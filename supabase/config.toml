@@ -1,0 +1,40 @@
+project_id = "fduagvpolipfvnrhtkxz"
+
+[functions.send-corporate-request]
+verify_jwt = false
+
+[functions.collect-lead]
+verify_jwt = false
+
+[functions.send-gift-card]
+verify_jwt = false
+
+[functions.send-contact-request]
+verify_jwt = false
+
+[functions.send-partner-request]
+verify_jwt = false
+
+[functions.send-booking-confirmation]
+verify_jwt = false
+
+[functions.send-booking-status-update]
+verify_jwt = false
+
+[functions.manage-users]
+verify_jwt = false
+
+[functions.recommend-experiences]
+verify_jwt = false
+
+[functions.geocode-hotel]
+verify_jwt = false
+
+[functions.hyperguest]
+verify_jwt = false
+
+[functions.hyperguest-certification]
+verify_jwt = false
+
+[functions.hyperguest-health]
+verify_jwt = false

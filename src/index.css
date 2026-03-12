@@ -1,0 +1,307 @@
+@import 'leaflet/dist/leaflet.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 36 40% 93%;
+    --foreground: 23 10% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 23 10% 15%;
+
+    --popover: 37 40% 96%;
+    --popover-foreground: 23 10% 15%;
+
+    --primary: 207 62% 15%;
+    --primary-foreground: 40 33% 93%;
+    --primary-glow: 208 61% 20%;
+
+    --secondary: 36 38% 78%;
+    --secondary-foreground: 23 10% 15%;
+
+    --muted: 35 20% 88%;
+    --muted-foreground: 30 8% 45%;
+
+    --accent: 29 48% 55%;
+    --accent-foreground: 40 33% 93%;
+
+    /* CTA Premium - Terracotta/Clay tone */
+    --cta: 15 45% 52%;
+    --cta-hover: 15 50% 48%;
+    --cta-foreground: 0 0% 100%;
+    --cta-border: 15 40% 42%;
+    --cta-shadow: 15 45% 35%;
+
+    /* Mobile warm system */
+    --mobile-header: 37 40% 96%;
+    --mobile-border: 34 33% 86%;
+    --mobile-logo: 0 0% 10%;
+    --mobile-active: 0 0% 10%;
+    --mobile-inactive: 30 15% 65%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 40 33% 93%;
+
+    --border: 23 10% 15% / 0.12;
+    --input: 23 10% 15% / 0.25;
+    --ring: 207 62% 15%;
+
+    --logo: 207 62% 15%;
+
+    --radius: 0.75rem;
+
+    /* Sidebar tokens */
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 23 10% 15%;
+    --sidebar-primary: 207 62% 15%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 40 33% 96%;
+    --sidebar-accent-foreground: 23 10% 15%;
+    --sidebar-border: 23 10% 15% / 0.08;
+    --sidebar-ring: 207 62% 15%;
+
+    /* Custom tokens */
+    --gradient-primary: linear-gradient(135deg, hsl(207 62% 15%), hsl(208 61% 20%));
+    --gradient-warm: linear-gradient(180deg, hsl(36 40% 93%), hsl(36 38% 78%));
+    --gradient-hero: linear-gradient(135deg, hsl(207 62% 15%) 0%, hsl(208 61% 20%) 50%, hsl(29 48% 55%) 100%);
+    --shadow-soft: 0 2px 8px -2px hsl(23 10% 15% / 0.06);
+    --shadow-medium: 0 4px 16px -4px hsl(23 10% 15% / 0.08);
+    --shadow-strong: 0 8px 32px -8px hsl(23 10% 15% / 0.12);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Hebrew input background – warm neutral */
+    --input-hebrew-bg: 30 25% 94%;
+  }
+
+  .dark {
+    --background: 207 62% 15%;
+    --foreground: 40 33% 93%;
+
+    --card: 207 62% 15%;
+    --card-foreground: 40 33% 93%;
+
+    --popover: 207 62% 15%;
+    --popover-foreground: 40 33% 93%;
+
+    --primary: 207 62% 15%;
+    --primary-foreground: 40 33% 93%;
+    --primary-glow: 208 61% 20%;
+
+    --secondary: 36 38% 78%;
+    --secondary-foreground: 23 10% 15%;
+
+    --muted: 208 61% 20%;
+    --muted-foreground: 40 33% 93%;
+
+    --accent: 29 48% 55%;
+    --accent-foreground: 40 33% 93%;
+
+    /* CTA Premium - Terracotta/Clay tone */
+    --cta: 15 45% 52%;
+    --cta-hover: 15 50% 48%;
+    --cta-foreground: 0 0% 100%;
+    --cta-border: 15 40% 42%;
+    --cta-shadow: 15 45% 35%;
+
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 40 33% 93%;
+
+    --border: 40 33% 93% / 0.12;
+    --input: 40 33% 93% / 0.25;
+    --ring: 207 62% 15%;
+
+    --logo: 207 62% 15%;
+
+    /* Sidebar tokens for dark mode */
+    --sidebar: 207 62% 12%;
+    --sidebar-foreground: 40 33% 93%;
+    --sidebar-primary: 40 33% 93%;
+    --sidebar-primary-foreground: 207 62% 15%;
+    --sidebar-accent: 207 62% 18%;
+    --sidebar-accent-foreground: 40 33% 93%;
+    --sidebar-border: 40 33% 93% / 0.12;
+    --sidebar-ring: 40 33% 93%;
+
+    --shadow-soft: 0 2px 8px -2px hsl(0 0% 0% / 0.3);
+    --shadow-medium: 0 4px 16px -4px hsl(0 0% 0% / 0.4);
+    --shadow-strong: 0 8px 32px -8px hsl(0 0% 0% / 0.5);
+    
+    /* Hebrew input background */
+    --input-hebrew-bg: 211 100% 96%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sans tracking-tight text-foreground;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer utilities {
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .gradient-warm {
+    background: var(--gradient-warm);
+  }
+  
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+  
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  
+  .shadow-medium {
+    box-shadow: var(--shadow-medium);
+  }
+  
+  .shadow-strong {
+    box-shadow: var(--shadow-strong);
+  }
+  
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+  
+  /* Hebrew input background utility */
+  .hebrew-input {
+    background-color: hsl(var(--input-hebrew-bg));
+  }
+  
+  /* Sharp skeleton corners */
+  [data-slot="skeleton"],
+  .animate-pulse {
+    border-radius: 0 !important;
+  }
+
+  /* Staggered skeleton appearance */
+  .animate-pulse:nth-child(1) { animation-delay: 0ms; }
+  .animate-pulse:nth-child(2) { animation-delay: 150ms; }
+  .animate-pulse:nth-child(3) { animation-delay: 300ms; }
+  .animate-pulse:nth-child(4) { animation-delay: 450ms; }
+
+  /* Hide scrollbar for carousel */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Fix for empty paragraphs in prose content (journal articles) */
+  .prose p:empty {
+    min-height: 1.5em;
+  }
+
+  /* Also handle paragraphs with only a br tag */
+  .prose p:has(br:only-child) {
+    min-height: 1.5em;
+  }
+
+  /* Tiptap editor prose overrides */
+  .ProseMirror {
+    @apply outline-none;
+  }
+
+  .ProseMirror h1 {
+    @apply text-2xl font-bold mt-4 mb-2;
+  }
+
+  .ProseMirror h2 {
+    @apply text-xl font-bold mt-3 mb-2;
+  }
+
+  .ProseMirror h3 {
+    @apply text-lg font-semibold mt-3 mb-1;
+  }
+
+  .ProseMirror p {
+    @apply leading-relaxed mb-2;
+  }
+
+  .ProseMirror strong {
+    @apply font-bold;
+  }
+
+  .ProseMirror em {
+    @apply italic;
+  }
+
+  .ProseMirror ul {
+    @apply list-disc pl-5 mb-2 space-y-1;
+  }
+
+  .ProseMirror ol {
+    @apply list-decimal pl-5 mb-2 space-y-1;
+  }
+
+  .ProseMirror li {
+    @apply leading-relaxed;
+  }
+
+  .ProseMirror a {
+    @apply text-primary underline cursor-pointer;
+  }
+
+  .ProseMirror s {
+    @apply line-through;
+  }
+}
+
+/* Scroll-down indicator animation */
+@keyframes scroll-line {
+  0% {
+    transform: scaleY(0);
+    transform-origin: top;
+    opacity: 1;
+  }
+  50% {
+    transform: scaleY(1);
+    transform-origin: top;
+    opacity: 1;
+  }
+  50.1% {
+    transform: scaleY(1);
+    transform-origin: bottom;
+  }
+  100% {
+    transform: scaleY(0);
+    transform-origin: bottom;
+    opacity: 0.6;
+  }
+}
+
+.scroll-indicator-line {
+  animation: scroll-line 2s ease-in-out infinite;
+}
+
+/* Leaflet map z-index — keep below calendar popovers */
+.leaflet-container {
+  z-index: 1 !important;
+}

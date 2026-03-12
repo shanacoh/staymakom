@@ -1,0 +1,13 @@
+
+-- Nouvelles colonnes hotels2 pour données HyperGuest
+ALTER TABLE hotels2 ADD COLUMN IF NOT EXISTS country_code TEXT;
+ALTER TABLE hotels2 ADD COLUMN IF NOT EXISTS timezone TEXT;
+ALTER TABLE hotels2 ADD COLUMN IF NOT EXISTS utc_offset NUMERIC;
+ALTER TABLE hotels2 ADD COLUMN IF NOT EXISTS max_child_age INTEGER;
+ALTER TABLE hotels2 ADD COLUMN IF NOT EXISTS max_infant_age INTEGER;
+ALTER TABLE hotels2 ADD COLUMN IF NOT EXISTS supported_cards JSONB;
+ALTER TABLE hotels2 ADD COLUMN IF NOT EXISTS cut_off TEXT;
+ALTER TABLE hotels2 ADD COLUMN IF NOT EXISTS description_room TEXT;
+ALTER TABLE hotels2 ADD COLUMN IF NOT EXISTS description_location TEXT;
+ALTER TABLE hotels2 ADD COLUMN IF NOT EXISTS description_room_he TEXT;
+ALTER TABLE hotels2 ADD COLUMN IF NOT EXISTS description_location_he TEXT;

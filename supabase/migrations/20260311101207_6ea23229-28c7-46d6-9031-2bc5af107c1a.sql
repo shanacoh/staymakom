@@ -1,0 +1,1 @@
+ALTER TABLE public.global_settings ADD COLUMN IF NOT EXISTS service_fee numeric DEFAULT 0;
