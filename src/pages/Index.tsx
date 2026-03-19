@@ -304,7 +304,7 @@ const Index = () => {
         ogImage={homepageSEO?.og_image}
       />
       <Header />
-      
+
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative h-[80vh] min-h-[450px] flex items-center justify-center md:items-end md:justify-start">

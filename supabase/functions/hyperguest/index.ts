@@ -14,6 +14,7 @@ const ALLOWED_ORIGINS: (string | RegExp)[] = [
   /\.lovableproject\.com$/,
   'http://localhost:5173',
   'http://localhost:3000',
+  'http://localhost:8080',
 ];
 
 function getCorsHeaders(req: Request) {

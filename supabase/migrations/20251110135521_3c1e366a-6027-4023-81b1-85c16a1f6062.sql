@@ -1,5 +1,11 @@
 -- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
+
+-- Wrapper so uuid_generate_v4() works from public schema
+CREATE OR REPLACE FUNCTION public.uuid_generate_v4()
+RETURNS uuid LANGUAGE sql AS $$
+  SELECT extensions.uuid_generate_v4()
+$$;
 
 -- Create enums
 CREATE TYPE app_role AS ENUM ('admin', 'hotel_admin', 'customer');

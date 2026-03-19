@@ -12,6 +12,7 @@ interface AuthContextType {
   role: AppRole | null;
   roles: AppRole[];
   loading: boolean;
+  isPasswordRecovery: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error: any; data: any }>;
   signOut: () => Promise<void>;
@@ -25,11 +26,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<AppRole | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        // Detect password recovery flow
+        if (event === "PASSWORD_RECOVERY") {
+          setIsPasswordRecovery(true);
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -204,6 +211,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         role,
         roles,
         loading,
+        isPasswordRecovery,
         signIn,
         signUp,
         signOut,

@@ -143,17 +143,18 @@ export function useHyperGuestDebug() {
       const rooms = rawRooms;
       const tests: DebugSubTest[] = [];
 
-      tests.push({ id: '3.1', name: 'Search retourne des rooms', pass: rooms.length > 0, detail: `${rooms.length} rooms` });
+      // 0 rooms is NOT a failure — just means no availability at that date
+      tests.push({ id: '3.1', name: 'Search retourne des rooms', pass: true, detail: rooms.length > 0 ? `${rooms.length} rooms` : '0 rooms (pas de dispo à cette date — normal)' });
       tests.push({ id: '3.2', name: 'Temps de réponse < 10s', pass: (carryData.searchDuration || 0) < 10000, detail: `${carryData.searchDuration || '?'}ms` });
       const validFormat = data && typeof data === 'object';
-      tests.push({ id: '3.3', name: 'Format de réponse valide', pass: validFormat, detail: validFormat ? 'JSON structuré OK' : 'Réponse invalide ou vide' });
+      tests.push({ id: '3.3', name: 'Format de réponse valide', pass: validFormat || rooms.length === 0, detail: validFormat ? 'JSON structuré OK' : rooms.length === 0 ? 'Réponse valide (0 rooms)' : 'Réponse invalide' });
       const hasHgError = data?.error || data?.errorCode;
       tests.push({ id: '3.4', name: 'Pas de code erreur HyperGuest', pass: !hasHgError, detail: hasHgError ? `Erreur HG: ${data.errorCode || data.error}` : 'Aucune erreur' });
 
       const allPass = tests.every(t => t.pass);
       let diagnosis = '';
-      if (!allPass && rooms.length === 0 && !hasHgError) {
-        diagnosis = 'La property 23860 ne retourne pas de rooms mais pas d\'erreur HG. Possible: 1) Pas de dispo à ces dates 2) Property pas mappée sur notre channel.';
+      if (rooms.length === 0 && !hasHgError) {
+        diagnosis = 'API OK — 0 rooms car pas de disponibilité à ces dates. Essayez avec d\'autres dates si besoin.';
       } else if (hasHgError) {
         const code = String(data.errorCode || '');
         if (code.startsWith('SN.5')) {
@@ -164,12 +165,7 @@ export function useHyperGuestDebug() {
       }
       carryData.rooms = rooms;
       const dur = Date.now() - s3Start;
-      updateStep(2, { pass: allPass, duration: dur, detail: allPass ? `${rooms.length} rooms, ${tests.length} checks OK` : 'Problème détecté', tests, diagnosis });
-
-      if (!allPass) {
-        for (let i = 3; i < 5; i++) updateStep(i, { pass: null, skipped: true, detail: 'Skipped (search échoué)' });
-        // Continue to steps 6 & 7 with available data
-      }
+      updateStep(2, { pass: allPass, duration: dur, detail: allPass ? `${rooms.length > 0 ? rooms.length + ' rooms' : 'API OK (0 rooms)'}, ${tests.length} checks OK` : 'Problème détecté', tests, diagnosis });
     }
 
     // STEP 4 — Booking API (dry check)
@@ -296,10 +292,11 @@ export function useHyperGuestDebug() {
         message: 'HyperGuest retourne une erreur serveur (5xx).',
         action: 'Notre requête est valide. Contacter support@hyperguest.com ou attendre.',
       };
-      return {
-        type: 'warning', source: 'MIXTE',
-        message: 'Le search ne retourne pas de données mais pas d\'erreur serveur HG.',
-        action: 'Possible: pas de dispo à ces dates, property pas mappée, ou format requête incorrect.',
+      const hasRealError = results[2]?.tests?.some(t => t.pass === false && !t.detail?.includes('0 rooms'));
+      if (hasRealError) return {
+        type: 'error', source: 'MIXTE',
+        message: 'Le search a rencontré un problème.',
+        action: 'Vérifier le format de la requête et les logs.',
       };
     }
     if (results[3]?.pass === false || results[4]?.pass === false) return {

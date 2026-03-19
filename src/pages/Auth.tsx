@@ -31,13 +31,16 @@ const signupSchema = z.object({
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { user, signIn, signUp } = useAuth();
+  const { user, signIn, signUp, isPasswordRecovery } = useAuth();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
   const [showPassword, setShowPassword] = useState(false);
   const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
+  const [updatingPassword, setUpdatingPassword] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [newUserId, setNewUserId] = useState<string | null>(null);
   
@@ -56,11 +59,37 @@ const Auth = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    // Don't redirect if onboarding is in progress
-    if (user && !showOnboarding && !newUserId) {
+    // Don't redirect if onboarding is in progress or password recovery
+    if (user && !showOnboarding && !newUserId && !isPasswordRecovery) {
       navigate("/account?tab=bookings");
     }
-  }, [user, navigate, showOnboarding, newUserId]);
+  }, [user, navigate, showOnboarding, newUserId, isPasswordRecovery]);
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    if (newPassword !== newPasswordConfirm) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    setUpdatingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Password updated successfully!");
+        navigate("/account?tab=bookings");
+      }
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setUpdatingPassword(false);
+    }
+  };
 
   const isLocked = lockedUntil !== null && Date.now() < lockedUntil;
 
@@ -186,6 +215,53 @@ const Auth = () => {
       setResetLoading(false);
     }
   };
+
+  // Password recovery mode — show new password form
+  if (isPasswordRecovery) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center space-y-2">
+            <h1 className="text-2xl font-bold">Set New Password</h1>
+            <p className="text-muted-foreground">Enter your new password below</p>
+          </div>
+          <form onSubmit={handleUpdatePassword} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                placeholder="Min. 6 characters"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+                minLength={6}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                placeholder="Repeat your password"
+                value={newPasswordConfirm}
+                onChange={(e) => setNewPasswordConfirm(e.target.value)}
+                required
+                minLength={6}
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={updatingPassword}>
+              {updatingPassword ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Updating...</>
+              ) : (
+                "Update Password"
+              )}
+            </Button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
