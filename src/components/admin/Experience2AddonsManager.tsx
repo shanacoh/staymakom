@@ -164,6 +164,7 @@ export function Experience2AddonsManager({
       toast.success("Addon added");
       resetNewForm();
       queryClient.invalidateQueries({ queryKey: ["experience2-addons", experienceId] });
+      queryClient.invalidateQueries({ queryKey: ["admin-experiences2"] });
     },
     onError: (err: any) => toast.error(err.message || "Error adding addon"),
   });
@@ -175,6 +176,7 @@ export function Experience2AddonsManager({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["experience2-addons", experienceId] });
+      queryClient.invalidateQueries({ queryKey: ["admin-experiences2"] });
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -188,6 +190,7 @@ export function Experience2AddonsManager({
       toast.success("Addon deleted");
       setDeleteAddonId(null);
       queryClient.invalidateQueries({ queryKey: ["experience2-addons", experienceId] });
+      queryClient.invalidateQueries({ queryKey: ["admin-experiences2"] });
     },
     onError: (err: any) => toast.error(err.message),
   });

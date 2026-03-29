@@ -436,7 +436,7 @@ Deno.serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const action = url.searchParams.get('action');
+    let action = url.searchParams.get('action');
     console.log('🚀 HyperGuest API request:', action, 'method:', req.method);
 
     let authResult: { authenticated: boolean; userId?: string; error?: string } = { authenticated: true };
@@ -460,6 +460,12 @@ Deno.serve(async (req) => {
           if (text && text.trim()) body = JSON.parse(text);
         } catch (_) { console.log('⚠️ No JSON body or parse error, using empty object'); }
       }
+    }
+
+    // Fallback: read action from body if not in URL params
+    if (!action && body.action) {
+      action = body.action as string;
+      console.log('📌 Action from body:', action);
     }
 
     let result;
@@ -495,9 +501,9 @@ Deno.serve(async (req) => {
         break;
       }
       case 'get-booking': {
-        const bookingId = url.searchParams.get('bookingId');
+        const bookingId = url.searchParams.get('bookingId') || body.bookingId;
         if (!bookingId) throw new Error('bookingId is required');
-        result = await getBookingDetails(bookingId);
+        result = await getBookingDetails(String(bookingId));
         break;
       }
       case 'list-bookings': result = await listBookings(body as any); break;
@@ -537,14 +543,14 @@ Deno.serve(async (req) => {
         break;
       }
       case 'get-hotels': {
-        const countryCode = url.searchParams.get('countryCode') || undefined;
+        const countryCode = url.searchParams.get('countryCode') || (body.countryCode as string) || undefined;
         result = await getAllHotels(countryCode);
         break;
       }
       case 'get-property': {
-        const propertyId = url.searchParams.get('propertyId');
+        const propertyId = url.searchParams.get('propertyId') || body.propertyId;
         if (!propertyId) throw new Error('propertyId is required');
-        result = await getPropertyDetails(parseInt(propertyId));
+        result = await getPropertyDetails(parseInt(String(propertyId)));
         break;
       }
       case 'get-facilities': result = await getFacilities(); break;

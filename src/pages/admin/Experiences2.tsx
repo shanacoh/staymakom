@@ -297,7 +297,7 @@ const AdminExperiences2 = () => {
               const addons = (experience as any).experience2_addons || [];
               const activeAddons = addons.filter((a: any) => a.is_active !== false);
               const hasNoCategory = !(experience as any).categories?.name;
-              const hasNoPhoto = !experience.hero_image;
+              const hasNoPhoto = !experience.hero_image && (!experience.photos || experience.photos.length === 0);
 
               // Pricing audit checks
               const hasFixedAddon = activeAddons.some((a: any) => a.type === "fixed");

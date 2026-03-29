@@ -93,7 +93,7 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
 
   const uploadImage = async (file: File): Promise<string> => {
     const fileExt = file.name.split(".").pop();
-    const fileName = `${Math.random()}.${fileExt}`;
+    const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const { error: uploadError } = await supabase.storage.from("experience-images").upload(fileName, file);
     if (uploadError) throw uploadError;
     const { data } = supabase.storage.from("experience-images").getPublicUrl(fileName);

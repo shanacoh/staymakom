@@ -195,7 +195,7 @@ export const useDiagnostic = () => {
         checkIn: getFutureCheckIn(),
         nights: 1,
         guests: '2',
-        hotelIds: [23860],
+        hotelIds: [113334],
       });
       const a2Duration = Date.now() - a2Start;
       a2Success = true;
@@ -316,7 +316,7 @@ export const useDiagnostic = () => {
     updateBlocTests('B', [], true);
     const tests: DiagnosticTest[] = [];
     const checkInStr = getFutureCheckIn();
-    const searchParams = { checkIn: checkInStr, nights: 2, guests: '2', hotelIds: [23860] };
+    const searchParams = { checkIn: checkInStr, nights: 2, guests: '2', hotelIds: [113334] };
 
     try {
       const b1Start = Date.now();
@@ -330,7 +330,7 @@ export const useDiagnostic = () => {
       // B1: Search returns rooms (0 rooms is not a failure — API responded correctly)
       tests.push({
         id: 'B1',
-        name: 'Search property 23860 retourne des rooms',
+        name: 'Search property 113334 retourne des rooms',
         pass: true, // API responded = pass. 0 rooms is just availability, not an error.
         warning: rooms.length === 0,
         detail: rooms.length > 0
@@ -429,7 +429,7 @@ export const useDiagnostic = () => {
       // B7: Search with child
       try {
         const childData = await callHyperGuest('search', {
-          checkIn: checkInStr, nights: 2, guests: '1-5', hotelIds: [23860],
+          checkIn: checkInStr, nights: 2, guests: '1-5', hotelIds: [113334],
         });
         const childRooms = childData?.results?.[0]?.rooms || [];
         tests.push({
@@ -462,7 +462,7 @@ export const useDiagnostic = () => {
 
       tests.push({
         id: 'B1',
-        name: 'Search property 23860 retourne des rooms',
+        name: 'Search property 113334 retourne des rooms',
         pass: false,
         detail: `Échec: ${diagnosis}`,
       });
@@ -515,7 +515,7 @@ export const useDiagnostic = () => {
     try {
       const checkIn = getFutureCheckIn();
       const searchData = await callHyperGuest('search', {
-        checkIn, nights: 1, guests: '2', hotelIds: [23860],
+        checkIn, nights: 1, guests: '2', hotelIds: [113334],
       });
       const room = searchData?.results?.[0]?.rooms?.[0];
       const rp = room?.ratePlans?.[0];
@@ -532,7 +532,7 @@ export const useDiagnostic = () => {
           await callHyperGuest('pre-book', {
             search: {
               dates: { from: checkIn, to: checkOut },
-              propertyId: 23860,
+              propertyId: 113334,
               nationality: 'IL',
               pax: [{ adults: 2, children: [] }],
             },
@@ -609,7 +609,7 @@ export const useDiagnostic = () => {
     // D2: Deadline calculation from live data
     try {
       const data = await callHyperGuest('search', {
-        checkIn: getFutureCheckIn(), nights: 1, guests: '2', hotelIds: [23860],
+        checkIn: getFutureCheckIn(), nights: 1, guests: '2', hotelIds: [113334],
       });
       const rooms = data?.results?.[0]?.rooms || [];
       const policies = rooms.flatMap((r: any) =>
@@ -700,7 +700,7 @@ export const useDiagnostic = () => {
     // E2: Past dates
     try {
       const pastData = await callHyperGuest('search', {
-        checkIn: '2024-01-01', nights: 2, guests: '2', hotelIds: [23860],
+        checkIn: '2024-01-01', nights: 2, guests: '2', hotelIds: [113334],
       });
       const pastRooms = pastData?.results?.[0]?.rooms || [];
       tests.push({
@@ -744,7 +744,7 @@ export const useDiagnostic = () => {
 
     // F1: Response time (3 runs, take median)
     const durations: number[] = [];
-    const searchParams = { checkIn: getFutureCheckIn(), nights: 2, guests: '2', hotelIds: [23860] };
+    const searchParams = { checkIn: getFutureCheckIn(), nights: 2, guests: '2', hotelIds: [113334] };
 
     for (let i = 0; i < 3; i++) {
       const start = Date.now();

@@ -295,7 +295,7 @@ export function UnifiedExperienceForm({
 
   const uploadImage = async (file: File, path: string): Promise<string> => {
     const fileExt = file.name.split(".").pop();
-    const fileName = `${Math.random()}.${fileExt}`;
+    const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `${path}/${fileName}`;
 
     const { error: uploadError } = await supabase.storage

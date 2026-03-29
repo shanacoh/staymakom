@@ -196,6 +196,20 @@ export function UnifiedExperience2Form({
     enabled: !!experienceId,
   });
 
+  // Check if this experience already has linked extras (to restore showExtras toggle)
+  const { data: existingExtrasCount } = useQuery({
+    queryKey: ["experience2-extras-count", experienceId],
+    queryFn: async () => {
+      const { count, error } = await (supabase as any)
+        .from("experience2_extras")
+        .select("id", { count: "exact", head: true })
+        .eq("experience_id", experienceId);
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled: !!experienceId,
+  });
+
   const { data: existingExperienceHotels } = useQuery({
     queryKey: ["experience2-hotels", experienceId],
     queryFn: async () => {
@@ -372,6 +386,13 @@ export function UnifiedExperience2Form({
     }
   }, [existingExperience, setValue, propHotelId]);
 
+  // Restore showExtras toggle when experience has linked extras
+  useEffect(() => {
+    if (typeof existingExtrasCount === "number" && existingExtrasCount > 0) {
+      setShowExtras(true);
+    }
+  }, [existingExtrasCount]);
+
   useEffect(() => {
     if (existingExperienceHotels && existingExperienceHotels.length > 0) {
       setExperienceHotels(
@@ -430,6 +451,7 @@ export function UnifiedExperience2Form({
   // -------------------------------------------------------------------------
 
   const handleHeroImageChange = (file: File | null) => {
+    if (isSaving) return;
     setHeroImage(file);
     if (file) {
       const reader = new FileReader();
@@ -441,7 +463,7 @@ export function UnifiedExperience2Form({
   };
 
   const handleGalleryImagesChange = (files: FileList | null) => {
-    if (!files) return;
+    if (!files || isSaving) return;
     const newFiles = Array.from(files).slice(0, 8 - galleryImages.length);
     setGalleryImages((prev) => [...prev, ...newFiles]);
     newFiles.forEach((file) => {
@@ -452,13 +474,14 @@ export function UnifiedExperience2Form({
   };
 
   const removeGalleryImage = (index: number) => {
+    if (isSaving) return;
     setGalleryImages((prev) => prev.filter((_, i) => i !== index));
     setGalleryPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   const uploadImage = async (file: File, path: string): Promise<string> => {
     const fileExt = file.name.split(".").pop();
-    const fileName = `${Math.random()}.${fileExt}`;
+    const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `${path}/${fileName}`;
     const { error: uploadError } = await supabase.storage.from("experience-images").upload(filePath, file);
     if (uploadError) throw uploadError;
@@ -505,13 +528,23 @@ export function UnifiedExperience2Form({
   // -------------------------------------------------------------------------
 
   const buildExperienceData = async (data: Experience2FormData, status: "draft" | "published") => {
-    let heroImageUrl = existingExperience?.hero_image || "";
-    if (heroImage) heroImageUrl = await uploadImage(heroImage, "hero");
+    // Snapshot image state to avoid race conditions during async uploads
+    const heroImageSnapshot = heroImage;
+    const galleryImagesSnapshot = [...galleryImages];
+    const galleryPreviewsSnapshot = [...galleryPreviews];
 
-    const photoUrls = galleryPreviews.filter((url) => url.startsWith("http"));
-    for (const img of galleryImages) {
-      const url = await uploadImage(img, "gallery");
-      photoUrls.push(url);
+    let heroImageUrl = existingExperience?.hero_image || "";
+    if (heroImageSnapshot) heroImageUrl = await uploadImage(heroImageSnapshot, "hero");
+
+    const photoUrls = galleryPreviewsSnapshot.filter((url) => url.startsWith("http"));
+    for (const img of galleryImagesSnapshot) {
+      try {
+        const url = await uploadImage(img, "gallery");
+        photoUrls.push(url);
+      } catch (e) {
+        console.error("Failed to upload gallery image, skipping:", e);
+        toast.error("Une image n'a pas pu être uploadée");
+      }
     }
 
     const primaryHotelId = experienceHotels.length > 0 ? experienceHotels[0].hotel_id : null;
@@ -535,7 +568,7 @@ export function UnifiedExperience2Form({
       cancellation_policy: data.cancellation_policy || null,
       cancellation_policy_he: data.cancellation_policy_he || null,
       hero_image: heroImageUrl || null,
-      thumbnail_image: thumbnailImagePreview || null,
+      thumbnail_image: thumbnailImagePreview || heroImageUrl || null,
       photos: photoUrls,
       status,
       slug: currentExperienceId ? existingExperience?.slug : generateSlug(title),
@@ -647,11 +680,13 @@ export function UnifiedExperience2Form({
         await saveLocalReviews(insertedData.id);
         toast.success("Draft saved!");
       }
-      // Clear auto-save on successful save
+      // Clear auto-save and reset local image state (already uploaded)
+      setGalleryImages([]);
       localStorage.removeItem(autoSaveKey);
       queryClient.invalidateQueries({ queryKey: ["admin-experiences2"] });
+      if (currentExperienceId) queryClient.invalidateQueries({ queryKey: ["experience2", currentExperienceId] });
     } catch (error: any) {
-      
+
       toast.error(error.message || "Failed to save draft");
     } finally {
       setIsSaving(false);
@@ -690,8 +725,10 @@ export function UnifiedExperience2Form({
         await saveLocalReviews(insertedData.id);
         toast.success("Published successfully");
       }
+      setGalleryImages([]);
       localStorage.removeItem(autoSaveKey);
       queryClient.invalidateQueries({ queryKey: ["admin-experiences2"] });
+      if (currentExperienceId) queryClient.invalidateQueries({ queryKey: ["experience2", currentExperienceId] });
       onClose?.();
     } catch (error: any) {
       
@@ -1050,6 +1087,64 @@ export function UnifiedExperience2Form({
                 <CardDescription>Images de l'expérience pour les listings et la page détail</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Reload HyperGuest photos for hotels with HG link but no photos */}
+                {(() => {
+                  const hotelsWithHGNoPhotos = experienceHotels
+                    .map((eh) => hotels?.find((x) => x.id === eh.hotel_id))
+                    .filter((h) => h && h.hyperguest_property_id && (!h.photos || h.photos.length === 0) && !h.hero_image);
+                  if (hotelsWithHGNoPhotos.length === 0) return null;
+                  return (
+                    <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <p className="text-sm text-amber-800 flex-1">
+                        {hotelsWithHGNoPhotos.length} hôtel(s) du parcours ont un lien HyperGuest mais aucune photo importée.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          for (const hotel of hotelsWithHGNoPhotos) {
+                            if (!hotel) continue;
+                            try {
+                              const { data, error } = await supabase.functions.invoke("hyperguest", {
+                                body: { action: "get-property", propertyId: Number(hotel.hyperguest_property_id) },
+                              });
+                              if (error) throw error;
+                              const propertyData = data?.data || data;
+                              const images = propertyData?.images || [];
+                              if (images.length === 0) continue;
+                              const photoUrls: string[] = [];
+                              let heroUrl = "";
+                              for (let i = 0; i < Math.min(images.length, 8); i++) {
+                                const img = images[i];
+                                const url = img.large || img.uri;
+                                const fileName = `hyperguest-${crypto.randomUUID()}.jpg`;
+                                const { data: dlData } = await supabase.functions.invoke("download-image", {
+                                  body: { imageUrl: url, bucket: "hotel-images", path: fileName },
+                                });
+                                if (dlData?.publicUrl) {
+                                  if (i === 0) heroUrl = dlData.publicUrl;
+                                  else photoUrls.push(dlData.publicUrl);
+                                }
+                              }
+                              await supabase.from("hotels2").update({
+                                hero_image: heroUrl || undefined,
+                                photos: photoUrls,
+                              }).eq("id", hotel.id);
+                            } catch (err) {
+                              console.error(`Failed to import photos for hotel ${hotel.name}:`, err);
+                            }
+                          }
+                          queryClient.invalidateQueries({ queryKey: ["admin-hotels2-list"] });
+                          toast.success("Photos HyperGuest importées !");
+                        }}
+                      >
+                        Importer les photos HyperGuest
+                      </Button>
+                    </div>
+                  );
+                })()}
+
                 {/* Hotel Images from parcours */}
                 {allParcoursImages.length > 0 && (
                   <div className="space-y-2">
@@ -1126,7 +1221,7 @@ export function UnifiedExperience2Form({
                               if (file.size > 10 * 1024 * 1024) { toast.error("Max 10MB"); return; }
                               try {
                                 const ext = file.name.split(".").pop();
-                                const name = `${Math.random().toString(36).substring(2)}-${Date.now()}.${ext}`;
+                                const name = `${crypto.randomUUID()}.${ext}`;
                                 const { error } = await supabase.storage.from("experience-images").upload(name, file);
                                 if (error) throw error;
                                 const { data: { publicUrl } } = supabase.storage.from("experience-images").getPublicUrl(name);
@@ -1173,34 +1268,33 @@ export function UnifiedExperience2Form({
                   <div
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleHeroDrop}
-                    className="border-2 border-dashed rounded-lg p-6 transition-colors hover:border-primary/50"
+                    className="border-2 border-dashed rounded-lg p-6 transition-colors hover:border-primary/50 relative"
                   >
                     {heroImagePreview ? (
-                      <div className="relative mb-3">
+                      <div className="relative">
                         <img src={heroImagePreview} alt="Hero" className="w-full h-64 object-cover rounded-lg" />
-                        <button
-                          type="button"
-                          onClick={() => { setHeroImage(null); setHeroImagePreview(null); }}
-                          className="absolute top-2 right-2 bg-destructive text-destructive-foreground rounded-full p-1"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          <label className="bg-secondary text-secondary-foreground rounded-full p-1 cursor-pointer hover:bg-secondary/80" title="Changer l'image">
+                            <Upload className="h-4 w-4" />
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handleHeroImageChange(e.target.files?.[0] || null)} />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => { setHeroImage(null); setHeroImagePreview(null); }}
+                            className="bg-destructive text-destructive-foreground rounded-full p-1"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                      <label className="flex flex-col items-center justify-center py-8 text-muted-foreground cursor-pointer">
                         <Upload className="h-10 w-10 mb-3 opacity-40" />
                         <p className="text-sm font-medium">Glisser-déposer ou cliquer pour parcourir</p>
                         <p className="text-xs mt-1">1600×900px minimum, max 5MB</p>
-                      </div>
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handleHeroImageChange(e.target.files?.[0] || null)} />
+                      </label>
                     )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleHeroImageChange(e.target.files?.[0] || null)}
-                      className={heroImagePreview ? "w-full" : "absolute inset-0 opacity-0 cursor-pointer w-full h-full"}
-                      style={heroImagePreview ? {} : { position: "absolute", top: 0, left: 0 }}
-                    />
-                    {!heroImagePreview && <div className="relative" />}
                   </div>
                 </div>
 

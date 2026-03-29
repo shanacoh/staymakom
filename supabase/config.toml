@@ -38,3 +38,18 @@ verify_jwt = false
 
 [functions.hyperguest-health]
 verify_jwt = false
+
+[functions.download-image]
+verify_jwt = false
+
+[functions.translate-text]
+verify_jwt = false
+
+[functions.export-data]
+verify_jwt = false
+
+[functions.send-cart-reminder]
+verify_jwt = false
+
+[functions.test-hyperguest]
+verify_jwt = false

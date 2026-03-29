@@ -98,7 +98,7 @@ export function useHyperGuestDebug() {
     const s2Start = Date.now();
     try {
       const { data, error } = await supabase.functions.invoke('hyperguest', {
-        body: { action: 'search', checkIn: checkInStr, nights: 1, guests: '2', hotelIds: [23860] },
+        body: { action: 'search', checkIn: checkInStr, nights: 1, guests: '2', hotelIds: [113334] },
       });
       const dur = Date.now() - s2Start;
       const errorStr = JSON.stringify(data?.error || error || '');
@@ -139,7 +139,7 @@ export function useHyperGuestDebug() {
     const s3Start = Date.now();
     {
       const data = carryData.searchData;
-      const rawRooms = data?.rooms || data?.data?.rooms || data?.result?.data?.rooms || [];
+      const rawRooms = data?.data?.results?.[0]?.rooms || data?.results?.[0]?.rooms || data?.rooms || data?.data?.rooms || [];
       const rooms = rawRooms;
       const tests: DebugSubTest[] = [];
 
@@ -174,7 +174,7 @@ export function useHyperGuestDebug() {
       const tests: DebugSubTest[] = [];
       try {
         await supabase.functions.invoke('hyperguest', {
-          body: { action: 'pre-book', propertyId: 23860 },
+          body: { action: 'pre-book', propertyId: 113334 },
         });
         tests.push({ id: '4.1', name: 'Endpoint booking accessible', pass: true, detail: 'Endpoint répond (erreur de validation attendue)' });
       } catch (e: any) {

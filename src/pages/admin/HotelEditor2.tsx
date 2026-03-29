@@ -704,6 +704,53 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
             </p>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Bouton pour recharger les photos HyperGuest en mode édition */}
+            {hyperguestPhotos.length === 0 && hyperguestId && (
+              <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border">
+                <p className="text-sm text-muted-foreground flex-1">
+                  Importez des photos depuis HyperGuest (property {hyperguestId})
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isDownloadingImages}
+                  onClick={async () => {
+                    try {
+                      const { data, error } = await supabase.functions.invoke("hyperguest", {
+                        body: { action: "get-property", propertyId: hyperguestId },
+                      });
+                      if (error) throw error;
+                      const propertyData = data?.data || data;
+                      const images = propertyData?.images || [];
+                      if (images.length === 0) {
+                        toast.info("Aucune photo disponible pour ce property");
+                        return;
+                      }
+                      const hgPhotos: HyperGuestPhoto[] = images.map((img: any) => ({
+                        url: img.large || img.uri,
+                        thumbnail: img.thumbnail || img.uri,
+                        caption: img.description || "",
+                      }));
+                      setHyperguestPhotos(hgPhotos);
+                      setSelectedHGPhotos([]);
+                      setSelectedHGHero(null);
+                      toast.success(`${hgPhotos.length} photos chargées depuis HyperGuest`);
+                    } catch (err: any) {
+                      toast.error(err.message || "Erreur lors du chargement des photos");
+                    }
+                  }}
+                >
+                  {isDownloadingImages ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                  ) : (
+                    <ImageIcon className="h-4 w-4 mr-1" />
+                  )}
+                  Charger photos HyperGuest
+                </Button>
+              </div>
+            )}
+
             {/* Sous-section : Sélection depuis HyperGuest */}
             {hyperguestPhotos.length > 0 && (
               <div className="space-y-3">
@@ -816,7 +863,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
                             Promise.all(
                               files.map(async (file) => {
                                 const fileExt = file.name.split(".").pop();
-                                const fileName = `${Math.random()}.${fileExt}`;
+                                const fileName = `${crypto.randomUUID()}.${fileExt}`;
                                 const { error: uploadError } = await supabase.storage
                                   .from("hotel-images")
                                   .upload(fileName, file);
@@ -827,7 +874,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
                                 return publicUrl;
                               }),
                             ).then((urls) => {
-                              setFormData({ ...formData, photos: [...formData.photos, ...urls] });
+                              setFormData((prev) => ({ ...prev, photos: [...prev.photos, ...urls] }));
                             }),
                             {
                               loading: `Upload de ${files.length} image(s)...`,

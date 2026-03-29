@@ -296,7 +296,7 @@ export const HotelEditor = ({ hotelId, onClose }: HotelEditorProps) => {
                             Promise.all(
                               filesToUpload.map(async (file) => {
                                 const fileExt = file.name.split('.').pop();
-                                const fileName = `${Math.random()}.${fileExt}`;
+                                const fileName = `${crypto.randomUUID()}.${fileExt}`;
                                 const { error: uploadError } = await supabase.storage
                                   .from('hotel-images')
                                   .upload(fileName, file);
@@ -310,7 +310,7 @@ export const HotelEditor = ({ hotelId, onClose }: HotelEditorProps) => {
                                 return publicUrl;
                               })
                             ).then((urls) => {
-                              setFormData({ ...formData, photos: [...formData.photos, ...urls] });
+                              setFormData((prev) => ({ ...prev, photos: [...prev.photos, ...urls] }));
                             }),
                             {
                               loading: `Uploading ${filesToUpload.length} image${filesToUpload.length > 1 ? 's' : ''}...`,

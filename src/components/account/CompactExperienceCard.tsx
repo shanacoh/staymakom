@@ -44,7 +44,7 @@ export default function CompactExperienceCard({
   const { lang } = useLanguage();
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
 
-  const image = experience.hero_image || experience.photos?.[0] || experience.hotels?.hero_image;
+  const image = (experience as any).thumbnail_image || experience.hero_image || experience.photos?.[0] || experience.hotels?.hero_image;
   const hotelName = experience.hotels?.name || "";
   const city = experience.hotels?.city || "";
   const currency = experience.currency === "ILS" ? "₪" : "$";

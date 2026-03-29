@@ -69,7 +69,7 @@ const IncludesManager = ({
   };
   const uploadImage = async (file: File): Promise<string> => {
     const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random()}.${fileExt}`;
+    const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `${fileName}`;
     const {
       error: uploadError

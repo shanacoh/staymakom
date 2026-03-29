@@ -57,12 +57,13 @@ Deno.serve(async (req) => {
         checkIn: checkInStr,
         nights: 1,
         guests: '2',
-        hotelIds: [23860],
+        hotelIds: [113334],
       }),
     });
     const duration = Date.now() - start;
     const data = await response.json();
-    const rooms = data?.rooms || data?.data?.rooms || data?.result?.data?.rooms || [];
+    const searchResults = data?.results || data?.data?.results || [];
+    const rooms = searchResults?.[0]?.rooms || data?.rooms || [];
 
     results.checks.edgeFunction = {
       pass: response.ok,
@@ -70,9 +71,11 @@ Deno.serve(async (req) => {
       status: response.status,
     };
 
+    // Search works if the API responded with valid results (even 0 rooms = availability issue, not API failure)
     results.checks.searchWorks = {
-      pass: rooms.length > 0,
+      pass: response.ok && (searchResults.length > 0 || !data?.error),
       roomCount: rooms.length,
+      warning: rooms.length === 0 ? 'No rooms available (availability, not API error)' : undefined,
     };
 
     const errorStr = JSON.stringify(data?.error || '');

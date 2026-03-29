@@ -8,7 +8,7 @@ const configItems = [
   { icon: Shield, label: 'isTest', value: 'false', note: 'Forcé par ENVIRONMENT=production' },
   { icon: Server, label: 'Search URL', value: 'search-api.hyperguest.io/2.0/', note: 'Availability search' },
   { icon: Server, label: 'Book URL', value: 'book-api.hyperguest.com/2.0/', note: 'Booking & cancellation' },
-  { icon: Globe, label: 'Property live', value: '23860', note: 'Production property' },
+  { icon: Globe, label: 'Property live', value: '113334', note: 'Hotel 1935 Tel Aviv — 4 room types' },
   { icon: Globe, label: 'Property cert', value: '19912', note: 'Certification sandbox' },
   { icon: Clock, label: 'Timeout booking', value: '300s', note: 'AbortController 300000ms' },
   { icon: Globe, label: 'CORS', value: 'staymakom.com', note: 'Allow-Origin: *' },

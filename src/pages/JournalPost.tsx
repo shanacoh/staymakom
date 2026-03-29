@@ -147,7 +147,7 @@ function EmbeddedExperienceCard({ experienceId }: { experienceId: string }) {
   const title = lang === "he" ? experience.title_he || experience.title : experience.title;
   const hotelName = lang === "he" ? hotel?.name_he || hotel?.name : hotel?.name;
   const city = lang === "he" ? hotel?.city_he || hotel?.city : hotel?.city;
-  const imageUrl = experience.hero_image || hotel?.hero_image;
+  const imageUrl = (experience as any).thumbnail_image || experience.hero_image || hotel?.hero_image;
 
   return (
     <>
