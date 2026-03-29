@@ -1,13 +1,95 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle, Mail, CheckCircle2, XCircle } from "lucide-react";
+
+const EMAIL_FUNCTIONS = [
+  { id: "send-contact-request", label: "Contact Request", body: (email: string) => ({ name: "Test Admin", email, message: "Test email from admin panel", lang: "en" }) },
+  { id: "send-booking-confirmation", label: "Booking Confirmation", body: (email: string) => ({ to: email, guestName: "Test Guest", hotelName: "Hotel Test", experienceTitle: "Test Experience", checkIn: "2026-04-10", checkOut: "2026-04-12", totalPrice: 1500, currency: "ILS", bookingRef: "SM-TEST-001", lang: "en" }) },
+  { id: "send-gift-card", label: "Gift Card", body: (email: string) => ({ recipientEmail: email, recipientName: "Test", senderName: "Admin", amount: 500, currency: "ILS", code: "MK-TEST-0000", message: "Test gift card", lang: "en" }) },
+  { id: "send-partner-request", label: "Partner Request", body: (email: string) => ({ name: "Test Hotel", email, phone: "+972500000000", hotelName: "Test Property", message: "Test partner request", lang: "en" }) },
+  { id: "send-corporate-request", label: "Corporate Request", body: (email: string) => ({ name: "Test Corp", email, company: "Test Inc.", message: "Test corporate request", lang: "en" }) },
+];
+
+function EmailTestCard() {
+  const [testEmail, setTestEmail] = useState("");
+  const [selectedFn, setSelectedFn] = useState(EMAIL_FUNCTIONS[0].id);
+  const [sending, setSending] = useState(false);
+  const [lastResult, setLastResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  const handleTest = async () => {
+    if (!testEmail) { toast.error("Enter an email address"); return; }
+    setSending(true);
+    setLastResult(null);
+    const fn = EMAIL_FUNCTIONS.find((f) => f.id === selectedFn)!;
+    try {
+      const { data, error } = await supabase.functions.invoke(fn.id, { body: fn.body(testEmail) });
+      if (error) throw error;
+      setLastResult({ ok: true, message: `${fn.label} sent to ${testEmail}` });
+      toast.success(`Email sent!`);
+    } catch (err: any) {
+      setLastResult({ ok: false, message: err.message || "Failed to send" });
+      toast.error(err.message || "Failed to send email");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Mail className="h-5 w-5" />
+          Email Test
+        </CardTitle>
+        <CardDescription>Send a test email to verify Resend integration</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label>Recipient Email</Label>
+          <Input
+            type="email"
+            placeholder="your@email.com"
+            value={testEmail}
+            onChange={(e) => setTestEmail(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Email Type</Label>
+          <Select value={selectedFn} onValueChange={setSelectedFn}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {EMAIL_FUNCTIONS.map((fn) => (
+                <SelectItem key={fn.id} value={fn.id}>{fn.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button onClick={handleTest} disabled={sending || !testEmail} variant="outline">
+            {sending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Mail className="h-4 w-4 mr-2" />}
+            Send Test
+          </Button>
+          {lastResult && (
+            <span className={`flex items-center gap-1.5 text-sm ${lastResult.ok ? "text-emerald-600" : "text-red-600"}`}>
+              {lastResult.ok ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+              {lastResult.message}
+            </span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 const AdminSettings = () => {
   const queryClient = useQueryClient();
@@ -221,12 +303,14 @@ const AdminSettings = () => {
             <Alert className="mt-4">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                Stripe secret keys must be stored as backend secrets for security reasons. 
+                Stripe secret keys must be stored as backend secrets for security reasons.
                 Contact your administrator to configure the STRIPE_SECRET_KEY in the backend environment.
               </AlertDescription>
             </Alert>
           </CardContent>
         </Card>
+
+        <EmailTestCard />
       </div>
 
       <div className="flex justify-end">
