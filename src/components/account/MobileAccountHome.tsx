@@ -15,7 +15,6 @@ import {
   MessageCircle,
   LogOut,
   ChevronRight,
-  Bookmark,
   Info,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
@@ -116,11 +115,6 @@ export default function MobileAccountHome() {
       icon: Heart,
       label: "Saved Escapes",
       onClick: () => navigate("/account?tab=wishlist"),
-    },
-    {
-      icon: Bookmark,
-      label: "Saved for Later",
-      onClick: () => navigate("/account?tab=savedcarts"),
     },
     {
       icon: Gift,

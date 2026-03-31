@@ -36,6 +36,7 @@ import ReviewsManager2, { type LocalReviewEntry } from "@/components/admin/Revie
 import DateOptionsManager from "@/components/admin/DateOptionsManager";
 import ExperienceExtrasSelector2 from "@/components/admin/ExperienceExtrasSelector2";
 import PracticalInfoManager from "@/components/admin/PracticalInfoManager";
+import AvailabilityRulesManager from "@/components/admin/AvailabilityRulesManager";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -58,8 +59,8 @@ interface ExperienceHotelEntry {
 
 const TABS = [
   { id: "presentation", label: "Présentation" },
-  { id: "photos", label: "Photos" },
   { id: "parcours", label: "Parcours & Hôtels" },
+  { id: "photos", label: "Photos" },
   { id: "inclus", label: "Inclus & Extras" },
   { id: "tarification", label: "Tarification" },
   { id: "things", label: "Things to Know" },
@@ -952,6 +953,7 @@ export function UnifiedExperience2Form({
                             content={field.value || ""}
                             onChange={field.onChange}
                             placeholder="Describe the experience in English..."
+                            defaultAlignment="right"
                           />
                         )}
                       />
@@ -986,6 +988,7 @@ export function UnifiedExperience2Form({
                             onChange={field.onChange}
                             placeholder="תאר את החוויה בעברית..."
                             dir="rtl"
+                            defaultAlignment="right"
                           />
                         )}
                       />
@@ -1799,6 +1802,21 @@ export function UnifiedExperience2Form({
                     }}
                     hotelId={experienceHotels.length > 0 ? experienceHotels[0].hotel_id : undefined}
                   />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Availability Rules */}
+            {experienceId && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Disponibilité</CardTitle>
+                  <CardDescription>
+                    Définissez les contraintes temporelles de cette expérience (jours, périodes, dates ponctuelles ou bloquées).
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AvailabilityRulesManager experienceId={experienceId} />
                 </CardContent>
               </Card>
             )}

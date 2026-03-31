@@ -189,6 +189,35 @@ export default function Experience2() {
     ? reviewsData!.reduce((acc, r) => acc + r.rating, 0) / reviewsCount
     : null;
 
+  // ---------------------------------------------------------------------------
+  // Availability rules (public, only active)
+  // ---------------------------------------------------------------------------
+
+  const { data: availabilityRules = [] } = useQuery({
+    queryKey: ["availability_rules_public", experience?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("experience2_availability_rules")
+        .select("id, rule_type, days_of_week, date_from, date_to, specific_dates, label, label_he, origin")
+        .eq("experience_id", experience!.id)
+        .eq("is_active", true)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data as Array<{
+        id: string;
+        rule_type: string;
+        days_of_week: number[] | null;
+        date_from: string | null;
+        date_to: string | null;
+        specific_dates: string[] | null;
+        label: string | null;
+        label_he: string | null;
+        origin: string;
+      }>;
+    },
+    enabled: !!experience?.id,
+  });
+
   // Analytics: scroll depth
   useScrollDepth(`experience/${slug}`);
 
@@ -264,13 +293,18 @@ export default function Experience2() {
   // All prices are computed in ILS internally, converted at display time via CurrencyContext
   const displayCurrency = "ILS";
 
-  // Use experience photos if available, otherwise hotel photos
-  const photos =
-    experience.photos?.length > 0
-      ? experience.photos
-      : allHotelPhotos.length > 0
-        ? allHotelPhotos
-        : [experience.hero_image || primaryHotel?.hero_image].filter(Boolean);
+  // Hero image is always first; remaining photos follow (no duplicate)
+  const heroImage = experience.hero_image || primaryHotel?.hero_image;
+  const basePhotos = experience.photos?.length > 0
+    ? experience.photos
+    : allHotelPhotos.length > 0
+      ? allHotelPhotos
+      : [];
+  const photos = heroImage
+    ? [heroImage, ...basePhotos.filter((p: string) => p !== heroImage)]
+    : basePhotos.length > 0
+      ? basePhotos
+      : [primaryHotel?.hero_image].filter(Boolean);
 
   // ---------------------------------------------------------------------------
   // Localized content
@@ -509,6 +543,12 @@ export default function Experience2() {
             {/* Location map(s) */}
             {renderMaps()}
 
+            {/* Share with Friends — below map */}
+            <ShareWithFriendsSection
+              title={title}
+              lang={lang as "en" | "he" | "fr"}
+            />
+
             {/* Reviews */}
             <div ref={reviewsRef}>
               <ReviewsGrid2 experienceId={experience.id} lang={lang} />
@@ -518,18 +558,10 @@ export default function Experience2() {
             <PracticalInfo experience={experience} lang={lang as "en" | "he" | "fr"} />
 
             {/* Other Experiences */}
-            {primaryHotel?.id && (
-              <OtherExperiences2
-                hotelId={primaryHotel.id}
-                currentExperienceId={experience.id}
-                lang={lang}
-              />
-            )}
-
-            {/* Share with Friends — bottom of left column */}
-            <ShareWithFriendsSection
-              title={title}
-              lang={lang as "en" | "he" | "fr"}
+            <OtherExperiences2
+              currentExperienceId={experience.id}
+              categoryId={category?.id ?? null}
+              lang={lang}
             />
           </div>
 
@@ -539,6 +571,28 @@ export default function Experience2() {
               className="sticky space-y-4 will-change-transform"
               style={{ top: `${stickyTop}px` }}
             >
+              {/* Availability rules notice */}
+              {availabilityRules.length > 0 && (
+                <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 space-y-1.5">
+                  <p className="text-xs font-medium flex items-center gap-1.5 text-foreground/80">
+                    <span>📅</span>
+                    {lang === "he" ? "זמינות" : "Disponibilité"}
+                  </p>
+                  <ul className="space-y-1">
+                    {availabilityRules.map((rule) => {
+                      const msg = lang === "he" ? rule.label_he : rule.label;
+                      if (!msg) return null;
+                      return (
+                        <li key={rule.id} className="text-xs text-muted-foreground flex gap-1.5">
+                          <span className="text-foreground/40 shrink-0">·</span>
+                          <span>{msg}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+
               {/* Price Callout CTA */}
               <HeroBookingPreview2
                 experienceId={experience.id}
@@ -592,7 +646,27 @@ export default function Experience2() {
         {/* Mobile Booking Sheet */}
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
           <SheetContent side="bottom" className="h-[90vh] overflow-y-auto p-0">
-            <div className="p-6">
+            <div className="p-6 space-y-4">
+              {availabilityRules.length > 0 && (
+                <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 space-y-1.5">
+                  <p className="text-xs font-medium flex items-center gap-1.5 text-foreground/80">
+                    <span>📅</span>
+                    {lang === "he" ? "זמינות" : "Disponibilité"}
+                  </p>
+                  <ul className="space-y-1">
+                    {availabilityRules.map((rule) => {
+                      const msg = lang === "he" ? rule.label_he : rule.label;
+                      if (!msg) return null;
+                      return (
+                        <li key={rule.id} className="text-xs text-muted-foreground flex gap-1.5">
+                          <span className="text-foreground/40 shrink-0">·</span>
+                          <span>{msg}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
               <BookingPanel2
                 experienceId={experience.id}
                 experienceTitle={lang === "he" ? experience.title_he || experience.title : experience.title}

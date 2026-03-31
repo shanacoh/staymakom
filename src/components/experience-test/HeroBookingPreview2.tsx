@@ -34,21 +34,7 @@ const HeroBookingPreview2 = ({
   const nightLabel = lang === "he" ? "ללילה" : "/ night";
 
   if (!hasHyperguest) {
-    return (
-      <div className="hidden md:block">
-        <div className="bg-muted/30 rounded-xl p-5 space-y-3">
-          <Button
-            onClick={onViewDates}
-            className="w-full bg-foreground text-background hover:bg-foreground/90 font-medium uppercase tracking-wide"
-          >
-            {lang === "he" ? "בקשו שהייה זו" : "Request this stay"}
-          </Button>
-          <p className="text-xs text-center text-muted-foreground">
-            {lang === "he" ? "נאשר זמינות תוך 24 שעות" : "We'll confirm availability within 24h"}
-          </p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   if (!displayPrice || displayPrice <= 0) {

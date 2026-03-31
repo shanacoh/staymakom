@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash2, Receipt, ChevronDown, ChevronUp, Zap, Eye, Settings2 } from "lucide-react";
+import { Loader2, Plus, Trash2, Receipt, ChevronDown, ChevronUp, Zap, Eye, Settings2, Pencil, X, Check } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import * as LucideIcons from "lucide-react";
 import {
@@ -167,6 +167,8 @@ export function Hotel2ExtrasManager({ hotelId, hyperguestExtras = [] }: Hotel2Ex
   const [newExtra, setNewExtra] = useState(EMPTY_FORM);
   const [selectedPreset, setSelectedPreset] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"preview" | "manage">("preview");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState(EMPTY_FORM);
 
   const { data: extras = [], isLoading } = useQuery({
     queryKey: ["hotel2-extras", hotelId],
@@ -214,6 +216,26 @@ export function Hotel2ExtrasManager({ hotelId, hyperguestExtras = [] }: Hotel2Ex
       queryClient.invalidateQueries({ queryKey: ["hotel2-extras", hotelId] });
       toast.success("Extra supprimé");
     },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: typeof EMPTY_FORM }) => {
+      const { error } = await supabase.from("hotel2_extras" as any).update({
+        name: data.name_en,
+        name_he: data.name_he || null,
+        price: parseFloat(data.price),
+        currency: data.currency,
+        pricing_type: data.pricing_type,
+        image_url: data.icon,
+      } as any).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["hotel2-extras", hotelId] });
+      toast.success("Extra modifié ✓");
+      setEditingId(null);
+    },
+    onError: () => toast.error("Erreur lors de la modification"),
   });
 
   const toggleMutation = useMutation({
@@ -371,7 +393,63 @@ export function Hotel2ExtrasManager({ hotelId, hyperguestExtras = [] }: Hotel2Ex
                 <tbody className="divide-y divide-border">
                   {extras.map((extra) => {
                     const IconCmp = getPhosphorIcon(extra.image_url, extra.name);
-                    return (
+                    const isEditing = editingId === extra.id;
+                    return isEditing ? (
+                      <tr key={extra.id} className="bg-muted/30">
+                        <td colSpan={5} className="px-3 py-3">
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs">Icône</Label>
+                              <Select value={editForm.icon} onValueChange={(v) => setEditForm({ ...editForm, icon: v })}>
+                                <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                                <SelectContent className="max-h-[200px]">
+                                  {AVAILABLE_ICONS.map((icon) => (
+                                    <SelectItem key={icon} value={icon}>
+                                      <span className="flex items-center gap-2">{renderLucideIcon(icon)}<span className="text-xs">{icon}</span></span>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Nom (EN) *</Label>
+                              <Input className="h-8" value={editForm.name_en} onChange={(e) => setEditForm({ ...editForm, name_en: e.target.value })} />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Nom (HE)</Label>
+                              <Input className="h-8 bg-blue-50" value={editForm.name_he} onChange={(e) => setEditForm({ ...editForm, name_he: e.target.value })} dir="rtl" />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Prix *</Label>
+                              <Input className="h-8" type="number" value={editForm.price} onChange={(e) => setEditForm({ ...editForm, price: e.target.value })} />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Devise</Label>
+                              <Select value={editForm.currency} onValueChange={(v) => setEditForm({ ...editForm, currency: v })}>
+                                <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                                <SelectContent>{CURRENCIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Type</Label>
+                              <Select value={editForm.pricing_type} onValueChange={(v) => setEditForm({ ...editForm, pricing_type: v })}>
+                                <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                                <SelectContent>{PRICING_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => updateMutation.mutate({ id: extra.id, data: editForm })} disabled={updateMutation.isPending}>
+                              {updateMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Check className="h-3.5 w-3.5 mr-1" />}
+                              Enregistrer
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                              <X className="h-3.5 w-3.5 mr-1" /> Annuler
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
                       <tr key={extra.id} className="hover:bg-muted/20 transition-colors">
                         <td className="px-3 py-2.5">
                           <div className="flex items-center gap-2">
@@ -395,13 +473,23 @@ export function Hotel2ExtrasManager({ hotelId, hyperguestExtras = [] }: Hotel2Ex
                           />
                         </td>
                         <td className="px-3 py-2.5 text-right">
-                          <Button
-                            variant="ghost" size="icon"
-                            className="text-destructive h-7 w-7"
-                            onClick={() => deleteMutation.mutate(extra.id)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                              onClick={() => {
+                                setEditingId(extra.id);
+                                setEditForm({ name_en: extra.name, name_he: extra.name_he || "", price: String(extra.price), currency: extra.currency, pricing_type: extra.pricing_type, icon: extra.image_url || "Gift" });
+                              }}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost" size="icon" className="text-destructive h-7 w-7"
+                              onClick={() => deleteMutation.mutate(extra.id)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     );

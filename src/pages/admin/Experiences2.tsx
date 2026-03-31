@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit, Eye, EyeOff, Copy, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Edit, Eye, EyeOff, Copy, Trash2, ExternalLink, MoreHorizontal } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { UnifiedExperience2Form } from "@/components/forms/UnifiedExperience2Form";
 import { toast } from "sonner";
 import { generateSlug } from "@/lib/utils";
@@ -21,9 +21,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { formatAddonValue, getAddonTypeLabelEn, type AddonType } from "@/types/experience2_addons";
-import { StatusBadge, WarningBadge } from "@/components/admin/StatusBadge";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { StatusBadge } from "@/components/admin/StatusBadge";
 
 const AdminExperiences2 = () => {
   const navigate = useNavigate();
@@ -185,33 +184,6 @@ const AdminExperiences2 = () => {
     if (experienceToDelete) deleteMutation.mutate(experienceToDelete);
   };
 
-  const buildParcoursLabel = (experience: any) => {
-    const junctionHotels = (experience.experience2_hotels || [])
-      .slice()
-      .sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0));
-
-    if (junctionHotels.length > 0) {
-      return junctionHotels.map((eh: any, idx: number) => (
-        <span key={eh.id} className="inline-flex items-center gap-1">
-          {idx > 0 && <span className="text-muted-foreground mx-1">→</span>}
-          <Badge variant="secondary" className="text-xs font-normal">
-            {eh.hotels2?.name ?? "?"} ({eh.nights ?? 1}N)
-          </Badge>
-        </span>
-      ));
-    }
-
-    if (experience.hotels2?.name) {
-      return (
-        <Badge variant="secondary" className="text-xs font-normal">
-          {experience.hotels2.name}
-        </Badge>
-      );
-    }
-
-    return <span className="text-muted-foreground/60">No hotel</span>;
-  };
-
   if (isFormView) {
     return (
       <div className="mx-auto p-2 sm:p-6">
@@ -286,165 +258,148 @@ const AdminExperiences2 = () => {
 
         {/* Experiences List */}
         {isLoading ? (
-          <div className="text-center py-12">Loading experiences...</div>
+          <div className="text-center py-12 text-muted-foreground">Loading experiences...</div>
         ) : !filteredExperiences?.length ? (
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">No experiences found</CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4">
-            {filteredExperiences.map((experience) => {
-              const addons = (experience as any).experience2_addons || [];
-              const activeAddons = addons.filter((a: any) => a.is_active !== false);
-              const hasNoCategory = !(experience as any).categories?.name;
-              const hasNoPhoto = !experience.hero_image && (!experience.photos || experience.photos.length === 0);
+          <Card>
+            <div className="divide-y divide-border">
+              {filteredExperiences.map((experience) => {
+                const addons = (experience as any).experience2_addons || [];
+                const activeAddons = addons.filter((a: any) => a.is_active !== false);
+                const hasNoCategory = !(experience as any).categories?.name;
+                const hasNoPhoto = !experience.hero_image && (!experience.photos || experience.photos.length === 0);
 
-              // Pricing audit checks
-              const hasFixedAddon = activeAddons.some((a: any) => a.type === "fixed");
-              const hasCommission = activeAddons.some((a: any) =>
-                ["commission", "commission_room", "commission_experience", "commission_fixed"].includes(a.type)
-              );
-              const junctionHotels = (experience as any).experience2_hotels || [];
-              const primaryHotel = junctionHotels.length > 0
-                ? junctionHotels.sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0))[0]?.hotels2
-                : (experience as any).hotels2;
-              const hasHyperguest = !!primaryHotel?.hyperguest_property_id;
+                const hasFixedAddon = activeAddons.some((a: any) => a.type === "fixed");
+                const hasCommission = activeAddons.some((a: any) =>
+                  ["commission", "commission_room", "commission_experience", "commission_fixed"].includes(a.type)
+                );
+                const junctionHotels = (experience as any).experience2_hotels || [];
+                const primaryHotel = junctionHotels.length > 0
+                  ? junctionHotels.sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0))[0]?.hotels2
+                  : (experience as any).hotels2;
+                const hasHyperguest = !!primaryHotel?.hyperguest_property_id;
+                const hasNoPricing = activeAddons.length === 0;
 
-              const hasNoPricing = activeAddons.length === 0;
-              const pricingWarnings: string[] = [];
-              if (!hasFixedAddon) pricingWarnings.push("No experience fee");
-              if (!hasCommission) pricingWarnings.push("No commission");
-              if (!hasHyperguest) pricingWarnings.push("No HG link");
+                const warnings: string[] = [];
+                if (hasNoCategory) warnings.push("No category");
+                if (hasNoPricing) warnings.push("No pricing");
+                if (hasNoPhoto) warnings.push("No photo");
+                if (experience.status === "published") {
+                  if (!hasFixedAddon) warnings.push("No experience fee");
+                  if (!hasCommission) warnings.push("No commission");
+                  if (!hasHyperguest) warnings.push("No HG link");
+                }
 
-              return (
-                <Card key={experience.id}>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2 flex-wrap">
-                          <h3 className="text-xl font-semibold">{experience.title}</h3>
-                          <StatusBadge status={experience.status || "draft"} />
-                          {hasNoCategory && <WarningBadge label="No category" />}
-                          {hasNoPricing && <WarningBadge label="No pricing" />}
-                          {hasNoPhoto && <WarningBadge label="No photo" />}
-                          {experience.status === "published" && pricingWarnings.length > 0 && (
-                            <WarningBadge label={`⚠ ${pricingWarnings.join(" · ")}`} />
-                          )}
-                        </div>
-                        <div className="space-y-1 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1 flex-wrap">
-                            <strong>Parcours:</strong> {buildParcoursLabel(experience)}
-                          </div>
-                          <p>
-                            <strong>Category:</strong> {(experience as any).categories?.name || <span className="text-muted-foreground/60">None</span>}
-                          </p>
-                          <div>
-                            <strong>Pricing:</strong>{" "}
-                            {(experience as any).experience2_addons?.length > 0 ? (
-                              <span className="inline-flex flex-wrap gap-1 ml-1">
-                                {(experience as any).experience2_addons.map((addon: any) => (
-                                  <Badge key={addon.id} variant="outline" className="text-xs">
-                                    {getAddonTypeLabelEn(addon.type as AddonType)}: {formatAddonValue(addon)}
-                                  </Badge>
-                                ))}
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground/60">Not configured</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {/* 1. Edit */}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => navigate(`/admin/experiences2/edit/${experience.id}`)}
-                              className="text-[#6B7280] hover:text-[#1A1814]"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Edit</TooltipContent>
-                        </Tooltip>
-                        {/* 2. Preview */}
-                        {experience.slug && experience.status === "published" && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                asChild
-                                className="text-[#6B7280] hover:text-[#1A1814]"
-                              >
-                                <a href={`/experience/${experience.slug}`} target="_blank" rel="noopener noreferrer">
-                                  <ExternalLink className="h-4 w-4" />
-                                </a>
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Preview on site</TooltipContent>
-                          </Tooltip>
-                        )}
-                        {/* 3. Duplicate */}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => duplicateMutation.mutate(experience.id)}
-                              className="text-[#6B7280] hover:text-[#1A1814]"
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Duplicate</TooltipContent>
-                        </Tooltip>
-                        {/* 4. Hide/Show */}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() =>
-                                toggleVisibilityMutation.mutate({
-                                  id: experience.id,
-                                  currentStatus: experience.status || "draft",
-                                })
-                              }
-                              className="text-[#6B7280] hover:text-[#1A1814]"
-                            >
-                              {experience.status === "published" ? (
-                                <EyeOff className="h-4 w-4" />
-                              ) : (
-                                <Eye className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>{experience.status === "published" ? "Unpublish" : "Publish"}</TooltipContent>
-                        </Tooltip>
-                        {/* 5. Delete */}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteClick(experience.id)}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Delete</TooltipContent>
-                        </Tooltip>
-                      </div>
+                const thumb = experience.hero_image || (experience.photos as any)?.[0];
+
+                return (
+                  <div key={experience.id} className="flex items-center gap-4 px-4 py-3 hover:bg-muted/30 transition-colors group">
+
+                    {/* Thumbnail */}
+                    <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-muted border border-border/50">
+                      {thumb ? (
+                        <img src={thumb} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground/30 text-xs">—</div>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+
+                    {/* Main info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-sm text-foreground truncate">{experience.title}</span>
+                        <StatusBadge status={experience.status || "draft"} />
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <span className="text-xs text-muted-foreground">
+                          {(experience as any).categories?.name || <span className="italic">No category</span>}
+                        </span>
+                        {junctionHotels.length > 0 && (
+                          <>
+                            <span className="text-muted-foreground/30">·</span>
+                            <span className="text-xs text-muted-foreground">
+                              {junctionHotels
+                                .sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0))
+                                .map((eh: any) => eh.hotels2?.name)
+                                .filter(Boolean)
+                                .join(" → ")}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      {warnings.length > 0 && (
+                        <div className="flex gap-1 mt-1 flex-wrap">
+                          {warnings.map((w) => (
+                            <span key={w} className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+                              ⚠ {w}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs gap-1.5"
+                        onClick={() => navigate(`/admin/experiences2/edit/${experience.id}`)}
+                      >
+                        <Edit className="h-3.5 w-3.5" />
+                        Edit
+                      </Button>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                          {experience.slug && experience.status === "published" && (
+                            <DropdownMenuItem asChild>
+                              <a href={`/experience/${experience.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                                <ExternalLink className="h-3.5 w-3.5" />
+                                View on site
+                              </a>
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            onClick={() => toggleVisibilityMutation.mutate({ id: experience.id, currentStatus: experience.status || "draft" })}
+                            className="flex items-center gap-2"
+                          >
+                            {experience.status === "published"
+                              ? <><EyeOff className="h-3.5 w-3.5" /> Unpublish</>
+                              : <><Eye className="h-3.5 w-3.5" /> Publish</>
+                            }
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => duplicateMutation.mutate(experience.id)}
+                            className="flex items-center gap-2"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                            Duplicate
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteClick(experience.id)}
+                            className="flex items-center gap-2 text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
         )}
 
         {/* Delete Confirmation Dialog */}

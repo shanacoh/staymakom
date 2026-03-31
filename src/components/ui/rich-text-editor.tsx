@@ -36,6 +36,7 @@ interface RichTextEditorProps {
   onChange: (content: string) => void;
   placeholder?: string;
   dir?: 'ltr' | 'rtl';
+  defaultAlignment?: 'left' | 'center' | 'right';
 }
 
 const COLORS = [
@@ -51,7 +52,7 @@ const COLORS = [
   { hex: '#374151', label: 'Gray' },
 ];
 
-const RichTextEditor = ({ content, onChange, placeholder, dir = 'ltr' }: RichTextEditorProps) => {
+const RichTextEditor = ({ content, onChange, placeholder, dir = 'ltr', defaultAlignment = 'left' }: RichTextEditorProps) => {
   // Track whether the change originated from the editor itself (user typing/formatting)
   const isInternalChange = useRef(false);
 
@@ -72,7 +73,7 @@ const RichTextEditor = ({ content, onChange, placeholder, dir = 'ltr' }: RichTex
       TextAlign.configure({
         types: ['heading', 'paragraph'],
         alignments: ['left', 'center', 'right'],
-        defaultAlignment: 'left',
+        defaultAlignment,
       }),
       TiptapLink.configure({
         openOnClick: false,

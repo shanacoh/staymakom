@@ -1,45 +1,68 @@
+import { useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getLocalizedField, type Language } from "@/hooks/useLanguage";
 import ExperienceCard from "@/components/ExperienceCard";
 
 interface OtherExperiences2Props {
-  hotelId: string;
   currentExperienceId: string;
+  categoryId?: string | null;
   lang?: string;
 }
 
-const OtherExperiences2 = ({ hotelId, currentExperienceId, lang = "en" }: OtherExperiences2Props) => {
+const OtherExperiences2 = ({ currentExperienceId, categoryId, lang = "en" }: OtherExperiences2Props) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   const { data: experiences } = useQuery({
-    queryKey: ["hotel2-other-experiences", hotelId, currentExperienceId],
+    queryKey: ["other-experiences-by-category", currentExperienceId, categoryId],
     queryFn: async () => {
-      const { data: links, error } = await supabase
-        .from("experience2_hotels")
-        .select("experience_id")
-        .eq("hotel_id", hotelId)
-        .neq("experience_id", currentExperienceId);
+      const MAX = 6;
+      let results: any[] = [];
 
-      if (error) throw error;
-      if (!links || links.length === 0) return [];
+      // 1. Same category first
+      if (categoryId) {
+        const { data } = await supabase
+          .from("experiences2")
+          .select(`
+            id, title, title_he, slug, hero_image, thumbnail_image, base_price, base_price_type, currency, hotel_id,
+            experience2_hotels(
+              position,
+              hotel:hotels2(id, name, name_he, city, city_he, region:city, region_he:city_he, hero_image)
+            )
+          `)
+          .eq("status", "published")
+          .eq("category_id", categoryId)
+          .neq("id", currentExperienceId)
+          .limit(MAX);
 
-      const ids = [...new Set(links.map((l) => l.experience_id))];
+        results = data || [];
+      }
 
-      const { data: exps, error: expErr } = await supabase
-        .from("experiences2")
-        .select(`
-          id, title, title_he, slug, hero_image, thumbnail_image, base_price, base_price_type, currency, hotel_id,
-          experience2_hotels(
-            position,
-            hotel:hotels2(id, name, name_he, city, city_he, region:city, region_he:city_he, hero_image)
-          )
-        `)
-        .in("id", ids)
-        .eq("status", "published")
-        .limit(4);
+      // 2. Fill with other categories if needed
+      if (results.length < MAX) {
+        const excludeIds = [currentExperienceId, ...results.map((e) => e.id)];
+        let query = supabase
+          .from("experiences2")
+          .select(`
+            id, title, title_he, slug, hero_image, thumbnail_image, base_price, base_price_type, currency, hotel_id,
+            experience2_hotels(
+              position,
+              hotel:hotels2(id, name, name_he, city, city_he, region:city, region_he:city_he, hero_image)
+            )
+          `)
+          .eq("status", "published")
+          .not("id", "in", `(${excludeIds.join(",")})`)
+          .limit(MAX - results.length);
 
-      if (expErr) throw expErr;
+        if (categoryId) {
+          query = query.neq("category_id", categoryId);
+        }
 
-      return (exps || []).map((exp: any) => {
+        const { data: extra } = await query;
+        results = [...results, ...(extra || [])];
+      }
+
+      return results.map((exp: any) => {
         const primaryHotel = exp.experience2_hotels
           ?.sort((a: any, b: any) => (a.position || 0) - (b.position || 0))
           ?.[0]?.hotel;
@@ -48,23 +71,57 @@ const OtherExperiences2 = ({ hotelId, currentExperienceId, lang = "en" }: OtherE
     },
   });
 
+  const scroll = (direction: "left" | "right") => {
+    if (!scrollRef.current) return;
+    const cardWidth = scrollRef.current.offsetWidth / 2;
+    scrollRef.current.scrollBy({ left: direction === "left" ? -cardWidth : cardWidth, behavior: "smooth" });
+  };
+
   if (!experiences || experiences.length === 0) return null;
+
+  const title = lang === "he" ? "חוויות נוספות" : lang === "fr" ? "Autres expériences" : "Other experiences";
 
   return (
     <section className="py-6">
-      <h2 className="font-serif text-lg md:text-2xl font-medium text-foreground mb-4">
-        {lang === "he" ? "חוויות נוספות" : lang === "fr" ? "Autres expériences" : "Other experiences"}
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-serif text-lg md:text-2xl font-medium text-foreground">{title}</h2>
+        {experiences.length > 2 && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => scroll("left")}
+              className="flex items-center justify-center w-8 h-8 rounded-full border border-border/60 hover:bg-muted transition-colors"
+              aria-label="Previous"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => scroll("right")}
+              className="flex items-center justify-center w-8 h-8 rounded-full border border-border/60 hover:bg-muted transition-colors"
+              aria-label="Next"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+      </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+      <div
+        ref={scrollRef}
+        className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
         {experiences.map((exp) => (
-          <ExperienceCard
+          <div
             key={exp.id}
-            experience={exp}
-            linkPrefix="/experience2"
-            rating={8.5 + Math.random() * 0.5}
-            reviewCount={50 + Math.floor(Math.random() * 200)}
-          />
+            className="snap-start shrink-0 w-[calc(50%-8px)]"
+          >
+            <ExperienceCard
+              experience={exp}
+              linkPrefix="/experience2"
+              rating={8.5 + Math.random() * 0.5}
+              reviewCount={50 + Math.floor(Math.random() * 200)}
+            />
+          </div>
         ))}
       </div>
     </section>
