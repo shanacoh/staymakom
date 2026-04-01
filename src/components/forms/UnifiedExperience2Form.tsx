@@ -1313,10 +1313,9 @@ export function UnifiedExperience2Form({
                     control={control}
                     render={({ field }) => (
                       <RichTextEditor
-                        value={field.value || ""}
+                        content={field.value || ""}
                         onChange={field.onChange}
                         placeholder="Description complète de l'expérience..."
-                        disabled={isSaving}
                       />
                     )}
                   />
@@ -1332,10 +1331,9 @@ export function UnifiedExperience2Form({
                     control={control}
                     render={({ field }) => (
                       <RichTextEditor
-                        value={field.value || ""}
+                        content={field.value || ""}
                         onChange={field.onChange}
                         placeholder="תיאור מלא של החוויה..."
-                        disabled={isSaving}
                         dir="rtl"
                       />
                     )}
