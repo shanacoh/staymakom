@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Save, Rocket, X, Upload, Loader2, Trash2, ArrowLeft, Plus, ChevronUp, ChevronDown, Star, Image as ImageIcon, HelpCircle, Check } from "lucide-react";
+import { Save, Rocket, X, Upload, Loader2, ArrowLeft, Plus, ChevronUp, ChevronDown, Star, Image as ImageIcon, HelpCircle, Check } from "lucide-react";
 import { toast } from "sonner";
 import RichTextEditor from "@/components/ui/rich-text-editor";
 import { generateSlug } from "@/lib/utils";
@@ -58,9 +58,8 @@ interface ExperienceHotelEntry {
 // ---------------------------------------------------------------------------
 
 const TABS = [
-  { id: "presentation", label: "Présentation" },
-  { id: "parcours", label: "Parcours & Hôtels" },
-  { id: "photos", label: "Photos" },
+  { id: "hotel_photos", label: "Hôtel & Photos" },
+  { id: "description", label: "Description" },
   { id: "inclus", label: "Inclus & Extras" },
   { id: "tarification", label: "Tarification" },
   { id: "things", label: "Things to Know" },
@@ -137,7 +136,7 @@ export function UnifiedExperience2Form({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [createdExperienceId, setCreatedExperienceId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabId>("presentation");
+  const [activeTab, setActiveTab] = useState<TabId>("hotel_photos");
 
   // Auto-save
   const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
@@ -785,8 +784,10 @@ export function UnifiedExperience2Form({
 
     // Switch to the tab containing the first error
     const errorField = Object.keys(errors)[0];
-    if (["title", "title_he", "subtitle", "subtitle_he", "category_id", "long_copy", "long_copy_he", "min_party", "max_party", "min_nights", "max_nights"].includes(errorField)) {
-      setActiveTab("presentation");
+    if (["title", "title_he", "subtitle", "subtitle_he", "category_id", "long_copy", "long_copy_he"].includes(errorField)) {
+      setActiveTab("description");
+    } else if (["min_party", "max_party", "min_nights", "max_nights"].includes(errorField)) {
+      setActiveTab("things");
     }
 
     const element = document.querySelector(`[name="${errorField}"]`) || document.getElementById(errorField);
@@ -801,18 +802,16 @@ export function UnifiedExperience2Form({
 
   const getTabCompletion = (tabId: TabId): boolean => {
     switch (tabId) {
-      case "presentation":
+      case "hotel_photos":
+        return experienceHotels.length > 0 && !!(heroImagePreview || galleryPreviews.length > 0);
+      case "description":
         return !!(title && longCopy && longCopy.length >= 100 && watch("category_id"));
-      case "photos":
-        return !!(heroImagePreview || galleryPreviews.length > 0);
-      case "parcours":
-        return experienceHotels.length > 0;
       case "inclus":
-        return true; // optional
+        return true;
       case "tarification":
-        return true; // optional
+        return true;
       case "things":
-        return true; // optional
+        return true;
     }
   };
 
@@ -915,172 +914,108 @@ export function UnifiedExperience2Form({
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* TAB: Présentation */}
+        {/* TAB: Hôtel & Photos */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {activeTab === "presentation" && (
+        {activeTab === "hotel_photos" && (
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Présentation</CardTitle>
-                <CardDescription>Informations principales en anglais et en hébreu</CardDescription>
+                <CardTitle>Parcours & Hôtels</CardTitle>
+                <CardDescription>
+                  Multi-hôtel : ordonnez les étapes du séjour.{" "}
+                  {experienceHotels.length > 0 && (
+                    <span className="font-medium text-foreground">
+                      {experienceHotels.length} hôtel(s) — Total {totalNights} nuit(s)
+                    </span>
+                  )}
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-2 gap-6">
-                  {/* English Column */}
-                  <div className="space-y-4">
-                    <div className="font-medium text-sm text-muted-foreground flex items-center gap-1.5">
-                      <span>🇬🇧</span> English
-                    </div>
-                    <div>
-                      <Label htmlFor="title">Titre (EN) *</Label>
-                      <Input id="title" {...register("title")} />
-                      {errors.title && <p className="text-sm text-destructive mt-1">{errors.title.message}</p>}
-                    </div>
-                    <div>
-                      <Label htmlFor="subtitle">Sous-titre (EN)</Label>
-                      <Input id="subtitle" {...register("subtitle")} />
-                    </div>
-                    <div>
-                      <Label htmlFor="long_copy">Description (EN) * (min 100 caractères)</Label>
-                      <Controller
-                        name="long_copy"
-                        control={control}
-                        render={({ field }) => (
-                          <RichTextEditor
-                            content={field.value || ""}
-                            onChange={field.onChange}
-                            placeholder="Describe the experience in English..."
-                            defaultAlignment="right"
-                          />
-                        )}
-                      />
-                      <div className="flex justify-between mt-1">
-                        {errors.long_copy && <p className="text-sm text-destructive">{errors.long_copy.message}</p>}
-                        <p className="text-sm text-muted-foreground ml-auto">{longCopy?.length || 0} / 100 min</p>
-                      </div>
-                    </div>
-                  </div>
+              <CardContent className="space-y-4">
+                {experienceHotels.length === 0 && (
+                  <p className="text-sm text-muted-foreground italic py-4 text-center">
+                    Aucun hôtel dans le parcours. Ajoutez-en au moins un ci-dessous.
+                  </p>
+                )}
 
-                  {/* Hebrew Column */}
-                  <div className="space-y-4">
-                    <div className="font-medium text-sm text-muted-foreground flex items-center gap-1.5">
-                      <span>🇮🇱</span> עברית
-                    </div>
-                    <div>
-                      <Label htmlFor="title_he">Titre (HE)</Label>
-                      <Input id="title_he" {...register("title_he")} dir="rtl" className="bg-hebrew-input" />
-                    </div>
-                    <div>
-                      <Label htmlFor="subtitle_he">Sous-titre (HE)</Label>
-                      <Input id="subtitle_he" {...register("subtitle_he")} dir="rtl" className="bg-hebrew-input" />
-                    </div>
-                    <div>
-                      <Label htmlFor="long_copy_he">Description (HE)</Label>
-                      <Controller
-                        name="long_copy_he"
-                        control={control}
-                        render={({ field }) => (
-                          <RichTextEditor
-                            content={field.value || ""}
-                            onChange={field.onChange}
-                            placeholder="תאר את החוויה בעברית..."
-                            dir="rtl"
-                            defaultAlignment="right"
-                          />
-                        )}
-                      />
-                      <p className="text-sm text-muted-foreground mt-1">{longCopyHe?.length || 0} characters</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Category & Party */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="category_id">Catégorie *</Label>
-                    <Controller
-                      name="category_id"
-                      control={control}
-                      render={({ field }) => (
-                        <Select value={field.value || ""} onValueChange={field.onChange}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner une catégorie" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories?.map((cat) => (
-                              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                    {errors.category_id && <p className="text-sm text-destructive mt-1">{errors.category_id.message}</p>}
-                  </div>
-                  
-                  {/* Featured on Home */}
-                  <div className="flex flex-col gap-2">
-                    <Label className="flex items-center gap-2">
-                      <Star className="h-4 w-4 text-primary" />
-                      Featured on Home
-                    </Label>
-                    <div className="flex items-center gap-4">
-                      <Switch
-                        checked={featuredOnHome}
-                        onCheckedChange={setFeaturedOnHome}
-                      />
-                      {featuredOnHome && (
-                        <div className="flex items-center gap-2">
-                          <Label htmlFor="home_display_order" className="text-xs text-muted-foreground whitespace-nowrap">Order:</Label>
-                          <Input
-                            id="home_display_order"
-                            type="number"
-                            min={0}
-                            max={99}
-                            className="w-16 h-8"
-                            value={homeDisplayOrder}
-                            onChange={(e) => setHomeDisplayOrder(parseInt(e.target.value) || 0)}
-                          />
+                {experienceHotels.map((eh, index) => {
+                  const hotel = hotels?.find((h) => h.id === eh.hotel_id);
+                  return (
+                    <div key={eh.hotel_id} className="flex items-center gap-3 p-3 rounded-lg border bg-card">
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                          {index + 1}
+                        </span>
+                        <div className="flex flex-col gap-0.5">
+                          <button type="button" disabled={index === 0} onClick={() => moveHotel(index, "up")} className="p-0.5 rounded hover:bg-muted disabled:opacity-30">
+                            <ChevronUp className="h-3 w-3" />
+                          </button>
+                          <button type="button" disabled={index === experienceHotels.length - 1} onClick={() => moveHotel(index, "down")} className="p-0.5 rounded hover:bg-muted disabled:opacity-30">
+                            <ChevronDown className="h-3 w-3" />
+                          </button>
                         </div>
+                      </div>
+                      {hotel?.hero_image && (
+                        <img src={hotel.hero_image} alt={hotel.name || "Hotel"} className="w-16 h-16 rounded-md object-cover flex-shrink-0" />
                       )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{hotel?.name || "Unknown hotel"}</p>
+                        <div className="flex items-center gap-3 mt-1">
+                          <div className="flex items-center gap-1">
+                            <Label className="text-xs text-muted-foreground whitespace-nowrap">Nuits :</Label>
+                            <Input
+                              type="number"
+                              min={1}
+                              value={eh.nights}
+                              onChange={(e) => updateHotelNights(index, parseInt(e.target.value) || 1)}
+                              className="w-16 h-7 text-sm"
+                            />
+                          </div>
+                          <div className="flex items-center gap-1 flex-1">
+                            <Label className="text-xs text-muted-foreground whitespace-nowrap">Notes :</Label>
+                            <Input
+                              value={eh.notes}
+                              onChange={(e) => updateHotelNotes(index, e.target.value)}
+                              placeholder="Ex: Arrivée, détente..."
+                              className="h-7 text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeHotelFromParcours(index)}
+                        className="p-1.5 rounded-md hover:bg-destructive/10 text-destructive flex-shrink-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {featuredOnHome 
-                        ? "Cette expérience sera mise en avant sur la homepage. Ordre bas = priorité haute."
-                        : "Activer pour afficher cette expérience en priorité sur la homepage."
-                      }
-                    </p>
-                  </div>
+                  );
+                })}
+
+                <div className="flex gap-2 pt-2 border-t">
+                  <Select value={hotelToAdd} onValueChange={setHotelToAdd}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Sélectionner un hôtel à ajouter..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableHotels?.map((hotel) => (
+                        <SelectItem key={hotel.id} value={hotel.id}>{hotel.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button type="button" variant="outline" onClick={addHotelToParcours} disabled={!hotelToAdd}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Ajouter
+                  </Button>
                 </div>
 
-                {/* Party Size & Nights */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <Label htmlFor="min_party">Min personnes</Label>
-                    <Input id="min_party" type="number" {...register("min_party", { valueAsNumber: true })} />
-                  </div>
-                  <div>
-                    <Label htmlFor="max_party">Max personnes</Label>
-                    <Input id="max_party" type="number" {...register("max_party", { valueAsNumber: true })} />
-                  </div>
-                  <div>
-                    <Label htmlFor="min_nights">Min nuits</Label>
-                    <Input id="min_nights" type="number" {...register("min_nights", { valueAsNumber: true })} />
-                  </div>
-                  <div>
-                    <Label htmlFor="max_nights">Max nuits</Label>
-                    <Input id="max_nights" type="number" {...register("max_nights", { valueAsNumber: true })} />
-                  </div>
-                </div>
+                {experienceHotels.length === 0 && (
+                  <p className="text-sm text-destructive">Au moins un hôtel est requis dans le parcours.</p>
+                )}
               </CardContent>
             </Card>
-          </div>
-        )}
 
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* TAB: Photos */}
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {activeTab === "photos" && (
-          <div className="space-y-6">
+            {/* Photos */}
             <Card>
               <CardHeader>
                 <CardTitle>Photos</CardTitle>
@@ -1301,175 +1236,180 @@ export function UnifiedExperience2Form({
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* TAB: Parcours & Hôtels */}
+        {/* TAB: Description */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {activeTab === "parcours" && (
+        {activeTab === "description" && (
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Parcours & Hôtels</CardTitle>
-                <CardDescription>
-                  Multi-hôtel : ordonnez les étapes du séjour.{" "}
-                  {experienceHotels.length > 0 && (
-                    <span className="font-medium text-foreground">
-                      {experienceHotels.length} hôtel(s) — Total {totalNights} nuit(s)
-                    </span>
-                  )}
-                </CardDescription>
+                <CardTitle>Titres & Description</CardTitle>
+                <CardDescription>Contenu principal de la fiche expérience (EN + HE)</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {experienceHotels.length === 0 && (
-                  <p className="text-sm text-muted-foreground italic py-4 text-center">
-                    Aucun hôtel dans le parcours. Ajoutez-en au moins un ci-dessous.
-                  </p>
-                )}
-
-                {experienceHotels.map((eh, index) => {
-                  const hotel = hotels?.find((h) => h.id === eh.hotel_id);
-                  return (
-                    <div key={eh.hotel_id} className="flex items-center gap-3 p-3 rounded-lg border bg-card">
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
-                          {index + 1}
-                        </span>
-                        <div className="flex flex-col gap-0.5">
-                          <button type="button" disabled={index === 0} onClick={() => moveHotel(index, "up")} className="p-0.5 rounded hover:bg-muted disabled:opacity-30">
-                            <ChevronUp className="h-3 w-3" />
-                          </button>
-                          <button type="button" disabled={index === experienceHotels.length - 1} onClick={() => moveHotel(index, "down")} className="p-0.5 rounded hover:bg-muted disabled:opacity-30">
-                            <ChevronDown className="h-3 w-3" />
-                          </button>
-                        </div>
-                      </div>
-                      {hotel?.hero_image && (
-                        <img src={hotel.hero_image} alt={hotel.name || "Hotel"} className="w-16 h-16 rounded-md object-cover flex-shrink-0" />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{hotel?.name || "Unknown hotel"}</p>
-                        <div className="flex items-center gap-3 mt-1">
-                          <div className="flex items-center gap-1">
-                            <Label className="text-xs text-muted-foreground whitespace-nowrap">Nuits :</Label>
-                            <Input
-                              type="number"
-                              min={1}
-                              value={eh.nights}
-                              onChange={(e) => updateHotelNights(index, parseInt(e.target.value) || 1)}
-                              className="w-16 h-7 text-sm"
-                            />
-                          </div>
-                          <div className="flex items-center gap-1 flex-1">
-                            <Label className="text-xs text-muted-foreground whitespace-nowrap">Notes :</Label>
-                            <Input
-                              value={eh.notes}
-                              onChange={(e) => updateHotelNotes(index, e.target.value)}
-                              placeholder="Ex: Arrivée, détente..."
-                              className="h-7 text-sm"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeHotelFromParcours(index)}
-                        className="p-1.5 rounded-md hover:bg-destructive/10 text-destructive flex-shrink-0"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  );
-                })}
-
-                <div className="flex gap-2 pt-2 border-t">
-                  <Select value={hotelToAdd} onValueChange={setHotelToAdd}>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Sélectionner un hôtel à ajouter..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableHotels?.map((hotel) => (
-                        <SelectItem key={hotel.id} value={hotel.id}>{hotel.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button type="button" variant="outline" onClick={addHotelToParcours} disabled={!hotelToAdd}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Ajouter
-                  </Button>
+              <CardContent className="space-y-6">
+                {/* Titres */}
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="title" className="flex items-center gap-1.5">
+                      <span>🇬🇧</span> Titre (EN) <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="title"
+                      {...register("title")}
+                      placeholder="Ex: Weekend at the Sea"
+                      disabled={isSaving}
+                    />
+                    {errors.title && <p className="text-destructive text-xs">{errors.title.message}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="title_he" className="flex items-center gap-1.5">
+                      <span>🇮🇱</span> כותרת (HE)
+                    </Label>
+                    <Input
+                      id="title_he"
+                      {...register("title_he")}
+                      placeholder="כותרת בעברית"
+                      dir="rtl"
+                      className="bg-hebrew-input"
+                      disabled={isSaving}
+                    />
+                  </div>
                 </div>
 
-                {experienceHotels.length === 0 && (
-                  <p className="text-sm text-destructive">Au moins un hôtel est requis dans le parcours.</p>
-                )}
+                {/* Sous-titres */}
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="subtitle" className="flex items-center gap-1.5">
+                      <span>🇬🇧</span> Sous-titre (EN)
+                    </Label>
+                    <Input
+                      id="subtitle"
+                      {...register("subtitle")}
+                      placeholder="Courte accroche"
+                      disabled={isSaving}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="subtitle_he" className="flex items-center gap-1.5">
+                      <span>🇮🇱</span> תת-כותרת (HE)
+                    </Label>
+                    <Input
+                      id="subtitle_he"
+                      {...register("subtitle_he")}
+                      placeholder="תת-כותרת בעברית"
+                      dir="rtl"
+                      className="bg-hebrew-input"
+                      disabled={isSaving}
+                    />
+                  </div>
+                </div>
+
+                {/* Descriptions longues */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    <span>🇬🇧</span> Description longue (EN) <span className="text-destructive">*</span>
+                  </Label>
+                  <Controller
+                    name="long_copy"
+                    control={control}
+                    render={({ field }) => (
+                      <RichTextEditor
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        placeholder="Description complète de l'expérience..."
+                        disabled={isSaving}
+                      />
+                    )}
+                  />
+                  {errors.long_copy && <p className="text-destructive text-xs">{errors.long_copy.message}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    <span>🇮🇱</span> תיאור ארוך (HE)
+                  </Label>
+                  <Controller
+                    name="long_copy_he"
+                    control={control}
+                    render={({ field }) => (
+                      <RichTextEditor
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        placeholder="תיאור מלא של החוויה..."
+                        disabled={isSaving}
+                        dir="rtl"
+                      />
+                    )}
+                  />
+                </div>
               </CardContent>
             </Card>
 
-            {/* Price / Availability Preview */}
-            {experienceHotels.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Aperçu Prix & Disponibilités</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {experienceHotels.map((eh, index) => {
-                    const hotel = hotels?.find((h) => h.id === eh.hotel_id);
-                    if (!hotel) return null;
-                    return (
-                      <div key={eh.hotel_id} className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">{index + 1}</span>
-                          <span className="font-medium">{hotel.name}</span>
-                          <span className="text-sm text-muted-foreground">— {eh.nights} nuit{eh.nights > 1 ? "s" : ""}</span>
-                        </div>
-                        <ExperienceAvailabilityPreview
-                          hyperguestPropertyId={hotel.hyperguest_property_id != null ? String(hotel.hyperguest_property_id) : null}
-                          hotelName={hotel.name}
-                          experienceId={currentExperienceId ?? null}
-                          currency="ILS"
-                          lang="en"
-                          nights={eh.nights}
-                          minParty={watch("min_party") || 1}
-                          maxParty={watch("max_party") || 20}
-                          onPriceChange={(price) => setHotelRoomPrices((prev) => ({ ...prev, [eh.hotel_id]: price }))}
+            {/* Catégorie & mise en avant */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Catégorie & Mise en avant</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="category_id">
+                      Catégorie <span className="text-destructive">*</span>
+                    </Label>
+                    <Controller
+                      name="category_id"
+                      control={control}
+                      render={({ field }) => (
+                        <Select value={field.value || ""} onValueChange={field.onChange} disabled={isSaving}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner une catégorie" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories?.map((cat) => (
+                              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    {errors.category_id && <p className="text-destructive text-xs">{errors.category_id.message}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Slug (URL)</Label>
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        value={generateSlug(watch("title") || "")}
+                        readOnly
+                        className="bg-muted text-muted-foreground text-sm"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Généré automatiquement depuis le titre EN</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-lg border">
+                  <div>
+                    <p className="font-medium text-sm">Mise en avant sur l'accueil</p>
+                    <p className="text-xs text-muted-foreground">Afficher cette expérience dans la section vedette de la page d'accueil</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {featuredOnHome && (
+                      <div className="flex items-center gap-1.5">
+                        <Label className="text-xs text-muted-foreground">Ordre</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={homeDisplayOrder}
+                          onChange={(e) => setHomeDisplayOrder(parseInt(e.target.value) || 0)}
+                          className="w-16 h-7 text-sm"
                         />
                       </div>
-                    );
-                  })}
-
-                  {(() => {
-                    const pricesArr = experienceHotels.map((eh) => hotelRoomPrices[eh.hotel_id]);
-                    const validPrices = pricesArr.filter((p): p is number => p != null && p > 0);
-                    if (validPrices.length === 0) return null;
-                    const combinedTotal = validPrices.reduce((s, p) => s + p, 0);
-                    return (
-                      <Card className="border-primary/30 bg-primary/5">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-base">Prix Total du Parcours</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
-                          {experienceHotels.map((eh) => {
-                            const hotel = hotels?.find((h) => h.id === eh.hotel_id);
-                            const price = hotelRoomPrices[eh.hotel_id];
-                            return (
-                              <div key={eh.hotel_id} className="flex justify-between items-center text-sm">
-                                <span>{hotel?.name ?? "Hôtel"} ({eh.nights} nuit{eh.nights > 1 ? "s" : ""})</span>
-                                <span className="font-medium">
-                                  {price != null && price > 0
-                                    ? `₪${price.toLocaleString("en-IL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                    : "—"}
-                                </span>
-                              </div>
-                            );
-                          })}
-                          <div className="border-t pt-2 flex justify-between items-center font-bold text-base">
-                            <span>Total Parcours</span>
-                            <span>₪{combinedTotal.toLocaleString("en-IL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })()}
-                </CardContent>
-              </Card>
-            )}
+                    )}
+                    <Switch checked={featuredOnHome} onCheckedChange={setFeaturedOnHome} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
 
@@ -1545,6 +1485,75 @@ export function UnifiedExperience2Form({
         {/* ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === "tarification" && (
           <div className="space-y-6">
+            {/* Price / Availability Preview */}
+            {experienceHotels.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Aperçu Prix & Disponibilités</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {experienceHotels.map((eh, index) => {
+                    const hotel = hotels?.find((h) => h.id === eh.hotel_id);
+                    if (!hotel) return null;
+                    return (
+                      <div key={eh.hotel_id} className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">{index + 1}</span>
+                          <span className="font-medium">{hotel.name}</span>
+                          <span className="text-sm text-muted-foreground">— {eh.nights} nuit{eh.nights > 1 ? "s" : ""}</span>
+                        </div>
+                        <ExperienceAvailabilityPreview
+                          hyperguestPropertyId={hotel.hyperguest_property_id != null ? String(hotel.hyperguest_property_id) : null}
+                          hotelName={hotel.name}
+                          experienceId={currentExperienceId ?? null}
+                          currency="ILS"
+                          lang="en"
+                          nights={eh.nights}
+                          minParty={watch("min_party") || 1}
+                          maxParty={watch("max_party") || 20}
+                          onPriceChange={(price) => setHotelRoomPrices((prev) => ({ ...prev, [eh.hotel_id]: price }))}
+                        />
+                      </div>
+                    );
+                  })}
+
+                  {(() => {
+                    const pricesArr = experienceHotels.map((eh) => hotelRoomPrices[eh.hotel_id]);
+                    const validPrices = pricesArr.filter((p): p is number => p != null && p > 0);
+                    if (validPrices.length === 0) return null;
+                    const combinedTotal = validPrices.reduce((s, p) => s + p, 0);
+                    return (
+                      <Card className="border-primary/30 bg-primary/5">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base">Prix Total du Parcours</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          {experienceHotels.map((eh) => {
+                            const hotel = hotels?.find((h) => h.id === eh.hotel_id);
+                            const price = hotelRoomPrices[eh.hotel_id];
+                            return (
+                              <div key={eh.hotel_id} className="flex justify-between items-center text-sm">
+                                <span>{hotel?.name ?? "Hôtel"} ({eh.nights} nuit{eh.nights > 1 ? "s" : ""})</span>
+                                <span className="font-medium">
+                                  {price != null && price > 0
+                                    ? `₪${price.toLocaleString("en-IL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                    : "—"}
+                                </span>
+                              </div>
+                            );
+                          })}
+                          <div className="border-t pt-2 flex justify-between items-center font-bold text-base">
+                            <span>Total Parcours</span>
+                            <span>₪{combinedTotal.toLocaleString("en-IL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+            )}
+
             <Card>
               <CardHeader>
                 <CardTitle>Tarification</CardTitle>
@@ -1706,6 +1715,64 @@ export function UnifiedExperience2Form({
               </CardContent>
             </Card>
 
+            {/* Participants & Durée */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Participants & Durée</CardTitle>
+                <CardDescription>Nombre de participants et durée du séjour</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="min_party">Participants min</Label>
+                    <Input
+                      id="min_party"
+                      type="number"
+                      min={1}
+                      max={100}
+                      {...register("min_party", { valueAsNumber: true })}
+                      disabled={isSaving}
+                    />
+                    {errors.min_party && <p className="text-destructive text-xs">{errors.min_party.message}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="max_party">Participants max</Label>
+                    <Input
+                      id="max_party"
+                      type="number"
+                      min={1}
+                      max={100}
+                      {...register("max_party", { valueAsNumber: true })}
+                      disabled={isSaving}
+                    />
+                    {errors.max_party && <p className="text-destructive text-xs">{errors.max_party.message}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="min_nights">Nuits min</Label>
+                    <Input
+                      id="min_nights"
+                      type="number"
+                      min={1}
+                      max={8}
+                      {...register("min_nights", { valueAsNumber: true })}
+                      disabled={isSaving}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="max_nights">Nuits max</Label>
+                    <Input
+                      id="max_nights"
+                      type="number"
+                      min={1}
+                      max={8}
+                      {...register("max_nights", { valueAsNumber: true })}
+                      disabled={isSaving}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Things to Know */}
             {experienceId && (
               <Card>
@@ -1847,24 +1914,6 @@ export function UnifiedExperience2Form({
           </div>
         )}
       </form>
-
-      {/* ── Delete zone at very bottom (only in edit mode) ── */}
-      {experienceId && (
-        <div className="border-t border-destructive/20 pt-8 mt-12">
-          <div className="flex flex-col items-center gap-3 max-w-md mx-auto text-center">
-            <p className="text-sm text-muted-foreground">Zone dangereuse</p>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleDelete}
-              className="w-full"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Supprimer cette expérience
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* ── Sticky bottom save bar (mobile) ── */}
       {isMobile && (
