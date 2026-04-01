@@ -118,8 +118,6 @@ const OtherExperiences2 = ({ currentExperienceId, categoryId, lang = "en" }: Oth
             <ExperienceCard
               experience={exp}
               linkPrefix="/experience2"
-              rating={8.5 + Math.random() * 0.5}
-              reviewCount={50 + Math.floor(Math.random() * 200)}
             />
           </div>
         ))}

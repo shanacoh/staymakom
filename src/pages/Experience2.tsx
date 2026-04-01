@@ -196,14 +196,14 @@ export default function Experience2() {
   const { data: availabilityRules = [] } = useQuery({
     queryKey: ["availability_rules_public", experience?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("experience2_availability_rules")
         .select("id, rule_type, days_of_week, date_from, date_to, specific_dates, label, label_he, origin")
         .eq("experience_id", experience!.id)
         .eq("is_active", true)
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return data as Array<{
+      return (data ?? []) as Array<{
         id: string;
         rule_type: string;
         days_of_week: number[] | null;
@@ -293,18 +293,19 @@ export default function Experience2() {
   // All prices are computed in ILS internally, converted at display time via CurrencyContext
   const displayCurrency = "ILS";
 
-  // Hero image is always first; remaining photos follow (no duplicate)
-  const heroImage = experience.hero_image || primaryHotel?.hero_image;
-  const basePhotos = experience.photos?.length > 0
-    ? experience.photos
+  // Photos rule: if experience has its own hero/gallery → use only those (never mix with hotel photos)
+  // If experience has NO photos at all → fall back to hotel photos so there's always something to show
+  const hasExpPhotos = !!experience.hero_image || (experience.photos?.length ?? 0) > 0;
+  const expHero = experience.hero_image;
+  const expGallery: string[] = experience.photos ?? [];
+
+  const photos: string[] = hasExpPhotos
+    ? expHero
+      ? [expHero, ...expGallery.filter((p: string) => p !== expHero)]
+      : expGallery
     : allHotelPhotos.length > 0
       ? allHotelPhotos
-      : [];
-  const photos = heroImage
-    ? [heroImage, ...basePhotos.filter((p: string) => p !== heroImage)]
-    : basePhotos.length > 0
-      ? basePhotos
-      : [primaryHotel?.hero_image].filter(Boolean);
+      : ([primaryHotel?.hero_image].filter(Boolean) as string[]);
 
   // ---------------------------------------------------------------------------
   // Localized content

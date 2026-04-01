@@ -299,15 +299,12 @@ export default function ExperienceCard({
                 {experience.hotels?.city ? (getLocalizedField(experience.hotels, 'city', lang) as string) : ''}{region ? ` | ${region}` : ''}
               </p>
             ) : <span />}
-            {rating && (
-              <div className="flex items-center gap-0.5 shrink-0">
-                <span className="text-foreground text-[11px]">★</span>
-                <span className="font-semibold text-[11px] text-foreground">{rating.toFixed(1)}</span>
-                {reviewCount != null && reviewCount > 0 && (
-                  <span className="text-muted-foreground text-[10px]">({reviewCount})</span>
-                )}
-              </div>
-            )}
+            <div className="flex items-center gap-0.5 shrink-0">
+              <span className="text-foreground text-[11px]">★</span>
+              <span className="font-semibold text-[11px] text-foreground">
+                {lang === "he" ? "חדש" : "NEW"}
+              </span>
+            </div>
           </div>
 
           {/* Hotel name */}

@@ -28,6 +28,19 @@ interface HotelEditor2Props {
   onClose: () => void;
 }
 
+const DEFAULT_HOTEL_EXTRAS = [
+  { name: "Car Transfer Service (one way)", name_he: "שירות העברה ברכב (כיוון אחד)", price: 400, currency: "ILS", pricing_type: "per_booking", image_url: "Car",      is_available: true },
+  { name: "Late Check-out",                name_he: "צ'ק אאוט מאוחר",              price: 350, currency: "ILS", pricing_type: "per_booking", image_url: "Clock",    is_available: true },
+  { name: "Flower Bouquet",                name_he: "זר פרחים",                    price: 180, currency: "ILS", pricing_type: "per_booking", image_url: "Flower2",   is_available: true },
+  { name: "Wine in Room",                  name_he: "יין בחדר",                    price: 199, currency: "ILS", pricing_type: "per_booking", image_url: "Wine",      is_available: true },
+  { name: "Card Game",                     name_he: "משחק קלפים",                  price: 68,  currency: "ILS", pricing_type: "per_booking", image_url: "Star",      is_available: true },
+  { name: "Digital Camera",               name_he: "מצלמה דיגיטלית",              price: 129, currency: "ILS", pricing_type: "per_booking", image_url: "Camera",    is_available: true },
+  { name: "Welcome Snack Basket",          name_he: "סל קבלת פנים",               price: 150, currency: "ILS", pricing_type: "per_booking", image_url: "Gift",      is_available: true },
+  { name: "Romantic set up",               name_he: "עיצוב רומנטי",               price: 190, currency: "ILS", pricing_type: "per_booking", image_url: "Heart",     is_available: true },
+  { name: "Dinner",                        name_he: "ארוחת ערב",                   price: 450, currency: "ILS", pricing_type: "per_person",  image_url: "Utensils",  is_available: true },
+  { name: "Massage",                       name_he: "עיסוי",                       price: 450, currency: "ILS", pricing_type: "per_person",  image_url: "Sparkles",  is_available: true },
+];
+
 export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
   const queryClient = useQueryClient();
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -452,20 +465,22 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
         console.log("[DEBUG SAVE] UPDATE success!");
       } else {
         console.log("[DEBUG SAVE] Calling supabase.from('hotels2').insert()...");
-        const { error } = await supabase.from("hotels2").insert([dataWithSlug]);
+        const { data: inserted, error } = await supabase.from("hotels2").insert([dataWithSlug]).select("id").single();
         if (error) {
           console.error("[DEBUG SAVE] INSERT error:", JSON.stringify(error, null, 2));
           throw error;
         }
         console.log("[DEBUG SAVE] INSERT success!");
+        // Seed default extras for new hotel
+        if (inserted?.id) {
+          await supabase.from("hotel2_extras").insert(DEFAULT_HOTEL_EXTRAS.map((e, i) => ({ ...e, hotel_id: inserted.id, sort_order: i })));
+        }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-hotels2"] });
-      toast.success(hotelId ? "Hotel updated" : "Hotel created");
-      setJustSaved(true);
-      setTimeout(() => setJustSaved(false), 2500);
-      if (!hotelId) onClose();
+      toast.success(hotelId ? "Hotel mis à jour" : "Hotel créé");
+      onClose();
     },
     onError: (error: any) => {
       toast.error("Error saving hotel: " + (error?.message || "Unknown error"));

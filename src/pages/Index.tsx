@@ -454,8 +454,6 @@ const Index = () => {
                       <div key={`${experience.id}-${index}`} className="flex-shrink-0 w-[75vw] md:w-[30vw] snap-center">
                         <ExperienceCard
                           experience={experience}
-                          rating={8.5 + Math.random() * 0.5}
-                          reviewCount={50 + Math.floor(Math.random() * 950)}
                         />
                       </div>
                     ))}

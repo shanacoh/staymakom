@@ -249,16 +249,12 @@ const Category = () => {
                   {filteredExperiences.map(experience => {
                     const originalPrice = Number(experience.base_price);
                     const discountPercent = Math.floor(Math.random() * 30) + 10;
-                    const rating = Math.random() * 0.5 + 8.5;
-                    const reviewCount = Math.floor(Math.random() * 1000) + 50;
                     return (
                       <ExperienceCard
                         key={experience.id}
                         experience={experience}
                         originalPrice={originalPrice}
                         discountPercent={discountPercent}
-                        rating={rating}
-                        reviewCount={reviewCount}
                       />
                     );
                   })}

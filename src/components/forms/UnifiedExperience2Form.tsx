@@ -129,11 +129,10 @@ export function UnifiedExperience2Form({
 }: UnifiedExperience2FormProps) {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
-  const [heroImage, setHeroImage] = useState<File | null>(null);
   const [heroImagePreview, setHeroImagePreview] = useState<string | null>(null);
+  const [heroImageUploading, setHeroImageUploading] = useState(false);
   const [galleryImages, setGalleryImages] = useState<File[]>([]);
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
-  const [thumbnailImagePreview, setThumbnailImagePreview] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
@@ -313,7 +312,6 @@ export function UnifiedExperience2Form({
         formData,
         experienceHotels,
         heroImagePreview,
-        thumbnailImagePreview,
         galleryPreviews: galleryPreviews.filter((u) => u.startsWith("http")),
         localAddons,
         localIncludes,
@@ -328,7 +326,7 @@ export function UnifiedExperience2Form({
     } catch (e) {
       // silent fail
     }
-  }, [getValues, experienceHotels, heroImagePreview, thumbnailImagePreview, galleryPreviews, localAddons, localIncludes, localTags, localReviews, featuredOnHome, homeDisplayOrder, autoSaveKey]);
+  }, [getValues, experienceHotels, heroImagePreview, galleryPreviews, localAddons, localIncludes, localTags, localReviews, featuredOnHome, homeDisplayOrder, autoSaveKey]);
 
   useEffect(() => {
     autoSaveTimerRef.current = setInterval(doAutoSave, 30000);
@@ -378,7 +376,6 @@ export function UnifiedExperience2Form({
       setValue("promo_is_percentage", (existingExperience as any).promo_is_percentage ?? true);
 
       if (existingExperience.hero_image) setHeroImagePreview(existingExperience.hero_image);
-      if ((existingExperience as any).thumbnail_image) setThumbnailImagePreview((existingExperience as any).thumbnail_image);
       if (existingExperience.photos && Array.isArray(existingExperience.photos)) setGalleryPreviews(existingExperience.photos);
       
       // Featured on home
@@ -451,15 +448,17 @@ export function UnifiedExperience2Form({
   // Image handlers
   // -------------------------------------------------------------------------
 
-  const handleHeroImageChange = (file: File | null) => {
+  const handleHeroImageChange = async (file: File | null) => {
     if (isSaving) return;
-    setHeroImage(file);
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setHeroImagePreview(reader.result as string);
-      reader.readAsDataURL(file);
-    } else {
-      setHeroImagePreview(null);
+    if (!file) { setHeroImagePreview(null); return; }
+    setHeroImageUploading(true);
+    try {
+      const url = await uploadImage(file, "hero");
+      setHeroImagePreview(url);
+    } catch {
+      toast.error("Impossible d'uploader la couverture");
+    } finally {
+      setHeroImageUploading(false);
     }
   };
 
@@ -529,13 +528,11 @@ export function UnifiedExperience2Form({
   // -------------------------------------------------------------------------
 
   const buildExperienceData = async (data: Experience2FormData, status: "draft" | "published") => {
-    // Snapshot image state to avoid race conditions during async uploads
-    const heroImageSnapshot = heroImage;
+    // hero is already uploaded immediately on selection — just use the URL
+    const heroImageUrl = heroImagePreview || existingExperience?.hero_image || "";
+
     const galleryImagesSnapshot = [...galleryImages];
     const galleryPreviewsSnapshot = [...galleryPreviews];
-
-    let heroImageUrl = existingExperience?.hero_image || "";
-    if (heroImageSnapshot) heroImageUrl = await uploadImage(heroImageSnapshot, "hero");
 
     const photoUrls = galleryPreviewsSnapshot.filter((url) => url.startsWith("http"));
     for (const img of galleryImagesSnapshot) {
@@ -569,7 +566,7 @@ export function UnifiedExperience2Form({
       cancellation_policy: data.cancellation_policy || null,
       cancellation_policy_he: data.cancellation_policy_he || null,
       hero_image: heroImageUrl || null,
-      thumbnail_image: thumbnailImagePreview || heroImageUrl || null,
+      thumbnail_image: heroImageUrl || null,
       photos: photoUrls,
       status,
       slug: currentExperienceId ? existingExperience?.slug : generateSlug(title),
@@ -1185,119 +1182,62 @@ export function UnifiedExperience2Form({
                   </div>
                 )}
 
-                {/* Thumbnail */}
-                <div>
-                  <Label className="flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4" />
-                    Vignette carte
-                  </Label>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Apparaît dans les listings. Utilise la photo de couverture si vide.
-                  </p>
-                  <div className="border-2 border-dashed rounded-lg p-4 space-y-3">
-                    <div className="flex items-center gap-4">
-                      {thumbnailImagePreview ? (
-                        <div className="relative w-[150px] shrink-0">
-                          <img src={thumbnailImagePreview} alt="Thumbnail" className="w-[150px] h-[150px] object-cover rounded-lg" />
-                          <button
-                            type="button"
-                            onClick={() => setThumbnailImagePreview(null)}
-                            className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-0.5"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground italic">Aucune vignette — utilisera la photo de couverture</p>
-                      )}
-                      <div>
-                        <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border bg-background hover:bg-muted transition-colors">
-                          <Upload className="h-3.5 w-3.5" />
-                          {thumbnailImagePreview ? "Changer" : "Télécharger"}
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (!file) return;
-                              if (file.size > 10 * 1024 * 1024) { toast.error("Max 10MB"); return; }
-                              try {
-                                const ext = file.name.split(".").pop();
-                                const name = `${crypto.randomUUID()}.${ext}`;
-                                const { error } = await supabase.storage.from("experience-images").upload(name, file);
-                                if (error) throw error;
-                                const { data: { publicUrl } } = supabase.storage.from("experience-images").getPublicUrl(name);
-                                setThumbnailImagePreview(publicUrl);
-                                toast.success("Vignette téléchargée");
-                              } catch (err: any) {
-                                toast.error(err.message || "Upload failed");
-                              }
-                            }}
-                          />
-                        </label>
-                      </div>
-                    </div>
-                    {allParcoursImages.length > 0 && (
-                      <div className="space-y-1.5">
-                        <p className="text-xs font-medium text-muted-foreground">Ou choisir depuis les images hôtels :</p>
-                        <div className="flex gap-2 overflow-x-auto pb-1">
-                          {allParcoursImages.map((img, i) => (
-                            <button
-                              key={i}
-                              type="button"
-                              onClick={() => setThumbnailImagePreview(img)}
-                              className={cn(
-                                "relative w-16 h-16 shrink-0 rounded-md overflow-hidden border-2 transition-all hover:border-primary",
-                                thumbnailImagePreview === img ? "border-primary ring-2 ring-primary/30" : "border-transparent"
-                              )}
-                            >
-                              <img src={img} alt="" className="w-full h-full object-cover" />
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
                 {/* Hero Image – styled drop zone */}
                 <div>
                   <Label className="flex items-center gap-2">
                     <Star className="h-4 w-4" />
-                    Photo de couverture
+                    Photo de couverture de l'expérience
                   </Label>
-                  <p className="text-xs text-muted-foreground mb-2">Grande image en haut de la page détail.</p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Grande image affichée en haut de la fiche. Si vide, la photo de l'hôtel sera utilisée automatiquement.
+                  </p>
                   <div
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleHeroDrop}
-                    className="border-2 border-dashed rounded-lg p-6 transition-colors hover:border-primary/50 relative"
+                    className="border-2 border-dashed rounded-lg p-4 transition-colors hover:border-primary/50"
                   >
-                    {heroImagePreview ? (
-                      <div className="relative">
-                        <img src={heroImagePreview} alt="Hero" className="w-full h-64 object-cover rounded-lg" />
-                        <div className="absolute top-2 right-2 flex gap-1">
-                          <label className="bg-secondary text-secondary-foreground rounded-full p-1 cursor-pointer hover:bg-secondary/80" title="Changer l'image">
-                            <Upload className="h-4 w-4" />
-                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handleHeroImageChange(e.target.files?.[0] || null)} />
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => { setHeroImage(null); setHeroImagePreview(null); }}
-                            className="bg-destructive text-destructive-foreground rounded-full p-1"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
+                    <div className="grid grid-cols-2 gap-4 items-center">
+                      {/* Colonne gauche : aperçu */}
+                      <div className="relative rounded-lg overflow-hidden bg-muted h-40">
+                        {heroImageUploading ? (
+                          <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+                            <Loader2 className="h-6 w-6 animate-spin mb-1 opacity-50" />
+                            <p className="text-xs">Upload en cours…</p>
+                          </div>
+                        ) : heroImagePreview ? (
+                          <>
+                            <img src={heroImagePreview} alt="Hero" className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => setHeroImagePreview(null)}
+                              className="absolute top-1.5 right-1.5 bg-destructive text-destructive-foreground rounded-full p-1"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </>
+                        ) : firstHotel?.hero_image ? (
+                          <>
+                            <img src={firstHotel.hero_image} alt="Photo hôtel (défaut)" className="w-full h-full object-cover opacity-50" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="text-xs font-medium bg-background/80 px-2 py-1 rounded-full">Photo de l'hôtel</span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="h-full flex items-center justify-center text-muted-foreground/40 text-xs">Aucune photo</div>
+                        )}
                       </div>
-                    ) : (
-                      <label className="flex flex-col items-center justify-center py-8 text-muted-foreground cursor-pointer">
-                        <Upload className="h-10 w-10 mb-3 opacity-40" />
-                        <p className="text-sm font-medium">Glisser-déposer ou cliquer pour parcourir</p>
-                        <p className="text-xs mt-1">1600×900px minimum, max 5MB</p>
-                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handleHeroImageChange(e.target.files?.[0] || null)} />
-                      </label>
-                    )}
+
+                      {/* Colonne droite : actions */}
+                      <div className="space-y-3">
+                        <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 text-sm rounded-md border bg-background hover:bg-muted transition-colors w-full justify-center">
+                          <Upload className="h-4 w-4" />
+                          {heroImagePreview ? "Changer la photo" : "Choisir une photo"}
+                          <input type="file" accept="image/*" className="hidden" onChange={(e) => handleHeroImageChange(e.target.files?.[0] || null)} />
+                        </label>
+                        <p className="text-xs text-muted-foreground text-center">ou glisser-déposer ici</p>
+                        <p className="text-xs text-muted-foreground text-center">1600×900px min · max 5MB</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -1320,15 +1260,7 @@ export function UnifiedExperience2Form({
                         <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             type="button"
-                            onClick={() => setThumbnailImagePreview(preview)}
-                            className="bg-secondary text-secondary-foreground rounded-full p-1"
-                            title="Définir comme vignette"
-                          >
-                            <ImageIcon className="h-3 w-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => { setHeroImage(null); setHeroImagePreview(preview); }}
+                            onClick={() => { setHeroImagePreview(preview); }}
                             className="bg-secondary text-secondary-foreground rounded-full p-1"
                             title="Définir comme couverture"
                           >
@@ -1343,9 +1275,6 @@ export function UnifiedExperience2Form({
                             <X className="h-3 w-3" />
                           </button>
                         </div>
-                        {thumbnailImagePreview === preview && (
-                          <span className="absolute bottom-1 left-1 text-[9px] bg-primary text-primary-foreground px-1 rounded">VIGNETTE</span>
-                        )}
                         {heroImagePreview === preview && (
                           <span className="absolute bottom-1 right-1 text-[9px] bg-accent text-accent-foreground px-1 rounded">COUV.</span>
                         )}

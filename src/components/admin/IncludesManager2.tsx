@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 // Card removed – parent form wraps this component
-import { Plus, Trash2, GripVertical, Edit2, Save, X, ImageIcon, Upload } from "lucide-react";
+import { Plus, Trash2, ChevronUp, ChevronDown, Edit2, Save, X, ImageIcon, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -195,6 +195,37 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
     onError: () => toast.error("Failed to delete item"),
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: async ({ id, direction }: { id: string; direction: 'up' | 'down' }) => {
+      const idx = displayItems.findIndex((i: any) => i.id === id);
+      const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (swapIdx < 0 || swapIdx >= displayItems.length) return;
+      const item = displayItems[idx];
+      const swap = displayItems[swapIdx];
+      await Promise.all([
+        (supabase as any).from("experience2_includes").update({ order_index: swap.order_index }).eq("id", item.id),
+        (supabase as any).from("experience2_includes").update({ order_index: item.order_index }).eq("id", swap.id),
+      ]);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["experience2-includes", experienceId] }),
+    onError: () => toast.error("Réorganisation échouée"),
+  });
+
+  const handleLocalReorder = (id: string, direction: 'up' | 'down') => {
+    const items = [...(localIncludes || [])];
+    const idx = items.findIndex(i => i._localId === id);
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= items.length) return;
+    [items[idx], items[swapIdx]] = [items[swapIdx], items[idx]];
+    items.forEach((item, i) => { item.order_index = i; });
+    onLocalIncludesChange?.(items);
+  };
+
+  const handleReorder = (id: string, direction: 'up' | 'down') => {
+    if (isLocalMode) handleLocalReorder(id, direction);
+    else reorderMutation.mutate({ id, direction });
+  };
+
   const togglePublishedMutation = useMutation({
     mutationFn: async ({ id, published }: { id: string; published: boolean }) => {
       const { error } = await (supabase as any).from("experience2_includes").update({ published }).eq("id", id);
@@ -299,9 +330,16 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
         <p className="text-muted-foreground text-center py-4 text-sm">No items yet</p>
       ) : (
         <div className="space-y-2">
-          {displayItems.map((include: any) => (
+          {displayItems.map((include: any, idx: number) => (
             <div key={include.id} className="flex items-start gap-3 p-3 border border-border rounded-lg bg-card">
-              <GripVertical className="w-4 h-4 text-muted-foreground cursor-move mt-1 flex-shrink-0" />
+              <div className="flex flex-col gap-0.5 flex-shrink-0 mt-0.5">
+                <button type="button" onClick={() => handleReorder(include.id, 'up')} disabled={idx === 0} className="h-5 w-5 flex items-center justify-center rounded hover:bg-muted disabled:opacity-20">
+                  <ChevronUp className="w-3.5 h-3.5" />
+                </button>
+                <button type="button" onClick={() => handleReorder(include.id, 'down')} disabled={idx === displayItems.length - 1} className="h-5 w-5 flex items-center justify-center rounded hover:bg-muted disabled:opacity-20">
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </button>
+              </div>
               {editingId === include.id && !isLocalMode ? (
                 <div className="flex-1 flex items-center gap-3 flex-wrap">
                   <div className="w-24 flex-shrink-0 space-y-1">

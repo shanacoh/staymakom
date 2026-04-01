@@ -164,8 +164,6 @@ export default function RecommendedExperiences({
               experience={exp}
               isInWishlist={wishlistIds?.includes(exp.id)}
               userId={userId}
-              rating={8.5 + Math.random() * 0.5}
-              reviewCount={50 + Math.floor(Math.random() * 950)}
             />
           ))}
         </div>

@@ -139,8 +139,6 @@ export default function WishlistSection({ userId }: WishlistSectionProps) {
             isInWishlist={true}
             onWishlistToggle={handleWishlistRemove}
             userId={userId}
-            rating={8.5 + Math.random() * 0.5}
-            reviewCount={50 + Math.floor(Math.random() * 950)}
           />
         );
       })}

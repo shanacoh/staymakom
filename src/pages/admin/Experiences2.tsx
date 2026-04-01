@@ -293,7 +293,7 @@ const AdminExperiences2 = () => {
                   if (!hasHyperguest) warnings.push("No HG link");
                 }
 
-                const thumb = experience.hero_image || (experience.photos as any)?.[0];
+                const thumb = (experience as any).thumbnail_image || experience.hero_image || (experience.photos as any)?.[0];
 
                 return (
                   <div key={experience.id} className="flex items-center gap-4 px-4 py-3 hover:bg-muted/30 transition-colors group">

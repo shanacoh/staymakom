@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Loader2, Tag } from "lucide-react";
+import { Plus, X, Loader2, Tag, ChevronUp, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -54,13 +54,16 @@ export function HighlightTagsSelector2({ experienceId, localTags, onLocalTagsCha
     },
   });
 
-  const { data: experienceTags, isLoading: isLoadingExpTags } = useQuery({
+  const { data: experienceTagLinks, isLoading: isLoadingExpTags } = useQuery({
     queryKey: ["experience2-highlight-tags", experienceId],
     queryFn: async () => {
       if (!experienceId) return [];
-      const { data, error } = await (supabase as any).from("experience2_highlight_tags").select("tag_id").eq("experience_id", experienceId);
+      const { data, error } = await (supabase as any)
+        .from("experience2_highlight_tags")
+        .select("tag_id, position")
+        .eq("experience_id", experienceId);
       if (error) throw error;
-      return data.map((et: any) => et.tag_id) as string[];
+      return (data || []) as Array<{ tag_id: string; position: number }>;
     },
     enabled: !!experienceId,
   });
@@ -94,7 +97,7 @@ export function HighlightTagsSelector2({ experienceId, localTags, onLocalTagsCha
   // Selected tag IDs
   const selectedTagIds: string[] = isLocalMode
     ? (localTags?.map((t) => t.tag_id) || [])
-    : (experienceTags || []);
+    : (experienceTagLinks?.map((l) => l.tag_id) || []);
 
   // All tags available for selection (common + custom)
   const allAvailableTags: TagObject[] = [...(commonTags || []), ...customTags];
@@ -104,13 +107,37 @@ export function HighlightTagsSelector2({ experienceId, localTags, onLocalTagsCha
   const addTagMutation = useMutation({
     mutationFn: async (tagId: string) => {
       if (!experienceId) throw new Error("No experience ID");
+      const maxPos = experienceTagLinks?.length
+        ? Math.max(...experienceTagLinks.map((l) => l.position)) + 1
+        : 0;
       const { error } = await (supabase as any)
         .from("experience2_highlight_tags")
-        .insert({ experience_id: experienceId, tag_id: tagId });
+        .insert({ experience_id: experienceId, tag_id: tagId, position: maxPos });
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["experience2-highlight-tags", experienceId] }),
     onError: (error: any) => toast.error(error.message || "Failed to add tag"),
+  });
+
+  const reorderTagMutation = useMutation({
+    mutationFn: async ({ tagId, direction }: { tagId: string; direction: 'up' | 'down' }) => {
+      const sortedLinks = [...(experienceTagLinks || [])].sort((a, b) => a.position - b.position);
+      const idx = sortedLinks.findIndex((l) => l.tag_id === tagId);
+      const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (swapIdx < 0 || swapIdx >= sortedLinks.length) return;
+      [sortedLinks[idx], sortedLinks[swapIdx]] = [sortedLinks[swapIdx], sortedLinks[idx]];
+      await Promise.all(
+        sortedLinks.map((link, i) =>
+          (supabase as any)
+            .from("experience2_highlight_tags")
+            .update({ position: i })
+            .eq("experience_id", experienceId)
+            .eq("tag_id", link.tag_id)
+        )
+      );
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["experience2-highlight-tags", experienceId] }),
+    onError: () => toast.error("Réorganisation échouée"),
   });
 
   const removeTagMutation = useMutation({
@@ -205,7 +232,13 @@ export function HighlightTagsSelector2({ experienceId, localTags, onLocalTagsCha
     );
   }
 
-  const selectedTagsDetails = allAvailableTags.filter((t) => selectedTagIds.includes(t.id));
+  // Selected tags sorted by position (DB mode) or order of localTags (local mode)
+  const selectedTagsDetails = isLocalMode
+    ? (localTags?.map((lt) => allAvailableTags.find((t) => t.id === lt.tag_id)).filter(Boolean) as TagObject[]) ?? []
+    : [...(experienceTagLinks || [])]
+        .sort((a, b) => a.position - b.position)
+        .map((l) => allAvailableTags.find((t) => t.id === l.tag_id))
+        .filter(Boolean) as TagObject[];
 
   return (
     <>
@@ -215,21 +248,43 @@ export function HighlightTagsSelector2({ experienceId, localTags, onLocalTagsCha
           <CardDescription>Sélectionnez les tags qui apparaîtront comme badges sur la fiche expérience (ex : Petit-déjeuner, SPA, Nuit...)</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Selected tags preview */}
+          {/* Selected tags preview — reorderable */}
           {selectedTagsDetails.length > 0 && (
-            <div className="flex flex-wrap gap-2 p-3 bg-muted/50 rounded-lg">
-              {selectedTagsDetails.map((tag) => (
-                <Badge key={tag.id} variant="secondary" className="flex items-center gap-1 px-2 py-1">
-                  {tag.label_en}
-                  <button
-                    type="button"
-                    onClick={() => handleTagToggle(tag.id, false)}
-                    className="hover:text-destructive ml-1"
-                    disabled={removeTagMutation.isPending}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
+            <div className="flex flex-col gap-1 p-3 bg-muted/50 rounded-lg">
+              {selectedTagsDetails.map((tag, idx) => (
+                <div key={tag.id} className="flex items-center gap-2">
+                  {!isLocalMode && (
+                    <div className="flex flex-col gap-0">
+                      <button
+                        type="button"
+                        onClick={() => reorderTagMutation.mutate({ tagId: tag.id, direction: 'up' })}
+                        disabled={idx === 0 || reorderTagMutation.isPending}
+                        className="h-4 w-4 flex items-center justify-center rounded hover:bg-muted disabled:opacity-20"
+                      >
+                        <ChevronUp className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => reorderTagMutation.mutate({ tagId: tag.id, direction: 'down' })}
+                        disabled={idx === selectedTagsDetails.length - 1 || reorderTagMutation.isPending}
+                        className="h-4 w-4 flex items-center justify-center rounded hover:bg-muted disabled:opacity-20"
+                      >
+                        <ChevronDown className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+                  <Badge variant="secondary" className="flex items-center gap-1 px-2 py-1">
+                    {tag.label_en}
+                    <button
+                      type="button"
+                      onClick={() => handleTagToggle(tag.id, false)}
+                      className="hover:text-destructive ml-1"
+                      disabled={removeTagMutation.isPending}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                </div>
               ))}
             </div>
           )}

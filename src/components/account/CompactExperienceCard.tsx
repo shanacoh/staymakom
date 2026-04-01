@@ -146,7 +146,7 @@ export default function CompactExperienceCard({
           <div className="flex items-center gap-2 mt-1">
             <div className="flex items-center gap-0.5">
               <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-              <span className="text-xs font-medium">{rating.toFixed(1)}</span>
+              <span className="text-xs font-medium">NEW</span>
             </div>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs font-medium text-foreground">

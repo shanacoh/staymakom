@@ -69,8 +69,6 @@ const Experiences = () => {
                   <ExperienceCard
                     key={experience.id}
                     experience={experience}
-                    rating={avgRating || undefined}
-                    reviewCount={experience.experience_reviews?.length || 0}
                   />
                 );
               })}
