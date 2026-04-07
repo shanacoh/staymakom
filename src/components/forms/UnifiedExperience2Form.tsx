@@ -27,6 +27,8 @@ import RichTextEditor from "@/components/ui/rich-text-editor";
 import { generateSlug } from "@/lib/utils";
 import { Experience2AddonsManager, type LocalAddonEntry } from "@/components/admin/Experience2AddonsManager";
 import { EXPERIENCE_PRICING_TYPES, COMMISSION_TYPES, TAX_TYPES } from "@/types/experience2_addons";
+import { useFromPrice } from "@/hooks/useExperience2Price";
+import { useQuickDateAvailability } from "@/hooks/useQuickDateAvailability";
 import { ExperienceAvailabilityPreview } from "@/components/experience/ExperienceAvailabilityPreview";
 import { Separator } from "@/components/ui/separator";
 import { Tag } from "lucide-react";
@@ -160,6 +162,7 @@ export function UnifiedExperience2Form({
   const [showExtras, setShowExtras] = useState(false);
   const [featuredOnHome, setFeaturedOnHome] = useState(false);
   const [homeDisplayOrder, setHomeDisplayOrder] = useState(0);
+  const [barRateRefreshEnabled, setBarRateRefreshEnabled] = useState(false);
 
   const currentExperienceId = experienceId || createdExperienceId;
 
@@ -294,6 +297,39 @@ export function UnifiedExperience2Form({
   const title = watch("title");
 
   const firstHotel = experienceHotels.length > 0 ? hotels?.find((h) => h.id === experienceHotels[0].hotel_id) : null;
+
+  // Primary hotel HyperGuest ID (for pricing hooks)
+  const primaryHyperguestId = firstHotel?.hyperguest_property_id ?? null;
+  const primaryPropertyId = primaryHyperguestId ? parseInt(primaryHyperguestId) : null;
+
+  // Modèle A — Prix de référence HyperGuest (meilleur tarif 30 jours, sans dates)
+  const { fromPriceILS, isLoading: isLoadingFromPrice } = useFromPrice(
+    currentExperienceId ?? null,
+    primaryHyperguestId,
+  );
+
+  // Modèle B — BAR RATE sur 30 jours (déclenché manuellement)
+  const { data: quickDatesBarRate, isLoading: isLoadingBarRate } = useQuickDateAvailability({
+    propertyId: primaryPropertyId,
+    nights: 1,
+    adults: 2,
+    currency: "ILS",
+    enabled: barRateRefreshEnabled,
+  });
+
+  // Calcul min/max BAR RATE et pré-remplissage automatique
+  const barRatePrices = quickDatesBarRate
+    ?.map((d: any) => d.cheapestPrice)
+    .filter((p: any): p is number => p !== null && p > 0) ?? [];
+  const minBarRate = barRatePrices.length > 0 ? Math.min(...barRatePrices) : null;
+  const maxBarRate = barRatePrices.length > 0 ? Math.max(...barRatePrices) : null;
+
+  // Pré-remplir bar_rate avec le min quand les données arrivent
+  useEffect(() => {
+    if (minBarRate !== null && barRateRefreshEnabled && !isLoadingBarRate) {
+      setValue("bar_rate", minBarRate);
+    }
+  }, [minBarRate, barRateRefreshEnabled, isLoadingBarRate, setValue]);
 
   const allParcoursImages: string[] = [];
   for (const eh of experienceHotels) {
@@ -1665,6 +1701,70 @@ export function UnifiedExperience2Form({
                         sectionDescription="VAT and applicable taxes (default 18%)"
                       />
                     </div>
+
+                    {/* ── Récap tarifaire estimé ── */}
+                    <div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4 space-y-2">
+                      <div className="flex items-center gap-2 mb-1">
+                        <TrendingUp className="h-4 w-4 text-primary" />
+                        <p className="font-semibold text-sm">Récap tarifaire estimé</p>
+                      </div>
+
+                      {!primaryHyperguestId ? (
+                        <p className="text-xs text-muted-foreground italic">
+                          Associez un hôtel HyperGuest au parcours pour voir l'estimation tarifaire.
+                        </p>
+                      ) : isLoadingFromPrice ? (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Chargement du tarif HyperGuest...
+                        </div>
+                      ) : (
+                        <div className="space-y-1 text-sm">
+                          {/* Prix chambre */}
+                          <div className="flex justify-between text-muted-foreground">
+                            <span>Prix chambre HyperGuest</span>
+                            <span className="font-medium text-foreground">
+                              {fromPriceILS ? `~${fromPriceILS.toFixed(0)} ₪` : "—"}
+                            </span>
+                          </div>
+
+                          {/* Frais expérience */}
+                          {localAddons.filter(a => EXPERIENCE_PRICING_TYPES.includes(a.type as any) && a.is_active).map((addon, i) => (
+                            <div key={i} className="flex justify-between text-muted-foreground">
+                              <span>+ {addon.name || addon.type}</span>
+                              <span>{addon.is_percentage ? `${addon.value}%` : `+${addon.value} ₪`}</span>
+                            </div>
+                          ))}
+
+                          {/* Commissions */}
+                          {localAddons.filter(a => COMMISSION_TYPES.includes(a.type as any) && a.is_active).map((addon, i) => (
+                            <div key={i} className="flex justify-between text-muted-foreground">
+                              <span>+ {addon.name || "Commission"}</span>
+                              <span>{addon.is_percentage ? `${addon.value}%` : `+${addon.value} ₪`}</span>
+                            </div>
+                          ))}
+
+                          {/* Taxes */}
+                          {localAddons.filter(a => TAX_TYPES.includes(a.type as any) && a.is_active).map((addon, i) => (
+                            <div key={i} className="flex justify-between text-muted-foreground">
+                              <span>+ Taxes ({addon.name})</span>
+                              <span>{addon.is_percentage ? `${addon.value}%` : `+${addon.value} ₪`}</span>
+                            </div>
+                          ))}
+
+                          {/* Total */}
+                          <div className="flex justify-between border-t pt-2 mt-1">
+                            <span className="font-semibold">= Prix de vente estimé</span>
+                            <span className="font-bold text-primary text-base">
+                              {fromPriceILS ? `~${fromPriceILS.toFixed(0)} ₪` : "—"}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground">
+                            Estimé sur le meilleur tarif disponible dans les 30 prochains jours. Indicatif uniquement.
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -1680,22 +1780,69 @@ export function UnifiedExperience2Form({
                       </div>
 
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        {/* BAR RATE (lecture seule — sera rempli via API) */}
-                        <div>
-                          <Label className="text-xs text-muted-foreground">BAR RATE (tiré par API)</Label>
-                          <div className="relative mt-1">
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              readOnly
-                              {...register("bar_rate", { valueAsNumber: true })}
-                              placeholder="En attente de connexion API"
-                              className="bg-muted/60 text-muted-foreground cursor-not-allowed pr-10"
-                            />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
+                        {/* BAR RATE — avec bouton Rafraîchir HyperGuest */}
+                        <div className="space-y-2">
+                          <Label className="text-xs text-muted-foreground">BAR RATE</Label>
+
+                          {/* Bouton de chargement */}
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full text-xs gap-2"
+                                  disabled={!primaryHyperguestId || isLoadingBarRate || isSaving}
+                                  onClick={() => {
+                                    setBarRateRefreshEnabled(true);
+                                  }}
+                                >
+                                  {isLoadingBarRate ? (
+                                    <><Loader2 className="h-3 w-3 animate-spin" /> Chargement sur 30 jours...</>
+                                  ) : (
+                                    <><TrendingUp className="h-3 w-3" /> Charger les tarifs HyperGuest</>
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              {!primaryHyperguestId && (
+                                <TooltipContent>
+                                  <p>Aucun hôtel HyperGuest associé au parcours</p>
+                                </TooltipContent>
+                              )}
+                            </Tooltip>
+                          </TooltipProvider>
+
+                          {/* Résultat min/max */}
+                          {minBarRate !== null && maxBarRate !== null && (
+                            <div className="rounded bg-muted/50 px-3 py-2 text-xs space-y-0.5">
+                              <div className="flex justify-between text-muted-foreground">
+                                <span>Min (30j)</span><span className="font-medium">{minBarRate.toFixed(0)} ₪</span>
+                              </div>
+                              <div className="flex justify-between text-muted-foreground">
+                                <span>Max (30j)</span><span className="font-medium">{maxBarRate.toFixed(0)} ₪</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Valeur utilisée — modifiable */}
+                          <div>
+                            <Label className="text-xs text-muted-foreground">
+                              {minBarRate !== null ? "Valeur utilisée (pré-remplie, modifiable)" : "Valeur de référence"}
+                            </Label>
+                            <div className="relative mt-1">
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                {...register("bar_rate", { valueAsNumber: true })}
+                                placeholder="—"
+                                disabled={isSaving}
+                                className="pr-10"
+                              />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
+                            </div>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1">Sera automatiquement rempli une fois l'API branchée</p>
                         </div>
 
                         {/* Majoration */}
