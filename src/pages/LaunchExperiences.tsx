@@ -62,13 +62,6 @@ const LaunchExperiences = () => {
   const { data: experiences2, isLoading } = useQuery({
     queryKey: ["launch-experiences2-listing"],
     queryFn: async () => {
-      // ── DEBUG STAYMAKOM ────────────────────────────────────────────────
-      const supabaseUrl = (supabase as any).supabaseUrl || import.meta.env.VITE_SUPABASE_URL || "URL inconnue";
-      console.group("🔍 [LaunchExperiences] Chargement des expériences");
-      console.log("🌐 Environnement :", import.meta.env.MODE);
-      console.log("🔗 Supabase URL  :", supabaseUrl);
-      // ──────────────────────────────────────────────────────────────────
-
       const { data, error } = await supabase
         .from("experiences2")
         .select(`
@@ -91,26 +84,7 @@ const LaunchExperiences = () => {
         `)
         .eq("status", "published")
         .order("created_at", { ascending: false });
-
-      // ── DEBUG STAYMAKOM ────────────────────────────────────────────────
-      if (error) {
-        console.error("❌ Erreur Supabase :", error);
-        console.groupEnd();
-        throw error;
-      }
-      console.log(`✅ ${data?.length ?? 0} expérience(s) récupérée(s) depuis Supabase`);
-      console.table(data?.map((exp: any) => ({
-        id: exp.id.slice(0, 8),
-        titre: exp.title,
-        statut: exp.status,
-        catégorie: exp.categories?.slug ?? "—",
-        featured: exp.featured_on_home ? "⭐ oui" : "non",
-        hôtels: exp.experience2_hotels?.length ?? 0,
-        créé_le: exp.created_at?.slice(0, 10),
-      })));
-      console.groupEnd();
-      // ──────────────────────────────────────────────────────────────────
-
+      if (error) throw error;
       return data;
     },
   });
@@ -157,17 +131,6 @@ const LaunchExperiences = () => {
     });
     return Array.from(map.values());
   }, [categoryExperiences, isRTL]);
-
-  // ── DEBUG STAYMAKOM ──────────────────────────────────────────────────────
-  const debugCategoryFilter = useMemo(() => {
-    if (!experiences2) return;
-    console.log(
-      `🎛️ [LaunchExperiences] Filtre catégorie : "${activeFilter}" → ${categoryExperiences?.length ?? 0}/${experiences2.length} expérience(s)`,
-      categoryExperiences?.map((e: any) => e.title)
-    );
-  }, [experiences2, categoryExperiences, activeFilter]);
-  void debugCategoryFilter;
-  // ──────────────────────────────────────────────────────────────────────────
 
   // Apply region + tag filters
   const filteredExperiences = useMemo(() => {
