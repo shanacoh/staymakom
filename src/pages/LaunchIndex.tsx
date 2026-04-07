@@ -119,6 +119,13 @@ const LaunchIndex = () => {
   const { data: experiences2, isLoading: isLoadingExp } = useQuery({
     queryKey: ["launch-experiences2"],
     queryFn: async () => {
+      // ── DEBUG STAYMAKOM ──────────────────────────────────────────────────
+      const supabaseUrl = (supabase as any).supabaseUrl || import.meta.env.VITE_SUPABASE_URL || "URL inconnue";
+      console.group("🔍 [LaunchIndex] Chargement des expériences");
+      console.log("🌐 Environnement :", import.meta.env.MODE);
+      console.log("🔗 Supabase URL  :", supabaseUrl);
+      // ────────────────────────────────────────────────────────────────────
+
       const { data, error } = await supabase.
       from("experiences2").
       select(`
@@ -140,7 +147,25 @@ const LaunchIndex = () => {
         `).
       eq("status", "published").
       order("created_at", { ascending: false });
-      if (error) throw error;
+
+      // ── DEBUG STAYMAKOM ──────────────────────────────────────────────────
+      if (error) {
+        console.error("❌ Erreur Supabase :", error);
+        console.groupEnd();
+        throw error;
+      }
+      console.log(`✅ ${data?.length ?? 0} expérience(s) récupérée(s) depuis Supabase`);
+      console.table(data?.map((exp: any) => ({
+        id: exp.id.slice(0, 8),
+        titre: exp.title,
+        statut: exp.status,
+        catégorie: exp.categories?.slug ?? "—",
+        hôtels: exp.experience2_hotels?.length ?? 0,
+        créé_le: exp.created_at?.slice(0, 10),
+      })));
+      console.groupEnd();
+      // ────────────────────────────────────────────────────────────────────
+
       return data;
     }
   });
@@ -155,6 +180,15 @@ const LaunchIndex = () => {
   activeFilter === FILTER_ADVENTURE ?
   experiences2?.filter((exp: any) => exp.categories?.slug !== "romantic") :
   experiences2;
+
+  // ── DEBUG STAYMAKOM ──────────────────────────────────────────────────────
+  if (experiences2 && filteredExperiences) {
+    console.log(
+      `🎛️ [LaunchIndex] Filtre actif : "${activeFilter}" → ${filteredExperiences.length}/${experiences2.length} expérience(s) affichée(s)`,
+      filteredExperiences.map((e: any) => e.title)
+    );
+  }
+  // ──────────────────────────────────────────────────────────────────────────
 
   // Lead capture handler
   const handleLeadSubmit = async (e: React.FormEvent) => {
