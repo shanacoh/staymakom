@@ -166,6 +166,9 @@ export function BookingPanel2({
   const [selectedRatePlanId, setSelectedRatePlanId] = useState<number | null>(null);
   const [dateSlotOffset, setDateSlotOffset] = useState(0);
   const [guestsExpanded, setGuestsExpanded] = useState(false);
+  // ── MODE PREVIEW ──────────────────────────────────────────────────────
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  // ──────────────────────────────────────────────────────────────────────
 
   // Fetch real availability for 1/2/3 nights tabs
   const propId = hyperguestPropertyId ? parseInt(hyperguestPropertyId) : null;
@@ -359,41 +362,9 @@ export function BookingPanel2({
 
   const handleContinue = () => {
     if (!dateRange.from || !dateRange.to || !selectedRoomId || !selectedRatePlanId || !selectedRatePlan) return;
-    trackBookThisStayClicked(experienceSlug, displayTotal);
-
-    const checkoutState: CheckoutState = {
-      experienceId,
-      experienceTitle,
-      hotelId,
-      hotelName,
-      hyperguestPropertyId: hyperguestPropertyId!,
-      currency,
-      lang,
-      adults,
-      childrenAges,
-      dateRange: {
-        from: dateRange.from.toISOString().split("T")[0],
-        to: dateRange.to.toISOString().split("T")[0],
-      },
-      nights,
-      selectedRoomId,
-      selectedRatePlanId,
-      selectedRoomName,
-      selectedRatePlan,
-      propertyRemarks,
-      selectedExtras,
-      searchParams,
-      experienceSlug,
-    };
-
-    try {
-      localStorage.setItem("staymakom_cart", JSON.stringify({
-        ...checkoutState,
-        savedAt: new Date().toISOString(),
-      }));
-    } catch {}
-
-    navigate("/checkout", { state: checkoutState });
+    // ── MODE PREVIEW — réservations désactivées ──────────────────────────
+    setPreviewModalOpen(true);
+    // ────────────────────────────────────────────────────────────────────
   };
 
   // Handle extra toggle from panel checklist
@@ -901,5 +872,37 @@ export function BookingPanel2({
         />
       </CardContent>
     </Card>
+
+    {/* ── MODALE PREVIEW ─────────────────────────────────────────────── */}
+    {previewModalOpen && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+        onClick={() => setPreviewModalOpen(false)}
+      >
+        <div
+          className="bg-background rounded-2xl shadow-xl max-w-sm w-full p-8 text-center space-y-4"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="text-4xl">🔒</div>
+          <h2 className="text-xl font-bold tracking-tight">
+            {lang === "he" ? "הזמנות בקרוב" : lang === "fr" ? "Réservations bientôt" : "Bookings coming soon"}
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            {lang === "he"
+              ? "תודה על עניינך! האתר נמצא כרגע בגרסת תצוגה מקדימה. ההזמנות יפתחו בקרוב."
+              : lang === "fr"
+              ? "Merci de votre intérêt ! Le site est actuellement en aperçu. Les réservations ouvriront bientôt."
+              : "Thank you for your interest! The site is currently in preview mode. Bookings will open very soon."}
+          </p>
+          <button
+            onClick={() => setPreviewModalOpen(false)}
+            className="mt-2 px-6 py-2 rounded-lg bg-foreground text-background text-sm font-medium hover:opacity-80 transition"
+          >
+            {lang === "he" ? "סגור" : lang === "fr" ? "Fermer" : "Close"}
+          </button>
+        </div>
+      </div>
+    )}
+    {/* ────────────────────────────────────────────────────────────────── */}
   );
 }
