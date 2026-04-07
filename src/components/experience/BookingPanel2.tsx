@@ -418,6 +418,7 @@ export function BookingPanel2({
   })();
 
   return (
+    <>
     <Card className="overflow-hidden will-change-transform">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg">{t.title}</CardTitle>
@@ -904,5 +905,6 @@ export function BookingPanel2({
       </div>
     )}
     {/* ────────────────────────────────────────────────────────────────── */}
+    </>
   );
 }
