@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Save, Rocket, X, Upload, Loader2, ArrowLeft, Plus, ChevronUp, ChevronDown, Star, Image as ImageIcon, HelpCircle, Check } from "lucide-react";
+import { Save, Rocket, X, Upload, Loader2, ArrowLeft, Plus, ChevronUp, ChevronDown, Star, Image as ImageIcon, HelpCircle, Check, DollarSign, TrendingUp, Receipt, Percent, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import RichTextEditor from "@/components/ui/rich-text-editor";
 import { generateSlug } from "@/lib/utils";
@@ -105,6 +105,13 @@ const experience2Schema = z.object({
   promo_type: z.string().optional(),
   promo_value: z.number().min(0).optional(),
   promo_is_percentage: z.boolean().optional(),
+  // Modèle BAR RATE
+  pricing_model: z.enum(["standard", "bar_rate"]).default("standard"),
+  bar_rate: z.number().min(0).optional(),
+  bar_rate_markup_value: z.number().min(0).optional(),
+  bar_rate_markup_is_pct: z.boolean().default(true),
+  experience_net_cost: z.number().min(0).optional(),
+  room_net_rate: z.number().min(0).optional(),
 });
 
 type Experience2FormData = z.infer<typeof experience2Schema>;
@@ -271,6 +278,12 @@ export function UnifiedExperience2Form({
       promo_type: "none",
       promo_value: 0,
       promo_is_percentage: true,
+      pricing_model: "standard",
+      bar_rate: undefined,
+      bar_rate_markup_value: undefined,
+      bar_rate_markup_is_pct: true,
+      experience_net_cost: undefined,
+      room_net_rate: undefined,
     },
   });
 
@@ -373,6 +386,12 @@ export function UnifiedExperience2Form({
       setValue("promo_type", (existingExperience as any).promo_type ?? "none");
       setValue("promo_value", (existingExperience as any).promo_value ?? 0);
       setValue("promo_is_percentage", (existingExperience as any).promo_is_percentage ?? true);
+      setValue("pricing_model", (existingExperience as any).pricing_model ?? "standard");
+      setValue("bar_rate", (existingExperience as any).bar_rate ?? undefined);
+      setValue("bar_rate_markup_value", (existingExperience as any).bar_rate_markup_value ?? undefined);
+      setValue("bar_rate_markup_is_pct", (existingExperience as any).bar_rate_markup_is_pct ?? true);
+      setValue("experience_net_cost", (existingExperience as any).experience_net_cost ?? undefined);
+      setValue("room_net_rate", (existingExperience as any).room_net_rate ?? undefined);
 
       if (existingExperience.hero_image) setHeroImagePreview(existingExperience.hero_image);
       if (existingExperience.photos && Array.isArray(existingExperience.photos)) setGalleryPreviews(existingExperience.photos);
@@ -590,6 +609,13 @@ export function UnifiedExperience2Form({
       promo_is_percentage: data.promo_is_percentage ?? true,
       featured_on_home: featuredOnHome,
       home_display_order: homeDisplayOrder,
+      // Modèle BAR RATE
+      pricing_model: data.pricing_model ?? "standard",
+      bar_rate: data.pricing_model === "bar_rate" ? (data.bar_rate ?? null) : null,
+      bar_rate_markup_value: data.pricing_model === "bar_rate" ? (data.bar_rate_markup_value ?? null) : null,
+      bar_rate_markup_is_pct: data.pricing_model === "bar_rate" ? (data.bar_rate_markup_is_pct ?? true) : null,
+      experience_net_cost: data.pricing_model === "bar_rate" ? (data.experience_net_cost ?? null) : null,
+      room_net_rate: data.pricing_model === "bar_rate" ? (data.room_net_rate ?? null) : null,
     };
   };
 
@@ -1555,47 +1581,249 @@ export function UnifiedExperience2Form({
             <Card>
               <CardHeader>
                 <CardTitle>Tarification</CardTitle>
-                <CardDescription>Frais, commissions et taxes de l'expérience</CardDescription>
+                <CardDescription>Choisissez votre modèle de tarification</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div>
-                  <p className="font-medium text-sm mb-3">Frais par personne / nuit / fixes</p>
-                  <Experience2AddonsManager
-                    experienceId={currentExperienceId}
-                    disabled={isSaving}
-                    localAddons={localAddons}
-                    onLocalAddonsChange={setLocalAddons}
-                    addonTypes={EXPERIENCE_PRICING_TYPES}
-                    sectionTitle="Experience Pricing"
-                    sectionDescription="Fees and extras charged to travelers"
-                  />
+
+                {/* ── Sélecteur de modèle ── */}
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setValue("pricing_model", "standard")}
+                    className={cn(
+                      "flex-1 flex items-center gap-2 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-colors",
+                      watch("pricing_model") === "standard"
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-border bg-background text-muted-foreground hover:border-primary/40"
+                    )}
+                  >
+                    <DollarSign className="h-4 w-4 shrink-0" />
+                    Modèle standard
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setValue("pricing_model", "bar_rate")}
+                    className={cn(
+                      "flex-1 flex items-center gap-2 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-colors",
+                      watch("pricing_model") === "bar_rate"
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-border bg-background text-muted-foreground hover:border-primary/40"
+                    )}
+                  >
+                    <TrendingUp className="h-4 w-4 shrink-0" />
+                    Modèle BAR RATE
+                  </button>
                 </div>
 
-                <div className="border-t pt-6">
-                  <p className="font-medium text-sm mb-3">Commissions Staymakom</p>
-                  <Experience2AddonsManager
-                    experienceId={currentExperienceId}
-                    disabled={isSaving}
-                    localAddons={localAddons}
-                    onLocalAddonsChange={setLocalAddons}
-                    addonTypes={COMMISSION_TYPES}
-                    sectionTitle="Commissions"
-                    sectionDescription="Staymakom margins on room and experience prices"
-                  />
-                </div>
+                {/* ── MODÈLE STANDARD ── */}
+                {watch("pricing_model") === "standard" && (
+                  <div className="space-y-4">
+                    <div className="rounded-lg bg-muted/40 p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        <p className="font-medium text-sm">Frais par personne / nuit / fixes</p>
+                      </div>
+                      <Experience2AddonsManager
+                        experienceId={currentExperienceId}
+                        disabled={isSaving}
+                        localAddons={localAddons}
+                        onLocalAddonsChange={setLocalAddons}
+                        addonTypes={EXPERIENCE_PRICING_TYPES}
+                        sectionTitle="Experience Pricing"
+                        sectionDescription="Fees and extras charged to travelers"
+                      />
+                    </div>
 
-                <div className="border-t pt-6">
-                  <p className="font-medium text-sm mb-3">Taxes</p>
-                  <Experience2AddonsManager
-                    experienceId={currentExperienceId}
-                    disabled={isSaving}
-                    localAddons={localAddons}
-                    onLocalAddonsChange={setLocalAddons}
-                    addonTypes={TAX_TYPES}
-                    sectionTitle="Taxes"
-                    sectionDescription="VAT and applicable taxes (default 18%)"
-                  />
-                </div>
+                    <div className="rounded-lg bg-muted/40 p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Percent className="h-4 w-4 text-muted-foreground" />
+                        <p className="font-medium text-sm">Commissions Staymakom</p>
+                      </div>
+                      <Experience2AddonsManager
+                        experienceId={currentExperienceId}
+                        disabled={isSaving}
+                        localAddons={localAddons}
+                        onLocalAddonsChange={setLocalAddons}
+                        addonTypes={COMMISSION_TYPES}
+                        sectionTitle="Commissions"
+                        sectionDescription="Staymakom margins on room and experience prices"
+                      />
+                    </div>
+
+                    <div className="rounded-lg bg-muted/40 p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Receipt className="h-4 w-4 text-muted-foreground" />
+                        <p className="font-medium text-sm">Taxes</p>
+                      </div>
+                      <Experience2AddonsManager
+                        experienceId={currentExperienceId}
+                        disabled={isSaving}
+                        localAddons={localAddons}
+                        onLocalAddonsChange={setLocalAddons}
+                        addonTypes={TAX_TYPES}
+                        sectionTitle="Taxes"
+                        sectionDescription="VAT and applicable taxes (default 18%)"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* ── MODÈLE BAR RATE ── */}
+                {watch("pricing_model") === "bar_rate" && (
+                  <div className="space-y-4">
+
+                    {/* Bloc 1 : Prix communiqué au client */}
+                    <div className="rounded-lg border bg-card p-5 space-y-4">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-primary" />
+                        <p className="font-semibold text-sm">Prix communiqué au client</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {/* BAR RATE (lecture seule — sera rempli via API) */}
+                        <div>
+                          <Label className="text-xs text-muted-foreground">BAR RATE (tiré par API)</Label>
+                          <div className="relative mt-1">
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              readOnly
+                              {...register("bar_rate", { valueAsNumber: true })}
+                              placeholder="En attente de connexion API"
+                              className="bg-muted/60 text-muted-foreground cursor-not-allowed pr-10"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">Sera automatiquement rempli une fois l'API branchée</p>
+                        </div>
+
+                        {/* Majoration */}
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Majoration</Label>
+                          <div className="flex gap-2 mt-1">
+                            <div className="relative flex-1">
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                {...register("bar_rate_markup_value", { valueAsNumber: true })}
+                                placeholder="0"
+                                disabled={isSaving}
+                              />
+                            </div>
+                            <Controller
+                              name="bar_rate_markup_is_pct"
+                              control={control}
+                              render={({ field }) => (
+                                <Select
+                                  value={field.value ? "pct" : "fixed"}
+                                  onValueChange={(val) => field.onChange(val === "pct")}
+                                  disabled={isSaving}
+                                >
+                                  <SelectTrigger className="w-[90px]">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pct">% </SelectItem>
+                                    <SelectItem value="fixed">₪ fixe</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Résultat : Prix client */}
+                      <div className="border-t pt-3">
+                        {(() => {
+                          const barRate = watch("bar_rate") ?? 0;
+                          const markup = watch("bar_rate_markup_value") ?? 0;
+                          const isPct = watch("bar_rate_markup_is_pct") ?? true;
+                          const prixClient = barRate + (isPct ? barRate * markup / 100 : markup);
+                          return (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">= Prix client</span>
+                              <span className="text-lg font-bold text-primary">
+                                {barRate > 0 ? `${prixClient.toFixed(2)} ₪` : "—"}
+                              </span>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+
+                    {/* Bloc 2 : Calcul de la commission */}
+                    <div className="rounded-lg border bg-card p-5 space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Receipt className="h-4 w-4 text-primary" />
+                        <p className="font-semibold text-sm">Calcul de la commission Staymakom</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {/* Coût expérience en net */}
+                        <div>
+                          <Label htmlFor="experience_net_cost" className="text-xs text-muted-foreground">Coût expérience (net)</Label>
+                          <div className="relative mt-1">
+                            <Input
+                              id="experience_net_cost"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              {...register("experience_net_cost", { valueAsNumber: true })}
+                              placeholder="0"
+                              disabled={isSaving}
+                              className="pr-10"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
+                          </div>
+                        </div>
+
+                        {/* Net rate chambre */}
+                        <div>
+                          <Label htmlFor="room_net_rate" className="text-xs text-muted-foreground">Net rate chambre</Label>
+                          <div className="relative mt-1">
+                            <Input
+                              id="room_net_rate"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              {...register("room_net_rate", { valueAsNumber: true })}
+                              placeholder="0"
+                              disabled={isSaving}
+                              className="pr-10"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Résultat : Commission */}
+                      <div className="border-t pt-3">
+                        {(() => {
+                          const barRate = watch("bar_rate") ?? 0;
+                          const markup = watch("bar_rate_markup_value") ?? 0;
+                          const isPct = watch("bar_rate_markup_is_pct") ?? true;
+                          const prixClient = barRate + (isPct ? barRate * markup / 100 : markup);
+                          const expCost = watch("experience_net_cost") ?? 0;
+                          const roomNet = watch("room_net_rate") ?? 0;
+                          const commission = prixClient - expCost - roomNet;
+                          const hasData = (expCost > 0 || roomNet > 0);
+                          return (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">= Commission Staymakom</span>
+                              <span className={cn("text-lg font-bold", commission >= 0 ? "text-green-600" : "text-destructive")}>
+                                {hasData ? `${commission.toFixed(2)} ₪` : "—"}
+                              </span>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
               </CardContent>
             </Card>
 

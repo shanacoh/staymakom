@@ -1456,6 +1456,12 @@ export type Database = {
           title: string
           title_he: string | null
           updated_at: string | null
+          pricing_model: string
+          bar_rate: number | null
+          bar_rate_markup_value: number | null
+          bar_rate_markup_is_pct: boolean | null
+          experience_net_cost: number | null
+          room_net_rate: number | null
         }
         Insert: {
           accessibility_info?: string | null
@@ -1527,6 +1533,12 @@ export type Database = {
           title: string
           title_he?: string | null
           updated_at?: string | null
+          pricing_model?: string
+          bar_rate?: number | null
+          bar_rate_markup_value?: number | null
+          bar_rate_markup_is_pct?: boolean | null
+          experience_net_cost?: number | null
+          room_net_rate?: number | null
         }
         Update: {
           accessibility_info?: string | null
@@ -1598,6 +1610,12 @@ export type Database = {
           title?: string
           title_he?: string | null
           updated_at?: string | null
+          pricing_model?: string
+          bar_rate?: number | null
+          bar_rate_markup_value?: number | null
+          bar_rate_markup_is_pct?: boolean | null
+          experience_net_cost?: number | null
+          room_net_rate?: number | null
         }
         Relationships: [
           {

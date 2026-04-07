@@ -13,6 +13,7 @@
   "dependencies": {
     "@amplitude/analytics-browser": "^2.36.2",
     "@amplitude/plugin-session-replay-browser": "^1.25.20",
+    "@amplitude/unified": "^1.0.15",
     "@hookform/resolvers": "^3.10.0",
     "@lovable.dev/cloud-auth-js": "^0.0.3",
     "@phosphor-icons/react": "^2.1.10",
