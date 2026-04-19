@@ -53,3 +53,9 @@ verify_jwt = false
 
 [functions.test-hyperguest]
 verify_jwt = false
+
+[functions.revolut-payment]
+verify_jwt = false
+
+[functions.revolut-webhook]
+verify_jwt = false

@@ -31,6 +31,8 @@ import AuthPromptDialog from "@/components/auth/AuthPromptDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useExperience2Price } from "@/hooks/useExperience2Price";
 import { preBook, createBooking } from "@/services/hyperguest";
+import { createRevolutOrder, refundRevolutOrder } from "@/services/revolut";
+import RevolutPaymentWidget from "@/components/experience/RevolutPaymentWidget";
 import { extractTaxBreakdown } from "@/utils/taxesDisplay";
 import { analyzeCancellationPolicies } from "@/utils/cancellationPolicy";
 import { supabase } from "@/integrations/supabase/client";
@@ -230,6 +232,10 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
   const [bookingElapsed, setBookingElapsed] = useState(0);
   const [confirmationData, setConfirmationData] = useState<BookingConfirmationData | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [revolutPublicId, setRevolutPublicId] = useState<string | null>(null);
+  const [revolutOrderId, setRevolutOrderId] = useState<string | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<"idle" | "creating" | "ready" | "paid" | "failed">("idle");
+  const [isPreBooking, setIsPreBooking] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const pendingBookAfterAuth = useRef(false);
   const bookingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -332,10 +338,16 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
     }
   };
 
+  const pendingContinueAfterAuth = useRef(false);
+
   useEffect(() => {
     if (user && pendingBookAfterAuth.current) {
       pendingBookAfterAuth.current = false;
       setTimeout(() => handleBookInternal(), 300);
+    }
+    if (user && pendingContinueAfterAuth.current) {
+      pendingContinueAfterAuth.current = false;
+      setTimeout(() => handleContinueToStep3(), 300);
     }
   }, [user]);
 
@@ -350,17 +362,14 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
 
   const handleBookInternal = async () => {
     if (isBooking) return;
-    
-    if (!isGuestValid) {
-      setShowGuestErrors(true);
-      setStep(2);
-      toast.error(t.fillGuestInfo);
+    if (paymentStatus !== "paid") {
+      toast.error(lang === "he" ? "יש להשלים את התשלום תחילה" : "Please complete payment first");
       return;
     }
 
     trackPaymentInitiated(state.experienceSlug, displayTotal, state.currency);
     setIsBooking(true);
-    setBookingStep("prebook");
+    setBookingStep("booking");
 
     try {
       const checkIn = state.dateRange.from;
@@ -373,37 +382,6 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       const expectedCurrency = state.selectedRatePlan.payment?.chargeAmount?.currency
         ?? state.selectedRatePlan.prices?.sell?.currency
         ?? "EUR";
-
-      const preBookData = {
-        search: {
-          dates: { from: checkIn, to: checkOut },
-          propertyId: parseInt(state.hyperguestPropertyId),
-          nationality: leadGuest.country || "IL",
-          pax: [{ adults: state.adults, children: state.childrenAges }],
-        },
-        rooms: [{
-          roomId: state.selectedRoomId,
-          ratePlanId: state.selectedRatePlanId,
-          expectedPrice: { amount: expectedAmount, currency: expectedCurrency },
-        }],
-      };
-
-      const preBookResult = await preBook(preBookData);
-      const roomResult = preBookResult.rooms?.[0];
-      if (roomResult?.priceChange) {
-        const { fromAmount, toAmount } = roomResult.priceChange;
-        const priceDiff = toAmount.amount - fromAmount.amount;
-        const priceDiffPercent = Math.round((priceDiff / fromAmount.amount) * 100);
-        toast.warning(
-          `${t.priceChanged}: ${fromAmount.amount} ${fromAmount.currency} → ${toAmount.amount} ${toAmount.currency} (${priceDiff > 0 ? '+' : ''}${priceDiffPercent}%)`,
-          { duration: 8000 }
-        );
-        setIsBooking(false);
-        setBookingStep("idle");
-        return;
-      }
-
-      setBookingStep("booking");
 
       const staymakomRef = `SM-${state.experienceId.substring(0, 8).toUpperCase()}-${Date.now()}`;
       const safe = sanitizeLeadGuest(leadGuest);
@@ -494,6 +472,9 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
         user_id: currentUserId,
         confirmation_token: confirmationToken,
         idempotency_key: idempotencyKeyRef.current,
+        revolut_order_id: revolutOrderId,
+        payment_status: "paid",
+        paid_at: new Date().toISOString(),
       } as any);
 
       const certCancelInfo = analyzeCancellationPolicies(
@@ -583,10 +564,19 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       const errorType = errorCode.startsWith("BN.5") ? "hg_error" : errorCode === "BN.402" ? "payment_declined" : "network";
       trackPaymentFailed(state.experienceSlug, errorType, detail.substring(0, 200), displayTotal);
 
-      toast.error(t.bookingError, {
-        description: friendlyMsg || (detail.length > 120 ? detail.substring(0, 120) + "…" : detail || undefined),
-        duration: 8000,
-      });
+      if (revolutOrderId && paymentStatus === "paid") {
+        try {
+          await refundRevolutOrder(revolutOrderId);
+          toast.error(lang === "he" ? "ההזמנה נכשלה. התשלום יוחזר אליך." : "Booking failed. Your payment will be refunded.", { duration: 10000 });
+        } catch {
+          toast.error(lang === "he" ? `ההזמנה נכשלה. צור קשר לקבלת החזר. Ref: ${revolutOrderId}` : `Booking failed. Contact support for refund. Ref: ${revolutOrderId}`, { duration: 15000 });
+        }
+      } else {
+        toast.error(t.bookingError, {
+          description: friendlyMsg || (detail.length > 120 ? detail.substring(0, 120) + "…" : detail || undefined),
+          duration: 8000,
+        });
+      }
     } finally {
       setIsBooking(false);
       setBookingStep("idle");
@@ -597,19 +587,84 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
     navigate(`/experience2/${state.experienceSlug}?lang=${lang}`);
   };
 
-  const handleContinueToStep3 = () => {
+  const handleContinueToStep3 = async () => {
     if (!isGuestValid) {
       setShowGuestErrors(true);
       toast.error(t.fillGuestInfo);
       return;
     }
-    // Save profile on continue
+    if (!user) {
+      pendingContinueAfterAuth.current = true;
+      setShowAuthPrompt(true);
+      return;
+    }
     if (user) {
       saveProfileFields(user.id, leadGuest);
     }
     trackCheckoutContinueClicked(state.experienceSlug, displayTotal);
-    setStep(3);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    setIsPreBooking(true);
+    setPaymentStatus("creating");
+
+    try {
+      const checkIn = state.dateRange.from;
+      const checkOut = state.dateRange.to;
+      const expectedAmount = state.selectedRatePlan.payment?.chargeAmount?.price
+        ?? state.selectedRatePlan.prices?.sell?.price
+        ?? state.selectedRatePlan.prices?.sell?.amount
+        ?? 0;
+      const expectedCurrency = state.selectedRatePlan.payment?.chargeAmount?.currency
+        ?? state.selectedRatePlan.prices?.sell?.currency
+        ?? "EUR";
+
+      const preBookData = {
+        search: {
+          dates: { from: checkIn, to: checkOut },
+          propertyId: parseInt(state.hyperguestPropertyId),
+          nationality: leadGuest.country || "IL",
+          pax: [{ adults: state.adults, children: state.childrenAges }],
+        },
+        rooms: [{
+          roomId: state.selectedRoomId,
+          ratePlanId: state.selectedRatePlanId,
+          expectedPrice: { amount: expectedAmount, currency: expectedCurrency },
+        }],
+      };
+
+      const preBookResult = await preBook(preBookData);
+      const roomResult = preBookResult.rooms?.[0];
+      if (roomResult?.priceChange) {
+        const { fromAmount, toAmount } = roomResult.priceChange;
+        const priceDiff = toAmount.amount - fromAmount.amount;
+        const priceDiffPercent = Math.round((priceDiff / fromAmount.amount) * 100);
+        toast.warning(
+          `${t.priceChanged}: ${fromAmount.amount} ${fromAmount.currency} → ${toAmount.amount} ${toAmount.currency} (${priceDiff > 0 ? '+' : ''}${priceDiffPercent}%)`,
+          { duration: 8000 }
+        );
+        setIsPreBooking(false);
+        setPaymentStatus("idle");
+        return;
+      }
+
+      const order = await createRevolutOrder({
+        amount: displayTotal,
+        currency: state.currency || "ILS",
+        description: `StayMakom — ${state.experienceTitle}`,
+        customerEmail: leadGuest.email,
+        customerName: `${leadGuest.firstName} ${leadGuest.lastName}`,
+      });
+
+      setRevolutPublicId(order.publicId);
+      setRevolutOrderId(order.orderId);
+      setPaymentStatus("ready");
+      setStep(3);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to prepare payment");
+      setPaymentStatus("idle");
+    } finally {
+      setIsPreBooking(false);
+    }
   };
 
   const stepLabels = [t.step2Title, t.step3Title];
@@ -761,11 +816,20 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                         : "bg-[#C8C0B4] text-white cursor-not-allowed hover:bg-[#C8C0B4]"
                     )}
                     style={{ height: '52px', borderRadius: '0px' }}
-                    disabled={!isGuestValid}
+                    disabled={!isGuestValid || isPreBooking}
                     onClick={handleContinueToStep3}
                   >
-                    {t.next}
-                    {lang === 'he' ? <ChevronLeft className="h-4 w-4 mr-1" /> : <ChevronRight className="h-4 w-4 ml-1" />}
+                    {isPreBooking ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {lang === "he" ? "מאמת מחיר..." : "Verifying price..."}
+                      </span>
+                    ) : (
+                      <>
+                        {t.next}
+                        {lang === 'he' ? <ChevronLeft className="h-4 w-4 mr-1" /> : <ChevronRight className="h-4 w-4 ml-1" />}
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
@@ -878,6 +942,35 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                 </Alert>
               )}
 
+              {/* Payment widget */}
+              {revolutPublicId && paymentStatus !== "paid" && (
+                <div className="py-4">
+                  <RevolutPaymentWidget
+                    publicId={revolutPublicId}
+                    amount={displayTotal}
+                    currency={state.currency || "ILS"}
+                    lang={lang as "en" | "he" | "fr"}
+                    onPaymentSuccess={() => {
+                      setPaymentStatus("paid");
+                      toast.success(lang === "he" ? "התשלום התקבל!" : "Payment successful!");
+                    }}
+                    onPaymentError={(err) => {
+                      setPaymentStatus("failed");
+                      toast.error(err);
+                    }}
+                  />
+                </div>
+              )}
+
+              {paymentStatus === "paid" && (
+                <Alert className="border-emerald-200 bg-emerald-50">
+                  <Check className="h-4 w-4 text-emerald-600" />
+                  <AlertDescription className="text-emerald-800">
+                    {lang === "he" ? "התשלום אושר. לחץ למטה לאישור ההזמנה." : "Payment confirmed. Click below to finalize your booking."}
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {/* Navigation — desktop: side by side, mobile: stacked */}
               <div className="pt-2 pb-8">
                 {/* Desktop */}
@@ -886,7 +979,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                     variant="outline"
                     className="shrink-0 uppercase tracking-[0.12em] text-[13px]"
                     style={{ height: '52px', borderRadius: '0px', border: '1px solid #1A1814', color: '#1A1814' }}
-                    onClick={() => { trackCheckoutBackClicked(state.experienceSlug, 'step3'); setStep(2); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    onClick={() => { trackCheckoutBackClicked(state.experienceSlug, 'step3'); setStep(2); setPaymentStatus("idle"); setRevolutPublicId(null); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                   >
                     {lang === 'he' ? <ChevronRight className="h-4 w-4 ml-1" /> : <ChevronLeft className="h-4 w-4 mr-1" />}
                     {t.back}
@@ -894,7 +987,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                   <Button
                     className="flex-1 uppercase tracking-[0.12em] text-[13px] bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
                     style={{ height: '52px', borderRadius: '0px' }}
-                    disabled={totalIsNaN || isBooking}
+                    disabled={totalIsNaN || isBooking || paymentStatus !== "paid"}
                     onClick={handleBook}
                   >
                     {isBooking ? (
@@ -903,7 +996,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                         {getBookingMessage()}
                       </span>
                     ) : (
-                      t.book
+                      lang === "he" ? "שלם והזמן" : lang === "fr" ? "PAYER & RÉSERVER" : "CONFIRM BOOKING"
                     )}
                   </Button>
                 </div>
@@ -913,7 +1006,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                   <Button
                     className="w-full uppercase tracking-[0.12em] text-[13px] bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
                     style={{ height: '52px', borderRadius: '0px' }}
-                    disabled={totalIsNaN || isBooking}
+                    disabled={totalIsNaN || isBooking || paymentStatus !== "paid"}
                     onClick={handleBook}
                   >
                     {isBooking ? (
@@ -922,13 +1015,13 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                         {getBookingMessage()}
                       </span>
                     ) : (
-                      t.book
+                      lang === "he" ? "שלם והזמן" : lang === "fr" ? "PAYER & RÉSERVER" : "CONFIRM BOOKING"
                     )}
                   </Button>
                   <button
                     className="w-full text-center text-[13px] py-2"
                     style={{ color: '#8C7B6B' }}
-                    onClick={() => { trackCheckoutBackClicked(state.experienceSlug, 'step3'); setStep(2); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    onClick={() => { trackCheckoutBackClicked(state.experienceSlug, 'step3'); setStep(2); setPaymentStatus("idle"); setRevolutPublicId(null); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                   >
                     ← {t.back}
                   </button>
@@ -964,6 +1057,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
           setShowAuthPrompt(open);
           if (!open && !user) {
             pendingBookAfterAuth.current = false;
+            pendingContinueAfterAuth.current = false;
           }
         }}
         lang={lang}
