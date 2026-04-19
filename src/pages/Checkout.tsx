@@ -224,7 +224,13 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
   }[lang];
 
   const [step, setStep] = useState<CheckoutStep>(2);
-  const [leadGuest, setLeadGuest] = useState<LeadGuestData>(EMPTY_LEAD_GUEST);
+  const [leadGuest, setLeadGuest] = useState<LeadGuestData>(() => {
+    try {
+      const saved = sessionStorage.getItem("staymakom_guest");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return EMPTY_LEAD_GUEST;
+  });
   const [specialRequests, setSpecialRequests] = useState("");
   const [showGuestErrors, setShowGuestErrors] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
@@ -242,6 +248,12 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
   
   const idempotencyKeyRef = useRef(crypto.randomUUID());
   const specialRequestTrackedRef = useRef(false);
+
+  useEffect(() => {
+    if (leadGuest.firstName || leadGuest.email) {
+      sessionStorage.setItem("staymakom_guest", JSON.stringify(leadGuest));
+    }
+  }, [leadGuest]);
 
   const dateFrom = new Date(state.dateRange.from);
   const dateTo = new Date(state.dateRange.to);
@@ -339,20 +351,27 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
   };
 
   const pendingContinueAfterAuth = useRef(false);
+  const savedFormDataRef = useRef<{ leadGuest: LeadGuestData; specialRequests: string } | null>(null);
 
   useEffect(() => {
-    if (user && pendingBookAfterAuth.current) {
+    if (!user) return;
+    if (pendingBookAfterAuth.current) {
       pendingBookAfterAuth.current = false;
-      setTimeout(() => handleBookInternal(), 300);
+      setTimeout(() => handleBookInternal(), 500);
     }
-    if (user && pendingContinueAfterAuth.current) {
+    if (pendingContinueAfterAuth.current) {
       pendingContinueAfterAuth.current = false;
-      setTimeout(() => handleContinueToStep3(), 300);
+      if (savedFormDataRef.current) {
+        setLeadGuest(savedFormDataRef.current.leadGuest);
+        setSpecialRequests(savedFormDataRef.current.specialRequests);
+      }
+      setTimeout(() => handleContinueToStep3(), 500);
     }
   }, [user]);
 
   const handleBook = () => {
     if (!user) {
+      savedFormDataRef.current = { leadGuest, specialRequests };
       pendingBookAfterAuth.current = true;
       setShowAuthPrompt(true);
       return;
@@ -516,7 +535,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
 
       trackBookingCompleted(staymakomRef, state.experienceSlug, sellPrice, bookingCurrency, state.nights, totalPartySize, 0, state.experienceTitle || '', state.selectedRoomName || '');
 
-      try { localStorage.removeItem("staymakom_cart"); } catch {}
+      try { localStorage.removeItem("staymakom_cart"); sessionStorage.removeItem("staymakom_guest"); } catch {}
 
       try {
         const emailCancellation = analyzeCancellationPolicies(
@@ -594,6 +613,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       return;
     }
     if (!user) {
+      savedFormDataRef.current = { leadGuest, specialRequests };
       pendingContinueAfterAuth.current = true;
       setShowAuthPrompt(true);
       return;
