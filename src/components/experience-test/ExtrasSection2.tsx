@@ -150,7 +150,7 @@ const ExtrasSection2 = ({
         </p>
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 w-full">
         {extras.map((extra) => {
           const isSelected = selectedExtras.some((se) => se.id === extra.id);
           const name = lang === "he" ? extra.name_he || extra.name : extra.name;
@@ -173,7 +173,7 @@ const ExtrasSection2 = ({
               data-addon-id={extra.id}
               data-addon-name={name}
               className={`
-                group rounded-xl p-4
+                group rounded-xl p-3 sm:p-4
                 transition-all duration-200 ease-out
                 border flex flex-col items-center text-center
                 ${isSelected 
@@ -195,7 +195,7 @@ const ExtrasSection2 = ({
               </div>
 
               <div className="flex-1 flex items-start">
-                <p className="text-sm text-foreground/80 leading-snug line-clamp-2">{name}</p>
+                <p className="text-sm text-foreground/80 leading-snug line-clamp-2 break-words w-full">{name}</p>
               </div>
 
               <div className="mt-3">
@@ -203,7 +203,7 @@ const ExtrasSection2 = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 text-xs font-medium rounded-full px-4 border-foreground/20 bg-transparent hover:bg-foreground hover:text-background hover:border-foreground transition-all duration-200"
+                    className="h-8 text-xs font-medium rounded-full px-3 border-foreground/20 bg-transparent hover:bg-foreground hover:text-background hover:border-foreground transition-all duration-200 whitespace-nowrap"
                     onClick={() => { trackAddonClicked(experienceId, name, extra.price); onToggleExtra(extraData); }}
                   >
                     {formatPrice(extra.price)} · {getText('add')}

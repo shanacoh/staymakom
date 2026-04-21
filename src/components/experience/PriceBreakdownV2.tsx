@@ -159,10 +159,10 @@ export function PriceBreakdownV2({
     <div className={className}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <p className="text-[10px] uppercase tracking-[0.12em] font-medium" style={{ color: '#8C7B6B', fontFamily: 'Inter, sans-serif' }}>
+        <p className="text-[11px] sm:text-[10px] uppercase tracking-[0.12em] font-medium" style={{ color: '#8C7B6B', fontFamily: 'Inter, sans-serif' }}>
           {t.title}
         </p>
-        <p className="text-[11px]" style={{ color: '#8C7B6B' }}>
+        <p className="text-xs sm:text-[11px]" style={{ color: '#8C7B6B' }}>
           {nightsCount} {nightsCount === 1 ? t.nights : t.nightsPlural} · {guestsCount} {guestsCount === 1 ? t.guests : t.guestsPlural}
         </p>
       </div>

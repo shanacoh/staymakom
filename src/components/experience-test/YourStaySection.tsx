@@ -104,7 +104,7 @@ const YourStaySection = ({ hotel, lang = "en" }: YourStaySectionProps) => {
         {/* Hotel Card - Large visual */}
         <div className="group relative overflow-hidden rounded-xl bg-muted">
           {/* Photo Grid */}
-          <div className="grid grid-cols-3 gap-0.5 aspect-[3/1] md:aspect-[4/1]">
+          <div className="grid grid-cols-3 gap-0.5 aspect-[2/1] md:aspect-[3/1]">
             {hotelPhotos.map((photo, index) => (
               <div key={index} className="relative overflow-hidden">
                 <img

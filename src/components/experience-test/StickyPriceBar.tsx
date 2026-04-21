@@ -58,7 +58,7 @@ const StickyPriceBar = ({
   return (
     <div
       className={cn(
-        "md:hidden fixed left-0 right-0 z-40 bg-background border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)] transition-all duration-300",
+        "md:hidden fixed left-0 right-0 z-40 bg-background border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)] transition-all duration-300 overflow-x-hidden",
         isHidden ? "translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
       )}
       style={{ bottom: `calc(${MOBILE_BOTTOM_NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px))` }}
@@ -66,18 +66,18 @@ const StickyPriceBar = ({
       <div className="px-4">
         <button
           onClick={handleClick}
-          className="flex items-center justify-between py-3 w-full text-left"
+          className="flex items-center justify-between py-3 w-full text-left min-h-[44px]"
         >
-          <div className="flex items-baseline gap-1.5 flex-wrap">
-            <span className="text-[13px] font-medium" style={{ color: '#B85C4A' }}>
-              ● {lang === 'he' ? 'הכי משתלם' : 'Best rate available'}
+          <div className="flex items-baseline gap-1 flex-wrap min-w-0">
+            <span className="text-sm font-medium whitespace-nowrap" style={{ color: '#B85C4A' }}>
+              ● {lang === 'he' ? 'הכי משתלם' : 'Best rate'}
             </span>
-            <span className="text-[13px] text-muted-foreground">—</span>
-            <span className="text-[13px] font-semibold text-foreground">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">—</span>
+            <span className="text-sm font-semibold text-foreground whitespace-nowrap">
               {lang === 'he' ? `מ-${symbol}${displayPrice}` : `from ${symbol}${displayPrice}`}
             </span>
           </div>
-          <span className="text-xs font-medium uppercase tracking-wider text-foreground shrink-0 ml-3"
+          <span className="text-xs font-medium uppercase tracking-wider text-foreground shrink-0 ml-2 whitespace-nowrap"
             style={{ borderBottom: '1px solid currentColor' }}
           >
             {lang === 'he' ? 'לתאריכים' : 'VIEW DATES'}

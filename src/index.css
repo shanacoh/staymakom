@@ -138,6 +138,16 @@ All colors MUST be HSL.
   }
 }
 
+/* Global overflow containment — prevents any horizontal scroll on any page */
+html {
+  overflow-x: clip; /* clip ne casse pas position:fixed sur Safari mobile, contrairement à hidden */
+  max-width: 100%;
+}
+body {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
 @layer base {
   * {
     @apply border-border;

@@ -362,7 +362,7 @@ export default function Experience2() {
 
     return (
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold">{t.yourJourney}</h2>
+        <h2 className="text-xl sm:text-2xl font-bold">{t.yourJourney}</h2>
         {totalNights && (
           <p className="text-muted-foreground">
             {totalNights} {totalNights === 1 ? t.night : t.nights}
@@ -392,7 +392,7 @@ export default function Experience2() {
                         <img
                           src={ph.hotel.hero_image}
                           alt={hotelName || ""}
-                          className="w-20 h-20 rounded-lg object-cover shrink-0"
+                          className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover shrink-0"
                         />
                       )}
                       <div className="space-y-1">
@@ -483,7 +483,7 @@ export default function Experience2() {
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="min-h-screen flex flex-col" dir={lang === 'he' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen flex flex-col overflow-x-hidden" dir={lang === 'he' ? 'rtl' : 'ltr'}>
       <SEOHead
         title={title}
         description={subtitle || undefined}
@@ -519,10 +519,10 @@ export default function Experience2() {
         </section>
 
       {/* Contenu principal — aligned to V1 layout */}
-      <div className="max-w-6xl mx-auto pb-40 md:pb-16 px-4 sm:px-6 lg:px-12 xl:px-16 my-8">
+      <div className="max-w-6xl mx-auto pb-28 md:pb-16 px-4 sm:px-6 lg:px-12 xl:px-16 my-8">
         <div className="grid md:grid-cols-[65%_35%] gap-6 lg:gap-10">
           {/* Left Column - Content */}
-          <div className="space-y-10 md:space-y-12">
+          <div className="space-y-10 md:space-y-12 min-w-0 overflow-x-hidden">
             {/* Journey Overview (multi-hotel) */}
             {renderJourneyOverview()}
 
@@ -646,7 +646,7 @@ export default function Experience2() {
 
         {/* Mobile Booking Sheet */}
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-          <SheetContent side="bottom" className="h-[90vh] overflow-y-auto p-0">
+          <SheetContent side="bottom" className="h-[85vh] sm:h-[90vh] overflow-y-auto p-0">
             <div className="p-6 space-y-4">
               {availabilityRules.length > 0 && (
                 <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 space-y-1.5">

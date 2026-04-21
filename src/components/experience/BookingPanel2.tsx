@@ -451,7 +451,7 @@ export function BookingPanel2({
       <CardHeader className="pb-3">
         <CardTitle className="text-lg">{t.title}</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6 overflow-x-hidden overflow-y-auto overscroll-contain" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+      <CardContent className="space-y-6 overflow-x-hidden overflow-y-auto overscroll-contain" style={{ maxHeight: 'calc(100vh - 80px)' }}>
         {/* Guests — compact collapsible */}
         <div className="space-y-2">
           <button
@@ -472,12 +472,12 @@ export function BookingPanel2({
               <div className="flex items-center justify-between" dir="ltr">
                 <span className="text-sm" dir={lang === "he" ? "rtl" : "ltr"}>{t.adults}</span>
                 <div className="flex items-center gap-4">
-                  <Button variant="outline" size="sm" onClick={() => { const v = Math.max(minParty, adults - 1); setAdults(v); trackGuestsSelected(experienceSlug, v, childrenAges.length); }} disabled={adults <= minParty}>
-                    <Minus className="h-3 w-3" />
+                  <Button variant="outline" size="sm" className="h-9 w-9 p-0" onClick={() => { const v = Math.max(minParty, adults - 1); setAdults(v); trackGuestsSelected(experienceSlug, v, childrenAges.length); }} disabled={adults <= minParty}>
+                    <Minus className="h-3.5 w-3.5" />
                   </Button>
                   <span className="text-lg font-medium w-8 text-center">{adults}</span>
-                  <Button variant="outline" size="sm" onClick={() => { const v = Math.min(maxParty, adults + 1); setAdults(v); trackGuestsSelected(experienceSlug, v, childrenAges.length); }} disabled={adults >= maxParty}>
-                    <Plus className="h-3 w-3" />
+                  <Button variant="outline" size="sm" className="h-9 w-9 p-0" onClick={() => { const v = Math.min(maxParty, adults + 1); setAdults(v); trackGuestsSelected(experienceSlug, v, childrenAges.length); }} disabled={adults >= maxParty}>
+                    <Plus className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
@@ -486,12 +486,12 @@ export function BookingPanel2({
               <div className="flex items-center justify-between" dir="ltr">
                 <span className="text-sm" dir={lang === "he" ? "rtl" : "ltr"}>{t.children}</span>
                 <div className="flex items-center gap-4">
-                  <Button variant="outline" size="sm" onClick={() => setChildrenAges(prev => prev.slice(0, -1))} disabled={childrenAges.length === 0}>
-                    <Minus className="h-3 w-3" />
+                  <Button variant="outline" size="sm" className="h-9 w-9 p-0" onClick={() => setChildrenAges(prev => prev.slice(0, -1))} disabled={childrenAges.length === 0}>
+                    <Minus className="h-3.5 w-3.5" />
                   </Button>
                   <span className="text-lg font-medium w-8 text-center">{childrenAges.filter(a => a >= 2).length}</span>
-                  <Button variant="outline" size="sm" onClick={() => setChildrenAges(prev => [...prev, 5])} disabled={childrenAges.length >= 4}>
-                    <Plus className="h-3 w-3" />
+                  <Button variant="outline" size="sm" className="h-9 w-9 p-0" onClick={() => setChildrenAges(prev => [...prev, 5])} disabled={childrenAges.length >= 4}>
+                    <Plus className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>

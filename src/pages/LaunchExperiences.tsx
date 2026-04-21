@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
 import LaunchHeader from "@/components/LaunchHeader";
@@ -21,9 +21,22 @@ const LaunchExperiences = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { lang } = useLanguage();
   const isRTL = lang === "he";
+  const queryClient = useQueryClient();
 
   const filterParam = searchParams.get("filter") || FILTER_ADVENTURE;
   const [activeFilter, setActiveFilter] = useState(filterParam);
+
+  // Abonnement Supabase Realtime : dès qu'une expérience est modifiée dans l'admin,
+  // la page launch se rafraîchit automatiquement sans que l'utilisateur ait besoin de recharger.
+  useEffect(() => {
+    const channel = supabase
+      .channel("launch-experiences-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "experiences2" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["launch-experiences2-listing"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
@@ -60,7 +73,7 @@ const LaunchExperiences = () => {
   };
 
   const { data: experiences2, isLoading } = useQuery({
-    queryKey: ["launch-experiences2-listing"],
+    queryKey: ["launch-experiences2-listing", activeFilter],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("experiences2")
@@ -83,10 +96,14 @@ const LaunchExperiences = () => {
           experience2_addons(type, value, is_active)
         `)
         .eq("status", "published")
-        .order("created_at", { ascending: false });
+        .order("display_order", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return data;
     },
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
   });
 
   // Filter by category

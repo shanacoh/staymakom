@@ -34,7 +34,7 @@ const Experiences2 = () => {
           experience2_addons(type, value, is_active)
         `)
         .eq("status", "published")
-        .order("created_at", { ascending: false });
+        .order("display_order", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return data;
     }

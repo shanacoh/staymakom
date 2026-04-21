@@ -230,7 +230,7 @@ const HeroSection = ({
       {/* 3. Subtitle — italic, muted */}
       {subtitle && (
          <p className={cn(
-           "text-muted-foreground leading-relaxed",
+           "text-muted-foreground leading-relaxed break-words",
            isMobile ? "text-sm" : "text-sm"
          )}>
           {subtitle}
@@ -279,7 +279,7 @@ const HeroSection = ({
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
               {lang === 'he' ? 'מתארחים ב' : 'Hosted at'}
             </p>
-            <p className="text-sm font-medium text-foreground">{hotelName}</p>
+            <p className="text-sm font-medium text-foreground break-words">{hotelName}</p>
             <LocationPopover
               city={city}
               region={region}
@@ -337,7 +337,7 @@ const HeroSection = ({
               </>
             )}
             <ChevronRight className={cn("h-3 w-3 flex-shrink-0", lang === 'he' && "rotate-180")} />
-            <span className="text-foreground font-medium truncate max-w-[180px] sm:max-w-none">{title}</span>
+            <span className="text-foreground font-medium truncate min-w-0 flex-1">{title}</span>
           </div>
         </nav>
 

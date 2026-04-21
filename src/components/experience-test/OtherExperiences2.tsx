@@ -82,21 +82,21 @@ const OtherExperiences2 = ({ currentExperienceId, categoryId, lang = "en" }: Oth
   const title = lang === "he" ? "חוויות נוספות" : lang === "fr" ? "Autres expériences" : "Other experiences";
 
   return (
-    <section className="py-6">
+    <section className="py-6 min-w-0 overflow-x-hidden w-full">
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-serif text-lg md:text-2xl font-medium text-foreground">{title}</h2>
         {experiences.length > 2 && (
           <div className="flex gap-2">
             <button
               onClick={() => scroll("left")}
-              className="flex items-center justify-center w-8 h-8 rounded-full border border-border/60 hover:bg-muted transition-colors"
+              className="flex items-center justify-center w-10 h-10 rounded-full border border-border/60 hover:bg-muted transition-colors"
               aria-label="Previous"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={() => scroll("right")}
-              className="flex items-center justify-center w-8 h-8 rounded-full border border-border/60 hover:bg-muted transition-colors"
+              className="flex items-center justify-center w-10 h-10 rounded-full border border-border/60 hover:bg-muted transition-colors"
               aria-label="Next"
             >
               <ChevronRight className="h-4 w-4" />
@@ -107,7 +107,7 @@ const OtherExperiences2 = ({ currentExperienceId, categoryId, lang = "en" }: Oth
 
       <div
         ref={scrollRef}
-        className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2"
+        className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 min-w-0 max-w-full"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {experiences.map((exp) => (

@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit, Eye, EyeOff, Copy, Trash2, ExternalLink, MoreHorizontal } from "lucide-react";
+import { Plus, Edit, Eye, EyeOff, Copy, Trash2, ExternalLink, MoreHorizontal, GripVertical } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,9 +32,11 @@ const AdminExperiences2 = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [hotelFilter, setHotelFilter] = useState<string>("all");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState<"romantic" | "adventure">("adventure");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [experienceToDelete, setExperienceToDelete] = useState<string | null>(null);
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
   const isFormView = window.location.pathname.includes("/new") || window.location.pathname.includes("/edit");
 
@@ -65,30 +67,37 @@ const AdminExperiences2 = () => {
           `
           *,
           hotels2 (id, name, hyperguest_property_id),
-          categories (id, name),
+          categories (id, name, slug),
           experience2_addons (id, type, name, value, is_percentage, is_active),
           experience2_hotels (id, position, nights, hotels2 (id, name, hyperguest_property_id))
         `,
         )
-        .order("updated_at", { ascending: false });
+        .order("display_order", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return data;
     },
   });
 
-  const filteredExperiences = experiences?.filter((exp) => {
+  // Étape 1 — filtrer par onglet actif (catégorie)
+  const tabExperiences = experiences?.filter((exp) => {
+    const isRomantic = (exp as any).categories?.slug === "romantic";
+    return activeTab === "romantic" ? isRomantic : !isRomantic;
+  });
+
+  // Étape 2 — appliquer les autres filtres (search, statut, hôtel)
+  const displayedExperiences = tabExperiences?.filter((exp) => {
     const matchesSearch = exp.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || exp.status === statusFilter;
-
     let matchesHotel = true;
     if (hotelFilter !== "all") {
-      const junctionHotelIds = ((exp as any).experience2_hotels || []).map((eh: any) => eh.hotels2?.id);
-      matchesHotel = exp.hotel_id === hotelFilter || junctionHotelIds.includes(hotelFilter);
+      const ids = ((exp as any).experience2_hotels || []).map((eh: any) => eh.hotels2?.id);
+      matchesHotel = exp.hotel_id === hotelFilter || ids.includes(hotelFilter);
     }
-
-    const matchesCategory = categoryFilter === "all" || exp.category_id === categoryFilter;
-    return matchesSearch && matchesStatus && matchesHotel && matchesCategory;
+    return matchesSearch && matchesStatus && matchesHotel;
   });
+
+  const romanticCount = experiences?.filter((e) => (e as any).categories?.slug === "romantic").length ?? 0;
+  const adventureCount = experiences?.filter((e) => (e as any).categories?.slug !== "romantic").length ?? 0;
 
   const handleCreateNew = () => navigate("/admin/experiences2/new");
   const handleCloseForm = () => {
@@ -184,6 +193,58 @@ const AdminExperiences2 = () => {
     if (experienceToDelete) deleteMutation.mutate(experienceToDelete);
   };
 
+  const reorderMutation = useMutation({
+    mutationFn: async (orderedIds: { id: string; display_order: number }[]) => {
+      for (const item of orderedIds) {
+        const { error } = await supabase
+          .from("experiences2")
+          .update({ display_order: item.display_order } as any)
+          .eq("id", item.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-experiences2"] });
+      queryClient.invalidateQueries({ queryKey: ["launch-experiences2-listing"] });
+      queryClient.invalidateQueries({ queryKey: ["all-experiences2-page"] });
+      toast.success("Ordre mis à jour");
+    },
+    onError: () => toast.error("Erreur lors de la sauvegarde de l'ordre"),
+  });
+
+  // Le filtre catégorie est autorisé avec le drag-and-drop (pour ordonner chaque catégorie indépendamment)
+  const hasActiveFilters =
+    searchQuery !== "" ||
+    statusFilter !== "all" ||
+    hotelFilter !== "all";
+
+  const handleDragStart = useCallback((idx: number) => {
+    setDraggedIdx(idx);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    setDragOverIdx(idx);
+  }, []);
+
+  const handleDrop = useCallback((dropIdx: number) => {
+    if (draggedIdx === null || draggedIdx === dropIdx || !displayedExperiences) return;
+    const reordered = [...displayedExperiences];
+    const [moved] = reordered.splice(draggedIdx, 1);
+    reordered.splice(dropIdx, 0, moved);
+    // Romantic reçoit un décalage de 1000 pour éviter les conflits avec Adventure (0-999)
+    const offset = activeTab === "romantic" ? 1000 : 0;
+    const updates = reordered.map((e, i) => ({ id: e.id, display_order: offset + i }));
+    reorderMutation.mutate(updates);
+    setDraggedIdx(null);
+    setDragOverIdx(null);
+  }, [draggedIdx, displayedExperiences, activeTab, reorderMutation]);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedIdx(null);
+    setDragOverIdx(null);
+  }, []);
+
   if (isFormView) {
     return (
       <div className="mx-auto p-2 sm:p-6">
@@ -206,10 +267,34 @@ const AdminExperiences2 = () => {
           </Button>
         </div>
 
+        {/* Toggle Romantic / Adventure */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setActiveTab("adventure")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+              activeTab === "adventure"
+                ? "bg-foreground text-background border-foreground"
+                : "bg-background text-muted-foreground border-border hover:border-foreground/40"
+            }`}
+          >
+            Feeling Adventurous ({adventureCount})
+          </button>
+          <button
+            onClick={() => setActiveTab("romantic")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+              activeTab === "romantic"
+                ? "bg-foreground text-background border-foreground"
+                : "bg-background text-muted-foreground border-border hover:border-foreground/40"
+            }`}
+          >
+            Romantic Escape ({romanticCount})
+          </button>
+        </div>
+
         {/* Filters */}
         <Card>
           <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Input
                 placeholder="Search experiences..."
                 value={searchQuery}
@@ -239,34 +324,29 @@ const AdminExperiences2 = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All categories</SelectItem>
-                  {categories?.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </CardContent>
         </Card>
 
+        {/* Bandeau filtres actifs */}
+        {hasActiveFilters && (
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-sm">
+            <span>⚠</span>
+            <span>Désactivez les filtres pour réordonner les expériences par glisser-déposer.</span>
+          </div>
+        )}
+
         {/* Experiences List */}
         {isLoading ? (
           <div className="text-center py-12 text-muted-foreground">Loading experiences...</div>
-        ) : !filteredExperiences?.length ? (
+        ) : !displayedExperiences?.length ? (
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">No experiences found</CardContent>
           </Card>
         ) : (
           <Card>
             <div className="divide-y divide-border">
-              {filteredExperiences.map((experience) => {
+              {displayedExperiences.map((experience, idx) => {
                 const addons = (experience as any).experience2_addons || [];
                 const activeAddons = addons.filter((a: any) => a.is_active !== false);
                 const hasNoCategory = !(experience as any).categories?.name;
@@ -296,7 +376,23 @@ const AdminExperiences2 = () => {
                 const thumb = (experience as any).thumbnail_image || experience.hero_image || (experience.photos as any)?.[0];
 
                 return (
-                  <div key={experience.id} className="flex items-center gap-4 px-4 py-3 hover:bg-muted/30 transition-colors group">
+                  <div
+                    key={experience.id}
+                    draggable={!hasActiveFilters}
+                    onDragStart={() => handleDragStart(idx)}
+                    onDragOver={(e) => handleDragOver(e, idx)}
+                    onDrop={() => handleDrop(idx)}
+                    onDragEnd={handleDragEnd}
+                    className={`flex items-center gap-2 px-4 py-3 transition-colors group ${
+                      dragOverIdx === idx && draggedIdx !== idx
+                        ? "bg-accent/40 border-t-2 border-primary"
+                        : "hover:bg-muted/30"
+                    }`}
+                  >
+                    {/* Drag handle */}
+                    <div className={`shrink-0 ${hasActiveFilters ? "opacity-0 pointer-events-none" : "cursor-grab active:cursor-grabbing"}`}>
+                      <GripVertical className="h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
+                    </div>
 
                     {/* Thumbnail */}
                     <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-muted border border-border/50">

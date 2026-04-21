@@ -29,13 +29,15 @@ const WhatsIncludedPhotos2 = ({ experienceId, lang = "en", longCopy }: WhatsIncl
     if (!longCopy) return null;
     return (
       <section className="py-6 border-b border-border" dir={lang === "he" ? "rtl" : "ltr"}>
-        <h2 className="font-serif text-xl md:text-2xl font-medium text-foreground mb-3">
+        <h2 className="font-serif text-xl md:text-2xl font-medium text-foreground mb-3 break-words">
           {lang === "he" ? "מה בתכנית" : lang === "fr" ? "Au programme" : "What's on the program"}
         </h2>
-        <div
-          className="text-xs md:text-sm text-muted-foreground leading-relaxed prose prose-sm max-w-none"
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(longCopy) }}
-        />
+        <div className="w-full overflow-hidden">
+          <div
+            className="text-sm text-muted-foreground leading-relaxed break-words [&_img]:max-w-full [&_img]:h-auto [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_table]:w-full [&_ul]:pl-5 [&_ol]:pl-5"
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(longCopy) }}
+          />
+        </div>
       </section>
     );
   }
@@ -54,12 +56,14 @@ const WhatsIncludedPhotos2 = ({ experienceId, lang = "en", longCopy }: WhatsIncl
 
   return (
     <section className="py-6 border-b border-border" dir={lang === "he" ? "rtl" : "ltr"}>
-      <h2 className="font-serif text-xl md:text-2xl font-medium text-foreground mb-3">{heading}</h2>
+      <h2 className="font-serif text-xl md:text-2xl font-medium text-foreground mb-3 break-words">{heading}</h2>
       {longCopy && (
-        <div
-          className="text-xs md:text-sm text-muted-foreground leading-relaxed mb-6 prose prose-sm max-w-none"
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(longCopy) }}
-        />
+        <div className="w-full overflow-hidden mb-6">
+          <div
+            className="text-sm text-muted-foreground leading-relaxed break-words [&_img]:max-w-full [&_img]:h-auto [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_table]:w-full [&_ul]:pl-5 [&_ol]:pl-5"
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(longCopy) }}
+          />
+        </div>
       )}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {includes.map((item) => {
@@ -83,11 +87,11 @@ const WhatsIncludedPhotos2 = ({ experienceId, lang = "en", longCopy }: WhatsIncl
                 )}
               </div>
               <div className="flex flex-col flex-1">
-                <h3 className="font-semibold text-[11px] sm:text-xs leading-tight line-clamp-2 h-7 sm:h-8">
+                <h3 className="font-semibold text-xs sm:text-sm leading-tight line-clamp-2 h-8 sm:h-9">
                   {title}
                 </h3>
                 {description && (
-                  <p className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5">
+                  <p className="text-[11px] sm:text-xs text-muted-foreground line-clamp-2 mt-0.5">
                     {description}
                   </p>
                 )}

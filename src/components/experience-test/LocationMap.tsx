@@ -123,7 +123,7 @@ const LocationMap = ({
 
   return (
     <section className="pb-6">
-      <div className="h-[280px] rounded-lg overflow-hidden border border-border relative">
+      <div className="h-[200px] sm:h-[240px] md:h-[280px] rounded-lg overflow-hidden border border-border relative">
         <div ref={mapContainer} className="w-full h-full" />
         {/* Two-finger overlay */}
         <div

@@ -124,6 +124,7 @@ function ExtraPreviewCard({ extra, onToggle, onDelete }: {
       {/* Actions overlay */}
       <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
+          type="button"
           onClick={onToggle}
           title={extra.is_available ? "Désactiver" : "Activer"}
           className="p-1 rounded-md bg-background border border-border hover:bg-muted transition-colors"
@@ -131,6 +132,7 @@ function ExtraPreviewCard({ extra, onToggle, onDelete }: {
           <div className={`w-2 h-2 rounded-full ${extra.is_available ? "bg-green-500" : "bg-muted-foreground"}`} />
         </button>
         <button
+          type="button"
           onClick={onDelete}
           title="Supprimer"
           className="p-1 rounded-md bg-background border border-destructive/30 text-destructive hover:bg-destructive/5 transition-colors"
@@ -290,7 +292,7 @@ export function Hotel2ExtrasManager({ hotelId, hyperguestExtras = [] }: Hotel2Ex
                 <Receipt className="h-5 w-5 text-blue-600" />
                 <CardTitle className="text-base">HyperGuest Taxes & Fees</CardTitle>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => setExpandedHyperguest(!expandedHyperguest)}>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setExpandedHyperguest(!expandedHyperguest)}>
                 {expandedHyperguest ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </Button>
             </div>
@@ -308,7 +310,7 @@ export function Hotel2ExtrasManager({ hotelId, hyperguestExtras = [] }: Hotel2Ex
                       {item.frequency && <span>({item.frequency})</span>}
                     </div>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => handleImport(item)}>Import</Button>
+                  <Button type="button" size="sm" variant="outline" onClick={() => handleImport(item)}>Import</Button>
                 </div>
               ))}
             </CardContent>
@@ -345,7 +347,7 @@ export function Hotel2ExtrasManager({ hotelId, hyperguestExtras = [] }: Hotel2Ex
             <div className="flex flex-col items-center gap-3 py-10 text-center border-2 border-dashed border-border rounded-xl">
               <Sparkle size={32} className="text-muted-foreground/40" weight="duotone" />
               <p className="text-sm text-muted-foreground">Aucun extra créé pour cet hôtel.</p>
-              <Button variant="outline" size="sm" onClick={() => setActiveTab("manage")}>
+              <Button type="button" variant="outline" size="sm" onClick={() => setActiveTab("manage")}>
                 <Plus className="h-3.5 w-3.5 mr-1" /> Ajouter un extra
               </Button>
             </div>
@@ -439,11 +441,11 @@ export function Hotel2ExtrasManager({ hotelId, hyperguestExtras = [] }: Hotel2Ex
                             </div>
                           </div>
                           <div className="flex gap-2">
-                            <Button size="sm" onClick={() => updateMutation.mutate({ id: extra.id, data: editForm })} disabled={updateMutation.isPending}>
+                            <Button type="button" size="sm" onClick={() => updateMutation.mutate({ id: extra.id, data: editForm })} disabled={updateMutation.isPending}>
                               {updateMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Check className="h-3.5 w-3.5 mr-1" />}
                               Enregistrer
                             </Button>
-                            <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                            <Button type="button" size="sm" variant="ghost" onClick={() => setEditingId(null)}>
                               <X className="h-3.5 w-3.5 mr-1" /> Annuler
                             </Button>
                           </div>
@@ -475,6 +477,7 @@ export function Hotel2ExtrasManager({ hotelId, hyperguestExtras = [] }: Hotel2Ex
                         <td className="px-3 py-2.5 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <Button
+                              type="button"
                               variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground"
                               onClick={() => {
                                 setEditingId(extra.id);
@@ -484,6 +487,7 @@ export function Hotel2ExtrasManager({ hotelId, hyperguestExtras = [] }: Hotel2Ex
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
                             <Button
+                              type="button"
                               variant="ghost" size="icon" className="text-destructive h-7 w-7"
                               onClick={() => deleteMutation.mutate(extra.id)}
                             >
@@ -589,7 +593,7 @@ export function Hotel2ExtrasManager({ hotelId, hyperguestExtras = [] }: Hotel2Ex
                 </div>
               </div>
 
-              <Button onClick={handleAddExtra} disabled={createMutation.isPending} className="w-full">
+              <Button type="button" onClick={handleAddExtra} disabled={createMutation.isPending} className="w-full">
                 {createMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
                 Ajouter l'extra
               </Button>

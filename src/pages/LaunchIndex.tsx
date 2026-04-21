@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MOBILE_HEADER_HEIGHT } from "@/constants/layout";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,9 +42,21 @@ const LaunchIndex = () => {
   const { lang } = useLanguage();
   const { getLocalizedPath } = useLocalizedNavigation();
   const isRTL = lang === "he";
+  const queryClient = useQueryClient();
 
   // Analytics
   useScrollDepth("launch");
+
+  // Rafraîchissement automatique quand l'admin modifie l'ordre
+  useEffect(() => {
+    const channel = supabase
+      .channel("launch-index-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "experiences2" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["launch-experiences2"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
 
   // Lead capture state
   const [email, setEmail] = useState("");
@@ -139,10 +151,14 @@ const LaunchIndex = () => {
           experience2_addons(type, value, is_active)
         `).
       eq("status", "published").
-      order("created_at", { ascending: false });
+      order("display_order", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return data;
-    }
+    },
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
   });
 
   // Resolve category id from slug
