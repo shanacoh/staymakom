@@ -2164,6 +2164,7 @@ export type Database = {
         Row: {
           address: string | null
           address_he: string | null
+          adults_only: boolean
           amenities: string[] | null
           amenities_he: string[] | null
           cancellation_policy: string | null
@@ -2234,6 +2235,7 @@ export type Database = {
         Insert: {
           address?: string | null
           address_he?: string | null
+          adults_only?: boolean
           amenities?: string[] | null
           amenities_he?: string[] | null
           cancellation_policy?: string | null
@@ -2304,6 +2306,7 @@ export type Database = {
         Update: {
           address?: string | null
           address_he?: string | null
+          adults_only?: boolean
           amenities?: string[] | null
           amenities_he?: string[] | null
           cancellation_policy?: string | null

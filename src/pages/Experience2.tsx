@@ -624,6 +624,8 @@ export default function Experience2() {
                   lang={lang as "en" | "he" | "fr"}
                   selectedExtras={selectedExtras}
                   onToggleExtra={handleToggleExtra}
+                  availabilityRules={availabilityRules}
+                  adultsOnly={primaryHotel?.adults_only ?? false}
                 />
               </div>
             </div>
@@ -681,6 +683,8 @@ export default function Experience2() {
                 lang={lang as "en" | "he" | "fr"}
                 selectedExtras={selectedExtras}
                 onToggleExtra={handleToggleExtra}
+                availabilityRules={availabilityRules}
+                adultsOnly={primaryHotel?.adults_only ?? false}
               />
             </div>
           </SheetContent>

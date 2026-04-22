@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { HyperGuestPhotoSelector, type HyperGuestPhoto } from "@/components/admin/HyperGuestPhotoSelector";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -104,6 +105,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
     utc_offset: null as number | null,
     contact_website: "",
     max_child_age: null as number | null,
+    adults_only: false,
     max_infant_age: null as number | null,
     supported_cards: [] as string[],
     cut_off: "",
@@ -342,6 +344,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
         contact_website: (h.contact_website as string) ?? "",
         max_child_age: (h.max_child_age as number) ?? null,
         max_infant_age: (h.max_infant_age as number) ?? null,
+        adults_only: (h.adults_only as boolean) ?? false,
         supported_cards: Array.isArray(h.supported_cards) ? (h.supported_cards as string[]) : [],
         cut_off: (h.cut_off as string) ?? "",
         description_room: (h.description_room as string) ?? "",
@@ -422,6 +425,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
         utc_offset: data.utc_offset,
         contact_website: data.contact_website || null,
         max_child_age: data.max_child_age,
+        adults_only: data.adults_only,
         max_infant_age: data.max_infant_age,
         supported_cards: data.supported_cards?.length ? (data.supported_cards as unknown as Json) : null,
         cut_off: data.cut_off || null,
@@ -1140,6 +1144,17 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
                   placeholder="—"
                 />
               </div>
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border p-4">
+              <div>
+                <p className="font-medium text-sm">Adults Only</p>
+                <p className="text-xs text-muted-foreground">למבוגרים בלבד — la sélection d'enfants sera masquée dans le panneau de réservation.</p>
+              </div>
+              <Switch
+                checked={formData.adults_only}
+                onCheckedChange={(v) => setFormData({ ...formData, adults_only: v })}
+              />
             </div>
           </CardContent>
         </Card>

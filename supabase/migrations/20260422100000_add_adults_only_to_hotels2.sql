@@ -1,0 +1,1 @@
+ALTER TABLE hotels2 ADD COLUMN IF NOT EXISTS adults_only boolean NOT NULL DEFAULT false;

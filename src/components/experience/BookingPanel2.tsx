@@ -55,6 +55,49 @@ interface SelectedExtra {
   pricing_type: string;
 }
 
+interface AvailabilityRule {
+  id: string;
+  rule_type: 'days_of_week' | 'date_range' | 'specific_dates' | 'blackout';
+  days_of_week: number[] | null;
+  date_from: string | null;
+  date_to: string | null;
+  specific_dates: string[] | null;
+}
+
+function isCheckinDisabled(date: Date, rules: AvailabilityRule[]): boolean {
+  const inclusionRules = rules.filter(r => r.rule_type !== 'blackout');
+  const blackoutRules = rules.filter(r => r.rule_type === 'blackout');
+
+  for (const rule of blackoutRules) {
+    if (rule.date_from && rule.date_to) {
+      const from = new Date(rule.date_from); from.setHours(0, 0, 0, 0);
+      const to = new Date(rule.date_to); to.setHours(23, 59, 59, 999);
+      if (date >= from && date <= to) return true;
+    }
+  }
+
+  if (inclusionRules.length === 0) return false;
+
+  for (const rule of inclusionRules) {
+    if (rule.rule_type === 'specific_dates' && rule.specific_dates) {
+      for (const s of rule.specific_dates) {
+        const d = new Date(s);
+        if (date.getFullYear() === d.getFullYear() && date.getMonth() === d.getMonth() && date.getDate() === d.getDate()) return false;
+      }
+    }
+    if (rule.rule_type === 'date_range' && rule.date_from && rule.date_to) {
+      const from = new Date(rule.date_from); from.setHours(0, 0, 0, 0);
+      const to = new Date(rule.date_to); to.setHours(23, 59, 59, 999);
+      if (date >= from && date <= to) return false;
+    }
+    if (rule.rule_type === 'days_of_week' && rule.days_of_week) {
+      if (rule.days_of_week.includes(date.getDay())) return false;
+    }
+  }
+
+  return true;
+}
+
 interface BookingPanel2Props {
   experienceId: string;
   experienceTitle?: string;
@@ -68,6 +111,8 @@ interface BookingPanel2Props {
   lang?: "en" | "he" | "fr";
   selectedExtras?: SelectedExtra[];
   onToggleExtra?: (extra: SelectedExtra) => void;
+  availabilityRules?: AvailabilityRule[];
+  adultsOnly?: boolean;
 }
 
 export function BookingPanel2({
@@ -83,6 +128,8 @@ export function BookingPanel2({
   lang = "en",
   selectedExtras = [],
   onToggleExtra,
+  availabilityRules = [],
+  adultsOnly = false,
 }: BookingPanel2Props) {
   const navigate = useNavigate();
   const { symbol: currencySymbol, convert } = useCurrency();
@@ -157,6 +204,13 @@ export function BookingPanel2({
   });
 
   type NightsTab = 1 | 2 | 3 | "pick";
+  const specificDatesFromRules = useMemo(() =>
+    availabilityRules
+      .filter(r => r.rule_type === 'specific_dates' && r.specific_dates)
+      .flatMap(r => r.specific_dates!),
+    [availabilityRules]
+  );
+  const hasSpecificDates = specificDatesFromRules.length > 0;
   const [selectedTab, setSelectedTab] = useState<NightsTab>(1);
   const [selectedDateOptionId, setSelectedDateOptionId] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
@@ -169,13 +223,30 @@ export function BookingPanel2({
 
   // Fetch real availability for 1/2/3 nights tabs
   const propId = hyperguestPropertyId ? parseInt(hyperguestPropertyId) : null;
+  const nightsCount = typeof selectedTab === "number" ? selectedTab : 1;
   const { data: quickDates, isLoading: isLoadingQuickDates } = useQuickDateAvailability({
     propertyId: propId,
-    nights: typeof selectedTab === "number" ? selectedTab : 1,
+    nights: nightsCount,
     adults,
     currency,
-    enabled: selectedTab !== "pick",
+    enabled: !hasSpecificDates && selectedTab !== "pick",
   });
+  const specificDateResults = useMemo(() => {
+    if (!hasSpecificDates || selectedTab === "pick") return [];
+    return specificDatesFromRules.map((dateStr) => {
+      const checkin = new Date(dateStr);
+      const checkout = new Date(dateStr);
+      checkout.setDate(checkout.getDate() + nightsCount);
+      return {
+        id: `spec-${nightsCount}-${dateStr}`,
+        checkin,
+        checkout,
+        nights: nightsCount,
+        cheapestPrice: null as number | null,
+        currency,
+      };
+    });
+  }, [specificDatesFromRules, nightsCount, hasSpecificDates, selectedTab, currency]);
 
   // Fetch addons & pricing config for "from" price on date cards
   const { data: _addons } = useExperienceAddons(experienceId);
@@ -213,18 +284,48 @@ export function BookingPanel2({
     return calculateFromPrice(rawPrice, _addons ?? [], config);
   };
 
+  const filteredQuickDates = useMemo(() => {
+    if (!quickDates || availabilityRules.length === 0) return quickDates ?? [];
+    return quickDates.filter(opt => {
+      const checkin = opt.checkin instanceof Date ? opt.checkin : new Date(opt.checkin as string);
+      return !isCheckinDisabled(checkin, availabilityRules);
+    });
+  }, [quickDates, availabilityRules]);
+
+  const calendarDefaultMonth = useMemo(() => {
+    if (dateRange.from) return dateRange.from;
+    const today = new Date();
+    for (const rule of availabilityRules) {
+      if (rule.rule_type === 'specific_dates' && rule.specific_dates) {
+        const upcoming = rule.specific_dates
+          .map((s: string) => new Date(s))
+          .filter((d: Date) => d >= today)
+          .sort((a: Date, b: Date) => a.getTime() - b.getTime());
+        if (upcoming.length > 0) return upcoming[0];
+      }
+      if (rule.rule_type === 'date_range' && rule.date_from) {
+        const d = new Date(rule.date_from);
+        if (d >= today) return d;
+      }
+    }
+    return new Date();
+  }, [availabilityRules, dateRange.from]);
+
+  const displayQuickDates = hasSpecificDates ? specificDateResults : filteredQuickDates;
+  const isLoadingDates = hasSpecificDates ? false : isLoadingQuickDates;
+
   // Find the best rate (cheapest) — now supports MULTIPLE slots
   const bestRatePrice = useMemo(() => {
-    if (!quickDates || quickDates.length === 0) return null;
+    if (displayQuickDates.length === 0) return null;
     let bestPrice = Infinity;
-    for (const opt of quickDates) {
+    for (const opt of displayQuickDates) {
       const price = applyFromPrice(opt.cheapestPrice) ?? opt.cheapestPrice;
       if (price != null && price < bestPrice) {
         bestPrice = price;
       }
     }
     return bestPrice === Infinity ? null : bestPrice;
-  }, [quickDates, _addons, _pricingConfig]);
+  }, [displayQuickDates, _addons, _pricingConfig]);
 
   const isBestRateSlot = useCallback((opt: any) => {
     if (bestRatePrice == null) return false;
@@ -232,30 +333,30 @@ export function BookingPanel2({
     return price != null && Math.abs(price - bestRatePrice) < 0.01;
   }, [bestRatePrice, _addons, _pricingConfig]);
 
-  // Auto-select the cheapest available date when quickDates load
+  // Auto-select the cheapest available date when dates load
   useEffect(() => {
-    if (selectedTab !== "pick" && quickDates && quickDates.length > 0 && !selectedDateOptionId) {
-      const cheapest = quickDates.reduce((best, curr) => {
+    if (selectedTab !== "pick" && displayQuickDates.length > 0 && !selectedDateOptionId) {
+      const cheapest = displayQuickDates.reduce((best, curr) => {
         if (curr.cheapestPrice == null) return best;
         if (!best || best.cheapestPrice == null || curr.cheapestPrice < best.cheapestPrice) return curr;
         return best;
-      }, null as typeof quickDates[0] | null);
+      }, null as typeof displayQuickDates[0] | null);
       if (cheapest) {
         setSelectedDateOptionId(cheapest.id);
       }
     }
-  }, [quickDates, selectedTab, selectedDateOptionId]);
+  }, [displayQuickDates, selectedTab, selectedDateOptionId]);
 
   useEffect(() => {
-    if (selectedDateOptionId && selectedTab !== "pick" && quickDates) {
-      const opt = quickDates.find((d) => d.id === selectedDateOptionId);
+    if (selectedDateOptionId && selectedTab !== "pick") {
+      const opt = displayQuickDates.find((d) => d.id === selectedDateOptionId);
       if (opt) {
         setDateRange({ from: opt.checkin, to: opt.checkout });
         const checkIn = typeof opt.checkin === 'string' ? opt.checkin : (opt.checkin as Date).toISOString().split('T')[0];
         trackDateSelected(experienceSlug, checkIn, opt.nights || (typeof selectedTab === 'number' ? selectedTab : 1));
       }
     }
-  }, [selectedDateOptionId, quickDates, selectedTab]);
+  }, [selectedDateOptionId, displayQuickDates, selectedTab]);
 
   useEffect(() => {
     setSelectedDateOptionId(null);
@@ -432,9 +533,9 @@ export function BookingPanel2({
 
   // Date slots with ← → navigation (show 3 at a time)
   const SLOTS_PER_PAGE = 3;
-  const visibleQuickDates = quickDates?.slice(dateSlotOffset, dateSlotOffset + SLOTS_PER_PAGE) ?? [];
+  const visibleQuickDates = displayQuickDates.slice(dateSlotOffset, dateSlotOffset + SLOTS_PER_PAGE);
   const canGoBack = dateSlotOffset > 0;
-  const canGoForward = quickDates ? dateSlotOffset + SLOTS_PER_PAGE < quickDates.length : false;
+  const canGoForward = dateSlotOffset + SLOTS_PER_PAGE < displayQuickDates.length;
 
   // Guests label for collapsed view
   const guestsLabel = (() => {
@@ -482,51 +583,54 @@ export function BookingPanel2({
                 </div>
               </div>
 
-              {/* Children */}
-              <div className="flex items-center justify-between" dir="ltr">
-                <span className="text-sm" dir={lang === "he" ? "rtl" : "ltr"}>{t.children}</span>
-                <div className="flex items-center gap-4">
-                  <Button variant="outline" size="sm" className="h-9 w-9 p-0" onClick={() => setChildrenAges(prev => prev.slice(0, -1))} disabled={childrenAges.length === 0}>
-                    <Minus className="h-3.5 w-3.5" />
-                  </Button>
-                  <span className="text-lg font-medium w-8 text-center">{childrenAges.filter(a => a >= 2).length}</span>
-                  <Button variant="outline" size="sm" className="h-9 w-9 p-0" onClick={() => setChildrenAges(prev => [...prev, 5])} disabled={childrenAges.length >= 4}>
-                    <Plus className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Age selectors */}
-              {childrenAges.length > 0 && (
-                <div className="pl-4 space-y-2">
-                  {childrenAges.map((age, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <Baby className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground w-16">
-                        {age < 2 ? (lang === "he" ? "תינוק" : lang === "fr" ? "Bébé" : "Infant") : (lang === "he" ? `ילד ${idx + 1}` : lang === "fr" ? `Enfant ${idx + 1}` : `Child ${idx + 1}`)}
-                      </span>
-                      <Select
-                        value={String(age)}
-                        onValueChange={(v) => {
-                          const newAges = [...childrenAges];
-                          newAges[idx] = parseInt(v);
-                          setChildrenAges(newAges);
-                        }}
-                      >
-                        <SelectTrigger className="w-20 h-8 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Array.from({ length: 13 }, (_, i) => (
-                            <SelectItem key={i} value={String(i)}>
-                              {i} {lang === "he" ? "שנים" : lang === "fr" ? "ans" : i === 1 ? "yr" : "yrs"}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+              {/* Children — hidden for adults-only hotels */}
+              {!adultsOnly && (
+                <>
+                  <div className="flex items-center justify-between" dir="ltr">
+                    <span className="text-sm" dir={lang === "he" ? "rtl" : "ltr"}>{t.children}</span>
+                    <div className="flex items-center gap-4">
+                      <Button variant="outline" size="sm" className="h-9 w-9 p-0" onClick={() => setChildrenAges(prev => prev.slice(0, -1))} disabled={childrenAges.length === 0}>
+                        <Minus className="h-3.5 w-3.5" />
+                      </Button>
+                      <span className="text-lg font-medium w-8 text-center">{childrenAges.filter(a => a >= 2).length}</span>
+                      <Button variant="outline" size="sm" className="h-9 w-9 p-0" onClick={() => setChildrenAges(prev => [...prev, 5])} disabled={childrenAges.length >= 4}>
+                        <Plus className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
-                  ))}
-                </div>
+                  </div>
+
+                  {childrenAges.length > 0 && (
+                    <div className="pl-4 space-y-2">
+                      {childrenAges.map((age, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <Baby className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground w-16">
+                            {age < 2 ? (lang === "he" ? "תינוק" : lang === "fr" ? "Bébé" : "Infant") : (lang === "he" ? `ילד ${idx + 1}` : lang === "fr" ? `Enfant ${idx + 1}` : `Child ${idx + 1}`)}
+                          </span>
+                          <Select
+                            value={String(age)}
+                            onValueChange={(v) => {
+                              const newAges = [...childrenAges];
+                              newAges[idx] = parseInt(v);
+                              setChildrenAges(newAges);
+                            }}
+                          >
+                            <SelectTrigger className="w-20 h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 13 }, (_, i) => (
+                                <SelectItem key={i} value={String(i)}>
+                                  {i} {lang === "he" ? "שנים" : lang === "fr" ? "ans" : i === 1 ? "yr" : "yrs"}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -559,34 +663,36 @@ export function BookingPanel2({
                 }
               </button>
             ))}
-            <button
-              type="button"
-              onClick={() => { trackViewDatesClicked(experienceSlug); setSelectedTab("pick"); }}
-              className={cn(
-                "flex-1 px-1 py-1.5 rounded-lg border-2 transition-all text-xs whitespace-nowrap",
-                "hover:border-primary/50",
-                selectedTab === "pick" ? "border-primary bg-primary/5 font-medium" : "border-border"
-              )}
-            >
-              {lang === "he" ? "בחר תאריכים" : lang === "fr" ? "Choisir" : "Pick dates"}
-            </button>
+            {!hasSpecificDates && (
+              <button
+                type="button"
+                onClick={() => { trackViewDatesClicked(experienceSlug); setSelectedTab("pick"); }}
+                className={cn(
+                  "flex-1 px-1 py-1.5 rounded-lg border-2 transition-all text-xs whitespace-nowrap",
+                  "hover:border-primary/50",
+                  selectedTab === "pick" ? "border-primary bg-primary/5 font-medium" : "border-border"
+                )}
+              >
+                {lang === "he" ? "בחר תאריכים" : lang === "fr" ? "Choisir" : "Pick dates"}
+              </button>
+            )}
           </div>
 
           {/* Quick date options with ← → navigation */}
           {selectedTab !== "pick" && (
             <>
-              {isLoadingQuickDates && (
+              {isLoadingDates && (
                 <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   {lang === "he" ? "בודק זמינות..." : lang === "fr" ? "Vérification des disponibilités..." : "Checking availability..."}
                 </div>
               )}
-              {!isLoadingQuickDates && quickDates && quickDates.length === 0 && (
+              {!isLoadingDates && displayQuickDates.length === 0 && (
                 <p className="text-sm text-muted-foreground py-4 text-center">
                   {lang === "he" ? "אין תאריכים זמינים כרגע" : lang === "fr" ? "Aucune date disponible pour le moment" : "No available dates at the moment"}
                 </p>
               )}
-              {!isLoadingQuickDates && quickDates && quickDates.length > 0 && (
+              {!isLoadingDates && displayQuickDates.length > 0 && (
                 <>
                   {/* Navigation arrows */}
                   <div className="flex items-center justify-between">
@@ -601,7 +707,7 @@ export function BookingPanel2({
                       <ChevronLeft className="h-4 w-4" />
                     </button>
                     <span className="text-[11px] text-muted-foreground">
-                      {dateSlotOffset + 1}–{Math.min(dateSlotOffset + SLOTS_PER_PAGE, quickDates.length)} / {quickDates.length}
+                      {dateSlotOffset + 1}–{Math.min(dateSlotOffset + SLOTS_PER_PAGE, displayQuickDates.length)} / {displayQuickDates.length}
                     </span>
                     <button
                       type="button"
@@ -679,7 +785,7 @@ export function BookingPanel2({
             >
               <Calendar
                 mode="range"
-                defaultMonth={dateRange.from || new Date()}
+                defaultMonth={calendarDefaultMonth}
                 selected={dateRange as DateRange}
                 onSelect={(range) => {
                   setDateRange({
@@ -688,7 +794,12 @@ export function BookingPanel2({
                   });
                 }}
                 numberOfMonths={1}
-                disabled={(date) => date < new Date()}
+                disabled={(date) => {
+                  if (date < new Date()) return true;
+                  // When picking checkout (from chosen, to not yet), don't restrict
+                  if (dateRange.from && !dateRange.to) return false;
+                  return isCheckinDisabled(date, availabilityRules);
+                }}
                 className="pointer-events-auto p-1"
                 classNames={{
                   months: "flex flex-col",
