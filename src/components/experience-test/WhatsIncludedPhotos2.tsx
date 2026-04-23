@@ -34,7 +34,7 @@ const WhatsIncludedPhotos2 = ({ experienceId, lang = "en", longCopy }: WhatsIncl
         </h2>
         <div className="w-full overflow-hidden">
           <div
-            className="text-sm text-muted-foreground leading-relaxed break-words [&_img]:max-w-full [&_img]:h-auto [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_table]:w-full [&_ul]:pl-5 [&_ol]:pl-5"
+            className="text-sm text-muted-foreground leading-relaxed break-words [&_p]:mb-4 [&_p:last-child]:mb-0 [&_img]:max-w-full [&_img]:h-auto [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_table]:w-full [&_ul]:pl-5 [&_ol]:pl-5"
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(longCopy) }}
           />
         </div>
@@ -60,7 +60,7 @@ const WhatsIncludedPhotos2 = ({ experienceId, lang = "en", longCopy }: WhatsIncl
       {longCopy && (
         <div className="w-full overflow-hidden mb-6">
           <div
-            className="text-sm text-muted-foreground leading-relaxed break-words [&_img]:max-w-full [&_img]:h-auto [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_table]:w-full [&_ul]:pl-5 [&_ol]:pl-5"
+            className="text-sm text-muted-foreground leading-relaxed break-words [&_p]:mb-4 [&_p:last-child]:mb-0 [&_img]:max-w-full [&_img]:h-auto [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_table]:w-full [&_ul]:pl-5 [&_ol]:pl-5"
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(longCopy) }}
           />
         </div>
