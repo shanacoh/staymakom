@@ -24,20 +24,62 @@ function getCorsHeaders(req: Request) {
   };
 }
 
-function getRevolutBaseUrl(): string {
-  const env = (Deno.env.get('ENVIRONMENT') || '').trim().toLowerCase();
-  return ['production', 'prod', 'live'].includes(env)
+function getEnvMode(envOverride?: string): 'production' | 'dev' {
+  const raw = (envOverride || Deno.env.get('ENVIRONMENT') || '').trim().toLowerCase();
+  return ['production', 'prod', 'live'].includes(raw) ? 'production' : 'dev';
+}
+
+function getRevolutBaseUrl(envOverride?: string): string {
+  return getEnvMode(envOverride) === 'production'
     ? 'https://merchant.revolut.com/api'
     : 'https://sandbox-merchant.revolut.com/api';
 }
 
-function getSecretKey(): string {
-  const env = (Deno.env.get('ENVIRONMENT') || '').trim().toLowerCase();
-  const isProd = ['production', 'prod', 'live'].includes(env);
+function getSecretKey(envOverride?: string): string {
+  const isProd = getEnvMode(envOverride) === 'production';
   return Deno.env.get(isProd ? 'REVOLUT_SECRET_KEY_PROD' : 'REVOLUT_SECRET_KEY') || '';
 }
 
-async function createOrder(body: Record<string, unknown>) {
+async function resolveAdminEnvOverride(
+  req: Request,
+  body: Record<string, unknown>
+): Promise<string | undefined> {
+  const requested = typeof body.environment === 'string' ? body.environment.toLowerCase() : '';
+  if (requested !== 'dev' && requested !== 'prod' && requested !== 'production') {
+    return undefined;
+  }
+
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) return undefined;
+  const token = authHeader.replace('Bearer ', '');
+
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: { user } } = await supabase.auth.getUser(token);
+    if (!user?.id) return undefined;
+
+    const { data: adminRole } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .maybeSingle();
+    if (!adminRole) {
+      console.warn('⚠️ Non-admin user requested env override, ignoring:', user.id);
+      return undefined;
+    }
+    const resolved = requested === 'prod' ? 'production' : requested;
+    console.log('🔧 Admin env override accepted:', resolved, 'for user:', user.id);
+    return resolved;
+  } catch (err) {
+    console.error('❌ Admin role check failed:', err);
+    return undefined;
+  }
+}
+
+async function createOrder(body: Record<string, unknown>, envOverride?: string) {
   const { amount, currency, description, customerEmail, customerName, bookingRef } = body;
   if (!amount || !currency) throw new Error('amount and currency are required');
 
@@ -54,11 +96,11 @@ async function createOrder(body: Record<string, unknown>) {
     },
   };
 
-  const url = `${getRevolutBaseUrl()}/orders`;
+  const url = `${getRevolutBaseUrl(envOverride)}/orders`;
   const response = await fetch(url, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${getSecretKey()}`,
+      'Authorization': `Bearer ${getSecretKey(envOverride)}`,
       'Content-Type': 'application/json',
       'Revolut-Api-Version': '2024-09-01',
     },
@@ -79,15 +121,15 @@ async function createOrder(body: Record<string, unknown>) {
   };
 }
 
-async function getOrder(body: Record<string, unknown>) {
+async function getOrder(body: Record<string, unknown>, envOverride?: string) {
   const { orderId } = body;
   if (!orderId) throw new Error('orderId is required');
 
-  const url = `${getRevolutBaseUrl()}/orders/${orderId}`;
+  const url = `${getRevolutBaseUrl(envOverride)}/orders/${orderId}`;
   const response = await fetch(url, {
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${getSecretKey()}`,
+      'Authorization': `Bearer ${getSecretKey(envOverride)}`,
       'Revolut-Api-Version': '2024-09-01',
     },
   });
@@ -106,7 +148,7 @@ async function getOrder(body: Record<string, unknown>) {
   };
 }
 
-async function refundOrder(body: Record<string, unknown>) {
+async function refundOrder(body: Record<string, unknown>, envOverride?: string) {
   const { orderId, amount, currency, description } = body;
   if (!orderId) throw new Error('orderId is required');
 
@@ -116,11 +158,11 @@ async function refundOrder(body: Record<string, unknown>) {
   if (amount) payload.amount = Math.round(Number(amount) * 100);
   if (currency) payload.currency = String(currency).toUpperCase();
 
-  const url = `${getRevolutBaseUrl()}/orders/${orderId}/refund`;
+  const url = `${getRevolutBaseUrl(envOverride)}/orders/${orderId}/refund`;
   const response = await fetch(url, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${getSecretKey()}`,
+      'Authorization': `Bearer ${getSecretKey(envOverride)}`,
       'Content-Type': 'application/json',
       'Revolut-Api-Version': '2024-09-01',
     },
@@ -133,6 +175,31 @@ async function refundOrder(body: Record<string, unknown>) {
   }
 
   return await response.json();
+}
+
+function checkConfig(envOverride?: string) {
+  const env = getEnvMode(envOverride);
+  const isProd = env === 'production';
+  const secretKeyName = isProd ? 'REVOLUT_SECRET_KEY_PROD' : 'REVOLUT_SECRET_KEY';
+  const secretKey = Deno.env.get(secretKeyName) || '';
+  const webhookSecret = Deno.env.get('REVOLUT_WEBHOOK_SIGNING_SECRET') || '';
+
+  return {
+    environment: env,
+    baseUrl: getRevolutBaseUrl(envOverride),
+    apiVersion: '2024-09-01',
+    secretKey: {
+      name: secretKeyName,
+      configured: secretKey.length > 0,
+      length: secretKey.length,
+      preview: secretKey ? `${secretKey.substring(0, 3)}...${secretKey.substring(secretKey.length - 4)}` : null,
+    },
+    webhookSecret: {
+      name: 'REVOLUT_WEBHOOK_SIGNING_SECRET',
+      configured: webhookSecret.length > 0,
+      length: webhookSecret.length,
+    },
+  };
 }
 
 Deno.serve(async (req) => {
@@ -149,23 +216,40 @@ Deno.serve(async (req) => {
     }
 
     const action = body.action as string;
-    let result;
 
+    // Admin-only override: allows the admin debug page to switch between Sandbox and Prod
+    // without changing the global ENVIRONMENT secret. Ignored for non-admin callers.
+    const envOverride = await resolveAdminEnvOverride(req, body);
+
+    let result;
     switch (action) {
+      case 'ping':
+        result = { pong: true };
+        break;
+      case 'check-config':
+        result = checkConfig(envOverride);
+        break;
       case 'create-order':
-        result = await createOrder(body);
+        result = await createOrder(body, envOverride);
         break;
       case 'get-order':
-        result = await getOrder(body);
+        result = await getOrder(body, envOverride);
         break;
       case 'refund-order':
-        result = await refundOrder(body);
+        result = await refundOrder(body, envOverride);
         break;
       default:
         throw new Error(`Unknown action: ${action}`);
     }
 
-    return new Response(JSON.stringify({ success: true, data: result }), {
+    const finalEnv = getEnvMode(envOverride);
+    return new Response(JSON.stringify({
+      success: true,
+      data: result,
+      environment: finalEnv,
+      isTest: finalEnv !== 'production',
+      envOverrideApplied: !!envOverride,
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

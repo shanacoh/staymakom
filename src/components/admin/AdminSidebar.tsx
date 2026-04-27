@@ -20,6 +20,7 @@ import {
   ScrollText,
   Cog,
   Plug,
+  CreditCard,
 } from "lucide-react";
 import {
   Sidebar,
@@ -60,6 +61,10 @@ const hyperguestMenuItems = [
   { title: "Debug API", url: "/admin/hyperguest/debug", icon: Bug },
   { title: "Logs", url: "/admin/hyperguest/logs", icon: ScrollText },
   { title: "Configuration", url: "/admin/hyperguest/config", icon: Cog },
+];
+
+const revolutMenuItems = [
+  { title: "Debug API", url: "/admin/revolut/debug", icon: Bug },
 ];
 
 const backupMenuItems = [
@@ -133,6 +138,42 @@ export function AdminSidebar() {
                 <SidebarGroupContent>
                   <SidebarMenu>
                     {hyperguestMenuItems.map((item) => (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton
+                          asChild
+                          className={
+                            isActive(item.url)
+                              ? "bg-[#1B2A4A] text-white hover:bg-[#1B2A4A]/90"
+                              : "hover:bg-muted"
+                          }
+                        >
+                          <Link to={item.url} onClick={handleNavClick}>
+                            <item.icon className="h-4 w-4 mr-3" />
+                            <span className="text-sm">{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </CollapsibleContent>
+            </Collapsible>
+          </SidebarGroup>
+        )}
+
+        {/* Revolut section */}
+        {!collapsed && (
+          <SidebarGroup>
+            <Collapsible defaultOpen>
+              <CollapsibleTrigger className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
+                <CreditCard className="h-4 w-4" />
+                <span>Revolut</span>
+                <ChevronDown className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {revolutMenuItems.map((item) => (
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
                           asChild

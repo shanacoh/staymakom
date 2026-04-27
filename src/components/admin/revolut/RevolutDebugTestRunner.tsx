@@ -1,16 +1,16 @@
-import { useHyperGuestDebug } from '@/hooks/admin/useHyperGuestDebug';
-import { DebugResultBanner } from './DebugResultBanner';
-import { DebugTestCard } from './DebugTestCard';
+import { useRevolutDebug } from '@/hooks/admin/useRevolutDebug';
+import { RevolutDebugResultBanner } from './RevolutDebugResultBanner';
+import { RevolutDebugTestCard } from './RevolutDebugTestCard';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Play, Loader2, Download, FlaskConical, ShieldCheck } from 'lucide-react';
-import { useHyperGuestAdminEnvironment } from '@/hooks/admin/useAdminEnvironment';
+import { useRevolutAdminEnvironment } from '@/hooks/admin/useAdminEnvironment';
 
-export function DebugTestRunner() {
-  const [environment, setEnvironment] = useHyperGuestAdminEnvironment();
-  const { results, running, runAll, verdict, lastRun, totalDuration } = useHyperGuestDebug(environment);
+export function RevolutDebugTestRunner() {
+  const [environment, setEnvironment] = useRevolutAdminEnvironment();
+  const { results, running, runAll, verdict, lastRun, totalDuration } = useRevolutDebug(environment);
 
   const handleExport = () => {
     const report = {
@@ -24,7 +24,7 @@ export function DebugTestRunner() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `hg-debug-${environment}-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `revolut-debug-${environment}-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -33,7 +33,7 @@ export function DebugTestRunner() {
 
   return (
     <div className="space-y-4">
-      {/* Toggle Dev / Prod */}
+      {/* Toggle Sandbox / Prod */}
       <div className="flex items-center justify-between rounded-lg border bg-card p-4">
         <div className="flex items-center gap-3">
           {isProd ? (
@@ -42,30 +42,30 @@ export function DebugTestRunner() {
             <FlaskConical className="h-5 w-5 text-amber-600" />
           )}
           <div>
-            <p className="text-sm font-medium text-foreground">Environnement HyperGuest pour les tests</p>
+            <p className="text-sm font-medium text-foreground">Environnement Revolut pour les tests</p>
             <p className="text-xs text-muted-foreground">
               {isProd
-                ? 'Les tests utiliseront ta clé de PRODUCTION (vraie API).'
-                : 'Les tests utiliseront ta clé de DEV (sandbox, sans impact réel).'}
+                ? 'Les tests utiliseront ta clé Revolut PRODUCTION (vraie API marchande).'
+                : 'Les tests utiliseront ta clé Revolut SANDBOX (cartes de test, sans débit réel).'}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <Label
-            htmlFor="hg-env-toggle"
+            htmlFor="revolut-env-toggle"
             className={`text-sm font-medium cursor-pointer ${!isProd ? 'text-amber-700' : 'text-muted-foreground'}`}
           >
-            DEV
+            SANDBOX
           </Label>
           <Switch
-            id="hg-env-toggle"
+            id="revolut-env-toggle"
             checked={isProd}
             onCheckedChange={(checked) => setEnvironment(checked ? 'prod' : 'dev')}
             disabled={running}
-            aria-label="Basculer entre Dev et Prod"
+            aria-label="Basculer entre Sandbox et Prod"
           />
           <Label
-            htmlFor="hg-env-toggle"
+            htmlFor="revolut-env-toggle"
             className={`text-sm font-medium cursor-pointer ${isProd ? 'text-emerald-700' : 'text-muted-foreground'}`}
           >
             PROD
@@ -78,7 +78,7 @@ export function DebugTestRunner() {
                 : 'bg-amber-500 hover:bg-amber-600 text-white ml-2'
             }
           >
-            {isProd ? 'PROD' : 'DEV'}
+            {isProd ? 'PROD' : 'SANDBOX'}
           </Badge>
         </div>
       </div>
@@ -102,19 +102,19 @@ export function DebugTestRunner() {
             {running ? (
               <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Exécution...</>
             ) : (
-              <><Play className="h-4 w-4 mr-2" />Lancer tous les tests ({isProd ? 'PROD' : 'DEV'})</>
+              <><Play className="h-4 w-4 mr-2" />Lancer tous les tests ({isProd ? 'PROD' : 'SANDBOX'})</>
             )}
           </Button>
         </div>
       </div>
 
       {/* Verdict */}
-      <DebugResultBanner verdict={verdict} />
+      <RevolutDebugResultBanner verdict={verdict} />
 
       {/* Steps */}
       <div className="space-y-2">
         {results.map((step) => (
-          <DebugTestCard key={step.stepIndex} step={step} running={running} />
+          <RevolutDebugTestCard key={step.stepIndex} step={step} running={running} />
         ))}
       </div>
     </div>

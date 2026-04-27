@@ -44,7 +44,7 @@ const STEP_NAMES = [
   'Business Logic',
 ];
 
-export function useHyperGuestDebug() {
+export function useHyperGuestDebug(environment: 'dev' | 'prod' = 'prod') {
   const [results, setResults] = useState<DebugStepResult[]>([]);
   const [running, setRunning] = useState(false);
   const [lastRun, setLastRun] = useState<string | null>(null);
@@ -74,7 +74,7 @@ export function useHyperGuestDebug() {
     const s1Start = Date.now();
     try {
       await supabase.functions.invoke('hyperguest', {
-        body: { action: 'ping' },
+        body: { action: 'ping', environment },
       });
       const dur = Date.now() - s1Start;
       updateStep(0, { pass: true, duration: dur, detail: `Edge Function accessible (${dur}ms)`, data: { duration: dur } });
@@ -98,17 +98,18 @@ export function useHyperGuestDebug() {
     const s2Start = Date.now();
     try {
       const { data, error } = await supabase.functions.invoke('hyperguest', {
-        body: { action: 'search', checkIn: checkInStr, nights: 1, guests: '2', hotelIds: [113334] },
+        body: { action: 'search', checkIn: checkInStr, nights: 1, guests: '2', hotelIds: [113334], environment },
       });
       const dur = Date.now() - s2Start;
       const errorStr = JSON.stringify(data?.error || error || '');
       const isAuthError = errorStr.includes('401') || errorStr.includes('403') || errorStr.includes('Unauthorized') || errorStr.includes('Forbidden');
 
       if (isAuthError) {
+        const expectedSecret = environment === 'prod' ? 'HYPERGUEST_TOKEN_PROD' : 'HYPERGUEST_TOKEN_DEV';
         updateStep(1, {
           pass: false, duration: dur,
-          detail: 'Token HyperGuest rejeté (401/403)',
-          diagnosis: "PROBLÈME CHEZ NOUS — Le token HyperGuest est invalide ou expiré. Vérifier: 1) HYPERGUEST_TOKEN_PROD dans les secrets 2) ENVIRONMENT = production 3) Le token n'a pas été révoqué par HyperGuest",
+          detail: `Token HyperGuest rejeté (401/403) — env demandé: ${environment.toUpperCase()}`,
+          diagnosis: `PROBLÈME CHEZ NOUS — Le token ${environment.toUpperCase()} est invalide ou expiré. Vérifier: 1) Le secret Supabase ${expectedSecret} est bien renseigné 2) Le token n'a pas été révoqué par HyperGuest 3) Tu as bien le rôle admin (sinon l'override est ignoré)`,
         });
         for (let i = 2; i < 7; i++) updateStep(i, { pass: null, skipped: true, detail: 'Skipped (authentification échouée)' });
         setRunning(false);
@@ -117,13 +118,17 @@ export function useHyperGuestDebug() {
         return;
       }
 
+      const serverEnv = data?.environment;
       const isTest = data?.isTest;
+      const overrideApplied = data?.envOverrideApplied === true;
+      const requestedNormalized = environment === 'prod' ? 'production' : 'dev';
+      const mismatch = serverEnv && serverEnv !== requestedNormalized;
       carryData.searchData = data;
       carryData.searchDuration = dur;
       updateStep(1, {
         pass: true, duration: dur,
-        detail: `Token accepté (isTest: ${isTest}, env: ${data?.environment || 'unknown'})`,
-        warning: isTest === true ? 'Token DEV utilisé en production !' : undefined,
+        detail: `Token accepté (env: ${serverEnv || 'unknown'}, isTest: ${isTest}${overrideApplied ? ', override admin actif' : ''})`,
+        warning: mismatch ? `Demandé: ${environment.toUpperCase()} — réellement utilisé: ${serverEnv.toUpperCase()} (override admin ignoré : tu n'es probablement pas admin)` : undefined,
       });
     } catch (e: any) {
       const dur = Date.now() - s2Start;
@@ -174,7 +179,7 @@ export function useHyperGuestDebug() {
       const tests: DebugSubTest[] = [];
       try {
         await supabase.functions.invoke('hyperguest', {
-          body: { action: 'pre-book', propertyId: 113334 },
+          body: { action: 'pre-book', propertyId: 113334, environment },
         });
         tests.push({ id: '4.1', name: 'Endpoint booking accessible', pass: true, detail: 'Endpoint répond (erreur de validation attendue)' });
       } catch (e: any) {
@@ -194,7 +199,7 @@ export function useHyperGuestDebug() {
       const tests: DebugSubTest[] = [];
       try {
         await supabase.functions.invoke('hyperguest', {
-          body: { action: 'cancel-booking', bookingId: 'TEST-INVALID-ID', cancelSimulation: true },
+          body: { action: 'cancel-booking', bookingId: 'TEST-INVALID-ID', cancelSimulation: true, environment },
         });
         tests.push({ id: '5.1', name: 'Cancel simulate endpoint accessible', pass: true, detail: 'Endpoint répond (erreur attendue pour ID invalide)' });
       } catch (e: any) {
@@ -270,7 +275,7 @@ export function useHyperGuestDebug() {
     setLastRun(new Date().toLocaleString('fr-FR'));
     setTotalDuration(Date.now() - globalStart);
     setRunning(false);
-  }, []);
+  }, [environment]);
 
   const verdict: DebugVerdict = (() => {
     if (results.length === 0) return { type: 'idle', source: '', message: 'Aucun test exécuté.', action: 'Cliquez sur "Lancer tous les tests" pour commencer.' };

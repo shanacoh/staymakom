@@ -137,13 +137,13 @@ function validateSearchParams(params: SearchParams): { isValid: boolean; errors:
   return { isValid: errors.length === 0, errors };
 }
 
-function getEnvMode(): 'production' | 'dev' {
-  const raw = (Deno.env.get('ENVIRONMENT') || '').trim().toLowerCase();
+function getEnvMode(override?: string): 'production' | 'dev' {
+  const raw = (override || Deno.env.get('ENVIRONMENT') || '').trim().toLowerCase();
   return (raw === 'production' || raw === 'prod' || raw === 'live') ? 'production' : 'dev';
 }
 
-function getAuthHeaders(): Record<string, string> {
-  const envMode = getEnvMode();
+function getAuthHeaders(envOverride?: string): Record<string, string> {
+  const envMode = getEnvMode(envOverride);
   const isProduction = envMode === 'production';
   const token = isProduction
     ? (Deno.env.get('HYPERGUEST_TOKEN_PROD') || Deno.env.get('HYPERGUEST_TOKEN') || Deno.env.get('HYPERGUEST_BEARER_TOKEN'))
@@ -151,7 +151,7 @@ function getAuthHeaders(): Record<string, string> {
 
   if (!token) throw new Error('HyperGuest token not configured for env: ' + envMode);
 
-  console.log('🔑 Using HyperGuest token for env:', isProduction ? 'PRODUCTION' : 'DEV', 'token length:', token.length);
+  console.log('🔑 Using HyperGuest token for env:', isProduction ? 'PRODUCTION' : 'DEV', 'token length:', token.length, envOverride ? '(admin override)' : '(default)');
   return {
     'Authorization': `Bearer ${token}`,
     'Accept-Encoding': 'gzip, deflate',
@@ -159,7 +159,60 @@ function getAuthHeaders(): Record<string, string> {
   };
 }
 
-async function searchHotels(params: SearchParams) {
+async function resolveAdminEnvOverride(
+  req: Request,
+  body: Record<string, unknown>,
+  authResult: { authenticated: boolean; userId?: string }
+): Promise<string | undefined> {
+  const requested = typeof body.environment === 'string' ? body.environment.toLowerCase() : '';
+  if (requested !== 'dev' && requested !== 'prod' && requested !== 'production') {
+    return undefined;
+  }
+
+  // Always authenticate when override is requested (even for non-protected actions like ping/search)
+  let userId = authResult.userId;
+  if (!userId) {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) return undefined;
+    const token = authHeader.replace('Bearer ', '');
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      const { data: { user } } = await supabase.auth.getUser(token);
+      userId = user?.id;
+    } catch (_) {
+      return undefined;
+    }
+  }
+  if (!userId) return undefined;
+
+  // Verify admin role via user_roles table (same pattern used elsewhere in this file)
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: adminRole } = await adminClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('role', 'admin')
+      .maybeSingle();
+    if (!adminRole) {
+      console.warn('⚠️ Non-admin user requested env override, ignoring:', userId);
+      return undefined;
+    }
+  } catch (err) {
+    console.error('❌ Admin role check failed:', err);
+    return undefined;
+  }
+
+  const resolved = requested === 'prod' ? 'production' : requested;
+  console.log('🔧 Admin env override accepted:', resolved, 'for user:', userId);
+  return resolved;
+}
+
+async function searchHotels(params: SearchParams, envOverride?: string) {
   console.log('🔍 Searching hotels with params:', JSON.stringify(params));
   const validation = validateSearchParams(params);
   if (!validation.isValid) throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
@@ -173,7 +226,7 @@ async function searchHotels(params: SearchParams) {
   if (params.currency) queryParams.append('currency', params.currency);
 
   const url = `${SEARCH_DOMAIN}?${queryParams.toString()}`;
-  const response = await fetch(url, { method: 'GET', headers: getAuthHeaders() });
+  const response = await fetch(url, { method: 'GET', headers: getAuthHeaders(envOverride) });
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -185,8 +238,8 @@ async function searchHotels(params: SearchParams) {
   return data;
 }
 
-async function preBook(preBookData: PreBookData) {
-  const isProduction = getEnvMode() === 'production';
+async function preBook(preBookData: PreBookData, envOverride?: string) {
+  const isProduction = getEnvMode(envOverride) === 'production';
   const payload: PreBookData = {
     ...preBookData,
     isTest: !isProduction,
@@ -194,7 +247,7 @@ async function preBook(preBookData: PreBookData) {
 
   console.log('📋 Pre-booking for property:', preBookData.search.propertyId, 'isTest:', payload.isTest);
   const url = `${BOOKING_DOMAIN}booking/pre-book`;
-  const response = await fetch(url, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(payload) });
+  const response = await fetch(url, { method: 'POST', headers: getAuthHeaders(envOverride), body: JSON.stringify(payload) });
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -217,8 +270,8 @@ function ensureDateString(dateVal: unknown): string {
 }
 
 // ✅ #5a: Create booking with 300s timeout + booking list fallback
-async function createBooking(bookingData: BookingData) {
-  const isProduction = getEnvMode() === 'production';
+async function createBooking(bookingData: BookingData, envOverride?: string) {
+  const isProduction = getEnvMode(envOverride) === 'production';
 
   const safeLeadGuest = { ...bookingData.leadGuest, birthDate: ensureDateString(bookingData.leadGuest.birthDate) };
   const safeRooms = bookingData.rooms.map(room => ({
@@ -256,7 +309,7 @@ async function createBooking(bookingData: BookingData) {
   try {
     const response = await fetch(url, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(envOverride),
       body: JSON.stringify(safeBookingData),
       signal: controller.signal,
     });
@@ -300,7 +353,7 @@ async function createBooking(bookingData: BookingData) {
           const listUrl = `${BOOKING_DOMAIN}booking/list`;
           const listResponse = await fetch(listUrl, {
             method: 'POST',
-            headers: getAuthHeaders(),
+            headers: getAuthHeaders(envOverride),
             body: JSON.stringify({ agencyReference: agencyRef }),
           });
 
@@ -330,9 +383,9 @@ async function createBooking(bookingData: BookingData) {
   }
 }
 
-async function getBookingDetails(bookingId: string) {
+async function getBookingDetails(bookingId: string, envOverride?: string) {
   const url = `${BOOKING_DOMAIN}booking/get/${bookingId}`;
-  const response = await fetch(url, { method: 'GET', headers: getAuthHeaders() });
+  const response = await fetch(url, { method: 'GET', headers: getAuthHeaders(envOverride) });
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Get booking failed: ${response.status} - ${errorText}`);
@@ -341,7 +394,7 @@ async function getBookingDetails(bookingId: string) {
   return data.content || data;
 }
 
-async function listBookings(params: { dates?: { from: string; to: string }; agencyReference?: string; customerEmail?: string; limit?: number; page?: number }) {
+async function listBookings(params: { dates?: { from: string; to: string }; agencyReference?: string; customerEmail?: string; limit?: number; page?: number }, envOverride?: string) {
   const url = `${BOOKING_DOMAIN}booking/list`;
   const body: Record<string, unknown> = {};
   if (params.dates) body.dates = params.dates;
@@ -350,7 +403,7 @@ async function listBookings(params: { dates?: { from: string; to: string }; agen
   if (params.limit) body.limit = params.limit;
   if (params.page) body.page = params.page;
 
-  const response = await fetch(url, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(body) });
+  const response = await fetch(url, { method: 'POST', headers: getAuthHeaders(envOverride), body: JSON.stringify(body) });
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`List bookings failed: ${response.status} - ${errorText}`);
@@ -359,7 +412,7 @@ async function listBookings(params: { dates?: { from: string; to: string }; agen
   return data.content || data;
 }
 
-async function cancelBooking(bookingId: string, options: { reason?: string; simulation?: boolean; cancelSimulation?: boolean } = {}) {
+async function cancelBooking(bookingId: string, options: { reason?: string; simulation?: boolean; cancelSimulation?: boolean } = {}, envOverride?: string) {
   // Support both `simulation` and `cancelSimulation` field names from frontend
   const isSimulation = options.simulation === true || options.cancelSimulation === true;
   console.log(isSimulation ? '🔍 Simulating cancellation:' : '🚫 Cancelling booking:', bookingId);
@@ -367,7 +420,7 @@ async function cancelBooking(bookingId: string, options: { reason?: string; simu
   const url = `${BOOKING_DOMAIN}booking/cancel`;
   const response = await fetch(url, {
     method: 'POST',
-    headers: getAuthHeaders(),
+    headers: getAuthHeaders(envOverride),
     body: JSON.stringify({ bookingId, simulation: isSimulation, ...(options.reason && { reason: options.reason }) }),
   });
 
@@ -385,9 +438,9 @@ async function cancelBooking(bookingId: string, options: { reason?: string; simu
   return data.content || data;
 }
 
-async function getAllHotels(countryCode?: string) {
+async function getAllHotels(countryCode?: string, envOverride?: string) {
   const url = `${STATIC_DOMAIN}hotels.json`;
-  const response = await fetch(url, { method: 'GET', headers: getAuthHeaders() });
+  const response = await fetch(url, { method: 'GET', headers: getAuthHeaders(envOverride) });
   const responseText = await response.text();
   if (!response.ok) throw new Error(`Get hotels failed: ${response.status} - ${responseText.substring(0, 200)}`);
   if (!responseText || responseText.trim() === '') throw new Error('Empty response from HyperGuest API');
@@ -407,9 +460,9 @@ async function getAllHotels(countryCode?: string) {
   return data;
 }
 
-async function getPropertyDetails(propertyId: number) {
+async function getPropertyDetails(propertyId: number, envOverride?: string) {
   const url = `${STATIC_DOMAIN}${propertyId}/property-static.json`;
-  const response = await fetch(url, { method: 'GET', headers: getAuthHeaders() });
+  const response = await fetch(url, { method: 'GET', headers: getAuthHeaders(envOverride) });
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Get property failed: ${response.status} - ${errorText}`);
@@ -417,9 +470,9 @@ async function getPropertyDetails(propertyId: number) {
   return await response.json();
 }
 
-async function getFacilities() {
+async function getFacilities(envOverride?: string) {
   const url = `${STATIC_DOMAIN}facilities.json`;
-  const response = await fetch(url, { method: 'GET', headers: getAuthHeaders() });
+  const response = await fetch(url, { method: 'GET', headers: getAuthHeaders(envOverride) });
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Get facilities failed: ${response.status} - ${errorText}`);
@@ -468,10 +521,26 @@ Deno.serve(async (req) => {
       console.log('📌 Action from body:', action);
     }
 
+    // Admin-only override: allows the admin debug page to switch between Dev and Prod tokens
+    // without changing the global ENVIRONMENT secret. Ignored for non-admin callers.
+    const envOverride = await resolveAdminEnvOverride(req, body, authResult);
+
+    // Handle ping action (used by admin debug runner — must respond before the switch below)
+    if (action === 'ping') {
+      const finalEnv = getEnvMode(envOverride);
+      return new Response(JSON.stringify({
+        success: true,
+        data: { pong: true },
+        environment: finalEnv,
+        isTest: finalEnv !== 'production',
+        envOverrideApplied: !!envOverride,
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     let result;
     switch (action) {
-      case 'search': result = await searchHotels(body as unknown as SearchParams); break;
-      case 'pre-book': result = await preBook(body as unknown as PreBookData); break;
+      case 'search': result = await searchHotels(body as unknown as SearchParams, envOverride); break;
+      case 'pre-book': result = await preBook(body as unknown as PreBookData, envOverride); break;
       case 'create-booking': {
         // Idempotency check - prevent double bookings
         const idempotencyKey = (body as { idempotencyKey?: string }).idempotencyKey;
@@ -497,16 +566,16 @@ Deno.serve(async (req) => {
             break;
           }
         }
-        result = await createBooking(body as unknown as BookingData);
+        result = await createBooking(body as unknown as BookingData, envOverride);
         break;
       }
       case 'get-booking': {
         const bookingId = url.searchParams.get('bookingId') || body.bookingId;
         if (!bookingId) throw new Error('bookingId is required');
-        result = await getBookingDetails(String(bookingId));
+        result = await getBookingDetails(String(bookingId), envOverride);
         break;
       }
-      case 'list-bookings': result = await listBookings(body as any); break;
+      case 'list-bookings': result = await listBookings(body as any, envOverride); break;
       case 'cancel-booking': {
         const cancelBookingId = (body as { bookingId?: string }).bookingId;
         if (!cancelBookingId) throw new Error('bookingId is required');
@@ -539,25 +608,32 @@ Deno.serve(async (req) => {
             }
           }
         }
-        result = await cancelBooking(cancelBookingId, body as any);
+        result = await cancelBooking(cancelBookingId, body as any, envOverride);
         break;
       }
       case 'get-hotels': {
         const countryCode = url.searchParams.get('countryCode') || (body.countryCode as string) || undefined;
-        result = await getAllHotels(countryCode);
+        result = await getAllHotels(countryCode, envOverride);
         break;
       }
       case 'get-property': {
         const propertyId = url.searchParams.get('propertyId') || body.propertyId;
         if (!propertyId) throw new Error('propertyId is required');
-        result = await getPropertyDetails(parseInt(String(propertyId)));
+        result = await getPropertyDetails(parseInt(String(propertyId)), envOverride);
         break;
       }
-      case 'get-facilities': result = await getFacilities(); break;
+      case 'get-facilities': result = await getFacilities(envOverride); break;
       default: throw new Error(`Unknown action: ${action}`);
     }
 
-    return new Response(JSON.stringify({ success: true, data: result }), {
+    const finalEnv = getEnvMode(envOverride);
+    return new Response(JSON.stringify({
+      success: true,
+      data: result,
+      environment: finalEnv,
+      isTest: finalEnv !== 'production',
+      envOverrideApplied: !!envOverride,
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
