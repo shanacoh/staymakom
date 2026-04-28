@@ -1,13 +1,25 @@
-import { useParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isPast, differenceInDays } from "date-fns";
-import { ArrowLeft, Gift, Calendar, Mail, User, Clock, CreditCard } from "lucide-react";
+import { ArrowLeft, Gift, Calendar, Mail, User, Clock, CreditCard, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 type GiftCard = {
   id: string;
@@ -29,6 +41,7 @@ type GiftCard = {
   expires_at: string;
   sent_at: string | null;
   redeemed_at: string | null;
+  amount_used: number | null;
 };
 
 const statusColors: Record<string, string> = {
@@ -42,6 +55,24 @@ const statusColors: Record<string, string> = {
 
 export default function GiftCardDetails() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("gift_cards").delete().eq("id", id!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-gift-cards"] });
+      toast.success("Gift card supprimée");
+      navigate("/admin/gift-cards");
+    },
+    onError: () => {
+      toast.error("Erreur lors de la suppression");
+    },
+  });
 
   const { data: giftCard, isLoading } = useQuery({
     queryKey: ["admin-gift-card", id],
@@ -122,12 +153,23 @@ export default function GiftCardDetails() {
             </p>
           </div>
         </div>
-        <Badge
-          variant="secondary"
-          className={cn("text-sm px-3 py-1", statusColors[giftCard.status] || "bg-gray-100")}
-        >
-          {giftCard.status}
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Badge
+            variant="secondary"
+            className={cn("text-sm px-3 py-1", statusColors[giftCard.status] || "bg-gray-100")}
+          >
+            {giftCard.status}
+          </Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-destructive border-destructive hover:bg-destructive/10"
+            onClick={() => setShowDeleteDialog(true)}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Supprimer
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -143,6 +185,25 @@ export default function GiftCardDetails() {
             <div className="text-4xl font-bold">
               {formatCurrency(giftCard.amount, giftCard.currency)}
             </div>
+            {(giftCard.amount_used ?? 0) > 0 && (
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Utilisé</span>
+                  <span className="text-orange-600 font-medium">
+                    -{formatCurrency(giftCard.amount_used, giftCard.currency)}
+                  </span>
+                </div>
+                <div className="flex justify-between font-semibold">
+                  <span>Solde restant</span>
+                  <span className="text-green-700">
+                    {formatCurrency(
+                      (giftCard.amount ?? 0) - (giftCard.amount_used ?? 0),
+                      giftCard.currency
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
             <Separator />
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
@@ -288,6 +349,26 @@ export default function GiftCardDetails() {
           </Card>
         )}
       </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette gift card ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              La gift card <strong>{giftCard.code}</strong> sera définitivement supprimée. Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteMutation.mutate()}
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

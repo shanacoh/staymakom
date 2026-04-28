@@ -50,7 +50,8 @@ const AdminBookings = () => {
           experiences:experience_id(title),
           customers:customer_id(first_name, last_name),
           packages:package_id(name),
-          booking_extras(*)
+          booking_extras(*),
+          booking_ops_ticket(id, status)
         `)
         .order("created_at", { ascending: false });
 
@@ -112,6 +113,24 @@ const AdminBookings = () => {
 
     const config = statusConfig[status] || { variant: "outline" as const, label: status };
     return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+
+  const getOpsBadge = (opsTickets: any[]) => {
+    const ticket = opsTickets?.[0];
+    if (!ticket) return null;
+    const config: Record<string, { label: string; style: React.CSSProperties }> = {
+      pending:     { label: "Ops: en attente", style: { background: "#FEF3C7", color: "#92400E", border: "1px solid #FDE68A" } },
+      in_progress: { label: "Ops: en cours",   style: { background: "#DBEAFE", color: "#1E40AF", border: "1px solid #BFDBFE" } },
+      done:        { label: "Ops: traité",      style: { background: "#D1FAE5", color: "#065F46", border: "1px solid #A7F3D0" } },
+      failed:      { label: "Ops: échec",       style: { background: "#FEE2E2", color: "#991B1B", border: "1px solid #FECACA" } },
+    };
+    const c = config[ticket.status];
+    if (!c) return null;
+    return (
+      <span style={{ ...c.style, fontSize: 10, fontWeight: 500, padding: "2px 6px", borderRadius: 4, whiteSpace: "nowrap" }}>
+        {c.label}
+      </span>
+    );
   };
 
   const getExtrasProgress = (bookingExtras: any[]) => {
@@ -258,6 +277,7 @@ const AdminBookings = () => {
                   <TableHead>Total</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Extras</TableHead>
+                  <TableHead>Ops</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -291,6 +311,9 @@ const AdminBookings = () => {
                     </TableCell>
                     <TableCell>
                       {getExtrasProgress(booking.booking_extras)}
+                    </TableCell>
+                    <TableCell>
+                      {getOpsBadge(booking.booking_ops_ticket)}
                     </TableCell>
                     <TableCell>
                       {format(new Date(booking.created_at), "MMM d, yyyy")}

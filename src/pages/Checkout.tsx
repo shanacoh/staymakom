@@ -18,10 +18,11 @@ import {
   trackPaymentInitiated,
 } from "@/lib/analytics";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Info, Check, Clock, Loader2, MessageSquare, Sparkles, ShieldCheck } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, Check, Clock, Loader2, MessageSquare, Sparkles, ShieldCheck, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { DualPrice } from "@/components/ui/DualPrice";
 import { PriceBreakdownV2 } from "@/components/experience/PriceBreakdownV2";
@@ -166,6 +167,11 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       priceChanged: "Price has changed",
       backToSelection: "Back to selection",
       secureCheckout: "Secure checkout",
+      giftCard: "Have a gift card?",
+      giftCardApply: "Apply",
+      giftCardApplied: "Gift card applied",
+      giftCardCoveredFull: "Your gift card covers the full amount — no payment required.",
+      giftCardDiscount: "Gift card",
     },
     he: {
       step2Title: "פרטי אורח",
@@ -193,6 +199,11 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       priceChanged: "המחיר השתנה",
       backToSelection: "חזרה לבחירה",
       secureCheckout: "הזמנה מאובטחת",
+      giftCard: "יש לך כרטיס מתנה?",
+      giftCardApply: "הפעל",
+      giftCardApplied: "כרטיס מתנה הופעל",
+      giftCardCoveredFull: "כרטיס המתנה שלך מכסה את כל הסכום — אין צורך בתשלום.",
+      giftCardDiscount: "כרטיס מתנה",
     },
     fr: {
       step2Title: "Informations voyageur",
@@ -220,6 +231,11 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       priceChanged: "Le prix a changé",
       backToSelection: "Retour à la sélection",
       secureCheckout: "Paiement sécurisé",
+      giftCard: "Vous avez une carte cadeau ?",
+      giftCardApply: "Appliquer",
+      giftCardApplied: "Carte cadeau appliquée",
+      giftCardCoveredFull: "Votre carte cadeau couvre le montant total — aucun paiement requis.",
+      giftCardDiscount: "Carte cadeau",
     },
   }[lang];
 
@@ -243,6 +259,17 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "creating" | "ready" | "paid" | "failed">("idle");
   const [isPreBooking, setIsPreBooking] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [giftCardCode, setGiftCardCode] = useState("");
+  const [appliedGiftCard, setAppliedGiftCard] = useState<{
+    id: string;
+    code: string;
+    totalAmount: number;
+    amountUsed: number;
+    availableBalance: number;
+    currency: string;
+  } | null>(null);
+  const [isValidatingGiftCard, setIsValidatingGiftCard] = useState(false);
+  const [giftCardError, setGiftCardError] = useState<string | null>(null);
   const pendingBookAfterAuth = useRef(false);
   const bookingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
@@ -286,6 +313,11 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
   const displayTotal = (priceBreakdown?.finalTotal ?? 0) + extrasTotal;
   const totalIsNaN = Number.isNaN(displayTotal);
   const isOnRequest = state.selectedRatePlan?.isImmediate === false;
+
+  const giftCardApplied = appliedGiftCard
+    ? Math.min(appliedGiftCard.availableBalance, displayTotal)
+    : 0;
+  const amountAfterGiftCard = Math.max(0, displayTotal - giftCardApplied);
 
   const isGuestValid = leadGuest.firstName.trim() !== "" &&
     leadGuest.lastName.trim() !== "" &&
@@ -368,6 +400,55 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       setTimeout(() => handleContinueToStep3(), 500);
     }
   }, [user]);
+
+  const handleApplyGiftCard = async () => {
+    if (!giftCardCode.trim()) return;
+    setIsValidatingGiftCard(true);
+    setGiftCardError(null);
+    try {
+      const { data, error } = await supabase.rpc("validate_gift_card", {
+        p_code: giftCardCode.trim().toUpperCase(),
+      });
+      if (error || !data) {
+        setGiftCardError(
+          lang === "he" ? "לא ניתן לאמת את הכרטיס. נסה שוב."
+          : lang === "fr" ? "Impossible de valider la carte. Réessayez."
+          : "Unable to validate the card. Please try again."
+        );
+        return;
+      }
+      type GiftCardResult = { valid: boolean; error?: string; id?: string; code?: string; amount?: number; amount_used?: number; available_balance?: number; currency?: string };
+      const result = data as GiftCardResult;
+      if (!result.valid) {
+        const msgs: Record<string, Record<string, string>> = {
+          not_found: { en: "Gift card not found. Check the code and try again.", he: "כרטיס מתנה לא נמצא. בדוק את הקוד ונסה שוב.", fr: "Carte cadeau introuvable. Vérifiez le code." },
+          invalid_status: { en: "This gift card cannot be used.", he: "לא ניתן להשתמש בכרטיס מתנה זה.", fr: "Cette carte cadeau n'est pas utilisable." },
+          expired: { en: "This gift card has expired.", he: "כרטיס המתנה פג תוקפו.", fr: "Cette carte cadeau a expiré." },
+          no_balance: { en: "This gift card has no remaining balance.", he: "אין יתרה בכרטיס מתנה זה.", fr: "Cette carte cadeau n'a plus de solde." },
+        };
+        const key = result.error || "not_found";
+        setGiftCardError(msgs[key]?.[lang] || msgs.not_found.en);
+        return;
+      }
+      setAppliedGiftCard({
+        id: result.id!,
+        code: result.code!,
+        totalAmount: result.amount!,
+        amountUsed: result.amount_used!,
+        availableBalance: result.available_balance!,
+        currency: result.currency!,
+      });
+      setGiftCardCode("");
+    } catch {
+      setGiftCardError(
+        lang === "he" ? "שגיאה בבדיקת הכרטיס."
+        : lang === "fr" ? "Erreur lors de la vérification."
+        : "Error validating card."
+      );
+    } finally {
+      setIsValidatingGiftCard(false);
+    }
+  };
 
   const handleBook = () => {
     if (!user) {
@@ -495,6 +576,20 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
         payment_status: "paid",
         paid_at: new Date().toISOString(),
       } as any);
+
+      if (appliedGiftCard && giftCardApplied > 0) {
+        try {
+          const newAmountUsed = appliedGiftCard.amountUsed + giftCardApplied;
+          const isFullyRedeemed = newAmountUsed >= appliedGiftCard.totalAmount;
+          await supabase.from("gift_cards").update({
+            amount_used: newAmountUsed,
+            status: isFullyRedeemed ? "redeemed" : "sent",
+            ...(isFullyRedeemed ? { redeemed_at: new Date().toISOString() } : {}),
+          }).eq("id", appliedGiftCard.id);
+        } catch {
+          // Non-bloquant : la réservation est confirmée même si la mise à jour échoue
+        }
+      }
 
       const certCancelInfo = analyzeCancellationPolicies(
         state.selectedRatePlan?.cancellationPolicies,
@@ -666,17 +761,22 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
         return;
       }
 
-      const order = await createRevolutOrder({
-        amount: displayTotal,
-        currency: state.currency || "ILS",
-        description: `StayMakom — ${state.experienceTitle}`,
-        customerEmail: leadGuest.email,
-        customerName: `${leadGuest.firstName} ${leadGuest.lastName}`,
-      });
-
-      setRevolutPublicId(order.publicId);
-      setRevolutOrderId(order.orderId);
-      setPaymentStatus("ready");
+      if (amountAfterGiftCard === 0) {
+        setRevolutPublicId(null);
+        setRevolutOrderId(null);
+        setPaymentStatus("paid");
+      } else {
+        const order = await createRevolutOrder({
+          amount: amountAfterGiftCard,
+          currency: state.currency || "ILS",
+          description: `StayMakom — ${state.experienceTitle}`,
+          customerEmail: leadGuest.email,
+          customerName: `${leadGuest.firstName} ${leadGuest.lastName}`,
+        });
+        setRevolutPublicId(order.publicId);
+        setRevolutOrderId(order.orderId);
+        setPaymentStatus("ready");
+      }
       setStep(3);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err: any) {
@@ -817,6 +917,57 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                   />
                 </div>
 
+                {/* Gift card */}
+                <div className="space-y-2 pt-1">
+                  {!appliedGiftCard ? (
+                    <>
+                      <p className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer" onClick={() => setGiftCardError(null)}>
+                        <Gift className="h-4 w-4" />
+                        {t.giftCard}
+                      </p>
+                      <div className={cn("flex gap-2", lang === 'he' && "flex-row-reverse")}>
+                        <Input
+                          placeholder="MK-XXXX-XXXX"
+                          value={giftCardCode}
+                          onChange={(e) => { setGiftCardCode(e.target.value.toUpperCase()); setGiftCardError(null); }}
+                          onKeyDown={(e) => e.key === "Enter" && handleApplyGiftCard()}
+                          className="font-mono tracking-wider text-sm"
+                          style={{ borderRadius: '0px', backgroundColor: '#F5F0E8', border: '1px solid #E8E0D4' }}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="shrink-0"
+                          style={{ borderRadius: '0px', border: '1px solid #1A1814' }}
+                          onClick={handleApplyGiftCard}
+                          disabled={isValidatingGiftCard || !giftCardCode.trim()}
+                        >
+                          {isValidatingGiftCard ? <Loader2 className="h-4 w-4 animate-spin" /> : t.giftCardApply}
+                        </Button>
+                      </div>
+                      {giftCardError && <p className="text-sm text-destructive">{giftCardError}</p>}
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-between rounded-none border border-emerald-200 bg-emerald-50 px-3 py-2">
+                      <div className="flex items-center gap-2 text-emerald-700 text-sm">
+                        <Gift className="h-4 w-4 shrink-0" />
+                        <span className="font-medium">{t.giftCardApplied}</span>
+                        <span className="font-mono text-xs">{appliedGiftCard.code}</span>
+                        <span className="font-semibold">
+                          -{appliedGiftCard.currency === "USD" ? "$" : "₪"}{giftCardApplied.toLocaleString()}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className="text-xs text-emerald-600 hover:text-destructive ml-2"
+                        onClick={() => { setAppliedGiftCard(null); setGiftCardError(null); }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 {/* Navigation */}
                 <div className={cn("flex gap-3 pt-2", lang === 'he' && "flex-row-reverse")}>
                   <Button
@@ -928,6 +1079,22 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                 />
               </div>
 
+              {/* Gift card discount */}
+              {appliedGiftCard && giftCardApplied > 0 && (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-emerald-700">
+                    <Gift className="h-4 w-4 shrink-0" />
+                    <div>
+                      <div className="text-sm font-medium">{t.giftCardDiscount}</div>
+                      <div className="text-xs font-mono text-emerald-600">{appliedGiftCard.code}</div>
+                    </div>
+                  </div>
+                  <div className="text-emerald-700 font-semibold text-sm">
+                    -{appliedGiftCard.currency === "USD" ? "$" : "₪"}{giftCardApplied.toLocaleString()}
+                  </div>
+                </div>
+              )}
+
               {/* Cancellation policy */}
               {state.selectedRatePlan?.cancellationPolicies && state.searchParams?.checkIn && (() => {
                 const cancellation = analyzeCancellationPolicies(
@@ -986,7 +1153,11 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                 <Alert className="border-emerald-200 bg-emerald-50">
                   <Check className="h-4 w-4 text-emerald-600" />
                   <AlertDescription className="text-emerald-800">
-                    {lang === "he" ? "התשלום אושר. לחץ למטה לאישור ההזמנה." : "Payment confirmed. Click below to finalize your booking."}
+                    {amountAfterGiftCard === 0 && appliedGiftCard
+                      ? t.giftCardCoveredFull
+                      : lang === "he" ? "התשלום אושר. לחץ למטה לאישור ההזמנה."
+                      : lang === "fr" ? "Paiement confirmé. Cliquez ci-dessous pour finaliser."
+                      : "Payment confirmed. Click below to finalize your booking."}
                   </AlertDescription>
                 </Alert>
               )}

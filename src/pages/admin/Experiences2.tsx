@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { OpsSlidePanel } from "@/components/admin/OpsSlidePanel";
 
 const AdminExperiences2 = () => {
   const navigate = useNavigate();
@@ -35,6 +36,7 @@ const AdminExperiences2 = () => {
   const [activeTab, setActiveTab] = useState<"romantic" | "adventure">("adventure");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [experienceToDelete, setExperienceToDelete] = useState<string | null>(null);
+  const [opsPanel, setOpsPanel] = useState<{ id: string; title: string } | null>(null);
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
@@ -439,6 +441,13 @@ const AdminExperiences2 = () => {
 
                     {/* Actions */}
                     <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => setOpsPanel({ id: experience.id, title: experience.title })}
+                        className="h-7 text-[11px] font-medium px-[10px] rounded-[6px]"
+                        style={{ background: "#1A1814", color: "#FAF8F4" }}
+                      >
+                        Ops
+                      </button>
                       <Button
                         size="sm"
                         variant="outline"
@@ -496,6 +505,16 @@ const AdminExperiences2 = () => {
               })}
             </div>
           </Card>
+        )}
+
+        {/* Ops slide panel */}
+        {opsPanel && (
+          <OpsSlidePanel
+            experienceId={opsPanel.id}
+            experienceTitle={opsPanel.title}
+            open={!!opsPanel}
+            onClose={() => setOpsPanel(null)}
+          />
         )}
 
         {/* Delete Confirmation Dialog */}

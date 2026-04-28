@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { format, isPast, differenceInDays } from "date-fns";
-import { Eye, Gift, Search } from "lucide-react";
+import { Eye, Gift, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,6 +22,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 type GiftCard = {
@@ -55,6 +66,25 @@ const statusColors: Record<string, string> = {
 export default function GiftCards() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  const queryClient = useQueryClient();
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("gift_cards").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-gift-cards"] });
+      toast.success("Gift card supprimée");
+      setPendingDeleteId(null);
+    },
+    onError: () => {
+      toast.error("Erreur lors de la suppression");
+      setPendingDeleteId(null);
+    },
+  });
 
   const { data: giftCards, isLoading } = useQuery({
     queryKey: ["admin-gift-cards"],
@@ -217,11 +247,21 @@ export default function GiftCards() {
                       {expStatus.text}
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon" asChild>
-                        <Link to={`/admin/gift-cards/${gc.id}`}>
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" asChild>
+                          <Link to={`/admin/gift-cards/${gc.id}`}>
+                            <Eye className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setPendingDeleteId(gc.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -258,6 +298,26 @@ export default function GiftCards() {
           </div>
         </div>
       )}
+
+      <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette gift card ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. La gift card sera définitivement supprimée.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => pendingDeleteId && deleteMutation.mutate(pendingDeleteId)}
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
