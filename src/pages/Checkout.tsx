@@ -757,7 +757,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
   };
 
   const goBackToExperience = () => {
-    navigate(`/experience2/${state.experienceSlug}?lang=${lang}`);
+    navigate(`/experience2/${state.experienceSlug}?lang=${lang}&context=launch`);
   };
 
   // Crée un nouvel ordre Revolut quand un paiement précédent a échoué.
@@ -1088,7 +1088,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                     {isPreBooking ? (
                       <span className="flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        {lang === "he" ? "מאמת מחיר..." : "Verifying price..."}
+                        {lang === "he" ? "...מכין את ההזמנה" : lang === "fr" ? "Préparation de votre réservation..." : "Preparing your booking..."}
                       </span>
                     ) : (
                       <>
@@ -1422,7 +1422,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
         open={showConfirmation}
         onClose={() => {
           setShowConfirmation(false);
-          navigate(`/experience2/${state.experienceSlug}?lang=${lang}`);
+          navigate(`/experience2/${state.experienceSlug}?lang=${lang}&context=launch`);
         }}
         data={confirmationData}
         lang={lang}
