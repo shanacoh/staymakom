@@ -246,16 +246,33 @@ export default function Experience2() {
     return (
       <div className="min-h-screen bg-background">
         {isLaunch ? <LaunchHeader forceScrolled /> : <Header />}
-        <div className="pt-20 max-w-6xl mx-auto px-4">
-          <Skeleton className="h-[60vh] w-full rounded-xl" />
-          <div className="grid grid-cols-1 lg:grid-cols-[65fr_35fr] gap-8 mt-8">
-            <div className="space-y-6">
-              <Skeleton className="h-8 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-64 w-full" />
+        <div className="pt-16 max-w-6xl mx-auto px-4 pb-16">
+          <Skeleton className="h-[55vh] w-full mt-4" />
+          <div className="grid grid-cols-1 lg:grid-cols-[65fr_35fr] gap-12 mt-10">
+            <div className="space-y-5">
+              <Skeleton className="h-9 w-3/4" />
+              <Skeleton className="h-5 w-1/3" />
+              <div className="flex gap-2 pt-1">
+                <Skeleton className="h-7 w-20" />
+                <Skeleton className="h-7 w-24" />
+                <Skeleton className="h-7 w-16" />
+                <Skeleton className="h-7 w-20" />
+              </div>
+              <Skeleton className="h-px w-full" />
+              <div className="space-y-3 pt-1">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-[92%]" />
+                <Skeleton className="h-4 w-[97%]" />
+                <Skeleton className="h-4 w-[85%]" />
+                <Skeleton className="h-4 w-[60%]" />
+              </div>
             </div>
-            <div>
-              <Skeleton className="h-96 w-full" />
+            <div className="space-y-4">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-6 w-2/3" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-4 w-1/2" />
             </div>
           </div>
         </div>

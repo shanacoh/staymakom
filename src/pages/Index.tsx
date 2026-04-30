@@ -72,7 +72,6 @@ import whoIsForRoad from "@/assets/who-is-for-road.png";
 
 import { ArrowRight } from "lucide-react";
 import { useLocalizedNavigation } from "@/hooks/useLocalizedNavigation";
-import LoadingScreen from "@/components/LoadingScreen";
 
 const fallbackImages: Record<string, string> = {
   "romantic": romanticImg,
@@ -287,11 +286,8 @@ const Index = () => {
     return displayMap[slug] || slug;
   };
 
-  const isPageLoading = isLoading || isLoadingExperiences;
-
   return (
     <div className="min-h-screen flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
-      <LoadingScreen isLoading={isPageLoading} />
       <SEOHead
         titleEn={homepageSEO?.seo_title_en}
         titleHe={homepageSEO?.seo_title_he}

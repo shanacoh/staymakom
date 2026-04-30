@@ -24,7 +24,6 @@ import {
   DialogDescription } from
 "@/components/ui/dialog";
 import { Loader2, ArrowRight, Gift, CheckCircle, Compass, Heart } from "lucide-react";
-import LoadingScreen from "@/components/LoadingScreen";
 import { cn } from "@/lib/utils";
 import { trackFindEscapeClicked, trackVibeTabClicked, trackWaitlistEmailSubmitted, trackGiftCardClicked, trackCategoryTileClicked } from "@/lib/analytics";
 import { useScrollDepth } from "@/hooks/useScrollDepth";
@@ -239,11 +238,8 @@ const LaunchIndex = () => {
     }
   };
 
-  const isPageLoading = isLoadingCategories || isLoadingExp;
-
   return (
     <div className="min-h-screen flex flex-col overflow-x-clip" dir={isRTL ? "rtl" : "ltr"}>
-      <LoadingScreen isLoading={isPageLoading} />
       <SEOHead
         title={isRTL ? "STAYMAKOM — מלונות וחוויות נבחרים בישראל" : "STAYMAKOM — Handpicked Hotels & Experiences in Israel"}
         description={isRTL ? "אנחנו אוצרים את המלונות הבוטיק הטובים בישראל ומשלבים אותם עם חוויות מקומיות ייחודיות." : "We curate Israel's best boutique hotels and pair them with unique local experiences."} />

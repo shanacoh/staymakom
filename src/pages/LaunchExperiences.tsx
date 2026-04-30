@@ -8,7 +8,6 @@ import LaunchFooter from "@/components/LaunchFooter";
 import { SEOHead } from "@/components/SEOHead";
 import Experience2CardWithPrice from "@/components/Experience2CardWithPrice";
 import MultiPinMap from "@/components/experience/MultiPinMap";
-import LoadingScreen from "@/components/LoadingScreen";
 import { cn } from "@/lib/utils";
 import { Loader2, Compass, Heart, ArrowRight } from "lucide-react";
 
@@ -220,7 +219,6 @@ const LaunchExperiences = () => {
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden" dir={isRTL ? "rtl" : "ltr"}>
-      <LoadingScreen isLoading={isLoading} />
       <SEOHead
         title={`${pageTitle} — STAYMAKOM`}
         description={heroDescription || (isRTL ? "גלה חוויות מלון ייחודיות בישראל" : "Discover unique hotel experiences in Israel")}

@@ -1,14 +1,13 @@
 /**
  * Lead Guest Form — Collects guest info required by HyperGuest create-booking
- * Auto-fills from user profile, with option to book for someone else
+ * Auto-fills from user profile
  */
 
 import { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { User, Gift, AlertCircle } from "lucide-react";
+import { User, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -40,8 +39,6 @@ const translations = {
     lastName: "Last name",
     email: "Email",
     phone: "Phone",
-    bookForOther: "Book for someone else",
-    bookForOtherDesc: "Fill in the guest's details below",
     autoFilled: "Auto-filled from your account",
     required: "Required",
     invalidEmail: "Invalid email",
@@ -54,8 +51,6 @@ const translations = {
     lastName: "שם משפחה",
     email: "אימייל",
     phone: "טלפון",
-    bookForOther: "הזמנה עבור מישהו אחר",
-    bookForOtherDesc: "מלא את פרטי האורח למטה",
     autoFilled: "מילוי אוטומטי מהחשבון שלך",
     required: "שדה חובה",
     invalidEmail: "כתובת אימייל לא תקינה",
@@ -68,8 +63,6 @@ const translations = {
     lastName: "Nom",
     email: "Email",
     phone: "Téléphone",
-    bookForOther: "Réserver pour quelqu'un d'autre",
-    bookForOtherDesc: "Remplissez les coordonnées du voyageur ci-dessous",
     autoFilled: "Pré-rempli depuis votre compte",
     required: "Requis",
     invalidEmail: "Email invalide",
@@ -104,9 +97,7 @@ const inputStyle = {
 export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false }: LeadGuestFormProps) {
   const t = translations[lang];
   const { user } = useAuth();
-  const [isForOther, setIsForOther] = useState(false);
   const [profileLoaded, setProfileLoaded] = useState(false);
-  const [savedProfileData, setSavedProfileData] = useState<LeadGuestData | null>(null);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const markTouched = (field: string) => setTouched(prev => ({ ...prev, [field]: true }));
@@ -156,23 +147,12 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
         country: customer?.address_country || "IL",
       };
 
-      setSavedProfileData(profileData);
       onChange(profileData);
       setProfileLoaded(true);
     };
 
     loadProfile();
   }, [user, profileLoaded]);
-
-  const handleToggleForOther = (forOther: boolean) => {
-    setIsForOther(forOther);
-    setTouched({});
-    if (!forOther && savedProfileData) {
-      onChange(savedProfileData);
-    } else if (forOther) {
-      onChange({ ...EMPTY_LEAD_GUEST, country: savedProfileData?.country || "IL" });
-    }
-  };
 
   const update = (field: keyof LeadGuestData, val: string) => {
     onChange({ ...value, [field]: val });
@@ -195,27 +175,11 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
           <User className="h-4 w-4" />
           {t.title}
         </CardTitle>
-        {user && !isForOther && profileLoaded && (
+        {user && profileLoaded && (
           <p className="text-xs text-muted-foreground mt-1">{t.autoFilled}</p>
         )}
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Toggle: book for someone else */}
-        {user && (
-          <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
-            <div className="flex items-center gap-2">
-              <Gift className="h-4 w-4 text-primary" />
-              <div>
-                <p className="text-sm font-medium">{t.bookForOther}</p>
-                {isForOther && (
-                  <p className="text-xs text-muted-foreground">{t.bookForOtherDesc}</p>
-                )}
-              </div>
-            </div>
-            <Switch checked={isForOther} onCheckedChange={handleToggleForOther} />
-          </div>
-        )}
-
         {/* Name */}
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
@@ -227,7 +191,6 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
               className={`h-9 ${errors.firstName ? "border-destructive" : ""}`}
               style={inputStyle}
               required
-              readOnly={!isForOther && profileLoaded && !!value.firstName}
             />
             <FieldError msg={errors.firstName} />
           </div>
@@ -240,7 +203,6 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
               className={`h-9 ${errors.lastName ? "border-destructive" : ""}`}
               style={inputStyle}
               required
-              readOnly={!isForOther && profileLoaded && !!value.lastName}
             />
             <FieldError msg={errors.lastName} />
           </div>
@@ -258,7 +220,6 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
               className={`h-9 ${errors.email ? "border-destructive" : ""}`}
               style={inputStyle}
               required
-              readOnly={!isForOther && profileLoaded && !!value.email}
             />
             <FieldError msg={errors.email} />
           </div>
