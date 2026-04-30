@@ -18,7 +18,7 @@ import {
   trackPaymentInitiated,
 } from "@/lib/analytics";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Info, Check, Clock, Loader2, MessageSquare, Sparkles, ShieldCheck, Gift, AlertTriangle, CreditCard } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, Check, Clock, Loader2, MessageSquare, Sparkles, ShieldCheck, Gift, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -33,7 +33,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useExperience2Price } from "@/hooks/useExperience2Price";
 import { preBook, createBooking } from "@/services/hyperguest";
 import { createRevolutOrder, refundRevolutOrder } from "@/services/revolut";
-import RevolutPaymentWidget from "@/components/experience/RevolutPaymentWidget";
+import RevolutPaymentWidget, { type RevolutPaymentWidgetHandle } from "@/components/experience/RevolutPaymentWidget";
 import { extractTaxBreakdown } from "@/utils/taxesDisplay";
 import { analyzeCancellationPolicies } from "@/utils/cancellationPolicy";
 import { supabase } from "@/integrations/supabase/client";
@@ -278,6 +278,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
   
   const idempotencyKeyRef = useRef(crypto.randomUUID());
   const specialRequestTrackedRef = useRef(false);
+  const revolutWidgetRef = useRef<RevolutPaymentWidgetHandle>(null);
 
   useEffect(() => {
     if (leadGuest.firstName || leadGuest.email) {
@@ -458,6 +459,30 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
   };
 
   const handleBook = () => {
+    // Si pas encore payé : ouvrir la popup Revolut (le booking sera auto-déclenché
+    // dans onPaymentSuccess une fois la carte validée). Un seul bouton, un seul clic.
+    if (paymentStatus !== "paid" && amountAfterGiftCard > 0) {
+      if (!user) {
+        savedFormDataRef.current = { leadGuest, specialRequests };
+        pendingBookAfterAuth.current = true;
+        setShowAuthPrompt(true);
+        return;
+      }
+      if (!revolutWidgetRef.current?.isReady) {
+        toast.error(
+          lang === "he"
+            ? "התשלום עדיין בטעינה, נסה שוב בעוד שנייה"
+            : lang === "fr"
+              ? "Le paiement est en train de se charger, réessayez dans une seconde"
+              : "Payment is still loading, try again in a second",
+        );
+        return;
+      }
+      revolutWidgetRef.current.pay();
+      return;
+    }
+    // Cas où le paiement est déjà fait (ex : gift card couvre 100%, ou paiement validé
+    // mais auto-trigger raté pour une raison X) : on lance la création de la résa.
     if (!user) {
       savedFormDataRef.current = { leadGuest, specialRequests };
       pendingBookAfterAuth.current = true;
@@ -1231,47 +1256,16 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                 </Alert>
               )}
 
-              {/* Encart "Cardholder name" — affiche clairement le nom qui sera sur la
-                  carte avant l'ouverture de la popup Revolut. Permet de vérifier d'un
-                  coup d'œil ou de revenir éditer si erreur. */}
+              {/* Widget Revolut "headless" — invisible sauf un mini badge de sécurité.
+                  La popup carte s'ouvre quand l'utilisateur clique "Confirm Booking",
+                  via la ref widgetRef.pay(). */}
               {revolutPublicId && paymentStatus !== "paid" && paymentStatus !== "failed" && (
-                <div className="rounded-lg border border-border bg-muted/30 p-3 flex items-center justify-between">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <CreditCard className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-xs text-muted-foreground">
-                        {lang === "he" ? "שם בעל הכרטיס" : lang === "fr" ? "Nom sur la carte" : "Cardholder name"}
-                      </p>
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {`${leadGuest.firstName || ""} ${leadGuest.lastName || ""}`.trim() ||
-                          (lang === "he" ? "לא צוין" : lang === "fr" ? "Non renseigné" : "Not set")}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setStep(2);
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                    }}
-                  >
-                    {lang === "he" ? "ערוך" : lang === "fr" ? "Modifier" : "Edit"}
-                  </Button>
-                </div>
-              )}
-
-              {/* Payment widget */}
-              {revolutPublicId && paymentStatus !== "paid" && paymentStatus !== "failed" && (
-                <div className="py-4">
+                <div className="py-2">
                   <RevolutPaymentWidget
+                    ref={revolutWidgetRef}
                     publicId={revolutPublicId}
-                    amount={displayTotal}
-                    currency={effectiveCurrency}
                     lang={lang as "en" | "he" | "fr"}
                     environment={revolutEnvironment ?? undefined}
-                    customerName={`${leadGuest.firstName || ""} ${leadGuest.lastName || ""}`.trim()}
                     customerEmail={leadGuest.email || undefined}
                     customerPhone={leadGuest.phone || undefined}
                     onPaymentSuccess={() => {
@@ -1279,15 +1273,9 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                       setPaymentErrorMessage(null);
                       toast.success(lang === "he" ? "התשלום התקבל! יוצר את ההזמנה..." : lang === "fr" ? "Paiement reçu ! Création de la réservation..." : "Payment received! Creating your booking...");
                       // ATOMICITÉ : déclenche immédiatement la création de la réservation
-                      // HyperGuest. Si elle échoue, le code de handleBookInternal rembourse
-                      // automatiquement Revolut. Plus de fenêtre où le client a payé sans
-                      // avoir de résa.
-                      // Délai très court pour laisser React appliquer le state "paid" avant
-                      // que handleBookInternal ne le vérifie.
+                      // HyperGuest. Si elle échoue, handleBookInternal rembourse Revolut.
                       setTimeout(() => {
                         if (!user) {
-                          // Sécurité : si l'utilisateur n'est pas connecté, on ne peut pas
-                          // créer la résa. handleBook() gère le prompt d'auth + retry après login.
                           savedFormDataRef.current = { leadGuest, specialRequests };
                           pendingBookAfterAuth.current = true;
                           setShowAuthPrompt(true);
@@ -1300,6 +1288,17 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                       setPaymentStatus("failed");
                       setPaymentErrorMessage(err);
                       toast.error(err);
+                    }}
+                    onPaymentCancel={() => {
+                      // L'utilisateur a fermé la popup Revolut sans payer. On reste sur
+                      // l'étape 3 sans rien casser — il peut re-cliquer "Confirm Booking".
+                      toast.info(
+                        lang === "he"
+                          ? "התשלום בוטל"
+                          : lang === "fr"
+                            ? "Paiement annulé"
+                            : "Payment cancelled",
+                      );
                     }}
                   />
                 </div>
@@ -1338,13 +1337,18 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                   <Button
                     className="flex-1 uppercase tracking-[0.12em] text-[13px] bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
                     style={{ height: '52px', borderRadius: '0px' }}
-                    disabled={totalIsNaN || isBooking || paymentStatus !== "paid"}
+                    disabled={totalIsNaN || isBooking || paymentStatus === "creating" || paymentStatus === "failed"}
                     onClick={handleBook}
                   >
                     {isBooking ? (
                       <span className="flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
                         {getBookingMessage()}
+                      </span>
+                    ) : paymentStatus === "creating" ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {lang === "he" ? "מכין תשלום..." : lang === "fr" ? "Préparation du paiement..." : "Preparing payment..."}
                       </span>
                     ) : (
                       lang === "he" ? "שלם והזמן" : lang === "fr" ? "PAYER & RÉSERVER" : "CONFIRM BOOKING"
@@ -1357,13 +1361,18 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                   <Button
                     className="w-full uppercase tracking-[0.12em] text-[13px] bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
                     style={{ height: '52px', borderRadius: '0px' }}
-                    disabled={totalIsNaN || isBooking || paymentStatus !== "paid"}
+                    disabled={totalIsNaN || isBooking || paymentStatus === "creating" || paymentStatus === "failed"}
                     onClick={handleBook}
                   >
                     {isBooking ? (
                       <span className="flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
                         {getBookingMessage()}
+                      </span>
+                    ) : paymentStatus === "creating" ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {lang === "he" ? "מכין תשלום..." : lang === "fr" ? "Préparation du paiement..." : "Preparing payment..."}
                       </span>
                     ) : (
                       lang === "he" ? "שלם והזמן" : lang === "fr" ? "PAYER & RÉSERVER" : "CONFIRM BOOKING"
