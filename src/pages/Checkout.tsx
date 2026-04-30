@@ -40,7 +40,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import Header from "@/components/Header";
+import LaunchHeader from "@/components/LaunchHeader";
 import { useQuery } from "@tanstack/react-query";
 
 interface SelectedExtra {
@@ -160,7 +160,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       fillGuestInfo: "Please fill in guest information (name, email, phone)",
       bookingError: "Booking failed. Your information has been saved — please try again.",
       onRequestWarning: "This booking is subject to hotel confirmation. You will be notified of the status.",
-      verifying: "Verifying price...",
+      verifying: "Preparing your booking...",
       booking: "Booking...",
       bookingLong: "Confirmation in progress, please wait...",
       bookingVeryLong: "Taking longer than expected. Do not close this page...",
@@ -192,7 +192,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       fillGuestInfo: "אנא מלא פרטי אורח (שם, אימייל, טלפון)",
       bookingError: "ההזמנה נכשלה. הפרטים שלך נשמרו — אנא נסה שוב.",
       onRequestWarning: "הזמנה זו כפופה לאישור המלון. תקבל/י עדכון על הסטטוס.",
-      verifying: "בודק מחיר...",
+      verifying: "...מכין את ההזמנה",
       booking: "...מזמין",
       bookingLong: "...אישור בתהליך, אנא המתן",
       bookingVeryLong: "...לוקח יותר זמן מהצפוי. אל תסגור את הדף",
@@ -224,7 +224,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       fillGuestInfo: "Veuillez remplir les informations voyageur (nom, email, téléphone)",
       bookingError: "La réservation a échoué. Vos informations ont été conservées — veuillez réessayer.",
       onRequestWarning: "Cette réservation est soumise à confirmation par l'hôtel. Vous serez notifié du statut.",
-      verifying: "Vérification du prix...",
+      verifying: "Préparation de votre réservation...",
       booking: "Réservation en cours...",
       bookingLong: "Confirmation en cours, veuillez patienter...",
       bookingVeryLong: "La réservation prend plus de temps que prévu. Ne fermez pas cette page...",
@@ -920,7 +920,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-background" dir={lang === 'he' ? 'rtl' : 'ltr'}>
-      <Header />
+      <LaunchHeader forceScrolled />
 
       <main className="flex-1 w-full">
         {/* Top bar with secure checkout + progress */}
