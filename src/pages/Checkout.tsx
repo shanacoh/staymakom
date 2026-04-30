@@ -18,7 +18,7 @@ import {
   trackPaymentInitiated,
 } from "@/lib/analytics";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Info, Check, Clock, Loader2, MessageSquare, Sparkles, ShieldCheck, Gift } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, Check, Clock, Loader2, MessageSquare, Sparkles, ShieldCheck, Gift, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -257,6 +257,8 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
   const [revolutPublicId, setRevolutPublicId] = useState<string | null>(null);
   const [revolutOrderId, setRevolutOrderId] = useState<string | null>(null);
   const [revolutEnvironment, setRevolutEnvironment] = useState<"production" | "dev" | null>(null);
+  const [paymentErrorMessage, setPaymentErrorMessage] = useState<string | null>(null);
+  const [isRetryingPayment, setIsRetryingPayment] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "creating" | "ready" | "paid" | "failed">("idle");
   const [isPreBooking, setIsPreBooking] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
@@ -289,6 +291,10 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
 
   const ratePlanPrices = state.selectedRatePlan?.prices || null;
   const priceBreakdown = useExperience2Price(state.experienceId, null, state.currency, state.nights, state.adults, ratePlanPrices);
+  // Source de vérité de la devise : la devise du rate plan HyperGuest (extraite par
+  // priceBreakdown). C'est elle qui est utilisée pour facturer côté Revolut et afficher
+  // dans le widget — sinon mismatch entre le total affiché et le montant débité.
+  const effectiveCurrency = priceBreakdown?.currency || state.currency || "ILS";
 
   const { data: experienceHeroImage } = useQuery({
     queryKey: ["experience2-hero", state.experienceId],
@@ -702,6 +708,40 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
     navigate(`/experience2/${state.experienceSlug}?lang=${lang}`);
   };
 
+  // Crée un nouvel ordre Revolut quand un paiement précédent a échoué.
+  // L'ordre Revolut précédent est probablement dans un état terminal (failed/declined),
+  // donc on en crée un neuf avec le même montant + devise.
+  const handleRetryPayment = async () => {
+    if (isRetryingPayment) return;
+    if (amountAfterGiftCard === 0) return; // Pas de paiement à refaire si déjà couvert
+    setIsRetryingPayment(true);
+    setPaymentErrorMessage(null);
+    setPaymentStatus("creating");
+    setRevolutPublicId(null);
+    setRevolutOrderId(null);
+    setRevolutEnvironment(null);
+    try {
+      const order = await createRevolutOrder({
+        amount: amountAfterGiftCard,
+        currency: effectiveCurrency,
+        description: `StayMakom — ${state.experienceTitle}`,
+        customerEmail: leadGuest.email,
+        customerName: `${leadGuest.firstName} ${leadGuest.lastName}`,
+      });
+      setRevolutPublicId(order.publicId);
+      setRevolutOrderId(order.orderId);
+      setRevolutEnvironment(order.environment);
+      setPaymentStatus("ready");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to create new payment order";
+      setPaymentErrorMessage(msg);
+      setPaymentStatus("failed");
+      toast.error(msg);
+    } finally {
+      setIsRetryingPayment(false);
+    }
+  };
+
   const handleContinueToStep3 = async () => {
     if (!isGuestValid) {
       setShowGuestErrors(true);
@@ -770,7 +810,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       } else {
         const order = await createRevolutOrder({
           amount: amountAfterGiftCard,
-          currency: state.currency || "ILS",
+          currency: effectiveCurrency,
           description: `StayMakom — ${state.experienceTitle}`,
           customerEmail: leadGuest.email,
           customerName: `${leadGuest.firstName} ${leadGuest.lastName}`,
@@ -1132,13 +1172,72 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                 </Alert>
               )}
 
+              {/* Bloc d'erreur paiement avec retry */}
+              {paymentStatus === "failed" && (
+                <Alert variant="destructive" className="border-destructive/50 bg-destructive/5">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription className="space-y-3">
+                    <div>
+                      <p className="font-semibold">
+                        {lang === "he"
+                          ? "התשלום נכשל"
+                          : lang === "fr"
+                            ? "Le paiement a échoué"
+                            : "Payment failed"}
+                      </p>
+                      <p className="text-sm mt-1">
+                        {paymentErrorMessage ||
+                          (lang === "he"
+                            ? "התשלום לא הושלם. אנא נסה כרטיס אחר או חזור לבחור תקופה אחרת."
+                            : lang === "fr"
+                              ? "Le paiement n'a pas été finalisé. Réessayez avec une autre carte ou revenez à l'étape précédente."
+                              : "The payment did not go through. Please try another card or go back to the previous step.")}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      <Button
+                        size="sm"
+                        onClick={handleRetryPayment}
+                        disabled={isRetryingPayment}
+                      >
+                        {isRetryingPayment && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                        {lang === "he"
+                          ? "נסה שוב"
+                          : lang === "fr"
+                            ? "Réessayer le paiement"
+                            : "Retry payment"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setPaymentStatus("idle");
+                          setPaymentErrorMessage(null);
+                          setRevolutPublicId(null);
+                          setRevolutOrderId(null);
+                          setRevolutEnvironment(null);
+                          setStep(2);
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                      >
+                        {lang === "he"
+                          ? "חזור"
+                          : lang === "fr"
+                            ? "Retour à l'étape précédente"
+                            : "Back to previous step"}
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {/* Payment widget */}
-              {revolutPublicId && paymentStatus !== "paid" && (
+              {revolutPublicId && paymentStatus !== "paid" && paymentStatus !== "failed" && (
                 <div className="py-4">
                   <RevolutPaymentWidget
                     publicId={revolutPublicId}
                     amount={displayTotal}
-                    currency={state.currency || "ILS"}
+                    currency={effectiveCurrency}
                     lang={lang as "en" | "he" | "fr"}
                     environment={revolutEnvironment ?? undefined}
                     customerName={`${leadGuest.firstName || ""} ${leadGuest.lastName || ""}`.trim()}
@@ -1146,10 +1245,12 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                     customerPhone={leadGuest.phone || undefined}
                     onPaymentSuccess={() => {
                       setPaymentStatus("paid");
+                      setPaymentErrorMessage(null);
                       toast.success(lang === "he" ? "התשלום התקבל!" : "Payment successful!");
                     }}
                     onPaymentError={(err) => {
                       setPaymentStatus("failed");
+                      setPaymentErrorMessage(err);
                       toast.error(err);
                     }}
                   />

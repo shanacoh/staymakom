@@ -83,13 +83,39 @@ Deno.serve(async (req) => {
       const paymentMethod = event.data?.payments?.[0]?.payment_method?.type;
       if (paymentMethod) updateData.payment_method = paymentMethod;
 
-      const { error } = await supabase
+      // Update + récupérer les lignes affectées pour détecter les paiements orphelins
+      // (paid event reçu pour un revolut_order_id qui n'a pas de booking en base).
+      const { data: updatedRows, error } = await supabase
         .from('bookings_hg')
         .update(updateData)
-        .eq('revolut_order_id', orderId);
+        .eq('revolut_order_id', orderId)
+        .select('id, hg_booking_id');
 
       if (error) {
         console.error('Failed to update booking payment status:', error);
+      } else if (!updatedRows || updatedRows.length === 0) {
+        // ⚠️ ORPHAN PAYMENT : un paiement a réussi côté Revolut mais aucune réservation
+        // associée en base. Ça veut dire que le frontend a planté entre la création de
+        // l'ordre Revolut et l'insert dans bookings_hg. Le client a été débité mais n'a
+        // pas sa résa.
+        // Ce log doit être très visible dans Supabase → Logs → Edge Functions pour
+        // qu'un admin puisse intervenir manuellement (vérifier chez HyperGuest, rembourser
+        // si besoin, contacter le client).
+        console.error('🚨 ORPHAN_PAYMENT_DETECTED 🚨', JSON.stringify({
+          orderId,
+          eventType,
+          paymentStatus,
+          revolutPaymentId: event.data?.payments?.[0]?.id,
+          paymentMethod: event.data?.payments?.[0]?.payment_method?.type,
+          customerEmail: event.data?.customer?.email,
+          customerName: event.data?.customer?.full_name,
+          totalAmount: event.data?.total_amount,
+          currency: event.data?.currency,
+          merchantOrderRef: event.data?.merchant_order_ext_ref,
+          completedAt: event.data?.completed_at || event.completed_at,
+          fullEvent: event,
+          message: 'A Revolut payment succeeded but no matching bookings_hg row exists. Frontend likely crashed before creating the booking. Manual reconciliation required: check HyperGuest for booking, refund customer if no booking found.',
+        }, null, 2));
       } else {
         console.log(`Updated booking payment_status=${paymentStatus} for order ${orderId}`);
       }
