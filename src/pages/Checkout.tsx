@@ -279,6 +279,9 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
   const idempotencyKeyRef = useRef(crypto.randomUUID());
   const specialRequestTrackedRef = useRef(false);
   const revolutWidgetRef = useRef<RevolutPaymentWidgetHandle>(null);
+  // Garde-fou anti-double-déclenchement de l'auto-booking (l'effet ci-dessous se relance
+  // si paymentStatus ou isBooking changent — on veut ne déclencher qu'UNE fois par paiement).
+  const autoBookTriggeredRef = useRef(false);
 
   useEffect(() => {
     if (leadGuest.firstName || leadGuest.email) {
@@ -392,6 +395,30 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
 
   const pendingContinueAfterAuth = useRef(false);
   const savedFormDataRef = useRef<{ leadGuest: LeadGuestData; specialRequests: string } | null>(null);
+
+  // ATOMICITÉ : déclenche automatiquement la création de la résa HG dès que le
+  // paiement Revolut passe à "paid". Utilise un useEffect (et pas un setTimeout dans
+  // onPaymentSuccess) pour échapper aux problèmes de closure React qui figeraient
+  // une ancienne version de handleBookInternal (avec paymentStatus="ready" closuré).
+  useEffect(() => {
+    if (paymentStatus !== "paid") {
+      autoBookTriggeredRef.current = false;
+      return;
+    }
+    if (autoBookTriggeredRef.current) return;
+    if (isBooking) return;
+    if (bookingCompletedRef.current) return;
+
+    autoBookTriggeredRef.current = true;
+    if (!user) {
+      savedFormDataRef.current = { leadGuest, specialRequests };
+      pendingBookAfterAuth.current = true;
+      setShowAuthPrompt(true);
+    } else {
+      handleBookInternal();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentStatus, isBooking, user]);
 
   useEffect(() => {
     if (!user) return;
@@ -1272,17 +1299,8 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                       setPaymentStatus("paid");
                       setPaymentErrorMessage(null);
                       toast.success(lang === "he" ? "התשלום התקבל! יוצר את ההזמנה..." : lang === "fr" ? "Paiement reçu ! Création de la réservation..." : "Payment received! Creating your booking...");
-                      // ATOMICITÉ : déclenche immédiatement la création de la réservation
-                      // HyperGuest. Si elle échoue, handleBookInternal rembourse Revolut.
-                      setTimeout(() => {
-                        if (!user) {
-                          savedFormDataRef.current = { leadGuest, specialRequests };
-                          pendingBookAfterAuth.current = true;
-                          setShowAuthPrompt(true);
-                        } else {
-                          handleBookInternal();
-                        }
-                      }, 50);
+                      // L'auto-trigger de handleBookInternal est géré par le useEffect
+                      // qui surveille paymentStatus — voir plus haut dans le composant.
                     }}
                     onPaymentError={(err) => {
                       setPaymentStatus("failed");
