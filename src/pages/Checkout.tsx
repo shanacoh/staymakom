@@ -18,7 +18,7 @@ import {
   trackPaymentInitiated,
 } from "@/lib/analytics";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Info, Check, Clock, Loader2, MessageSquare, Sparkles, ShieldCheck, Gift, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, Check, Clock, Loader2, MessageSquare, Sparkles, ShieldCheck, Gift, AlertTriangle, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -1231,6 +1231,37 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                 </Alert>
               )}
 
+              {/* Encart "Cardholder name" — affiche clairement le nom qui sera sur la
+                  carte avant l'ouverture de la popup Revolut. Permet de vérifier d'un
+                  coup d'œil ou de revenir éditer si erreur. */}
+              {revolutPublicId && paymentStatus !== "paid" && paymentStatus !== "failed" && (
+                <div className="rounded-lg border border-border bg-muted/30 p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <CreditCard className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">
+                        {lang === "he" ? "שם בעל הכרטיס" : lang === "fr" ? "Nom sur la carte" : "Cardholder name"}
+                      </p>
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {`${leadGuest.firstName || ""} ${leadGuest.lastName || ""}`.trim() ||
+                          (lang === "he" ? "לא צוין" : lang === "fr" ? "Non renseigné" : "Not set")}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setStep(2);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                  >
+                    {lang === "he" ? "ערוך" : lang === "fr" ? "Modifier" : "Edit"}
+                  </Button>
+                </div>
+              )}
+
               {/* Payment widget */}
               {revolutPublicId && paymentStatus !== "paid" && paymentStatus !== "failed" && (
                 <div className="py-4">
@@ -1246,7 +1277,24 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                     onPaymentSuccess={() => {
                       setPaymentStatus("paid");
                       setPaymentErrorMessage(null);
-                      toast.success(lang === "he" ? "התשלום התקבל!" : "Payment successful!");
+                      toast.success(lang === "he" ? "התשלום התקבל! יוצר את ההזמנה..." : lang === "fr" ? "Paiement reçu ! Création de la réservation..." : "Payment received! Creating your booking...");
+                      // ATOMICITÉ : déclenche immédiatement la création de la réservation
+                      // HyperGuest. Si elle échoue, le code de handleBookInternal rembourse
+                      // automatiquement Revolut. Plus de fenêtre où le client a payé sans
+                      // avoir de résa.
+                      // Délai très court pour laisser React appliquer le state "paid" avant
+                      // que handleBookInternal ne le vérifie.
+                      setTimeout(() => {
+                        if (!user) {
+                          // Sécurité : si l'utilisateur n'est pas connecté, on ne peut pas
+                          // créer la résa. handleBook() gère le prompt d'auth + retry après login.
+                          savedFormDataRef.current = { leadGuest, specialRequests };
+                          pendingBookAfterAuth.current = true;
+                          setShowAuthPrompt(true);
+                        } else {
+                          handleBookInternal();
+                        }
+                      }, 50);
                     }}
                     onPaymentError={(err) => {
                       setPaymentStatus("failed");
@@ -1263,9 +1311,13 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                   <AlertDescription className="text-emerald-800">
                     {amountAfterGiftCard === 0 && appliedGiftCard
                       ? t.giftCardCoveredFull
-                      : lang === "he" ? "התשלום אושר. לחץ למטה לאישור ההזמנה."
-                      : lang === "fr" ? "Paiement confirmé. Cliquez ci-dessous pour finaliser."
-                      : "Payment confirmed. Click below to finalize your booking."}
+                      : isBooking
+                      ? lang === "he" ? "התשלום אושר. יוצר את ההזמנה אצל בית המלון..."
+                        : lang === "fr" ? "Paiement confirmé. Création de votre réservation chez l'hôtel..."
+                        : "Payment confirmed. Creating your booking with the hotel..."
+                      : lang === "he" ? "התשלום אושר. ההזמנה תיווצר אוטומטית."
+                        : lang === "fr" ? "Paiement confirmé. Votre réservation va être créée automatiquement."
+                        : "Payment confirmed. Your booking will be created automatically."}
                   </AlertDescription>
                 </Alert>
               )}

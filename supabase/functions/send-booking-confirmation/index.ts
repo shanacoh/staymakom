@@ -98,17 +98,37 @@ const handler = async (req: Request): Promise<Response> => {
          </div>`
       : '';
 
-    // Build cancellation policy HTML
+    // Build cancellation policy HTML — inclut la date butoir explicite si disponible.
     let cancellationHtml = '';
     if (!isCancellation && cancellationPolicy?.summaryText) {
       const bgColor = cancellationPolicy.isNonRefundable ? '#ffebee' : '#e8f5e9';
       const textColor = cancellationPolicy.isNonRefundable ? '#c62828' : '#2e7d32';
       const icon = cancellationPolicy.isNonRefundable ? '⚠️' : '✓';
       const label = isHebrew ? 'מדיניות ביטול' : isFrench ? "Politique d'annulation" : 'Cancellation Policy';
+
+      // Date butoir explicite — formatée dans la langue du client.
+      let deadlineLine = '';
+      if (!cancellationPolicy.isNonRefundable && cancellationPolicy.deadline) {
+        const deadlineDate = new Date(cancellationPolicy.deadline);
+        if (!isNaN(deadlineDate.getTime())) {
+          const locale = isHebrew ? 'he-IL' : isFrench ? 'fr-FR' : 'en-US';
+          const hasTime = deadlineDate.getHours() !== 0 || deadlineDate.getMinutes() !== 0;
+          const formatted = hasTime
+            ? deadlineDate.toLocaleString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
+            : deadlineDate.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+          const cancelUntilLabel = isHebrew ? 'ניתן לבטל בחינם עד' : isFrench ? "Annulation gratuite jusqu'au" : 'Free cancellation until';
+          deadlineLine = `
+            <p style="color:${textColor};font-size:15px;font-weight:700;margin:10px 0 0;border-top:1px solid ${textColor}33;padding-top:10px;">
+              📅 ${cancelUntilLabel} <span style="text-transform:capitalize;">${escapeHTML(formatted)}</span>
+            </p>`;
+        }
+      }
+
       cancellationHtml = `
         <div style="background-color:${bgColor};border-radius:8px;padding:15px;margin-bottom:20px;">
           <p style="color:${textColor};font-size:14px;font-weight:600;margin:0 0 4px;">${icon} ${label}</p>
           <p style="color:${textColor};font-size:13px;margin:0;">${escapeHTML(cancellationPolicy.summaryText)}</p>
+          ${deadlineLine}
         </div>`;
     }
 
