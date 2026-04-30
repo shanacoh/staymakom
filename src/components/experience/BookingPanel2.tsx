@@ -7,7 +7,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, AlertCircle, CalendarDays, Sparkles, Loader2, Clock, Baby, Minus, Plus, ChevronRight, ChevronDown, ChevronLeft, ChevronUp } from "lucide-react";
+import { Users, AlertCircle, CalendarDays, Sparkles, Loader2, Clock, Baby, Minus, Plus, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { SaveForLaterButton } from "./SaveForLaterButton";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -218,7 +218,7 @@ export function BookingPanel2({
   const [childrenAges, setChildrenAges] = useState<number[]>([]);
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
   const [selectedRatePlanId, setSelectedRatePlanId] = useState<number | null>(null);
-  const [dateSlotOffset, setDateSlotOffset] = useState(0);
+  const [datePageOffset, setDatePageOffset] = useState(0);
   const [guestsExpanded, setGuestsExpanded] = useState(false);
 
   // Fetch real availability for 1/2/3 nights tabs
@@ -363,7 +363,7 @@ export function BookingPanel2({
     setDateRange({});
     setSelectedRoomId(null);
     setSelectedRatePlanId(null);
-    setDateSlotOffset(0);
+    setDatePageOffset(0);
   }, [selectedTab]);
 
   const MAX_NIGHTS = 30;
@@ -531,11 +531,10 @@ export function BookingPanel2({
     );
   }
 
-  // Date slots with ← → navigation (show 3 at a time)
   const SLOTS_PER_PAGE = 3;
-  const visibleQuickDates = displayQuickDates.slice(dateSlotOffset, dateSlotOffset + SLOTS_PER_PAGE);
-  const canGoBack = dateSlotOffset > 0;
-  const canGoForward = dateSlotOffset + SLOTS_PER_PAGE < displayQuickDates.length;
+  const visibleQuickDates = displayQuickDates.slice(datePageOffset, datePageOffset + SLOTS_PER_PAGE);
+  const hasMoreDates = datePageOffset + SLOTS_PER_PAGE < displayQuickDates.length;
+  const hasPrevDates = datePageOffset > 0;
 
   // Guests label for collapsed view
   const guestsLabel = (() => {
@@ -548,11 +547,11 @@ export function BookingPanel2({
   })();
 
   return (
-    <Card className="overflow-hidden will-change-transform">
-      <CardHeader className="pb-3">
+    <Card className="overflow-hidden will-change-transform flex-1 min-h-0" style={{ display: 'flex', flexDirection: 'column' }}>
+      <CardHeader className="pb-3 shrink-0">
         <CardTitle className="text-lg">{t.title}</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6 overflow-x-hidden overflow-y-auto overscroll-contain" style={{ maxHeight: 'calc(100vh - 80px)' }}>
+      <CardContent className="flex-1 min-h-0 space-y-6 overflow-x-hidden overflow-y-auto overscroll-contain">
         {/* Guests — compact collapsible */}
         <div className="space-y-2">
           <button
@@ -694,33 +693,6 @@ export function BookingPanel2({
               )}
               {!isLoadingDates && displayQuickDates.length > 0 && (
                 <>
-                  {/* Navigation arrows */}
-                  <div className="flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => setDateSlotOffset(Math.max(0, dateSlotOffset - SLOTS_PER_PAGE))}
-                      className={cn(
-                        "h-7 w-7 rounded-full flex items-center justify-center transition-colors",
-                        canGoBack ? "hover:bg-muted cursor-pointer" : "opacity-0 pointer-events-none"
-                      )}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
-                    <span className="text-[11px] text-muted-foreground">
-                      {dateSlotOffset + 1}–{Math.min(dateSlotOffset + SLOTS_PER_PAGE, displayQuickDates.length)} / {displayQuickDates.length}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setDateSlotOffset(dateSlotOffset + SLOTS_PER_PAGE)}
-                      className={cn(
-                        "h-7 w-7 rounded-full flex items-center justify-center transition-colors",
-                        canGoForward ? "hover:bg-muted cursor-pointer" : "opacity-0 pointer-events-none"
-                      )}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
-                  </div>
-
                   <RadioGroup
                     value={selectedDateOptionId ?? ""}
                     onValueChange={(val) => setSelectedDateOptionId(val)}
@@ -769,6 +741,26 @@ export function BookingPanel2({
                       );
                     })}
                   </RadioGroup>
+                  {(hasPrevDates || hasMoreDates) && (
+                    <div className="flex items-center justify-center gap-3 pt-1">
+                      <button
+                        type="button"
+                        disabled={!hasPrevDates}
+                        onClick={() => setDatePageOffset(prev => prev - SLOTS_PER_PAGE)}
+                        className="p-1.5 rounded-full border transition-colors disabled:opacity-25 disabled:cursor-default hover:enabled:border-primary/60"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!hasMoreDates}
+                        onClick={() => setDatePageOffset(prev => prev + SLOTS_PER_PAGE)}
+                        className="p-1.5 rounded-full border transition-colors disabled:opacity-25 disabled:cursor-default hover:enabled:border-primary/60"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
             </>
@@ -861,6 +853,9 @@ export function BookingPanel2({
             }}
             lang={lang}
             checkInDate={searchParams?.checkIn}
+            addons={_addons}
+            pricingConfig={_pricingConfig}
+            nights={nights}
           />
         )}
 
@@ -888,7 +883,6 @@ export function BookingPanel2({
                   >
                     <Checkbox
                       checked={isChecked}
-                      onCheckedChange={() => handlePanelExtraToggle(extra)}
                       className={cn(
                         "h-4 w-4 rounded-sm border-[1.5px] shrink-0",
                         isChecked

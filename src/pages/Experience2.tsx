@@ -500,7 +500,7 @@ export default function Experience2() {
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="min-h-screen flex flex-col overflow-x-hidden" dir={lang === 'he' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen flex flex-col" style={{ overflowX: 'clip' }} dir={lang === 'he' ? 'rtl' : 'ltr'}>
       <SEOHead
         title={title}
         description={subtitle || undefined}
@@ -584,14 +584,35 @@ export default function Experience2() {
           </div>
 
           {/* Right Column - Sticky Booking Panel (Desktop) */}
-          <div className="hidden md:block pr-1 md:-mt-10" style={{ height: '100%' }}>
+          <div className="hidden md:block pr-1 md:-mt-10">
+            {/* Price callout — non sticky, scrolls with page */}
+            <div className="mb-3">
+              <HeroBookingPreview2
+                experienceId={experience.id}
+                currency={displayCurrency}
+                lang={lang as "en" | "he" | "fr"}
+                hyperguestPropertyId={hyperguestPropertyId || null}
+                minParty={experience.min_party || 2}
+                minNights={experience.min_nights || 1}
+                onViewDates={() => {
+                  const bookingPanel = document.getElementById('booking-panel-v2');
+                  if (bookingPanel) {
+                    bookingPanel.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+              />
+            </div>
+
             <div
-              className="sticky space-y-4 will-change-transform"
-              style={{ top: `${stickyTop}px` }}
+              className="sticky flex flex-col gap-3 will-change-transform"
+              style={{
+                top: `${stickyTop}px`,
+                maxHeight: `calc(100vh - ${stickyTop}px - 16px)`,
+              }}
             >
               {/* Availability rules notice */}
               {availabilityRules.length > 0 && (
-                <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 space-y-1.5">
+                <div className="shrink-0 rounded-lg border border-border bg-muted/40 px-4 py-3 space-y-1.5">
                   <p className="text-xs font-medium flex items-center gap-1.5 text-foreground/80">
                     <span>📅</span>
                     {lang === "he" ? "זמינות" : "Disponibilité"}
@@ -611,23 +632,7 @@ export default function Experience2() {
                 </div>
               )}
 
-              {/* Price Callout CTA */}
-              <HeroBookingPreview2
-                experienceId={experience.id}
-                currency={displayCurrency}
-                lang={lang as "en" | "he" | "fr"}
-                hyperguestPropertyId={hyperguestPropertyId || null}
-                minParty={experience.min_party || 2}
-                minNights={experience.min_nights || 1}
-                onViewDates={() => {
-                  const bookingPanel = document.getElementById('booking-panel-v2');
-                  if (bookingPanel) {
-                    bookingPanel.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }}
-              />
-
-              <div id="booking-panel-v2">
+              <div id="booking-panel-v2" className="flex-1 min-h-0 flex flex-col">
                 <BookingPanel2
                   experienceId={experience.id}
                   experienceTitle={lang === "he" ? experience.title_he || experience.title : experience.title}

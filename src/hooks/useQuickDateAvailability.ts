@@ -35,9 +35,9 @@ async function scanAvailability(
 ): Promise<AvailableDate[]> {
   const today = new Date();
   const startOffset = 3;
-  const datesToScan = 30;
-  const maxResults = 5;
-  const batchSize = 5; // Send 5 requests at a time to avoid rate-limiting
+  const datesToScan = 90;
+  const maxResults = 30;
+  const batchSize = 10; // Send 10 requests at a time to avoid rate-limiting
 
   const guests = formatGuests([{ adults, children: [] }]);
   const results: (AvailableDate | null)[] = [];

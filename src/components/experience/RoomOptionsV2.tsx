@@ -12,6 +12,8 @@ import { getBoardTypeLabel } from "@/services/hyperguest";
 import { cn } from "@/lib/utils";
 import { analyzeCancellationPolicies } from "@/utils/cancellationPolicy";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { calculateFromPrice } from "@/hooks/useExperience2Price";
+import type { PricingConfig } from "@/types/experience2_addons";
 
 interface RoomRatePlan {
   ratePlanId: number;
@@ -53,6 +55,9 @@ interface RoomOptionsV2Props {
   onSelect: (roomId: number, ratePlanId: number) => void;
   lang?: "en" | "he" | "fr";
   checkInDate?: string;
+  addons?: any[];
+  pricingConfig?: PricingConfig;
+  nights?: number;
 }
 
 function shouldHideRatePlan(ratePlan: RoomRatePlan): boolean {
@@ -76,6 +81,9 @@ export function RoomOptionsV2({
   onSelect,
   lang = "en",
   checkInDate,
+  addons,
+  pricingConfig,
+  nights = 1,
 }: RoomOptionsV2Props) {
   const t = {
     en: {
@@ -148,6 +156,14 @@ export function RoomOptionsV2({
   const formatPrice = (amount: number, _currency: string) => {
     const converted = convert(amount);
     return `${symbol}${Math.round(converted).toLocaleString("en-US")}`;
+  };
+
+  const applyFromPrice = (rawPrice: number): number => {
+    const config: PricingConfig = pricingConfig ?? {
+      commission_room_pct: 0, commission_addons_pct: 0, tax_pct: 0,
+      promo_type: null, promo_value: null, promo_is_percentage: true,
+    };
+    return calculateFromPrice(rawPrice, addons ?? [], config) ?? rawPrice;
   };
 
   if (isLoading) {
@@ -223,7 +239,7 @@ export function RoomOptionsV2({
                     {room.roomName}
                   </span>
                   <span className="text-sm font-semibold shrink-0">
-                    {formatPrice(price, currency)}
+                    {formatPrice(applyFromPrice(price), currency)}
                   </span>
                 </div>
 
