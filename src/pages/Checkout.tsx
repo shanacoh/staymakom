@@ -256,6 +256,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [revolutPublicId, setRevolutPublicId] = useState<string | null>(null);
   const [revolutOrderId, setRevolutOrderId] = useState<string | null>(null);
+  const [revolutEnvironment, setRevolutEnvironment] = useState<"production" | "dev" | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "creating" | "ready" | "paid" | "failed">("idle");
   const [isPreBooking, setIsPreBooking] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
@@ -764,6 +765,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       if (amountAfterGiftCard === 0) {
         setRevolutPublicId(null);
         setRevolutOrderId(null);
+        setRevolutEnvironment(null);
         setPaymentStatus("paid");
       } else {
         const order = await createRevolutOrder({
@@ -775,6 +777,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
         });
         setRevolutPublicId(order.publicId);
         setRevolutOrderId(order.orderId);
+        setRevolutEnvironment(order.environment);
         setPaymentStatus("ready");
       }
       setStep(3);
@@ -1137,6 +1140,10 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                     amount={displayTotal}
                     currency={state.currency || "ILS"}
                     lang={lang as "en" | "he" | "fr"}
+                    environment={revolutEnvironment ?? undefined}
+                    customerName={`${leadGuest.firstName || ""} ${leadGuest.lastName || ""}`.trim()}
+                    customerEmail={leadGuest.email || undefined}
+                    customerPhone={leadGuest.phone || undefined}
                     onPaymentSuccess={() => {
                       setPaymentStatus("paid");
                       toast.success(lang === "he" ? "התשלום התקבל!" : "Payment successful!");

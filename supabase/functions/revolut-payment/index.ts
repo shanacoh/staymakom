@@ -25,7 +25,11 @@ function getCorsHeaders(req: Request) {
 }
 
 function getEnvMode(envOverride?: string): 'production' | 'dev' {
-  const raw = (envOverride || Deno.env.get('ENVIRONMENT') || '').trim().toLowerCase();
+  // Ordre de priorité :
+  // 1. override fourni explicitement (ex: toggle admin debug)
+  // 2. secret dédié Revolut (REVOLUT_ENVIRONMENT) — permet de découpler de HyperGuest
+  // 3. secret global (ENVIRONMENT) — fallback historique
+  const raw = (envOverride || Deno.env.get('REVOLUT_ENVIRONMENT') || Deno.env.get('ENVIRONMENT') || '').trim().toLowerCase();
   return ['production', 'prod', 'live'].includes(raw) ? 'production' : 'dev';
 }
 

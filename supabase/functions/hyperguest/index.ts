@@ -138,7 +138,11 @@ function validateSearchParams(params: SearchParams): { isValid: boolean; errors:
 }
 
 function getEnvMode(override?: string): 'production' | 'dev' {
-  const raw = (override || Deno.env.get('ENVIRONMENT') || '').trim().toLowerCase();
+  // Ordre de priorité :
+  // 1. override fourni explicitement (ex: toggle admin debug)
+  // 2. secret dédié HyperGuest (HYPERGUEST_ENVIRONMENT) — permet de découpler de Revolut
+  // 3. secret global (ENVIRONMENT) — fallback historique
+  const raw = (override || Deno.env.get('HYPERGUEST_ENVIRONMENT') || Deno.env.get('ENVIRONMENT') || '').trim().toLowerCase();
   return (raw === 'production' || raw === 'prod' || raw === 'live') ? 'production' : 'dev';
 }
 

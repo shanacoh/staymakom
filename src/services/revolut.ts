@@ -14,6 +14,7 @@ interface CreateOrderResult {
   publicId: string;
   state: string;
   checkoutUrl?: string;
+  environment: 'production' | 'dev';
 }
 
 interface OrderStatus {
@@ -29,7 +30,7 @@ export async function createRevolutOrder(params: CreateOrderParams): Promise<Cre
   });
   if (error) throw new Error(error.message || "Failed to create payment order");
   if (!data?.success) throw new Error(data?.error || "Failed to create payment order");
-  return data.data;
+  return { ...data.data, environment: data.environment };
 }
 
 export async function getRevolutOrderStatus(orderId: string): Promise<OrderStatus> {
