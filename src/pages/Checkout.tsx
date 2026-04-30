@@ -50,6 +50,7 @@ interface SelectedExtra {
   price: number;
   currency: string;
   pricing_type: string;
+  quantity?: number;
 }
 
 export interface CheckoutState {
@@ -314,12 +315,9 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
 
   const extrasTotal = useMemo(() => {
     return state.selectedExtras.reduce((sum, extra) => {
-      let multiplier = 1;
-      if (extra.pricing_type === "per_guest") multiplier = state.adults;
-      if (extra.pricing_type === "per_night") multiplier = state.nights;
-      return sum + extra.price * multiplier;
+      return sum + extra.price * (extra.quantity || 1);
     }, 0);
-  }, [state.selectedExtras, state.adults, state.nights]);
+  }, [state.selectedExtras]);
 
   const displayTotal = (priceBreakdown?.finalTotal ?? 0) + extrasTotal;
   const totalIsNaN = Number.isNaN(displayTotal);

@@ -17,11 +17,9 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { DualPrice } from "@/components/ui/DualPrice";
 import { RoomOptionsV2 } from "./RoomOptionsV2";
-import { PriceBreakdownV2 } from "./PriceBreakdownV2";
 import { useHyperGuestAvailability } from "@/hooks/useHyperGuestAvailability";
 import { useQuickDateAvailability } from "@/hooks/useQuickDateAvailability";
 import { useExperience2Price, useExperienceAddons, useExperiencePricingConfig, calculateFromPrice } from "@/hooks/useExperience2Price";
@@ -53,6 +51,7 @@ interface SelectedExtra {
   price: number;
   currency: string;
   pricing_type: string;
+  quantity?: number;
 }
 
 interface AvailabilityRule {
@@ -151,6 +150,9 @@ export function BookingPanel2({
       showMore: "Show more dates ↓",
       bestRate: "● Best rate",
       enhanceTitle: "ENHANCE YOUR STAY",
+      perPerson: "per person",
+      perNight: "per night",
+      perStay: "per stay",
     },
     he: {
       title: "הזמן חוויה זו",
@@ -168,6 +170,9 @@ export function BookingPanel2({
       showMore: "הצג עוד תאריכים ↓",
       bestRate: "● הכי משתלם",
       enhanceTitle: "שדרגו את השהייה",
+      perPerson: "לאדם",
+      perNight: "ללילה",
+      perStay: "לשהייה",
     },
     fr: {
       title: "Réserver cette expérience",
@@ -185,11 +190,14 @@ export function BookingPanel2({
       showMore: "Voir plus de dates ↓",
       bestRate: "● Meilleur tarif",
       enhanceTitle: "AMÉLIOREZ VOTRE SÉJOUR",
+      perPerson: "par pers.",
+      perNight: "par nuit",
+      perStay: "par séjour",
     },
   }[lang];
 
   // ── State ──
-  const { data: dateOptions } = useQuery({
+  useQuery({
     queryKey: ["experience2-date-options-public", experienceId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -220,6 +228,7 @@ export function BookingPanel2({
   const [selectedRatePlanId, setSelectedRatePlanId] = useState<number | null>(null);
   const [datePageOffset, setDatePageOffset] = useState(0);
   const [guestsExpanded, setGuestsExpanded] = useState(false);
+  const [panelQuantities, setPanelQuantities] = useState<Record<string, number>>({});
 
   // Fetch real availability for 1/2/3 nights tabs
   const propId = hyperguestPropertyId ? parseInt(hyperguestPropertyId) : null;
@@ -429,12 +438,31 @@ export function BookingPanel2({
       } else if (searchResult.rooms) {
         rooms = searchResult.rooms;
       }
-      if (rooms.length > 0) {
-        const firstRoom = rooms[0];
-        if (firstRoom.ratePlans?.length > 0) {
-          setSelectedRoomId(firstRoom.roomId);
-          setSelectedRatePlanId(firstRoom.ratePlans[0].ratePlanId);
+      // Select the cheapest visible room/ratePlan (same logic as RoomOptionsV2)
+      let cheapestRoom: any = null;
+      let cheapestPlan: any = null;
+      let cheapestPrice = Infinity;
+      for (const room of rooms) {
+        for (const rp of room.ratePlans || []) {
+          const sell = rp.prices?.sell;
+          if (!sell) continue;
+          const sellAmt = Number(sell.price ?? sell.amount) || 0;
+          if (sellAmt <= 0) continue;
+          const bar = rp.prices?.bar;
+          if (bar) {
+            const barAmt = Number(bar.price ?? bar.amount) || 0;
+            if (barAmt > 0 && sellAmt < barAmt) continue;
+          }
+          if (sellAmt < cheapestPrice) {
+            cheapestPrice = sellAmt;
+            cheapestRoom = room;
+            cheapestPlan = rp;
+          }
         }
+      }
+      if (cheapestRoom && cheapestPlan) {
+        setSelectedRoomId(cheapestRoom.roomId);
+        setSelectedRatePlanId(cheapestPlan.ratePlanId);
       }
     }
   }, [searchResult, selectedRoomId]);
@@ -444,17 +472,16 @@ export function BookingPanel2({
     setSelectedRatePlanId(null);
   }, [dateRange.from, dateRange.to]);
 
-  const extrasTotal = useMemo(() => {
-    return selectedExtras.reduce((sum, extra) => {
-      let multiplier = 1;
-      if (extra.pricing_type === "per_guest") multiplier = adults;
-      if (extra.pricing_type === "per_night") multiplier = nights;
-      return sum + extra.price * multiplier;
+  const panelExtrasTotal = useMemo(() => {
+    if (!panelExtras) return 0;
+    return panelExtras.reduce((sum, extra) => {
+      const qty = panelQuantities[extra.id] || 0;
+      return sum + extra.price * qty;
     }, 0);
-  }, [selectedExtras, adults, nights]);
+  }, [panelExtras, panelQuantities]);
 
   const isStep1Complete = !!(dateRange.from && dateRange.to && selectedRoomId && selectedRatePlanId);
-  const displayTotal = (priceBreakdown?.finalTotal ?? 0) + extrasTotal;
+  const displayTotal = (priceBreakdown?.finalTotal ?? 0) + panelExtrasTotal;
   const totalIsNaN = Number.isNaN(displayTotal);
   const isOnRequest = selectedRatePlan?.isImmediate === false;
 
@@ -482,7 +509,17 @@ export function BookingPanel2({
       selectedRoomName,
       selectedRatePlan,
       propertyRemarks,
-      selectedExtras,
+      selectedExtras: (panelExtras ?? [])
+        .filter((e) => (panelQuantities[e.id] || 0) > 0)
+        .map((e) => ({
+          id: e.id,
+          name: e.name,
+          name_he: e.name_he,
+          price: e.price,
+          currency,
+          pricing_type: e.pricing_type,
+          quantity: panelQuantities[e.id] || 1,
+        })),
       searchParams,
       experienceSlug,
     };
@@ -496,20 +533,6 @@ export function BookingPanel2({
 
     navigate("/checkout", { state: checkoutState });
   };
-
-  // Handle extra toggle from panel checklist
-  const handlePanelExtraToggle = useCallback((extra: any) => {
-    if (!onToggleExtra) return;
-    const extraData: SelectedExtra = {
-      id: extra.id,
-      name: extra.name,
-      name_he: extra.name_he,
-      price: extra.price,
-      currency: currency,
-      pricing_type: extra.pricing_type,
-    };
-    onToggleExtra(extraData);
-  }, [onToggleExtra, currency]);
 
   if (!hyperguestPropertyId) {
     return (
@@ -859,8 +882,8 @@ export function BookingPanel2({
           />
         )}
 
-        {/* ENHANCE YOUR STAY — extras checklist */}
-        {panelExtras && panelExtras.length > 0 && onToggleExtra && (
+        {/* ENHANCE YOUR STAY — extras with quantity steppers */}
+        {panelExtras && panelExtras.length > 0 && (
           <div className="space-y-0">
             <div className="py-2">
               <p className="text-[10px] uppercase tracking-[0.12em] font-medium" style={{ color: '#8C7B6B' }}>
@@ -869,29 +892,55 @@ export function BookingPanel2({
             </div>
             <div className="border-t" style={{ borderColor: '#E8E0D4' }}>
               {panelExtras.map((extra) => {
-                const isChecked = selectedExtras.some((se) => se.id === extra.id);
+                const qty = panelQuantities[extra.id] || 0;
+                const maxQty = extra.pricing_type === 'per_stay' ? 1 : 10;
                 const name = lang === "he" ? extra.name_he || extra.name : extra.name;
-                const displayPrice = `+${currencySymbol}${Math.round(convert(extra.price))}`;
+                const pricingLabel = extra.pricing_type === 'per_guest'
+                  ? t.perPerson
+                  : extra.pricing_type === 'per_night'
+                    ? t.perNight
+                    : t.perStay;
+                const lineTotal = extra.price * qty;
                 return (
                   <div
                     key={extra.id}
-                    onClick={() => handlePanelExtraToggle(extra)}
-                    className="flex items-center gap-3 cursor-pointer transition-colors px-1"
-                    style={{ minHeight: '44px', borderBottom: '1px solid #F0EBE3' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#FAF8F4')}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    className="flex items-center gap-3 px-1"
+                    style={{ minHeight: '50px', borderBottom: '1px solid #F0EBE3' }}
                   >
-                    <Checkbox
-                      checked={isChecked}
-                      className={cn(
-                        "h-4 w-4 rounded-sm border-[1.5px] shrink-0",
-                        isChecked
-                          ? "bg-[#1A1814] border-[#1A1814] text-white data-[state=checked]:bg-[#1A1814] data-[state=checked]:text-white data-[state=checked]:border-[#1A1814]"
-                          : "border-[#C8C0B4]"
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px]" style={{ color: '#2C2520' }}>{name}</p>
+                      <p className="text-[11px]" style={{ color: '#8C7B6B' }}>
+                        {currencySymbol}{Math.round(convert(extra.price))} · {pricingLabel}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {qty > 0 && (
+                        <span className="text-[12px] font-medium" style={{ color: '#2C2520' }}>
+                          +{currencySymbol}{Math.round(convert(lineTotal))}
+                        </span>
                       )}
-                    />
-                    <span className="flex-1 text-[13px] truncate" style={{ color: '#2C2520' }}>{name}</span>
-                    <span className="text-[13px] shrink-0" style={{ color: '#8C7B6B' }}>{displayPrice}</span>
+                      <div className="flex items-center gap-1" dir="ltr">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 w-7 p-0 rounded-full"
+                          onClick={() => setPanelQuantities(prev => ({ ...prev, [extra.id]: Math.max(0, (prev[extra.id] || 0) - 1) }))}
+                          disabled={qty === 0}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="text-sm font-medium w-5 text-center">{qty}</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 w-7 p-0 rounded-full"
+                          onClick={() => setPanelQuantities(prev => ({ ...prev, [extra.id]: Math.min(maxQty, (prev[extra.id] || 0) + 1) }))}
+                          disabled={qty >= maxQty}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
@@ -909,30 +958,27 @@ export function BookingPanel2({
           </Alert>
         )}
 
-        {/* Selected extras summary */}
-        {selectedExtras.length > 0 && (
+        {/* Extras total summary — shown only when at least one extra is selected */}
+        {panelExtrasTotal > 0 && (
           <div className="space-y-2">
             <Separator />
             <div className="flex items-center gap-2 text-sm font-medium">
               <Sparkles className="h-4 w-4 text-primary" />
               {lang === "he" ? "תוספות נבחרות" : lang === "fr" ? "Extras sélectionnés" : "Selected extras"}
             </div>
-            {selectedExtras.map((extra) => {
+            {(panelExtras ?? []).filter(e => (panelQuantities[e.id] || 0) > 0).map((extra) => {
               const name = lang === "he" ? extra.name_he || extra.name : extra.name;
-              let multiplier = 1;
-              if (extra.pricing_type === "per_guest") multiplier = adults;
-              if (extra.pricing_type === "per_night") multiplier = nights;
-              const lineTotal = extra.price * multiplier;
+              const qty = panelQuantities[extra.id] || 0;
               return (
                 <div key={extra.id} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{name}</span>
-                  <DualPrice amount={lineTotal} currency={extra.currency} inline className="text-sm" />
+                  <span className="text-muted-foreground">{name} × {qty}</span>
+                  <DualPrice amount={extra.price * qty} currency={extra.currency} inline className="text-sm" />
                 </div>
               );
             })}
             <div className="flex justify-between text-sm font-medium pt-1 border-t border-border">
               <span>{lang === "he" ? "סה\"כ תוספות" : lang === "fr" ? "Total extras" : "Extras total"}</span>
-              <DualPrice amount={extrasTotal} currency={currency} inline className="text-sm" />
+              <DualPrice amount={panelExtrasTotal} currency={currency} inline className="text-sm" />
             </div>
           </div>
         )}
