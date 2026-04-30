@@ -115,7 +115,7 @@ async function createOrder(body: Record<string, unknown>, envOverride?: string) 
   const data = await response.json();
   return {
     orderId: data.id,
-    publicId: data.public_id,
+    publicId: data.token || data.public_id,
     state: data.state,
     checkoutUrl: data.checkout_url,
   };

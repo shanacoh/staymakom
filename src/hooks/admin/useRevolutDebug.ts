@@ -228,7 +228,7 @@ export function useRevolutDebug(environment: 'dev' | 'prod' = 'prod') {
       tests.push({ id: '3.1', name: 'Réponse 2xx de Revolut', pass: true, detail: `${dur}ms` });
       tests.push({ id: '3.2', name: 'orderId retourné', pass: !!order?.orderId, detail: order?.orderId ? `${String(order.orderId).substring(0, 20)}...` : 'manquant' });
       tests.push({ id: '3.3', name: 'publicId retourné', pass: !!order?.publicId, detail: order?.publicId ? `${String(order.publicId).substring(0, 20)}...` : 'manquant' });
-      tests.push({ id: '3.4', name: 'state initial PENDING', pass: order?.state === 'PENDING', detail: order?.state || 'inconnu' });
+      tests.push({ id: '3.4', name: 'state initial PENDING', pass: typeof order?.state === 'string' && order.state.toUpperCase() === 'PENDING', detail: order?.state || 'inconnu' });
 
       const allPass = tests.every(t => t.pass);
       updateStep(2, {
