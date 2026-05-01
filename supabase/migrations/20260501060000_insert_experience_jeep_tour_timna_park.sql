@@ -47,7 +47,7 @@ Breakfast is a full buffet, and the Arava light comes in early. The kind of morn
 בחזרה באילת, פליי אילת מחכה לשאר היום. הבריכה החיצונית, בר הבריכה, אחר הצהריים הנינוח. יש קבוצות שתופסות שורת כסאות שיזוף ולא זזות עד שהאור נגמר. זוגות מוצאים פינה. נוסעים יחידים קוראים. המלון ממוקם קרוב לחוף חנניה ולטיילת הצפונית, שקט מספיק כדי להתאושש, קרוב מספיק לכל דבר אם הערב קורא.
 
 ארוחת הבוקר היא בופה מלא, ואור הערבה נכנס מוקדם. הסוג של בוקר שגורם לנסיעה חזרה לצפון להרגיש, לרגע קצר, כמו טעות.',
-    0, 'per_stay', 'ILS',
+    0, 'per_booking', 'ILS',
     2, 6, 1, 1,
     'Timna Park Jeep Tour & Stay in Eilat | STAYMAKOM',
     'A guided jeep tour through Timna''s ancient copper canyons, park entrance included, followed by a stay at Play Eilat on the Red Sea.',
