@@ -24,31 +24,32 @@ const AdminFavorites = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [hotelFilter, setHotelFilter] = useState<string>("all");
 
-  // Fetch all wishlist items with user and experience details
+  // Fetch all wishlist items then enrich with experience data separately
   const { data: wishlistItems, isLoading } = useQuery({
     queryKey: ["admin-wishlist"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: rawItems, error } = await supabase
         .from("wishlist")
-        .select(`
-          id,
-          user_id,
-          experience_id,
-          created_at,
-          deleted_at,
-          experiences (
-            id,
-            title,
-            slug,
-            hotel_id,
-            hotels (id, name)
-          )
-        `)
+        .select("id, user_id, experience_id, created_at")
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as any[];
+      if (!rawItems || rawItems.length === 0) return [];
+
+      const expIds = [...new Set(rawItems.map((w) => w.experience_id).filter(Boolean))];
+
+      const { data: experiences } = await supabase
+        .from("experiences2")
+        .select("id, title, slug, hotel_id, hotels2(id, name)")
+        .in("id", expIds);
+
+      const expMap = new Map((experiences || []).map((e: any) => [e.id, e]));
+
+      return rawItems.map((item) => ({
+        ...item,
+        experiences2: expMap.get(item.experience_id) || null,
+      }));
     },
   });
 
@@ -67,7 +68,7 @@ const AdminFavorites = () => {
     queryKey: ["admin-hotels"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("hotels")
+        .from("hotels2")
         .select("id, name")
         .order("name");
       if (error) throw error;
@@ -97,7 +98,7 @@ const AdminFavorites = () => {
     const expId = item.experience_id;
     if (!acc[expId]) {
       acc[expId] = {
-        experience: item.experiences,
+        experience: item.experiences2,
         count: 0,
         lastAdded: item.created_at,
       };
@@ -129,7 +130,7 @@ const AdminFavorites = () => {
         lastAdded: item.created_at,
       };
     }
-    acc[userId].experiences.push(item.experiences);
+    acc[userId].experiences.push(item.experiences2);
     if (new Date(item.created_at) > new Date(acc[userId].lastAdded)) {
       acc[userId].lastAdded = item.created_at;
     }
@@ -314,7 +315,7 @@ const AdminFavorites = () => {
                         <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Building2 className="h-3 w-3" />
-                            {stat.experience?.hotels?.name || "Unknown Hotel"}
+                            {stat.experience?.hotels2?.name || "Unknown Hotel"}
                           </span>
                           <span>
                             Last favorited:{" "}

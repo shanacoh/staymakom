@@ -52,7 +52,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
           hotels2 (name, name_he, city, city_he)
         `)
         .eq("user_id", userId)
-        .order("checkin", { ascending: true });
+        .order("created_at", { ascending: false });
 
       const today = new Date().toISOString().split("T")[0];
       if (timeFilter === "upcoming") {
@@ -97,7 +97,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
           experiences (title, slug)
         `)
         .eq("customer_id", customer.id)
-        .order("checkin", { ascending: true });
+        .order("created_at", { ascending: false });
 
       const today = new Date().toISOString().split("T")[0];
       if (timeFilter === "upcoming") {
@@ -159,12 +159,22 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
       }
 
       if (hgCancelSuccess) {
+        const wasPaid = booking.payment_status === "paid" && !!booking.revolut_order_id;
+        const refundAmount = wasPaid && simulationResult?.penalty !== undefined
+          ? Math.max(0, (booking.sell_price || 0) - (simulationResult.penalty || 0))
+          : 0;
+        const newPaymentStatus = wasPaid
+          ? refundAmount > 0 ? "refund_pending" : "no_refund_due"
+          : booking.payment_status;
+
         await supabase
           .from("bookings_hg")
           .update({
             is_cancelled: true,
             cancelled_at: new Date().toISOString(),
             status: "cancelled",
+            payment_status: newPaymentStatus,
+            ...(refundAmount > 0 ? { refund_amount: refundAmount } : {}),
           } as any)
           .eq("id", bookingId);
 
@@ -313,7 +323,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
       heroImage: null,
       raw: b,
     })),
-  ].sort((a, b) => new Date(a.checkin).getTime() - new Date(b.checkin).getTime());
+  ].sort((a, b) => new Date(b.raw.created_at || b.checkin).getTime() - new Date(a.raw.created_at || a.checkin).getTime());
 
   // ✅ #4: Get simulation display info
   const getCancelSimulationDisplay = () => {
