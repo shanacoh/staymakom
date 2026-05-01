@@ -130,18 +130,18 @@ const AdminCustomers = () => {
         filtered = filtered.filter(c => filteredIds.includes(c.user_id));
       }
 
-      const customerIds = filtered.map(c => c.id);
       const { data: bookingStats } = await supabase
-        .from("bookings")
-        .select("customer_id, total_price")
-        .in("customer_id", customerIds);
+        .from("bookings_hg" as any)
+        .select("user_id, sell_price")
+        .in("user_id", userIds)
+        .eq("is_cancelled", false);
 
-      const statsMap = (bookingStats || []).reduce((acc, b) => {
-        const id = b.customer_id;
+      const statsMap = (bookingStats || []).reduce((acc: any, b: any) => {
+        const id = b.user_id;
         if (!id) return acc;
         if (!acc[id]) acc[id] = { count: 0, total: 0 };
         acc[id].count += 1;
-        acc[id].total += Number(b.total_price || 0);
+        acc[id].total += Number(b.sell_price || 0);
         return acc;
       }, {} as Record<string, { count: number; total: number }>);
 
@@ -159,8 +159,8 @@ const AdminCustomers = () => {
           user_profiles: profile || null,
           user_roles: rolesMap[c.user_id] || null,
           hotel_admin: haMap[c.user_id] || null,
-          bookingsCount: statsMap[c.id]?.count || 0,
-          totalSpent: statsMap[c.id]?.total || 0,
+          bookingsCount: statsMap[c.user_id]?.count || 0,
+          totalSpent: statsMap[c.user_id]?.total || 0,
           isActive: true,
           membershipProgress: mp,
           clubStatus: getClub(mp),
@@ -325,11 +325,12 @@ const AdminCustomers = () => {
         supabase.from("hotel_admins").select("*, hotels(name)").eq("user_id", selectedCustomerId).single(),
       ]);
       const { data: bookings } = await supabase
-        .from("bookings")
-        .select("*, hotels(name), experiences(title)")
-        .eq("customer_id", customer.id)
+        .from("bookings_hg" as any)
+        .select("*, hotels2(name), experiences2(title)")
+        .eq("user_id", selectedCustomerId)
+        .eq("is_cancelled", false)
         .order("created_at", { ascending: false });
-      const totalSpent = bookings?.reduce((s, b) => s + Number(b.total_price || 0), 0) || 0;
+      const totalSpent = (bookings as any[])?.reduce((s: number, b: any) => s + Number(b.sell_price || 0), 0) || 0;
       // Get email from customer list cache
       const cachedCustomer = customers?.find((c: any) => c.user_id === selectedCustomerId);
       return {
@@ -590,14 +591,14 @@ const AdminCustomers = () => {
                         <div key={b.id} className="border rounded-md p-3 bg-muted/30 space-y-1">
                           <div className="flex justify-between items-start">
                             <div>
-                              <p className="text-sm font-medium">{b.experiences?.title || "Experience"}</p>
-                              <p className="text-xs text-muted-foreground">{b.hotels?.name}</p>
+                              <p className="text-sm font-medium">{b.experiences2?.title || "Experience"}</p>
+                              <p className="text-xs text-muted-foreground">{b.hotels2?.name}</p>
                             </div>
-                            <StatusBadge status={b.status || "pending"} />
+                            <StatusBadge status={b.is_cancelled ? "archived" : (b.status || "pending")} />
                           </div>
                           <div className="flex gap-4 text-xs text-muted-foreground">
                             <span>{format(new Date(b.checkin), "MMM d")} - {format(new Date(b.checkout), "MMM d, yyyy")}</span>
-                            <span className="font-medium text-foreground">₪{Number(b.total_price).toLocaleString()}</span>
+                            <span className="font-medium text-foreground">₪{Number(b.sell_price).toLocaleString()}</span>
                           </div>
                         </div>
                       ))}

@@ -98,9 +98,10 @@ const AdminDashboard = () => {
     queryKey: ["dashboard-pending-bookings"],
     queryFn: async () => {
       const { count, error } = await supabase
-        .from("bookings" as any)
+        .from("bookings_hg" as any)
         .select("id", { count: "exact", head: true })
-        .eq("status", "pending");
+        .eq("status", "pending")
+        .eq("is_cancelled", false);
       if (error) return 0;
       return count || 0;
     },
