@@ -113,6 +113,12 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
     description_location: "",
     description_room_he: "",
     description_location_he: "",
+    // Tarification BAR rate (Modèle B). Permet à l'admin de définir un tarif de
+    // référence (BAR) + marge pour cet hôtel.
+    pricing_model: "standard" as "standard" | "bar_rate",
+    bar_rate: null as number | null,
+    bar_rate_markup_value: null as number | null,
+    bar_rate_markup_is_pct: true,
   });
 
   const downloadHyperGuestImages = async (imageUrls: string[], heroUrl?: string | null) => {
@@ -351,6 +357,12 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
         description_location: (h.description_location as string) ?? "",
         description_room_he: (h.description_room_he as string) ?? "",
         description_location_he: (h.description_location_he as string) ?? "",
+        // BAR rate fields — utilisent une type-assertion temporaire le temps que
+        // les types Supabase soient regénérés via `supabase gen types typescript`.
+        pricing_model: ((h as Record<string, unknown>).pricing_model as "standard" | "bar_rate") ?? "standard",
+        bar_rate: ((h as Record<string, unknown>).bar_rate as number) ?? null,
+        bar_rate_markup_value: ((h as Record<string, unknown>).bar_rate_markup_value as number) ?? null,
+        bar_rate_markup_is_pct: ((h as Record<string, unknown>).bar_rate_markup_is_pct as boolean) ?? true,
       });
 
       // Restore hyperguestId from existing hotel data
@@ -433,6 +445,12 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
         description_location: data.description_location || null,
         description_room_he: data.description_room_he || null,
         description_location_he: data.description_location_he || null,
+        // BAR rate (Modèle B). Persisté si pricing_model = "bar_rate", sinon les champs
+        // bar_rate_* peuvent rester nuls.
+        pricing_model: data.pricing_model || "standard",
+        bar_rate: data.bar_rate,
+        bar_rate_markup_value: data.bar_rate_markup_value,
+        bar_rate_markup_is_pct: data.bar_rate_markup_is_pct,
       };
 
       // ======== DEBUG START ========
@@ -1156,6 +1174,109 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
                 onCheckedChange={(v) => setFormData({ ...formData, adults_only: v })}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* ══════════════════════════════════════════════════════════
+            5b. TARIFICATION BAR RATE (Modèle B)
+        ══════════════════════════════════════════════════════════ */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Tarification BAR rate</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Best Available Rate de l'hôtel (tarif de référence) + marge appliquée. Utilisé
+              comme tarif par défaut au niveau de l'hôtel — peut être surchargé par expérience.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label>Modèle de tarification</Label>
+              <Select
+                value={formData.pricing_model}
+                onValueChange={(v) => setFormData({ ...formData, pricing_model: v as "standard" | "bar_rate" })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standard">Standard (coût net + commission)</SelectItem>
+                  <SelectItem value="bar_rate">BAR rate (tarif de référence + marge)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {formData.pricing_model === "bar_rate" && (
+              <>
+                <div>
+                  <Label htmlFor="bar_rate">BAR rate (tarif de référence)</Label>
+                  <Input
+                    id="bar_rate"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.bar_rate ?? ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        bar_rate: e.target.value ? parseFloat(e.target.value) : null,
+                      })
+                    }
+                    placeholder="ex : 850"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Tarif que l'hôtel pratique normalement pour une nuit (avant ta marge).
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="bar_rate_markup_value">Marge sur le BAR</Label>
+                  <Input
+                    id="bar_rate_markup_value"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.bar_rate_markup_value ?? ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        bar_rate_markup_value: e.target.value ? parseFloat(e.target.value) : null,
+                      })
+                    }
+                    placeholder={formData.bar_rate_markup_is_pct ? "ex : 15 (pour +15%)" : "ex : 50 (pour +50€)"}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div>
+                    <p className="font-medium text-sm">Marge en pourcentage</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formData.bar_rate_markup_is_pct
+                        ? "La marge est appliquée en %, ex : 15% du BAR."
+                        : "La marge est un montant fixe ajouté au BAR."}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={formData.bar_rate_markup_is_pct}
+                    onCheckedChange={(v) => setFormData({ ...formData, bar_rate_markup_is_pct: v })}
+                  />
+                </div>
+
+                {formData.bar_rate != null && formData.bar_rate_markup_value != null && (
+                  <div className="rounded-lg border bg-muted/30 p-3 text-sm">
+                    <span className="text-muted-foreground">Prix de vente calculé : </span>
+                    <span className="font-semibold">
+                      {formData.bar_rate_markup_is_pct
+                        ? (formData.bar_rate * (1 + formData.bar_rate_markup_value / 100)).toFixed(2)
+                        : (formData.bar_rate + formData.bar_rate_markup_value).toFixed(2)}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {" "}
+                      ({formData.bar_rate} + {formData.bar_rate_markup_is_pct ? `${formData.bar_rate_markup_value}%` : formData.bar_rate_markup_value})
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
           </CardContent>
         </Card>
 

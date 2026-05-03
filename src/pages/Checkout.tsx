@@ -29,6 +29,7 @@ import { PriceBreakdownV2 } from "@/components/experience/PriceBreakdownV2";
 import { LeadGuestForm, EMPTY_LEAD_GUEST, sanitizeLeadGuest, saveProfileFields, type LeadGuestData } from "@/components/experience/LeadGuestForm";
 import { BookingConfirmationDialog, type BookingConfirmationData } from "@/components/experience/BookingConfirmationDialog";
 import AuthPromptDialog from "@/components/auth/AuthPromptDialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useExperience2Price } from "@/hooks/useExperience2Price";
 import { preBook, createBooking } from "@/services/hyperguest";
@@ -261,6 +262,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
   const [revolutMerchantPublicKey, setRevolutMerchantPublicKey] = useState<string | null>(null);
   const [paymentErrorMessage, setPaymentErrorMessage] = useState<string | null>(null);
   const [isRetryingPayment, setIsRetryingPayment] = useState(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "creating" | "ready" | "paid" | "failed">("idle");
   const [isPreBooking, setIsPreBooking] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
@@ -484,11 +486,22 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
   };
 
   const handleBook = () => {
-    // Avec l'embedded checkout, le widget Revolut a ses propres boutons "Pay" par
-    // méthode (Revolut Pay, Carte, Google Pay). Ce bouton "Confirm Booking" ne sert
-    // donc QUE pour les cas où aucun paiement n'est requis :
-    //   - Gift card couvre 100% du montant → paymentStatus = "paid" directement
-    //   - Edge case : paiement déjà validé mais auto-booking n'a pas été déclenché
+    // Single-button flow : "Confirm Booking" déclenche soit la popup de paiement
+    // (si paiement requis), soit la création directe de la résa (si gift card 100%
+    // ou paiement déjà fait).
+    if (paymentStatus !== "paid" && amountAfterGiftCard > 0) {
+      if (!user) {
+        savedFormDataRef.current = { leadGuest, specialRequests };
+        pendingBookAfterAuth.current = true;
+        setShowAuthPrompt(true);
+        return;
+      }
+      // Ouvre la popup full-screen avec le widget Revolut multi-méthodes (Revolut Pay,
+      // Carte, Google Pay…). Au succès, le widget appellera onPaymentSuccess qui
+      // ferme la popup et déclenche automatiquement la création de la résa.
+      setPaymentDialogOpen(true);
+      return;
+    }
     if (!user) {
       savedFormDataRef.current = { leadGuest, specialRequests };
       pendingBookAfterAuth.current = true;
@@ -1266,42 +1279,9 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                 </Alert>
               )}
 
-              {/* Embedded Checkout Revolut — rend toutes les méthodes de paiement
-                  configurées (Revolut Pay, Carte, Google Pay) directement dans la page.
-                  Le client clique sur sa méthode préférée et paie sans quitter le site.
-                  Plus besoin de bouton "Pay" externe : le widget gère tout. */}
-              {revolutPublicId && paymentStatus !== "paid" && paymentStatus !== "failed" && (
-                <div className="py-2">
-                  <RevolutPaymentWidget
-                    publicId={revolutPublicId}
-                    merchantPublicKey={revolutMerchantPublicKey ?? undefined}
-                    lang={lang as "en" | "he" | "fr"}
-                    environment={revolutEnvironment ?? undefined}
-                    customerEmail={leadGuest.email || undefined}
-                    onPaymentSuccess={() => {
-                      setPaymentStatus("paid");
-                      setPaymentErrorMessage(null);
-                      toast.success(lang === "he" ? "התשלום התקבל! יוצר את ההזמנה..." : lang === "fr" ? "Paiement reçu ! Création de la réservation..." : "Payment received! Creating your booking...");
-                      // L'auto-trigger de handleBookInternal est géré par le useEffect
-                      // qui surveille paymentStatus.
-                    }}
-                    onPaymentError={(err) => {
-                      setPaymentStatus("failed");
-                      setPaymentErrorMessage(err);
-                      toast.error(err);
-                    }}
-                    onPaymentCancel={() => {
-                      toast.info(
-                        lang === "he"
-                          ? "התשלום בוטל"
-                          : lang === "fr"
-                            ? "Paiement annulé"
-                            : "Payment cancelled",
-                      );
-                    }}
-                  />
-                </div>
-              )}
+              {/* Le widget Revolut (multi-méthodes) s'ouvre dans une popup full-screen
+                  quand le client clique sur "Confirm Booking" — voir la Dialog plus bas
+                  dans le composant. */}
 
               {paymentStatus === "paid" && (
                 <Alert className="border-emerald-200 bg-emerald-50">
@@ -1333,27 +1313,26 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                     {lang === 'he' ? <ChevronRight className="h-4 w-4 ml-1" /> : <ChevronLeft className="h-4 w-4 mr-1" />}
                     {t.back}
                   </Button>
-                  {/* Bouton "Confirm Booking" externe : caché quand un paiement est requis
-                      via le widget embedded (le widget a ses propres boutons Pay par méthode).
-                      Visible UNIQUEMENT si gift card couvre 100% OU si paiement déjà validé
-                      mais résa à finaliser manuellement (edge case). */}
-                  {(amountAfterGiftCard === 0 || paymentStatus === "paid" || isBooking) && (
-                    <Button
-                      className="flex-1 uppercase tracking-[0.12em] text-[13px] bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
-                      style={{ height: '52px', borderRadius: '0px' }}
-                      disabled={totalIsNaN || isBooking}
-                      onClick={handleBook}
-                    >
-                      {isBooking ? (
-                        <span className="flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          {getBookingMessage()}
-                        </span>
-                      ) : (
-                        lang === "he" ? "אשר הזמנה" : lang === "fr" ? "CONFIRMER LA RÉSERVATION" : "CONFIRM BOOKING"
-                      )}
-                    </Button>
-                  )}
+                  <Button
+                    className="flex-1 uppercase tracking-[0.12em] text-[13px] bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
+                    style={{ height: '52px', borderRadius: '0px' }}
+                    disabled={totalIsNaN || isBooking || paymentStatus === "creating" || paymentStatus === "failed"}
+                    onClick={handleBook}
+                  >
+                    {isBooking ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {getBookingMessage()}
+                      </span>
+                    ) : paymentStatus === "creating" ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {lang === "he" ? "מכין תשלום..." : lang === "fr" ? "Préparation du paiement..." : "Preparing payment..."}
+                      </span>
+                    ) : (
+                      lang === "he" ? "שלם והזמן" : lang === "fr" ? "PAYER & RÉSERVER" : "CONFIRM BOOKING"
+                    )}
+                  </Button>
                 </div>
 
                 {/* Mobile: stacked */}
@@ -1421,6 +1400,70 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
         defaultTab="login"
         context="account"
       />
+
+      {/* Popup de paiement Revolut — full-screen pour laisser de l'air aux 3 méthodes
+          (Revolut Pay, Carte, Google Pay). Le widget est démonté quand la popup se
+          ferme : ça permet d'avoir une instance Revolut fraîche à chaque ouverture. */}
+      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+        {/* Popup généreuse en taille pour que le widget Revolut affiche TOUTES ses
+            méthodes de paiement sans être tronqué (Revolut Pay + Apple Pay + Google Pay
+            + Carte peuvent prendre jusqu'à 700-800px de hauteur). */}
+        <DialogContent className="max-w-3xl w-[95vw] max-h-[95vh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle>
+              {lang === "he"
+                ? "תשלום מאובטח"
+                : lang === "fr"
+                  ? "Paiement sécurisé"
+                  : "Secure payment"}
+            </DialogTitle>
+            <DialogDescription>
+              {lang === "he"
+                ? "בחר אמצעי תשלום והשלם את ההזמנה. התשלום מתבצע באמצעות Revolut."
+                : lang === "fr"
+                  ? "Choisissez un moyen de paiement et finalisez votre réservation. Paiement sécurisé par Revolut."
+                  : "Choose a payment method and complete your booking. Secured by Revolut."}
+            </DialogDescription>
+          </DialogHeader>
+          {revolutPublicId && (
+            <RevolutPaymentWidget
+              publicId={revolutPublicId}
+              merchantPublicKey={revolutMerchantPublicKey ?? undefined}
+              lang={lang as "en" | "he" | "fr"}
+              environment={revolutEnvironment ?? undefined}
+              customerEmail={leadGuest.email || undefined}
+              onPaymentSuccess={() => {
+                setPaymentStatus("paid");
+                setPaymentErrorMessage(null);
+                setPaymentDialogOpen(false);
+                toast.success(
+                  lang === "he"
+                    ? "התשלום התקבל! יוצר את ההזמנה..."
+                    : lang === "fr"
+                      ? "Paiement reçu ! Création de la réservation..."
+                      : "Payment received! Creating your booking...",
+                );
+              }}
+              onPaymentError={(err) => {
+                setPaymentStatus("failed");
+                setPaymentErrorMessage(err);
+                setPaymentDialogOpen(false);
+                toast.error(err);
+              }}
+              onPaymentCancel={() => {
+                setPaymentDialogOpen(false);
+                toast.info(
+                  lang === "he"
+                    ? "התשלום בוטל"
+                    : lang === "fr"
+                      ? "Paiement annulé"
+                      : "Payment cancelled",
+                );
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
