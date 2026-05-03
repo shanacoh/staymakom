@@ -28,7 +28,7 @@ import { formatGuests, calculateNights } from "@/services/hyperguest";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { CheckoutState } from "@/pages/Checkout";
-import { trackDurationTabClicked, trackDateSelected, trackViewDatesClicked, trackGuestsSelected, trackRoomTypeSelected, trackBookThisStayClicked } from "@/lib/analytics";
+import { trackDurationTabClicked, trackDateSelected, trackViewDatesClicked, trackGuestsSelected, trackRoomTypeSelected, trackBookThisStayClicked, trackNoAvailabilityShown } from "@/lib/analytics";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { DateRange } from "react-day-picker";
 
@@ -399,6 +399,18 @@ export function BookingPanel2({
     setSelectedRatePlanId(null);
     setDatePageOffset(0);
   }, [selectedTab]);
+
+  useEffect(() => {
+    if (!isLoadingDates && displayQuickDates.length === 0) {
+      if (searchParams) {
+        trackNoAvailabilityShown(experienceSlug, searchParams.checkIn, searchParams.nights);
+      } else if (selectedTab !== "pick" && propId) {
+        const todayCheckIn = new Date().toISOString().split("T")[0];
+        trackNoAvailabilityShown(experienceSlug, todayCheckIn, nightsCount);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoadingDates, displayQuickDates.length]);
 
   const MAX_NIGHTS = 30;
 

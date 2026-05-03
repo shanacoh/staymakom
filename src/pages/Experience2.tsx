@@ -532,6 +532,7 @@ export default function Experience2() {
         averageRating={averageRating}
         reviewsCount={reviewsCount}
         onScrollToReviews={scrollToReviews}
+        slug={experience.slug}
       />
         </section>
 

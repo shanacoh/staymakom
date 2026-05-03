@@ -145,6 +145,14 @@ export function trackShareThisEscapeClicked(slug: string) {
   safeTrack("share_this_escape_clicked", { slug });
 }
 
+export function trackNoAvailabilityShown(slug: string, checkIn: string, nights: number) {
+  safeTrack("no_availability_shown", { slug, check_in: checkIn, nights });
+}
+
+export function trackPhotoIndexViewed(slug: string, photoIndex: number, totalPhotos: number) {
+  safeTrack("photo_index_viewed", { slug, photo_index: photoIndex, total_photos: totalPhotos });
+}
+
 // ============================================
 // D. CHECKOUT STEP 2 — GUEST INFO (6 events)
 // ============================================
@@ -208,6 +216,10 @@ export function trackBookingCompleted(
     room_type: roomType,
   });
   safeSetUserProperty("hasBooked", true);
+  const stored = parseInt(localStorage.getItem("sm_booking_count") ?? "0", 10);
+  const newCount = stored + 1;
+  localStorage.setItem("sm_booking_count", String(newCount));
+  safeSetUserProperty("has_booked_count", newCount);
 }
 
 export function trackBookingAbandoned(
@@ -224,6 +236,20 @@ export function trackBookingAbandoned(
       time_spent_seconds: Math.round(timeSpentSeconds),
     });
   }
+}
+
+export function trackAiBookingConversion(
+  experienceId: string,
+  bookingId: string,
+  searchId: string | null,
+  slug: string
+) {
+  safeTrack("ai_booking_conversion", {
+    experience_id: experienceId,
+    booking_id: bookingId,
+    search_id: searchId,
+    slug,
+  });
 }
 
 export function trackPaymentFailed(slug: string, errorType: string, errorMessage: string, totalPrice: number) {

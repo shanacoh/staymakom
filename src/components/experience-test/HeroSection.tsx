@@ -54,6 +54,7 @@ interface HeroSectionProps {
   maxParty?: number;
   categoryName?: string;
   categorySlug?: string;
+  slug?: string;
 }
 
 const HeroSection = ({ 
@@ -81,7 +82,8 @@ const HeroSection = ({
   minParty = 2,
   maxParty = 4,
   categoryName,
-  categorySlug
+  categorySlug,
+  slug,
 }: HeroSectionProps) => {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
@@ -440,6 +442,7 @@ const HeroSection = ({
         photos={photos}
         title={title}
         initialIndex={carouselIndex}
+        slug={slug}
       />
 
       {/* Share Dialog */}

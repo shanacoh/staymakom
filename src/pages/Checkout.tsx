@@ -16,7 +16,9 @@ import {
   trackAdditionalInfoExpanded,
   trackSpecialRequestTyped,
   trackPaymentInitiated,
+  trackAiBookingConversion,
 } from "@/lib/analytics";
+import { getLastSearchId } from "@/lib/aiTracking";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Info, Check, Clock, Loader2, MessageSquare, Sparkles, ShieldCheck, Gift, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -689,6 +691,11 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       bookingCompletedRef.current = true;
 
       trackBookingCompleted(staymakomRef, state.experienceSlug, data.sellPrice ?? amountAfterGiftCard, data.bookingCurrency ?? "ILS", state.nights, totalPartySize, 0, state.experienceTitle || "", state.selectedRoomName || "");
+
+      const aiSearchId = getLastSearchId();
+      if (aiSearchId) {
+        trackAiBookingConversion(state.experienceId, staymakomRef, aiSearchId, state.experienceSlug);
+      }
 
       try { localStorage.removeItem("staymakom_cart"); sessionStorage.removeItem("staymakom_guest"); } catch {}
 

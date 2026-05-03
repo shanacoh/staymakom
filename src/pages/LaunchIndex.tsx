@@ -25,7 +25,7 @@ import {
 "@/components/ui/dialog";
 import { Loader2, ArrowRight, Gift, CheckCircle, Compass, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { trackFindEscapeClicked, trackVibeTabClicked, trackWaitlistEmailSubmitted, trackGiftCardClicked, trackCategoryTileClicked } from "@/lib/analytics";
+import { trackFindEscapeClicked, trackVibeTabClicked, trackWaitlistEmailSubmitted, trackGiftCardClicked, trackCategoryTileClicked, trackViewAllExperiencesClicked } from "@/lib/analytics";
 import { useScrollDepth } from "@/hooks/useScrollDepth";
 import { toast } from "sonner";
 import heroImage from "@/assets/hero-image-new.jpg";
@@ -383,7 +383,7 @@ const LaunchIndex = () => {
               "No experiences in this category yet."}
               </p>
               <button
-              onClick={() => setActiveFilter(null)}
+              onClick={() => { setActiveFilter(null); trackViewAllExperiencesClicked("homepage"); }}
               className="mt-4 text-sm underline underline-offset-4 text-primary hover:text-primary/80">
 
                 {isRTL ? "הצג הכל" : "Show all experiences"}

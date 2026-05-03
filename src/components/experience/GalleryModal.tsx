@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
+import { trackPhotoIndexViewed } from "@/lib/analytics";
 
 interface GalleryModalProps {
   open: boolean;
@@ -10,6 +11,7 @@ interface GalleryModalProps {
   photos: string[];
   title: string;
   initialIndex?: number;
+  slug?: string;
 }
 
 const GalleryModal = ({
@@ -18,18 +20,24 @@ const GalleryModal = ({
   photos,
   title,
   initialIndex = 0,
+  slug,
 }: GalleryModalProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     startIndex: initialIndex,
   });
+  const hasMounted = useRef(false);
 
   // Update current index when carousel scrolls
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
-    setCurrentIndex(emblaApi.selectedScrollSnap());
-  }, [emblaApi]);
+    const index = emblaApi.selectedScrollSnap();
+    setCurrentIndex(index);
+    if (hasMounted.current && slug) {
+      trackPhotoIndexViewed(slug, index, photos.length);
+    }
+  }, [emblaApi, slug, photos.length]);
 
   // Initialize carousel listeners
   useEffect(() => {
@@ -41,11 +49,14 @@ const GalleryModal = ({
     };
   }, [emblaApi, onSelect]);
 
-  // Scroll to initial index when modal opens
+  // Scroll to initial index when modal opens; arm tracking after initial scroll settles
   useEffect(() => {
     if (open && emblaApi) {
+      hasMounted.current = false;
       emblaApi.scrollTo(initialIndex, true);
       setCurrentIndex(initialIndex);
+      const timer = setTimeout(() => { hasMounted.current = true; }, 100);
+      return () => clearTimeout(timer);
     }
   }, [open, emblaApi, initialIndex]);
 
