@@ -209,9 +209,14 @@ export function RevolutLivePaymentTester() {
       </CardContent>
 
       {/* Popup de paiement Revolut — réutilise le même widget que le checkout client.
-          modal=false pour que la popup 3D Secure / Apple Pay puisse communiquer en retour. */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen} modal={false}>
-        <DialogContent className="max-w-3xl w-[95vw] max-h-[95vh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+          On bloque les clics extérieurs pour que la popup 3D Secure ou Apple Pay sheet
+          n'entraîne pas la fermeture du Dialog parent pendant la session de paiement. */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent
+          className="max-w-3xl w-[95vw] max-h-[95vh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6"
+          onInteractOutside={(e) => e.preventDefault()}
+          onPointerDownOutside={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>Test paiement {amount} {currency}</DialogTitle>
             <DialogDescription>
