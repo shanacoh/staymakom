@@ -270,7 +270,7 @@ Deno.serve(async (req: Request) => {
           checkOut,
           nights: body.nights,
           partySize: body.partySize,
-          totalPrice: sellPrice,
+          totalPrice: body.paidAmount ?? sellPrice,
           currency: bookingCurrency,
           bookingRef: body.staymakomRef,
           hgBookingId,
