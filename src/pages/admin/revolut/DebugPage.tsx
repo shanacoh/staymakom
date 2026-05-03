@@ -1,4 +1,5 @@
 import { RevolutDebugTestRunner } from '@/components/admin/revolut/RevolutDebugTestRunner';
+import { RevolutLivePaymentTester } from '@/components/admin/revolut/RevolutLivePaymentTester';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const RevolutDebugPage = () => {
@@ -17,6 +18,9 @@ const RevolutDebugPage = () => {
           <RevolutDebugTestRunner />
         </CardContent>
       </Card>
+
+      {/* Test paiement live — déclenche un vrai ordre Revolut isolé du flow réservation */}
+      <RevolutLivePaymentTester />
     </div>
   );
 };
