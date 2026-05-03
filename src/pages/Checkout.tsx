@@ -569,10 +569,15 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
         lang,
       );
       const taxBreakdown = extractTaxBreakdown(state.selectedRatePlan);
-      const allRemarks = [
+      const STAYMAKOM_VAT_TEXT = "Taxes are not included. Israeli citizens and residents need to pay an 18% VAT at check-in in accordance with Israeli regulations. Tourists holding a valid foreign passport and an entry permit (B/2, B/3, or B/4) are exempt from VAT. Please make sure to keep the entry permit received at the airport upon arrival, as it may be required to confirm eligibility. If exemption cannot be validated at check-in, VAT will be charged accordingly.";
+      const isVatRemark = (r: string) => /taxes are not included|17% vat|18% vat|b2 visa|local regulations.*tax|pay.*tax.*check.?in/i.test(r);
+      const rawAllRemarks = [
         ...state.propertyRemarks,
         ...(state.selectedRatePlan?.remarks || []),
       ].filter((r: string) => !/general message that should be shown/i.test(r));
+      const hasVat = rawAllRemarks.some(isVatRemark);
+      const otherRaw = [...new Set(rawAllRemarks.filter(r => !isVatRemark(r)))];
+      const allRemarks = [...(hasVat ? [STAYMAKOM_VAT_TEXT] : []), ...otherRaw];
 
       const giftCardPayload = appliedGiftCard && giftCardApplied > 0 ? {
         id: appliedGiftCard.id,

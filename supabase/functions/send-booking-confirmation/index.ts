@@ -87,11 +87,14 @@ const handler = async (req: Request): Promise<Response> => {
     const safeRoom = escapeHTML(roomName || '');
     const safeRef = escapeHTML(bookingRef || hgBookingId || '');
 
-    // Build remarks HTML
+    // Build remarks HTML — deduplicate and replace HyperGuest VAT text with Staymakom's
+    const STAYMAKOM_VAT_TEXT = "Taxes are not included. Israeli citizens and residents need to pay an 18% VAT at check-in in accordance with Israeli regulations. Tourists holding a valid foreign passport and an entry permit (B/2, B/3, or B/4) are exempt from VAT. Please make sure to keep the entry permit received at the airport upon arrival, as it may be required to confirm eligibility. If exemption cannot be validated at check-in, VAT will be charged accordingly.";
+    const isVatRemark = (r: string) => /taxes are not included|17% vat|18% vat|b2 visa|local regulations.*tax|pay.*tax.*check.?in/i.test(r);
     const genericFilter = /general message that should be shown/i;
-    const filteredRemarks = Array.isArray(remarks)
-      ? remarks.filter((r: string) => r && !genericFilter.test(r))
-      : [];
+    const rawRemarks: string[] = Array.isArray(remarks) ? remarks.filter((r: string) => r && !genericFilter.test(r)) : [];
+    const hasVat = rawRemarks.some(isVatRemark);
+    const otherRemarks = [...new Set(rawRemarks.filter((r: string) => !isVatRemark(r)))];
+    const filteredRemarks = [...(hasVat ? [STAYMAKOM_VAT_TEXT] : []), ...otherRemarks];
     const remarksHtml = filteredRemarks.length > 0
       ? `<div style="background-color:#fff8e1;border-radius:8px;padding:20px;margin-bottom:20px;">
            ${filteredRemarks.map((r: string) => `<p style="color:#666;font-size:14px;line-height:1.6;margin:4px 0;">• ${escapeHTML(r)}</p>`).join('')}

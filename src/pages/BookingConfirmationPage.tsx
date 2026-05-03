@@ -219,12 +219,19 @@ export default function BookingConfirmationPage() {
   // Build staymakom ref from raw data or derive
   const staymakomRef = hgRaw?.reference?.agency || `SM-${(booking.experience_id || "").substring(0, 8).toUpperCase()}`;
 
-  // Remarks
-  const remarks: string[] = [];
-  if (hgRaw?.remarks) remarks.push(...(hgRaw.remarks as string[]).filter((r: string) => !/general message/i.test(r)));
+  const STAYMAKOM_VAT_TEXT = "Taxes are not included. Israeli citizens and residents need to pay an 18% VAT at check-in in accordance with Israeli regulations. Tourists holding a valid foreign passport and an entry permit (B/2, B/3, or B/4) are exempt from VAT. Please make sure to keep the entry permit received at the airport upon arrival, as it may be required to confirm eligibility. If exemption cannot be validated at check-in, VAT will be charged accordingly.";
+  const isVatRemark = (r: string) => /taxes are not included|17% vat|18% vat|b2 visa|local regulations.*tax|pay.*tax.*check.?in/i.test(r);
+
+  // Remarks — deduplicated, HyperGuest VAT text replaced with Staymakom's
+  const rawRemarks: string[] = [];
+  if (hgRaw?.remarks) rawRemarks.push(...(hgRaw.remarks as string[]).filter((r: string) => !/general message/i.test(r)));
   if (hgRaw?.rooms?.[0]?.ratePlans?.[0]?.remarks) {
-    remarks.push(...(hgRaw.rooms[0].ratePlans[0].remarks as string[]).filter((r: string) => !/general message/i.test(r)));
+    rawRemarks.push(...(hgRaw.rooms[0].ratePlans[0].remarks as string[]).filter((r: string) => !/general message/i.test(r)));
   }
+  const hasVatRemark = rawRemarks.some(isVatRemark);
+  const otherRemarks = rawRemarks.filter(r => !isVatRemark(r));
+  const uniqueOtherRemarks = [...new Set(otherRemarks)];
+  const remarks: string[] = [...(hasVatRemark ? [STAYMAKOM_VAT_TEXT] : []), ...uniqueOtherRemarks];
 
   // Special requests
   const specialRequests = hgRaw?.rooms?.[0]?.specialRequests || "";
