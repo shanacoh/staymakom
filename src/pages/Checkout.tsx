@@ -33,7 +33,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useExperience2Price } from "@/hooks/useExperience2Price";
-import { preBook, createBooking } from "@/services/hyperguest";
+import { preBook } from "@/services/hyperguest";
 import { createRevolutOrder, refundRevolutOrder } from "@/services/revolut";
 import RevolutPaymentWidget from "@/components/experience/RevolutPaymentWidget";
 import { extractTaxBreakdown } from "@/utils/taxesDisplay";
@@ -516,7 +516,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
 
   const handleBookInternal = async () => {
     if (isBooking) return;
-    if (paymentStatus !== "paid") {
+    if (paymentStatus !== "paid" && amountAfterGiftCard > 0) {
       toast.error(lang === "he" ? "יש להשלים את התשלום תחילה" : "Please complete payment first");
       return;
     }
@@ -528,6 +528,10 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
     try {
       const checkIn = state.dateRange.from;
       const checkOut = state.dateRange.to;
+      const staymakomRef = `SM-${state.experienceId.substring(0, 8).toUpperCase()}-${Date.now()}`;
+      const safe = sanitizeLeadGuest(leadGuest);
+
+      if (user) saveProfileFields(user.id, leadGuest);
 
       const expectedAmount = state.selectedRatePlan.payment?.chargeAmount?.price
         ?? state.selectedRatePlan.prices?.sell?.price
@@ -536,14 +540,6 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       const expectedCurrency = state.selectedRatePlan.payment?.chargeAmount?.currency
         ?? state.selectedRatePlan.prices?.sell?.currency
         ?? "EUR";
-
-      const staymakomRef = `SM-${state.experienceId.substring(0, 8).toUpperCase()}-${Date.now()}`;
-      const safe = sanitizeLeadGuest(leadGuest);
-
-      // Save profile fields on booking
-      if (user) {
-        saveProfileFields(user.id, leadGuest);
-      }
 
       const adultGuests = [
         {
@@ -564,119 +560,105 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
         name: { first: `Child`, last: `${i + 1}` },
       }));
 
-      const bookingData = {
-        dates: { from: checkIn, to: checkOut },
-        propertyId: parseInt(state.hyperguestPropertyId),
-        leadGuest: {
-          birthDate: safe.birthDate,
-          title: safe.title,
-          name: { first: safe.firstName, last: safe.lastName },
-          contact: {
-            address: safe.address,
-            city: safe.city,
-            country: safe.country,
-            email: safe.email,
-            phone: safe.phone,
-            state: "N/A",
-            zip: "00000",
-          },
-        },
-        reference: { agency: staymakomRef },
-        rooms: [{
-          roomId: state.selectedRoomId,
-          ratePlanId: state.selectedRatePlanId,
-          expectedPrice: { amount: expectedAmount, currency: expectedCurrency },
-          specialRequests: specialRequests || undefined,
-          guests: [...adultGuests, ...childGuests],
-        }],
-        idempotencyKey: idempotencyKeyRef.current,
-      };
-
-      const bookingResult = await createBooking(bookingData);
-      const hgBookingId = bookingResult.id || bookingResult.bookingId || "";
-      const hgStatus = bookingResult.status || "Confirmed";
-      const sellPrice = bookingResult.totalPrice?.amount ?? expectedAmount;
-      const bookingCurrency = bookingResult.totalPrice?.currency ?? expectedCurrency;
-
       const currentSession = await supabase.auth.getSession();
       const currentUserId = currentSession.data.session?.user?.id || null;
-      const confirmationToken = crypto.randomUUID();
 
-      const { error: dbError } = await supabase.from("bookings_hg").insert({
-        hg_booking_id: hgBookingId,
-        hotel_id: state.hotelId,
-        experience_id: state.experienceId,
-        checkin: checkIn,
-        checkout: checkOut,
-        nights: state.nights,
-        party_size: totalPartySize,
-        sell_price: sellPrice,
-        // Montant réellement débité au client via Revolut, après application de la
-        // gift card. Source de vérité pour l'affichage client (page confirmation,
-        // espace client, email). À ne pas confondre avec sell_price qui est le prix
-        // HyperGuest de la chambre seule (pour la compta avec HG).
-        paid_amount: amountAfterGiftCard,
-        net_price: 0,
-        commission_amount: priceBreakdown?.totalCommissions ?? 0,
-        currency: bookingCurrency,
-        status: hgStatus.toLowerCase(),
-        hg_status: hgStatus,
-        board_type: state.selectedRatePlan?.board || "RO",
-        room_code: String(state.selectedRoomId),
-        room_name: state.selectedRoomName,
-        rate_plan: String(state.selectedRatePlanId),
-        customer_name: `${leadGuest.firstName} ${leadGuest.lastName}`,
-        customer_email: leadGuest.email,
-        hg_raw_data: bookingResult,
-        user_id: currentUserId,
-        confirmation_token: confirmationToken,
-        idempotency_key: idempotencyKeyRef.current,
-        revolut_order_id: revolutOrderId,
-        payment_status: "paid",
-        paid_at: new Date().toISOString(),
-      } as any);
-
-      if (dbError) {
-        // La réservation HyperGuest est confirmée mais l'enregistrement en base a échoué.
-        // On NE rembourse PAS — la chambre est bien réservée. On informe le client et l'admin.
-        console.error("[Checkout] bookings_hg insert failed:", dbError);
-        toast.error(
-          lang === "he"
-            ? `ההזמנה אושרה אצל HyperGuest אך לא נשמרה. אנא שמור את מספר הזמנה: ${hgBookingId}`
-            : lang === "fr"
-            ? `Réservation confirmée mais non enregistrée. Conservez votre référence : ${hgBookingId}`
-            : `Booking confirmed but not saved. Please keep your reference: ${hgBookingId}`,
-          { duration: 30000 }
-        );
-      }
-
-      if (appliedGiftCard && giftCardApplied > 0) {
-        try {
-          const newAmountUsed = appliedGiftCard.amountUsed + giftCardApplied;
-          const isFullyRedeemed = newAmountUsed >= appliedGiftCard.totalAmount;
-          await supabase.from("gift_cards").update({
-            amount_used: newAmountUsed,
-            status: isFullyRedeemed ? "redeemed" : "sent",
-            ...(isFullyRedeemed ? { redeemed_at: new Date().toISOString() } : {}),
-          }).eq("id", appliedGiftCard.id);
-        } catch {
-          // Non-bloquant : la réservation est confirmée même si la mise à jour échoue
-        }
-      }
-
-      const certCancelInfo = analyzeCancellationPolicies(
+      const emailCancellation = analyzeCancellationPolicies(
         state.selectedRatePlan?.cancellationPolicies,
-        checkIn
+        checkIn,
+        lang,
       );
-      const refundLabel = certCancelInfo?.isNonRefundable
-        ? 'Non-refundable'
-        : `Fully refundable${certCancelInfo?.effectiveDeadline ? ` (free cancellation until ${certCancelInfo.effectiveDeadline.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })})` : ''}`;
-
       const taxBreakdown = extractTaxBreakdown(state.selectedRatePlan);
       const allRemarks = [
         ...state.propertyRemarks,
         ...(state.selectedRatePlan?.remarks || []),
       ].filter((r: string) => !/general message that should be shown/i.test(r));
+
+      const giftCardPayload = appliedGiftCard && giftCardApplied > 0 ? {
+        id: appliedGiftCard.id,
+        newAmountUsed: appliedGiftCard.amountUsed + giftCardApplied,
+        isFullyRedeemed: (appliedGiftCard.amountUsed + giftCardApplied) >= appliedGiftCard.totalAmount,
+      } : undefined;
+
+      const { data, error: fnError } = await supabase.functions.invoke("process-booking", {
+        body: {
+          hyperguestBookingData: {
+            dates: { from: checkIn, to: checkOut },
+            propertyId: parseInt(state.hyperguestPropertyId),
+            leadGuest: {
+              birthDate: safe.birthDate,
+              title: safe.title,
+              name: { first: safe.firstName, last: safe.lastName },
+              contact: {
+                address: safe.address,
+                city: safe.city,
+                country: safe.country,
+                email: safe.email,
+                phone: safe.phone,
+                state: "N/A",
+                zip: "00000",
+              },
+            },
+            reference: { agency: staymakomRef },
+            rooms: [{
+              roomId: state.selectedRoomId,
+              ratePlanId: state.selectedRatePlanId,
+              expectedPrice: { amount: expectedAmount, currency: expectedCurrency },
+              specialRequests: specialRequests || undefined,
+              guests: [...adultGuests, ...childGuests],
+            }],
+            idempotencyKey: idempotencyKeyRef.current,
+          },
+          hotelId: state.hotelId,
+          experienceId: state.experienceId,
+          staymakomRef,
+          nights: state.nights,
+          partySize: totalPartySize,
+          paidAmount: amountAfterGiftCard,
+          commissionAmount: priceBreakdown?.totalCommissions ?? 0,
+          userId: currentUserId,
+          revolutOrderId,
+          roomName: state.selectedRoomName,
+          boardType: state.selectedRatePlan?.board || "RO",
+          giftCard: giftCardPayload,
+          email: leadGuest.email,
+          guestName: `${safe.firstName} ${safe.lastName}`,
+          lang,
+          experienceTitle: state.experienceTitle || "",
+          hotelName: state.hotelName || "",
+          remarks: allRemarks,
+          specialRequests,
+          displayTaxesTotal: taxBreakdown.totalDisplayAmount,
+          cancellationPolicy: {
+            summaryText: emailCancellation.summaryText,
+            isNonRefundable: emailCancellation.isNonRefundable,
+            deadline: emailCancellation.effectiveDeadline?.toISOString() || null,
+          },
+        },
+      });
+
+      if (fnError) throw fnError;
+
+      // HyperGuest a échoué → on peut rembourser
+      if (data?.errorType === "hg_booking_failed") {
+        throw new Error(data.error);
+      }
+
+      // HyperGuest OK mais DB a échoué → NE PAS rembourser, chambre réservée
+      if (data?.errorType === "db_insert_failed") {
+        toast.error(
+          lang === "he"
+            ? `ההזמנה אושרה אצל HyperGuest אך לא נשמרה. אנא שמור את מספר הזמנה: ${data.hgBookingId}`
+            : lang === "fr"
+            ? `Réservation confirmée mais non enregistrée. Conservez votre référence : ${data.hgBookingId}`
+            : `Booking confirmed but not saved. Please keep your reference: ${data.hgBookingId}`,
+          { duration: 30000 }
+        );
+      }
+
+      const hgBookingId = data.hgBookingId || "";
+      const hgStatus = data.hgStatus || "Confirmed";
+      const confirmationToken = data.confirmationToken || "";
 
       setConfirmationData({
         hgBookingId,
@@ -701,47 +683,10 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       setShowConfirmation(true);
       bookingCompletedRef.current = true;
 
-      trackBookingCompleted(staymakomRef, state.experienceSlug, sellPrice, bookingCurrency, state.nights, totalPartySize, 0, state.experienceTitle || '', state.selectedRoomName || '');
+      trackBookingCompleted(staymakomRef, state.experienceSlug, data.sellPrice ?? amountAfterGiftCard, data.bookingCurrency ?? "ILS", state.nights, totalPartySize, 0, state.experienceTitle || "", state.selectedRoomName || "");
 
       try { localStorage.removeItem("staymakom_cart"); sessionStorage.removeItem("staymakom_guest"); } catch {}
 
-      try {
-        const emailCancellation = analyzeCancellationPolicies(
-          state.selectedRatePlan?.cancellationPolicies,
-          checkIn,
-          lang,
-        );
-        await supabase.functions.invoke("send-booking-confirmation", {
-          body: {
-            to: leadGuest.email,
-            guestName: `${leadGuest.firstName} ${leadGuest.lastName}`,
-            experienceTitle: state.experienceTitle,
-            hotelName: state.hotelName,
-            roomName: state.selectedRoomName,
-            boardType: state.selectedRatePlan?.board || "RO",
-            checkIn,
-            checkOut,
-            nights: state.nights,
-            partySize: totalPartySize,
-            totalPrice: sellPrice,
-            currency: bookingCurrency,
-            bookingRef: staymakomRef,
-            hgBookingId,
-            remarks: allRemarks,
-            specialRequests,
-            lang,
-            displayTaxesTotal: taxBreakdown.totalDisplayAmount,
-            confirmationToken,
-            cancellationPolicy: {
-              summaryText: emailCancellation.summaryText,
-              isNonRefundable: emailCancellation.isNonRefundable,
-              deadline: emailCancellation.effectiveDeadline?.toISOString() || null,
-            },
-          },
-        });
-      } catch (emailError) {
-        // Error handled silently
-      }
     } catch (error: any) {
       const detail = error?.message || "";
       const codeMatch = detail.match(/BN\.\d+/);
