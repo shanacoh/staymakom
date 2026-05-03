@@ -40,6 +40,7 @@ import ExperienceExtrasSelector2 from "@/components/admin/ExperienceExtrasSelect
 import PracticalInfoManager from "@/components/admin/PracticalInfoManager";
 import AvailabilityRulesManager from "@/components/admin/AvailabilityRulesManager";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Slider } from "@/components/ui/slider";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
@@ -73,6 +74,9 @@ type TabId = (typeof TABS)[number]["id"];
 // Zod schema
 // ---------------------------------------------------------------------------
 
+const optNum = (min = 0) =>
+  z.preprocess((v) => (typeof v === "number" && isNaN(v) ? undefined : v), z.number().min(min).optional());
+
 const experience2Schema = z.object({
   title: z.string().min(1, "English title is required"),
   title_he: z.string().optional(),
@@ -81,8 +85,8 @@ const experience2Schema = z.object({
   category_id: z.string().min(1, "Category is required"),
   long_copy: z.string().min(100, "English description must be at least 100 characters"),
   long_copy_he: z.string().optional(),
-  min_nights: z.number().min(1).max(8).optional(),
-  max_nights: z.number().min(1).max(8).optional(),
+  min_nights: optNum(1),
+  max_nights: optNum(1),
   min_party: z.number().min(1).max(100),
   max_party: z.number().min(1).max(100),
   cancellation_policy: z.string().optional(),
@@ -101,19 +105,24 @@ const experience2Schema = z.object({
   og_description_he: z.string().optional(),
   og_description_fr: z.string().optional(),
   og_image: z.string().optional(),
-  commission_room_pct: z.number().min(0).max(100).optional(),
-  commission_addons_pct: z.number().min(0).max(100).optional(),
-  tax_pct: z.number().min(0).max(100).optional(),
+  commission_room_pct: optNum(),
+  commission_addons_pct: optNum(),
+  tax_pct: optNum(),
   promo_type: z.string().optional(),
-  promo_value: z.number().min(0).optional(),
+  promo_value: optNum(),
   promo_is_percentage: z.boolean().optional(),
   // Modèle BAR RATE
-  pricing_model: z.enum(["standard", "bar_rate"]).default("standard"),
-  bar_rate: z.number().min(0).optional(),
-  bar_rate_markup_value: z.number().min(0).optional(),
+  pricing_model: z.enum(["standard", "bar_rate"]).default("bar_rate"),
+  bar_rate: optNum(),
+  bar_rate_markup_value: optNum(),
   bar_rate_markup_is_pct: z.boolean().default(true),
-  experience_net_cost: z.number().min(0).optional(),
-  room_net_rate: z.number().min(0).optional(),
+  experience_net_cost: optNum(),
+  room_net_rate: optNum(),
+  // Tarification expérience (nouveaux champs)
+  experience_cost_fixed: optNum(),
+  experience_cost_per_person: optNum(),
+  experience_sell_fixed: optNum(),
+  experience_sell_per_person: optNum(),
 });
 
 type Experience2FormData = z.infer<typeof experience2Schema>;
@@ -163,6 +172,9 @@ export function UnifiedExperience2Form({
   const [featuredOnHome, setFeaturedOnHome] = useState(false);
   const [homeDisplayOrder, setHomeDisplayOrder] = useState(0);
   const [barRateRefreshEnabled, setBarRateRefreshEnabled] = useState(false);
+  const [simulatorNights, setSimulatorNights] = useState(1);
+  const [simulatorGuests, setSimulatorGuests] = useState(2);
+  const [taxesOpen, setTaxesOpen] = useState(false);
 
   const currentExperienceId = experienceId || createdExperienceId;
 
@@ -317,19 +329,26 @@ export function UnifiedExperience2Form({
     enabled: barRateRefreshEnabled,
   });
 
-  // Calcul min/max BAR RATE et pré-remplissage automatique
-  const barRatePrices = quickDatesBarRate
+  // Net Rate (tarif contractuel = sell price HyperGuest = "ce que Staymakom paie")
+  const netRatePrices = quickDatesBarRate
     ?.map((d: any) => d.cheapestPrice)
     .filter((p: any): p is number => p !== null && p > 0) ?? [];
-  const minBarRate = barRatePrices.length > 0 ? Math.min(...barRatePrices) : null;
-  const maxBarRate = barRatePrices.length > 0 ? Math.max(...barRatePrices) : null;
+  const minNetRate = netRatePrices.length > 0 ? Math.min(...netRatePrices) : null;
+  const maxNetRate = netRatePrices.length > 0 ? Math.max(...netRatePrices) : null;
 
-  // Pré-remplir bar_rate avec le min quand les données arrivent
+  // BAR Rate public (tarif public hôtel = bar price HyperGuest)
+  const barRatePublicPrices = quickDatesBarRate
+    ?.map((d: any) => d.cheapestBarPrice)
+    .filter((p: any): p is number => p !== null && p > 0) ?? [];
+  const minBarRatePublic = barRatePublicPrices.length > 0 ? Math.min(...barRatePublicPrices) : null;
+  const maxBarRatePublic = barRatePublicPrices.length > 0 ? Math.max(...barRatePublicPrices) : null;
+
+  // Pré-remplir room_net_rate avec le min Net Rate quand les données arrivent
   useEffect(() => {
-    if (minBarRate !== null && barRateRefreshEnabled && !isLoadingBarRate) {
-      setValue("bar_rate", minBarRate);
+    if (minNetRate !== null && barRateRefreshEnabled && !isLoadingBarRate) {
+      setValue("room_net_rate", minNetRate);
     }
-  }, [minBarRate, barRateRefreshEnabled, isLoadingBarRate, setValue]);
+  }, [minNetRate, barRateRefreshEnabled, isLoadingBarRate, setValue]);
 
   const allParcoursImages: string[] = [];
   for (const eh of experienceHotels) {
@@ -422,12 +441,16 @@ export function UnifiedExperience2Form({
       setValue("promo_type", (existingExperience as any).promo_type ?? "none");
       setValue("promo_value", (existingExperience as any).promo_value ?? 0);
       setValue("promo_is_percentage", (existingExperience as any).promo_is_percentage ?? true);
-      setValue("pricing_model", (existingExperience as any).pricing_model ?? "standard");
+      setValue("pricing_model", "bar_rate");
       setValue("bar_rate", (existingExperience as any).bar_rate ?? undefined);
       setValue("bar_rate_markup_value", (existingExperience as any).bar_rate_markup_value ?? undefined);
       setValue("bar_rate_markup_is_pct", (existingExperience as any).bar_rate_markup_is_pct ?? true);
       setValue("experience_net_cost", (existingExperience as any).experience_net_cost ?? undefined);
       setValue("room_net_rate", (existingExperience as any).room_net_rate ?? undefined);
+      setValue("experience_cost_fixed", (existingExperience as any).experience_cost_fixed ?? undefined);
+      setValue("experience_cost_per_person", (existingExperience as any).experience_cost_per_person ?? undefined);
+      setValue("experience_sell_fixed", (existingExperience as any).experience_sell_fixed ?? undefined);
+      setValue("experience_sell_per_person", (existingExperience as any).experience_sell_per_person ?? undefined);
 
       if (existingExperience.hero_image) setHeroImagePreview(existingExperience.hero_image);
       if (existingExperience.photos && Array.isArray(existingExperience.photos)) setGalleryPreviews(existingExperience.photos);
@@ -645,13 +668,17 @@ export function UnifiedExperience2Form({
       promo_is_percentage: data.promo_is_percentage ?? true,
       featured_on_home: featuredOnHome,
       home_display_order: homeDisplayOrder,
-      // Modèle BAR RATE
-      pricing_model: data.pricing_model ?? "standard",
-      bar_rate: data.pricing_model === "bar_rate" ? (data.bar_rate ?? null) : null,
-      bar_rate_markup_value: data.pricing_model === "bar_rate" ? (data.bar_rate_markup_value ?? null) : null,
-      bar_rate_markup_is_pct: data.pricing_model === "bar_rate" ? (data.bar_rate_markup_is_pct ?? true) : null,
-      experience_net_cost: data.pricing_model === "bar_rate" ? (data.experience_net_cost ?? null) : null,
-      room_net_rate: data.pricing_model === "bar_rate" ? (data.room_net_rate ?? null) : null,
+      // Modèle BAR RATE (toujours actif)
+      pricing_model: "bar_rate",
+      bar_rate: data.bar_rate ?? null,
+      bar_rate_markup_value: data.bar_rate_markup_value ?? null,
+      bar_rate_markup_is_pct: data.bar_rate_markup_is_pct ?? true,
+      experience_net_cost: data.experience_net_cost ?? null,
+      room_net_rate: data.room_net_rate ?? null,
+      experience_cost_fixed: data.experience_cost_fixed ?? null,
+      experience_cost_per_person: data.experience_cost_per_person ?? null,
+      experience_sell_fixed: data.experience_sell_fixed ?? null,
+      experience_sell_per_person: data.experience_sell_per_person ?? null,
     };
   };
 
@@ -1545,152 +1572,270 @@ export function UnifiedExperience2Form({
         {/* ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === "tarification" && (
           <div className="space-y-6">
-            {/* Price / Availability Preview */}
-            {experienceHotels.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Aperçu Prix & Disponibilités</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {experienceHotels.map((eh, index) => {
-                    const hotel = hotels?.find((h) => h.id === eh.hotel_id);
-                    if (!hotel) return null;
-                    return (
-                      <div key={eh.hotel_id} className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">{index + 1}</span>
-                          <span className="font-medium">{hotel.name}</span>
-                          <span className="text-sm text-muted-foreground">— {eh.nights} nuit{eh.nights > 1 ? "s" : ""}</span>
-                        </div>
-                        <ExperienceAvailabilityPreview
-                          hyperguestPropertyId={hotel.hyperguest_property_id != null ? String(hotel.hyperguest_property_id) : null}
-                          hotelName={hotel.name}
-                          experienceId={currentExperienceId ?? null}
-                          currency="ILS"
-                          lang="en"
-                          nights={eh.nights}
-                          minParty={watch("min_party") || 1}
-                          maxParty={watch("max_party") || 20}
-                          onPriceChange={(price) => setHotelRoomPrices((prev) => ({ ...prev, [eh.hotel_id]: price }))}
-                        />
-                      </div>
-                    );
-                  })}
-
-                  {(() => {
-                    const pricesArr = experienceHotels.map((eh) => hotelRoomPrices[eh.hotel_id]);
-                    const validPrices = pricesArr.filter((p): p is number => p != null && p > 0);
-                    if (validPrices.length === 0) return null;
-                    const combinedTotal = validPrices.reduce((s, p) => s + p, 0);
-                    return (
-                      <Card className="border-primary/30 bg-primary/5">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-base">Prix Total du Parcours</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
-                          {experienceHotels.map((eh) => {
-                            const hotel = hotels?.find((h) => h.id === eh.hotel_id);
-                            const price = hotelRoomPrices[eh.hotel_id];
-                            return (
-                              <div key={eh.hotel_id} className="flex justify-between items-center text-sm">
-                                <span>{hotel?.name ?? "Hôtel"} ({eh.nights} nuit{eh.nights > 1 ? "s" : ""})</span>
-                                <span className="font-medium">
-                                  {price != null && price > 0
-                                    ? `₪${price.toLocaleString("en-IL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                    : "—"}
-                                </span>
-                              </div>
-                            );
-                          })}
-                          <div className="border-t pt-2 flex justify-between items-center font-bold text-base">
-                            <span>Total Parcours</span>
-                            <span>₪{combinedTotal.toLocaleString("en-IL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })()}
-                </CardContent>
-              </Card>
-            )}
-
             <Card>
               <CardHeader>
                 <CardTitle>Tarification</CardTitle>
-                <CardDescription>Choisissez votre modèle de tarification</CardDescription>
+                <CardDescription>Paramétrez les tarifs chambre et expérience, puis simulez votre commission</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
 
-                {/* ── Sélecteur de modèle ── */}
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setValue("pricing_model", "standard")}
-                    className={cn(
-                      "flex-1 flex items-center gap-2 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-colors",
-                      watch("pricing_model") === "standard"
-                        ? "border-primary bg-primary/5 text-primary"
-                        : "border-border bg-background text-muted-foreground hover:border-primary/40"
-                    )}
-                  >
-                    <DollarSign className="h-4 w-4 shrink-0" />
-                    Modèle standard
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setValue("pricing_model", "bar_rate")}
-                    className={cn(
-                      "flex-1 flex items-center gap-2 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-colors",
-                      watch("pricing_model") === "bar_rate"
-                        ? "border-primary bg-primary/5 text-primary"
-                        : "border-border bg-background text-muted-foreground hover:border-primary/40"
-                    )}
-                  >
-                    <TrendingUp className="h-4 w-4 shrink-0" />
-                    Modèle BAR RATE
-                  </button>
+                {/* ── Bloc 0 : Indicatif HyperGuest ── */}
+                <div className="rounded-lg bg-muted/50 border p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                      <p className="font-medium text-sm">Données HyperGuest — indicatif 30 jours</p>
+                    </div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="text-xs gap-1.5 h-7"
+                            disabled={!primaryHyperguestId || isLoadingBarRate || isSaving}
+                            onClick={() => setBarRateRefreshEnabled(true)}
+                          >
+                            {isLoadingBarRate ? (
+                              <><Loader2 className="h-3 w-3 animate-spin" />Chargement...</>
+                            ) : (
+                              <><TrendingUp className="h-3 w-3" />Charger HyperGuest</>
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        {!primaryHyperguestId && (
+                          <TooltipContent>
+                            <p>Aucun hôtel HyperGuest associé au parcours</p>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+
+                  {minBarRatePublic !== null && minNetRate !== null ? (
+                    <div className="rounded bg-background border px-3 py-2 space-y-1 text-xs">
+                      {(() => {
+                        const minDiffILS = minBarRatePublic - minNetRate;
+                        const minDiffPct = minNetRate > 0 ? (minDiffILS / minNetRate) * 100 : null;
+                        const maxDiffILS = maxBarRatePublic !== null && maxNetRate !== null ? maxBarRatePublic - maxNetRate : null;
+                        const maxDiffPct = maxDiffILS !== null && maxNetRate !== null && maxNetRate > 0 ? (maxDiffILS / maxNetRate) * 100 : null;
+                        return (
+                          <>
+                            <div className="grid grid-cols-5 gap-2 text-muted-foreground font-medium pb-1 border-b">
+                              <span></span>
+                              <span className="text-center">BAR Rate</span>
+                              <span className="text-center">Net Rate</span>
+                              <span className="text-center">Diff ₪</span>
+                              <span className="text-center">Diff %</span>
+                            </div>
+                            <div className="grid grid-cols-5 gap-2">
+                              <span className="text-muted-foreground">Min</span>
+                              <span className="text-center font-medium">{minBarRatePublic.toFixed(0)} ₪</span>
+                              <span className="text-center font-medium">{minNetRate.toFixed(0)} ₪</span>
+                              <span className="text-center font-medium">{minDiffILS.toFixed(0)} ₪</span>
+                              <span className="text-center font-medium">{minDiffPct !== null ? `${minDiffPct.toFixed(1)} %` : "—"}</span>
+                            </div>
+                            <div className="grid grid-cols-5 gap-2">
+                              <span className="text-muted-foreground">Max</span>
+                              <span className="text-center font-medium">{maxBarRatePublic !== null ? maxBarRatePublic.toFixed(0) : "—"} ₪</span>
+                              <span className="text-center font-medium">{maxNetRate !== null ? maxNetRate.toFixed(0) : "—"} ₪</span>
+                              <span className="text-center font-medium">{maxDiffILS !== null ? `${maxDiffILS.toFixed(0)} ₪` : "—"}</span>
+                              <span className="text-center font-medium">{maxDiffPct !== null ? `${maxDiffPct.toFixed(1)} %` : "—"}</span>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  ) : (
+                    !isLoadingBarRate && (
+                      <p className="text-xs text-muted-foreground italic">
+                        Clique sur « Charger HyperGuest » pour voir les tarifs indicatifs.
+                      </p>
+                    )
+                  )}
+
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Tarifs indicatifs sur les 30 prochains jours. Le Net Rate réel dépend de la date choisie par le client au moment de la réservation.
+                  </p>
                 </div>
 
                 {/* ── MODÈLE STANDARD ── */}
-                {watch("pricing_model") === "standard" && (
-                  <div className="space-y-4">
-                    <div className="rounded-lg bg-muted/40 p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                        <p className="font-medium text-sm">Frais par personne / nuit / fixes</p>
+                {/* ── Bloc 1 : Chambre ── */}
+                <div className="rounded-lg border bg-card p-5 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-primary" />
+                    <p className="font-semibold text-sm">Chambre</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="room_net_rate" className="text-xs font-medium">Net Rate par nuit (ce que je paie)</Label>
+                      <div className="relative">
+                        <Input
+                          id="room_net_rate"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          {...register("room_net_rate", { valueAsNumber: true })}
+                          placeholder="0"
+                          disabled={isSaving}
+                          className="pr-10"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
                       </div>
-                      <Experience2AddonsManager
-                        experienceId={currentExperienceId}
-                        disabled={isSaving}
-                        localAddons={localAddons}
-                        onLocalAddonsChange={setLocalAddons}
-                        addonTypes={EXPERIENCE_PRICING_TYPES}
-                        sectionTitle="Experience Pricing"
-                        sectionDescription="Fees and extras charged to travelers"
-                      />
+                      <p className="text-[11px] text-muted-foreground">Chargé depuis HyperGuest ou saisi manuellement</p>
                     </div>
 
-                    <div className="rounded-lg bg-muted/40 p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Percent className="h-4 w-4 text-muted-foreground" />
-                        <p className="font-medium text-sm">Commissions Staymakom</p>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium">Markup chambre</Label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            {...register("bar_rate_markup_value", { valueAsNumber: true })}
+                            placeholder="0"
+                            disabled={isSaving}
+                          />
+                        </div>
+                        <Controller
+                          name="bar_rate_markup_is_pct"
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                              value={field.value ? "pct" : "fixed"}
+                              onValueChange={(val) => field.onChange(val === "pct")}
+                              disabled={isSaving}
+                            >
+                              <SelectTrigger className="w-[90px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pct">%</SelectItem>
+                                <SelectItem value="fixed">₪ fixe</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
                       </div>
-                      <Experience2AddonsManager
-                        experienceId={currentExperienceId}
-                        disabled={isSaving}
-                        localAddons={localAddons}
-                        onLocalAddonsChange={setLocalAddons}
-                        addonTypes={COMMISSION_TYPES}
-                        sectionTitle="Commissions"
-                        sectionDescription="Staymakom margins on room and experience prices"
-                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Bloc 2 : Expérience ── */}
+                <div className="rounded-lg border bg-card p-5 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-primary" />
+                    <p className="font-semibold text-sm">Expérience <span className="text-xs font-normal text-muted-foreground ml-1">— remplis l'un ou l'autre</span></p>
+                  </div>
+
+                  <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-start">
+
+                    {/* Mode A : Par séjour */}
+                    <div className="space-y-2">
+                      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Par séjour</p>
+                      <div className="space-y-2">
+                        <div className="space-y-1">
+                          <Label htmlFor="experience_cost_fixed" className="text-xs">Coût (ce que je paie)</Label>
+                          <div className="relative">
+                            <Input
+                              id="experience_cost_fixed"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              {...register("experience_cost_fixed", { valueAsNumber: true })}
+                              placeholder="0"
+                              disabled={isSaving}
+                              className="pr-8"
+                            />
+                            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="experience_sell_fixed" className="text-xs">Prix vendu</Label>
+                          <div className="relative">
+                            <Input
+                              id="experience_sell_fixed"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              {...register("experience_sell_fixed", { valueAsNumber: true })}
+                              placeholder="0"
+                              disabled={isSaving}
+                              className="pr-8"
+                            />
+                            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="rounded-lg bg-muted/40 p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Receipt className="h-4 w-4 text-muted-foreground" />
-                        <p className="font-medium text-sm">Taxes</p>
+                    {/* Séparateur OU vertical */}
+                    <div className="flex flex-col items-center self-stretch pt-5 gap-1">
+                      <div className="flex-1 border-l border-dashed" />
+                      <span className="text-[11px] font-bold text-muted-foreground py-1">OU</span>
+                      <div className="flex-1 border-l border-dashed" />
+                    </div>
+
+                    {/* Mode B : Par personne */}
+                    <div className="space-y-2">
+                      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Par personne</p>
+                      <div className="space-y-2">
+                        <div className="space-y-1">
+                          <Label htmlFor="experience_cost_per_person" className="text-xs">Coût (ce que je paie)</Label>
+                          <div className="relative">
+                            <Input
+                              id="experience_cost_per_person"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              {...register("experience_cost_per_person", { valueAsNumber: true })}
+                              placeholder="0"
+                              disabled={isSaving}
+                              className="pr-8"
+                            />
+                            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="experience_sell_per_person" className="text-xs">Prix vendu</Label>
+                          <div className="relative">
+                            <Input
+                              id="experience_sell_per_person"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              {...register("experience_sell_per_person", { valueAsNumber: true })}
+                              placeholder="0"
+                              disabled={isSaving}
+                              className="pr-8"
+                            />
+                            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
+                          </div>
+                        </div>
                       </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* ── Taxes (repliable) ── */}
+                <div className="rounded-lg bg-muted/40 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setTaxesOpen((o) => !o)}
+                    className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-muted/60 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Receipt className="h-4 w-4 text-muted-foreground" />
+                      <p className="font-medium text-sm">Taxes</p>
+                    </div>
+                    <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", taxesOpen && "rotate-180")} />
+                  </button>
+                  {taxesOpen && (
+                    <div className="px-4 pb-4">
                       <Experience2AddonsManager
                         experienceId={currentExperienceId}
                         disabled={isSaving}
@@ -1701,275 +1846,111 @@ export function UnifiedExperience2Form({
                         sectionDescription="VAT and applicable taxes (default 18%)"
                       />
                     </div>
+                  )}
+                </div>
 
-                    {/* ── Récap tarifaire estimé ── */}
-                    <div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4 space-y-2">
-                      <div className="flex items-center gap-2 mb-1">
-                        <TrendingUp className="h-4 w-4 text-primary" />
-                        <p className="font-semibold text-sm">Récap tarifaire estimé</p>
+                {/* ── Bloc 3 : Simulateur ── */}
+                {(() => {
+                  const roomNetRate = watch("room_net_rate") || 0;
+                  const markupValue = watch("bar_rate_markup_value") || 0;
+                  const markupIsPct = watch("bar_rate_markup_is_pct") ?? true;
+                  const costFixed = watch("experience_cost_fixed") || 0;
+                  const costPerPerson = watch("experience_cost_per_person") || 0;
+                  const sellFixed = watch("experience_sell_fixed") || 0;
+                  const sellPerPerson = watch("experience_sell_per_person") || 0;
+                  const maxParty = watch("max_party") || 10;
+
+                  const markupAmount = markupIsPct ? roomNetRate * markupValue / 100 : markupValue;
+                  const netChambre = roomNetRate * simulatorNights;
+                  const markupChambre = markupAmount * simulatorNights;
+                  const coutExperience = costFixed + costPerPerson * simulatorGuests;
+                  const prixVenduExp = sellFixed + sellPerPerson * simulatorGuests;
+                  const prixClientTotal = (roomNetRate + markupAmount) * simulatorNights + sellFixed + sellPerPerson * simulatorGuests;
+                  const commission = prixClientTotal - netChambre - coutExperience;
+                  const margePercent = prixClientTotal > 0 ? (commission / prixClientTotal) * 100 : 0;
+                  const hasData = roomNetRate > 0 || costFixed > 0 || costPerPerson > 0 || sellFixed > 0 || sellPerPerson > 0;
+
+                  return (
+                    <div className="rounded-lg border bg-card p-5 space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Percent className="h-4 w-4 text-primary" />
+                        <p className="font-semibold text-sm">Simulateur</p>
                       </div>
 
-                      {!primaryHyperguestId ? (
-                        <p className="text-xs text-muted-foreground italic">
-                          Associez un hôtel HyperGuest au parcours pour voir l'estimation tarifaire.
-                        </p>
-                      ) : isLoadingFromPrice ? (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                          Chargement du tarif HyperGuest...
+                      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <Label className="text-xs font-medium">Nb de nuits</Label>
+                            <span className="text-sm font-bold">{simulatorNights}</span>
+                          </div>
+                          <Slider
+                            min={1}
+                            max={7}
+                            step={1}
+                            value={[simulatorNights]}
+                            onValueChange={([v]) => setSimulatorNights(v)}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <Label className="text-xs font-medium">Nb de guests</Label>
+                            <span className="text-sm font-bold">{simulatorGuests}</span>
+                          </div>
+                          <Slider
+                            min={1}
+                            max={Math.max(maxParty, 1)}
+                            step={1}
+                            value={[simulatorGuests]}
+                            onValueChange={([v]) => setSimulatorGuests(v)}
+                          />
+                        </div>
+                      </div>
+
+                      {hasData ? (
+                        <div className="rounded-lg bg-muted/40 p-4 space-y-1.5 text-sm border-t">
+                          <div className="flex justify-between text-muted-foreground">
+                            <span>Net Rate chambre × {simulatorNights} nuit{simulatorNights > 1 ? "s" : ""}</span>
+                            <span className="font-medium text-foreground">{netChambre.toFixed(0)} ₪</span>
+                          </div>
+                          <div className="flex justify-between text-muted-foreground">
+                            <span>Markup chambre × {simulatorNights} nuit{simulatorNights > 1 ? "s" : ""}</span>
+                            <span className="font-medium text-foreground">{markupChambre.toFixed(0)} ₪</span>
+                          </div>
+                          <div className="flex justify-between text-muted-foreground">
+                            <span>Coût expérience × {simulatorGuests} guest{simulatorGuests > 1 ? "s" : ""}</span>
+                            <span className="font-medium text-foreground">{coutExperience.toFixed(0)} ₪</span>
+                          </div>
+                          <div className="flex justify-between text-muted-foreground">
+                            <span>Prix vendu expérience × {simulatorGuests} guest{simulatorGuests > 1 ? "s" : ""}</span>
+                            <span className="font-medium text-foreground">{prixVenduExp.toFixed(0)} ₪</span>
+                          </div>
+                          <Separator />
+                          <div className="flex justify-between font-semibold">
+                            <span>Prix client total</span>
+                            <span className="text-primary text-base">{prixClientTotal.toFixed(0)} ₪</span>
+                          </div>
+                          <div className="flex justify-between font-semibold">
+                            <span>Ma commission nette</span>
+                            <span className={cn("text-base font-bold", commission >= 0 ? "text-green-600" : "text-destructive")}>
+                              {commission.toFixed(0)} ₪
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-muted-foreground text-xs">
+                            <span>Marge</span>
+                            <span className={cn("font-medium", commission >= 0 ? "text-green-600" : "text-destructive")}>
+                              {margePercent.toFixed(1)} %
+                            </span>
+                          </div>
                         </div>
                       ) : (
-                        <div className="space-y-1 text-sm">
-                          {/* Prix chambre */}
-                          <div className="flex justify-between text-muted-foreground">
-                            <span>Prix chambre HyperGuest</span>
-                            <span className="font-medium text-foreground">
-                              {fromPriceILS ? `~${fromPriceILS.toFixed(0)} ₪` : "—"}
-                            </span>
-                          </div>
-
-                          {/* Frais expérience */}
-                          {localAddons.filter(a => EXPERIENCE_PRICING_TYPES.includes(a.type as any) && a.is_active).map((addon, i) => (
-                            <div key={i} className="flex justify-between text-muted-foreground">
-                              <span>+ {addon.name || addon.type}</span>
-                              <span>{addon.is_percentage ? `${addon.value}%` : `+${addon.value} ₪`}</span>
-                            </div>
-                          ))}
-
-                          {/* Commissions */}
-                          {localAddons.filter(a => COMMISSION_TYPES.includes(a.type as any) && a.is_active).map((addon, i) => (
-                            <div key={i} className="flex justify-between text-muted-foreground">
-                              <span>+ {addon.name || "Commission"}</span>
-                              <span>{addon.is_percentage ? `${addon.value}%` : `+${addon.value} ₪`}</span>
-                            </div>
-                          ))}
-
-                          {/* Taxes */}
-                          {localAddons.filter(a => TAX_TYPES.includes(a.type as any) && a.is_active).map((addon, i) => (
-                            <div key={i} className="flex justify-between text-muted-foreground">
-                              <span>+ Taxes ({addon.name})</span>
-                              <span>{addon.is_percentage ? `${addon.value}%` : `+${addon.value} ₪`}</span>
-                            </div>
-                          ))}
-
-                          {/* Total */}
-                          <div className="flex justify-between border-t pt-2 mt-1">
-                            <span className="font-semibold">= Prix de vente estimé</span>
-                            <span className="font-bold text-primary text-base">
-                              {fromPriceILS ? `~${fromPriceILS.toFixed(0)} ₪` : "—"}
-                            </span>
-                          </div>
-                          <p className="text-[10px] text-muted-foreground">
-                            Estimé sur le meilleur tarif disponible dans les 30 prochains jours. Indicatif uniquement.
-                          </p>
-                        </div>
+                        <p className="text-xs text-muted-foreground italic text-center py-2">
+                          Remplis les champs Chambre et Expérience pour voir la simulation.
+                        </p>
                       )}
                     </div>
-                  </div>
-                )}
-
-                {/* ── MODÈLE BAR RATE ── */}
-                {watch("pricing_model") === "bar_rate" && (
-                  <div className="space-y-4">
-
-                    {/* Bloc 1 : Prix communiqué au client */}
-                    <div className="rounded-lg border bg-card p-5 space-y-4">
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-primary" />
-                        <p className="font-semibold text-sm">Prix communiqué au client</p>
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        {/* BAR RATE — avec bouton Rafraîchir HyperGuest */}
-                        <div className="space-y-2">
-                          <Label className="text-xs text-muted-foreground">BAR RATE</Label>
-
-                          {/* Bouton de chargement */}
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  className="w-full text-xs gap-2"
-                                  disabled={!primaryHyperguestId || isLoadingBarRate || isSaving}
-                                  onClick={() => {
-                                    setBarRateRefreshEnabled(true);
-                                  }}
-                                >
-                                  {isLoadingBarRate ? (
-                                    <><Loader2 className="h-3 w-3 animate-spin" /> Chargement sur 30 jours...</>
-                                  ) : (
-                                    <><TrendingUp className="h-3 w-3" /> Charger les tarifs HyperGuest</>
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              {!primaryHyperguestId && (
-                                <TooltipContent>
-                                  <p>Aucun hôtel HyperGuest associé au parcours</p>
-                                </TooltipContent>
-                              )}
-                            </Tooltip>
-                          </TooltipProvider>
-
-                          {/* Résultat min/max */}
-                          {minBarRate !== null && maxBarRate !== null && (
-                            <div className="rounded bg-muted/50 px-3 py-2 text-xs space-y-0.5">
-                              <div className="flex justify-between text-muted-foreground">
-                                <span>Min (30j)</span><span className="font-medium">{minBarRate.toFixed(0)} ₪</span>
-                              </div>
-                              <div className="flex justify-between text-muted-foreground">
-                                <span>Max (30j)</span><span className="font-medium">{maxBarRate.toFixed(0)} ₪</span>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Valeur utilisée — modifiable */}
-                          <div>
-                            <Label className="text-xs text-muted-foreground">
-                              {minBarRate !== null ? "Valeur utilisée (pré-remplie, modifiable)" : "Valeur de référence"}
-                            </Label>
-                            <div className="relative mt-1">
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                {...register("bar_rate", { valueAsNumber: true })}
-                                placeholder="—"
-                                disabled={isSaving}
-                                className="pr-10"
-                              />
-                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Majoration */}
-                        <div>
-                          <Label className="text-xs text-muted-foreground">Majoration</Label>
-                          <div className="flex gap-2 mt-1">
-                            <div className="relative flex-1">
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                {...register("bar_rate_markup_value", { valueAsNumber: true })}
-                                placeholder="0"
-                                disabled={isSaving}
-                              />
-                            </div>
-                            <Controller
-                              name="bar_rate_markup_is_pct"
-                              control={control}
-                              render={({ field }) => (
-                                <Select
-                                  value={field.value ? "pct" : "fixed"}
-                                  onValueChange={(val) => field.onChange(val === "pct")}
-                                  disabled={isSaving}
-                                >
-                                  <SelectTrigger className="w-[90px]">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="pct">% </SelectItem>
-                                    <SelectItem value="fixed">₪ fixe</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              )}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Résultat : Prix client */}
-                      <div className="border-t pt-3">
-                        {(() => {
-                          const barRate = watch("bar_rate") ?? 0;
-                          const markup = watch("bar_rate_markup_value") ?? 0;
-                          const isPct = watch("bar_rate_markup_is_pct") ?? true;
-                          const prixClient = barRate + (isPct ? barRate * markup / 100 : markup);
-                          return (
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium">= Prix client</span>
-                              <span className="text-lg font-bold text-primary">
-                                {barRate > 0 ? `${prixClient.toFixed(2)} ₪` : "—"}
-                              </span>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    </div>
-
-                    {/* Bloc 2 : Calcul de la commission */}
-                    <div className="rounded-lg border bg-card p-5 space-y-4">
-                      <div className="flex items-center gap-2">
-                        <Receipt className="h-4 w-4 text-primary" />
-                        <p className="font-semibold text-sm">Calcul de la commission Staymakom</p>
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        {/* Coût expérience en net */}
-                        <div>
-                          <Label htmlFor="experience_net_cost" className="text-xs text-muted-foreground">Coût expérience (net)</Label>
-                          <div className="relative mt-1">
-                            <Input
-                              id="experience_net_cost"
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              {...register("experience_net_cost", { valueAsNumber: true })}
-                              placeholder="0"
-                              disabled={isSaving}
-                              className="pr-10"
-                            />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
-                          </div>
-                        </div>
-
-                        {/* Net rate chambre */}
-                        <div>
-                          <Label htmlFor="room_net_rate" className="text-xs text-muted-foreground">Net rate chambre</Label>
-                          <div className="relative mt-1">
-                            <Input
-                              id="room_net_rate"
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              {...register("room_net_rate", { valueAsNumber: true })}
-                              placeholder="0"
-                              disabled={isSaving}
-                              className="pr-10"
-                            />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Résultat : Commission */}
-                      <div className="border-t pt-3">
-                        {(() => {
-                          const barRate = watch("bar_rate") ?? 0;
-                          const markup = watch("bar_rate_markup_value") ?? 0;
-                          const isPct = watch("bar_rate_markup_is_pct") ?? true;
-                          const prixClient = barRate + (isPct ? barRate * markup / 100 : markup);
-                          const expCost = watch("experience_net_cost") ?? 0;
-                          const roomNet = watch("room_net_rate") ?? 0;
-                          const commission = prixClient - expCost - roomNet;
-                          const hasData = (expCost > 0 || roomNet > 0);
-                          return (
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium">= Commission Staymakom</span>
-                              <span className={cn("text-lg font-bold", commission >= 0 ? "text-green-600" : "text-destructive")}>
-                                {hasData ? `${commission.toFixed(2)} ₪` : "—"}
-                              </span>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
 
               </CardContent>
             </Card>
@@ -2056,6 +2037,75 @@ export function UnifiedExperience2Form({
                 </div>
               </CardContent>
             </Card>
+
+            {/* Aperçu Prix & Disponibilités — en bas de page */}
+            {experienceHotels.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Aperçu Prix & Disponibilités</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {experienceHotels.map((eh, index) => {
+                    const hotel = hotels?.find((h) => h.id === eh.hotel_id);
+                    if (!hotel) return null;
+                    return (
+                      <div key={eh.hotel_id} className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">{index + 1}</span>
+                          <span className="font-medium">{hotel.name}</span>
+                          <span className="text-sm text-muted-foreground">— {eh.nights} nuit{eh.nights > 1 ? "s" : ""}</span>
+                        </div>
+                        <ExperienceAvailabilityPreview
+                          hyperguestPropertyId={hotel.hyperguest_property_id != null ? String(hotel.hyperguest_property_id) : null}
+                          hotelName={hotel.name}
+                          experienceId={currentExperienceId ?? null}
+                          currency="ILS"
+                          lang="en"
+                          nights={eh.nights}
+                          minParty={watch("min_party") || 1}
+                          maxParty={watch("max_party") || 20}
+                          onPriceChange={(price) => setHotelRoomPrices((prev) => ({ ...prev, [eh.hotel_id]: price }))}
+                        />
+                      </div>
+                    );
+                  })}
+
+                  {(() => {
+                    const pricesArr = experienceHotels.map((eh) => hotelRoomPrices[eh.hotel_id]);
+                    const validPrices = pricesArr.filter((p): p is number => p != null && p > 0);
+                    if (validPrices.length === 0) return null;
+                    const combinedTotal = validPrices.reduce((s, p) => s + p, 0);
+                    return (
+                      <Card className="border-primary/30 bg-primary/5">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base">Prix Total du Parcours</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          {experienceHotels.map((eh) => {
+                            const hotel = hotels?.find((h) => h.id === eh.hotel_id);
+                            const price = hotelRoomPrices[eh.hotel_id];
+                            return (
+                              <div key={eh.hotel_id} className="flex justify-between items-center text-sm">
+                                <span>{hotel?.name ?? "Hôtel"} ({eh.nights} nuit{eh.nights > 1 ? "s" : ""})</span>
+                                <span className="font-medium">
+                                  {price != null && price > 0
+                                    ? `₪${price.toLocaleString("en-IL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                    : "—"}
+                                </span>
+                              </div>
+                            );
+                          })}
+                          <div className="border-t pt-2 flex justify-between items-center font-bold text-base">
+                            <span>Total Parcours</span>
+                            <span>₪{combinedTotal.toLocaleString("en-IL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
 

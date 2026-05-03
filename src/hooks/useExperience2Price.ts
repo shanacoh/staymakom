@@ -401,6 +401,24 @@ export function useFromPrice(
   const { data: addons } = useExperienceAddons(experienceId);
   const { data: pricingConfig } = useExperiencePricingConfig(experienceId);
 
+  // Champs du modèle BAR RATE
+  const { data: barRateData } = useQuery({
+    queryKey: ["experience2-bar-rate-from-price", experienceId],
+    queryFn: async () => {
+      if (!experienceId) return null;
+      const { data, error } = await supabase
+        .from("experiences2")
+        .select(
+          "pricing_model, room_net_rate, bar_rate_markup_value, bar_rate_markup_is_pct, experience_sell_fixed, experience_sell_per_person, min_party"
+        )
+        .eq("id", experienceId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!experienceId,
+  });
+
   const propId = hyperguestPropertyId ? parseInt(hyperguestPropertyId) : null;
 
   const { data: quickDates, isLoading } = useQuickDateAvailability({
@@ -422,6 +440,24 @@ export function useFromPrice(
   }, [quickDates]);
 
   const fromPrice = useMemo(() => {
+    // Modèle BAR RATE : prix client = (net rate live HG + markup) + prix vendu expérience × min_party
+    if (barRateData?.pricing_model === "bar_rate") {
+      // Préférer le prix live HyperGuest (best available rate) sur le net rate stocké
+      const liveNetRate = cheapestDate?.cheapestPrice ?? null;
+      const storedNetRate = (barRateData.room_net_rate as number | null) ?? 0;
+      const netRate = liveNetRate ?? storedNetRate;
+      if (netRate <= 0) return null;
+      const markupValue = (barRateData.bar_rate_markup_value as number | null) ?? 0;
+      const isPct = (barRateData.bar_rate_markup_is_pct as boolean | null) ?? true;
+      const markupAmount = isPct ? (netRate * markupValue) / 100 : markupValue;
+      const sellFixed = (barRateData.experience_sell_fixed as number | null) ?? 0;
+      const sellPerPerson = (barRateData.experience_sell_per_person as number | null) ?? 0;
+      const minParty = (barRateData.min_party as number | null) ?? 1;
+      const total = (netRate + markupAmount) + sellFixed + sellPerPerson * minParty;
+      return total > 0 ? total : null;
+    }
+
+    // Modèle standard (logique existante inchangée)
     const roomPrice = cheapestDate?.cheapestPrice ?? 0;
     const config: PricingConfig = pricingConfig ?? {
       commission_room_pct: 0,
@@ -432,7 +468,7 @@ export function useFromPrice(
       promo_is_percentage: true,
     };
     return calculateFromPrice(roomPrice, addons ?? [], config);
-  }, [cheapestDate, addons, pricingConfig]);
+  }, [barRateData, cheapestDate, addons, pricingConfig]);
 
   return {
     fromPriceILS: fromPrice,

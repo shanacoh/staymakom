@@ -12,8 +12,10 @@ interface AvailableDate {
   checkin: Date;
   checkout: Date;
   nights: number;
-  /** Cheapest sell price found across all rooms/rate plans */
+  /** Cheapest sell (contracted) price found across all rooms/rate plans */
   cheapestPrice: number | null;
+  /** Cheapest BAR (public hotel) price found across all rooms/rate plans */
+  cheapestBarPrice: number | null;
   currency: string;
 }
 
@@ -70,6 +72,7 @@ async function scanAvailability(
             if (rooms.length === 0) return null;
 
             let cheapest: number | null = null;
+            let cheapestBar: number | null = null;
             let cur = currency;
 
             for (const room of rooms) {
@@ -106,6 +109,11 @@ async function scanAvailability(
                   cheapest = sellPrice;
                   cur = sellCur;
                 }
+
+                // Track cheapest BAR price for back-office display (not for public UI)
+                if (barPrice != null && (cheapestBar === null || barPrice < cheapestBar)) {
+                  cheapestBar = barPrice;
+                }
               }
             }
 
@@ -116,6 +124,7 @@ async function scanAvailability(
               checkout,
               nights,
               cheapestPrice: cheapest,
+              cheapestBarPrice: cheapestBar,
               currency: cur,
             } satisfies AvailableDate;
           })

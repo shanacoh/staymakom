@@ -261,6 +261,21 @@ export function BookingPanel2({
   const { data: _addons } = useExperienceAddons(experienceId);
   const { data: _pricingConfig } = useExperiencePricingConfig(experienceId);
 
+  // Fetch BAR RATE fields for "from" price calculation on date cards
+  const { data: _barRateData } = useQuery({
+    queryKey: ["experience2-bar-rate-booking", experienceId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("experiences2")
+        .select("pricing_model, bar_rate_markup_value, bar_rate_markup_is_pct, experience_sell_fixed, experience_sell_per_person")
+        .eq("id", experienceId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!experienceId,
+  });
+
   // Fetch available extras for the panel checklist
   const { data: panelExtras } = useQuery({
     queryKey: ["experience2-panel-extras", experienceId],
@@ -283,9 +298,19 @@ export function BookingPanel2({
     },
   });
 
-  /** Apply fixed addons + commissions to a raw HyperGuest room price */
+  /** Apply markup + experience sell price (BAR RATE) or addons+commissions (standard) to a raw HyperGuest sell price */
   const applyFromPrice = (rawPrice: number | null): number | null => {
     if (rawPrice == null || rawPrice <= 0) return rawPrice;
+
+    if (_barRateData?.pricing_model === "bar_rate") {
+      const markupValue = (_barRateData.bar_rate_markup_value as number | null) ?? 0;
+      const isPct = (_barRateData.bar_rate_markup_is_pct as boolean | null) ?? true;
+      const markupAmount = isPct ? (rawPrice * markupValue) / 100 : markupValue;
+      const sellFixed = (_barRateData.experience_sell_fixed as number | null) ?? 0;
+      const sellPerPerson = (_barRateData.experience_sell_per_person as number | null) ?? 0;
+      return rawPrice + markupAmount + sellFixed + sellPerPerson * adults;
+    }
+
     const config: PricingConfig = _pricingConfig ?? {
       commission_room_pct: 0, commission_addons_pct: 0, tax_pct: 0,
       promo_type: null, promo_value: null, promo_is_percentage: true,
@@ -334,13 +359,13 @@ export function BookingPanel2({
       }
     }
     return bestPrice === Infinity ? null : bestPrice;
-  }, [displayQuickDates, _addons, _pricingConfig]);
+  }, [displayQuickDates, _addons, _pricingConfig, _barRateData, adults]);
 
   const isBestRateSlot = useCallback((opt: any) => {
     if (bestRatePrice == null) return false;
     const price = applyFromPrice(opt.cheapestPrice) ?? opt.cheapestPrice;
     return price != null && Math.abs(price - bestRatePrice) < 0.01;
-  }, [bestRatePrice, _addons, _pricingConfig]);
+  }, [bestRatePrice, _addons, _pricingConfig, _barRateData, adults]);
 
   // Auto-select the cheapest available date when dates load
   useEffect(() => {
