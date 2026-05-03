@@ -15,6 +15,10 @@ interface CreateOrderResult {
   state: string;
   checkoutUrl?: string;
   environment: 'production' | 'dev';
+  /** Merchant Public Key Revolut (pk_...) — utilisée par le widget pour initialiser
+   *  l'embedded checkout. Renvoyée par le serveur pour éviter de la dupliquer en
+   *  variable d'environnement frontend. */
+  merchantPublicKey?: string;
 }
 
 interface OrderStatus {

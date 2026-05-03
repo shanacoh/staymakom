@@ -41,8 +41,9 @@ interface CarryData {
   publicId?: string;
   state?: string;
   configData?: {
-    secretKey?: { configured: boolean; name: string; preview: string | null };
-    webhookSecret?: { configured: boolean };
+    secretKey?: { configured: boolean; name: string; preview: string | null; length?: number };
+    publicKey?: { configured: boolean; name: string; preview: string | null; length?: number };
+    webhookSecret?: { configured: boolean; length?: number };
     baseUrl?: string;
     apiVersion?: string;
   };
@@ -127,9 +128,18 @@ export function useRevolutDebug(environment: 'dev' | 'prod' = 'prod') {
           ? `OK (preview: ${config?.secretKey?.preview || '?'})`
           : `MANQUANT — ajouter ce secret dans Supabase`,
       });
-      const webhookOk = config?.webhookSecret?.configured === true && config?.webhookSecret?.length > 10;
+      const publicKeyOk = config?.publicKey?.configured === true && config?.publicKey?.length > 5;
       tests.push({
         id: '2.2',
+        name: `Secret ${config?.publicKey?.name || 'REVOLUT_PUBLIC_KEY'} configuré`,
+        pass: publicKeyOk,
+        detail: publicKeyOk
+          ? `OK (preview: ${config?.publicKey?.preview || '?'})`
+          : `MANQUANT — requis pour l'embedded checkout (widget multi-méthodes dans la page)`,
+      });
+      const webhookOk = config?.webhookSecret?.configured === true && config?.webhookSecret?.length > 10;
+      tests.push({
+        id: '2.3',
         name: 'Secret REVOLUT_WEBHOOK_SIGNING_SECRET configuré',
         pass: webhookOk,
         detail: webhookOk ? `OK (${config.webhookSecret.length} caractères)` : 'MANQUANT — les notifications de paiement ne pourront pas être vérifiées',
@@ -137,7 +147,7 @@ export function useRevolutDebug(environment: 'dev' | 'prod' = 'prod') {
       const expectedHost = environment === 'prod' ? 'merchant.revolut.com' : 'sandbox-merchant.revolut.com';
       const urlOk = typeof config?.baseUrl === 'string' && config.baseUrl.includes(expectedHost);
       tests.push({
-        id: '2.3',
+        id: '2.4',
         name: `URL serveur cohérente avec env ${environment.toUpperCase()}`,
         pass: urlOk,
         detail: config?.baseUrl || 'inconnue',
@@ -149,6 +159,8 @@ export function useRevolutDebug(environment: 'dev' | 'prod' = 'prod') {
       let diagnosis = '';
       if (!secretKeyOk) {
         diagnosis = `PROBLÈME CHEZ NOUS — La clé secrète Revolut "${config?.secretKey?.name}" n'est pas dans les secrets Supabase (ou elle est vide). Va dans Settings → Edge Functions → Secrets et ajoute-la.`;
+      } else if (!publicKeyOk) {
+        diagnosis = `PROBLÈME CHEZ NOUS — La merchant public key Revolut "${config?.publicKey?.name}" n'est pas dans les secrets Supabase. Sans elle, le widget embedded checkout ne peut pas se charger. Va dans Settings → Edge Functions → Secrets, ajoute la clé qui commence par "pk_..." (récupérée sur ton dashboard Revolut Merchant).`;
       } else if (!webhookOk) {
         diagnosis = "PROBLÈME CHEZ NOUS — Le secret de webhook n'est pas configuré. Sans lui, ton serveur ne pourra pas vérifier l'authenticité des notifications de paiement Revolut. Crée d'abord le webhook côté Revolut, puis copie le 'signing secret' dans le secret Supabase REVOLUT_WEBHOOK_SIGNING_SECRET.";
       } else if (!urlOk) {

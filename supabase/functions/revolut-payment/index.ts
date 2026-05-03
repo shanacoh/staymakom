@@ -44,6 +44,14 @@ function getSecretKey(envOverride?: string): string {
   return Deno.env.get(isProd ? 'REVOLUT_SECRET_KEY_PROD' : 'REVOLUT_SECRET_KEY') || '';
 }
 
+/** Merchant Public Key Revolut — utilisée par le widget côté navigateur pour
+ *  initialiser l'embedded checkout. C'est une clé "publique par design" : OK qu'elle
+ *  transite jusqu'au navigateur via la réponse de create-order. */
+function getMerchantPublicKey(envOverride?: string): string {
+  const isProd = getEnvMode(envOverride) === 'production';
+  return Deno.env.get(isProd ? 'REVOLUT_PUBLIC_KEY_PROD' : 'REVOLUT_PUBLIC_KEY') || '';
+}
+
 async function resolveAdminEnvOverride(
   req: Request,
   body: Record<string, unknown>
@@ -122,6 +130,9 @@ async function createOrder(body: Record<string, unknown>, envOverride?: string) 
     publicId: data.token || data.public_id,
     state: data.state,
     checkoutUrl: data.checkout_url,
+    // La merchant public key est renvoyée avec chaque ordre pour que le widget puisse
+    // initialiser l'embedded checkout. Elle est publique par design (pk_...).
+    merchantPublicKey: getMerchantPublicKey(envOverride),
   };
 }
 
@@ -185,7 +196,9 @@ function checkConfig(envOverride?: string) {
   const env = getEnvMode(envOverride);
   const isProd = env === 'production';
   const secretKeyName = isProd ? 'REVOLUT_SECRET_KEY_PROD' : 'REVOLUT_SECRET_KEY';
+  const publicKeyName = isProd ? 'REVOLUT_PUBLIC_KEY_PROD' : 'REVOLUT_PUBLIC_KEY';
   const secretKey = Deno.env.get(secretKeyName) || '';
+  const publicKey = Deno.env.get(publicKeyName) || '';
   const webhookSecret = Deno.env.get('REVOLUT_WEBHOOK_SIGNING_SECRET') || '';
 
   return {
@@ -197,6 +210,12 @@ function checkConfig(envOverride?: string) {
       configured: secretKey.length > 0,
       length: secretKey.length,
       preview: secretKey ? `${secretKey.substring(0, 3)}...${secretKey.substring(secretKey.length - 4)}` : null,
+    },
+    publicKey: {
+      name: publicKeyName,
+      configured: publicKey.length > 0,
+      length: publicKey.length,
+      preview: publicKey ? `${publicKey.substring(0, 3)}...${publicKey.substring(publicKey.length - 4)}` : null,
     },
     webhookSecret: {
       name: 'REVOLUT_WEBHOOK_SIGNING_SECRET',
