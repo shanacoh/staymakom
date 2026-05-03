@@ -354,23 +354,34 @@ const AdminExperiences2 = () => {
                 const hasNoCategory = !(experience as any).categories?.name;
                 const hasNoPhoto = !experience.hero_image && (!experience.photos || experience.photos.length === 0);
 
-                const hasFixedAddon = activeAddons.some((a: any) => a.type === "fixed");
-                const hasCommission = activeAddons.some((a: any) =>
-                  ["commission", "commission_room", "commission_experience", "commission_fixed"].includes(a.type)
-                );
                 const junctionHotels = (experience as any).experience2_hotels || [];
                 const primaryHotel = junctionHotels.length > 0
                   ? junctionHotels.sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0))[0]?.hotels2
                   : (experience as any).hotels2;
                 const hasHyperguest = !!primaryHotel?.hyperguest_property_id;
-                const hasNoPricing = activeAddons.length === 0;
+
+                const isBarRate = (experience as any).pricing_model === "bar_rate";
+
+                const hasNoPricing = isBarRate
+                  ? !((experience as any).room_net_rate > 0)
+                  : activeAddons.length === 0;
+
+                const hasExperienceFee = isBarRate
+                  ? ((experience as any).experience_sell_fixed > 0 || (experience as any).experience_sell_per_person > 0)
+                  : activeAddons.some((a: any) => a.type === "fixed");
+
+                const hasCommission = isBarRate
+                  ? ((experience as any).bar_rate_markup_value > 0)
+                  : activeAddons.some((a: any) =>
+                      ["commission", "commission_room", "commission_experience", "commission_fixed"].includes(a.type)
+                    );
 
                 const warnings: string[] = [];
                 if (hasNoCategory) warnings.push("No category");
                 if (hasNoPricing) warnings.push("No pricing");
                 if (hasNoPhoto) warnings.push("No photo");
                 if (experience.status === "published") {
-                  if (!hasFixedAddon) warnings.push("No experience fee");
+                  if (!hasExperienceFee) warnings.push("No experience fee");
                   if (!hasCommission) warnings.push("No commission");
                   if (!hasHyperguest) warnings.push("No HG link");
                 }
