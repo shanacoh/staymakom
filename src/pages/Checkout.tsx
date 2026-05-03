@@ -31,6 +31,7 @@ import { BookingConfirmationDialog, type BookingConfirmationData } from "@/compo
 import AuthPromptDialog from "@/components/auth/AuthPromptDialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { useExperience2Price } from "@/hooks/useExperience2Price";
 import { preBook, createBooking } from "@/services/hyperguest";
 import { createRevolutOrder, refundRevolutOrder } from "@/services/revolut";
@@ -295,6 +296,8 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
   const dateFrom = new Date(state.dateRange.from);
   const dateTo = new Date(state.dateRange.to);
   const totalPartySize = state.adults + state.childrenAges.length;
+
+  const { symbol: currencySymbol, convert: convertCurrency } = useCurrency();
 
   const ratePlanPrices = state.selectedRatePlan?.prices || null;
   const priceBreakdown = useExperience2Price(state.experienceId, null, state.currency, state.nights, state.adults, ratePlanPrices);
@@ -632,6 +635,20 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
         payment_status: "paid",
         paid_at: new Date().toISOString(),
       } as any);
+
+      if (dbError) {
+        // La réservation HyperGuest est confirmée mais l'enregistrement en base a échoué.
+        // On NE rembourse PAS — la chambre est bien réservée. On informe le client et l'admin.
+        console.error("[Checkout] bookings_hg insert failed:", dbError);
+        toast.error(
+          lang === "he"
+            ? `ההזמנה אושרה אצל HyperGuest אך לא נשמרה. אנא שמור את מספר הזמנה: ${hgBookingId}`
+            : lang === "fr"
+            ? `Réservation confirmée mais non enregistrée. Conservez votre référence : ${hgBookingId}`
+            : `Booking confirmed but not saved. Please keep your reference: ${hgBookingId}`,
+          { duration: 30000 }
+        );
+      }
 
       if (appliedGiftCard && giftCardApplied > 0) {
         try {
@@ -1050,7 +1067,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                         <span className="font-medium">{t.giftCardApplied}</span>
                         <span className="font-mono text-xs">{appliedGiftCard.code}</span>
                         <span className="font-semibold">
-                          -{appliedGiftCard.currency === "USD" ? "$" : "₪"}{giftCardApplied.toLocaleString()}
+                          -{currencySymbol}{Math.round(convertCurrency(giftCardApplied)).toLocaleString()}
                         </span>
                       </div>
                       <button
@@ -1186,7 +1203,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                     </div>
                   </div>
                   <div className="text-emerald-700 font-semibold text-sm">
-                    -{appliedGiftCard.currency === "USD" ? "$" : "₪"}{giftCardApplied.toLocaleString()}
+                    -{currencySymbol}{Math.round(convertCurrency(giftCardApplied)).toLocaleString()}
                   </div>
                 </div>
               )}

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import AuthPromptDialog from "@/components/auth/AuthPromptDialog";
 
 interface Experience {
@@ -42,12 +43,12 @@ export default function CompactExperienceCard({
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { lang } = useLanguage();
+  const { symbol } = useCurrency();
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
 
   const image = (experience as any).thumbnail_image || experience.hero_image || experience.photos?.[0] || experience.hotels?.hero_image;
   const hotelName = experience.hotels?.name || "";
   const city = experience.hotels?.city || "";
-  const currency = experience.currency === "ILS" ? "₪" : "$";
 
   const toggleWishlist = useMutation({
     mutationFn: async () => {
@@ -150,7 +151,7 @@ export default function CompactExperienceCard({
             </div>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs font-medium text-foreground">
-              {currency}{experience.base_price}
+              {symbol}{experience.base_price}
             </span>
           </div>
         </div>

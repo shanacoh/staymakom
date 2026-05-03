@@ -22,11 +22,20 @@ const CurrencyContext = createContext<CurrencyContextValue | null>(null);
 const FALLBACK_ILS_TO_USD = 0.27;
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
-  const [displayCurrency, setDisplayCurrencyRaw] = useState<DisplayCurrency>("USD");
+  const [displayCurrency, setDisplayCurrencyRaw] = useState<DisplayCurrency>(() => {
+    try {
+      const saved = localStorage.getItem("staymakom_currency");
+      if (saved === "ILS" || saved === "USD") return saved;
+    } catch {}
+    return "USD";
+  });
 
   const setDisplayCurrency = useCallback((c: DisplayCurrency) => {
     setDisplayCurrencyRaw((prev) => {
-      if (prev !== c) trackCurrencySwitched(prev, c);
+      if (prev !== c) {
+        trackCurrencySwitched(prev, c);
+        try { localStorage.setItem("staymakom_currency", c); } catch {}
+      }
       return c;
     });
   }, []);

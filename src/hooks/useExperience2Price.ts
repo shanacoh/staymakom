@@ -1,6 +1,6 @@
 // =============================================================================
 // src/hooks/useExperience2Price.ts
-// Hook de calcul de prix V3 — Addons-only model
+// Hook de calcul de prix — modèle unifié : (HG_price + markup) + exp_sell + extras
 // =============================================================================
 
 import { useMemo } from "react";
@@ -311,27 +311,92 @@ export function useExperience2Price(
   numberOfGuests: number,
   ratePlanPrices?: unknown,
 ): PriceBreakdownV2 | null {
-  const { data: addons } = useExperienceAddons(experienceId);
-  const { data: pricingConfig } = useExperiencePricingConfig(experienceId);
+  // Fetch the unified pricing fields (markup + experience sell prices + promo)
+  const { data: pricingData } = useQuery({
+    queryKey: ["experience2-unified-pricing", experienceId],
+    queryFn: async () => {
+      if (!experienceId) return null;
+      const { data, error } = await (supabase as any)
+        .from("experiences2")
+        .select(
+          "bar_rate_markup_value, bar_rate_markup_is_pct, experience_sell_fixed, experience_sell_per_person, promo_type, promo_value, promo_is_percentage"
+        )
+        .eq("id", experienceId)
+        .single();
+      if (error) throw error;
+      return data as {
+        bar_rate_markup_value: number | null;
+        bar_rate_markup_is_pct: boolean | null;
+        experience_sell_fixed: number | null;
+        experience_sell_per_person: number | null;
+        promo_type: string | null;
+        promo_value: number | null;
+        promo_is_percentage: boolean | null;
+      } | null;
+    },
+    enabled: !!experienceId,
+  });
 
   return useMemo(() => {
     const extracted = extractPriceFromRatePlanPrices(ratePlanPrices);
     const roomPrice = extracted?.amount ?? basePrice ?? 0;
     const cur = extracted?.currency ?? currency;
 
-    if (roomPrice <= 0 && (!addons || addons.length === 0)) return null;
+    if (roomPrice <= 0) return null;
 
-    const config: PricingConfig = pricingConfig ?? {
-      commission_room_pct: 0,
-      commission_addons_pct: 0,
-      tax_pct: 0,
-      promo_type: null,
-      promo_value: null,
-      promo_is_percentage: true,
+    // Formule unifiée : prix_HG + markup + prix_vendu_expérience
+    const markupValue = pricingData?.bar_rate_markup_value ?? 0;
+    const isPct = pricingData?.bar_rate_markup_is_pct ?? true;
+    const markupAmount = isPct ? (roomPrice * markupValue) / 100 : markupValue;
+    const sellFixed = pricingData?.experience_sell_fixed ?? 0;
+    const sellPerPerson = pricingData?.experience_sell_per_person ?? 0;
+    const subtotal = roomPrice + markupAmount + sellFixed + sellPerPerson * numberOfGuests;
+
+    // Promo
+    let discountAmount = 0;
+    let fakeOriginalPrice: number | null = null;
+    const promoType = pricingData?.promo_type ?? null;
+    const promoValue = pricingData?.promo_value ?? null;
+    const promoIsPct = pricingData?.promo_is_percentage ?? true;
+
+    if (promoType === "real_discount" && promoValue != null && promoValue > 0) {
+      discountAmount = promoIsPct ? (subtotal * promoValue) / 100 : Math.min(promoValue, subtotal);
+    } else if (promoType === "fake_markup" && promoValue != null && promoValue > 0) {
+      fakeOriginalPrice = subtotal * (1 + promoValue / 100);
+    }
+
+    const finalTotal = Math.max(0, subtotal - discountAmount);
+
+    return {
+      roomPrice,
+      pricingAddonLines: [],
+      totalPricingAddons: sellFixed + sellPerPerson * numberOfGuests,
+      commissionLines: [],
+      totalCommissions: markupAmount,
+      subtotalBeforeTax: subtotal,
+      taxLines: [],
+      totalTax: 0,
+      perPersonAddons: [],
+      totalAddons: 0,
+      commissionRoomPct: 0,
+      commissionRoomAmount: 0,
+      commissionAddonsPct: 0,
+      commissionAddonsAmount: 0,
+      taxPct: 0,
+      taxAmount: 0,
+      promo: {
+        type: promoType,
+        value: promoValue,
+        isPercentage: promoIsPct,
+        discountAmount,
+        fakeOriginalPrice,
+      },
+      finalTotal,
+      currency: cur,
+      nights,
+      guests: numberOfGuests,
     };
-
-    return calculatePriceV2(roomPrice, numberOfGuests, nights, addons ?? [], config, cur);
-  }, [addons, pricingConfig, basePrice, currency, nights, numberOfGuests, ratePlanPrices]);
+  }, [pricingData, basePrice, currency, nights, numberOfGuests, ratePlanPrices]);
 }
 
 // ---------------------------------------------------------------------------

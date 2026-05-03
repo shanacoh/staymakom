@@ -506,11 +506,7 @@ export function BookingPanel2({
   }, [panelExtras, panelQuantities]);
 
   const isStep1Complete = !!(dateRange.from && dateRange.to && selectedRoomId && selectedRatePlanId);
-  const displayTotal = (
-    _barRateData?.pricing_model === "bar_rate" && priceBreakdown?.roomPrice
-      ? (applyFromPrice(priceBreakdown.roomPrice) ?? priceBreakdown.finalTotal ?? 0)
-      : (priceBreakdown?.finalTotal ?? 0)
-  ) + panelExtrasTotal;
+  const displayTotal = (priceBreakdown?.finalTotal ?? 0) + panelExtrasTotal;
   const totalIsNaN = Number.isNaN(displayTotal);
   const isOnRequest = selectedRatePlan?.isImmediate === false;
 

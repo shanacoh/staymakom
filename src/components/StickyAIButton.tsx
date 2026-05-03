@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { t } from '@/lib/translations';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -64,6 +65,7 @@ const StickyAIButton = () => {
   const [isSubmittingEmail, setIsSubmittingEmail] = useState(false);
   
   const { lang } = useLanguage();
+  const { symbol } = useCurrency();
   const navigate = useNavigate();
   const { toast } = useToast();
   const isRTL = lang === 'he';
@@ -346,7 +348,7 @@ const StickyAIButton = () => {
                         </p>
                         <div className="flex items-center justify-between mt-1">
                           <span className="font-semibold text-sm">
-                            {rec.currency === 'ILS' ? '₪' : rec.currency}{rec.price}
+                            {symbol}{rec.price}
                           </span>
                           <ArrowRight className={`w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity ${isRTL ? 'rotate-180' : ''}`} />
                         </div>

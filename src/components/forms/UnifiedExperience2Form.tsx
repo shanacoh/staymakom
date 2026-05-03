@@ -1624,7 +1624,7 @@ export function UnifiedExperience2Form({
                           <>
                             <div className="grid grid-cols-5 gap-2 text-muted-foreground font-medium pb-1 border-b">
                               <span></span>
-                              <span className="text-center">BAR Rate</span>
+                              <span className="text-center">Tarif indicatif</span>
                               <span className="text-center">Net Rate</span>
                               <span className="text-center">Diff ₪</span>
                               <span className="text-center">Diff %</span>
