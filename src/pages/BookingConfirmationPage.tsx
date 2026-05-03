@@ -125,7 +125,7 @@ export default function BookingConfirmationPage() {
       if (!token) throw new Error("No token");
       const { data, error } = await supabase
         .from("bookings_hg")
-        .select("id, hg_booking_id, experience_id, hotel_id, checkin, checkout, nights, party_size, sell_price, currency, status, hg_status, board_type, room_code, room_name, rate_plan, customer_email, hg_raw_data, confirmation_token, is_cancelled, cancelled_at")
+        .select("id, hg_booking_id, experience_id, hotel_id, checkin, checkout, nights, party_size, sell_price, paid_amount, currency, status, hg_status, board_type, room_code, room_name, rate_plan, customer_email, hg_raw_data, confirmation_token, is_cancelled, cancelled_at")
         .eq("confirmation_token", token)
         .maybeSingle();
       if (error || !data) throw new Error("Not found");
@@ -327,11 +327,19 @@ export default function BookingConfirmationPage() {
 
               <Separator />
 
-              {/* Price breakdown */}
+              {/* Price breakdown — affiche le montant réellement débité au client
+                  (paid_amount) plutôt que le prix HG nu (sell_price), pour que le
+                  client voie le même montant que sur son relevé bancaire.
+                  Fallback sur sell_price pour les anciennes résas qui n'ont pas
+                  encore paid_amount renseigné. */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="font-semibold">{labels.totalPaid}</span>
-                  <DualPrice amount={booking.sell_price} currency={booking.currency} className="text-primary text-xl font-bold items-end" />
+                  <DualPrice
+                    amount={booking.paid_amount ?? booking.sell_price}
+                    currency={booking.currency}
+                    className="text-primary text-xl font-bold items-end"
+                  />
                 </div>
                 {displayTaxes > 0 && (
                   <p className="text-xs text-muted-foreground text-right">

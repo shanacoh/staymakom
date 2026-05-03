@@ -608,6 +608,11 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
         nights: state.nights,
         party_size: totalPartySize,
         sell_price: sellPrice,
+        // Montant réellement débité au client via Revolut, après application de la
+        // gift card. Source de vérité pour l'affichage client (page confirmation,
+        // espace client, email). À ne pas confondre avec sell_price qui est le prix
+        // HyperGuest de la chambre seule (pour la compta avec HG).
+        paid_amount: amountAfterGiftCard,
         net_price: 0,
         commission_amount: priceBreakdown?.totalCommissions ?? 0,
         currency: bookingCurrency,
