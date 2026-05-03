@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface MyStaymakomSectionProps {
   userId?: string;
@@ -31,6 +32,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
   const { lang } = useLanguage();
   const isHebrew = lang === "he";
   const isFrench = lang === "fr";
+  const { symbol, convert } = useCurrency();
   const [timeFilter, setTimeFilter] = useState<string>("all");
   const [cancellingBookingId, setCancellingBookingId] = useState<string | null>(null);
   // ✅ #4: Cancel simulation state
@@ -359,17 +361,15 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
         };
       }
 
-      const booking = bookingsHg?.find((b: any) => b.id === cancellingBookingId);
-      const curr = booking?.currency || "USD";
-      const symbol = "$";
+      const penaltyDisplay = `${symbol}${Number(convert(penalty)).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 
       return {
         loading: false,
         message: isHebrew
-          ? `עמלת ביטול: ${symbol}${Number(penalty).toLocaleString()}`
+          ? `עמלת ביטול: ${penaltyDisplay}`
           : isFrench
-          ? `Frais d'annulation : ${symbol}${Number(penalty).toLocaleString()}`
-          : `Cancellation fee: ${symbol}${Number(penalty).toLocaleString()}`,
+          ? `Frais d'annulation : ${penaltyDisplay}`
+          : `Cancellation fee: ${penaltyDisplay}`,
         hasPenalty: true,
         penalty,
         refund,
@@ -538,7 +538,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
                     <div>
                       <p className="text-xs text-muted-foreground">{isHebrew ? "סה\"כ" : "Total"}</p>
                       <p className="text-xl font-bold">
-                        ${Number(booking.totalPrice).toLocaleString()}
+                        {symbol}{Number(convert(booking.totalPrice ?? 0)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </p>
                     </div>
                     <div className="flex gap-2">
