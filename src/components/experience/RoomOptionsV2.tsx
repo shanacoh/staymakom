@@ -47,6 +47,14 @@ interface SearchResult {
   rooms?: Room[];
 }
 
+interface BarRateData {
+  pricing_model: string;
+  bar_rate_markup_value: number | null;
+  bar_rate_markup_is_pct: boolean | null;
+  experience_sell_fixed: number | null;
+  experience_sell_per_person: number | null;
+}
+
 interface RoomOptionsV2Props {
   searchResult: SearchResult | null;
   isLoading: boolean;
@@ -58,6 +66,8 @@ interface RoomOptionsV2Props {
   addons?: any[];
   pricingConfig?: PricingConfig;
   nights?: number;
+  barRateData?: BarRateData | null;
+  adults?: number;
 }
 
 function shouldHideRatePlan(ratePlan: RoomRatePlan): boolean {
@@ -83,7 +93,8 @@ export function RoomOptionsV2({
   checkInDate,
   addons,
   pricingConfig,
-  nights = 1,
+  barRateData,
+  adults = 2,
 }: RoomOptionsV2Props) {
   const t = {
     en: {
@@ -159,6 +170,14 @@ export function RoomOptionsV2({
   };
 
   const applyFromPrice = (rawPrice: number): number => {
+    if (barRateData?.pricing_model === "bar_rate") {
+      const markupValue = barRateData.bar_rate_markup_value ?? 0;
+      const isPct = barRateData.bar_rate_markup_is_pct ?? true;
+      const markupAmount = isPct ? (rawPrice * markupValue) / 100 : markupValue;
+      const sellFixed = barRateData.experience_sell_fixed ?? 0;
+      const sellPerPerson = barRateData.experience_sell_per_person ?? 0;
+      return rawPrice + markupAmount + sellFixed + sellPerPerson * adults;
+    }
     const config: PricingConfig = pricingConfig ?? {
       commission_room_pct: 0, commission_addons_pct: 0, tax_pct: 0,
       promo_type: null, promo_value: null, promo_is_percentage: true,

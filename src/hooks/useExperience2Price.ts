@@ -406,7 +406,7 @@ export function useFromPrice(
     queryKey: ["experience2-bar-rate-from-price", experienceId],
     queryFn: async () => {
       if (!experienceId) return null;
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("experiences2")
         .select(
           "pricing_model, room_net_rate, bar_rate_markup_value, bar_rate_markup_is_pct, experience_sell_fixed, experience_sell_per_person, min_party"
@@ -414,7 +414,7 @@ export function useFromPrice(
         .eq("id", experienceId)
         .single();
       if (error) throw error;
-      return data;
+      return data as { pricing_model: string; room_net_rate: number | null; bar_rate_markup_value: number | null; bar_rate_markup_is_pct: boolean | null; experience_sell_fixed: number | null; experience_sell_per_person: number | null; min_party: number | null } | null;
     },
     enabled: !!experienceId,
   });

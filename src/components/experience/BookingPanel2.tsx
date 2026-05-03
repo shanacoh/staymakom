@@ -265,13 +265,13 @@ export function BookingPanel2({
   const { data: _barRateData } = useQuery({
     queryKey: ["experience2-bar-rate-booking", experienceId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("experiences2")
         .select("pricing_model, bar_rate_markup_value, bar_rate_markup_is_pct, experience_sell_fixed, experience_sell_per_person")
         .eq("id", experienceId)
         .single();
       if (error) throw error;
-      return data;
+      return data as { pricing_model: string; bar_rate_markup_value: number | null; bar_rate_markup_is_pct: boolean | null; experience_sell_fixed: number | null; experience_sell_per_person: number | null } | null;
     },
     enabled: !!experienceId,
   });
@@ -904,6 +904,8 @@ export function BookingPanel2({
             addons={_addons}
             pricingConfig={_pricingConfig}
             nights={nights}
+            barRateData={_barRateData}
+            adults={adults}
           />
         )}
 
