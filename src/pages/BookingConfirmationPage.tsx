@@ -16,7 +16,7 @@ import { DualPrice } from "@/components/ui/DualPrice";
 import { getBoardTypeLabel } from "@/services/hyperguest";
 import { analyzeCancellationPolicies } from "@/utils/cancellationPolicy";
 import { toast } from "sonner";
-import Header from "@/components/Header";
+import LaunchHeader from "@/components/LaunchHeader";
 import Footer from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
 
@@ -170,7 +170,7 @@ export default function BookingConfirmationPage() {
   if (isLoading) {
     return (
       <>
-        <Header />
+        <LaunchHeader forceScrolled />
         <div className="min-h-screen flex items-center justify-center">
           <p className="text-muted-foreground">{labels.loading}</p>
         </div>
@@ -182,7 +182,7 @@ export default function BookingConfirmationPage() {
   if (error || !booking) {
     return (
       <>
-        <Header />
+        <LaunchHeader forceScrolled />
         <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-4">
           <AlertCircle className="h-12 w-12 text-muted-foreground" />
           <h1 className="text-xl font-semibold">{labels.notFound}</h1>
@@ -235,7 +235,7 @@ export default function BookingConfirmationPage() {
         title={labels.title}
         description={labels.title}
       />
-      <Header />
+      <LaunchHeader forceScrolled />
       <main className="min-h-screen bg-background py-8 md:py-16 px-4">
         <div className="max-w-2xl mx-auto space-y-6">
           {/* Animated check icon */}
