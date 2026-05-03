@@ -1404,10 +1404,13 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       {/* Popup de paiement Revolut — full-screen pour laisser de l'air aux 3 méthodes
           (Revolut Pay, Carte, Google Pay). Le widget est démonté quand la popup se
           ferme : ça permet d'avoir une instance Revolut fraîche à chaque ouverture. */}
-      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen} modal={false}>
         {/* Popup généreuse en taille pour que le widget Revolut affiche TOUTES ses
             méthodes de paiement sans être tronqué (Revolut Pay + Apple Pay + Google Pay
-            + Carte peuvent prendre jusqu'à 700-800px de hauteur). */}
+            + Carte peuvent prendre jusqu'à 700-800px de hauteur).
+            modal=false : permet à la popup 3D Secure / feuille Apple Pay de communiquer
+            correctement avec notre widget (le focus trap par défaut bloque parfois les
+            callbacks onSuccess). */}
         <DialogContent className="max-w-3xl w-[95vw] max-h-[95vh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>

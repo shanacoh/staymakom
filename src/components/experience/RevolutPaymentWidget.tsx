@@ -166,15 +166,21 @@ export default function RevolutPaymentWidget({
           email: customerEmail || undefined,
           // createOrder est appelé par Revolut quand le client clique sur un moyen
           // de paiement. On retourne le publicId de l'ordre déjà créé en amont.
-          createOrder: async () => ({ publicId }),
-          onSuccess: ({ orderId }) => {
-            onPaymentSuccess(orderId);
+          createOrder: async () => {
+            console.log("🔍 [Revolut] createOrder callback triggered, returning publicId:", publicId.substring(0, 12) + "...");
+            return { publicId };
           },
-          onError: ({ error }) => {
-            const msg = error?.message || "Payment failed";
+          onSuccess: (payload) => {
+            console.log("✅ [Revolut] onSuccess fired with payload:", payload);
+            onPaymentSuccess(payload?.orderId);
+          },
+          onError: (payload) => {
+            console.error("❌ [Revolut] onError fired with payload:", payload);
+            const msg = payload?.error?.message || "Payment failed";
             onPaymentError(msg);
           },
-          onCancel: () => {
+          onCancel: (payload) => {
+            console.warn("⚠️ [Revolut] onCancel fired with payload:", payload);
             onPaymentCancel?.();
           },
         });
