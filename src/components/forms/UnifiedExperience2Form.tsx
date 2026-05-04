@@ -348,6 +348,14 @@ export function UnifiedExperience2Form({
   const minBarRatePublic = barRatePublicPrices.length > 0 ? Math.min(...barRatePublicPrices) : null;
   const maxBarRatePublic = barRatePublicPrices.length > 0 ? Math.max(...barRatePublicPrices) : null;
 
+  // Auto-déclenche le fetch HyperGuest dès qu'on arrive sur l'onglet Tarification
+  // avec un hôtel HG associé, pour que le Net Rate soit pré-rempli sans clic manuel.
+  useEffect(() => {
+    if (activeTab === "tarification" && primaryHyperguestId && !barRateRefreshEnabled) {
+      setBarRateRefreshEnabled(true);
+    }
+  }, [activeTab, primaryHyperguestId, barRateRefreshEnabled]);
+
   // Pré-remplir room_net_rate avec le min Net Rate quand les données arrivent.
   // shouldDirty + shouldTouch forcent react-hook-form à propager la valeur au DOM
   // (sinon le champ peut rester visuellement vide alors que l'état interne est correct).
@@ -1928,10 +1936,6 @@ export function UnifiedExperience2Form({
                           <div className="flex justify-between text-muted-foreground">
                             <span>Markup chambre × {simulatorNights} nuit{simulatorNights > 1 ? "s" : ""}</span>
                             <span className="font-medium text-foreground">{markupChambre.toFixed(0)} ₪</span>
-                          </div>
-                          <div className="flex justify-between text-muted-foreground">
-                            <span>Coût expérience × {simulatorGuests} guest{simulatorGuests > 1 ? "s" : ""}</span>
-                            <span className="font-medium text-foreground">{coutExperience.toFixed(0)} ₪</span>
                           </div>
                           <div className="flex justify-between text-muted-foreground">
                             <span>Prix vendu expérience × {simulatorGuests} guest{simulatorGuests > 1 ? "s" : ""}</span>
