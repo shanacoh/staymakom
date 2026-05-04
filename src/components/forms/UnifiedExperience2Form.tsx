@@ -1629,9 +1629,9 @@ export function UnifiedExperience2Form({
                     <div className="rounded bg-background border px-3 py-2 space-y-1 text-xs">
                       {(() => {
                         const minDiffILS = minBarRatePublic - minNetRate;
-                        const minDiffPct = minNetRate > 0 ? (minDiffILS / minNetRate) * 100 : null;
+                        const minDiffPct = minBarRatePublic > 0 ? (minDiffILS / minBarRatePublic) * 100 : null;
                         const maxDiffILS = maxBarRatePublic !== null && maxNetRate !== null ? maxBarRatePublic - maxNetRate : null;
-                        const maxDiffPct = maxDiffILS !== null && maxNetRate !== null && maxNetRate > 0 ? (maxDiffILS / maxNetRate) * 100 : null;
+                        const maxDiffPct = maxDiffILS !== null && maxBarRatePublic !== null && maxBarRatePublic > 0 ? (maxDiffILS / maxBarRatePublic) * 100 : null;
                         return (
                           <>
                             <div className="grid grid-cols-5 gap-2 text-muted-foreground font-medium pb-1 border-b">
