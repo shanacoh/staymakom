@@ -456,11 +456,16 @@ export function UnifiedExperience2Form({
       setValue("promo_value", (existingExperience as any).promo_value ?? 0);
       setValue("promo_is_percentage", (existingExperience as any).promo_is_percentage ?? true);
       setValue("pricing_model", "bar_rate");
-      setValue("bar_rate", (existingExperience as any).bar_rate ?? undefined);
+      // Ne pas écraser bar_rate / room_net_rate si la base est null :
+      // ces champs peuvent être pré-remplis par l'auto-fill HyperGuest avant
+      // qu'un refetch d'`existingExperience` ne déclenche à nouveau cet effet.
+      const existingBarRate = (existingExperience as any).bar_rate;
+      if (existingBarRate != null) setValue("bar_rate", existingBarRate);
       setValue("bar_rate_markup_value", (existingExperience as any).bar_rate_markup_value ?? undefined);
       setValue("bar_rate_markup_is_pct", (existingExperience as any).bar_rate_markup_is_pct ?? true);
       setValue("experience_net_cost", (existingExperience as any).experience_net_cost ?? undefined);
-      setValue("room_net_rate", (existingExperience as any).room_net_rate ?? undefined);
+      const existingRoomNetRate = (existingExperience as any).room_net_rate;
+      if (existingRoomNetRate != null) setValue("room_net_rate", existingRoomNetRate);
       setValue("experience_cost_fixed", (existingExperience as any).experience_cost_fixed ?? undefined);
       setValue("experience_cost_per_person", (existingExperience as any).experience_cost_per_person ?? undefined);
       setValue("experience_sell_fixed", (existingExperience as any).experience_sell_fixed ?? undefined);
