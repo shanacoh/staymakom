@@ -8,12 +8,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Check, CalendarDays, Hotel, Users, MessageSquare, Copy, Clock, AlertTriangle } from "lucide-react";
+import { Check, CalendarDays, Hotel, Users, MessageSquare, Clock, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/hooks/useLanguage";
 import { DualPrice } from "@/components/ui/DualPrice";
 import { getBoardTypeLabel } from "@/services/hyperguest";
-import { toast } from "sonner";
 
 export interface BookingConfirmationData {
   hgBookingId: string;
@@ -67,7 +66,7 @@ const translations = {
     copyRef: "Copy reference",
     nights: "nights",
     taxesAtHotel: "To pay at the hotel (taxes & fees)",
-    vatNote: "Prices do not include VAT. Israeli residents are subject to 18% VAT payable at the hotel.",
+    vatNote: "Prices do not include VAT. Israeli residents are subject to 18% VAT payable at the hotel. Tourists with an entry permit (B/2, B/3, or B/4) and a valid foreign passport are not subject to VAT. Please make sure to keep the entry permit received upon arrival, as it may be required to confirm eligibility. If exemption cannot be validated at check-in, VAT will be charged accordingly.",
     viewConfirmation: "View my confirmation",
   },
   he: {
@@ -89,7 +88,7 @@ const translations = {
     copyRef: "העתק מספר הפניה",
     nights: "לילות",
     taxesAtHotel: "לתשלום במלון (מסים ועמלות)",
-    vatNote: "המחירים אינם כוללים מע\"מ. תושבי ישראל חייבים ב-18% מע\"מ המשולם ישירות במלון.",
+    vatNote: "המחירים אינם כוללים מע״מ. אזרחי ותושבי ישראל חייבים במע״מ בשיעור של 18%, אשר ישולם במלון. תיירים המחזיקים בדרכון זר ובאשרת כניסה (B/2, B/3 או B/4) אינם חייבים במע״מ; יש לשמור את אישור הכניסה שניתן בעת ההגעה, שכן ייתכן ויידרש לצורך אימות הזכאות. במידה ולא ניתן לאשר את הפטור במעמד הצ'ק-אין, יחויב המע״מ בהתאם.",
     viewConfirmation: "צפה באישור שלי",
   },
   fr: {
@@ -111,7 +110,7 @@ const translations = {
     copyRef: "Copier la référence",
     nights: "nuits",
     taxesAtHotel: "À régler sur place (taxes et frais)",
-    vatNote: "Les prix n'incluent pas la TVA. Les résidents israéliens sont soumis à 18% de TVA payable à l'hôtel.",
+    vatNote: "Les prix n'incluent pas la TVA. Les résidents israéliens sont soumis à 18% de TVA payable à l'hôtel. Les touristes détenteurs d'un passeport étranger valide et d'un permis d'entrée (B/2, B/3 ou B/4) sont exonérés de TVA. Veuillez conserver le permis d'entrée reçu à l'arrivée, car il peut être demandé pour confirmer votre éligibilité. Si l'exonération ne peut être validée au moment du check-in, la TVA sera facturée en conséquence.",
     viewConfirmation: "Voir ma confirmation",
   },
 };
@@ -131,10 +130,8 @@ export function BookingConfirmationDialog({ open, onClose, data, lang = "en" }: 
   const isConfirmed = data.status?.toLowerCase() === "confirmed";
   const isOnRequest = data.isOnRequest || (!isConfirmed && data.status?.toLowerCase() !== "confirmed");
 
-  const copyRef = () => {
-    navigator.clipboard.writeText(data.staymakomRef);
-    toast.success(lang === "he" ? "הועתק!" : lang === "fr" ? "Copié !" : "Copied!");
-  };
+  const isVatRemark = (r: string) => /taxes are not included|prices do not include vat|17% vat|18% vat|b2 visa|local regulations.*tax|pay.*tax.*check.?in/i.test(r);
+  const displayRemarks = data.remarks.filter(r => !/general message that should be shown/i.test(r) && !isVatRemark(r));
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -165,15 +162,6 @@ export function BookingConfirmationDialog({ open, onClose, data, lang = "en" }: 
 
           {/* References */}
           <div className="space-y-2 p-3 rounded-lg bg-muted/50">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">{t.ref}</span>
-              <div className="flex items-center gap-1">
-                <span className="font-mono font-medium">{data.staymakomRef}</span>
-                <button onClick={copyRef} className="text-muted-foreground hover:text-foreground">
-                  <Copy className="h-3 w-3" />
-                </button>
-              </div>
-            </div>
             {data.hgBookingId && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{t.hgRef}</span>
@@ -237,12 +225,12 @@ export function BookingConfirmationDialog({ open, onClose, data, lang = "en" }: 
           <p className="text-xs text-muted-foreground">{t.vatNote}</p>
 
           {/* Remarks */}
-          {data.remarks.filter(r => !/general message that should be shown/i.test(r)).length > 0 && (
+          {displayRemarks.length > 0 && (
             <>
               <Separator />
-              <div className="space-y-1.5 p-3 rounded-md bg-amber-50 border border-amber-200">
-                {data.remarks.filter(r => !/general message that should be shown/i.test(r)).map((remark, idx) => (
-                  <p key={idx} className="text-xs text-amber-700">{remark}</p>
+              <div className="space-y-1">
+                {displayRemarks.map((remark, idx) => (
+                  <p key={idx} className="text-xs text-muted-foreground">· {remark}</p>
                 ))}
               </div>
             </>

@@ -87,17 +87,26 @@ const handler = async (req: Request): Promise<Response> => {
     const safeRoom = escapeHTML(roomName || '');
     const safeRef = escapeHTML(bookingRef || hgBookingId || '');
 
-    // Build remarks HTML — deduplicate and replace HyperGuest VAT text with Staymakom's
-    const STAYMAKOM_VAT_TEXT = "Taxes are not included. Israeli citizens and residents need to pay an 18% VAT at check-in in accordance with Israeli regulations. Tourists holding a valid foreign passport and an entry permit (B/2, B/3, or B/4) are exempt from VAT. Please make sure to keep the entry permit received at the airport upon arrival, as it may be required to confirm eligibility. If exemption cannot be validated at check-in, VAT will be charged accordingly.";
-    const isVatRemark = (r: string) => /taxes are not included|17% vat|18% vat|b2 visa|local regulations.*tax|pay.*tax.*check.?in/i.test(r);
+    // VAT text — always shown, language-specific
+    const VAT_TEXT_EN = "Prices do not include VAT. Israeli residents are subject to 18% VAT payable at the hotel. Tourists with an entry permit (B/2, B/3, or B/4) and a valid foreign passport are not subject to VAT. Please make sure to keep the entry permit received upon arrival, as it may be required to confirm eligibility. If exemption cannot be validated at check-in, VAT will be charged accordingly.";
+    const VAT_TEXT_HE = "המחירים אינם כוללים מע״מ. אזרחי ותושבי ישראל חייבים במע״מ בשיעור של 18%, אשר ישולם במלון. תיירים המחזיקים בדרכון זר ובאשרת כניסה (B/2, B/3 או B/4) אינם חייבים במע״מ; יש לשמור את אישור הכניסה שניתן בעת ההגעה, שכן ייתכן ויידרש לצורך אימות הזכאות. במידה ולא ניתן לאשר את הפטור במעמד הצ'ק-אין, יחויב המע״מ בהתאם.";
+    const VAT_TEXT_FR = "Les prix n'incluent pas la TVA. Les résidents israéliens sont soumis à 18% de TVA payable à l'hôtel. Les touristes détenteurs d'un passeport étranger valide et d'un permis d'entrée (B/2, B/3 ou B/4) sont exonérés de TVA. Veuillez conserver le permis d'entrée reçu à l'arrivée, car il peut être demandé pour confirmer votre éligibilité. Si l'exonération ne peut être validée au moment du check-in, la TVA sera facturée en conséquence.";
+    const vatTextForEmail = isHebrew ? VAT_TEXT_HE : isFrench ? VAT_TEXT_FR : VAT_TEXT_EN;
+
+    // Build other remarks — filter out VAT text (shown separately above)
+    const isVatRemark = (r: string) => /taxes are not included|prices do not include vat|17% vat|18% vat|b2 visa|local regulations.*tax|pay.*tax.*check.?in/i.test(r);
     const genericFilter = /general message that should be shown/i;
     const rawRemarks: string[] = Array.isArray(remarks) ? remarks.filter((r: string) => r && !genericFilter.test(r)) : [];
-    const hasVat = rawRemarks.some(isVatRemark);
     const otherRemarks = [...new Set(rawRemarks.filter((r: string) => !isVatRemark(r)))];
-    const filteredRemarks = [...(hasVat ? [STAYMAKOM_VAT_TEXT] : []), ...otherRemarks];
-    const remarksHtml = filteredRemarks.length > 0
-      ? `<div style="background-color:#fff8e1;border-radius:8px;padding:20px;margin-bottom:20px;">
-           ${filteredRemarks.map((r: string) => `<p style="color:#666;font-size:14px;line-height:1.6;margin:4px 0;">• ${escapeHTML(r)}</p>`).join('')}
+
+    const vatHtml = !isCancellation
+      ? `<div style="background-color:#f9f9f6;border-left:3px solid #c9a87c;padding:14px 16px;margin-bottom:16px;border-radius:0 6px 6px 0;">
+           <p style="color:#555;font-size:13px;line-height:1.7;margin:0;">${escapeHTML(vatTextForEmail)}</p>
+         </div>`
+      : '';
+    const otherRemarksHtml = otherRemarks.length > 0
+      ? `<div style="margin-bottom:20px;">
+           ${otherRemarks.map((r: string) => `<p style="color:#888;font-size:13px;line-height:1.6;margin:3px 0;">· ${escapeHTML(r)}</p>`).join('')}
          </div>`
       : '';
 
@@ -235,7 +244,8 @@ const handler = async (req: Request): Promise<Response> => {
           </div>
           ${displayTaxesHtml}
           ${cancellationHtml}
-          ${remarksHtml}
+          ${vatHtml}
+          ${otherRemarksHtml}
           ${specialRequests && !isCancellation ? `<div style="background-color:#f0f4ff;border-radius:8px;padding:15px;margin-bottom:20px;">
             <p style="color:#666;font-size:13px;margin:0;"><strong>${isHebrew ? 'בקשות מיוחדות:' : isFrench ? 'Demandes spéciales :' : 'Special requests:'}</strong> ${escapeHTML(specialRequests)}</p>
           </div>` : ''}

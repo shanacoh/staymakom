@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ArrowLeft, CheckCircle, Mail, AlertTriangle, CreditCard, Calendar, Users, Building, Star } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle, Mail, AlertTriangle, CreditCard, Calendar, Users, Building, ExternalLink } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -25,6 +25,18 @@ export default function AdminReservationDetails() {
       return data as any;
     },
     enabled: !!bookingId,
+  });
+
+  const resendEmailMutation = useMutation({
+    mutationFn: async () => {
+      if (!booking?.id) throw new Error("Réservation introuvable");
+      const { error } = await supabase.functions.invoke("admin-resend-email", {
+        body: { booking_id: booking.id },
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => toast.success("Email de confirmation renvoyé"),
+    onError: (error: any) => toast.error("Erreur", { description: error.message }),
   });
 
   const markRefundDoneMutation = useMutation({
@@ -109,6 +121,35 @@ export default function AdminReservationDetails() {
           {getStatusBadge(booking)}
           {getPaymentBadge(booking.payment_status)}
         </div>
+      </div>
+
+      {/* Quick actions */}
+      <div className="flex flex-wrap gap-2">
+        {booking.confirmation_token && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open(`/booking/confirmation/${booking.confirmation_token}`, "_blank")}
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Voir la page de confirmation
+          </Button>
+        )}
+        {booking.customer_email && !booking.is_cancelled && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => resendEmailMutation.mutate()}
+            disabled={resendEmailMutation.isPending}
+          >
+            {resendEmailMutation.isPending ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Mail className="h-4 w-4 mr-2" />
+            )}
+            Renvoyer l'email de confirmation
+          </Button>
+        )}
       </div>
 
       {/* Refund alert */}

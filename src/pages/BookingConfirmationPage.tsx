@@ -3,11 +3,12 @@
  * Public access (no auth required) — secured by unguessable UUID token
  */
 
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
-import { Check, CalendarDays, Hotel, Users, Copy, Clock, Info, MessageSquare, AlertCircle, XCircle } from "lucide-react";
+import { Check, CalendarDays, Hotel, Users, Copy, Clock, Info, MessageSquare, AlertCircle, XCircle, Mail, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -46,6 +47,10 @@ const t = {
     onRequest: "Your booking is pending hotel confirmation. You will be notified by email.",
     freeCancelLong: (date: string) => `You can cancel for free until ${date}. After that date, fees may apply.`,
     nonRefundableLong: "This booking is non-refundable.",
+    vatNote: "Prices do not include VAT. Israeli residents are subject to 18% VAT payable at the hotel. Tourists with an entry permit (B/2, B/3, or B/4) and a valid foreign passport are not subject to VAT. Please make sure to keep the entry permit received upon arrival, as it may be required to confirm eligibility. If exemption cannot be validated at check-in, VAT will be charged accordingly.",
+    resendEmail: "Resend confirmation email",
+    resendSuccess: "Confirmation email sent!",
+    resendError: "Error sending email",
     loading: "Loading...",
   },
   he: {
@@ -73,6 +78,10 @@ const t = {
     onRequest: "הזמנתך ממתינה לאישור המלון. תקבל/י עדכון במייל.",
     freeCancelLong: (date: string) => `ניתן לבטל בחינם עד ${date}. לאחר מכן עלולים לחול דמי ביטול.`,
     nonRefundableLong: "הזמנה זו אינה ניתנת להחזר.",
+    vatNote: "המחירים אינם כוללים מע״מ. אזרחי ותושבי ישראל חייבים במע״מ בשיעור של 18%, אשר ישולם במלון. תיירים המחזיקים בדרכון זר ובאשרת כניסה (B/2, B/3 או B/4) אינם חייבים במע״מ; יש לשמור את אישור הכניסה שניתן בעת ההגעה, שכן ייתכן ויידרש לצורך אימות הזכאות. במידה ולא ניתן לאשר את הפטור במעמד הצ'ק-אין, יחויב המע״מ בהתאם.",
+    resendEmail: "שלח מחדש את אישור ההזמנה",
+    resendSuccess: "!אישור נשלח בהצלחה",
+    resendError: "שגיאה בשליחת המייל",
     loading: "...טוען",
   },
   fr: {
@@ -100,6 +109,10 @@ const t = {
     onRequest: "Votre réservation est en attente de confirmation par l'hôtel. Vous serez notifié par email.",
     freeCancelLong: (date: string) => `Vous pouvez annuler gratuitement jusqu'au ${date}. Après cette date, des frais s'appliquent.`,
     nonRefundableLong: "Cette réservation n'est pas remboursable.",
+    vatNote: "Les prix n'incluent pas la TVA. Les résidents israéliens sont soumis à 18% de TVA payable à l'hôtel. Les touristes détenteurs d'un passeport étranger valide et d'un permis d'entrée (B/2, B/3 ou B/4) sont exonérés de TVA. Veuillez conserver le permis d'entrée reçu à l'arrivée, car il peut être demandé pour confirmer votre éligibilité. Si l'exonération ne peut être validée au moment du check-in, la TVA sera facturée en conséquence.",
+    resendEmail: "Renvoyer l'email de confirmation",
+    resendSuccess: "Email de confirmation renvoyé !",
+    resendError: "Erreur lors de l'envoi",
     loading: "Chargement...",
   },
 };
@@ -162,6 +175,8 @@ export default function BookingConfirmationPage() {
     enabled: !!booking?.hotel_id,
   });
 
+  const [resending, setResending] = useState(false);
+
   const copyRef = (ref: string) => {
     navigator.clipboard.writeText(ref);
     toast.success(lang === "he" ? "הועתק!" : lang === "fr" ? "Copié !" : "Copied!");
@@ -219,22 +234,57 @@ export default function BookingConfirmationPage() {
   // Build staymakom ref from raw data or derive
   const staymakomRef = hgRaw?.reference?.agency || `SM-${(booking.experience_id || "").substring(0, 8).toUpperCase()}`;
 
-  const STAYMAKOM_VAT_TEXT = "Taxes are not included. Israeli citizens and residents need to pay an 18% VAT at check-in in accordance with Israeli regulations. Tourists holding a valid foreign passport and an entry permit (B/2, B/3, or B/4) are exempt from VAT. Please make sure to keep the entry permit received at the airport upon arrival, as it may be required to confirm eligibility. If exemption cannot be validated at check-in, VAT will be charged accordingly.";
-  const isVatRemark = (r: string) => /taxes are not included|17% vat|18% vat|b2 visa|local regulations.*tax|pay.*tax.*check.?in/i.test(r);
+  const isVatRemark = (r: string) => /taxes are not included|prices do not include vat|17% vat|18% vat|b2 visa|local regulations.*tax|pay.*tax.*check.?in/i.test(r);
 
-  // Remarks — deduplicated, HyperGuest VAT text replaced with Staymakom's
+  // Remarks — deduplicated, VAT text filtered out (displayed separately via vatNote)
   const rawRemarks: string[] = [];
   if (hgRaw?.remarks) rawRemarks.push(...(hgRaw.remarks as string[]).filter((r: string) => !/general message/i.test(r)));
   if (hgRaw?.rooms?.[0]?.ratePlans?.[0]?.remarks) {
     rawRemarks.push(...(hgRaw.rooms[0].ratePlans[0].remarks as string[]).filter((r: string) => !/general message/i.test(r)));
   }
-  const hasVatRemark = rawRemarks.some(isVatRemark);
-  const otherRemarks = rawRemarks.filter(r => !isVatRemark(r));
-  const uniqueOtherRemarks = [...new Set(otherRemarks)];
-  const remarks: string[] = [...(hasVatRemark ? [STAYMAKOM_VAT_TEXT] : []), ...uniqueOtherRemarks];
+  const remarks: string[] = [...new Set(rawRemarks.filter(r => !isVatRemark(r)))];
 
   // Special requests
   const specialRequests = hgRaw?.rooms?.[0]?.specialRequests || "";
+
+  const handleResendEmail = async () => {
+    if (!booking.customer_email) return;
+    setResending(true);
+    try {
+      const guestName = hgRaw?.rooms?.[0]?.guests?.[0]?.name
+        ? `${hgRaw.rooms[0].guests[0].name.first} ${hgRaw.rooms[0].guests[0].name.last}`
+        : hgRaw?.leadGuest?.name
+        ? `${hgRaw.leadGuest.name.first} ${hgRaw.leadGuest.name.last}`
+        : "Guest";
+      await supabase.functions.invoke("send-booking-confirmation", {
+        body: {
+          to: booking.customer_email,
+          guestName,
+          experienceTitle,
+          hotelName,
+          roomName: booking.room_name,
+          boardType: booking.board_type,
+          checkIn: booking.checkin,
+          checkOut: booking.checkout,
+          nights: booking.nights,
+          partySize: booking.party_size,
+          totalPrice: booking.paid_amount ?? booking.sell_price,
+          currency: booking.currency,
+          bookingRef: staymakomRef,
+          hgBookingId: booking.hg_booking_id,
+          remarks,
+          confirmationToken: booking.confirmation_token,
+          lang,
+          displayTaxesTotal: displayTaxes > 0 ? displayTaxes : undefined,
+        },
+      });
+      toast.success(labels.resendSuccess);
+    } catch {
+      toast.error(labels.resendError);
+    } finally {
+      setResending(false);
+    }
+  };
 
   return (
     <>
@@ -353,6 +403,7 @@ export default function BookingConfirmationPage() {
                     + {fmt(Number(displayTaxes), booking.currency)} {labels.taxesAtHotel}
                   </p>
                 )}
+                <p className="text-xs text-muted-foreground pt-1">{labels.vatNote}</p>
               </div>
 
               {/* Cancellation policy */}
@@ -395,15 +446,6 @@ export default function BookingConfirmationPage() {
           {/* References */}
           <Card>
             <CardContent className="p-5 space-y-3">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">{labels.ref}</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-mono font-medium text-xs">{staymakomRef}</span>
-                  <button onClick={() => copyRef(staymakomRef)} className="text-muted-foreground hover:text-foreground">
-                    <Copy className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
               {booking.hg_booking_id && (
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">{labels.hgRef}</span>
@@ -430,9 +472,9 @@ export default function BookingConfirmationPage() {
                   <Info className="h-4 w-4 text-muted-foreground" />
                   {labels.remarks}
                 </div>
-                <div className="space-y-1.5 p-3 rounded-md bg-muted/50">
+                <div className="space-y-1">
                   {remarks.map((remark, idx) => (
-                    <p key={idx} className="text-xs text-muted-foreground">• {remark}</p>
+                    <p key={idx} className="text-xs text-muted-foreground">· {remark}</p>
                   ))}
                 </div>
               </CardContent>
@@ -461,6 +503,23 @@ export default function BookingConfirmationPage() {
               <Link to="/">{labels.backHome}</Link>
             </Button>
           </div>
+
+          {/* Resend confirmation email */}
+          {booking.customer_email && !isCancelled && (
+            <Button
+              variant="ghost"
+              onClick={handleResendEmail}
+              disabled={resending}
+              className="w-full text-muted-foreground text-sm"
+            >
+              {resending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Mail className="h-4 w-4 mr-2" />
+              )}
+              {labels.resendEmail}
+            </Button>
+          )}
         </div>
       </main>
       <Footer />
