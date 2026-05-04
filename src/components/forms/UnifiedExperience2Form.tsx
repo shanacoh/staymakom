@@ -355,6 +355,15 @@ export function UnifiedExperience2Form({
     }
   }, [minNetRate, barRateRefreshEnabled, isLoadingBarRate, setValue]);
 
+  // Pré-remplir bar_rate avec le min BAR public quand les données arrivent.
+  // Sert de rappel visuel à l'admin pour qu'il sache à quel prix minimum le client
+  // doit voir l'expérience (parité tarifaire HG).
+  useEffect(() => {
+    if (minBarRatePublic !== null && barRateRefreshEnabled && !isLoadingBarRate) {
+      setValue("bar_rate", minBarRatePublic);
+    }
+  }, [minBarRatePublic, barRateRefreshEnabled, isLoadingBarRate, setValue]);
+
   const allParcoursImages: string[] = [];
   for (const eh of experienceHotels) {
     const h = hotels?.find((x) => x.id === eh.hotel_id);
@@ -1629,7 +1638,7 @@ export function UnifiedExperience2Form({
                           <>
                             <div className="grid grid-cols-5 gap-2 text-muted-foreground font-medium pb-1 border-b">
                               <span></span>
-                              <span className="text-center">Tarif indicatif</span>
+                              <span className="text-center">BAR Rate</span>
                               <span className="text-center">Net Rate</span>
                               <span className="text-center">Diff ₪</span>
                               <span className="text-center">Diff %</span>
@@ -1673,7 +1682,7 @@ export function UnifiedExperience2Form({
                     <p className="font-semibold text-sm">Chambre</p>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <div className="space-y-1">
                       <Label htmlFor="room_net_rate" className="text-xs font-medium">Net Rate par nuit (ce que je paie)</Label>
                       <div className="relative">
@@ -1690,6 +1699,24 @@ export function UnifiedExperience2Form({
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
                       </div>
                       <p className="text-[11px] text-muted-foreground">Chargé depuis HyperGuest ou saisi manuellement</p>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label htmlFor="bar_rate" className="text-xs font-medium">BAR Rate par nuit (prix public hôtel)</Label>
+                      <div className="relative">
+                        <Input
+                          id="bar_rate"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          {...register("bar_rate", { valueAsNumber: true })}
+                          placeholder="0"
+                          disabled={isSaving}
+                          className="pr-10"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">Référence parité — prix de vente minimum autorisé</p>
                     </div>
 
                     <div className="space-y-1">
