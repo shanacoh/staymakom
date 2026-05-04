@@ -329,14 +329,19 @@ export function UnifiedExperience2Form({
     enabled: barRateRefreshEnabled,
   });
 
-  // Net Rate (tarif contractuel = sell price HyperGuest = "ce que Staymakom paie")
+  // Net Rate (tarif WHOLESALE = ce que StayMakom paie réellement à HyperGuest).
+  // Confirmé par Reshma (HG account manager) le 2026-05-04 : NET = la vraie facture HG.
+  // Auparavant on affichait `cheapestPrice` (= sell price) qui est le prix de revente
+  // suggéré par HG, pas le coût réel — corrigé pour pointer sur cheapestNetPrice.
   const netRatePrices = quickDatesBarRate
-    ?.map((d: any) => d.cheapestPrice)
+    ?.map((d: any) => d.cheapestNetPrice ?? d.cheapestPrice) // fallback sur sell si net absent
     .filter((p: any): p is number => p !== null && p > 0) ?? [];
   const minNetRate = netRatePrices.length > 0 ? Math.min(...netRatePrices) : null;
   const maxNetRate = netRatePrices.length > 0 ? Math.max(...netRatePrices) : null;
 
-  // BAR Rate public (tarif public hôtel = bar price HyperGuest)
+  // BAR Rate public (tarif public hôtel = bar price HyperGuest).
+  // Source : prices.bar.price. Sert de référence de parité tarifaire — le prix
+  // public ne devrait jamais descendre en-dessous (règle contractuelle HG).
   const barRatePublicPrices = quickDatesBarRate
     ?.map((d: any) => d.cheapestBarPrice)
     .filter((p: any): p is number => p !== null && p > 0) ?? [];

@@ -16,6 +16,12 @@ interface AvailableDate {
   cheapestPrice: number | null;
   /** Cheapest BAR (public hotel) price found across all rooms/rate plans */
   cheapestBarPrice: number | null;
+  /**
+   * Cheapest NET (wholesale) price — le vrai coût pour StayMakom auprès de HyperGuest.
+   * Confirmé par Reshma (HG account manager) : NET = la valeur facturée par HG.
+   * À ne JAMAIS exposer dans l'UI client (back-office uniquement).
+   */
+  cheapestNetPrice: number | null;
   currency: string;
 }
 
@@ -73,6 +79,7 @@ async function scanAvailability(
 
             let cheapest: number | null = null;
             let cheapestBar: number | null = null;
+            let cheapestNet: number | null = null;
             let cur = currency;
 
             for (const room of rooms) {
@@ -97,6 +104,17 @@ async function scanAvailability(
                       ? barNativePrice
                       : null;
 
+                // NET (wholesale) — le vrai coût HG pour StayMakom. Back-office uniquement.
+                // Confirmé par Reshma (HG account manager) le 2026-05-04.
+                const netSearchPrice = rp.prices?.net?.searchCurrency;
+                const netNativePrice = rp.prices?.net?.price;
+                const netPrice =
+                  typeof netSearchPrice === 'number'
+                    ? netSearchPrice
+                    : typeof netNativePrice === 'number'
+                      ? netNativePrice
+                      : null;
+
                 if (sellPrice == null) continue;
                 if (barPrice != null && sellPrice < barPrice) continue;
 
@@ -114,6 +132,11 @@ async function scanAvailability(
                 if (barPrice != null && (cheapestBar === null || barPrice < cheapestBar)) {
                   cheapestBar = barPrice;
                 }
+
+                // Track cheapest NET price for back-office display (NEVER for public UI).
+                if (netPrice != null && (cheapestNet === null || netPrice < cheapestNet)) {
+                  cheapestNet = netPrice;
+                }
               }
             }
 
@@ -125,6 +148,7 @@ async function scanAvailability(
               nights,
               cheapestPrice: cheapest,
               cheapestBarPrice: cheapestBar,
+              cheapestNetPrice: cheapestNet,
               currency: cur,
             } satisfies AvailableDate;
           })
