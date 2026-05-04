@@ -348,10 +348,12 @@ export function UnifiedExperience2Form({
   const minBarRatePublic = barRatePublicPrices.length > 0 ? Math.min(...barRatePublicPrices) : null;
   const maxBarRatePublic = barRatePublicPrices.length > 0 ? Math.max(...barRatePublicPrices) : null;
 
-  // Pré-remplir room_net_rate avec le min Net Rate quand les données arrivent
+  // Pré-remplir room_net_rate avec le min Net Rate quand les données arrivent.
+  // shouldDirty + shouldTouch forcent react-hook-form à propager la valeur au DOM
+  // (sinon le champ peut rester visuellement vide alors que l'état interne est correct).
   useEffect(() => {
     if (minNetRate !== null && barRateRefreshEnabled && !isLoadingBarRate) {
-      setValue("room_net_rate", minNetRate);
+      setValue("room_net_rate", minNetRate, { shouldDirty: true, shouldTouch: true });
     }
   }, [minNetRate, barRateRefreshEnabled, isLoadingBarRate, setValue]);
 
@@ -360,7 +362,7 @@ export function UnifiedExperience2Form({
   // doit voir l'expérience (parité tarifaire HG).
   useEffect(() => {
     if (minBarRatePublic !== null && barRateRefreshEnabled && !isLoadingBarRate) {
-      setValue("bar_rate", minBarRatePublic);
+      setValue("bar_rate", minBarRatePublic, { shouldDirty: true, shouldTouch: true });
     }
   }, [minBarRatePublic, barRateRefreshEnabled, isLoadingBarRate, setValue]);
 
