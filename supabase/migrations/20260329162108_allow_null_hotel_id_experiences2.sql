@@ -1,0 +1,1 @@
+ALTER TABLE experiences2 ALTER COLUMN hotel_id DROP NOT NULL;

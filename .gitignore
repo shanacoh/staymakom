@@ -28,3 +28,18 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# Claude Code local state
+.claude/
+
+# Data exports (one-off, not part of the codebase)
+experiences-export-*.json
+hotels-export-*.json
+migration-export/
+
+# Local scripts (not shared)
+scripts/
+
+# Supabase CLI temp files & scratch
+supabase/.temp/
+supabase/Untitled
