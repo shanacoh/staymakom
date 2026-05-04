@@ -206,10 +206,10 @@ const handler = async (req: Request): Promise<Response> => {
               ${isHebrew ? 'פרטי ההזמנה' : isFrench ? 'Détails de la réservation' : 'Booking Details'}
             </h3>
             <table width="100%" cellpadding="0" cellspacing="0">
-              <tr><td style="padding:12px 0;border-bottom:1px solid #eee;">
-                <p style="color:#999;font-size:12px;margin:0 0 3px;text-transform:uppercase;letter-spacing:1px;">${isHebrew ? 'מספר הזמנה' : isFrench ? 'Référence' : 'Reference'}</p>
-                <p style="color:#1a1a1a;font-size:16px;margin:0;font-weight:600;">${safeRef}</p>
-              </td></tr>
+              ${escapeHTML(hgBookingId || '') ? `<tr><td style="padding:12px 0;border-bottom:1px solid #eee;">
+                <p style="color:#999;font-size:12px;margin:0 0 3px;text-transform:uppercase;letter-spacing:1px;">${isHebrew ? 'מספר אישור' : isFrench ? 'N° de confirmation' : 'Confirmation #'}</p>
+                <p style="color:#1a1a1a;font-size:16px;margin:0;font-weight:600;">${escapeHTML(hgBookingId || '')}</p>
+              </td></tr>` : ''}
               <tr><td style="padding:12px 0;border-bottom:1px solid #eee;">
                 <p style="color:#999;font-size:12px;margin:0 0 3px;text-transform:uppercase;letter-spacing:1px;">${isHebrew ? 'חוויה' : isFrench ? 'Expérience' : 'Experience'}</p>
                 <p style="color:#1a1a1a;font-size:16px;margin:0;font-weight:600;">${safeTitle}</p>

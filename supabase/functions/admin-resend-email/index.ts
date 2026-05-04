@@ -35,6 +35,15 @@ const handler = async (req: Request): Promise<Response> => {
       : booking.customer_name || "Guest";
     const staymakomRef = hgRaw?.reference?.agency || `SM-${(booking.experience_id || "").substring(0, 8).toUpperCase()}`;
 
+    // Extract remarks from raw HyperGuest data
+    const isVatRemark = (r: string) => /taxes are not included|prices do not include vat|17% vat|18% vat|b2 visa|local regulations.*tax|pay.*tax.*check.?in/i.test(r);
+    const rawRemarks: string[] = [];
+    if (hgRaw?.remarks) rawRemarks.push(...(hgRaw.remarks as string[]).filter((r: string) => !/general message/i.test(r)));
+    if (hgRaw?.rooms?.[0]?.ratePlans?.[0]?.remarks) {
+      rawRemarks.push(...(hgRaw.rooms[0].ratePlans[0].remarks as string[]).filter((r: string) => !/general message/i.test(r)));
+    }
+    const remarks = [...new Set(rawRemarks.filter((r: string) => !isVatRemark(r)))];
+
     // Call send-booking-confirmation with service role (same as process-booking does)
     const { error: emailError } = await adminClient.functions.invoke('send-booking-confirmation', {
       body: {
@@ -52,7 +61,7 @@ const handler = async (req: Request): Promise<Response> => {
         currency: booking.currency || "USD",
         bookingRef: staymakomRef,
         hgBookingId: booking.hg_booking_id,
-        remarks: [],
+        remarks,
         confirmationToken: booking.confirmation_token || "",
         lang: "en",
       },
