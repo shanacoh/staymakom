@@ -178,3 +178,76 @@ export function useQuickDateAvailability({
     retry: 1,
   });
 }
+
+/**
+ * Fetches HyperGuest prices for a fixed list of specific check-in dates.
+ * Returns a map { dateStr: cheapestSellPrice | null }.
+ */
+export function useSpecificDatePrices({
+  propertyId,
+  dates,
+  nights,
+  adults,
+  currency = 'ILS',
+  enabled = true,
+}: {
+  propertyId: number | null;
+  dates: string[];
+  nights: number;
+  adults: number;
+  currency?: string;
+  enabled?: boolean;
+}) {
+  return useQuery({
+    queryKey: ['specific-date-prices', propertyId, dates, nights, adults, currency],
+    queryFn: async (): Promise<Record<string, number | null>> => {
+      if (!propertyId || dates.length === 0) return {};
+      const guests = formatGuests([{ adults, children: [] }]);
+      const results: Record<string, number | null> = {};
+
+      await Promise.all(dates.map(async (dateStr) => {
+        try {
+          const res = await searchHotelsRaw({
+            checkIn: dateStr,
+            nights,
+            guests,
+            hotelIds: [propertyId],
+            customerNationality: 'IL',
+            currency,
+          });
+          const rooms = res?.results?.[0]?.rooms || [];
+          let cheapest: number | null = null;
+
+          for (const room of rooms) {
+            for (const rp of room.ratePlans || []) {
+              const sellSearchPrice = rp.prices?.sell?.searchCurrency;
+              const sellNativePrice = rp.prices?.sell?.price;
+              const sellPrice =
+                typeof sellSearchPrice === 'number' ? sellSearchPrice
+                  : typeof sellNativePrice === 'number' ? sellNativePrice
+                    : null;
+              const barSearchPrice = rp.prices?.bar?.searchCurrency;
+              const barNativePrice = rp.prices?.bar?.price;
+              const barPrice =
+                typeof barSearchPrice === 'number' ? barSearchPrice
+                  : typeof barNativePrice === 'number' ? barNativePrice
+                    : null;
+
+              if (typeof sellPrice !== 'number') continue;
+              if (barPrice != null && sellPrice < barPrice) continue;
+              if (cheapest === null || sellPrice < cheapest) cheapest = sellPrice;
+            }
+          }
+          results[dateStr] = cheapest;
+        } catch {
+          results[dateStr] = null;
+        }
+      }));
+
+      return results;
+    },
+    enabled: enabled && !!propertyId && dates.length > 0 && nights > 0,
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
+}

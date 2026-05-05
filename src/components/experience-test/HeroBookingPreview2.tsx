@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useFromPrice } from "@/hooks/useExperience2Price";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { Loader2 } from "lucide-react";
+import type { AvailabilityRule } from "@/lib/availabilityUtils";
 
 interface HeroBookingPreview2Props {
   experienceId: string;
@@ -12,6 +13,7 @@ interface HeroBookingPreview2Props {
   hyperguestPropertyId?: string | null;
   minParty?: number;
   minNights?: number;
+  availabilityRules?: AvailabilityRule[];
 }
 
 const HeroBookingPreview2 = ({
@@ -22,12 +24,14 @@ const HeroBookingPreview2 = ({
   hyperguestPropertyId,
   minParty = 2,
   minNights = 1,
+  availabilityRules = [],
 }: HeroBookingPreview2Props) => {
   const { symbol, convert } = useCurrency();
 
   const { fromPriceILS, cheapestDate, isLoading, hasHyperguest } = useFromPrice(
     experienceId,
     hyperguestPropertyId ?? null,
+    availabilityRules,
   );
 
   const displayPrice = fromPriceILS ? Math.round(convert(fromPriceILS)) : null;

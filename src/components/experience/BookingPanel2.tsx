@@ -21,7 +21,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { DualPrice } from "@/components/ui/DualPrice";
 import { RoomOptionsV2 } from "./RoomOptionsV2";
 import { useHyperGuestAvailability } from "@/hooks/useHyperGuestAvailability";
-import { useQuickDateAvailability } from "@/hooks/useQuickDateAvailability";
+import { useQuickDateAvailability, useSpecificDatePrices } from "@/hooks/useQuickDateAvailability";
+import { isCheckinDisabled } from "@/lib/availabilityUtils";
+import type { AvailabilityRule } from "@/lib/availabilityUtils";
 import { useExperience2Price, useExperienceAddons, useExperiencePricingConfig, calculateFromPrice } from "@/hooks/useExperience2Price";
 import type { PricingConfig } from "@/types/experience2_addons";
 import { formatGuests, calculateNights } from "@/services/hyperguest";
@@ -54,48 +56,6 @@ interface SelectedExtra {
   quantity?: number;
 }
 
-interface AvailabilityRule {
-  id: string;
-  rule_type: 'days_of_week' | 'date_range' | 'specific_dates' | 'blackout';
-  days_of_week: number[] | null;
-  date_from: string | null;
-  date_to: string | null;
-  specific_dates: string[] | null;
-}
-
-function isCheckinDisabled(date: Date, rules: AvailabilityRule[]): boolean {
-  const inclusionRules = rules.filter(r => r.rule_type !== 'blackout');
-  const blackoutRules = rules.filter(r => r.rule_type === 'blackout');
-
-  for (const rule of blackoutRules) {
-    if (rule.date_from && rule.date_to) {
-      const from = new Date(rule.date_from); from.setHours(0, 0, 0, 0);
-      const to = new Date(rule.date_to); to.setHours(23, 59, 59, 999);
-      if (date >= from && date <= to) return true;
-    }
-  }
-
-  if (inclusionRules.length === 0) return false;
-
-  for (const rule of inclusionRules) {
-    if (rule.rule_type === 'specific_dates' && rule.specific_dates) {
-      for (const s of rule.specific_dates) {
-        const d = new Date(s);
-        if (date.getFullYear() === d.getFullYear() && date.getMonth() === d.getMonth() && date.getDate() === d.getDate()) return false;
-      }
-    }
-    if (rule.rule_type === 'date_range' && rule.date_from && rule.date_to) {
-      const from = new Date(rule.date_from); from.setHours(0, 0, 0, 0);
-      const to = new Date(rule.date_to); to.setHours(23, 59, 59, 999);
-      if (date >= from && date <= to) return false;
-    }
-    if (rule.rule_type === 'days_of_week' && rule.days_of_week) {
-      if (rule.days_of_week.includes(date.getDay())) return false;
-    }
-  }
-
-  return true;
-}
 
 interface BookingPanel2Props {
   experienceId: string;
@@ -240,6 +200,16 @@ export function BookingPanel2({
     currency,
     enabled: !hasSpecificDates && selectedTab !== "pick",
   });
+
+  const { data: specificDatePrices, isLoading: isLoadingSpecificPrices } = useSpecificDatePrices({
+    propertyId: propId,
+    dates: specificDatesFromRules,
+    nights: nightsCount,
+    adults,
+    currency,
+    enabled: hasSpecificDates && selectedTab !== "pick",
+  });
+
   const specificDateResults = useMemo(() => {
     if (!hasSpecificDates || selectedTab === "pick") return [];
     return specificDatesFromRules.map((dateStr) => {
@@ -251,11 +221,13 @@ export function BookingPanel2({
         checkin,
         checkout,
         nights: nightsCount,
-        cheapestPrice: null as number | null,
+        cheapestPrice: specificDatePrices?.[dateStr] ?? null,
+        cheapestBarPrice: null as number | null,
+        cheapestNetPrice: null as number | null,
         currency,
       };
     });
-  }, [specificDatesFromRules, nightsCount, hasSpecificDates, selectedTab, currency]);
+  }, [specificDatesFromRules, nightsCount, hasSpecificDates, selectedTab, currency, specificDatePrices]);
 
   // Fetch addons & pricing config for "from" price on date cards
   const { data: _addons } = useExperienceAddons(experienceId);
@@ -346,7 +318,7 @@ export function BookingPanel2({
   }, [availabilityRules, dateRange.from]);
 
   const displayQuickDates = hasSpecificDates ? specificDateResults : filteredQuickDates;
-  const isLoadingDates = hasSpecificDates ? false : isLoadingQuickDates;
+  const isLoadingDates = hasSpecificDates ? isLoadingSpecificPrices : isLoadingQuickDates;
 
   // Find the best rate (cheapest) — now supports MULTIPLE slots
   const bestRatePrice = useMemo(() => {

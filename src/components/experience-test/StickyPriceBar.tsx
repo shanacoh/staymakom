@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { MOBILE_BOTTOM_NAV_HEIGHT } from "@/constants/layout";
 import { useFromPrice } from "@/hooks/useExperience2Price";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import type { AvailabilityRule } from "@/lib/availabilityUtils";
 
 interface StickyPriceBarProps {
   experienceId: string;
@@ -14,6 +15,7 @@ interface StickyPriceBarProps {
   selectedExtrasTotal?: number;
   minParty?: number;
   minNights?: number;
+  availabilityRules?: AvailabilityRule[];
 }
 
 const StickyPriceBar = ({
@@ -26,11 +28,12 @@ const StickyPriceBar = ({
   selectedExtrasTotal = 0,
   minParty = 2,
   minNights = 1,
+  availabilityRules = [],
 }: StickyPriceBarProps) => {
   const [isHidden, setIsHidden] = useState(false);
   const { symbol, convert } = useCurrency();
 
-  const { fromPriceILS, hasHyperguest } = useFromPrice(experienceId, hyperguestPropertyId ?? null);
+  const { fromPriceILS, hasHyperguest } = useFromPrice(experienceId, hyperguestPropertyId ?? null, availabilityRules);
 
   const displayPrice = fromPriceILS ? Math.round(convert(fromPriceILS)) : null;
 

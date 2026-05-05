@@ -595,6 +595,7 @@ export default function Experience2() {
                 hyperguestPropertyId={hyperguestPropertyId || null}
                 minParty={experience.min_party || 2}
                 minNights={experience.min_nights || 1}
+                availabilityRules={availabilityRules}
                 onViewDates={() => {
                   const bookingPanel = document.getElementById('booking-panel-v2');
                   if (bookingPanel) {
@@ -667,6 +668,7 @@ export default function Experience2() {
           selectedExtrasTotal={selectedExtras.reduce((sum, e) => sum + e.price, 0)}
           minParty={experience.min_party || 2}
           minNights={experience.min_nights || 1}
+          availabilityRules={availabilityRules}
         />
 
         {/* Mobile Booking Sheet */}

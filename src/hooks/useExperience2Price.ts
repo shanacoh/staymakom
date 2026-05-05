@@ -7,6 +7,8 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuickDateAvailability } from "@/hooks/useQuickDateAvailability";
+import { isCheckinDisabled } from "@/lib/availabilityUtils";
+import type { AvailabilityRule } from "@/lib/availabilityUtils";
 import type {
   ExperienceAddon,
   PricingConfig,
@@ -462,6 +464,7 @@ export function calculateFromPrice(
 export function useFromPrice(
   experienceId: string | null,
   hyperguestPropertyId: string | null,
+  availabilityRules: AvailabilityRule[] = [],
 ) {
   const { data: addons } = useExperienceAddons(experienceId);
   const { data: pricingConfig } = useExperiencePricingConfig(experienceId);
@@ -496,13 +499,20 @@ export function useFromPrice(
 
   const cheapestDate = useMemo(() => {
     if (!quickDates || quickDates.length === 0) return null;
-    return quickDates.reduce((best, curr) => {
+    const filtered = availabilityRules.length > 0
+      ? quickDates.filter(opt => {
+          const checkin = opt.checkin instanceof Date ? opt.checkin : new Date(opt.checkin as string);
+          return !isCheckinDisabled(checkin, availabilityRules);
+        })
+      : quickDates;
+    if (filtered.length === 0) return null;
+    return filtered.reduce((best, curr) => {
       if (curr.cheapestPrice == null) return best;
       if (!best || best.cheapestPrice == null || curr.cheapestPrice < best.cheapestPrice)
         return curr;
       return best;
     }, null as (typeof quickDates)[0] | null);
-  }, [quickDates]);
+  }, [quickDates, availabilityRules]);
 
   const fromPrice = useMemo(() => {
     // Modèle BAR RATE : prix client = (net rate live HG + markup) + prix vendu expérience × min_party
