@@ -2130,6 +2130,21 @@ export function UnifiedExperience2Form({
         {/* ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === "things" && (
           <div className="space-y-6">
+            {/* Availability Rules */}
+            {experienceId && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Disponibilité</CardTitle>
+                  <CardDescription>
+                    Définissez les contraintes temporelles de cette expérience (jours, périodes, dates ponctuelles ou bloquées).
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AvailabilityRulesManager experienceId={experienceId} />
+                </CardContent>
+              </Card>
+            )}
+
             {/* Cancellation Policy */}
             <Card>
               <CardHeader>
@@ -2211,21 +2226,6 @@ export function UnifiedExperience2Form({
                 </div>
               </CardContent>
             </Card>
-
-            {/* Availability Rules */}
-            {experienceId && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Disponibilité</CardTitle>
-                  <CardDescription>
-                    Définissez les contraintes temporelles de cette expérience (jours, périodes, dates ponctuelles ou bloquées).
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <AvailabilityRulesManager experienceId={experienceId} />
-                </CardContent>
-              </Card>
-            )}
 
             {/* Things to Know */}
             {experienceId && (
