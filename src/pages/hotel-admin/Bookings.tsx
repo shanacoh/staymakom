@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +14,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { format, parseISO, differenceInDays } from "date-fns";
@@ -21,6 +31,11 @@ export default function HotelBookings() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [refundDialog, setRefundDialog] = useState<{ open: boolean; bookingId: string | null; revolut: string }>({
+    open: false,
+    bookingId: null,
+    revolut: "",
+  });
 
   const { data: hotelAdmin } = useQuery({
     queryKey: ["hotel-admin", user?.id],
@@ -51,21 +66,38 @@ export default function HotelBookings() {
   });
 
   const markRefundDoneMutation = useMutation({
-    mutationFn: async (bookingId: string) => {
+    mutationFn: async ({ bookingId, revolut_refund_id }: { bookingId: string; revolut_refund_id: string }) => {
       const { error } = await supabase
         .from("bookings_hg")
-        .update({ payment_status: "refunded" } as any)
+        .update({
+          payment_status: "refunded",
+          revolut_refund_id: revolut_refund_id || null,
+          refunded_at: new Date().toISOString(),
+        } as any)
         .eq("id", bookingId);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["hotel-bookings-hg"] });
-      toast.success("Refund marked as processed");
+      setRefundDialog({ open: false, bookingId: null, revolut: "" });
+      toast.success("Remboursement confirmé et enregistré");
     },
     onError: (error: any) => {
-      toast.error("Failed to update", { description: error.message });
+      toast.error("Erreur", { description: error.message });
     },
   });
+
+  const openRefundDialog = (bookingId: string) => {
+    setRefundDialog({ open: true, bookingId, revolut: "" });
+  };
+
+  const confirmRefund = () => {
+    if (!refundDialog.bookingId) return;
+    markRefundDoneMutation.mutate({
+      bookingId: refundDialog.bookingId,
+      revolut_refund_id: refundDialog.revolut,
+    });
+  };
 
   const refundsPending = (bookings || []).filter(
     (b: any) => b.payment_status === "refund_pending"
@@ -143,12 +175,11 @@ export default function HotelBookings() {
                 </div>
                 <Button
                   size="sm"
-                  variant="outline"
-                  onClick={() => markRefundDoneMutation.mutate(b.id)}
-                  disabled={markRefundDoneMutation.isPending}
+                  variant="destructive"
+                  onClick={() => openRefundDialog(b.id)}
                 >
                   <CheckCircle className="h-4 w-4 mr-1" />
-                  Mark Refund Done
+                  Confirmer le remboursement
                 </Button>
               </div>
             ))}
@@ -227,7 +258,15 @@ export default function HotelBookings() {
                       )}
                     </TableCell>
                     <TableCell>{getStatusBadge(booking)}</TableCell>
-                    <TableCell>{getPaymentBadge(booking)}</TableCell>
+                    <TableCell>
+                      {getPaymentBadge(booking)}
+                      {booking.payment_status === "refunded" && booking.revolut_refund_id && (
+                        <div className="text-xs text-muted-foreground mt-1 font-mono">Revolut : {booking.revolut_refund_id}</div>
+                      )}
+                      {booking.payment_status === "refunded" && booking.refunded_at && (
+                        <div className="text-xs text-muted-foreground">le {format(parseISO(booking.refunded_at), "dd MMM yyyy")}</div>
+                      )}
+                    </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {format(parseISO(booking.created_at), "dd MMM yyyy")}
                     </TableCell>
@@ -237,11 +276,10 @@ export default function HotelBookings() {
                           <Button
                             variant="destructive"
                             size="sm"
-                            onClick={() => markRefundDoneMutation.mutate(booking.id)}
-                            disabled={markRefundDoneMutation.isPending}
+                            onClick={() => openRefundDialog(booking.id)}
                           >
                             <CheckCircle className="h-4 w-4 mr-1" />
-                            Refund Done
+                            Remb. fait
                           </Button>
                         )}
                         <Button
@@ -261,6 +299,52 @@ export default function HotelBookings() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={refundDialog.open}
+        onOpenChange={(open) => !open && setRefundDialog({ open: false, bookingId: null, revolut: "" })}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <CheckCircle className="h-5 w-5" />
+              Confirmer le remboursement
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Entrez la référence du virement Revolut pour garder une trace de ce remboursement.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="revolut-ref-hotel">Référence Revolut <span className="text-muted-foreground">(optionnel)</span></Label>
+              <Input
+                id="revolut-ref-hotel"
+                placeholder="ex. REV-2026-XXXXXX"
+                value={refundDialog.revolut}
+                onChange={(e) => setRefundDialog((prev) => ({ ...prev, revolut: e.target.value }))}
+                onKeyDown={(e) => e.key === "Enter" && confirmRefund()}
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRefundDialog({ open: false, bookingId: null, revolut: "" })}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmRefund}
+              disabled={markRefundDoneMutation.isPending}
+            >
+              <CheckCircle className="h-4 w-4 mr-1" />
+              Confirmer le remboursement
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

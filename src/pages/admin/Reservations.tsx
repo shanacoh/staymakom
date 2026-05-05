@@ -19,6 +19,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -31,13 +39,18 @@ const AdminBookings = () => {
   const [hotelFilter, setHotelFilter] = useState<string>("all");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [refundDialog, setRefundDialog] = useState<{ open: boolean; bookingId: string | null; revolut: string }>({
+    open: false,
+    bookingId: null,
+    revolut: "",
+  });
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ["admin-bookings-hg", statusFilter, hotelFilter, paymentFilter],
     queryFn: async () => {
       let query = supabase
         .from("bookings_hg")
-        .select("id, hg_booking_id, customer_name, customer_email, checkin, checkout, nights, party_size, sell_price, currency, status, is_cancelled, payment_status, refund_amount, revolut_order_id, cancelled_at, created_at, experiences2(title), hotels2(name, id)")
+        .select("id, hg_booking_id, customer_name, customer_email, checkin, checkout, nights, party_size, sell_price, currency, status, is_cancelled, payment_status, refund_amount, revolut_order_id, revolut_refund_id, refunded_at, cancelled_at, created_at, experiences2(title), hotels2(name, id)")
         .order("created_at", { ascending: false });
 
       if (statusFilter === "cancelled") {
@@ -73,21 +86,38 @@ const AdminBookings = () => {
   });
 
   const markRefundDoneMutation = useMutation({
-    mutationFn: async (bookingId: string) => {
+    mutationFn: async ({ bookingId, revolut_refund_id }: { bookingId: string; revolut_refund_id: string }) => {
       const { error } = await supabase
         .from("bookings_hg")
-        .update({ payment_status: "refunded" } as any)
+        .update({
+          payment_status: "refunded",
+          revolut_refund_id: revolut_refund_id || null,
+          refunded_at: new Date().toISOString(),
+        } as any)
         .eq("id", bookingId);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-bookings-hg"] });
-      toast.success("Remboursement marqué comme effectué");
+      setRefundDialog({ open: false, bookingId: null, revolut: "" });
+      toast.success("Remboursement confirmé et enregistré");
     },
     onError: (error: any) => {
       toast.error("Erreur", { description: error.message });
     },
   });
+
+  const openRefundDialog = (bookingId: string) => {
+    setRefundDialog({ open: true, bookingId, revolut: "" });
+  };
+
+  const confirmRefund = () => {
+    if (!refundDialog.bookingId) return;
+    markRefundDoneMutation.mutate({
+      bookingId: refundDialog.bookingId,
+      revolut_refund_id: refundDialog.revolut,
+    });
+  };
 
   const refundsPending = useMemo(
     () => (bookings || []).filter((b: any) => b.payment_status === "refund_pending"),
@@ -167,12 +197,11 @@ const AdminBookings = () => {
                 </div>
                 <Button
                   size="sm"
-                  variant="outline"
-                  onClick={() => markRefundDoneMutation.mutate(b.id)}
-                  disabled={markRefundDoneMutation.isPending}
+                  variant="destructive"
+                  onClick={() => openRefundDialog(b.id)}
                 >
                   <CheckCircle className="h-4 w-4 mr-1" />
-                  Remboursement fait
+                  Confirmer le remboursement
                 </Button>
               </div>
             ))}
@@ -277,11 +306,19 @@ const AdminBookings = () => {
                   <TableCell>
                     <div className="font-medium">{booking.sell_price} {booking.currency}</div>
                     {booking.payment_status === "refund_pending" && booking.refund_amount > 0 && (
-                      <div className="text-xs text-destructive font-medium">Remb. : {booking.refund_amount} {booking.currency}</div>
+                      <div className="text-xs text-destructive font-semibold">⚠ Remb. dû : {booking.refund_amount} {booking.currency}</div>
                     )}
                   </TableCell>
                   <TableCell>{getStatusBadge(booking)}</TableCell>
-                  <TableCell>{getPaymentBadge(booking)}</TableCell>
+                  <TableCell>
+                    {getPaymentBadge(booking)}
+                    {booking.payment_status === "refunded" && booking.revolut_refund_id && (
+                      <div className="text-xs text-muted-foreground mt-1 font-mono">Revolut : {booking.revolut_refund_id}</div>
+                    )}
+                    {booking.payment_status === "refunded" && booking.refunded_at && (
+                      <div className="text-xs text-muted-foreground">le {format(parseISO(booking.refunded_at), "dd MMM yyyy")}</div>
+                    )}
+                  </TableCell>
                   <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                     {format(parseISO(booking.created_at), "dd MMM yyyy")}
                   </TableCell>
@@ -291,8 +328,7 @@ const AdminBookings = () => {
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => markRefundDoneMutation.mutate(booking.id)}
-                          disabled={markRefundDoneMutation.isPending}
+                          onClick={() => openRefundDialog(booking.id)}
                         >
                           <CheckCircle className="h-4 w-4 mr-1" />
                           Remb. fait
@@ -319,6 +355,52 @@ const AdminBookings = () => {
           </p>
         </div>
       )}
+
+      <Dialog
+        open={refundDialog.open}
+        onOpenChange={(open) => !open && setRefundDialog({ open: false, bookingId: null, revolut: "" })}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <CheckCircle className="h-5 w-5" />
+              Confirmer le remboursement
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Entrez la référence du virement Revolut pour garder une trace de ce remboursement.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="revolut-ref">Référence Revolut <span className="text-muted-foreground">(optionnel)</span></Label>
+              <Input
+                id="revolut-ref"
+                placeholder="ex. REV-2026-XXXXXX"
+                value={refundDialog.revolut}
+                onChange={(e) => setRefundDialog((prev) => ({ ...prev, revolut: e.target.value }))}
+                onKeyDown={(e) => e.key === "Enter" && confirmRefund()}
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRefundDialog({ open: false, bookingId: null, revolut: "" })}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmRefund}
+              disabled={markRefundDoneMutation.isPending}
+            >
+              <CheckCircle className="h-4 w-4 mr-1" />
+              Confirmer le remboursement
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
