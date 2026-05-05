@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Plus, X, Check, CalendarDays } from "lucide-react";
+import { Pencil, Trash2, Plus, X, Check, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -135,6 +135,127 @@ function formToPayload(form: FormState, experienceId: string) {
     label_he: form.label_he || null,
     is_active: form.is_active,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Specific Dates Calendar Picker
+// ---------------------------------------------------------------------------
+
+function SpecificDatesCalendar({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const today = new Date();
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
+
+  const selected = new Set(
+    value.split(",").map((s) => s.trim()).filter(Boolean)
+  );
+
+  const toggleDate = (dateStr: string) => {
+    const next = new Set(selected);
+    if (next.has(dateStr)) next.delete(dateStr);
+    else next.add(dateStr);
+    onChange([...next].sort().join(", "));
+  };
+
+  const removeDate = (dateStr: string) => {
+    const next = new Set(selected);
+    next.delete(dateStr);
+    onChange([...next].sort().join(", "));
+  };
+
+  const prevMonth = () => {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1); }
+    else setViewMonth((m) => m - 1);
+  };
+
+  const nextMonth = () => {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear((y) => y + 1); }
+    else setViewMonth((m) => m + 1);
+  };
+
+  const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const todayStr = today.toISOString().slice(0, 10);
+
+  const cells: (number | null)[] = [
+    ...Array(firstDayOfWeek).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ];
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString("fr-FR", {
+    month: "long",
+    year: "numeric",
+  });
+
+  return (
+    <div className="space-y-2">
+      <Label className="text-xs">Dates disponibles — cliquez pour sélectionner / désélectionner</Label>
+
+      <div className="border rounded-lg p-3 bg-background w-fit">
+        <div className="flex items-center justify-between mb-3 gap-4">
+          <button type="button" onClick={prevMonth} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <span className="text-sm font-medium capitalize">{monthLabel}</span>
+          <button type="button" onClick={nextMonth} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-7 mb-1">
+          {["Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa"].map((d) => (
+            <div key={d} className="w-8 text-center text-[10px] text-muted-foreground font-medium py-1">{d}</div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-y-1">
+          {cells.map((day, i) => {
+            if (!day) return <div key={i} className="w-8 h-8" />;
+            const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+            const isSelected = selected.has(dateStr);
+            const isToday = dateStr === todayStr;
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => toggleDate(dateStr)}
+                className={cn(
+                  "w-8 h-8 rounded-full text-xs flex items-center justify-center transition-colors",
+                  isSelected
+                    ? "bg-primary text-primary-foreground font-semibold"
+                    : isToday
+                    ? "border border-primary/50 text-primary hover:bg-primary/10"
+                    : "hover:bg-muted text-foreground"
+                )}
+              >
+                {day}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {selected.size > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {[...selected].sort().map((dateStr) => (
+            <span key={dateStr} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+              {formatDate(dateStr)}
+              <button type="button" onClick={() => removeDate(dateStr)} className="hover:text-destructive transition-colors">
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -306,15 +427,10 @@ export default function AvailabilityRulesManager({ experienceId }: Props) {
 
       {/* Specific dates */}
       {form.rule_type === "specific_dates" && (
-        <div className="space-y-1.5">
-          <Label className="text-xs">Dates (format AAAA-MM-JJ, séparées par des virgules)</Label>
-          <Input
-            className="h-8 text-sm font-mono"
-            placeholder="2026-07-14, 2026-07-15, 2026-08-01"
-            value={form.specific_dates}
-            onChange={(e) => setForm((f) => ({ ...f, specific_dates: e.target.value }))}
-          />
-        </div>
+        <SpecificDatesCalendar
+          value={form.specific_dates}
+          onChange={(v) => setForm((f) => ({ ...f, specific_dates: v }))}
+        />
       )}
 
       {/* Labels */}

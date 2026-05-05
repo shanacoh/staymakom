@@ -2212,6 +2212,21 @@ export function UnifiedExperience2Form({
               </CardContent>
             </Card>
 
+            {/* Availability Rules */}
+            {experienceId && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Disponibilité</CardTitle>
+                  <CardDescription>
+                    Définissez les contraintes temporelles de cette expérience (jours, périodes, dates ponctuelles ou bloquées).
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AvailabilityRulesManager experienceId={experienceId} />
+                </CardContent>
+              </Card>
+            )}
+
             {/* Things to Know */}
             {experienceId && (
               <Card>
@@ -2237,21 +2252,6 @@ export function UnifiedExperience2Form({
                     }}
                     hotelId={experienceHotels.length > 0 ? experienceHotels[0].hotel_id : undefined}
                   />
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Availability Rules */}
-            {experienceId && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Disponibilité</CardTitle>
-                  <CardDescription>
-                    Définissez les contraintes temporelles de cette expérience (jours, périodes, dates ponctuelles ou bloquées).
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <AvailabilityRulesManager experienceId={experienceId} />
                 </CardContent>
               </Card>
             )}
