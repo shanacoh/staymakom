@@ -148,15 +148,37 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
       >
         <div className="absolute inset-0 bg-black/45" />
         <div className="relative z-10 max-w-2xl mx-auto text-center px-4 space-y-4">
+          {!isRTL && (
+            <p className="text-[11px] tracking-[0.25em] uppercase font-medium text-white/55">
+              YOUR TRIP. YOUR RULES.
+            </p>
+          )}
           <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold tracking-[-0.02em] leading-tight text-white">
             {getCopy("Looking for something truly unique?", "מחפשים משהו באמת ייחודי?")}
           </h2>
-          <p className="text-white/85 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
-            {getCopy(
-              "Some escapes can't be found in a list. Tell us yours.",
-              "יש בריחות שלא ניתן למצוא ברשימה. ספרו לנו על שלכם."
-            )}
-          </p>
+          <div className="space-y-2">
+            <p className="text-white/70 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
+              {getCopy(
+                "Proposal, family vacation, long stay, special occasion, business getaway...",
+                "הצעת נישואין, חופשה משפחתית, שהות ארוכה, אירוע מיוחד, נסיעת עסקים..."
+              )}
+            </p>
+            <p className="text-white text-sm sm:text-base font-medium max-w-lg mx-auto">
+              {getCopy("Drop your idea, we handle everything.", "שתפו אותנו ברעיון, אנחנו מטפלים בכל השאר.")}
+            </p>
+          </div>
+          {!isRTL && (
+            <div className="flex flex-wrap justify-center gap-2 pt-1">
+              {["Tailor-made", "Authentic", "Truly unique", "Best price guaranteed"].map((perk) => (
+                <span
+                  key={perk}
+                  className="px-3 py-1 rounded-full text-[11px] tracking-wide border border-white/30 text-white/70"
+                >
+                  {perk}
+                </span>
+              ))}
+            </div>
+          )}
           <Button
             onClick={() => { setDialogOpen(true); setSubmitted(false); }}
             className="group mt-2"
