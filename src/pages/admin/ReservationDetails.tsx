@@ -17,6 +17,7 @@ export default function AdminReservationDetails() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [refundDialog, setRefundDialog] = useState<{ open: boolean; revolut: string }>({ open: false, revolut: "" });
+  const [forceRefundDialog, setForceRefundDialog] = useState<{ open: boolean; amount: string }>({ open: false, amount: "" });
 
   const { data: booking, isLoading } = useQuery({
     queryKey: ["admin-booking-details-hg", bookingId],
@@ -61,6 +62,28 @@ export default function AdminReservationDetails() {
       queryClient.invalidateQueries({ queryKey: ["admin-bookings-hg"] });
       setRefundDialog({ open: false, revolut: "" });
       toast.success("Remboursement confirmé et enregistré");
+    },
+    onError: (error: any) => {
+      toast.error("Erreur", { description: error.message });
+    },
+  });
+
+  const forceRefundMutation = useMutation({
+    mutationFn: async (amount: number) => {
+      const { error } = await supabase
+        .from("bookings_hg")
+        .update({
+          payment_status: "refund_pending",
+          refund_amount: amount,
+        } as any)
+        .eq("id", bookingId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-booking-details-hg", bookingId] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bookings-hg"] });
+      setForceRefundDialog({ open: false, amount: "" });
+      toast.success("Remboursement déclenché — il apparaît maintenant dans la liste");
     },
     onError: (error: any) => {
       toast.error("Erreur", { description: error.message });
@@ -208,6 +231,31 @@ export default function AdminReservationDetails() {
           {booking.revolut_refund_id && (
             <p className="text-sm mt-1">Référence Revolut : <span className="font-mono font-semibold">{booking.revolut_refund_id}</span></p>
           )}
+        </div>
+      )}
+
+      {/* Correction manuelle — annulé mais marqué No Refund à tort */}
+      {booking.is_cancelled && booking.payment_status === "no_refund_due" && (
+        <div className="rounded-lg border border-orange-400 bg-orange-50 p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-orange-700 font-semibold">
+                <AlertTriangle className="h-5 w-5" />
+                Remboursement marqué "aucun" — à corriger ?
+              </div>
+              <p className="text-sm text-orange-700">
+                Le système a indiqué qu'aucun remboursement n'était dû, mais si le client avait droit à un remboursement, tu peux le corriger ici.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              className="border-orange-400 text-orange-700 hover:bg-orange-100 whitespace-nowrap"
+              onClick={() => setForceRefundDialog({ open: true, amount: String(booking.paid_amount ?? booking.sell_price ?? "") })}
+            >
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              Déclencher un remboursement
+            </Button>
+          </div>
         </div>
       )}
 
@@ -429,6 +477,52 @@ export default function AdminReservationDetails() {
             >
               <CheckCircle className="h-4 w-4 mr-1" />
               Confirmer le remboursement
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={forceRefundDialog.open}
+        onOpenChange={(open) => !open && setForceRefundDialog({ open: false, amount: "" })}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-700">
+              <AlertTriangle className="h-5 w-5" />
+              Déclencher un remboursement
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Entre le montant total à rembourser au client (hôtel + expérience). Ce montant apparaîtra dans la liste des remboursements à traiter.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="force-refund-amount">Montant à rembourser ({booking.currency})</Label>
+              <Input
+                id="force-refund-amount"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder={`ex. ${booking.paid_amount ?? booking.sell_price ?? "0"}`}
+                value={forceRefundDialog.amount}
+                onChange={(e) => setForceRefundDialog((prev) => ({ ...prev, amount: e.target.value }))}
+                onKeyDown={(e) => e.key === "Enter" && forceRefundMutation.mutate(parseFloat(forceRefundDialog.amount))}
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setForceRefundDialog({ open: false, amount: "" })}>
+              Annuler
+            </Button>
+            <Button
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+              onClick={() => forceRefundMutation.mutate(parseFloat(forceRefundDialog.amount))}
+              disabled={forceRefundMutation.isPending || !forceRefundDialog.amount || isNaN(parseFloat(forceRefundDialog.amount))}
+            >
+              <AlertTriangle className="h-4 w-4 mr-1" />
+              Déclencher le remboursement
             </Button>
           </DialogFooter>
         </DialogContent>
