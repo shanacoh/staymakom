@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Calendar, Users, MapPin, ChevronRight, Clock, Plane, X, AlertTriangle, Pencil } from "lucide-react";
+import { Loader2, Calendar, Users, MapPin, ChevronRight, Clock, Plane, X, AlertTriangle, Pencil, Check } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { differenceInDays, format, parseISO, isPast, isBefore, addDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { analyzeCancellationPolicies } from "@/utils/cancellationPolicy";
 
 interface MyStaymakomSectionProps {
   userId?: string;
@@ -471,6 +472,12 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
             // ✅ #8: Modify button — same conditions as cancel
             const showModify = showCancel;
 
+            const hgRaw = booking.type === "v2" ? (booking.raw as any).hg_raw_data : null;
+            const cancPolicies = hgRaw?.rooms?.[0]?.ratePlans?.[0]?.cancellationPolicies || hgRaw?.cancellationPolicies || null;
+            const cancellation = booking.type === "v2" && !booking.isCancelled
+              ? analyzeCancellationPolicies(cancPolicies, booking.checkin, lang)
+              : null;
+
             const statusAccentColor = booking.isCancelled || booking.status === "cancelled"
               ? "#C0392B" // red
               : isPast(parseISO(booking.checkin))
@@ -533,6 +540,17 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
                       </div>
                     </div>
                   </div>
+
+                  {cancellation?.badgeText && (
+                    <div className={`flex items-center gap-1.5 text-xs mt-1 mb-3 ${cancellation.isNonRefundable ? "text-destructive" : "text-emerald-600"}`}>
+                      {cancellation.isNonRefundable ? (
+                        <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                      ) : (
+                        <Check className="h-3.5 w-3.5 shrink-0" />
+                      )}
+                      <span>{cancellation.badgeText}</span>
+                    </div>
+                  )}
 
                   <div className="flex justify-between items-center pt-4 border-t gap-4">
                     <div>

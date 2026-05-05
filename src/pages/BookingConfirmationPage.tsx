@@ -276,6 +276,11 @@ export default function BookingConfirmationPage() {
           confirmationToken: booking.confirmation_token,
           lang,
           displayTaxesTotal: displayTaxes > 0 ? displayTaxes : undefined,
+          cancellationPolicy: cancellation.summaryText ? {
+            summaryText: cancellation.summaryText,
+            isNonRefundable: cancellation.isNonRefundable,
+            deadline: cancellation.effectiveDeadline?.toISOString() || null,
+          } : undefined,
         },
       });
       toast.success(labels.resendSuccess);
