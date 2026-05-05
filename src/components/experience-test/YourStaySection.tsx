@@ -53,7 +53,9 @@ const YourStaySection = ({ hotel, lang = "en" }: YourStaySectionProps) => {
   const highlights = (lang === 'he' ? hotel.highlights_he : hotel.highlights) || hotel.highlights || [];
 
   // Get 3 photos for the grid
-  const hotelPhotos = [hotel.hero_image, ...(hotel.photos || [])].filter(Boolean).slice(0, 3);
+  const hotelPhotos = Array.from(
+    new Set([hotel.hero_image, ...(hotel.photos || [])].filter(Boolean))
+  ).slice(0, 3);
 
   // Build info chips from new fields
   const infoChips: { icon: React.ReactNode; label: string }[] = [];
