@@ -516,9 +516,14 @@ const AdminLeads = () => {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className={`text-xs ${sourceColors[lead.source] || "bg-gray-100 text-gray-800"}`}>
-                        {lead.source.replace(/_/g, " ")}
-                      </Badge>
+                      <div className="flex flex-col gap-0.5">
+                        <Badge variant="secondary" className={`text-xs ${sourceColors[lead.source] || "bg-gray-100 text-gray-800"}`}>
+                          {lead.source.replace(/_/g, " ")}
+                        </Badge>
+                        {lead.source === "category_waitlist" && lead.metadata?.category_name && (
+                          <span className="text-xs text-muted-foreground">{lead.metadata.category_name}</span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell><LeadStatusBadge status={lead.status || "new"} /></TableCell>
                     <TableCell><LastContactBadge date={lead.updated_at || lead.created_at} /></TableCell>
@@ -567,10 +572,15 @@ const AdminLeads = () => {
               {/* Header */}
               <div>
                 <h3 className="text-lg font-bold">{selectedLead.email}</h3>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <Badge variant="secondary" className={sourceColors[selectedLead.source] || "bg-gray-100"}>
                     {selectedLead.source.replace(/_/g, " ")}
                   </Badge>
+                  {selectedLead.source === "category_waitlist" && selectedLead.metadata?.category_name && (
+                    <Badge variant="outline" className="text-xs">
+                      {selectedLead.metadata.category_name}
+                    </Badge>
+                  )}
                   <span className="text-xs text-muted-foreground">Added {format(new Date(selectedLead.created_at), "MMM d, yyyy")}</span>
                 </div>
               </div>
