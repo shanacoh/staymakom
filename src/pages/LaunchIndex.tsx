@@ -128,13 +128,26 @@ const LaunchIndex = () => {
   });
 
   // Fetch published experiences2 with hotels
+  // ⚡️ Optim 2026-05-07 : on ne sélectionne QUE les colonnes utilisées par la vignette
+  // (titre, photo hero, slug, hôtel principal, tags). Les colonnes lourdes (long_copy,
+  // long_copy_he, og_*, meta_*, faqs, etc.) ne sont jamais lues sur cette page → on
+  // les laisse en base. Avant : ~144 Ko, 1,2 s. Après : ~50-60 Ko, ~0,4 s attendus.
+  // Cache 60 s : les modifs admin apparaissent avec ~1 min de délai max, gain énorme
+  // sur les visites suivantes (page instantanée).
   const { data: experiences2, isLoading: isLoadingExp } = useQuery({
     queryKey: ["launch-experiences2"],
     queryFn: async () => {
       const { data, error } = await supabase.
       from("experiences2").
       select(`
-          *,
+          id,
+          slug,
+          title,
+          title_he,
+          hero_image,
+          photos,
+          status,
+          display_order,
           categories(slug),
           experience2_hotels(
             position,
@@ -147,18 +160,15 @@ const LaunchIndex = () => {
             highlight_tags(
               id, slug, label_en, label_he
             )
-          ),
-          experience2_addons(type, value, is_active)
+          )
         `).
       eq("status", "published").
       order("display_order", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return data;
     },
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: "always",
+    staleTime: 60_000, // 60 s — page instantanée pour les visites successives
+    gcTime: 5 * 60_000, // 5 min en mémoire avant garbage-collect
   });
 
   // Resolve category id from slug
