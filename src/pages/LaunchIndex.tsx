@@ -11,6 +11,7 @@ import LaunchFooter from "@/components/LaunchFooter";
 import { SEOHead } from "@/components/SEOHead";
 import MarqueeBanner from "@/components/MarqueeBanner";
 import TailoredRequestSection from "@/components/TailoredRequestSection";
+import FAQSection from "@/components/FAQSection";
 import HowItWorksBanner from "@/components/HowItWorksBanner";
 import CategoryCard from "@/components/CategoryCard";
 import Experience2CardWithPrice from "@/components/Experience2CardWithPrice";
@@ -541,6 +542,9 @@ const LaunchIndex = () => {
             </div>
           </div>
         </section>
+
+        {/* ─── 9. FAQ ─── */}
+        <FAQSection />
 
       </main>
 
