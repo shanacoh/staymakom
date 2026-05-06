@@ -311,6 +311,10 @@ export function UnifiedExperience2Form({
   const minNights = watch("min_nights");
   const maxNights = watch("max_nights");
   const title = watch("title");
+  // Pension préférée — pilote le filtre HyperGuest pour cette expérience.
+  // Watchée pour que le changement dans le menu déroulant rafraîchisse instantanément
+  // les aperçus (Données HyperGuest, Aperçu Prix & Disponibilités).
+  const preferredBoardType = watch("preferred_board_type") ?? null;
 
   const firstHotel = experienceHotels.length > 0 ? hotels?.find((h) => h.id === experienceHotels[0].hotel_id) : null;
 
@@ -322,6 +326,8 @@ export function UnifiedExperience2Form({
   const { fromPriceILS, isLoading: isLoadingFromPrice } = useFromPrice(
     currentExperienceId ?? null,
     primaryHyperguestId,
+    [],
+    preferredBoardType,
   );
 
   // Modèle B — BAR RATE sur 30 jours (déclenché manuellement)
@@ -330,6 +336,7 @@ export function UnifiedExperience2Form({
     nights: 1,
     adults: 2,
     currency: "ILS",
+    preferredBoardType,
     enabled: barRateRefreshEnabled,
   });
 
@@ -1614,6 +1621,51 @@ export function UnifiedExperience2Form({
               </CardHeader>
               <CardContent className="space-y-6">
 
+                {/* ── Bloc tête : Pension préférée — pilote tous les filtres HyperGuest ── */}
+                <div className="rounded-lg border-2 border-primary/40 bg-primary/5 p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-primary" />
+                    <Label htmlFor="preferred_board_type" className="text-sm font-semibold">
+                      Pension affichée en priorité
+                    </Label>
+                  </div>
+                  <Controller
+                    name="preferred_board_type"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value ?? "none"}
+                        onValueChange={(val) =>
+                          field.onChange(
+                            val === "none"
+                              ? null
+                              : (val as "RO" | "BB" | "HB" | "FB" | "AI"),
+                          )
+                        }
+                        disabled={isSaving}
+                      >
+                        <SelectTrigger id="preferred_board_type">
+                          <SelectValue placeholder="Le moins cher (par défaut)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Le moins cher (par défaut)</SelectItem>
+                          <SelectItem value="BB">Petit-déjeuner inclus (BB)</SelectItem>
+                          <SelectItem value="RO">Chambre seule (RO)</SelectItem>
+                          <SelectItem value="HB">Demi-pension (HB)</SelectItem>
+                          <SelectItem value="FB">Pension complète (FB)</SelectItem>
+                          <SelectItem value="AI">Tout inclus (AI)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Pilote toute la tarification : les chiffres HyperGuest affichés ci-dessous,
+                    les aperçus de prix, et les chambres réservables côté client.
+                    Si la pension choisie n'est pas dispo pour des dates → l'expérience
+                    apparaît "indisponible aux dates choisies".
+                  </p>
+                </div>
+
                 {/* ── Bloc 0 : Indicatif HyperGuest ── */}
                 <div className="rounded-lg bg-muted/50 border p-4 space-y-3">
                   <div className="flex items-center justify-between gap-2">
@@ -1756,44 +1808,6 @@ export function UnifiedExperience2Form({
                         />
                       </div>
                     </div>
-                  </div>
-
-                  {/* Pension préférée — filtre les rate plans HyperGuest */}
-                  <div className="space-y-1 pt-2 border-t">
-                    <Label className="text-xs font-medium">Pension affichée en priorité</Label>
-                    <Controller
-                      name="preferred_board_type"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          value={field.value ?? "none"}
-                          onValueChange={(val) =>
-                            field.onChange(
-                              val === "none"
-                                ? null
-                                : (val as "RO" | "BB" | "HB" | "FB" | "AI"),
-                            )
-                          }
-                          disabled={isSaving}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Le moins cher (par défaut)" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Le moins cher (par défaut)</SelectItem>
-                            <SelectItem value="BB">Petit-déjeuner inclus (BB)</SelectItem>
-                            <SelectItem value="RO">Chambre seule (RO)</SelectItem>
-                            <SelectItem value="HB">Demi-pension (HB)</SelectItem>
-                            <SelectItem value="FB">Pension complète (FB)</SelectItem>
-                            <SelectItem value="AI">Tout inclus (AI)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                    <p className="text-[11px] text-muted-foreground">
-                      Filtre les tarifs HyperGuest affichés et réservables. Si la pension n'est pas
-                      disponible pour des dates, l'expérience apparaît "indisponible aux dates choisies".
-                    </p>
                   </div>
                 </div>
 
@@ -2133,6 +2147,7 @@ export function UnifiedExperience2Form({
                           nights={eh.nights}
                           minParty={watch("min_party") || 1}
                           maxParty={watch("max_party") || 20}
+                          preferredBoardType={preferredBoardType}
                           onPriceChange={(price) => setHotelRoomPrices((prev) => ({ ...prev, [eh.hotel_id]: price }))}
                         />
                       </div>

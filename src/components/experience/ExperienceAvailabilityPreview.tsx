@@ -40,6 +40,8 @@ export interface ExperienceAvailabilityPreviewProps {
   onPriceChange?: (price: number | null) => void;
   /** Masquer le PriceBreakdownV2 individuel (quand on affiche un total combiné) */
   hidePriceBreakdown?: boolean;
+  /** Pension préférée — filtre les rate plans HyperGuest dans le sélecteur de chambres. */
+  preferredBoardType?: string | null;
 }
 
 /** Normalise la réponse API pour RoomOptionsV2 (results[0].rooms ou .rooms) */
@@ -89,6 +91,7 @@ export function ExperienceAvailabilityPreview({
   maxParty = 20,
   onPriceChange,
   hidePriceBreakdown = false,
+  preferredBoardType = null,
 }: ExperienceAvailabilityPreviewProps) {
   const t = {
     en: {
@@ -374,6 +377,7 @@ export function ExperienceAvailabilityPreview({
                 setSelectedRatePlanId(ratePlanId);
               }}
               lang={lang}
+              preferredBoardType={preferredBoardType}
             />
             {!hidePriceBreakdown && (
               <PriceBreakdownV2 breakdown={priceBreakdown} isLoading={isLoadingAvailability} lang={lang} />
