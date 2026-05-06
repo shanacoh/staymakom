@@ -24,9 +24,11 @@ import { t } from "@/lib/translations";
 import { useLocalizedNavigation } from "@/hooks/useLocalizedNavigation";
 import { useAuth } from "@/contexts/AuthContext";
 
-type Currency = "USD" | "ILS";
+// Décision validée par Shana 2026-05-07 : toutes les cartes cadeaux sont émises en
+// shekels (ILS). C'est la devise des hôtels, ça évite les bugs de conversion au moment
+// de l'application au checkout (cf. bug "card en € soustraite à un total en ₪").
+type Currency = "ILS";
 
-const AMOUNTS_USD = [150, 300, 500, 750];
 const AMOUNTS_ILS = [500, 1000, 1800, 2500];
 const MAX_MESSAGE = 150;
 
@@ -36,7 +38,7 @@ const CARD_BACKGROUNDS = [
   { id: "road", src: cardBg3, label: "Road" },
 ];
 
-const CURRENCY_SYMBOLS: Record<Currency, string> = { USD: "$", ILS: "₪" };
+const CURRENCY_SYMBOLS: Record<Currency, string> = { ILS: "₪" };
 
 function generateGiftCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -115,7 +117,8 @@ export default function GiftCard() {
   const isRTL = lang === "he";
 
   useEffect(() => { trackGiftCardPageViewed(); }, []);
-  const [currency, setCurrency] = useState<Currency>("USD");
+  // ILS forcé (cf. type Currency en haut du fichier)
+  const currency: Currency = "ILS";
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState("");
   const [message, setMessage] = useState("");
@@ -128,15 +131,9 @@ export default function GiftCard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedBg, setSelectedBg] = useState(CARD_BACKGROUNDS[0].id);
 
-  const amounts = currency === "USD" ? AMOUNTS_USD : AMOUNTS_ILS;
+  const amounts = AMOUNTS_ILS;
   const sym = CURRENCY_SYMBOLS[currency];
   const bgSrc = CARD_BACKGROUNDS.find((b) => b.id === selectedBg)?.src ?? CARD_BACKGROUNDS[0].src;
-
-  // Reset selected amount when switching currency
-  useEffect(() => {
-    setSelectedAmount(null);
-    setCustomAmount("");
-  }, [currency]);
 
   // Auto-fill from logged-in user
   const isLoggedIn = !!user;
@@ -347,27 +344,22 @@ export default function GiftCard() {
 
           {/* RIGHT: Form */}
           <div className="space-y-0">
-            {/* ── Currency toggle ── */}
-            <div className="mb-4">
-              <Label className={labelClass}>
-                {lang === "he" ? "מטבע" : "Currency"}
-              </Label>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {(["USD", "ILS"] as Currency[]).map((cur) => (
-                  <button
-                    key={cur}
-                    onClick={() => setCurrency(cur)}
-                    className={cn(
-                      "h-11 rounded-[10px] text-sm font-medium border-[1.5px] transition-all",
-                      currency === cur
-                        ? "bg-foreground text-background border-foreground"
-                        : "bg-secondary/40 text-foreground border-border hover:border-foreground/30"
-                    )}
-                  >
-                    {cur === "USD" ? "$ USD" : "₪ NIS"}
-                  </button>
-                ))}
-              </div>
+            {/* ── Currency notice (forcé en ILS depuis 2026-05-07) ── */}
+            <div className="mb-4 rounded-[10px] border-[1.5px] border-border bg-secondary/30 px-4 py-3">
+              <p className="text-sm font-medium text-foreground">
+                {lang === "he"
+                  ? "מטבע: ש״ח (NIS)"
+                  : lang === "fr"
+                    ? "Devise : Shekel israélien (₪)"
+                    : "Currency: Israeli Shekel (₪)"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {lang === "he"
+                  ? "כל כרטיסי המתנה מונפקים בש״ח, המטבע של בתי המלון."
+                  : lang === "fr"
+                    ? "Toutes les cartes cadeaux sont émises en shekels, la devise des hôtels."
+                    : "All gift cards are issued in shekels, the currency of the hotels."}
+              </p>
             </div>
 
             {/* ── Section 1: Amount ── */}

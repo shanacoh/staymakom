@@ -244,15 +244,66 @@ Deno.serve(async (req: Request) => {
     console.log('✅ Booking saved to DB:', hgBookingId);
 
     // 4. Mise à jour de la carte cadeau (non-bloquant)
+    // Décision validée par Shana 2026-05-07 : on garde non-bloquant pour ne pas casser
+    // une résa déjà payée si la BD a un hoquet, MAIS on envoie une alerte email immédiate
+    // à Shana pour qu'elle invalide manuellement la carte si nécessaire.
     if (body.giftCard?.id) {
+      let gcUpdateError: unknown = null;
       try {
-        await adminClient.from('gift_cards').update({
+        const { error } = await adminClient.from('gift_cards').update({
           amount_used: body.giftCard.newAmountUsed,
           status: body.giftCard.isFullyRedeemed ? 'redeemed' : 'sent',
           ...(body.giftCard.isFullyRedeemed ? { redeemed_at: new Date().toISOString() } : {}),
         }).eq('id', body.giftCard.id);
+        if (error) gcUpdateError = error;
       } catch (gcErr) {
-        console.error('⚠️ Gift card update failed (non-blocking):', gcErr);
+        gcUpdateError = gcErr;
+      }
+
+      if (gcUpdateError) {
+        console.error('⚠️ Gift card update failed (non-blocking):', gcUpdateError);
+
+        // Alerte email à l'équipe pour intervention manuelle
+        const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+        if (RESEND_API_KEY) {
+          try {
+            const errMsg = gcUpdateError instanceof Error
+              ? gcUpdateError.message
+              : JSON.stringify(gcUpdateError);
+            const alertHtml = `
+              <h2>⚠️ Gift card update failed after successful booking</h2>
+              <p>A booking was confirmed but the gift card balance could not be updated.
+                 The card may still be re-usable — please intervene manually.</p>
+              <ul>
+                <li><b>HG Booking ID:</b> ${hgBookingId}</li>
+                <li><b>Staymakom Ref:</b> ${body.staymakomRef ?? '—'}</li>
+                <li><b>Gift Card ID:</b> ${body.giftCard.id}</li>
+                <li><b>Amount used (intended):</b> ${body.giftCard.newAmountUsed}</li>
+                <li><b>Fully redeemed:</b> ${body.giftCard.isFullyRedeemed ? 'yes' : 'no'}</li>
+                <li><b>Customer email:</b> ${body.email ?? '—'}</li>
+                <li><b>Error:</b> <pre>${errMsg}</pre></li>
+              </ul>
+              <p><b>Action requise :</b> aller dans /admin/gift-cards, ouvrir la carte
+                 ${body.giftCard.id}, vérifier le solde, ajuster amount_used à ${body.giftCard.newAmountUsed}
+                 et marquer status = redeemed si la carte a été consommée à 100 %.</p>
+            `;
+            await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${RESEND_API_KEY}`,
+              },
+              body: JSON.stringify({
+                from: 'Staymakom Alerts <reservations@staymakom.com>',
+                to: ['shana@staymakom.com'],
+                subject: `⚠️ Gift card update failed — manual action required (booking ${hgBookingId})`,
+                html: alertHtml,
+              }),
+            });
+          } catch (mailErr) {
+            console.error('⚠️ Could not send gift card alert email:', mailErr);
+          }
+        }
       }
     }
 
