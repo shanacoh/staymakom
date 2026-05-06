@@ -7,10 +7,9 @@
 import { useMemo } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, BedDouble, Clock } from "lucide-react";
+import { BedDouble, Clock } from "lucide-react";
 import { getBoardTypeLabel } from "@/services/hyperguest";
 import { cn } from "@/lib/utils";
-import { analyzeCancellationPolicies } from "@/utils/cancellationPolicy";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { calculateFromPrice } from "@/hooks/useExperience2Price";
 import type { PricingConfig } from "@/types/experience2_addons";
@@ -228,12 +227,6 @@ export function RoomOptionsV2({
           const boardLabel = getBoardTypeLabel(ratePlan.board);
           const isOnRequest = ratePlan.isImmediate === false;
 
-          const cancellation = analyzeCancellationPolicies(
-            ratePlan.cancellationPolicies,
-            checkInDate,
-            lang,
-          );
-
           return (
             <label
               key={room.roomId}
@@ -274,22 +267,6 @@ export function RoomOptionsV2({
                   </p>
                 )}
 
-                {cancellation.badgeText && (
-                  <p
-                    className={cn(
-                      "mt-0.5 leading-tight",
-                      cancellation.isFreeCancellation
-                        ? "text-emerald-600"
-                        : "text-muted-foreground",
-                    )}
-                    style={{ fontSize: "11px" }}
-                  >
-                    {cancellation.isFreeCancellation && (
-                      <Check className="h-3 w-3 inline mr-0.5 -mt-px" />
-                    )}
-                    {cancellation.badgeText}
-                  </p>
-                )}
               </div>
             </label>
           );

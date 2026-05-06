@@ -22,6 +22,8 @@ interface AvailableDate {
    * À ne JAMAIS exposer dans l'UI client (back-office uniquement).
    */
   cheapestNetPrice: number | null;
+  /** Cancellation policies of the cheapest rate plan, used to display per-date cancellation badge */
+  cheapestCancellationPolicies: any[] | null;
   currency: string;
 }
 
@@ -80,6 +82,7 @@ async function scanAvailability(
             let cheapest: number | null = null;
             let cheapestBar: number | null = null;
             let cheapestNet: number | null = null;
+            let cheapestPolicies: any[] | null = null;
             let cur = currency;
 
             for (const room of rooms) {
@@ -126,6 +129,7 @@ async function scanAvailability(
                 if (cheapest === null || sellPrice < cheapest) {
                   cheapest = sellPrice;
                   cur = sellCur;
+                  cheapestPolicies = rp.cancellationPolicies ?? null;
                 }
 
                 // Track cheapest BAR price for back-office display (not for public UI)
@@ -149,6 +153,7 @@ async function scanAvailability(
               cheapestPrice: cheapest,
               cheapestBarPrice: cheapestBar,
               cheapestNetPrice: cheapestNet,
+              cheapestCancellationPolicies: cheapestPolicies,
               currency: cur,
             } satisfies AvailableDate;
           })

@@ -7,7 +7,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, AlertCircle, CalendarDays, Sparkles, Loader2, Clock, Baby, Minus, Plus, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "lucide-react";
+import { Users, AlertCircle, CalendarDays, Sparkles, Loader2, Clock, Baby, Minus, Plus, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { SaveForLaterButton } from "./SaveForLaterButton";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,7 @@ import { RoomOptionsV2 } from "./RoomOptionsV2";
 import { useHyperGuestAvailability } from "@/hooks/useHyperGuestAvailability";
 import { useQuickDateAvailability, useSpecificDatePrices } from "@/hooks/useQuickDateAvailability";
 import { isCheckinDisabled } from "@/lib/availabilityUtils";
+import { analyzeCancellationPolicies } from "@/utils/cancellationPolicy";
 import type { AvailabilityRule } from "@/lib/availabilityUtils";
 import { useExperience2Price, useExperienceAddons, useExperiencePricingConfig, calculateFromPrice } from "@/hooks/useExperience2Price";
 import type { PricingConfig } from "@/types/experience2_addons";
@@ -224,6 +225,7 @@ export function BookingPanel2({
         cheapestPrice: specificDatePrices?.[dateStr] ?? null,
         cheapestBarPrice: null as number | null,
         cheapestNetPrice: null as number | null,
+        cheapestCancellationPolicies: null as any[] | null,
         currency,
       };
     });
@@ -490,6 +492,7 @@ export function BookingPanel2({
   }, [panelExtras, panelQuantities]);
 
   const isStep1Complete = !!(dateRange.from && dateRange.to && selectedRoomId && selectedRatePlanId);
+
   const displayTotal = (priceBreakdown?.finalTotal ?? 0) + panelExtrasTotal;
   const totalIsNaN = Number.isNaN(displayTotal);
   const isOnRequest = selectedRatePlan?.isImmediate === false;
@@ -732,6 +735,9 @@ export function BookingPanel2({
                   >
                     {visibleQuickDates.map((opt) => {
                       const isBest = isBestRateSlot(opt);
+                      const checkinStr = (opt.checkin instanceof Date ? opt.checkin : new Date(opt.checkin as string)).toISOString().split('T')[0];
+                      const policies = opt.cheapestCancellationPolicies ?? selectedRatePlan?.cancellationPolicies ?? null;
+                      const cancellation = analyzeCancellationPolicies(policies, checkinStr, lang);
                       return (
                         <label
                           key={opt.id}
@@ -753,6 +759,17 @@ export function BookingPanel2({
                                 : (lang === "he" ? "לילות" : lang === "fr" ? "nuits" : "nights")
                               }
                             </p>
+                            {cancellation.badgeText && (
+                              <p className={cn(
+                                "text-[11px] mt-0.5 leading-tight",
+                                cancellation.isFreeCancellation ? "text-emerald-600" : "text-muted-foreground"
+                              )}>
+                                {cancellation.isFreeCancellation && (
+                                  <Check className="h-3 w-3 inline mr-0.5 -mt-px" />
+                                )}
+                                {cancellation.badgeText}
+                              </p>
+                            )}
                           </div>
                           <div className="text-right shrink-0">
                             {isBest && (
