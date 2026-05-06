@@ -3,7 +3,6 @@
  */
 
 import { formatPrice, getBoardTypeLabel } from './utils';
-import { pickPreferredRatePlan, type BoardType } from '@/lib/boardTypePreference';
 
 // ==========================================================================
 // INTERFACES
@@ -193,50 +192,27 @@ export class SearchProperty {
     return this.info?.starRating || 0;
   }
 
-  /**
-   * Retourne la chambre la moins chère, optionnellement filtrée par pension préférée.
-   *
-   * - preferredBoard = null → comportement historique (la moins chère, peu importe la pension).
-   * - preferredBoard défini → ne considère que les chambres ayant un rate plan du type demandé,
-   *   et retourne null si aucune chambre n'en a → "indisponible aux dates choisies".
-   */
-  getCheapestRoom(preferredBoard: BoardType | null = null): SearchRoom | null {
+  getCheapestRoom(): SearchRoom | null {
     if (this.rooms.length === 0) return null;
-
-    let cheapestRoom: SearchRoom | null = null;
-    let cheapestPrice = Infinity;
-
-    for (const room of this.rooms) {
-      const rp = room.getCheapestRatePlan(preferredBoard);
-      if (!rp) continue;
-      const amount = rp.getPrice('sell').amount;
-      if (typeof amount !== 'number' || amount <= 0) continue;
-      if (amount < cheapestPrice) {
-        cheapestRoom = room;
-        cheapestPrice = amount;
-      }
-    }
-
-    return cheapestRoom;
+    
+    return this.rooms.reduce((cheapest, room) => {
+      const cheapestPrice = cheapest?.getCheapestRatePlan()?.getPrice('sell').amount || Infinity;
+      const roomPrice = room.getCheapestRatePlan()?.getPrice('sell').amount || Infinity;
+      
+      return roomPrice < cheapestPrice ? room : cheapest;
+    });
   }
 
-  getRoomsWithBestPrice(
-    preferredBoard: BoardType | null = null,
-  ): { room: SearchRoom; bestRatePlan: SearchRatePlan | null }[] {
-    return this.rooms
-      .map(room => ({
-        room,
-        bestRatePlan: room.getCheapestRatePlan(preferredBoard),
-      }))
-      .filter(item => item.bestRatePlan !== null);
+  getRoomsWithBestPrice(): { room: SearchRoom; bestRatePlan: SearchRatePlan | null }[] {
+    return this.rooms.map(room => ({
+      room,
+      bestRatePlan: room.getCheapestRatePlan(),
+    })).filter(item => item.bestRatePlan !== null);
   }
 
-  toCardDisplay(
-    nights: number | null = null,
-    preferredBoard: BoardType | null = null,
-  ): SearchCardDisplay | null {
-    const cheapestRoom = this.getCheapestRoom(preferredBoard);
-    const bestRate = cheapestRoom?.getCheapestRatePlan(preferredBoard);
+  toCardDisplay(nights: number | null = null): SearchCardDisplay | null {
+    const cheapestRoom = this.getCheapestRoom();
+    const bestRate = cheapestRoom?.getCheapestRatePlan();
     
     if (!bestRate || !bestRate.getPrice('sell') || bestRate.getPrice('sell').amount === 0) {
       return null;
@@ -404,20 +380,15 @@ export class SearchRoom {
     this.ratePlanCount = this.ratePlans.length;
   }
 
-  /**
-   * Retourne le rate plan le moins cher, optionnellement filtré par pension préférée.
-   *
-   * - preferredBoard = null → comportement historique : moins cher tous types confondus.
-   * - preferredBoard défini → moins cher parmi ceux dont le board correspond.
-   *   Retourne null si aucun rate plan ne correspond → "indisponible aux dates choisies".
-   */
-  getCheapestRatePlan(preferredBoard: BoardType | null = null): SearchRatePlan | null {
-    return pickPreferredRatePlan(
-      this.ratePlans,
-      (rp) => rp.board,
-      (rp) => rp.getPrice('sell').amount,
-      preferredBoard,
-    );
+  getCheapestRatePlan(): SearchRatePlan | null {
+    if (this.ratePlans.length === 0) return null;
+    
+    return this.ratePlans.reduce((cheapest, rp) => {
+      const cheapestPrice = cheapest?.getPrice('sell').amount || Infinity;
+      const rpPrice = rp.getPrice('sell').amount || Infinity;
+      
+      return rpPrice < cheapestPrice ? rp : cheapest;
+    });
   }
 
   getRatePlanByCode(rateCode: string): SearchRatePlan | undefined {

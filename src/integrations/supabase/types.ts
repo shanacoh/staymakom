@@ -2214,7 +2214,6 @@ export type Database = {
           og_title_fr: string | null
           og_title_he: string | null
           photos: string[] | null
-          preferred_board_type: string | null
           property_type: string | null
           region: string | null
           region_he: string | null
@@ -2286,7 +2285,6 @@ export type Database = {
           og_title_fr?: string | null
           og_title_he?: string | null
           photos?: string[] | null
-          preferred_board_type?: string | null
           property_type?: string | null
           region?: string | null
           region_he?: string | null
@@ -2358,7 +2356,6 @@ export type Database = {
           og_title_fr?: string | null
           og_title_he?: string | null
           photos?: string[] | null
-          preferred_board_type?: string | null
           property_type?: string | null
           region?: string | null
           region_he?: string | null

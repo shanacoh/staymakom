@@ -7,7 +7,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { addDays, format } from 'date-fns';
 import { searchHotelsRaw, formatGuests } from '@/services/hyperguest';
-import { normalizeBoardPreference, type BoardType } from '@/lib/boardTypePreference';
 
 interface AvailableDate {
   id: string;
@@ -25,8 +24,6 @@ interface UseSpecificDateAvailabilityOptions {
   adults: number;
   currency?: string;
   enabled?: boolean;
-  /** Voir useQuickDateAvailability — même logique stricte de filtrage par pension. */
-  preferredBoardType?: BoardType | string | null;
 }
 
 async function fetchSpecificDates(
@@ -35,7 +32,6 @@ async function fetchSpecificDates(
   propertyId: number,
   adults: number,
   currency: string,
-  preferredBoardType: BoardType | null,
 ): Promise<AvailableDate[]> {
   const guests = formatGuests([{ adults, children: [] }]);
 
@@ -58,10 +54,6 @@ async function fetchSpecificDates(
 
         for (const room of rooms) {
           for (const rp of room.ratePlans || []) {
-            if (preferredBoardType) {
-              const board = typeof rp.board === 'string' ? rp.board.toUpperCase() : null;
-              if (board !== preferredBoardType) continue;
-            }
             const sellSearchPrice = rp.prices?.sell?.searchCurrency;
             const sellNativePrice = rp.prices?.sell?.price;
             const sellPrice =
@@ -120,12 +112,10 @@ export function useSpecificDateAvailability({
   adults,
   currency = 'ILS',
   enabled = true,
-  preferredBoardType = null,
 }: UseSpecificDateAvailabilityOptions) {
-  const board = normalizeBoardPreference(preferredBoardType);
   return useQuery({
-    queryKey: ['specific-date-availability', specificDates, nights, propertyId, adults, currency, board],
-    queryFn: () => fetchSpecificDates(specificDates, nights, propertyId!, adults, currency, board),
+    queryKey: ['specific-date-availability', specificDates, nights, propertyId, adults, currency],
+    queryFn: () => fetchSpecificDates(specificDates, nights, propertyId!, adults, currency),
     enabled: enabled && !!propertyId && nights > 0 && specificDates.length > 0,
     staleTime: 1000 * 60 * 5,
     retry: 1,
