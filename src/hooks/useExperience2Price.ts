@@ -460,11 +460,16 @@ export function calculateFromPrice(
 /**
  * Hook: returns the "From" price in ILS for an experience,
  * using the cheapest 1-night HyperGuest rate + fixed addons + commissions.
+ *
+ * @param preferredBoardType — pension préférée de l'hôtel (hotels2.preferred_board_type).
+ *                              Si défini, on filtre les rate plans par ce type avant de
+ *                              calculer le prix "À partir de…".
  */
 export function useFromPrice(
   experienceId: string | null,
   hyperguestPropertyId: string | null,
   availabilityRules: AvailabilityRule[] = [],
+  preferredBoardType: string | null = null,
 ) {
   const { data: addons } = useExperienceAddons(experienceId);
   const { data: pricingConfig } = useExperiencePricingConfig(experienceId);
@@ -494,6 +499,7 @@ export function useFromPrice(
     nights: 1,
     adults: 2,
     currency: "ILS",
+    preferredBoardType,
     enabled: !!propId,
   });
 

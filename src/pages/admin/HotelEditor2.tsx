@@ -113,6 +113,8 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
     description_location: "",
     description_room_he: "",
     description_location_he: "",
+    /** Pension à afficher en priorité (NULL = le moins cher peu importe le type) */
+    preferred_board_type: null as null | "RO" | "BB" | "HB" | "FB" | "AI",
   });
 
   const downloadHyperGuestImages = async (imageUrls: string[], heroUrl?: string | null) => {
@@ -351,6 +353,8 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
         description_location: (h.description_location as string) ?? "",
         description_room_he: (h.description_room_he as string) ?? "",
         description_location_he: (h.description_location_he as string) ?? "",
+        preferred_board_type:
+          (h.preferred_board_type as null | "RO" | "BB" | "HB" | "FB" | "AI") ?? null,
       });
 
       // Restore hyperguestId from existing hotel data
@@ -433,6 +437,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
         description_location: data.description_location || null,
         description_room_he: data.description_room_he || null,
         description_location_he: data.description_location_he || null,
+        preferred_board_type: data.preferred_board_type ?? null,
       };
 
       // ======== DEBUG START ========
@@ -595,6 +600,53 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
             </CardContent>
           </Card>
         )}
+
+        {/* ══════════════════════════════════════════════════════════
+            1bis. AFFICHAGE & TARIFICATION HYPERGUEST
+        ══════════════════════════════════════════════════════════ */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Affichage des tarifs</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Choisissez quelle pension est affichée en priorité pour cet hôtel. Si la pension
+              choisie n'est pas disponible pour des dates, l'hôtel apparaît "indisponible aux
+              dates choisies" plutôt que de retomber sur un autre tarif.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-w-md">
+              <Label htmlFor="preferred_board_type">Pension préférée</Label>
+              <Select
+                value={formData.preferred_board_type ?? "none"}
+                onValueChange={(value) =>
+                  setFormData({
+                    ...formData,
+                    preferred_board_type:
+                      value === "none"
+                        ? null
+                        : (value as "RO" | "BB" | "HB" | "FB" | "AI"),
+                  })
+                }
+              >
+                <SelectTrigger id="preferred_board_type">
+                  <SelectValue placeholder="Le moins cher (par défaut)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Le moins cher (par défaut)</SelectItem>
+                  <SelectItem value="BB">Petit-déjeuner inclus (BB)</SelectItem>
+                  <SelectItem value="RO">Chambre seule (RO)</SelectItem>
+                  <SelectItem value="HB">Demi-pension (HB)</SelectItem>
+                  <SelectItem value="FB">Pension complète (FB)</SelectItem>
+                  <SelectItem value="AI">Tout inclus (AI)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Sans préférence définie, le site affiche automatiquement le tarif le moins cher
+                renvoyé par HyperGuest, peu importe le type de pension.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* ══════════════════════════════════════════════════════════
             2. IDENTITÉ DE L'HÔTEL

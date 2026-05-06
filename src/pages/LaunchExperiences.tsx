@@ -84,7 +84,7 @@ const LaunchExperiences = () => {
             nights,
             hotel:hotels2(
               id, name, name_he, city, city_he, region, region_he, hero_image,
-              hyperguest_property_id, latitude, longitude
+              hyperguest_property_id, latitude, longitude, preferred_board_type
             )
           ),
           experience2_highlight_tags(

@@ -12,6 +12,8 @@ interface StickyPriceBarProps {
   onViewDates: () => void;
   footerRef: React.RefObject<HTMLElement>;
   hyperguestPropertyId?: string | null;
+  /** Pension préférée de l'hôtel (hotels2.preferred_board_type) — propagée pour cohérence des prix. */
+  preferredBoardType?: string | null;
   selectedExtrasTotal?: number;
   minParty?: number;
   minNights?: number;
@@ -25,6 +27,7 @@ const StickyPriceBar = ({
   onViewDates,
   footerRef,
   hyperguestPropertyId,
+  preferredBoardType = null,
   selectedExtrasTotal = 0,
   minParty = 2,
   minNights = 1,
@@ -33,7 +36,12 @@ const StickyPriceBar = ({
   const [isHidden, setIsHidden] = useState(false);
   const { symbol, convert } = useCurrency();
 
-  const { fromPriceILS, hasHyperguest } = useFromPrice(experienceId, hyperguestPropertyId ?? null, availabilityRules);
+  const { fromPriceILS, hasHyperguest } = useFromPrice(
+    experienceId,
+    hyperguestPropertyId ?? null,
+    availabilityRules,
+    preferredBoardType,
+  );
 
   const displayPrice = fromPriceILS ? Math.round(convert(fromPriceILS)) : null;
 

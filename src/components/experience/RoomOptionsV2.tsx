@@ -67,6 +67,12 @@ interface RoomOptionsV2Props {
   nights?: number;
   barRateData?: BarRateData | null;
   adults?: number;
+  /**
+   * Pension préférée de l'hôtel (hotels2.preferred_board_type).
+   * Si défini, on filtre les rate plans pour ne garder que ceux de ce type.
+   * Une chambre n'apparaît que si elle a au moins un rate plan correspondant.
+   */
+  preferredBoardType?: string | null;
 }
 
 function shouldHideRatePlan(ratePlan: RoomRatePlan): boolean {
@@ -94,7 +100,12 @@ export function RoomOptionsV2({
   pricingConfig,
   barRateData,
   adults = 2,
+  preferredBoardType = null,
 }: RoomOptionsV2Props) {
+  const preferredBoardUpper =
+    typeof preferredBoardType === "string" && preferredBoardType.trim() !== ""
+      ? preferredBoardType.toUpperCase()
+      : null;
   const t = {
     en: {
       title: "Room type",
@@ -122,11 +133,19 @@ export function RoomOptionsV2({
     return [];
   }, [searchResult]);
 
-  // For each room, pick the cheapest visible rate plan, then sort by price ascending
+  // For each room, pick the cheapest visible rate plan, then sort by price ascending.
+  // Si une pension préférée est définie, on filtre d'abord les rate plans correspondants.
+  // Une chambre sans rate plan compatible disparaît de la liste (option B Shana).
   const roomCards = useMemo(() => {
     const cards = rooms
       .map((room) => {
-        const visiblePlans = room.ratePlans.filter((rp) => !shouldHideRatePlan(rp));
+        let visiblePlans = room.ratePlans.filter((rp) => !shouldHideRatePlan(rp));
+        if (preferredBoardUpper) {
+          visiblePlans = visiblePlans.filter((rp) => {
+            const board = typeof rp.board === "string" ? rp.board.toUpperCase() : null;
+            return board === preferredBoardUpper;
+          });
+        }
         if (visiblePlans.length === 0) return null;
 
         let cheapest = visiblePlans[0];
@@ -160,7 +179,7 @@ export function RoomOptionsV2({
     });
 
     return cards;
-  }, [rooms]);
+  }, [rooms, preferredBoardUpper]);
 
   const { symbol, convert } = useCurrency();
   const formatPrice = (amount: number, _currency: string) => {

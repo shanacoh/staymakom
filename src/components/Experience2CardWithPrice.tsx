@@ -28,7 +28,12 @@ export default function Experience2CardWithPrice({
 }: Experience2CardWithPriceProps) {
   const { convert } = useCurrency();
 
-  const { fromPriceILS } = useFromPrice(experience.id, hyperguestPropertyId ?? null);
+  const { fromPriceILS } = useFromPrice(
+    experience.id,
+    hyperguestPropertyId ?? null,
+    [],
+    primaryHotel?.preferred_board_type ?? null,
+  );
 
   // Convert ILS → display currency, hide if no price
   const displayPrice = fromPriceILS ? Math.round(convert(fromPriceILS)) : 0;

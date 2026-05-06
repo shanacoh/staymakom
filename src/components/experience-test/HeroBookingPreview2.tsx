@@ -11,6 +11,8 @@ interface HeroBookingPreview2Props {
   lang: "en" | "he" | "fr";
   onViewDates: () => void;
   hyperguestPropertyId?: string | null;
+  /** Pension préférée de l'hôtel (hotels2.preferred_board_type) — propagée pour cohérence des prix. */
+  preferredBoardType?: string | null;
   minParty?: number;
   minNights?: number;
   availabilityRules?: AvailabilityRule[];
@@ -22,6 +24,7 @@ const HeroBookingPreview2 = ({
   lang,
   onViewDates,
   hyperguestPropertyId,
+  preferredBoardType = null,
   minParty = 2,
   minNights = 1,
   availabilityRules = [],
@@ -32,6 +35,7 @@ const HeroBookingPreview2 = ({
     experienceId,
     hyperguestPropertyId ?? null,
     availabilityRules,
+    preferredBoardType,
   );
 
   const displayPrice = fromPriceILS ? Math.round(convert(fromPriceILS)) : null;

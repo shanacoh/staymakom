@@ -6,6 +6,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { addDays, format } from 'date-fns';
 import { searchHotelsRaw, formatGuests } from '@/services/hyperguest';
+import { normalizeBoardPreference, type BoardType } from '@/lib/boardTypePreference';
 
 interface AvailableDate {
   id: string;
@@ -33,6 +34,13 @@ interface UseQuickDateAvailabilityOptions {
   adults: number;
   currency?: string;
   enabled?: boolean;
+  /**
+   * Pension préférée pour cet hôtel (lue depuis hotels2.preferred_board_type).
+   * Si défini, on ne retient QUE les rate plans dont le board correspond.
+   * Si aucun rate plan ne matche pour des dates → cheapestPrice = null
+   * → la date apparaît comme "indisponible" dans l'UI (option B Shana).
+   */
+  preferredBoardType?: BoardType | string | null;
 }
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -42,6 +50,7 @@ async function scanAvailability(
   nights: number,
   adults: number,
   currency: string,
+  preferredBoardType: BoardType | null,
 ): Promise<AvailableDate[]> {
   const today = new Date();
   const startOffset = 3;
@@ -87,6 +96,14 @@ async function scanAvailability(
 
             for (const room of rooms) {
               for (const rp of room.ratePlans || []) {
+                // Filtre option B Shana : si une pension préférée est définie sur l'hôtel,
+                // on ignore les rate plans qui ne correspondent pas. Si AUCUN ne matche
+                // sur cette date, cheapestPrice restera null → "indisponible".
+                if (preferredBoardType) {
+                  const board = typeof rp.board === 'string' ? rp.board.toUpperCase() : null;
+                  if (board !== preferredBoardType) continue;
+                }
+
                 // Never use net/agent prices in public UI. Prefer sell.searchCurrency, then sell.price.
                 const sellSearchPrice = rp.prices?.sell?.searchCurrency;
                 const sellNativePrice = rp.prices?.sell?.price;
@@ -174,10 +191,12 @@ export function useQuickDateAvailability({
   adults,
   currency = 'ILS',
   enabled = true,
+  preferredBoardType = null,
 }: UseQuickDateAvailabilityOptions) {
+  const board = normalizeBoardPreference(preferredBoardType);
   return useQuery({
-    queryKey: ['quick-date-availability', propertyId, nights, adults, currency],
-    queryFn: () => scanAvailability(propertyId!, nights, adults, currency),
+    queryKey: ['quick-date-availability', propertyId, nights, adults, currency, board],
+    queryFn: () => scanAvailability(propertyId!, nights, adults, currency, board),
     enabled: enabled && !!propertyId && nights > 0,
     staleTime: 1000 * 60 * 5, // 5 min cache
     retry: 1,
@@ -195,6 +214,7 @@ export function useSpecificDatePrices({
   adults,
   currency = 'ILS',
   enabled = true,
+  preferredBoardType = null,
 }: {
   propertyId: number | null;
   dates: string[];
@@ -202,9 +222,11 @@ export function useSpecificDatePrices({
   adults: number;
   currency?: string;
   enabled?: boolean;
+  preferredBoardType?: BoardType | string | null;
 }) {
+  const board = normalizeBoardPreference(preferredBoardType);
   return useQuery({
-    queryKey: ['specific-date-prices', propertyId, dates, nights, adults, currency],
+    queryKey: ['specific-date-prices', propertyId, dates, nights, adults, currency, board],
     queryFn: async (): Promise<Record<string, number | null>> => {
       if (!propertyId || dates.length === 0) return {};
       const guests = formatGuests([{ adults, children: [] }]);
@@ -225,6 +247,10 @@ export function useSpecificDatePrices({
 
           for (const room of rooms) {
             for (const rp of room.ratePlans || []) {
+              if (board) {
+                const rpBoard = typeof rp.board === 'string' ? rp.board.toUpperCase() : null;
+                if (rpBoard !== board) continue;
+              }
               const sellSearchPrice = rp.prices?.sell?.searchCurrency;
               const sellNativePrice = rp.prices?.sell?.price;
               const sellPrice =

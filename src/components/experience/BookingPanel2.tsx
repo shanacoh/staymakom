@@ -65,6 +65,12 @@ interface BookingPanel2Props {
   hotelId: string;
   hotelName?: string;
   hyperguestPropertyId: string | null;
+  /**
+   * Pension préférée de l'hôtel (hotels2.preferred_board_type).
+   * Si défini, on filtre les rate plans pour ne garder que ceux du type demandé.
+   * Si aucun ne matche → cheapestPrice = null → la date apparaît "indisponible".
+   */
+  preferredBoardType?: string | null;
   currency?: string;
   minParty?: number;
   maxParty?: number;
@@ -82,6 +88,7 @@ export function BookingPanel2({
   hotelId,
   hotelName = "",
   hyperguestPropertyId,
+  preferredBoardType = null,
   currency = "ILS",
   minParty = 2,
   maxParty = 4,
@@ -199,6 +206,7 @@ export function BookingPanel2({
     nights: nightsCount,
     adults,
     currency,
+    preferredBoardType,
     enabled: !hasSpecificDates && selectedTab !== "pick",
   });
 
@@ -208,6 +216,7 @@ export function BookingPanel2({
     nights: nightsCount,
     adults,
     currency,
+    preferredBoardType,
     enabled: hasSpecificDates && selectedTab !== "pick",
   });
 
@@ -449,12 +458,21 @@ export function BookingPanel2({
       } else if (searchResult.rooms) {
         rooms = searchResult.rooms;
       }
-      // Select the cheapest visible room/ratePlan (same logic as RoomOptionsV2)
+      // Select the cheapest visible room/ratePlan (same logic as RoomOptionsV2).
+      // Si l'hôtel a une pension préférée, on ne considère QUE les rate plans correspondants.
+      const preferredBoardUpper =
+        typeof preferredBoardType === "string" && preferredBoardType.trim() !== ""
+          ? preferredBoardType.toUpperCase()
+          : null;
       let cheapestRoom: any = null;
       let cheapestPlan: any = null;
       let cheapestPrice = Infinity;
       for (const room of rooms) {
         for (const rp of room.ratePlans || []) {
+          if (preferredBoardUpper) {
+            const board = typeof rp.board === "string" ? rp.board.toUpperCase() : null;
+            if (board !== preferredBoardUpper) continue;
+          }
           const sell = rp.prices?.sell;
           if (!sell) continue;
           const sellAmt = Number(sell.price ?? sell.amount) || 0;
@@ -476,7 +494,7 @@ export function BookingPanel2({
         setSelectedRatePlanId(cheapestPlan.ratePlanId);
       }
     }
-  }, [searchResult, selectedRoomId]);
+  }, [searchResult, selectedRoomId, preferredBoardType]);
 
   useEffect(() => {
     setSelectedRoomId(null);
@@ -907,6 +925,7 @@ export function BookingPanel2({
             nights={nights}
             barRateData={_barRateData}
             adults={adults}
+            preferredBoardType={preferredBoardType}
           />
         )}
 
