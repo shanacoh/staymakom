@@ -1437,6 +1437,7 @@ export type Database = {
           og_title_fr: string | null
           og_title_he: string | null
           photos: string[] | null
+          preferred_board_type: string | null
           promo_is_percentage: boolean | null
           promo_type: string | null
           promo_value: number | null
@@ -1514,6 +1515,7 @@ export type Database = {
           og_title_fr?: string | null
           og_title_he?: string | null
           photos?: string[] | null
+          preferred_board_type?: string | null
           promo_is_percentage?: boolean | null
           promo_type?: string | null
           promo_value?: number | null
@@ -1591,6 +1593,7 @@ export type Database = {
           og_title_fr?: string | null
           og_title_he?: string | null
           photos?: string[] | null
+          preferred_board_type?: string | null
           promo_is_percentage?: boolean | null
           promo_type?: string | null
           promo_value?: number | null

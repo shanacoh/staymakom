@@ -123,6 +123,8 @@ const experience2Schema = z.object({
   experience_cost_per_person: optNum(),
   experience_sell_fixed: optNum(),
   experience_sell_per_person: optNum(),
+  // Pension préférée (filtre les rate plans HyperGuest affichés/réservables)
+  preferred_board_type: z.enum(["RO", "BB", "HB", "FB", "AI"]).nullable().optional(),
 });
 
 type Experience2FormData = z.infer<typeof experience2Schema>;
@@ -299,6 +301,8 @@ export function UnifiedExperience2Form({
       bar_rate_markup_is_pct: true,
       experience_net_cost: undefined,
       room_net_rate: undefined,
+      // Par défaut, les nouvelles expériences sont en BB (validé par Shana 2026-05-07)
+      preferred_board_type: "BB",
     },
   });
 
@@ -471,6 +475,16 @@ export function UnifiedExperience2Form({
       setValue("experience_cost_per_person", (existingExperience as any).experience_cost_per_person ?? undefined);
       setValue("experience_sell_fixed", (existingExperience as any).experience_sell_fixed ?? undefined);
       setValue("experience_sell_per_person", (existingExperience as any).experience_sell_per_person ?? undefined);
+      setValue(
+        "preferred_board_type",
+        ((existingExperience as any).preferred_board_type as
+          | "RO"
+          | "BB"
+          | "HB"
+          | "FB"
+          | "AI"
+          | null) ?? null,
+      );
 
       if (existingExperience.hero_image) setHeroImagePreview(existingExperience.hero_image);
       if (existingExperience.photos && Array.isArray(existingExperience.photos)) setGalleryPreviews(existingExperience.photos);
@@ -699,6 +713,7 @@ export function UnifiedExperience2Form({
       experience_cost_per_person: data.experience_cost_per_person ?? null,
       experience_sell_fixed: data.experience_sell_fixed ?? null,
       experience_sell_per_person: data.experience_sell_per_person ?? null,
+      preferred_board_type: data.preferred_board_type ?? null,
     };
   };
 
@@ -1741,6 +1756,44 @@ export function UnifiedExperience2Form({
                         />
                       </div>
                     </div>
+                  </div>
+
+                  {/* Pension préférée — filtre les rate plans HyperGuest */}
+                  <div className="space-y-1 pt-2 border-t">
+                    <Label className="text-xs font-medium">Pension affichée en priorité</Label>
+                    <Controller
+                      name="preferred_board_type"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          value={field.value ?? "none"}
+                          onValueChange={(val) =>
+                            field.onChange(
+                              val === "none"
+                                ? null
+                                : (val as "RO" | "BB" | "HB" | "FB" | "AI"),
+                            )
+                          }
+                          disabled={isSaving}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Le moins cher (par défaut)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Le moins cher (par défaut)</SelectItem>
+                            <SelectItem value="BB">Petit-déjeuner inclus (BB)</SelectItem>
+                            <SelectItem value="RO">Chambre seule (RO)</SelectItem>
+                            <SelectItem value="HB">Demi-pension (HB)</SelectItem>
+                            <SelectItem value="FB">Pension complète (FB)</SelectItem>
+                            <SelectItem value="AI">Tout inclus (AI)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      Filtre les tarifs HyperGuest affichés et réservables. Si la pension n'est pas
+                      disponible pour des dates, l'expérience apparaît "indisponible aux dates choisies".
+                    </p>
                   </div>
                 </div>
 

@@ -32,7 +32,7 @@ export default function Experience2CardWithPrice({
     experience.id,
     hyperguestPropertyId ?? null,
     [],
-    primaryHotel?.preferred_board_type ?? null,
+    experience.preferred_board_type ?? null,
   );
 
   // Convert ILS → display currency, hide if no price

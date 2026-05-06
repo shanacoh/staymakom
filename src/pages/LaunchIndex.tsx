@@ -148,12 +148,13 @@ const LaunchIndex = () => {
           photos,
           status,
           display_order,
+          preferred_board_type,
           categories(slug),
           experience2_hotels(
             position,
             nights,
             hotel:hotels2(
-              id, name, name_he, city, city_he, region, region_he, hero_image, hyperguest_property_id, preferred_board_type
+              id, name, name_he, city, city_he, region, region_he, hero_image, hyperguest_property_id
             )
           ),
           experience2_highlight_tags(

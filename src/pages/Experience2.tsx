@@ -593,7 +593,7 @@ export default function Experience2() {
                 currency={displayCurrency}
                 lang={lang as "en" | "he" | "fr"}
                 hyperguestPropertyId={hyperguestPropertyId || null}
-                preferredBoardType={primaryHotel?.preferred_board_type ?? null}
+                preferredBoardType={(experience as any).preferred_board_type ?? null}
                 minParty={experience.min_party || 2}
                 minNights={experience.min_nights || 1}
                 availabilityRules={availabilityRules}
@@ -643,7 +643,7 @@ export default function Experience2() {
                   hotelId={primaryHotel?.id || ""}
                   hotelName={lang === "he" ? (primaryHotel?.name_he || primaryHotel?.name || "") : (primaryHotel?.name || "")}
                   hyperguestPropertyId={hyperguestPropertyId || null}
-                  preferredBoardType={primaryHotel?.preferred_board_type ?? null}
+                  preferredBoardType={(experience as any).preferred_board_type ?? null}
                   currency={displayCurrency}
                   minParty={experience.min_party || 2}
                   maxParty={experience.max_party || 4}
@@ -667,7 +667,7 @@ export default function Experience2() {
           onViewDates={() => setIsSheetOpen(true)}
           footerRef={footerRef}
           hyperguestPropertyId={hyperguestPropertyId || null}
-          preferredBoardType={primaryHotel?.preferred_board_type ?? null}
+          preferredBoardType={(experience as any).preferred_board_type ?? null}
           selectedExtrasTotal={selectedExtras.reduce((sum, e) => sum + e.price, 0)}
           minParty={experience.min_party || 2}
           minNights={experience.min_nights || 1}
