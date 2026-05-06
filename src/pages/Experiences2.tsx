@@ -26,7 +26,7 @@ const Experiences2 = () => {
             position,
             nights,
             hotel:hotels2(
-              id, name, name_he, city, city_he, region, region_he, hero_image, hyperguest_property_id
+              id, name, name_he, city, city_he, region, region_he, hero_image, hyperguest_property_id, preferred_board_type
             )
           ),
           categories(name, name_he, slug),
