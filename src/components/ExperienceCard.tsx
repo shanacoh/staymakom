@@ -327,7 +327,7 @@ export default function ExperienceCard({
                 </span>
               )}
               <span className="text-[10px] text-muted-foreground">
-                / {lang === 'he' ? 'לילה' : 'night'}
+                / {lang === 'he' ? 'לילה ל-2 אנשים' : lang === 'fr' ? 'nuit · 2 personnes' : 'night · 2 guests'}
               </span>
               {discountPercent && (
                 <span className="inline-block ml-1 px-1.5 py-px bg-accent text-accent-foreground text-[9px] font-medium rounded">

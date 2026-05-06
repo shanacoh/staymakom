@@ -39,7 +39,7 @@ const HeroBookingPreview2 = ({
   );
 
   const displayPrice = fromPriceILS ? Math.round(convert(fromPriceILS)) : null;
-  const nightLabel = lang === "he" ? "ללילה" : "/ night";
+  const nightLabel = lang === "he" ? "ללילה ל-2 אנשים" : lang === "fr" ? "/ nuit · 2 personnes" : "/ night · 2 guests";
 
   if (!hasHyperguest) {
     return null;

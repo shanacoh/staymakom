@@ -79,13 +79,18 @@ const StickyPriceBar = ({
           onClick={handleClick}
           className="flex items-center justify-between py-3 w-full text-left min-h-[44px]"
         >
-          <div className="flex items-baseline gap-1 flex-wrap min-w-0">
-            <span className="text-sm font-medium whitespace-nowrap" style={{ color: '#B85C4A' }}>
-              ● {lang === 'he' ? 'הכי משתלם' : 'Best rate'}
-            </span>
-            <span className="text-sm text-muted-foreground whitespace-nowrap">—</span>
-            <span className="text-sm font-semibold text-foreground whitespace-nowrap">
-              {lang === 'he' ? `מ-${symbol}${displayPrice}` : `from ${symbol}${displayPrice}`}
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-baseline gap-1 flex-wrap">
+              <span className="text-sm font-medium whitespace-nowrap" style={{ color: '#B85C4A' }}>
+                ● {lang === 'he' ? 'הכי משתלם' : 'Best rate'}
+              </span>
+              <span className="text-sm text-muted-foreground whitespace-nowrap">—</span>
+              <span className="text-sm font-semibold text-foreground whitespace-nowrap">
+                {lang === 'he' ? `מ-${symbol}${displayPrice}` : `from ${symbol}${displayPrice}`}
+              </span>
+            </div>
+            <span className="text-[11px] text-muted-foreground">
+              {lang === 'he' ? 'ל-2 אנשים' : lang === 'fr' ? '· 2 personnes' : '· 2 guests'}
             </span>
           </div>
           <span className="text-xs font-medium uppercase tracking-wider text-foreground shrink-0 ml-2 whitespace-nowrap"
