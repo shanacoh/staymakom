@@ -23,6 +23,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { useLocalizedNavigation } from "@/hooks/useLocalizedNavigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 // Décision validée par Shana 2026-05-07 : toutes les cartes cadeaux sont émises en
 // shekels (ILS). C'est la devise des hôtels, ça évite les bugs de conversion au moment
@@ -52,18 +53,22 @@ function generateGiftCode(): string {
 }
 
 /* ─── Live Gift Card Preview ─── */
+/**
+ * `displayedAmount` est le montant à afficher (déjà converti dans la devise du
+ * visiteur). `displayedSymbol` est le symbole correspondant. Le montant stocké en
+ * base reste TOUJOURS en ILS — la preview reflète juste ce que voit l'acheteur.
+ */
 function GiftCardPreview({
-  amount,
-  currency,
+  displayedAmount,
+  displayedSymbol,
   recipientName,
   bgSrc,
 }: {
-  amount: number | null;
-  currency: Currency;
+  displayedAmount: number | null;
+  displayedSymbol: string;
   recipientName: string;
   bgSrc: string;
 }) {
-  const sym = CURRENCY_SYMBOLS[currency];
   return (
     <div className="aspect-video w-full max-w-[480px] mx-auto rounded-2xl overflow-hidden relative select-none">
       {/* Background image */}
@@ -83,7 +88,9 @@ function GiftCardPreview({
         {/* Center: Amount */}
         <div className="text-center space-y-1">
           <p className="text-white text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight drop-shadow-lg">
-            {amount ? `${sym}${amount}` : `${sym}—`}
+            {displayedAmount != null
+              ? `${displayedSymbol}${Math.round(displayedAmount).toLocaleString("en-US")}`
+              : `${displayedSymbol}—`}
           </p>
           <p className="text-white/60 text-xs sm:text-sm italic font-light">
             Gift of Escape
@@ -116,9 +123,13 @@ export default function GiftCard() {
   const { user } = useAuth();
   const isRTL = lang === "he";
 
+  // Devise du SITE (toggle ₪/$ dans le header). Le stockage reste en ILS, mais
+  // l'affichage et la saisie suivent la préférence visiteur.
+  const { displayCurrency, convert, ilsToUsd, symbol: displaySymbol } = useCurrency();
+
   useEffect(() => { trackGiftCardPageViewed(); }, []);
-  // ILS forcé (cf. type Currency en haut du fichier)
-  const currency: Currency = "ILS";
+  // ILS forcé pour le stockage (cf. type Currency en haut du fichier)
+  const storedCurrency: Currency = "ILS";
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState("");
   const [message, setMessage] = useState("");
@@ -131,8 +142,11 @@ export default function GiftCard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedBg, setSelectedBg] = useState(CARD_BACKGROUNDS[0].id);
 
+  // Boutons préréglés : montants en ILS (ce qui sera stocké), affichage converti.
   const amounts = AMOUNTS_ILS;
-  const sym = CURRENCY_SYMBOLS[currency];
+  // Symbole pour l'aperçu de la carte (face visible) — ILS toujours, c'est ce que
+  // le destinataire utilisera au checkout.
+  const storedSymbol = CURRENCY_SYMBOLS[storedCurrency];
   const bgSrc = CARD_BACKGROUNDS.find((b) => b.id === selectedBg)?.src ?? CARD_BACKGROUNDS[0].src;
 
   // Auto-fill from logged-in user
@@ -146,7 +160,17 @@ export default function GiftCard() {
     }
   }, [user]);
 
-  const effectiveAmount = selectedAmount || (customAmount ? parseFloat(customAmount) : null);
+  // Le custom amount est saisi dans la devise affichée. À la submission, on convertit
+  // en ILS pour le stockage. Si l'utilisateur a tapé "100" en mode USD, on stocke
+  // 100 / ilsToUsd ≈ 370 ILS.
+  const customAmountAsILS = customAmount
+    ? displayCurrency === "ILS"
+      ? parseFloat(customAmount)
+      : parseFloat(customAmount) / (ilsToUsd || 1)
+    : null;
+
+  // L'amount effectif (toujours en ILS, c'est ce qui est stocké).
+  const effectiveAmount = selectedAmount || customAmountAsILS;
 
   const handleSubmit = async () => {
     const amount = effectiveAmount;
@@ -202,12 +226,16 @@ export default function GiftCard() {
     const validUntil = addYears(now, 1);
     const targetEmail = recipientEmail || senderEmail;
 
+    // `amount` est en ILS (peu importe ce que le visiteur a vu : on stocke toujours en ILS).
+    // On arrondit à l'entier pour rester dans des valeurs propres en base.
+    const amountILS = Math.round(amount);
+
     try {
       const { error } = await supabase.from("gift_cards").insert({
         code,
         type: "amount",
-        amount,
-        currency,
+        amount: amountILS,
+        currency: storedCurrency,
         sender_name: senderName,
         sender_email: senderEmail,
         recipient_name: recipientName || null,
@@ -231,8 +259,8 @@ export default function GiftCard() {
           .invoke("send-gift-card", {
             body: {
               code,
-              amount,
-              currency,
+              amount: amountILS,
+              currency: storedCurrency,
               sender_name: senderName,
               recipient_name: recipientName || "Friend",
               recipient_email: targetEmail,
@@ -301,8 +329,8 @@ export default function GiftCard() {
           {/* LEFT: Gift Card Preview (sticky on desktop) */}
           <div className="mb-8 md:mb-0 md:sticky md:top-24 space-y-4">
             <GiftCardPreview
-              amount={effectiveAmount}
-              currency={currency}
+              displayedAmount={effectiveAmount != null ? convert(effectiveAmount) : null}
+              displayedSymbol={displaySymbol}
               recipientName={recipientName}
               bgSrc={bgSrc}
             />
@@ -344,14 +372,20 @@ export default function GiftCard() {
 
           {/* RIGHT: Form */}
           <div className="space-y-0">
-            {/* ── Currency notice (forcé en ILS depuis 2026-05-07) ── */}
+            {/* ── Currency notice (cartes émises en ILS, affichage en devise visiteur) ── */}
             <div className="mb-4 rounded-[10px] border-[1.5px] border-border bg-secondary/30 px-4 py-3">
               <p className="text-sm font-medium text-foreground">
-                {lang === "he"
-                  ? "מטבע: ש״ח (NIS)"
-                  : lang === "fr"
-                    ? "Devise : Shekel israélien (₪)"
-                    : "Currency: Israeli Shekel (₪)"}
+                {displayCurrency === "ILS"
+                  ? lang === "he"
+                    ? "מטבע: ש״ח (NIS)"
+                    : lang === "fr"
+                      ? "Devise : Shekel israélien (₪)"
+                      : "Currency: Israeli Shekel (₪)"
+                  : lang === "he"
+                    ? `תצוגה: דולר ($) — ההנפקה בש״ח (₪)`
+                    : lang === "fr"
+                      ? `Affichage en dollar ($) — émise en shekels (₪)`
+                      : `Displayed in dollars ($) — issued in shekels (₪)`}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 {lang === "he"
@@ -368,29 +402,44 @@ export default function GiftCard() {
                 {lang === "he" ? "בחרו סכום" : "Select amount"}
               </Label>
               <div className="grid grid-cols-2 gap-2 mt-3">
-                {amounts.map((amt) => (
-                  <button
-                    key={amt}
-                    onClick={() => {
-                      setSelectedAmount(amt);
-                      setCustomAmount("");
-                    }}
-                    className={cn(
-                      "h-14 rounded-[10px] text-base font-semibold border-[1.5px] transition-all duration-150",
-                      selectedAmount === amt
-                        ? "bg-foreground text-background border-foreground"
-                        : "bg-secondary/40 text-foreground border-border hover:border-foreground/30"
-                    )}
-                  >
-                    {sym}{amt}
-                  </button>
-                ))}
+                {amounts.map((amt) => {
+                  // amt = montant ILS (stocké). Affichage = dans devise visiteur.
+                  const displayed = Math.round(convert(amt));
+                  return (
+                    <button
+                      key={amt}
+                      onClick={() => {
+                        setSelectedAmount(amt);
+                        setCustomAmount("");
+                      }}
+                      className={cn(
+                        "h-14 rounded-[10px] text-base font-semibold border-[1.5px] transition-all duration-150 flex flex-col items-center justify-center leading-tight",
+                        selectedAmount === amt
+                          ? "bg-foreground text-background border-foreground"
+                          : "bg-secondary/40 text-foreground border-border hover:border-foreground/30"
+                      )}
+                    >
+                      <span>{displaySymbol}{displayed.toLocaleString("en-US")}</span>
+                      {displayCurrency !== "ILS" && (
+                        <span className={cn(
+                          "text-[10px] font-normal",
+                          selectedAmount === amt ? "text-background/70" : "text-muted-foreground"
+                        )}>
+                          ≈ {storedSymbol}{amt.toLocaleString("en-US")}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* Custom amount */}
+              {/* Custom amount — saisie en devise visiteur, conversion à la sauvegarde */}
               <div className="mt-4 space-y-1.5">
                 <Label htmlFor="custom-amount" className={labelClass}>
                   {lang === "he" ? "סכום אחר" : "Another amount"}
+                  <span className="text-[11px] font-normal text-muted-foreground ml-2">
+                    ({lang === "he" ? `ב${displaySymbol}` : `in ${displaySymbol}`})
+                  </span>
                 </Label>
                 <div className="relative">
                   <span
@@ -399,15 +448,15 @@ export default function GiftCard() {
                       isRTL ? "right-4" : "left-4"
                     )}
                   >
-                    {sym}
+                    {displaySymbol}
                   </span>
                   <Input
                     id="custom-amount"
                     type="number"
                     placeholder={
                       lang === "he"
-                        ? `למשל ${sym}400`
-                        : `e.g. ${sym}400`
+                        ? `למשל ${displaySymbol}${displayCurrency === "ILS" ? "400" : "100"}`
+                        : `e.g. ${displaySymbol}${displayCurrency === "ILS" ? "400" : "100"}`
                     }
                     value={customAmount}
                     onChange={(e) => {
@@ -417,6 +466,15 @@ export default function GiftCard() {
                     className={cn(inputClass, isRTL ? "pr-10" : "pl-10")}
                   />
                 </div>
+                {customAmount && customAmountAsILS != null && customAmountAsILS > 0 && displayCurrency !== "ILS" && (
+                  <p className="text-[11px] text-muted-foreground">
+                    {lang === "he"
+                      ? `הכרטיס יונפק ב-${storedSymbol}${Math.round(customAmountAsILS).toLocaleString("en-US")}`
+                      : lang === "fr"
+                        ? `Carte émise en ${storedSymbol}${Math.round(customAmountAsILS).toLocaleString("en-US")}`
+                        : `Card issued for ${storedSymbol}${Math.round(customAmountAsILS).toLocaleString("en-US")}`}
+                  </p>
+                )}
               </div>
             </div>
 
