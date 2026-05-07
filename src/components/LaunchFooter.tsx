@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
-import { Instagram } from "lucide-react";
+import { Instagram, Gift } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
+import { openNewsletterPopup } from "@/components/NewsletterPopup";
 
 const LaunchFooter = () => {
   const { lang } = useLanguage();
@@ -8,7 +9,23 @@ const LaunchFooter = () => {
 
   return (
     <footer className="bg-[#1a1a1a] text-white border-t border-white/10" dir={isRTL ? "rtl" : "ltr"}>
-      <div className="container py-6">
+      <div className="container py-6 space-y-4">
+        {/* Bandeau newsletter — toujours accessible pour récupérer le code WELCOME10 */}
+        <div className="flex items-center justify-center">
+          <button
+            type="button"
+            onClick={openNewsletterPopup}
+            className="group inline-flex items-center gap-2 rounded-full border border-white/30 px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/80 transition-all hover:border-white hover:text-white"
+          >
+            <Gift className="h-3.5 w-3.5" />
+            {lang === "he"
+              ? "הירשם/י לניוזלטר ותקבל/י 10% הנחה"
+              : lang === "fr"
+                ? "S'inscrire à la newsletter — 10 % offerts"
+                : "Subscribe & get 10% off"}
+          </button>
+        </div>
+
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           {/* Left: Logo */}
           <Link to="/launch" className="flex items-center">
@@ -19,10 +36,6 @@ const LaunchFooter = () => {
 
           {/* Center: Links */}
           <div className="flex items-center gap-4 text-xs text-white/80">
-            <Link to="/gift-card" className="hover:text-white transition-colors">
-              {lang === "he" ? "כרטיס מתנה" : "Gift a Stay"}
-            </Link>
-            <span className="text-white/30">·</span>
             <Link to="/partners" className="hover:text-white transition-colors">
               {lang === "he" ? "הפוך לשותף" : "I'm a hotel"}
             </Link>

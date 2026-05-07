@@ -12,13 +12,25 @@ import { toast } from "sonner";
  *
  * Comportement :
  *   - S'ouvre automatiquement après 10 secondes sur la page (configurable via `delayMs`).
- *   - Apparaît UNE SEULE FOIS par appareil — un flag dans localStorage empêche la
- *     ré-apparition (clé `staymakom_newsletter_popup_seen`).
- *   - L'utilisateur peut fermer la popup, dans ce cas elle ne reviendra pas non plus
- *     (on l'a vue donc on ne la repropose pas).
+ *   - Auto-affichage UNE SEULE FOIS par appareil — un flag dans localStorage empêche
+ *     la ré-apparition automatique (clé `staymakom_newsletter_popup_seen`).
+ *   - PEUT ÊTRE RÉ-OUVERTE MANUELLEMENT en dispatchant l'événement global
+ *     `staymakom-open-newsletter` (ex. depuis un bouton "Get 10% off" dans le footer).
+ *     L'ouverture manuelle ignore le flag localStorage et ré-affiche le formulaire.
  *   - Saisie email → enregistrement dans la table `leads` (source = "newsletter_popup")
  *     → affichage du code WELCOME10 directement avec un bouton "Copy".
  */
+
+export const NEWSLETTER_OPEN_EVENT = "staymakom-open-newsletter";
+
+/**
+ * Helper pour ouvrir la popup newsletter depuis n'importe où dans l'app.
+ * Usage : `<button onClick={openNewsletterPopup}>Subscribe</button>`
+ */
+export function openNewsletterPopup() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(NEWSLETTER_OPEN_EVENT));
+}
 
 const STORAGE_KEY = "staymakom_newsletter_popup_seen";
 const DEFAULT_DELAY_MS = 10_000;
@@ -89,8 +101,8 @@ export function NewsletterPopup({
   const [submitted, setSubmitted] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Auto-ouverture après délai (une seule fois par appareil, géré par localStorage)
   useEffect(() => {
-    // Si déjà vu sur cet appareil, on ne réaffiche pas
     try {
       if (localStorage.getItem(STORAGE_KEY) === "1") return;
     } catch {
@@ -99,6 +111,20 @@ export function NewsletterPopup({
     const timer = setTimeout(() => setOpen(true), delayMs);
     return () => clearTimeout(timer);
   }, [delayMs]);
+
+  // Ouverture manuelle via événement global (bouton "Get 10% off" dans le footer, etc.)
+  // Ignore le flag localStorage : si tu veux ouvrir la popup, on l'ouvre.
+  useEffect(() => {
+    const handler = () => {
+      // Réinitialise le formulaire pour permettre une nouvelle saisie
+      setEmail("");
+      setSubmitted(false);
+      setCopied(false);
+      setOpen(true);
+    };
+    window.addEventListener(NEWSLETTER_OPEN_EVENT, handler);
+    return () => window.removeEventListener(NEWSLETTER_OPEN_EVENT, handler);
+  }, []);
 
   const markSeen = () => {
     try {

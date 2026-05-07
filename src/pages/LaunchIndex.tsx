@@ -443,10 +443,29 @@ const LaunchIndex = () => {
               </p>
 
               {submitted ?
-              <div className="flex items-center gap-2 text-primary font-medium text-sm">
+              // Après inscription : on affiche le code WELCOME10 avec un bouton Copy.
+              // Cohérent avec la popup. Permet à ceux qui ont raté la popup de
+              // récupérer le code via le formulaire inline.
+              <div className="flex flex-col sm:flex-row items-center gap-2">
+                <div className="flex items-center gap-2 text-primary font-medium text-sm">
                   <CheckCircle className="h-4 w-4" />
-                  {isRTL ? "נרשמת בהצלחה!" : "You're on the list!"}
-                </div> :
+                  {isRTL
+                    ? "נרשמת! קוד 10% שלך:"
+                    : lang === "fr"
+                      ? "Inscrit·e ! Ton code 10 % :"
+                      : "You're on the list! Your 10% code:"}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText("WELCOME10").catch(() => {});
+                    toast.success(isRTL ? "הועתק!" : lang === "fr" ? "Copié !" : "Copied!");
+                  }}
+                  className="font-mono text-sm font-bold tracking-wider px-3 py-1 rounded-md border border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
+                >
+                  WELCOME10
+                </button>
+              </div> :
 
               <form onSubmit={handleLeadSubmit} className="flex gap-2 w-full sm:w-auto">
                   <Input
