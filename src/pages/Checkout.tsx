@@ -1156,7 +1156,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                       </p>
                       <div className={cn("flex gap-2", lang === 'he' && "flex-row-reverse")}>
                         <Input
-                          placeholder="WELCOME10"
+                          placeholder={lang === "he" ? "הזן/י קוד הנחה" : lang === "fr" ? "Entrez votre code" : "Enter your code"}
                           value={promoCodeInput}
                           onChange={(e) => { setPromoCodeInput(e.target.value.toUpperCase()); setPromoError(null); }}
                           onKeyDown={(e) => e.key === "Enter" && handleApplyPromo()}
