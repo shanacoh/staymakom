@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { format, isPast, differenceInDays } from "date-fns";
-import { Eye, Gift, Search, Trash2 } from "lucide-react";
+import { Eye, Gift, Plus, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -145,6 +145,14 @@ export default function GiftCards() {
             Manage all gift cards and track their status
           </p>
         </div>
+        {/* Bouton de création — emmène l'admin vers le formulaire d'émission /gift-card,
+            désormais protégé par rôle "admin" (cf. App.tsx). */}
+        <Button asChild>
+          <Link to="/gift-card">
+            <Plus className="h-4 w-4 mr-2" />
+            Create Gift Card
+          </Link>
+        </Button>
       </div>
 
       {/* Filters */}

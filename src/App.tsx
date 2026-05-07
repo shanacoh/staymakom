@@ -133,7 +133,17 @@ const AppContent = () => {
         <Route path="/launch/experiences" element={<LaunchExperiences />} />
         <Route path="/mobile-login" element={<MobileAuthPrompt />} />
         <Route path="/auth" element={<Auth />} />
-        <Route path="/gift-card" element={<GiftCard />} />
+        {/* /gift-card : émission de cartes cadeaux réservée aux admins (validé Shana 2026-05-07).
+            Les visiteurs non-admin sont redirigés vers la home. Le destinataire d'une carte
+            n'a pas besoin d'accéder à cette page : son code arrive par email. */}
+        <Route
+          path="/gift-card"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <GiftCard />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/gift-card/confirmation" element={<GiftCardConfirmation />} />
         <Route path="/companies" element={<Companies />} />
         <Route path="/corporate" element={<Companies />} />
