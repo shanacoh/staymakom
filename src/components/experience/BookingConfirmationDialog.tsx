@@ -25,6 +25,7 @@ export interface BookingConfirmationData {
   checkOut: string;
   nights: number;
   partySize: number;
+  /** Montant effectivement payé par le client (déjà déduit de la carte cadeau si applicable). */
   sellPrice: number;
   currency: string;
   remarks: string[];
@@ -37,6 +38,13 @@ export interface BookingConfirmationData {
   isOnRequest?: boolean;
   /** Confirmation token for dedicated page */
   confirmationToken?: string;
+  /**
+   * Total avant déduction carte cadeau. Si fourni ET supérieur à `sellPrice`,
+   * le total original est affiché barré au-dessus de la ligne "À payer".
+   */
+  originalTotal?: number;
+  /** Montant déduit par la carte cadeau (pour la ligne dédiée). */
+  giftCardDiscount?: number;
 }
 
 interface BookingConfirmationDialogProps {
@@ -60,6 +68,8 @@ const translations = {
     dates: "Dates",
     guests: "Guests",
     price: "Total price",
+    youPaid: "You paid",
+    giftCardLabel: "Gift card",
     remarks: "Important notices",
     specialRequests: "Your special requests",
     close: "Close",
@@ -82,6 +92,8 @@ const translations = {
     dates: "תאריכים",
     guests: "אורחים",
     price: "מחיר כולל",
+    youPaid: "שילמת",
+    giftCardLabel: "כרטיס מתנה",
     remarks: "הערות חשובות",
     specialRequests: "הבקשות המיוחדות שלך",
     close: "סגור",
@@ -104,6 +116,8 @@ const translations = {
     dates: "Dates",
     guests: "Voyageurs",
     price: "Prix total",
+    youPaid: "Vous avez payé",
+    giftCardLabel: "Carte cadeau",
     remarks: "Remarques importantes",
     specialRequests: "Vos demandes spéciales",
     close: "Fermer",
@@ -205,11 +219,32 @@ export function BookingConfirmationDialog({ open, onClose, data, lang = "en" }: 
 
           <Separator />
 
-          {/* Price */}
-          <div className="flex justify-between items-center">
-            <span className="font-medium">{t.price}</span>
-            <DualPrice amount={data.sellPrice} currency={data.currency} className="text-primary text-lg items-end" />
-          </div>
+          {/* Price — affichage adaptatif si carte cadeau utilisée :
+              - Sans carte : juste le total
+              - Avec carte : total original barré + ligne carte cadeau + montant payé en avant */}
+          {data.giftCardDiscount && data.giftCardDiscount > 0 && data.originalTotal && data.originalTotal > data.sellPrice ? (
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center text-sm text-muted-foreground">
+                <span>{t.price}</span>
+                <span className="line-through">
+                  <DualPrice amount={data.originalTotal} currency={data.currency} className="items-end" />
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-sm text-emerald-700 dark:text-emerald-400">
+                <span>{t.giftCardLabel}</span>
+                <span>−<DualPrice amount={data.giftCardDiscount} currency={data.currency} className="items-end" /></span>
+              </div>
+              <div className="flex justify-between items-center pt-1">
+                <span className="font-medium">{t.youPaid}</span>
+                <DualPrice amount={data.sellPrice} currency={data.currency} className="text-primary text-lg items-end" />
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-between items-center">
+              <span className="font-medium">{t.price}</span>
+              <DualPrice amount={data.sellPrice} currency={data.currency} className="text-primary text-lg items-end" />
+            </div>
+          )}
 
           {/* ✅ #2c: Display taxes at hotel */}
           {data.displayTaxesTotal != null && data.displayTaxesTotal > 0 && (

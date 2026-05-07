@@ -686,6 +686,9 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
         displayTaxesTotal: taxBreakdown.totalDisplayAmount,
         isOnRequest: state.selectedRatePlan?.isImmediate === false,
         confirmationToken,
+        // Affichage prix barré sur la confirmation si la carte cadeau a été utilisée
+        originalTotal: giftCardApplied > 0 ? displayTotal : undefined,
+        giftCardDiscount: giftCardApplied > 0 ? giftCardApplied : undefined,
       });
       setShowConfirmation(true);
       bookingCompletedRef.current = true;
@@ -875,7 +878,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
           <p className="text-xs text-muted-foreground mt-0.5">{state.hotelName}</p>
         </div>
       </div>
-      {/* Full breakdown */}
+      {/* Full breakdown — passe giftCardApplied pour barrer le total quand une carte est appliquée */}
       <PriceBreakdownV2
         breakdown={priceBreakdown}
         isLoading={false}
@@ -889,6 +892,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
         hotelName={state.hotelName}
         roomName={state.selectedRoomName}
         dateLabel={`${format(dateFrom, "dd MMM")} → ${format(dateTo, "dd MMM yyyy")} · ${state.nights} ${state.nights === 1 ? (lang === "he" ? "לילה" : "night") : (lang === "he" ? "לילות" : "nights")}`}
+        giftCardDiscount={giftCardApplied}
       />
     </div>
   );
@@ -1135,7 +1139,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                 )}
               </div>
 
-              {/* Clean price breakdown */}
+              {/* Clean price breakdown — passe giftCardApplied pour barrer le total */}
               <div className="rounded-xl border border-border bg-card p-4">
                 <PriceBreakdownV2
                   breakdown={priceBreakdown}
@@ -1146,6 +1150,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                   extrasTotal={extrasTotal}
                   adults={state.adults}
                   nights={state.nights}
+                  giftCardDiscount={giftCardApplied}
                 />
               </div>
 

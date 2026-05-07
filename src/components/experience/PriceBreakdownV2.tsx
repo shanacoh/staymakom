@@ -30,6 +30,12 @@ interface PriceBreakdownV2Props {
   roomName?: string;
   /** Date string for display */
   dateLabel?: string;
+  /**
+   * Montant déduit par une carte cadeau (en devise interne ILS).
+   * Si > 0, le total original est affiché barré et le nouveau montant à payer est mis
+   * en avant (cf. UX validée par Shana 2026-05-07).
+   */
+  giftCardDiscount?: number;
 }
 
 const translations = {
@@ -45,6 +51,8 @@ const translations = {
     guestsPlural: "guests",
     noData: "Select a room and rate plan to see the price breakdown.",
     vatTooltip: "Foreign visitors with a B/2 visa are exempt from VAT.\nIsraeli residents pay 18% VAT directly at the hotel upon check-in.\nThis amount is not collected by STAYMAKOM.",
+    giftCardLabel: "Gift card",
+    youPay: "YOU PAY",
   },
   he: {
     title: "פירוט מחיר",
@@ -58,6 +66,8 @@ const translations = {
     guestsPlural: "אורחים",
     noData: "בחר חדר ותכנית תעריף כדי לראות פירוט מחירים.",
     vatTooltip: "מבקרים זרים עם אשרת B/2 פטורים ממע\"מ.\nתושבי ישראל משלמים 18% מע\"מ ישירות במלון בעת הצ'ק-אין.\nסכום זה אינו נגבה על ידי STAYMAKOM.",
+    giftCardLabel: "כרטיס מתנה",
+    youPay: "סך לתשלום",
   },
   fr: {
     title: "DÉTAIL DU PRIX",
@@ -71,6 +81,8 @@ const translations = {
     guestsPlural: "voyageurs",
     noData: "Sélectionnez une chambre et un plan tarifaire pour voir le détail du prix.",
     vatTooltip: "Les visiteurs étrangers munis d'un visa B/2 sont exemptés de TVA.\nLes résidents israéliens paient 18% de TVA directement à l'hôtel lors du check-in.\nCe montant n'est pas perçu par STAYMAKOM.",
+    giftCardLabel: "Carte cadeau",
+    youPay: "À PAYER",
   },
 };
 
@@ -100,6 +112,7 @@ export function PriceBreakdownV2({
   hotelName,
   roomName,
   dateLabel,
+  giftCardDiscount = 0,
 }: PriceBreakdownV2Props) {
   const t = translations[lang];
   const fmt = useFmt();
@@ -199,31 +212,87 @@ export function PriceBreakdownV2({
 
       <Separator className="my-4" />
 
-      {/* Total with VAT tooltip */}
-      <div className="flex justify-between items-center">
-        <span className="font-bold" style={{ color: '#1A1814', fontFamily: 'Inter, sans-serif', fontSize: '18px' }}>
-          {t.total}
-        </span>
-        <div className="flex items-center gap-1.5">
-          <span className="font-bold" style={{ color: '#1A1814', fontFamily: 'Inter, sans-serif', fontSize: '18px' }}>
-            {fmt(totalWithExtras)}
-          </span>
-          <div className="relative group">
-            <span className="text-xs cursor-help" style={{ color: '#8C7B6B' }}>ⓘ</span>
-            <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block z-50" style={{ width: '260px' }}>
-              <div className="text-xs text-white leading-relaxed whitespace-pre-line" style={{
-                background: '#1A1814',
-                borderRadius: '4px',
-                padding: '10px 12px',
-                fontFamily: 'Inter, sans-serif',
-                fontSize: '12px',
-              }}>
-                {t.vatTooltip}
+      {/* Total — comportement adaptatif si une carte cadeau est appliquée :
+          - Sans carte : "TOTAL: 631 ₪"
+          - Avec carte : "TOTAL: 631 ₪ (barré)" + ligne "Carte cadeau: -100 ₪"
+                        + "À PAYER: 531 ₪" en gros */}
+      {giftCardDiscount > 0 ? (
+        <div className="space-y-2">
+          {/* Ligne total original — barré et atténué */}
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium" style={{ color: '#8C7B6B', fontFamily: 'Inter, sans-serif' }}>
+              {t.total}
+            </span>
+            <span
+              className="text-sm line-through"
+              style={{ color: '#8C7B6B', fontFamily: 'Inter, sans-serif' }}
+            >
+              {fmt(totalWithExtras)}
+            </span>
+          </div>
+
+          {/* Ligne réduction carte cadeau */}
+          <div className="flex justify-between items-center">
+            <span className="text-sm" style={{ color: '#0F8A65', fontFamily: 'Inter, sans-serif' }}>
+              {t.giftCardLabel}
+            </span>
+            <span className="text-sm font-medium" style={{ color: '#0F8A65', fontFamily: 'Inter, sans-serif' }}>
+              −{fmt(giftCardDiscount)}
+            </span>
+          </div>
+
+          {/* Nouveau total à payer — mis en avant */}
+          <div className="flex justify-between items-center pt-1">
+            <span className="font-bold" style={{ color: '#1A1814', fontFamily: 'Inter, sans-serif', fontSize: '18px' }}>
+              {t.youPay}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold" style={{ color: '#1A1814', fontFamily: 'Inter, sans-serif', fontSize: '18px' }}>
+                {fmt(Math.max(0, totalWithExtras - giftCardDiscount))}
+              </span>
+              <div className="relative group">
+                <span className="text-xs cursor-help" style={{ color: '#8C7B6B' }}>ⓘ</span>
+                <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block z-50" style={{ width: '260px' }}>
+                  <div className="text-xs text-white leading-relaxed whitespace-pre-line" style={{
+                    background: '#1A1814',
+                    borderRadius: '4px',
+                    padding: '10px 12px',
+                    fontFamily: 'Inter, sans-serif',
+                    fontSize: '12px',
+                  }}>
+                    {t.vatTooltip}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex justify-between items-center">
+          <span className="font-bold" style={{ color: '#1A1814', fontFamily: 'Inter, sans-serif', fontSize: '18px' }}>
+            {t.total}
+          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="font-bold" style={{ color: '#1A1814', fontFamily: 'Inter, sans-serif', fontSize: '18px' }}>
+              {fmt(totalWithExtras)}
+            </span>
+            <div className="relative group">
+              <span className="text-xs cursor-help" style={{ color: '#8C7B6B' }}>ⓘ</span>
+              <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block z-50" style={{ width: '260px' }}>
+                <div className="text-xs text-white leading-relaxed whitespace-pre-line" style={{
+                  background: '#1A1814',
+                  borderRadius: '4px',
+                  padding: '10px 12px',
+                  fontFamily: 'Inter, sans-serif',
+                  fontSize: '12px',
+                }}>
+                  {t.vatTooltip}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
