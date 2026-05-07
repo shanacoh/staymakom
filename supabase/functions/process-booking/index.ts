@@ -261,6 +261,7 @@ Deno.serve(async (req: Request) => {
       }
 
       if (gcUpdateError) {
+        // Garder ce comportement non bloquant (cf. décision Shana 2026-05-07)
         console.error('⚠️ Gift card update failed (non-blocking):', gcUpdateError);
 
         // Alerte email à l'équipe pour intervention manuelle
@@ -304,6 +305,39 @@ Deno.serve(async (req: Request) => {
             console.error('⚠️ Could not send gift card alert email:', mailErr);
           }
         }
+      }
+    }
+
+    // 4 bis. Enregistrement de l'utilisation d'un code promo (non-bloquant).
+    // Décision Shana 2026-05-07 : 1 utilisation par email — la contrainte UNIQUE
+    // sur (promo_code_id, email) assure qu'une 2e tentative échouerait silencieusement.
+    if (body.promoCode?.id && body.email) {
+      try {
+        await adminClient.from('promo_code_redemptions').insert({
+          promo_code_id: body.promoCode.id,
+          email: String(body.email).toLowerCase().trim(),
+          booking_id: null, // bookings_hg.hg_booking_id est text, on garde null pour l'instant
+          amount_discounted: body.promoCode.amountDiscounted ?? 0,
+        });
+        // Incrémentation du compteur global d'utilisations sur le code (best-effort)
+        await adminClient.rpc('increment_promo_used_count' as any, {
+          p_code_id: body.promoCode.id,
+        }).catch(async () => {
+          // Fallback si la RPC n'existe pas : update direct
+          const { data: existing } = await adminClient
+            .from('promo_codes')
+            .select('used_count')
+            .eq('id', body.promoCode.id)
+            .maybeSingle();
+          if (existing) {
+            await adminClient
+              .from('promo_codes')
+              .update({ used_count: (existing.used_count ?? 0) + 1 })
+              .eq('id', body.promoCode.id);
+          }
+        });
+      } catch (promoErr) {
+        console.error('⚠️ Promo code redemption insert failed (non-blocking):', promoErr);
       }
     }
 

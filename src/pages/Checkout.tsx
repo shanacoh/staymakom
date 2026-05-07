@@ -177,6 +177,8 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       giftCardApplied: "Gift card applied",
       giftCardCoveredFull: "Your gift card covers the full amount — no payment required.",
       giftCardDiscount: "Gift card",
+      promoCode: "Have a promo code?",
+      promoApplied: "Promo code applied",
     },
     he: {
       step2Title: "פרטי אורח",
@@ -209,6 +211,8 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       giftCardApplied: "כרטיס מתנה הופעל",
       giftCardCoveredFull: "כרטיס המתנה שלך מכסה את כל הסכום — אין צורך בתשלום.",
       giftCardDiscount: "כרטיס מתנה",
+      promoCode: "יש לך קוד הנחה?",
+      promoApplied: "קוד הנחה הופעל",
     },
     fr: {
       step2Title: "Informations voyageur",
@@ -241,6 +245,8 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       giftCardApplied: "Carte cadeau appliquée",
       giftCardCoveredFull: "Votre carte cadeau couvre le montant total — aucun paiement requis.",
       giftCardDiscount: "Carte cadeau",
+      promoCode: "Vous avez un code promo ?",
+      promoApplied: "Code promo appliqué",
     },
   }[lang];
 
@@ -280,6 +286,16 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
   } | null>(null);
   const [isValidatingGiftCard, setIsValidatingGiftCard] = useState(false);
   const [giftCardError, setGiftCardError] = useState<string | null>(null);
+
+  // Promo code (cumulable avec gift card, 1 utilisation par email — validé Shana 2026-05-07)
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<{
+    id: string;
+    code: string;
+    discountPct: number;
+  } | null>(null);
+  const [isValidatingPromo, setIsValidatingPromo] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
   const pendingBookAfterAuth = useRef(false);
   const bookingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
@@ -330,10 +346,20 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
   const totalIsNaN = Number.isNaN(displayTotal);
   const isOnRequest = state.selectedRatePlan?.isImmediate === false;
 
-  const giftCardApplied = appliedGiftCard
-    ? Math.min(appliedGiftCard.availableBalance, displayTotal)
+  // Ordre de calcul (validé Shana 2026-05-07, cumulable promo + gift card) :
+  //   1. displayTotal (prix de référence affiché)
+  //   2. - promo % → amountAfterPromo
+  //   3. - gift card (plafonnée à amountAfterPromo) → amountAfterGiftCard = ce qui reste à payer
+  const promoDiscount = appliedPromo
+    ? Math.round((displayTotal * appliedPromo.discountPct) / 100)
     : 0;
-  const amountAfterGiftCard = Math.max(0, displayTotal - giftCardApplied);
+  const amountAfterPromo = Math.max(0, displayTotal - promoDiscount);
+  const giftCardApplied = appliedGiftCard
+    ? Math.min(appliedGiftCard.availableBalance, amountAfterPromo)
+    : 0;
+  const amountAfterGiftCard = Math.max(0, amountAfterPromo - giftCardApplied);
+  // Total des réductions cumulées (pour l'affichage prix barré)
+  const totalDiscountApplied = promoDiscount + giftCardApplied;
 
   const isGuestValid = leadGuest.firstName.trim() !== "" &&
     leadGuest.lastName.trim() !== "" &&
@@ -490,6 +516,67 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
     }
   };
 
+  // Application d'un code promo. Valide via la RPC validate_promo_code (table promo_codes).
+  // Vérifie : actif, dans la fenêtre valid_from/until, max_uses non atteint, email pas
+  // déjà utilisé pour ce code (1 fois par email — règle Shana 2026-05-07).
+  const handleApplyPromo = async () => {
+    if (!promoCodeInput.trim()) return;
+    if (!leadGuest.email.trim()) {
+      setPromoError(
+        lang === "he" ? "הזן/י קודם את האימייל שלך"
+        : lang === "fr" ? "Renseigne d'abord ton email"
+        : "Enter your email first"
+      );
+      return;
+    }
+    setIsValidatingPromo(true);
+    setPromoError(null);
+    try {
+      const { data, error } = await (supabase.rpc as any)("validate_promo_code", {
+        p_code: promoCodeInput.trim().toUpperCase(),
+        p_email: leadGuest.email.trim(),
+      });
+      if (error || !data) {
+        setPromoError(
+          lang === "he" ? "לא ניתן לאמת את הקוד. נסה שוב."
+          : lang === "fr" ? "Impossible de valider le code. Réessayez."
+          : "Unable to validate the code. Please try again."
+        );
+        return;
+      }
+      type PromoResult = { valid: boolean; error?: string; id?: string; code?: string; discount_pct?: number };
+      const result = data as PromoResult;
+      if (!result.valid) {
+        const msgs: Record<string, Record<string, string>> = {
+          not_found: { en: "Promo code not found.", he: "קוד הנחה לא נמצא.", fr: "Code promo introuvable." },
+          inactive: { en: "This code is no longer active.", he: "קוד זה לא פעיל יותר.", fr: "Ce code n'est plus actif." },
+          not_yet_valid: { en: "This code is not valid yet.", he: "הקוד עדיין לא תקף.", fr: "Code pas encore valide." },
+          expired: { en: "This code has expired.", he: "תוקף הקוד פג.", fr: "Ce code a expiré." },
+          max_uses_reached: { en: "This code has reached its maximum number of uses.", he: "הקוד הגיע למספר השימושים המרבי.", fr: "Code arrivé au nombre maximum d'utilisations." },
+          already_used_by_email: { en: "You've already used this code.", he: "כבר השתמשת בקוד זה.", fr: "Tu as déjà utilisé ce code." },
+          invalid_input: { en: "Invalid code or email.", he: "קוד או אימייל לא תקינים.", fr: "Code ou email invalide." },
+        };
+        const key = result.error || "not_found";
+        setPromoError(msgs[key]?.[lang] || msgs.not_found.en);
+        return;
+      }
+      setAppliedPromo({
+        id: result.id!,
+        code: result.code!,
+        discountPct: Number(result.discount_pct ?? 0),
+      });
+      setPromoCodeInput("");
+    } catch {
+      setPromoError(
+        lang === "he" ? "שגיאה באימות הקוד."
+        : lang === "fr" ? "Erreur lors de la vérification."
+        : "Error validating code."
+      );
+    } finally {
+      setIsValidatingPromo(false);
+    }
+  };
+
   const handleBook = () => {
     // Single-button flow : "Confirm Booking" déclenche soit la popup de paiement
     // (si paiement requis), soit la création directe de la résa (si gift card 100%
@@ -587,6 +674,16 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
         isFullyRedeemed: (appliedGiftCard.amountUsed + giftCardApplied) >= appliedGiftCard.totalAmount,
       } : undefined;
 
+      // Payload code promo : transmis à process-booking pour enregistrer
+      // une ligne dans promo_code_redemptions (1 utilisation par email).
+      const promoCodePayload = appliedPromo && promoDiscount > 0 ? {
+        id: appliedPromo.id,
+        code: appliedPromo.code,
+        discountPct: appliedPromo.discountPct,
+        amountDiscounted: promoDiscount,
+        email: leadGuest.email.trim(),
+      } : undefined;
+
       const { data, error: fnError } = await supabase.functions.invoke("process-booking", {
         body: {
           hyperguestBookingData: {
@@ -628,6 +725,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
           roomName: state.selectedRoomName,
           boardType: state.selectedRatePlan?.board || "RO",
           giftCard: giftCardPayload,
+          promoCode: promoCodePayload,
           email: leadGuest.email,
           guestName: `${safe.firstName} ${safe.lastName}`,
           lang,
@@ -686,9 +784,12 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
         displayTaxesTotal: taxBreakdown.totalDisplayAmount,
         isOnRequest: state.selectedRatePlan?.isImmediate === false,
         confirmationToken,
-        // Affichage prix barré sur la confirmation si la carte cadeau a été utilisée
-        originalTotal: giftCardApplied > 0 ? displayTotal : undefined,
+        // Affichage prix barré sur la confirmation si une réduction a été appliquée
+        // (carte cadeau et/ou code promo, cumulables — validé Shana 2026-05-07).
+        originalTotal: (giftCardApplied > 0 || promoDiscount > 0) ? displayTotal : undefined,
         giftCardDiscount: giftCardApplied > 0 ? giftCardApplied : undefined,
+        promoDiscount: promoDiscount > 0 ? promoDiscount : undefined,
+        promoCode: appliedPromo?.code,
       });
       setShowConfirmation(true);
       bookingCompletedRef.current = true;
@@ -893,6 +994,9 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
         roomName={state.selectedRoomName}
         dateLabel={`${format(dateFrom, "dd MMM")} → ${format(dateTo, "dd MMM yyyy")} · ${state.nights} ${state.nights === 1 ? (lang === "he" ? "לילה" : "night") : (lang === "he" ? "לילות" : "nights")}`}
         giftCardDiscount={giftCardApplied}
+        promoDiscount={promoDiscount}
+        promoCode={appliedPromo?.code}
+        promoPct={appliedPromo?.discountPct}
       />
     </div>
   );
@@ -1042,6 +1146,55 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                   )}
                 </div>
 
+                {/* Promo code (cumulable avec gift card, 1 utilisation par email) */}
+                <div className="space-y-2 pt-1">
+                  {!appliedPromo ? (
+                    <>
+                      <p className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer" onClick={() => setPromoError(null)}>
+                        <Sparkles className="h-4 w-4" />
+                        {t.promoCode}
+                      </p>
+                      <div className={cn("flex gap-2", lang === 'he' && "flex-row-reverse")}>
+                        <Input
+                          placeholder="WELCOME10"
+                          value={promoCodeInput}
+                          onChange={(e) => { setPromoCodeInput(e.target.value.toUpperCase()); setPromoError(null); }}
+                          onKeyDown={(e) => e.key === "Enter" && handleApplyPromo()}
+                          className="font-mono tracking-wider text-sm"
+                          style={{ borderRadius: '0px', backgroundColor: '#F5F0E8', border: '1px solid #E8E0D4' }}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="shrink-0"
+                          style={{ borderRadius: '0px', border: '1px solid #1A1814' }}
+                          onClick={handleApplyPromo}
+                          disabled={isValidatingPromo || !promoCodeInput.trim()}
+                        >
+                          {isValidatingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : t.giftCardApply}
+                        </Button>
+                      </div>
+                      {promoError && <p className="text-sm text-destructive">{promoError}</p>}
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-between rounded-none border border-emerald-200 bg-emerald-50 px-3 py-2">
+                      <div className="flex items-center gap-2 text-emerald-700 text-sm">
+                        <Sparkles className="h-4 w-4 shrink-0" />
+                        <span className="font-medium">{t.promoApplied}</span>
+                        <span className="font-mono text-xs">{appliedPromo.code}</span>
+                        <span className="font-semibold">−{appliedPromo.discountPct}%</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="text-xs text-emerald-600 hover:text-destructive ml-2"
+                        onClick={() => { setAppliedPromo(null); setPromoError(null); }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 {/* Navigation */}
                 <div className={cn("flex gap-3 pt-2", lang === 'he' && "flex-row-reverse")}>
                   <Button
@@ -1151,6 +1304,9 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                   adults={state.adults}
                   nights={state.nights}
                   giftCardDiscount={giftCardApplied}
+                  promoDiscount={promoDiscount}
+                  promoCode={appliedPromo?.code}
+                  promoPct={appliedPromo?.discountPct}
                 />
               </div>
 

@@ -36,6 +36,13 @@ interface PriceBreakdownV2Props {
    * en avant (cf. UX validée par Shana 2026-05-07).
    */
   giftCardDiscount?: number;
+  /**
+   * Montant déduit par un code promo (en devise interne ILS) + son code, pour
+   * afficher une ligne dédiée (ex. "WELCOME10 −10%"). Cumulable avec gift card.
+   */
+  promoDiscount?: number;
+  promoCode?: string;
+  promoPct?: number;
 }
 
 const translations = {
@@ -52,6 +59,7 @@ const translations = {
     noData: "Select a room and rate plan to see the price breakdown.",
     vatTooltip: "Foreign visitors with a B/2 visa are exempt from VAT.\nIsraeli residents pay 18% VAT directly at the hotel upon check-in.\nThis amount is not collected by STAYMAKOM.",
     giftCardLabel: "Gift card",
+    promoLabel: "Promo",
     youPay: "YOU PAY",
   },
   he: {
@@ -67,6 +75,7 @@ const translations = {
     noData: "בחר חדר ותכנית תעריף כדי לראות פירוט מחירים.",
     vatTooltip: "מבקרים זרים עם אשרת B/2 פטורים ממע\"מ.\nתושבי ישראל משלמים 18% מע\"מ ישירות במלון בעת הצ'ק-אין.\nסכום זה אינו נגבה על ידי STAYMAKOM.",
     giftCardLabel: "כרטיס מתנה",
+    promoLabel: "קוד הנחה",
     youPay: "סך לתשלום",
   },
   fr: {
@@ -82,6 +91,7 @@ const translations = {
     noData: "Sélectionnez une chambre et un plan tarifaire pour voir le détail du prix.",
     vatTooltip: "Les visiteurs étrangers munis d'un visa B/2 sont exemptés de TVA.\nLes résidents israéliens paient 18% de TVA directement à l'hôtel lors du check-in.\nCe montant n'est pas perçu par STAYMAKOM.",
     giftCardLabel: "Carte cadeau",
+    promoLabel: "Code promo",
     youPay: "À PAYER",
   },
 };
@@ -113,6 +123,9 @@ export function PriceBreakdownV2({
   roomName,
   dateLabel,
   giftCardDiscount = 0,
+  promoDiscount = 0,
+  promoCode,
+  promoPct,
 }: PriceBreakdownV2Props) {
   const t = translations[lang];
   const fmt = useFmt();
@@ -212,11 +225,13 @@ export function PriceBreakdownV2({
 
       <Separator className="my-4" />
 
-      {/* Total — comportement adaptatif si une carte cadeau est appliquée :
-          - Sans carte : "TOTAL: 631 ₪"
-          - Avec carte : "TOTAL: 631 ₪ (barré)" + ligne "Carte cadeau: -100 ₪"
-                        + "À PAYER: 531 ₪" en gros */}
-      {giftCardDiscount > 0 ? (
+      {/* Total — comportement adaptatif si réductions appliquées (promo et/ou gift card) :
+          - Aucune réduction : "TOTAL: 631 ₪"
+          - Réduction(s) :    "TOTAL: 631 ₪ (barré)"
+                              + "Code promo WELCOME10 (−10%): −63 ₪"  (si promo)
+                              + "Carte cadeau: −100 ₪"               (si gift card)
+                              + "À PAYER: 468 ₪" en gros */}
+      {(giftCardDiscount > 0 || promoDiscount > 0) ? (
         <div className="space-y-2">
           {/* Ligne total original — barré et atténué */}
           <div className="flex justify-between items-center">
@@ -231,15 +246,31 @@ export function PriceBreakdownV2({
             </span>
           </div>
 
+          {/* Ligne réduction code promo */}
+          {promoDiscount > 0 && (
+            <div className="flex justify-between items-center">
+              <span className="text-sm" style={{ color: '#0F8A65', fontFamily: 'Inter, sans-serif' }}>
+                {t.promoLabel}
+                {promoCode ? <span className="ml-1 font-mono">{promoCode}</span> : null}
+                {typeof promoPct === "number" ? <span className="ml-1 text-xs">(−{promoPct}%)</span> : null}
+              </span>
+              <span className="text-sm font-medium" style={{ color: '#0F8A65', fontFamily: 'Inter, sans-serif' }}>
+                −{fmt(promoDiscount)}
+              </span>
+            </div>
+          )}
+
           {/* Ligne réduction carte cadeau */}
-          <div className="flex justify-between items-center">
-            <span className="text-sm" style={{ color: '#0F8A65', fontFamily: 'Inter, sans-serif' }}>
-              {t.giftCardLabel}
-            </span>
-            <span className="text-sm font-medium" style={{ color: '#0F8A65', fontFamily: 'Inter, sans-serif' }}>
-              −{fmt(giftCardDiscount)}
-            </span>
-          </div>
+          {giftCardDiscount > 0 && (
+            <div className="flex justify-between items-center">
+              <span className="text-sm" style={{ color: '#0F8A65', fontFamily: 'Inter, sans-serif' }}>
+                {t.giftCardLabel}
+              </span>
+              <span className="text-sm font-medium" style={{ color: '#0F8A65', fontFamily: 'Inter, sans-serif' }}>
+                −{fmt(giftCardDiscount)}
+              </span>
+            </div>
+          )}
 
           {/* Nouveau total à payer — mis en avant */}
           <div className="flex justify-between items-center pt-1">
@@ -248,7 +279,7 @@ export function PriceBreakdownV2({
             </span>
             <div className="flex items-center gap-1.5">
               <span className="font-bold" style={{ color: '#1A1814', fontFamily: 'Inter, sans-serif', fontSize: '18px' }}>
-                {fmt(Math.max(0, totalWithExtras - giftCardDiscount))}
+                {fmt(Math.max(0, totalWithExtras - giftCardDiscount - promoDiscount))}
               </span>
               <div className="relative group">
                 <span className="text-xs cursor-help" style={{ color: '#8C7B6B' }}>ⓘ</span>

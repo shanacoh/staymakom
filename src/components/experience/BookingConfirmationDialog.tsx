@@ -39,12 +39,16 @@ export interface BookingConfirmationData {
   /** Confirmation token for dedicated page */
   confirmationToken?: string;
   /**
-   * Total avant déduction carte cadeau. Si fourni ET supérieur à `sellPrice`,
-   * le total original est affiché barré au-dessus de la ligne "À payer".
+   * Total avant déduction carte cadeau et/ou code promo. Si fourni ET supérieur à
+   * `sellPrice`, le total original est affiché barré au-dessus de la ligne "À payer".
    */
   originalTotal?: number;
   /** Montant déduit par la carte cadeau (pour la ligne dédiée). */
   giftCardDiscount?: number;
+  /** Montant déduit par un code promo (pour la ligne dédiée, cumulable avec gift card). */
+  promoDiscount?: number;
+  /** Code promo utilisé, affiché à côté du label. */
+  promoCode?: string;
 }
 
 interface BookingConfirmationDialogProps {
@@ -70,6 +74,7 @@ const translations = {
     price: "Total price",
     youPaid: "You paid",
     giftCardLabel: "Gift card",
+    promoLabel: "Promo",
     remarks: "Important notices",
     specialRequests: "Your special requests",
     close: "Close",
@@ -94,6 +99,7 @@ const translations = {
     price: "מחיר כולל",
     youPaid: "שילמת",
     giftCardLabel: "כרטיס מתנה",
+    promoLabel: "קוד הנחה",
     remarks: "הערות חשובות",
     specialRequests: "הבקשות המיוחדות שלך",
     close: "סגור",
@@ -118,6 +124,7 @@ const translations = {
     price: "Prix total",
     youPaid: "Vous avez payé",
     giftCardLabel: "Carte cadeau",
+    promoLabel: "Code promo",
     remarks: "Remarques importantes",
     specialRequests: "Vos demandes spéciales",
     close: "Fermer",
@@ -219,10 +226,12 @@ export function BookingConfirmationDialog({ open, onClose, data, lang = "en" }: 
 
           <Separator />
 
-          {/* Price — affichage adaptatif si carte cadeau utilisée :
-              - Sans carte : juste le total
-              - Avec carte : total original barré + ligne carte cadeau + montant payé en avant */}
-          {data.giftCardDiscount && data.giftCardDiscount > 0 && data.originalTotal && data.originalTotal > data.sellPrice ? (
+          {/* Price — affichage adaptatif si réduction(s) appliquée(s) :
+              - Sans réduction : juste le total
+              - Avec réduction(s) : total original barré + ligne(s) promo et/ou gift card
+                + montant payé mis en avant. Cumulable (validé Shana 2026-05-07). */}
+          {((data.giftCardDiscount && data.giftCardDiscount > 0) || (data.promoDiscount && data.promoDiscount > 0))
+            && data.originalTotal && data.originalTotal > data.sellPrice ? (
             <div className="space-y-1.5">
               <div className="flex justify-between items-center text-sm text-muted-foreground">
                 <span>{t.price}</span>
@@ -230,10 +239,21 @@ export function BookingConfirmationDialog({ open, onClose, data, lang = "en" }: 
                   <DualPrice amount={data.originalTotal} currency={data.currency} className="items-end" />
                 </span>
               </div>
-              <div className="flex justify-between items-center text-sm text-emerald-700 dark:text-emerald-400">
-                <span>{t.giftCardLabel}</span>
-                <span>−<DualPrice amount={data.giftCardDiscount} currency={data.currency} className="items-end" /></span>
-              </div>
+              {data.promoDiscount && data.promoDiscount > 0 ? (
+                <div className="flex justify-between items-center text-sm text-emerald-700 dark:text-emerald-400">
+                  <span>
+                    {t.promoLabel}
+                    {data.promoCode ? <span className="ml-1 font-mono text-xs">{data.promoCode}</span> : null}
+                  </span>
+                  <span>−<DualPrice amount={data.promoDiscount} currency={data.currency} className="items-end" /></span>
+                </div>
+              ) : null}
+              {data.giftCardDiscount && data.giftCardDiscount > 0 ? (
+                <div className="flex justify-between items-center text-sm text-emerald-700 dark:text-emerald-400">
+                  <span>{t.giftCardLabel}</span>
+                  <span>−<DualPrice amount={data.giftCardDiscount} currency={data.currency} className="items-end" /></span>
+                </div>
+              ) : null}
               <div className="flex justify-between items-center pt-1">
                 <span className="font-medium">{t.youPaid}</span>
                 <DualPrice amount={data.sellPrice} currency={data.currency} className="text-primary text-lg items-end" />
