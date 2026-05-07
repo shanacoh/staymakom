@@ -520,7 +520,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
           <Link to="/admin/hotels2">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Hotels 2
+              Back to Hotels
             </Button>
           </Link>
           <h2 className="text-3xl font-bold">{hotelId ? "Edit Hotel" : "New Hotel"}</h2>

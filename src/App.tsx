@@ -126,8 +126,10 @@ const AppContent = () => {
     <>
       <MobileAppShell />
       <Routes>
-        {/* Coming Soon en page d'accueil (temporaire) */}
-        <Route path="/" element={<ComingSoon />} />
+        {/* Site live depuis 2026-05-07 : la racine pointe sur LaunchIndex (vrai site).
+            La page Coming Soon reste accessible sur /coming-soon si besoin. */}
+        <Route path="/" element={<LaunchIndex />} />
+        <Route path="/coming-soon" element={<ComingSoon />} />
         <Route path="/home" element={<Index />} />
         <Route path="/launch" element={<LaunchIndex />} />
         <Route path="/launch/experiences" element={<LaunchExperiences />} />
