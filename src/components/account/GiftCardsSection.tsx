@@ -122,15 +122,32 @@ const GiftCardsSection = ({ userId, userEmail }: GiftCardsSectionProps) => {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <Skeleton className="h-6 w-40 mb-1" />
-            <Skeleton className="h-4 w-56" />
-          </div>
+        {/* Section header */}
+        <div className="flex items-center gap-2 mb-4">
+          <Skeleton className="h-6 w-6 rounded-full" />
+          <Skeleton className="h-6 w-36" />
         </div>
+        {/* Cards — rounded-2xl, p-5, same structure as real cards */}
         <div className="grid gap-4 md:grid-cols-2">
           {[1, 2].map((i) => (
-            <Skeleton key={i} className="h-40 rounded-2xl" />
+            <div key={i} className="border rounded-2xl p-5 space-y-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </div>
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+              <Skeleton className="h-3.5 w-full" />
+              <Skeleton className="h-3.5 w-3/4" />
+              <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                <Skeleton className="h-6 w-28 rounded" />
+                <Skeleton className="h-3.5 w-24" />
+              </div>
+            </div>
           ))}
         </div>
       </div>

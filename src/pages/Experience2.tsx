@@ -247,16 +247,18 @@ export default function Experience2() {
       <div className="min-h-screen bg-background">
         {isLaunch ? <LaunchHeader forceScrolled /> : <Header />}
         <div className="pt-16 max-w-6xl mx-auto px-4 pb-16">
-          <Skeleton className="h-[55vh] w-full mt-4" />
+          {/* Hero image */}
+          <Skeleton className="h-[55vh] w-full mt-4 rounded-xl" />
           <div className="grid grid-cols-1 lg:grid-cols-[65fr_35fr] gap-12 mt-10">
+            {/* Left column — title, tags, description */}
             <div className="space-y-5">
               <Skeleton className="h-9 w-3/4" />
               <Skeleton className="h-5 w-1/3" />
               <div className="flex gap-2 pt-1">
-                <Skeleton className="h-7 w-20" />
-                <Skeleton className="h-7 w-24" />
-                <Skeleton className="h-7 w-16" />
-                <Skeleton className="h-7 w-20" />
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-6 w-24 rounded-full" />
+                <Skeleton className="h-6 w-16 rounded-full" />
+                <Skeleton className="h-6 w-20 rounded-full" />
               </div>
               <Skeleton className="h-px w-full" />
               <div className="space-y-3 pt-1">
@@ -267,12 +269,22 @@ export default function Experience2() {
                 <Skeleton className="h-4 w-[60%]" />
               </div>
             </div>
-            <div className="space-y-4">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-6 w-2/3" />
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-4 w-1/2" />
+            {/* Right column — booking panel */}
+            <div className="border rounded-2xl p-5 space-y-4 h-fit">
+              <Skeleton className="h-5 w-1/2" />
+              <Skeleton className="h-11 w-full rounded-lg" />
+              <Skeleton className="h-11 w-full rounded-lg" />
+              <div className="flex items-center justify-between pt-1">
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-5 w-1/4" />
+              </div>
+              <Skeleton className="h-px w-full" />
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-4 w-1/4" />
+                <Skeleton className="h-6 w-1/3" />
+              </div>
+              <Skeleton className="h-12 w-full rounded-full" />
+              <Skeleton className="h-3.5 w-2/3 mx-auto" />
             </div>
           </div>
         </div>

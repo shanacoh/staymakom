@@ -41,17 +41,38 @@ const Journal = () => {
         </div>
 
         {isLoading ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Card key={i} className="overflow-hidden">
-                <div className="aspect-[4/3] bg-muted animate-pulse" />
-                <CardContent className="p-4">
-                  <div className="h-3 bg-muted rounded mb-3 animate-pulse" />
-                  <div className="h-5 bg-muted rounded mb-2 animate-pulse" />
-                  <div className="h-3 bg-muted rounded animate-pulse" />
-                </CardContent>
-              </Card>
-            ))}
+          <div className="space-y-12">
+            {/* Hero card skeleton — mirrors the featured post layout */}
+            <div className="relative rounded-xl overflow-hidden" style={{ height: "420px" }}>
+              <Skeleton className="w-full h-full" />
+              <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 space-y-3">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="h-9 w-3/4" />
+                <Skeleton className="h-9 w-1/2" />
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+            </div>
+            {/* Grid skeleton — mirrors the remaining posts */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Card key={i} className="overflow-hidden border-0 bg-white">
+                  <div className="aspect-[4/3] overflow-hidden">
+                    <Skeleton className="w-full h-full" />
+                  </div>
+                  <CardContent className="p-5 space-y-2">
+                    <Skeleton className="h-4 w-16 rounded-full" />
+                    <Skeleton className="h-5 w-full" />
+                    <Skeleton className="h-5 w-4/5" />
+                    <Skeleton className="h-3 w-full mt-1" />
+                    <Skeleton className="h-3 w-3/4" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         ) : posts && posts.length > 0 ? (
           <div className="space-y-12">

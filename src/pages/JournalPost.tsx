@@ -129,12 +129,16 @@ function EmbeddedExperienceCard({ experienceId }: { experienceId: string }) {
 
   if (isLoading) {
     return (
-      <div className="my-8 p-4 border rounded-lg bg-muted/30 animate-pulse">
-        <div className="flex gap-4">
-          <div className="w-32 h-24 bg-muted rounded" />
-          <div className="flex-1 space-y-2">
-            <div className="h-5 bg-muted rounded w-3/4" />
-            <div className="h-4 bg-muted rounded w-1/2" />
+      <div className="my-8 border rounded-xl overflow-hidden bg-card">
+        <div className="flex flex-col sm:flex-row">
+          <Skeleton className="sm:w-48 aspect-video sm:aspect-square shrink-0" />
+          <div className="flex-1 p-4 space-y-2">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <div className="flex items-center justify-between pt-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-8 w-24 rounded-full" />
+            </div>
           </div>
         </div>
       </div>
@@ -417,11 +421,30 @@ const JournalPost = () => {
     return (
       <div className="min-h-screen bg-[#FAF8F5]">
         <Header />
-        <div className="max-w-4xl mx-auto px-6 py-20">
-          <div className="h-8 bg-muted rounded w-32 mb-8 animate-pulse" />
-          <div className="h-12 bg-muted rounded mb-4 animate-pulse" />
-          <div className="h-6 bg-muted rounded w-48 mb-8 animate-pulse" />
-          <div className="aspect-[16/9] bg-muted rounded mb-12 animate-pulse" />
+        <div className="max-w-4xl mx-auto px-6 pt-24 pb-20">
+          {/* Back breadcrumb */}
+          <Skeleton className="h-3.5 w-20 mb-8" />
+          {/* Category pill */}
+          <Skeleton className="h-5 w-24 rounded-full mb-4" />
+          {/* Title — two lines like Cormorant Garamond headline */}
+          <Skeleton className="h-10 w-11/12 mb-3" />
+          <Skeleton className="h-10 w-2/3 mb-6" />
+          {/* Author + date row */}
+          <div className="flex items-center gap-4 mb-10">
+            <Skeleton className="h-7 w-7 rounded-full" />
+            <Skeleton className="h-3.5 w-28" />
+            <Skeleton className="h-3.5 w-20" />
+          </div>
+          {/* Hero image 16/9 */}
+          <Skeleton className="w-full aspect-[16/9] rounded-xl mb-12" />
+          {/* Body content lines */}
+          <div className="space-y-3 max-w-2xl">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-[96%]" />
+            <Skeleton className="h-4 w-[88%]" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-[72%]" />
+          </div>
         </div>
         <Footer />
       </div>

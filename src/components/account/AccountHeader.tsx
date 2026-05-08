@@ -111,9 +111,16 @@ export default function AccountHeader({ userId, userEmail }: AccountHeaderProps)
 
   if (isLoading) {
     return (
-      <div className="bg-[#1A1814] h-16 rounded-lg mb-6 flex items-center px-6">
-        <Skeleton className="h-12 w-12 rounded-full" />
-        <Skeleton className="h-4 w-48 ml-4" />
+      <div className="bg-[#1A1814] h-16 rounded-lg mb-6 flex items-center justify-between px-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-12 w-12 rounded-full" />
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-5 w-16 rounded" />
+        </div>
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-3 w-28" />
+          <Skeleton className="h-[3px] w-[200px] rounded-full" />
+        </div>
       </div>
     );
   }

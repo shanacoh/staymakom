@@ -70,6 +70,7 @@ const sourceColors: Record<string, string> = {
   landing_page: "bg-indigo-100 text-indigo-800",
   tailored_request: "bg-amber-100 text-amber-800",
   category_waitlist: "bg-pink-100 text-pink-800",
+  experience_only: "bg-teal-100 text-teal-800",
 };
 
 // ─── Status Badge Component ───

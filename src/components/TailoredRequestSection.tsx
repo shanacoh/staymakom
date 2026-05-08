@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
 import { Button } from "@/components/ui/button";
@@ -75,6 +75,12 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
   const isRTL = lang === "he";
 
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => { setDialogOpen(true); setSubmitted(false); };
+    window.addEventListener("staymakom-open-design-my-stay", handler);
+    return () => window.removeEventListener("staymakom-open-design-my-stay", handler);
+  }, []);
   const [moods, setMoods] = useState<string[]>([]);
   const [otherMood, setOtherMood] = useState("");
   const [occasion, setOccasion] = useState("");

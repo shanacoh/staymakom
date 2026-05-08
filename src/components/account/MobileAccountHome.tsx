@@ -74,11 +74,26 @@ export default function MobileAccountHome() {
 
   if (isLoading) {
     return (
-      <div className="px-6 pt-20 pb-32 space-y-6">
-        <div className="flex flex-col items-center gap-3">
+      <div className="px-6 pt-20 pb-32">
+        {/* Avatar + name + tier — centred like the real layout */}
+        <div className="flex flex-col items-center text-center pt-4 mb-8 gap-3">
           <Skeleton className="h-[72px] w-[72px] rounded-full" />
-          <Skeleton className="h-6 w-40" />
-          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-6 w-36" />
+          <Skeleton className="h-4 w-24 rounded-full" />
+          <Skeleton className="h-[3px] w-40 rounded-full" />
+          <Skeleton className="h-3 w-28" />
+        </div>
+        {/* Menu items */}
+        <div className="space-y-1">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="flex items-center justify-between py-3.5 px-1">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-5 w-5 rounded" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+              <Skeleton className="h-4 w-4" />
+            </div>
+          ))}
         </div>
       </div>
     );
