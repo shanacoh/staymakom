@@ -222,7 +222,7 @@ export function BookingPanel2({
 
   const specificDateResults = useMemo(() => {
     if (!hasSpecificDates || selectedTab === "pick") return [];
-    return specificDatesFromRules.map((dateStr) => {
+    const all = specificDatesFromRules.map((dateStr) => {
       const checkin = new Date(dateStr);
       const checkout = new Date(dateStr);
       checkout.setDate(checkout.getDate() + nightsCount);
@@ -238,6 +238,11 @@ export function BookingPanel2({
         currency,
       };
     });
+    // Une fois les prix chargés, on masque les dates sans chambre disponible
+    if (specificDatePrices !== undefined) {
+      return all.filter(d => d.cheapestPrice !== null);
+    }
+    return all;
   }, [specificDatesFromRules, nightsCount, hasSpecificDates, selectedTab, currency, specificDatePrices]);
 
   // Fetch addons & pricing config for "from" price on date cards

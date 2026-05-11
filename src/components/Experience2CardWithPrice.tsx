@@ -6,6 +6,9 @@
 import ExperienceCard from "@/components/ExperienceCard";
 import { useFromPrice } from "@/hooks/useExperience2Price";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import type { AvailabilityRule } from "@/lib/availabilityUtils";
 
 interface Experience2CardWithPriceProps {
   experience: any;
@@ -28,10 +31,25 @@ export default function Experience2CardWithPrice({
 }: Experience2CardWithPriceProps) {
   const { convert } = useCurrency();
 
+  // Fetch les règles de dispo pour filtrer le prix "À partir de" sur les bonnes dates
+  const { data: availabilityRules = [] } = useQuery<AvailabilityRule[]>({
+    queryKey: ["availability_rules_card", experience.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("experience2_availability_rules" as any)
+        .select("id, rule_type, days_of_week, date_from, date_to, specific_dates")
+        .eq("experience_id", experience.id)
+        .eq("is_active", true);
+      if (error) throw error;
+      return (data ?? []) as AvailabilityRule[];
+    },
+    staleTime: 5 * 60_000,
+  });
+
   const { fromPriceILS } = useFromPrice(
     experience.id,
     hyperguestPropertyId ?? null,
-    [],
+    availabilityRules,
     experience.preferred_board_type ?? null,
   );
 

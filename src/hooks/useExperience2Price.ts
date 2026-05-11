@@ -6,7 +6,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuickDateAvailability } from "@/hooks/useQuickDateAvailability";
+import { useQuickDateAvailability, useSpecificDatePrices } from "@/hooks/useQuickDateAvailability";
 import { isCheckinDisabled } from "@/lib/availabilityUtils";
 import type { AvailabilityRule } from "@/lib/availabilityUtils";
 import type {
@@ -494,16 +494,63 @@ export function useFromPrice(
 
   const propId = hyperguestPropertyId ? parseInt(hyperguestPropertyId) : null;
 
-  const { data: quickDates, isLoading } = useQuickDateAvailability({
+  // Quand des dates spécifiques sont configurées, on interroge uniquement ces dates
+  // plutôt que de scanner les 90 prochains jours (plus précis et plus fiable).
+  const specificDates = useMemo(
+    () => availabilityRules
+      .filter(r => r.rule_type === 'specific_dates' && r.specific_dates)
+      .flatMap(r => r.specific_dates!),
+    [availabilityRules],
+  );
+  const hasSpecificDates = specificDates.length > 0;
+
+  const { data: specificDatePrices, isLoading: isLoadingSpecific } = useSpecificDatePrices({
+    propertyId: propId,
+    dates: specificDates,
+    nights: 1,
+    adults: 2,
+    currency: "ILS",
+    preferredBoardType,
+    enabled: hasSpecificDates && !!propId,
+  });
+
+  const { data: quickDates, isLoading: isLoadingQuick } = useQuickDateAvailability({
     propertyId: propId,
     nights: 1,
     adults: 2,
     currency: "ILS",
     preferredBoardType,
-    enabled: !!propId,
+    enabled: !hasSpecificDates && !!propId,
   });
 
+  const isLoading = hasSpecificDates ? isLoadingSpecific : isLoadingQuick;
+
   const cheapestDate = useMemo(() => {
+    if (hasSpecificDates) {
+      if (!specificDatePrices) return null;
+      let cheapestPrice: number | null = null;
+      let cheapestStr: string | null = null;
+      for (const [dateStr, price] of Object.entries(specificDatePrices)) {
+        if (price != null && (cheapestPrice === null || price < cheapestPrice)) {
+          cheapestPrice = price;
+          cheapestStr = dateStr;
+        }
+      }
+      if (cheapestPrice === null || cheapestStr === null) return null;
+      const checkin = new Date(cheapestStr);
+      return {
+        id: `from-price-${cheapestStr}`,
+        checkin,
+        checkout: checkin,
+        nights: 1,
+        cheapestPrice,
+        cheapestBarPrice: null,
+        cheapestNetPrice: null,
+        cheapestCancellationPolicies: null,
+        currency: "ILS",
+      };
+    }
+
     if (!quickDates || quickDates.length === 0) return null;
     const filtered = availabilityRules.length > 0
       ? quickDates.filter(opt => {
@@ -518,7 +565,7 @@ export function useFromPrice(
         return curr;
       return best;
     }, null as (typeof quickDates)[0] | null);
-  }, [quickDates, availabilityRules]);
+  }, [hasSpecificDates, specificDatePrices, quickDates, availabilityRules]);
 
   const fromPrice = useMemo(() => {
     // Modèle BAR RATE : prix client = (net rate live HG + markup) + prix vendu expérience × min_party
@@ -556,6 +603,7 @@ export function useFromPrice(
     cheapestDate,
     isLoading,
     hasHyperguest: !!propId,
+    hasSpecificDates,
   };
 }
 
