@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { trackExperiencesListViewed } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +39,37 @@ const Experiences2 = () => {
       return data;
     }
   });
+
+  const experienceIds = useMemo(
+    () => (experiences ?? []).map((e: any) => e.id as string),
+    [experiences],
+  );
+
+  const { data: allAvailabilityRules = [] } = useQuery({
+    queryKey: ["availability_rules_batch", experienceIds],
+    queryFn: async () => {
+      if (experienceIds.length === 0) return [];
+      const { data, error } = await (supabase as any)
+        .from("experience2_availability_rules")
+        .select("id, experience_id, rule_type, days_of_week, date_from, date_to, specific_dates")
+        .in("experience_id", experienceIds)
+        .eq("is_active", true);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: experienceIds.length > 0,
+    staleTime: 5 * 60_000,
+    gcTime: 10 * 60_000,
+  });
+
+  const rulesMap = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    for (const rule of allAvailabilityRules) {
+      if (!map[rule.experience_id]) map[rule.experience_id] = [];
+      map[rule.experience_id].push(rule);
+    }
+    return map;
+  }, [allAvailabilityRules]);
 
   return (
     <div className="min-h-screen flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
@@ -85,6 +116,7 @@ const Experiences2 = () => {
                     experience={experience}
                     primaryHotel={primaryHotelLink}
                     hyperguestPropertyId={primaryHotelLink?.hyperguest_property_id}
+                    availabilityRules={rulesMap[experience.id] ?? []}
                     addons={(experience as any).experience2_addons}
                     linkPrefix="/experience2"
                   />

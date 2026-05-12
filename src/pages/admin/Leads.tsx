@@ -131,13 +131,15 @@ const AdminLeads = () => {
   const { data: leads, isLoading, refetch } = useQuery({
     queryKey: ["admin-leads", sourceFilter, statusFilter],
     queryFn: async () => {
-      let query = supabase.from("leads").select("*").order("created_at", { ascending: false });
+      let query = supabase.from("leads").select("*").order("created_at", { ascending: false }).limit(500);
       if (sourceFilter !== "all") query = query.eq("source", sourceFilter);
       if (statusFilter !== "all") query = query.eq("status", statusFilter);
       const { data, error } = await query;
       if (error) throw error;
       return data as Lead[];
     },
+    staleTime: 2 * 60_000,
+    gcTime: 5 * 60_000,
   });
 
   // Filter by search + date range

@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MOBILE_HEADER_HEIGHT } from "@/constants/layout";
 import { Link } from "react-router-dom";
@@ -172,6 +172,39 @@ const LaunchIndex = () => {
     staleTime: 60_000, // 60 s — page instantanée pour les visites successives
     gcTime: 5 * 60_000, // 5 min en mémoire avant garbage-collect
   });
+
+  // IDs de toutes les expériences chargées — sert à la requête batch ci-dessous
+  const experienceIds = useMemo(
+    () => (experiences2 ?? []).map((e: any) => e.id as string),
+    [experiences2],
+  );
+
+  // Une seule requête pour TOUTES les règles de dispo → distribuée aux cartes via rulesMap
+  const { data: allAvailabilityRules = [] } = useQuery({
+    queryKey: ["availability_rules_batch", experienceIds],
+    queryFn: async () => {
+      if (experienceIds.length === 0) return [];
+      const { data, error } = await (supabase as any)
+        .from("experience2_availability_rules")
+        .select("id, experience_id, rule_type, days_of_week, date_from, date_to, specific_dates")
+        .in("experience_id", experienceIds)
+        .eq("is_active", true);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: experienceIds.length > 0,
+    staleTime: 5 * 60_000,
+    gcTime: 10 * 60_000,
+  });
+
+  const rulesMap = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    for (const rule of allAvailabilityRules) {
+      if (!map[rule.experience_id]) map[rule.experience_id] = [];
+      map[rule.experience_id].push(rule);
+    }
+    return map;
+  }, [allAvailabilityRules]);
 
   // Resolve category id from slug
   const getCategoryIdFromSlug = (slug: string) =>
@@ -381,6 +414,7 @@ const LaunchIndex = () => {
                   primaryHotel={primaryHotelLink}
                   hyperguestPropertyId={primaryHotelLink?.hyperguest_property_id}
                   addons={(experience as any).experience2_addons}
+                  availabilityRules={rulesMap[experience.id] ?? []}
                   linkPrefix="/experience"
                   linkSuffix="context=launch"
                   index={idx} />);
