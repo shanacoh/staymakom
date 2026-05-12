@@ -7,9 +7,10 @@ import LaunchHeader from "@/components/LaunchHeader";
 import LaunchFooter from "@/components/LaunchFooter";
 import { SEOHead } from "@/components/SEOHead";
 import Experience2CardWithPrice from "@/components/Experience2CardWithPrice";
+import ExperienceCardSkeleton from "@/components/ExperienceCardSkeleton";
 import MultiPinMap from "@/components/experience/MultiPinMap";
 import { cn } from "@/lib/utils";
-import { Loader2, Compass, Heart, ArrowRight } from "lucide-react";
+import { Compass, Heart, ArrowRight } from "lucide-react";
 
 const FILTER_ADVENTURE = "adventure";
 const FILTER_ROMANTIC = "romantic";
@@ -370,8 +371,8 @@ const LaunchExperiences = () => {
           )}
 
           {isLoading ? (
-            <div className="text-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+            <div className="grid grid-cols-2 gap-3">
+              {Array.from({ length: 8 }).map((_, i) => <ExperienceCardSkeleton key={i} />)}
             </div>
           ) : (
             <div className="flex flex-col md:grid md:grid-cols-[1fr_340px] gap-6 items-start">

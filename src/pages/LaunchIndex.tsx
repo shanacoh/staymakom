@@ -15,6 +15,7 @@ import FAQSection from "@/components/FAQSection";
 import HowItWorksBanner from "@/components/HowItWorksBanner";
 import CategoryCard from "@/components/CategoryCard";
 import Experience2CardWithPrice from "@/components/Experience2CardWithPrice";
+import ExperienceCardSkeleton from "@/components/ExperienceCardSkeleton";
 import NewsletterPopup from "@/components/NewsletterPopup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -398,8 +399,8 @@ const LaunchIndex = () => {
           </div>
 
           {isLoadingExp ?
-          <div className="text-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+          <div className="mt-4 md:mt-3 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-5">
+              {Array.from({ length: 8 }).map((_, i) => <ExperienceCardSkeleton key={i} />)}
             </div> :
           filteredExperiences && filteredExperiences.length > 0 ?
           <div className="mt-4 md:mt-3 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-5 transition-all duration-500">

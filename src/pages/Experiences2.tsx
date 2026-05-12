@@ -2,10 +2,10 @@ import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { trackExperiencesListViewed } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Experience2CardWithPrice from "@/components/Experience2CardWithPrice";
+import ExperienceCardSkeleton from "@/components/ExperienceCardSkeleton";
 import { useLanguage } from "@/hooks/useLanguage";
 import { SEOHead } from "@/components/SEOHead";
 
@@ -100,8 +100,8 @@ const Experiences2 = () => {
         {/* Experiences Grid */}
         <section className="container py-8 sm:py-12 md:py-16 px-4">
           {isLoading ? (
-            <div className="text-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+              {Array.from({ length: 8 }).map((_, i) => <ExperienceCardSkeleton key={i} />)}
             </div>
           ) : experiences && experiences.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
