@@ -170,6 +170,44 @@ serve(async (req) => {
     const requestData = await req.json();
     console.log('Received lead data:', { ...requestData, email: '***' });
 
+    // Handle step 2 enrichment: update existing tailored_request lead with extra preferences
+    if (requestData.source === 'tailored_request' && requestData.leadId) {
+      const { data: existing, error: fetchError } = await supabase
+        .from('leads')
+        .select('id, metadata')
+        .eq('id', requestData.leadId)
+        .single();
+
+      if (fetchError || !existing) {
+        console.error('Lead not found for step 2 update:', requestData.leadId);
+        return new Response(
+          JSON.stringify({ success: false, error: 'Lead not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const mergedMetadata = { ...(existing.metadata || {}), ...(requestData.metadata || {}) };
+
+      const { error: updateError } = await supabase
+        .from('leads')
+        .update({ metadata: mergedMetadata })
+        .eq('id', requestData.leadId);
+
+      if (updateError) {
+        console.error('Failed to update lead metadata:', updateError);
+        return new Response(
+          JSON.stringify({ success: false, error: 'Failed to update lead' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('tailored_request lead enriched (step 2):', requestData.leadId);
+      return new Response(
+        JSON.stringify({ success: true, leadId: requestData.leadId }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Handle simple email collection from AI assistant or coming soon page
     if (['ai_assistant_save', 'coming_soon', 'category_waitlist', 'tailored_request', 'newsletter_popup', 'experience_only'].includes(requestData.source)) {
       if (!requestData.email || !validateEmail(requestData.email)) {

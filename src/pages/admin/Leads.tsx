@@ -645,6 +645,58 @@ const AdminLeads = () => {
                 </div>
               </div>
 
+              {/* Dream Stay Details — tailored_request leads */}
+              {selectedLead.source === "tailored_request" && selectedLead.metadata && Object.keys(selectedLead.metadata).length > 0 && (
+                <div className="border rounded-lg p-4 space-y-3">
+                  <h4 className="font-semibold text-sm">✨ Dream Stay Details</h4>
+                  <dl className="space-y-2.5">
+                    {selectedLead.metadata.occasion && (
+                      <div className="flex gap-3 items-start">
+                        <dt className="text-xs text-muted-foreground w-20 shrink-0 pt-0.5">Occasion</dt>
+                        <dd className="text-sm font-medium">{selectedLead.metadata.occasion}</dd>
+                      </div>
+                    )}
+                    {selectedLead.metadata.people && (
+                      <div className="flex gap-3 items-start">
+                        <dt className="text-xs text-muted-foreground w-20 shrink-0 pt-0.5">People</dt>
+                        <dd className="text-sm">{selectedLead.metadata.people}</dd>
+                      </div>
+                    )}
+                    {selectedLead.metadata.moods && selectedLead.metadata.moods.length > 0 && (
+                      <div className="flex gap-3 items-start">
+                        <dt className="text-xs text-muted-foreground w-20 shrink-0 pt-0.5">Mood(s)</dt>
+                        <dd className="text-sm flex flex-wrap gap-1">
+                          {(selectedLead.metadata.moods as string[]).map((m: string) => (
+                            <Badge key={m} variant="secondary" className="text-xs">{m}</Badge>
+                          ))}
+                          {selectedLead.metadata.otherMood && (
+                            <Badge variant="secondary" className="text-xs">{selectedLead.metadata.otherMood}</Badge>
+                          )}
+                        </dd>
+                      </div>
+                    )}
+                    {selectedLead.metadata.timing && (
+                      <div className="flex gap-3 items-start">
+                        <dt className="text-xs text-muted-foreground w-20 shrink-0 pt-0.5">Timing</dt>
+                        <dd className="text-sm">{selectedLead.metadata.timing}</dd>
+                      </div>
+                    )}
+                    {selectedLead.metadata.budget && (
+                      <div className="flex gap-3 items-start">
+                        <dt className="text-xs text-muted-foreground w-20 shrink-0 pt-0.5">Budget</dt>
+                        <dd className="text-sm font-medium text-primary">{selectedLead.metadata.budget}</dd>
+                      </div>
+                    )}
+                    {selectedLead.metadata.description && (
+                      <div className="flex gap-3 items-start">
+                        <dt className="text-xs text-muted-foreground w-20 shrink-0 pt-0.5">Wishes</dt>
+                        <dd className="text-sm text-muted-foreground bg-muted p-2 rounded flex-1">{selectedLead.metadata.description}</dd>
+                      </div>
+                    )}
+                  </dl>
+                </div>
+              )}
+
               {/* Message if present */}
               {selectedLead.message && (
                 <div className="border rounded-lg p-4 space-y-2">

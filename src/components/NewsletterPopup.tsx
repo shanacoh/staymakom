@@ -33,7 +33,7 @@ export function openNewsletterPopup() {
 }
 
 const STORAGE_KEY = "staymakom_newsletter_popup_seen";
-const DEFAULT_DELAY_MS = 10_000;
+const DEFAULT_DELAY_MS = 20_000;
 
 interface NewsletterPopupProps {
   delayMs?: number;

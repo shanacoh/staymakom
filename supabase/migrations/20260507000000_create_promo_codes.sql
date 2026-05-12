@@ -101,11 +101,13 @@ GRANT EXECUTE ON FUNCTION validate_promo_code(TEXT, TEXT) TO anon;
 ALTER TABLE public.promo_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.promo_code_redemptions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Admins can manage promo_codes" ON public.promo_codes;
 CREATE POLICY "Admins can manage promo_codes" ON public.promo_codes
   FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'))
   WITH CHECK (EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'));
 
+DROP POLICY IF EXISTS "Admins can read redemptions" ON public.promo_code_redemptions;
 CREATE POLICY "Admins can read redemptions" ON public.promo_code_redemptions
   FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'));
