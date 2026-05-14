@@ -699,6 +699,56 @@ const AdminLeads = () => {
                 </div>
               )}
 
+              {/* Partner Qualification — partners leads */}
+              {selectedLead.source === "partners" && selectedLead.metadata && (
+                selectedLead.metadata.partner_goals?.length ||
+                selectedLead.metadata.pms ||
+                selectedLead.metadata.num_rooms ||
+                selectedLead.metadata.facilities?.length
+              ) && (
+                <div className="border rounded-lg p-4 space-y-3">
+                  <h4 className="font-semibold text-sm">🏨 Partner Qualification</h4>
+                  <dl className="space-y-2.5">
+                    {selectedLead.metadata.partner_goals?.length > 0 && (
+                      <div className="flex gap-3 items-start">
+                        <dt className="text-xs text-muted-foreground w-24 shrink-0 pt-0.5">Goals</dt>
+                        <dd className="text-sm flex flex-wrap gap-1">
+                          {(selectedLead.metadata.partner_goals as string[]).map((g: string) => (
+                            <Badge key={g} variant="secondary" className="text-xs capitalize">
+                              {g.replace(/_/g, " ")}
+                            </Badge>
+                          ))}
+                        </dd>
+                      </div>
+                    )}
+                    {selectedLead.metadata.pms && (
+                      <div className="flex gap-3 items-start">
+                        <dt className="text-xs text-muted-foreground w-24 shrink-0 pt-0.5">PMS</dt>
+                        <dd className="text-sm font-medium">{selectedLead.metadata.pms}</dd>
+                      </div>
+                    )}
+                    {selectedLead.metadata.num_rooms && (
+                      <div className="flex gap-3 items-start">
+                        <dt className="text-xs text-muted-foreground w-24 shrink-0 pt-0.5">Rooms</dt>
+                        <dd className="text-sm font-medium">{selectedLead.metadata.num_rooms}</dd>
+                      </div>
+                    )}
+                    {selectedLead.metadata.facilities?.length > 0 && (
+                      <div className="flex gap-3 items-start">
+                        <dt className="text-xs text-muted-foreground w-24 shrink-0 pt-0.5">Facilities</dt>
+                        <dd className="text-sm flex flex-wrap gap-1">
+                          {(selectedLead.metadata.facilities as string[]).map((f: string) => (
+                            <Badge key={f} variant="outline" className="text-xs capitalize">
+                              {f.replace(/_/g, " ")}
+                            </Badge>
+                          ))}
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                </div>
+              )}
+
               {/* Message if present */}
               {selectedLead.message && (
                 <div className="border rounded-lg p-4 space-y-2">

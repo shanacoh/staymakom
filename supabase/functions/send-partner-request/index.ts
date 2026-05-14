@@ -20,6 +20,12 @@ interface PartnerRequest {
   phone?: string;
   message?: string;
   language?: string;
+  qualification?: {
+    partner_goals?: string[];
+    pms?: string;
+    num_rooms?: number | string;
+    facilities?: string[];
+  };
 }
 
 const escapeHTML = (str: string): string => {
@@ -50,14 +56,31 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { 
-      name, 
-      hotel_name, 
-      email, 
-      phone, 
+    const {
+      name,
+      hotel_name,
+      email,
+      phone,
       message,
-      language = 'en'
+      language = 'en',
+      qualification,
     }: PartnerRequest = await req.json();
+
+    const goalLabels: Record<string, string> = {
+      increase_visibility: "Increase international visibility",
+      low_season: "Improve low season occupancy",
+      midweek: "Improve midweek occupancy",
+      ancillary_revenue: "Increase ancillary revenue / extras sales",
+      experiences: "Promote experiences & activities",
+      other: "Other",
+    };
+    const facilityLabels: Record<string, string> = {
+      spa: "Spa / Wellness",
+      restaurant: "Restaurant",
+      pool: "Pool",
+      rooftop: "Rooftop",
+      experiences: "Experiences & activities",
+    };
     
     console.log("Processing partner request from:", email);
 
@@ -129,6 +152,33 @@ const handler = async (req: Request): Promise<Response> => {
                 <h3 style="color: #1a1a1a; margin: 0 0 15px; font-size: 18px; font-weight: 600;">Additional Message</h3>
                 <div style="background-color: #f9f9f6; border-left: 4px solid #c9a87c; padding: 20px; border-radius: 4px;">
                   <p style="color: #1a1a1a; font-size: 15px; line-height: 1.6; margin: 0; white-space: pre-wrap;">${escapeHTML(message)}</p>
+                </div>
+              </div>
+              ` : ''}
+              ${qualification && (qualification.partner_goals?.length || qualification.pms || qualification.num_rooms || qualification.facilities?.length) ? `
+              <div style="margin-bottom: 30px;">
+                <h3 style="color: #1a1a1a; margin: 0 0 15px; font-size: 18px; font-weight: 600;">Qualification Answers</h3>
+                <div style="background-color: #f9f9f6; border-radius: 8px; padding: 20px;">
+                  ${qualification.partner_goals?.length ? `
+                  <p style="color: #999999; font-size: 12px; margin: 0 0 6px; text-transform: uppercase;">Goals</p>
+                  <p style="color: #1a1a1a; font-size: 14px; margin: 0 0 16px; line-height: 1.8;">
+                    ${qualification.partner_goals.map(g => `• ${escapeHTML(goalLabels[g] || g)}`).join('<br>')}
+                  </p>
+                  ` : ''}
+                  ${qualification.pms ? `
+                  <p style="color: #999999; font-size: 12px; margin: 0 0 6px; text-transform: uppercase;">PMS</p>
+                  <p style="color: #1a1a1a; font-size: 14px; margin: 0 0 16px;">${escapeHTML(String(qualification.pms))}</p>
+                  ` : ''}
+                  ${qualification.num_rooms ? `
+                  <p style="color: #999999; font-size: 12px; margin: 0 0 6px; text-transform: uppercase;">Number of Rooms</p>
+                  <p style="color: #1a1a1a; font-size: 14px; margin: 0 0 16px;">${escapeHTML(String(qualification.num_rooms))}</p>
+                  ` : ''}
+                  ${qualification.facilities?.length ? `
+                  <p style="color: #999999; font-size: 12px; margin: 0 0 6px; text-transform: uppercase;">Facilities</p>
+                  <p style="color: #1a1a1a; font-size: 14px; margin: 0;">
+                    ${qualification.facilities.map(f => `• ${escapeHTML(facilityLabels[f] || f)}`).join('<br>')}
+                  </p>
+                  ` : ''}
                 </div>
               </div>
               ` : ''}

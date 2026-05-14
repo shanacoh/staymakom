@@ -1,52 +1,23 @@
-import { useState, useEffect } from "react";
-import { trackPartnersPageViewed, trackPartnerFormSubmitted } from "@/lib/analytics";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { useEffect } from "react";
+import { trackPartnersPageViewed } from "@/lib/analytics";
 import { useQuery } from "@tanstack/react-query";
 import LaunchHeader from "@/components/LaunchHeader";
 import LaunchFooter from "@/components/LaunchFooter";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { toast } from "sonner";
 import { Mail } from "lucide-react";
 import partnersHero from "@/assets/partners-hero.jpg";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { useLocalizedNavigation } from "@/hooks/useLocalizedNavigation";
-
-const formSchema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(100),
-  hotel_name: z.string().trim().min(1, "Hotel name is required").max(200),
-  email: z.string().trim().email("Invalid email address").max(255),
-  phone: z.string().trim().min(1, "Phone is required").max(50),
-  message: z.string().trim().min(1, "Message is required").max(1000)
-});
-
-type FormData = z.infer<typeof formSchema>;
+import { PartnerFormFlow } from "@/components/partners/PartnerFormFlow";
 
 const Partners = () => {
   const { lang } = useLanguage();
   const isRTL = lang === 'he';
   const { navigateLocalized } = useLocalizedNavigation();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => { trackPartnersPageViewed(); }, []);
-
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      hotel_name: "",
-      email: "",
-      phone: "",
-      message: ""
-    }
-  });
 
   const { data: settings } = useQuery({
     queryKey: ["global-settings"],
@@ -56,52 +27,10 @@ const Partners = () => {
         .select("*")
         .eq("key", "site_config")
         .maybeSingle();
-      
       if (error) throw error;
       return data;
     },
   });
-
-  const onSubmit = async (data: FormData) => {
-    setIsSubmitting(true);
-    try {
-      const { error } = await supabase
-        .from("leads")
-        .insert({
-          source: "partners",
-          name: data.name,
-          email: data.email,
-          phone: data.phone,
-          property_name: data.hotel_name,
-          message: data.message,
-          is_b2b: true,
-        });
-
-      if (error) throw error;
-
-      const { error: emailError } = await supabase.functions.invoke("send-partner-request", {
-        body: {
-          name: data.name,
-          hotel_name: data.hotel_name,
-          email: data.email,
-          phone: data.phone,
-          message: data.message,
-          language: lang
-        }
-      });
-      
-
-      trackPartnerFormSubmitted();
-      setShowSuccess(true);
-      form.reset();
-      toast.success(lang === 'he' ? "תודה על ההתעניינות!" : "Thank you for your interest!");
-    } catch (error) {
-      
-      toast.error(lang === 'he' ? "משהו השתבש. אנא נסו שוב." : "Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#FAF8F5]">
@@ -191,101 +120,7 @@ const Partners = () => {
           <h2 className="font-serif text-2xl md:text-3xl text-center mb-8">
             {t(lang, 'partnersBecomePartner')}
           </h2>
-
-          {showSuccess ? (
-            <div className="bg-white rounded-lg p-8 text-center">
-              <div className="mb-4 text-[#D72638]">
-                <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h3 className="font-serif text-2xl mb-3">{t(lang, 'partnersThankYou')}</h3>
-              <p className="text-sm text-muted-foreground mb-6">
-                {t(lang, 'partnersThankYouDesc')}
-              </p>
-              <Button variant="outline" size="sm" onClick={() => setShowSuccess(false)}>
-                {t(lang, 'partnersSubmitAnother')}
-              </Button>
-            </div>
-          ) : (
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 bg-white rounded-lg p-6">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm">{t(lang, 'partnersName')} *</FormLabel>
-                      <FormControl>
-                        <Input placeholder={lang === 'he' ? "השם שלכם" : "Your name"} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="hotel_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm">{t(lang, 'partnersHotelName')} *</FormLabel>
-                      <FormControl>
-                        <Input placeholder={lang === 'he' ? "שם המלון שלכם" : "Your hotel name"} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm">{t(lang, 'partnersEmail')} *</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="your@email.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm">{t(lang, 'partnersPhone')} *</FormLabel>
-                      <FormControl>
-                        <Input type="tel" placeholder="+972 XX XXX XXXX" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="message"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm">{t(lang, 'partnersPropertyDesc')} *</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder={t(lang, 'partnersPropertyPlaceholder')} className="min-h-[100px]" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Button type="submit" disabled={isSubmitting} className="w-full bg-[#D72638] hover:bg-[#D72638]/90">
-                  {isSubmitting ? t(lang, 'partnersSending') : t(lang, 'partnersSendRequest')}
-                </Button>
-              </form>
-            </Form>
-          )}
+          <PartnerFormFlow lang={lang} />
         </section>
 
         {/* Direct Contact Section */}
