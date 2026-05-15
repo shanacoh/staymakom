@@ -216,7 +216,10 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
           <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/65 mb-5">
             Crafted for {client_name}
           </p>
-          <h1 className="font-sans text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.05] mb-5 tracking-tight">
+          <h1
+            className="font-sans text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.05] mb-5 tracking-tight text-white"
+            style={{ textShadow: "0 2px 16px rgba(0,0,0,0.45)" }}
+          >
             {c.title}
           </h1>
           {c.tagline && (
@@ -324,19 +327,6 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
               </div>
             </div>
           </div>
-
-          {/* Narrative quote */}
-          {chapter.narrative && (
-            <div className="my-14 px-6">
-              <div className="max-w-3xl mx-auto flex items-center gap-6 sm:gap-10">
-                <div className="flex-1 h-px bg-[#EDE8E0]" />
-                <p className="font-display text-xl sm:text-2xl italic text-[#6B6560] text-center leading-relaxed flex-shrink min-w-0">
-                  "{chapter.narrative}"
-                </p>
-                <div className="flex-1 h-px bg-[#EDE8E0]" />
-              </div>
-            </div>
-          )}
 
           {/* Body text */}
           {chapter.body && (
@@ -533,7 +523,7 @@ const PREVIEW_ITINERARY: ItineraryRow = {
       duration: "17 days of possibilities",
       format: "Friends joining anytime",
     },
-    intro: "Hi Nicole,\n\nI didn't build this as a traditional itinerary with everything locked in advance. The idea is a little different: creating a flexible framework filled with inspirations, atmospheres, hotels, experiences, and moments you can pick from depending on your mood, your energy, and the people around you.\n\nSome parts are made for slow mornings and beautiful hotels. Others are more about long dinners, beach days, nightlife, wellness, desert escapes, road trips, or spontaneous plans with friends joining along the way.\n\nNothing here is set in stone. This document is really here to help you imagine what your summer in Israel could feel like, and then shape it together around what excites you most (and remove what doesn't).\n\nIf you already have ideas, specific wishes, people you want to see, or experiences you've always wanted to try, we can obviously build those in too.\n\nThe goal is simple: creating something personal, effortless, memorable, and genuinely cool, not just another checklist trip.",
+    intro: "Hi Nicole,\n\nThis isn't a traditional itinerary with everything locked in advance. Think of it as a flexible collection of places, moods, hotels, and experiences you can pick from depending on your energy and who's joining you.\n\nNothing is set in stone. The goal is to help you imagine what your summer in Israel could feel like, and build it together around what excites you most. Something personal, effortless, and genuinely cool.",
     chapters: [
       {
         number: "01",
@@ -602,7 +592,7 @@ const PREVIEW_ITINERARY: ItineraryRow = {
             description: "Sunrise hike up Masada, float in the Dead Sea, swim at Ein Gedi waterfall.",
           },
         ],
-        accommodation_note: "You'll be staying at a design hotel in the White City, walking distance from the beach, Dizengoff Square, and the Carmel Market. Breakfast included. Check-in June 24, check-out July 4. Currently checking with partners to see if we can secure special offers or complimentary stays in exchange for content creation (although we already have very good rates negotiated with most properties).",
+        accommodation_note: "You'll be staying at a design hotel in the White City, walking distance from the beach, Dizengoff Square, and the Carmel Market. Breakfast included. Check-in June 24, check-out July 4. We're currently in discussions with hotels, hospitality partners, and short-term rentals about potential collaborations for this stay. This may include complimentary nights, partially gifted stays, preferred rates, or other partnership arrangements. Nothing is finalized yet, but we'll keep you updated as things progress.",
       },
       {
         number: "02",
@@ -644,7 +634,7 @@ const PREVIEW_ITINERARY: ItineraryRow = {
             highlight: true,
           },
         ],
-        accommodation_note: "Two nights at a boutique hotel within the historic centre, stone walls, contemporary interiors, rooftop terrace overlooking the Old City. Breakfast included. Currently checking with partners to see if we can secure special offers or complimentary stays in exchange for content creation (although we already have very good rates negotiated with most properties).",
+        accommodation_note: "Two nights at a boutique hotel within the historic centre, stone walls, contemporary interiors, rooftop terrace overlooking the Old City. Breakfast included. We're currently in discussions with hotels, hospitality partners, and short-term rentals about potential collaborations for this stay. This may include complimentary nights, partially gifted stays, preferred rates, or other partnership arrangements. Nothing is finalized yet, but we'll keep you updated as things progress.",
       },
       {
         number: "03",
@@ -682,7 +672,7 @@ const PREVIEW_ITINERARY: ItineraryRow = {
             tags: ["1 night", "1h30 from Tel Aviv", "Lakeside boutique hotel"],
           },
         ],
-        accommodation_note: "Hotels are pre-booked at each destination. A hire car is arranged for each leg. Currently checking with partners to see if we can secure special offers or complimentary stays in exchange for content creation (although we already have very good rates negotiated with most properties).",
+        accommodation_note: "Hotels are pre-booked at each destination. A hire car is arranged for each leg. We're currently in discussions with hotels, hospitality partners, and short-term rentals about potential collaborations for this stay. This may include complimentary nights, partially gifted stays, preferred rates, or other partnership arrangements. Nothing is finalized yet, but we'll keep you updated as things progress.",
       },
     ],
     closing: {
