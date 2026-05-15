@@ -56,6 +56,7 @@ interface Chapter {
   body?: string;
   experiences?: Experience[];
   daytrips?: DayTrip[];
+  daytrips_intro?: string;
   destinations?: Destination[];
   accommodation_note?: string;
 }
@@ -65,6 +66,7 @@ interface ItineraryContent {
   subtitle?: string;
   cover_image?: string;
   tagline?: string;
+  quote?: string;
   meta?: { dates?: string; duration?: string; format?: string };
   intro?: string;
   chapters: Chapter[];
@@ -211,18 +213,20 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
 
         {/* Content bottom */}
         <div className="relative z-10 px-6 pb-16 max-w-5xl mx-auto w-full text-center text-white">
-          <p className="text-[10px] uppercase tracking-[0.25em] text-white/50 mb-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/65 mb-5">
             Crafted for {client_name}
           </p>
-          <h1 className="font-display text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-light leading-[0.9] mb-6 tracking-tight">
+          <h1 className="font-sans text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.05] mb-5 tracking-tight">
             {c.title}
           </h1>
-          {c.subtitle && (
-            <p className="text-xs uppercase tracking-[0.2em] text-white/50 mb-6">{c.subtitle}</p>
-          )}
           {c.tagline && (
-            <p className="font-display text-lg sm:text-xl italic text-white/70 max-w-xl mx-auto mb-10 leading-relaxed">
-              "{c.tagline}"
+            <p className="text-sm text-white/75 max-w-lg mx-auto mb-5 leading-relaxed">
+              {c.tagline}
+            </p>
+          )}
+          {c.quote && (
+            <p className="font-display text-xl sm:text-2xl italic text-white/90 max-w-xl mx-auto mb-10 leading-relaxed">
+              "{c.quote}"
             </p>
           )}
           {c.meta && (
@@ -255,11 +259,12 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
 
       {/* ── 2. INTRO ───────────────────────────────────────────────────────── */}
       {c.intro && (
-        <div className="py-16 px-6 max-w-2xl mx-auto text-center">
-          <p className="text-sm text-[#4A4540] leading-relaxed mb-1">
-            Dear <span className="font-medium text-[#1A1814]">{client_name}</span>,
-          </p>
-          <p className="text-[15px] text-[#6B6560] leading-[1.9]">{c.intro}</p>
+        <div className="py-16 px-6 max-w-2xl mx-auto">
+          {c.intro.split("\n\n").map((para, i) => (
+            <p key={i} className="text-[15px] text-[#6B6560] leading-[1.9] mb-5 last:mb-0">
+              {para}
+            </p>
+          ))}
         </div>
       )}
 
@@ -388,24 +393,35 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
             </div>
           )}
 
-          {/* Day trips grid */}
+          {/* Day trips — dark contrast section */}
           {chapter.daytrips && chapter.daytrips.length > 0 && (
-            <div className="max-w-5xl mx-auto px-6 mb-14">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-[#9E9890] mb-6">
-                Day Trips
-              </p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {chapter.daytrips.map((trip, j) => (
-                  <div key={j} className="bg-white rounded-xl border border-[#EDE8E0] p-4">
-                    {trip.icon && (
-                      <span className="text-xl block mb-2.5">{trip.icon}</span>
-                    )}
-                    <p className="text-sm font-medium text-[#1A1814] mb-1.5 leading-snug">
-                      {trip.title}
-                    </p>
-                    <p className="text-xs text-[#9E9890] leading-relaxed">{trip.description}</p>
-                  </div>
-                ))}
+            <div className="mb-14" style={{ backgroundColor: "#1C1915" }}>
+              <div className="max-w-5xl mx-auto px-6 py-10">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-[#C4A882] mb-4">
+                  Day Trips
+                </p>
+                {chapter.daytrips_intro && (
+                  <p className="text-sm text-white/55 leading-relaxed mb-8 max-w-2xl">
+                    {chapter.daytrips_intro}
+                  </p>
+                )}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {chapter.daytrips.map((trip, j) => (
+                    <div
+                      key={j}
+                      className="rounded-xl border border-white/10 p-4"
+                      style={{ backgroundColor: "rgba(255,255,255,0.06)" }}
+                    >
+                      {trip.icon && (
+                        <span className="text-xl block mb-2.5">{trip.icon}</span>
+                      )}
+                      <p className="text-sm font-medium text-white mb-1.5 leading-snug">
+                        {trip.title}
+                      </p>
+                      <p className="text-xs text-white/45 leading-relaxed">{trip.description}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -508,15 +524,16 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
 const PREVIEW_ITINERARY: ItineraryRow = {
   client_name: "Nicole",
   itinerary_content: {
-    title: "17 Days. One Country.",
+    title: "A Summer Built Around You",
     cover_image: "/hero-itinerary.jpg",
-    tagline: "Israel isn't a destination you visit. It's a place that happens to you, and we built this trip so every single day, something does.",
+    tagline: "Not a fixed itinerary. More a collection of places, moods, people, and moments we can shape together.",
+    quote: "This isn't about following a schedule. It's about creating the version of Israel you actually want to experience.",
     meta: {
       dates: "June 24 – July 10",
-      duration: "17 nights",
-      format: "Solo or with friends",
+      duration: "17 days of possibilities",
+      format: "Friends joining anytime",
     },
-    intro: "Nicole, we've built this trip around the way Israel actually feels, not a checklist, but a rhythm. Three distinct chapters, each with its own tempo: the electric energy of Tel Aviv, the layered weight of Jerusalem, and the open road south and north. Everything is arranged. All you need to do is show up.",
+    intro: "Hi Nicole,\n\nI didn't build this as a traditional itinerary with everything locked in advance. The idea is a little different: creating a flexible framework filled with inspirations, atmospheres, hotels, experiences, and moments you can pick from depending on your mood, your energy, and the people around you.\n\nSome parts are made for slow mornings and beautiful hotels. Others are more about long dinners, beach days, nightlife, wellness, desert escapes, road trips, or spontaneous plans with friends joining along the way.\n\nNothing here is set in stone. This document is really here to help you imagine what your summer in Israel could feel like, and then shape it together around what excites you most (and remove what doesn't).\n\nIf you already have ideas, specific wishes, people you want to see, or experiences you've always wanted to try, we can obviously build those in too.\n\nThe goal is simple: creating something personal, effortless, memorable, and genuinely cool, not just another checklist trip.",
     chapters: [
       {
         number: "01",
@@ -560,9 +577,9 @@ const PREVIEW_ITINERARY: ItineraryRow = {
             icon: "🏃",
             title: "Active Retreat",
             description: "Tel Aviv is one of the most fitness-forward cities in the world. Options: bootcamp, yoga, pilates, reformer, beachfront surf lesson, or a half-day trail hike north of the city.",
-            highlight: true,
           },
         ],
+        daytrips_intro: "Easy day trips from Tel Aviv to experience incredible places while still keeping the city as your home base. All under 2 hours away — you're back in time for dinner.",
         daytrips: [
           {
             icon: "🍷",
@@ -585,7 +602,7 @@ const PREVIEW_ITINERARY: ItineraryRow = {
             description: "Sunrise hike up Masada, float in the Dead Sea, swim at Ein Gedi waterfall.",
           },
         ],
-        accommodation_note: "You'll be staying at a design hotel in the White City,walking distance from the beach, Dizengoff Square, and the Carmel Market. Breakfast included. Check-in June 24, check-out July 4.",
+        accommodation_note: "You'll be staying at a design hotel in the White City, walking distance from the beach, Dizengoff Square, and the Carmel Market. Breakfast included. Check-in June 24, check-out July 4. Currently checking with partners to see if we can secure special offers or complimentary stays in exchange for content creation (although we already have very good rates negotiated with most properties).",
       },
       {
         number: "02",
@@ -627,50 +644,50 @@ const PREVIEW_ITINERARY: ItineraryRow = {
             highlight: true,
           },
         ],
-        accommodation_note: "Two nights at a boutique hotel within the historic centre,stone walls, contemporary interiors, rooftop terrace overlooking the Old City. Breakfast included.",
+        accommodation_note: "Two nights at a boutique hotel within the historic centre, stone walls, contemporary interiors, rooftop terrace overlooking the Old City. Breakfast included. Currently checking with partners to see if we can secure special offers or complimentary stays in exchange for content creation (although we already have very good rates negotiated with most properties).",
       },
       {
         number: "03",
         title: "The Road",
-        period: "July 6 – July 10 · 4 nights",
-        narrative: "The south teaches you silence. The north teaches you softness. The road between is the point.",
-        body: "The final chapter is a self-drive road trip through four utterly different landscapes,desert, mystical hilltop city, winery village, and the Sea of Galilee. A hire car is arranged from July 6; hotels are pre-booked at each stop.",
+        period: "July 6 – July 10",
+        narrative: "Okay. This is where things get interesting.",
+        body: "We're proposing four very different escapes from Tel Aviv, each with its own energy, landscape, and vibe. You don't have to do all of them in one trip. Pick one or two that excite you most, experience them fully, and save the others for a future visit. The idea is to come home with energy, not exhaustion. Every destination below is within easy reach of Tel Aviv, and a car is arranged for each leg.",
         destinations: [
           {
             icon: "🏜️",
             title: "The Negev Desert, Mitzpe Ramon",
-            body: "Ramon Crater (Makhtesh Ramon) is the world's largest erosion crater, 40km long, utterly silent at dawn. You'll sleep in a desert lodge at the rim. One night is enough to feel it reset you.",
-            highlights: ["Full-day jeep tour into the crater", "Stargazing,zero light pollution", "Desert sunrise at the rim"],
-            tags: ["1 night", "1.5hr from Jerusalem", "Desert lodge"],
+            body: "Ramon Crater is the world's largest natural erosion crater, 40km wide and completely silent. It's the kind of place that resets you in a way no beach or city can. You sleep in a desert lodge right at the rim. One night is all you need — and all you'll be able to think about for weeks after.",
+            highlights: ["Full-day jeep tour deep into the crater", "Camel ride at sunset", "Stargazing under the clearest sky in Israel", "Desert sunrise from the rim"],
+            tags: ["1 night", "2h30 from Tel Aviv", "Desert lodge"],
           },
           {
             icon: "🌀",
             title: "Tzfat, City of Kabbalah",
-            body: "The mystical hilltop city of the Kabbalists. Blue-painted alleys, artist studios in ancient synagogues, a profound quiet. The most spiritual city in Israel,and for a Jewish creator, one of the most powerful stops in the country.",
-            highlights: ["Mystical Old City walk", "Visit to the Ari Synagogue", "Private artist gallery"],
-            tags: ["1 night", "1.5hr from the Negev", "Boutique guesthouse"],
+            body: "The most spiritual city in Israel, and one of the most otherworldly places you'll ever visit. Winding blue-painted alleys, ancient synagogues, artist studios hidden in old stone buildings. A total contrast to Tel Aviv — slower, quieter, and deeply atmospheric.",
+            highlights: ["Guided walk through the mystical Old City", "Visit to one of the oldest synagogues in Israel", "Private artist gallery", "Hidden local market at sunrise"],
+            tags: ["1 night", "2hr from Tel Aviv", "Boutique guesthouse"],
           },
           {
             icon: "🍇",
             title: "Zichron Ya'akov, Wine Country",
-            body: "A Rothschild-era wine village in the Carmel mountains, founded in the 1880s and still producing some of Israel's best wine. The main street is lined with stone houses, artisan shops, and wine bars.",
-            highlights: ["Private winery tasting", "Ottoman pedestrian street", "Mediterranean views"],
-            tags: ["1 night", "1hr from Tzfat", "Design guesthouse"],
+            body: "45 minutes from Tel Aviv, a completely different world. A Rothschild-era wine village in the Carmel mountains, beautiful Ottoman street, century-old cellars, long lunches with Mediterranean views. The closest thing to a French countryside feeling in Israel.",
+            highlights: ["Private winery tasting", "Ottoman pedestrian street", "Mediterranean views over the coast", "Hidden wine bar dinner"],
+            tags: ["1 night", "45min from Tel Aviv", "Design guesthouse"],
           },
           {
             icon: "🌊",
             title: "Sea of Galilee, Kinneret",
-            body: "The journey ends where the water is wide and still. A final night at a boutique hotel on the shore of the Kinneret. A private boat at sunset. Dinner on the water. A slow goodbye.",
-            highlights: ["Private sunset boat ride", "Shore dinner", "Morning swim in the lake"],
-            tags: ["1 night", "1hr from Zichron", "Lakeside boutique hotel"],
+            body: "Wide open water, total quiet, and a boutique hotel right on the shore. A private boat at golden hour. Dinner on the water. Morning kayak on the lake. A slow, beautiful way to end a summer in Israel.",
+            highlights: ["Private sunset boat ride", "Dinner on the water", "Morning kayak on the lake", "Hidden local spots along the shore"],
+            tags: ["1 night", "1h30 from Tel Aviv", "Lakeside boutique hotel"],
           },
         ],
-        accommodation_note: "Four consecutive nights, one at each destination. All hotels are pre-booked. A hire car is arranged from Jerusalem on July 6 and returned at the Galilee hotel on July 10. Airport transfer on July 10 at 15:00.",
+        accommodation_note: "Hotels are pre-booked at each destination. A hire car is arranged for each leg. Currently checking with partners to see if we can secure special offers or complimentary stays in exchange for content creation (although we already have very good rates negotiated with most properties).",
       },
     ],
     closing: {
       title: "Next step. Let's talk.",
-      body: "This itinerary is a proposal, not a contract. Every detail can be adjusted,the timing, the pace, which experiences matter most to you. Send a message and we'll refine it together until it's exactly right.",
+      body: "Hi Nicole, I was so happy we connected. These are just ideas for now, a starting point we can shape together. I can help you book everything, or simply organize a few activities here and there. The goal is really for you to have an amazing trip and make the classic Israel experience feel a little more unforgettable. That's exactly the mission behind Staymakom.",
     },
     contact: "shana@staymakom.com",
   },
