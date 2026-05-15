@@ -37,6 +37,7 @@ const GiftCardConfirmation = lazy(() => import("./pages/GiftCardConfirmation"));
 const Companies          = lazy(() => import("./pages/Companies"));
 const Partners           = lazy(() => import("./pages/Partners"));
 const PartnerForm        = lazy(() => import("./pages/PartnerForm"));
+const Itineraries        = lazy(() => import("./pages/Itineraries"));
 const Journal            = lazy(() => import("./pages/Journal"));
 const JournalPost        = lazy(() => import("./pages/JournalPost"));
 const Contact            = lazy(() => import("./pages/Contact"));
@@ -163,6 +164,7 @@ const AppContent = () => {
           <Route path="/corporate" element={<Companies />} />
           <Route path="/partners" element={<Partners />} />
           <Route path="/partner-form" element={<PartnerForm />} />
+          <Route path="/itineraries" element={<Itineraries />} />
           <Route path="/journal" element={<Journal />} />
           <Route path="/journal/:slug" element={<JournalPost />} />
           <Route path="/contact" element={<Contact />} />
