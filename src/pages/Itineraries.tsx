@@ -504,32 +504,31 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
   );
 };
 
-// ─── Preview data — REMOVE before production ──────────────────────────────────
+// ─── Preview data,REMOVE before production ──────────────────────────────────
 const PREVIEW_ITINERARY: ItineraryRow = {
-  client_name: "Maya",
+  client_name: "Nicole",
   itinerary_content: {
     title: "17 Days. One Country.",
-    subtitle: "A journey crafted for you",
-    cover_image: "https://images.unsplash.com/photo-1558862107-d49ef2a04d72?w=1600&q=85",
-    tagline: "Israel isn't a destination you visit. It's a place that happens to you — and we built this trip so every single day, something does.",
+    cover_image: "/hero-itinerary.jpg",
+    tagline: "Israel isn't a destination you visit. It's a place that happens to you, and we built this trip so every single day, something does.",
     meta: {
       dates: "June 24 – July 10",
       duration: "17 nights",
       format: "Solo or with friends",
     },
-    intro: "Maya, we've built this trip around the way Israel actually feels — not a checklist, but a rhythm. Three distinct chapters, each with its own tempo: the electric energy of Tel Aviv, the layered weight of Jerusalem, and the open road south and north. Everything is arranged. All you need to do is show up.",
+    intro: "Nicole, we've built this trip around the way Israel actually feels, not a checklist, but a rhythm. Three distinct chapters, each with its own tempo: the electric energy of Tel Aviv, the layered weight of Jerusalem, and the open road south and north. Everything is arranged. All you need to do is show up.",
     chapters: [
       {
         number: "01",
         title: "Tel Aviv",
         period: "June 24 – July 4 · 10 nights",
-        narrative: "Ten days in a city that never quite sleeps — but knows how to be still when it matters.",
-        body: "Tel Aviv isn't a backdrop. It's a character. Your base is a design hotel steps from the beach; the city opens from there — the shuk, the galleries, the coastline, the neighbourhoods that each feel like a different city within the city.",
+        narrative: "Ten days in a city that never quite sleeps, but knows how to be still when it matters.",
+        body: "Tel Aviv isn't a backdrop. It's a character. Your base is a design hotel steps from the beach; the city opens from there,the shuk, the galleries, the coastline, the neighbourhoods that each feel like a different city within the city.",
         experiences: [
           {
             icon: "🌅",
             title: "Beach mornings, late breakfasts, rooftop evenings",
-            description: "Yes, it's the classic — but it's the classic for a reason. We'll send you a curated list of the right spots: beach clubs worth the membership, breakfast places that don't show up in the obvious guides, rooftops that actually have a view.",
+            description: "Yes, it's the classic,but it's the classic for a reason. We'll send you a curated list of the right spots: beach clubs worth the membership, breakfast places that don't show up in the obvious guides, rooftops that actually have a view.",
             highlight: true,
           },
           {
@@ -540,7 +539,7 @@ const PREVIEW_ITINERARY: ItineraryRow = {
           {
             icon: "🥃",
             title: "Whisky & Chocolate Tasting",
-            description: "A sit-down session with an Israeli whisky expert — not a tour, a conversation. Really good whisky matched with single-origin Israeli chocolate.",
+            description: "A sit-down session with an Israeli whisky expert,not a tour, a conversation. Really good whisky matched with single-origin Israeli chocolate.",
           },
           {
             icon: "🍳",
@@ -550,7 +549,7 @@ const PREVIEW_ITINERARY: ItineraryRow = {
           {
             icon: "🎤",
             title: "Comedy Club Night",
-            description: "Tel Aviv has a genuinely thriving stand-up scene — in English. A great way to be in a room full of locals laughing at the same things.",
+            description: "Tel Aviv has a genuinely thriving stand-up scene,in English. A great way to be in a room full of locals laughing at the same things.",
           },
           {
             icon: "🏺",
@@ -586,30 +585,30 @@ const PREVIEW_ITINERARY: ItineraryRow = {
             description: "Sunrise hike up Masada, float in the Dead Sea, swim at Ein Gedi waterfall.",
           },
         ],
-        accommodation_note: "You'll be staying at a design hotel in the White City — walking distance from the beach, Dizengoff Square, and the Carmel Market. Breakfast included. Check-in June 24, check-out July 4.",
+        accommodation_note: "You'll be staying at a design hotel in the White City,walking distance from the beach, Dizengoff Square, and the Carmel Market. Breakfast included. Check-in June 24, check-out July 4.",
       },
       {
         number: "02",
         title: "Jerusalem",
         period: "July 4 – July 6 · 2 nights",
         narrative: "Two nights is not enough. It never is. But it's enough to feel the weight of it.",
-        body: "Jerusalem doesn't perform for tourists — it simply exists, with 3,000 years of continuity happening simultaneously. You'll see it at dusk when the city goes quiet, and again at dawn when it wakes before anyone else.",
+        body: "Jerusalem doesn't perform for tourists,it simply exists, with 3,000 years of continuity happening simultaneously. You'll see it at dusk when the city goes quiet, and again at dawn when it wakes before anyone else.",
         experiences: [
           {
             icon: "🕌",
-            title: "The Western Wall — your moment, your way",
-            description: "There's no right time — only your time. Some people go at dawn before the crowds, some go at the start of Shabbat when the plaza fills with singing. Optional add-on: rooftop walk on the Old City ramparts with views across all four quarters.",
+            title: "The Western Wall,your moment, your way",
+            description: "There's no right time,only your time. Some people go at dawn before the crowds, some go at the start of Shabbat when the plaza fills with singing. Optional add-on: rooftop walk on the Old City ramparts with views across all four quarters.",
             highlight: true,
           },
           {
             icon: "🚶",
-            title: "Old City walk — the four quarters + Mahane Yehuda",
-            description: "Armenian ceramics, the shuk, Via Dolorosa, the Jewish Quarter at golden hour — and then the market as Shabbat approaches. A curated list of which hummus counter, which pastry, which spice vendor.",
+            title: "Old City walk,the four quarters + Mahane Yehuda",
+            description: "Armenian ceramics, the shuk, Via Dolorosa, the Jewish Quarter at golden hour,and then the market as Shabbat approaches. A curated list of which hummus counter, which pastry, which spice vendor.",
           },
           {
             icon: "🏺",
             title: "Ceramic Workshop",
-            description: "Jerusalem has one of the best ceramic traditions in the region — Armenian, Jewish, contemporary. A hands-on session in the Old City, making something you actually bring home.",
+            description: "Jerusalem has one of the best ceramic traditions in the region,Armenian, Jewish, contemporary. A hands-on session in the Old City, making something you actually bring home.",
           },
           {
             icon: "🪂",
@@ -619,52 +618,48 @@ const PREVIEW_ITINERARY: ItineraryRow = {
           {
             icon: "🏙️",
             title: "City of David Tour",
-            description: "Underground tunnels through 3,000 years of Jerusalem — Hezekiah's Tunnel, the archaeological layers beneath the modern city. Almost no one outside Israel knows this exists.",
+            description: "Underground tunnels through 3,000 years of Jerusalem,Hezekiah's Tunnel, the archaeological layers beneath the modern city. Almost no one outside Israel knows this exists.",
           },
           {
             icon: "🕯️",
             title: "Kabbalat Shabbat",
-            description: "If the timing aligns — and we'll make sure it does — a Friday evening in Jerusalem as Shabbat comes in is like nothing else. The city shifts. Candles appear in windows. The Western Wall fills.",
+            description: "If the timing aligns,and we'll make sure it does,a Friday evening in Jerusalem as Shabbat comes in is like nothing else. The city shifts. Candles appear in windows. The Western Wall fills.",
             highlight: true,
           },
         ],
-        accommodation_note: "Two nights at a boutique hotel within the historic centre — stone walls, contemporary interiors, rooftop terrace overlooking the Old City. Breakfast included.",
+        accommodation_note: "Two nights at a boutique hotel within the historic centre,stone walls, contemporary interiors, rooftop terrace overlooking the Old City. Breakfast included.",
       },
       {
         number: "03",
         title: "The Road",
         period: "July 6 – July 10 · 4 nights",
         narrative: "The south teaches you silence. The north teaches you softness. The road between is the point.",
-        body: "The final chapter is a self-drive road trip through four utterly different landscapes — desert, mystical hilltop city, winery village, and the Sea of Galilee. A hire car is arranged from July 6; hotels are pre-booked at each stop.",
+        body: "The final chapter is a self-drive road trip through four utterly different landscapes,desert, mystical hilltop city, winery village, and the Sea of Galilee. A hire car is arranged from July 6; hotels are pre-booked at each stop.",
         destinations: [
           {
             icon: "🏜️",
-            title: "The Negev Desert — Mitzpe Ramon",
-            subtitle: "July 6 – 7 · 1 night",
-            body: "Ramon Crater (Makhtesh Ramon) is the world's largest erosion crater — 40km long, utterly silent at dawn. You'll sleep in a desert lodge at the rim. One night is enough to feel it reset you.",
-            highlights: ["Full-day jeep tour into the crater", "Stargazing — zero light pollution", "Desert sunrise at the rim"],
+            title: "The Negev Desert, Mitzpe Ramon",
+            body: "Ramon Crater (Makhtesh Ramon) is the world's largest erosion crater, 40km long, utterly silent at dawn. You'll sleep in a desert lodge at the rim. One night is enough to feel it reset you.",
+            highlights: ["Full-day jeep tour into the crater", "Stargazing,zero light pollution", "Desert sunrise at the rim"],
             tags: ["1 night", "1.5hr from Jerusalem", "Desert lodge"],
           },
           {
             icon: "🌀",
-            title: "Tzfat — City of Kabbalah",
-            subtitle: "July 7 – 8 · 1 night",
-            body: "The mystical hilltop city of the Kabbalists. Blue-painted alleys, artist studios in ancient synagogues, a profound quiet. The most spiritual city in Israel — and for a Jewish creator, one of the most powerful stops in the country.",
+            title: "Tzfat, City of Kabbalah",
+            body: "The mystical hilltop city of the Kabbalists. Blue-painted alleys, artist studios in ancient synagogues, a profound quiet. The most spiritual city in Israel,and for a Jewish creator, one of the most powerful stops in the country.",
             highlights: ["Mystical Old City walk", "Visit to the Ari Synagogue", "Private artist gallery"],
             tags: ["1 night", "1.5hr from the Negev", "Boutique guesthouse"],
           },
           {
             icon: "🍇",
-            title: "Zichron Ya'akov — Wine Country",
-            subtitle: "July 8 – 9 · 1 night · On the way north",
+            title: "Zichron Ya'akov, Wine Country",
             body: "A Rothschild-era wine village in the Carmel mountains, founded in the 1880s and still producing some of Israel's best wine. The main street is lined with stone houses, artisan shops, and wine bars.",
             highlights: ["Private winery tasting", "Ottoman pedestrian street", "Mediterranean views"],
             tags: ["1 night", "1hr from Tzfat", "Design guesthouse"],
           },
           {
             icon: "🌊",
-            title: "Sea of Galilee — Kinneret",
-            subtitle: "July 9 – 10 · 1 night",
+            title: "Sea of Galilee, Kinneret",
             body: "The journey ends where the water is wide and still. A final night at a boutique hotel on the shore of the Kinneret. A private boat at sunset. Dinner on the water. A slow goodbye.",
             highlights: ["Private sunset boat ride", "Shore dinner", "Morning swim in the lake"],
             tags: ["1 night", "1hr from Zichron", "Lakeside boutique hotel"],
@@ -674,8 +669,8 @@ const PREVIEW_ITINERARY: ItineraryRow = {
       },
     ],
     closing: {
-      title: "Next step — let's talk.",
-      body: "This itinerary is a proposal, not a contract. Every detail can be adjusted — the timing, the pace, which experiences matter most to you. Send a message and we'll refine it together until it's exactly right.",
+      title: "Next step. Let's talk.",
+      body: "This itinerary is a proposal, not a contract. Every detail can be adjusted,the timing, the pace, which experiences matter most to you. Send a message and we'll refine it together until it's exactly right.",
     },
     contact: "shana@staymakom.com",
   },
