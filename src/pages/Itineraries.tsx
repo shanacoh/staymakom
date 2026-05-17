@@ -42,6 +42,9 @@ interface Destination {
   title: string;
   subtitle?: string;
   body: string;
+  distance?: string;
+  nights?: string;
+  stay?: string;
   highlights?: string[];
   tags?: string[];
   image?: string;
@@ -425,38 +428,66 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
               <div className="space-y-5">
                 {chapter.destinations.map((dest, j) => (
                   <div key={j} className="bg-white rounded-2xl border border-[#EDE8E0] overflow-hidden">
-                    {dest.image && (
-                      <img src={dest.image} alt={dest.title} className="w-full h-52 object-cover" />
+
+                    {/* A — Header teinté */}
+                    <div className="px-6 py-5" style={{ backgroundColor: "#F8F5F0" }}>
+                      <p className="font-display text-[11px] tracking-widest mb-2" style={{ color: "#C4A882" }}>
+                        {String(j + 1).padStart(2, "0")}
+                      </p>
+                      <div className="flex items-center gap-2.5">
+                        {dest.icon && <span className="text-xl shrink-0">{dest.icon}</span>}
+                        <p className="font-medium text-[#1A1814] text-base leading-snug">{dest.title}</p>
+                      </div>
+                    </div>
+
+                    {/* B — Bande d'infos rapides */}
+                    {(dest.distance || dest.nights || dest.stay) && (
+                      <div className="px-6 py-3 flex flex-wrap gap-x-5 gap-y-1.5 border-b border-[#EDE8E0]">
+                        {dest.distance && (
+                          <span className="flex items-center gap-1.5 text-xs text-[#4A4540]">
+                            <span className="text-sm">📍</span>
+                            <span className="font-medium">{dest.distance}</span>
+                          </span>
+                        )}
+                        {dest.nights && (
+                          <span className="flex items-center gap-1.5 text-xs text-[#4A4540]">
+                            <span className="text-sm">🌙</span>
+                            {dest.nights}
+                          </span>
+                        )}
+                        {dest.stay && (
+                          <span className="flex items-center gap-1.5 text-xs text-[#4A4540]">
+                            <span className="text-sm">🏨</span>
+                            {dest.stay}
+                          </span>
+                        )}
+                      </div>
                     )}
-                    <div className="px-6 py-6">
-                      <div className="flex items-start gap-3 mb-4">
-                        {dest.icon && <span className="text-2xl shrink-0">{dest.icon}</span>}
-                        <div>
-                          <p className="font-medium text-[#1A1814] text-[15px] leading-snug">
-                            {dest.title}
-                          </p>
-                          {dest.subtitle && (
-                            <p className="text-xs text-[#9E9890] mt-0.5">{dest.subtitle}</p>
-                          )}
+
+                    {/* C — Corps */}
+                    <div className="px-6 pt-5 pb-2">
+                      <p className="text-sm text-[#4A4540] leading-[1.85]">{dest.body}</p>
+                    </div>
+
+                    {/* D — Grille d'activités */}
+                    {dest.highlights && dest.highlights.length > 0 && (
+                      <div className="px-6 pb-6 pt-4">
+                        <p className="text-[10px] uppercase tracking-widest text-[#9E9890] mb-3">
+                          Things to do
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {dest.highlights.map((h, k) => (
+                            <div
+                              key={k}
+                              className="rounded-xl px-3 py-2.5 text-xs text-[#4A4540] leading-snug"
+                              style={{ backgroundColor: "#F8F5F0" }}
+                            >
+                              {h}
+                            </div>
+                          ))}
                         </div>
                       </div>
-                      <p className="text-sm text-[#4A4540] leading-[1.85] mb-5">{dest.body}</p>
-                      {((dest.highlights?.length ?? 0) > 0 || (dest.tags?.length ?? 0) > 0) && (
-                        <div className="flex flex-wrap gap-2">
-                          {dest.highlights?.map((h, k) => (
-                            <span key={k} className="px-3 py-1 rounded-full text-xs font-medium"
-                              style={{ backgroundColor: "#FFF0E6", color: "#C4732A" }}>
-                              {h}
-                            </span>
-                          ))}
-                          {dest.tags?.map((tag, k) => (
-                            <span key={k} className="px-3 py-1 rounded-full text-xs border border-[#EDE8E0] text-[#6B6560]">
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -592,7 +623,7 @@ const PREVIEW_ITINERARY: ItineraryRow = {
             description: "Sunrise hike up Masada, float in the Dead Sea, swim at Ein Gedi waterfall.",
           },
         ],
-        accommodation_note: "You'll be staying at a design hotel in the White City, walking distance from the beach, Dizengoff Square, and the Carmel Market. Breakfast included. Check-in June 24, check-out July 4. We're currently in discussions with hotels, hospitality partners, and short-term rentals about potential collaborations for this stay. This may include complimentary nights, partially gifted stays, preferred rates, or other partnership arrangements. Nothing is finalized yet, but we'll keep you updated as things progress.",
+        accommodation_note: "You'll be staying at a design hotel in the White City, walking distance from the beach, Dizengoff Square, and the Carmel Market. Breakfast included. Check-in June 24, check-out July 4. Accommodation sourcing is currently in progress, with ongoing conversations with hotels and short-term rentals regarding availability, preferred rates, and potential hosted stays.",
       },
       {
         number: "02",
@@ -634,7 +665,7 @@ const PREVIEW_ITINERARY: ItineraryRow = {
             highlight: true,
           },
         ],
-        accommodation_note: "Two nights at a boutique hotel within the historic centre, stone walls, contemporary interiors, rooftop terrace overlooking the Old City. Breakfast included. We're currently in discussions with hotels, hospitality partners, and short-term rentals about potential collaborations for this stay. This may include complimentary nights, partially gifted stays, preferred rates, or other partnership arrangements. Nothing is finalized yet, but we'll keep you updated as things progress.",
+        accommodation_note: "Two nights at a boutique hotel within the historic centre, stone walls, contemporary interiors, rooftop terrace overlooking the Old City. Breakfast included. Accommodation sourcing is currently in progress, with ongoing conversations with hotels and short-term rentals regarding availability, preferred rates, and potential hosted stays.",
       },
       {
         number: "03",
@@ -646,33 +677,41 @@ const PREVIEW_ITINERARY: ItineraryRow = {
           {
             icon: "🏜️",
             title: "The Negev Desert, Mitzpe Ramon",
-            body: "Ramon Crater is the world's largest natural erosion crater, 40km wide and completely silent. It's the kind of place that resets you in a way no beach or city can. You sleep in a desert lodge right at the rim. One night is all you need — and all you'll be able to think about for weeks after.",
+            distance: "2h30 from Tel Aviv",
+            nights: "1 night",
+            stay: "Desert lodge",
+            body: "Ramon Crater is the world's largest natural erosion crater, 40km wide and completely silent. It's the kind of place that resets you in a way no beach or city can. You sleep in a desert lodge right at the rim. One night is all you need, and all you'll be able to think about for weeks after.",
             highlights: ["Full-day jeep tour deep into the crater", "Camel ride at sunset", "Stargazing under the clearest sky in Israel", "Desert sunrise from the rim"],
-            tags: ["1 night", "2h30 from Tel Aviv", "Desert lodge"],
           },
           {
             icon: "🌀",
             title: "Tzfat, City of Kabbalah",
-            body: "The most spiritual city in Israel, and one of the most otherworldly places you'll ever visit. Winding blue-painted alleys, ancient synagogues, artist studios hidden in old stone buildings. A total contrast to Tel Aviv — slower, quieter, and deeply atmospheric.",
+            distance: "2hr from Tel Aviv",
+            nights: "1 night",
+            stay: "Boutique guesthouse",
+            body: "The most spiritual city in Israel, and one of the most otherworldly places you'll ever visit. Winding blue-painted alleys, ancient synagogues, artist studios hidden in old stone buildings. A total contrast to Tel Aviv, slower, quieter, and deeply atmospheric.",
             highlights: ["Guided walk through the mystical Old City", "Visit to one of the oldest synagogues in Israel", "Private artist gallery", "Hidden local market at sunrise"],
-            tags: ["1 night", "2hr from Tel Aviv", "Boutique guesthouse"],
           },
           {
             icon: "🍇",
             title: "Zichron Ya'akov, Wine Country",
+            distance: "45min from Tel Aviv",
+            nights: "1 night",
+            stay: "Design guesthouse",
             body: "45 minutes from Tel Aviv, a completely different world. A Rothschild-era wine village in the Carmel mountains, beautiful Ottoman street, century-old cellars, long lunches with Mediterranean views. The closest thing to a French countryside feeling in Israel.",
             highlights: ["Private winery tasting", "Ottoman pedestrian street", "Mediterranean views over the coast", "Hidden wine bar dinner"],
-            tags: ["1 night", "45min from Tel Aviv", "Design guesthouse"],
           },
           {
             icon: "🌊",
             title: "Sea of Galilee, Kinneret",
+            distance: "1h30 from Tel Aviv",
+            nights: "1 night",
+            stay: "Lakeside boutique hotel",
             body: "Wide open water, total quiet, and a boutique hotel right on the shore. A private boat at golden hour. Dinner on the water. Morning kayak on the lake. A slow, beautiful way to end a summer in Israel.",
             highlights: ["Private sunset boat ride", "Dinner on the water", "Morning kayak on the lake", "Hidden local spots along the shore"],
-            tags: ["1 night", "1h30 from Tel Aviv", "Lakeside boutique hotel"],
           },
         ],
-        accommodation_note: "Hotels are pre-booked at each destination. A hire car is arranged for each leg. We're currently in discussions with hotels, hospitality partners, and short-term rentals about potential collaborations for this stay. This may include complimentary nights, partially gifted stays, preferred rates, or other partnership arrangements. Nothing is finalized yet, but we'll keep you updated as things progress.",
+        accommodation_note: "Hotels are pre-booked at each destination. A hire car is arranged for each leg. Accommodation sourcing is currently in progress, with ongoing conversations with hotels and short-term rentals regarding availability, preferred rates, and potential hosted stays.",
       },
     ],
     closing: {
