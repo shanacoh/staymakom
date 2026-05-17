@@ -164,7 +164,7 @@ const AppContent = () => {
           <Route path="/corporate" element={<Companies />} />
           <Route path="/partners" element={<Partners />} />
           <Route path="/partner-form" element={<PartnerForm />} />
-          <Route path="/itineraries" element={<Itineraries />} />
+          <Route path="/itineraries-AJ" element={<Itineraries />} />
           <Route path="/journal" element={<Journal />} />
           <Route path="/journal/:slug" element={<JournalPost />} />
           <Route path="/contact" element={<Contact />} />
