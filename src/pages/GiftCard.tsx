@@ -6,10 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Check } from "lucide-react";
-import { format, addYears } from "date-fns";
+import { Check } from "lucide-react";
+import { addYears } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -137,8 +135,6 @@ export default function GiftCard() {
   const [recipientEmail, setRecipientEmail] = useState("");
   const [senderName, setSenderName] = useState("");
   const [senderEmail, setSenderEmail] = useState("");
-  const [deliveryType, setDeliveryType] = useState<"now" | "scheduled">("now");
-  const [scheduledDate, setScheduledDate] = useState<Date>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedBg, setSelectedBg] = useState(CARD_BACKGROUNDS[0].id);
 
@@ -193,15 +189,6 @@ export default function GiftCard() {
       return;
     }
 
-    if (deliveryType === "scheduled" && !scheduledDate) {
-      toast.error(
-        lang === "he"
-          ? "אנא בחרו תאריך משלוח"
-          : "Please select a delivery date"
-      );
-      return;
-    }
-
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(senderEmail)) {
       toast.error(
@@ -241,36 +228,31 @@ export default function GiftCard() {
         recipient_name: recipientName || null,
         recipient_email: targetEmail,
         message: message || null,
-        delivery_type: deliveryType,
-        delivery_date:
-          deliveryType === "scheduled" && scheduledDate
-            ? scheduledDate.toISOString()
-            : now.toISOString(),
-        status: deliveryType === "now" ? "sent" : "scheduled",
+        delivery_type: "now",
+        delivery_date: now.toISOString(),
+        status: "sent",
         language: lang,
-        sent_at: deliveryType === "now" ? now.toISOString() : null,
+        sent_at: now.toISOString(),
         expires_at: validUntil.toISOString(),
       });
 
       if (error) throw error;
 
-      if (deliveryType === "now") {
-        await supabase.functions
-          .invoke("send-gift-card", {
-            body: {
-              code,
-              amount: amountILS,
-              currency: storedCurrency,
-              sender_name: senderName,
-              recipient_name: recipientName || "Friend",
-              recipient_email: targetEmail,
-              message: message || null,
-              valid_until: validUntil.toISOString(),
-              language: lang,
-            },
-          })
-          .catch(() => {});
-      }
+      await supabase.functions
+        .invoke("send-gift-card", {
+          body: {
+            code,
+            amount: amountILS,
+            currency: storedCurrency,
+            sender_name: senderName,
+            recipient_name: recipientName || "Friend",
+            recipient_email: targetEmail,
+            message: message || null,
+            valid_until: validUntil.toISOString(),
+            language: lang,
+          },
+        })
+        .catch(() => {});
 
       navigate(
         getLocalizedPath(`/gift-card/confirmation?code=${code}&type=amount`)
@@ -549,72 +531,7 @@ export default function GiftCard() {
 
             <SectionDivider />
 
-            {/* ── Section 5: Delivery ── */}
-            <div className="space-y-3">
-              <Label className={labelClass}>
-                {lang === "he" ? "מועד שליחה" : "Delivery"}
-              </Label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => setDeliveryType("now")}
-                  className={cn(
-                    "h-12 rounded-[10px] text-sm font-medium border-[1.5px] transition-all",
-                    deliveryType === "now"
-                      ? "bg-foreground text-background border-foreground"
-                      : "bg-secondary/40 text-foreground border-border hover:border-foreground/30"
-                  )}
-                >
-                  {lang === "he" ? "שלח עכשיו" : "Send now"}
-                </button>
-                <button
-                  onClick={() => setDeliveryType("scheduled")}
-                  className={cn(
-                    "h-12 rounded-[10px] text-sm font-medium border-[1.5px] transition-all",
-                    deliveryType === "scheduled"
-                      ? "bg-foreground text-background border-foreground"
-                      : "bg-secondary/40 text-foreground border-border hover:border-foreground/30"
-                  )}
-                >
-                  {lang === "he" ? "תזמן לאחר כך" : "Schedule for later"}
-                </button>
-              </div>
-
-              {deliveryType === "scheduled" && (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        inputClass,
-                        !scheduledDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {scheduledDate
-                        ? format(scheduledDate, "PPP")
-                        : lang === "he"
-                          ? "בחרו תאריך"
-                          : "Pick a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={scheduledDate}
-                      onSelect={setScheduledDate}
-                      disabled={(date) => date < new Date()}
-                      initialFocus
-                      className="pointer-events-auto p-3"
-                    />
-                  </PopoverContent>
-                </Popover>
-              )}
-            </div>
-
-            <SectionDivider />
-
-            {/* ── Section 6: Sender info ── */}
+            {/* ── Section 5: Sender info ── */}
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
