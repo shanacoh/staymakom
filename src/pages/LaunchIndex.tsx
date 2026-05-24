@@ -49,6 +49,36 @@ const LaunchIndex = () => {
   // Analytics
   useScrollDepth("launch");
 
+  // [DEBUG] Vérification de la configuration Supabase au chargement de l'accueil
+  useEffect(() => {
+    const url = import.meta.env.VITE_SUPABASE_URL;
+    const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+    if (!url || !key) {
+      console.error("❌ Supabase MAL CONFIGURÉ — variables d'environnement manquantes", {
+        VITE_SUPABASE_URL: url ? "présente" : "MANQUANTE",
+        VITE_SUPABASE_PUBLISHABLE_KEY: key ? "présente" : "MANQUANTE",
+      });
+      return;
+    }
+
+    // La clé existe : on teste un vrai appel pour confirmer qu'elle est acceptée
+    (async () => {
+      const { error } = await supabase
+        .from("experiences")
+        .select("id", { count: "exact", head: true });
+
+      if (error) {
+        console.error("❌ Supabase joignable mais l'appel a échoué :", error.message, error);
+      } else {
+        console.log("✅ Supabase OK — variables présentes et clé API acceptée", {
+          url,
+          keyPreview: `${key.slice(0, 8)}…${key.slice(-4)}`,
+        });
+      }
+    })();
+  }, []);
+
   // Rafraîchissement automatique quand l'admin modifie l'ordre
   useEffect(() => {
     const channel = supabase
