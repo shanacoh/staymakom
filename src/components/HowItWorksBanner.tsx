@@ -4,32 +4,44 @@ const HowItWorksBanner = () => {
     lang
   } = useLanguage();
   const isRTL = lang === 'he';
-  const steps = isRTL ? [{
+  const steps = lang === 'he' ? [{
     number: "1",
-    line1: "בחר",
-    line2: "את האווירה"
+    line1: "יום",
+    line2: "או לילה"
   }, {
     number: "2",
-    line1: "בחר",
-    line2: "את החוויה"
+    line1: "האווירה",
+    line2: "שלך"
   }, {
     number: "3",
-    line1: "הזמן",
-    line2: "את המלון"
-  }] : [{
+    line1: "הזמינו",
+    line2: "את הרגע"
+  }] : lang === 'fr' ? [{
     number: "1",
-    line1: "Choose",
-    line2: "your vibe"
+    line1: "Aventure",
+    line2: "ou Romantique"
   }, {
     number: "2",
-    line1: "Pick",
-    line2: "your experience"
+    line1: "Choisissez",
+    line2: "l'expérience"
+  }, {
+    number: "3",
+    line1: "Réservez",
+    line2: "le séjour"
+  }] : [{
+    number: "1",
+    line1: "Day",
+    line2: "or Night"
+  }, {
+    number: "2",
+    line1: "Your",
+    line2: "Mood"
   }, {
     number: "3",
     line1: "Book",
-    line2: "your hotel"
+    line2: "it"
   }];
-  return <section className="bg-foreground py-2.5 sm:py-4 cursor-default select-none" dir={isRTL ? 'rtl' : 'ltr'}>
+  return <section className="bg-[#1a1a1a] py-2.5 sm:py-4 cursor-default select-none" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="container px-4">
         <div className="flex flex-row flex-wrap items-center justify-center gap-2 sm:gap-0 md:gap-0">
           {steps.map((step, index) => <div key={index} className="flex items-center gap-2 sm:gap-0 md:gap-0">

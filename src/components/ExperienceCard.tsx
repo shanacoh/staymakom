@@ -19,6 +19,7 @@ interface HighlightTag {
   slug: string;
   label_en: string;
   label_he?: string | null;
+  label_fr?: string | null;
 }
 
 interface ExperienceCardProps {
@@ -279,7 +280,7 @@ export default function ExperienceCard({
                 key={tag.id}
                 className="inline-block whitespace-nowrap px-1.5 py-px bg-muted/60 rounded-full text-[9px] font-normal tracking-wide text-muted-foreground border border-border/40"
               >
-                {lang === 'he' && tag.label_he ? tag.label_he : tag.label_en}
+                {lang === 'he' && tag.label_he ? tag.label_he : lang === 'fr' && tag.label_fr ? tag.label_fr : tag.label_en}
               </span>
             ))}
             {highlightTags.length > maxTags && (

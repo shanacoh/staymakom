@@ -176,6 +176,7 @@ const LaunchIndex = () => {
           slug,
           title,
           title_he,
+          title_fr,
           hero_image,
           photos,
           status,
@@ -186,12 +187,12 @@ const LaunchIndex = () => {
             position,
             nights,
             hotel:hotels2(
-              id, name, name_he, city, city_he, region, region_he, hero_image, hyperguest_property_id
+              id, name, name_he, name_fr, city, city_he, city_fr, region, region_he, region_fr, hero_image, hyperguest_property_id
             )
           ),
           experience2_highlight_tags(
             highlight_tags(
-              id, slug, label_en, label_he
+              id, slug, label_en, label_he, label_fr
             )
           )
         `).
@@ -261,9 +262,9 @@ const LaunchIndex = () => {
       setSubmitted(true);
       setEmail("");
       trackWaitlistEmailSubmitted(email.split("@")[1] || "unknown");
-      toast.success(isRTL ? "נרשמת בהצלחה!" : "You're on the list!");
+      toast.success(lang === 'he' ? "נרשמת בהצלחה!" : lang === 'fr' ? "Vous êtes sur la liste !" : "You're on the list!");
     } catch {
-      toast.error(isRTL ? "שגיאה, נסה שנית" : "Something went wrong. Try again.");
+      toast.error(lang === 'he' ? "שגיאה, נסה שנית" : lang === 'fr' ? "Une erreur est survenue. Réessayez." : "Something went wrong. Try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -286,9 +287,9 @@ const LaunchIndex = () => {
       if (error) throw error;
       setWaitlistSubmitted(true);
       setWaitlistEmail("");
-      toast.success(isRTL ? "נרשמת בהצלחה!" : "You're on the list!");
+      toast.success(lang === 'he' ? "נרשמת בהצלחה!" : lang === 'fr' ? "Vous êtes sur la liste !" : "You're on the list!");
     } catch {
-      toast.error(isRTL ? "שגיאה, נסה שנית" : "Something went wrong.");
+      toast.error(lang === 'he' ? "שגיאה, נסה שנית" : lang === 'fr' ? "Une erreur est survenue." : "Something went wrong.");
     } finally {
       setWaitlistSubmitting(false);
     }
@@ -318,8 +319,8 @@ const LaunchIndex = () => {
   return (
     <div className="min-h-screen flex flex-col overflow-x-clip" dir={isRTL ? "rtl" : "ltr"}>
       <SEOHead
-        title={isRTL ? "STAYMAKOM — מלונות וחוויות נבחרים בישראל" : "STAYMAKOM — Handpicked Hotels & Experiences in Israel"}
-        description={isRTL ? "אנחנו אוצרים את המלונות הבוטיק הטובים בישראל ומשלבים אותם עם חוויות מקומיות ייחודיות." : "We curate Israel's best boutique hotels and pair them with unique local experiences."} />
+        title={lang === 'he' ? "STAYMAKOM — מלונות וחוויות נבחרים בישראל" : lang === 'fr' ? "STAYMAKOM — Hôtels & Expériences d'exception en Israël" : "STAYMAKOM — Handpicked Hotels & Experiences in Israel"}
+        description={lang === 'he' ? "אנחנו אוצרים את המלונות הבוטיק הטובים בישראל ומשלבים אותם עם חוויות מקומיות ייחודיות." : lang === 'fr' ? "Nous sélectionnons les meilleurs hôtels boutique d'Israël et les associons à des expériences locales uniques." : "We curate Israel's best boutique hotels and pair them with unique local experiences."} />
 
       <LaunchHeader />
 
@@ -332,12 +333,14 @@ const LaunchIndex = () => {
 
           <div className="absolute inset-0 bg-black/45" />
 
-          <div className="relative z-10 text-center text-white px-6 max-w-3xl mx-auto pt-6 sm:pt-0">
+          <div className={`relative z-10 text-center text-white px-6 ${lang === 'fr' ? 'max-w-5xl' : 'max-w-3xl'} mx-auto pt-6 sm:pt-0`}>
             <h1
-              className="font-sans text-[26px] sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-[0.02em] leading-[1.1] mb-2.5 sm:mb-4 opacity-0 animate-hero-fade-up text-white"
+              className="font-sans text-[26px] sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-[0.02em] leading-[1.1] mb-2.5 sm:mb-4 opacity-0 animate-hero-fade-up text-white text-center"
               style={{ animationDelay: '0ms' }}>
-              {isRTL ? (
+              {lang === 'he' ? (
                 <><span className="whitespace-nowrap">אל תבחר עיר,</span><br /><span className="whitespace-nowrap">בחר את הבריחה שלך</span></>
+              ) : lang === 'fr' ? (
+                <>Plus qu'une destination.<br />Une émotion.</>
               ) : (
                 <><span className="whitespace-nowrap">Don't choose a city,</span><br /><span className="whitespace-nowrap">choose your escape</span></>
               )}
@@ -345,7 +348,7 @@ const LaunchIndex = () => {
             <p
               className="font-sans italic text-white/90 mb-5 sm:mb-7 max-w-xl mx-auto opacity-0 animate-hero-fade-up text-sm sm:text-lg md:text-xl"
               style={{ animationDelay: '250ms' }}>
-              {isRTL ? "הישראל שרוב האנשים לא מוצאים." : "The Israel most people never find."}
+              {lang === 'he' ? "הישראל שרוב האנשים לא מוצאים." : lang === 'fr' ? "Hôtels uniques et expériences immersives à travers Israël." : "The Israel most people never find."}
             </p>
             <button
               onClick={() => {
@@ -355,7 +358,7 @@ const LaunchIndex = () => {
               }}
               className="px-10 py-2.5 sm:py-4 bg-white text-foreground font-semibold uppercase tracking-wide text-sm rounded-md shadow-md hover:shadow-lg hover:-translate-y-0.5 hover:brightness-110 transition-all duration-300 opacity-0 animate-hero-fade-up cursor-pointer"
               style={{ animationDelay: '500ms' }}>
-              {isRTL ? "מצא את הבריחה שלך" : "Find your escape"}
+              {lang === 'he' ? "מצא את הבריחה שלך" : lang === 'fr' ? "Explorer les expériences" : "Find your escape"}
             </button>
           </div>
         </section>
@@ -368,10 +371,10 @@ const LaunchIndex = () => {
           {/* Title block — static, not the sticky parent */}
           <div className="text-center mb-4 sm:mb-6">
             <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold uppercase tracking-[-0.02em] mb-1.5 leading-tight">
-              {isRTL ? (<>מלונות שנבחרו בקפידה.<br />חוויות בלתי נשכחות.</>) : (<>Handpicked Hotels.<br />Unforgettable Experiences.</>)}
+              {lang === 'he' ? (<>מלונות שנבחרו בקפידה.<br />חוויות בלתי נשכחות.</>) : lang === 'fr' ? (<>Hôtels d'exception.<br />Expériences inoubliables.</>) : (<>Handpicked Hotels.<br />Unforgettable Experiences.</>)}
             </h2>
             <p className="text-muted-foreground text-xs sm:text-sm mb-5">
-              {isRTL ? "ל-24 שעות, 48 שעות, או חוויות מותאמות אישית." : "For 24 hours, 48 hours, or tailor-made experiences."}
+              {lang === 'he' ? "ל-24 שעות, 48 שעות, או חוויות מותאמות אישית." : lang === 'fr' ? "Pour 24h, 48h, ou des expériences sur mesure." : "For 24 hours, 48 hours, or tailor-made experiences."}
             </p>
           </div>
 
@@ -402,7 +405,7 @@ const LaunchIndex = () => {
               >
                 <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                   <Compass size={12} strokeWidth={1.5} />
-                  {isRTL ? "הרפתקה" : "Feel adventurous"}
+                  {lang === 'he' ? "הרפתקה" : lang === 'fr' ? "Esprit aventure" : "Feel adventurous"}
                 </span>
               </button>
               <div className="w-px h-4 bg-mobile-border" />
@@ -418,7 +421,7 @@ const LaunchIndex = () => {
               >
                 <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                   <Heart size={12} strokeWidth={1.5} />
-                  {isRTL ? "בריחה רומנטית" : "Romantic Escape"}
+                  {lang === 'he' ? "בריחה רומנטית" : lang === 'fr' ? "Escapade romantique" : "Romantic Escape"}
                 </span>
               </button>
               <div
@@ -456,15 +459,13 @@ const LaunchIndex = () => {
 
           <div className="text-center py-16">
               <p className="text-muted-foreground">
-                {isRTL ?
-              "אין חוויות בקטגוריה זו עדיין" :
-              "No experiences in this category yet."}
+                {lang === 'he' ? "אין חוויות בקטגוריה זו עדיין" : lang === 'fr' ? "Aucune expérience dans cette catégorie pour l'instant." : "No experiences in this category yet."}
               </p>
               <button
               onClick={() => { setActiveFilter(null); trackViewAllExperiencesClicked("homepage"); }}
               className="mt-4 text-sm underline underline-offset-4 text-primary hover:text-primary/80">
 
-                {isRTL ? "הצג הכל" : "Show all experiences"}
+                {lang === 'he' ? "הצג הכל" : lang === 'fr' ? "Voir toutes les expériences" : "Show all experiences"}
               </button>
             </div>
           }
@@ -498,13 +499,13 @@ const LaunchIndex = () => {
           <div className="container px-4 mx-auto">
             <div className="max-w-2xl mx-auto text-center mb-3">
               <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold tracking-[-0.02em] uppercase">
-                {isRTL ? "עוד בריחות בדרך" : "More escapes are on the way."}
+                {lang === 'he' ? "עוד בריחות בדרך" : lang === 'fr' ? "D'autres escapades arrivent bientôt." : "More escapes are on the way."}
               </h2>
             </div>
 
             <div className="max-w-sm sm:max-w-xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 mb-6 sm:mb-10">
               <p className="text-muted-foreground text-xs sm:text-sm whitespace-nowrap">
-                {isRTL ? "היו הראשונים." : "Be the first in."}
+                {lang === 'he' ? "היו הראשונים." : lang === 'fr' ? "Soyez les premiers." : "Be the first in."}
               </p>
 
               {submitted ?
@@ -538,11 +539,11 @@ const LaunchIndex = () => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={isRTL ? "כתובת האימייל שלך" : "Your email address"}
+                  placeholder={lang === 'he' ? "כתובת האימייל שלך" : lang === 'fr' ? "Votre adresse e-mail" : "Your email address"}
                   className="flex-1 sm:w-56 h-9 text-sm" />
 
                   <Button type="submit" disabled={isSubmitting} size="sm" className="h-9 text-xs px-4 bg-[#1A1814] text-white hover:bg-[#1A1814]/90">
-                    {isRTL ? "הצטרפו לרשימה" : "Join the list"}
+                    {lang === 'he' ? "הצטרפו לרשימה" : lang === 'fr' ? "Je m'inscris" : "Join the list"}
                   </Button>
                 </form>
               }
@@ -618,7 +619,7 @@ const LaunchIndex = () => {
 
             <div className={`space-y-4 ${isRTL ? "text-right md:order-1" : ""}`}>
               <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold tracking-[-0.02em] leading-tight">
-                {isRTL ? (<>מתנה מושלמת.<br />מתנת הבריחה.</>) : (<>Perfect gift.<br />The gift of escape.</>)}
+                {lang === 'he' ? (<>מתנה מושלמת.<br />מתנת הבריחה.</>) : lang === 'fr' ? (<>Le cadeau parfait.<br />Une évasion à offrir.</>) : (<>Perfect gift.<br />The gift of escape.</>)}
               </h2>
               <p className="text-muted-foreground text-sm md:text-base max-w-md">
                 {t(lang, "giftCardSectionDesc")}
@@ -662,21 +663,17 @@ const LaunchIndex = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="font-sans text-xl font-bold tracking-[-0.02em]">
-              {isRTL ?
-              "החוויה הזו בדרך" :
-              "This experience is coming soon."}
+              {lang === 'he' ? "החוויה הזו בדרך" : lang === 'fr' ? "Cette expérience arrive bientôt." : "This experience is coming soon."}
             </DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              {isRTL ?
-              `הצטרף לרשימת ההמתנה של "${waitlistCategory}" והיה הראשון לדעת.` :
-              `Join the waitlist for "${waitlistCategory}" and be the first to access it.`}
+              {lang === 'he' ? `הצטרף לרשימת ההמתנה של "${waitlistCategory}" והיה הראשון לדעת.` : lang === 'fr' ? `Rejoignez la liste d'attente pour "${waitlistCategory}" et soyez les premiers informés.` : `Join the waitlist for "${waitlistCategory}" and be the first to access it.`}
             </DialogDescription>
           </DialogHeader>
 
           {waitlistSubmitted ?
           <div className="flex items-center justify-center gap-2 text-primary font-medium py-6">
               <CheckCircle className="h-5 w-5" />
-              {isRTL ? "נרשמת בהצלחה!" : "You're on the list!"}
+              {lang === 'he' ? "נרשמת בהצלחה!" : lang === 'fr' ? "Vous êtes sur la liste !" : "You're on the list!"}
             </div> :
 
           <form
@@ -688,17 +685,12 @@ const LaunchIndex = () => {
               required
               value={waitlistEmail}
               onChange={(e) => setWaitlistEmail(e.target.value)}
-              placeholder={
-              isRTL ? "כתובת האימייל שלך" : "Your email address"
-              } />
+              placeholder={lang === 'he' ? "כתובת האימייל שלך" : lang === 'fr' ? "Votre adresse e-mail" : "Your email address"} />
 
               <Button type="submit" disabled={waitlistSubmitting} className="w-full">
                 {waitlistSubmitting ?
               <Loader2 className="h-4 w-4 animate-spin" /> :
-              isRTL ?
-              "עדכנו אותי" :
-
-              "Notify me"
+              lang === 'he' ? "עדכנו אותי" : lang === 'fr' ? "M'avertir" : "Notify me"
               }
               </Button>
             </form>

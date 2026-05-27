@@ -51,6 +51,18 @@ const OCCASIONS_HE = [
   "אחר",
 ];
 
+const OCCASIONS_FR = [
+  "Juste une escapade",
+  "Anniversaire de mariage",
+  "Anniversaire",
+  "Demande en mariage",
+  "Lune de miel",
+  "Voyage entre amis",
+  "Voyage en famille",
+  "Célébration",
+  "Autre",
+];
+
 const TIMING_EN = [
   "Within the next month",
   "In 1 to 3 months",
@@ -65,6 +77,14 @@ const TIMING_HE = [
   "בעוד 3 עד 6 חודשים",
   "מאוחר יותר השנה",
   "סתם בודק רעיונות",
+];
+
+const TIMING_FR = [
+  "Dans le mois à venir",
+  "Dans 1 à 3 mois",
+  "Dans 3 à 6 mois",
+  "Plus tard dans l'année",
+  "Je me renseigne",
 ];
 
 const BUDGET = ["Under $300", "$300 – $600", "$600 – $1,000", "$1,000 – $2,000", "$2,000+"];
@@ -126,7 +146,8 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
     setDescription("");
   };
 
-  const getCopy = (en: string, he: string) => (isRTL ? he : en);
+  const getCopy = (en: string, he: string, fr: string = en) =>
+    lang === "he" ? he : lang === "fr" ? fr : en;
 
   const toggleMood = (slug: string) => {
     setMoods((prev) =>
@@ -156,7 +177,11 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
       setLeadId(data?.leadId ?? null);
       setStep("transition");
     } catch {
-      toast.error(getCopy("Something went wrong. Please try again.", "שגיאה, נסה שנית."));
+      toast.error(getCopy(
+        "Something went wrong. Please try again.",
+        "שגיאה, נסה שנית.",
+        "Une erreur s'est produite. Veuillez réessayer."
+      ));
     } finally {
       setSubmitting(false);
     }
@@ -189,8 +214,8 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
     }
   };
 
-  const occasions = isRTL ? OCCASIONS_HE : OCCASIONS_EN;
-  const timings = isRTL ? TIMING_HE : TIMING_EN;
+  const occasions = lang === "he" ? OCCASIONS_HE : lang === "fr" ? OCCASIONS_FR : OCCASIONS_EN;
+  const timings = lang === "he" ? TIMING_HE : lang === "fr" ? TIMING_FR : TIMING_EN;
   const budgets = isRTL ? BUDGET_HE : BUDGET;
 
   const fieldLabel =
@@ -221,6 +246,10 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
     </button>
   );
 
+  const perksEN = ["Tailor-made", "Authentic", "Truly unique", "Best price guaranteed"];
+  const perksFR = ["Sur mesure", "Authentique", "Vraiment unique", "Meilleur prix garanti"];
+  const perks = lang === "fr" ? perksFR : perksEN;
+
   return (
     <>
       {/* ─── Photo Hero Banner ─── */}
@@ -231,31 +260,37 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
       >
         <div className="absolute inset-0 bg-black/45" />
         <div className="relative z-10 max-w-2xl mx-auto text-center px-4 space-y-4">
-          {!isRTL && (
+          {lang !== "he" && (
             <p className="text-[11px] tracking-[0.25em] uppercase font-medium text-white/55">
-              YOUR TRIP. YOUR RULES.
+              {lang === "fr" ? "VOS ENVIES. NOTRE SAVOIR-FAIRE." : "YOUR TRIP. YOUR RULES."}
             </p>
           )}
           <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold tracking-[-0.02em] leading-tight text-white">
-            {getCopy("Looking for something truly unique?", "מחפשים משהו באמת ייחודי?")}
+            {getCopy(
+              "Looking for something truly unique?",
+              "מחפשים משהו באמת ייחודי?",
+              "Une idée de séjour hors du commun ?"
+            )}
           </h2>
           <div className="space-y-2">
             <p className="text-white/70 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
               {getCopy(
                 "Proposal, family vacation, long stay, special occasion, business getaway...",
-                "הצעת נישואין, חופשה משפחתית, שהות ארוכה, אירוע מיוחד, נסיעת עסקים..."
+                "הצעת נישואין, חופשה משפחתית, שהות ארוכה, אירוע מיוחד, נסיעת עסקים...",
+                "Demande en mariage, vacances en famille, séjour prolongé, occasion spéciale, retraite professionnelle..."
               )}
             </p>
             <p className="text-white text-sm sm:text-base font-medium max-w-lg mx-auto">
               {getCopy(
                 "Drop your idea, we handle everything.",
-                "שתפו אותנו ברעיון, אנחנו מטפלים בכל השאר."
+                "שתפו אותנו ברעיון, אנחנו מטפלים בכל השאר.",
+                "Partagez votre idée, on s'occupe du reste."
               )}
             </p>
           </div>
-          {!isRTL && (
+          {lang !== "he" && (
             <div className="flex flex-wrap justify-center gap-2 pt-1">
-              {["Tailor-made", "Authentic", "Truly unique", "Best price guaranteed"].map((perk) => (
+              {perks.map((perk) => (
                 <span
                   key={perk}
                   className="px-3 py-1 rounded-full text-[11px] tracking-wide border border-white/30 text-white/70"
@@ -272,7 +307,7 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
             }}
             className="group mt-2"
           >
-            {getCopy("DESIGN MY STAY", "עצבו את השהייה שלכם")}
+            {getCopy("DESIGN MY STAY", "עצבו את השהייה שלכם", "CRÉER MON SÉJOUR")}
             <ArrowRight
               className={cn(
                 "h-4 w-4 transition-transform group-hover:translate-x-1",
@@ -295,12 +330,17 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
             <>
               <DialogHeader>
                 <DialogTitle className="font-sans text-xl font-bold tracking-[-0.02em]">
-                  {getCopy("Tell us about your dream stay", "ספרו לנו על השהייה החלומית שלכם")}
+                  {getCopy(
+                    "Tell us about your dream stay",
+                    "ספרו לנו על השהייה החלומית שלכם",
+                    "Parlez-nous de votre séjour idéal"
+                  )}
                 </DialogTitle>
                 <p className="text-sm text-muted-foreground pt-1">
                   {getCopy(
                     "Takes less than a minute — we'll handle the rest.",
-                    "פחות מדקה — אנחנו נטפל בכל השאר."
+                    "פחות מדקה — אנחנו נטפל בכל השאר.",
+                    "Moins d'une minute. On s'occupe du reste."
                   )}
                 </p>
               </DialogHeader>
@@ -310,7 +350,7 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
                 {/* Occasion bubbles */}
                 <div>
                   <label className={fieldLabel}>
-                    {getCopy("What's the occasion?", "מה האירוע?")}
+                    {getCopy("What's the occasion?", "מה האירוע?", "Quelle est l'occasion ?")}
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {occasions.map((o, i) => (
@@ -326,7 +366,7 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
                     <Input
                       value={otherOccasion}
                       onChange={(e) => setOtherOccasion(e.target.value)}
-                      placeholder={getCopy("Tell us more…", "ספר לנו עוד…")}
+                      placeholder={getCopy("Tell us more…", "ספר לנו עוד…", "Dites-nous en plus…")}
                       className={cn("mt-2", cardInput)}
                       maxLength={200}
                     />
@@ -336,7 +376,7 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
                 {/* Number of people */}
                 <div>
                   <label className={fieldLabel}>
-                    {getCopy("How many people?", "כמה אנשים?")}
+                    {getCopy("How many people?", "כמה אנשים?", "Combien de personnes ?")}
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {PEOPLE.map((p) => (
@@ -354,26 +394,26 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className={fieldLabel}>
-                      {getCopy("First name", "שם פרטי")} *
+                      {getCopy("First name", "שם פרטי", "Prénom")} *
                     </label>
                     <Input
                       required
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      placeholder={getCopy("First name", "שם פרטי")}
+                      placeholder={getCopy("First name", "שם פרטי", "Prénom")}
                       className={cardInput}
                       maxLength={100}
                     />
                   </div>
                   <div>
                     <label className={fieldLabel}>
-                      {getCopy("Last name", "שם משפחה")} *
+                      {getCopy("Last name", "שם משפחה", "Nom")} *
                     </label>
                     <Input
                       required
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      placeholder={getCopy("Last name", "שם משפחה")}
+                      placeholder={getCopy("Last name", "שם משפחה", "Nom")}
                       className={cardInput}
                       maxLength={100}
                     />
@@ -383,14 +423,14 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
                 {/* Email */}
                 <div>
                   <label className={fieldLabel}>
-                    {getCopy("Email", "אימייל")} *
+                    {getCopy("Email", "אימייל", "Email")} *
                   </label>
                   <Input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder={getCopy("Your email", "כתובת האימייל שלך")}
+                    placeholder={getCopy("Your email", "כתובת האימייל שלך", "Votre email")}
                     className={cardInput}
                     maxLength={255}
                   />
@@ -399,16 +439,16 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
                 {/* Phone */}
                 <div>
                   <label className={fieldLabel}>
-                    {getCopy("Phone", "טלפון")}
+                    {getCopy("Phone", "טלפון", "Téléphone")}
                     <span className="normal-case tracking-normal font-normal text-muted-foreground/60 ml-1">
-                      ({getCopy("optional", "אופציונלי")})
+                      ({getCopy("optional", "אופציונלי", "facultatif")})
                     </span>
                   </label>
                   <Input
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder={getCopy("Your phone number", "מספר טלפון")}
+                    placeholder={getCopy("Your phone number", "מספר טלפון", "Votre numéro de téléphone")}
                     className={cardInput}
                     maxLength={50}
                   />
@@ -424,21 +464,22 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
                   {submitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    getCopy("Send my request", "שלחו את הבקשה שלי")
+                    getCopy("Send my request", "שלחו את הבקשה שלי", "Envoyer ma demande")
                   )}
                 </Button>
 
                 <p className="text-[10px] text-muted-foreground/60 text-center leading-relaxed">
                   {getCopy(
                     "By submitting this form you agree to receive Staymakom updates and accept our ",
-                    "בשליחת טופס זה אתם מסכימים לקבל עדכונים מ-Staymakom ומקבלים את "
+                    "בשליחת טופס זה אתם מסכימים לקבל עדכונים מ-Staymakom ומקבלים את ",
+                    "En soumettant ce formulaire, vous acceptez de recevoir les actualités de Staymakom et nos "
                   )}
                   <Link to="/terms" className="underline underline-offset-2 hover:text-foreground/60">
-                    {getCopy("Terms", "התנאים")}
+                    {getCopy("Terms", "התנאים", "Conditions d'utilisation")}
                   </Link>
-                  {getCopy(" and ", " ו")}
+                  {getCopy(" and ", " ו", " et notre ")}
                   <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground/60">
-                    {getCopy("Privacy Policy", "מדיניות הפרטיות")}
+                    {getCopy("Privacy Policy", "מדיניות הפרטיות", "Politique de confidentialité")}
                   </Link>
                   .
                 </p>
@@ -452,12 +493,17 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
               <div className="space-y-3">
                 <CheckCircle className="h-12 w-12 text-emerald-500 mx-auto" />
                 <h3 className="font-sans text-2xl font-bold tracking-[-0.02em]">
-                  {getCopy("We'll be in touch soon.", "ניצור איתך קשר בקרוב.")}
+                  {getCopy(
+                    "We'll be in touch soon.",
+                    "ניצור איתך קשר בקרוב.",
+                    "On revient vers vous très vite."
+                  )}
                 </h3>
                 <p className="text-muted-foreground text-sm max-w-sm mx-auto leading-relaxed">
                   {getCopy(
                     "Your request is on its way to our team. Want to give us more to work with? A few extra details help us find the perfect match.",
-                    "הבקשה שלך בדרך לצוות שלנו. רוצה לעזור לנו למצוא את ההתאמה המושלמת? כמה פרטים נוספים יעזרו לנו מאוד."
+                    "הבקשה שלך בדרך לצוות שלנו. רוצה לעזור לנו למצוא את ההתאמה המושלמת? כמה פרטים נוספים יעזרו לנו מאוד.",
+                    "Votre demande est en route. Pour nous aider à trouver le séjour parfait, quelques détails supplémentaires font toute la différence."
                   )}
                 </p>
               </div>
@@ -469,14 +515,18 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
                   className="w-full rounded-full py-5 text-sm font-semibold uppercase tracking-[0.12em] gap-2"
                 >
                   <Sparkles className="h-4 w-4" />
-                  {getCopy("Help us curate my stay", "עזרו לנו לאצור את השהות שלי")}
+                  {getCopy(
+                    "Help us curate my stay",
+                    "עזרו לנו לאצור את השהות שלי",
+                    "Affiner mon séjour"
+                  )}
                 </Button>
                 <button
                   type="button"
                   onClick={() => setDialogOpen(false)}
                   className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors underline underline-offset-2 block mx-auto"
                 >
-                  {getCopy("No thanks, I'm done", "לא תודה, סיימתי")}
+                  {getCopy("No thanks, I'm done", "לא תודה, סיימתי", "Non merci, c'est bon")}
                 </button>
               </div>
             </div>
@@ -489,13 +539,18 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-accent" />
                   <DialogTitle className="font-sans text-xl font-bold tracking-[-0.02em]">
-                    {getCopy("A little more about you", "עוד קצת עליכם")}
+                    {getCopy(
+                      "A little more about you",
+                      "עוד קצת עליכם",
+                      "Encore quelques détails"
+                    )}
                   </DialogTitle>
                 </div>
                 <p className="text-sm text-muted-foreground pt-1">
                   {getCopy(
                     "Optional — helps us suggest the perfect match.",
-                    "אופציונלי — עוזר לנו למצוא את ההתאמה המושלמת."
+                    "אופציונלי — עוזר לנו למצוא את ההתאמה המושלמת.",
+                    "Facultatif, cela nous aide à affiner notre sélection."
                   )}
                 </p>
               </DialogHeader>
@@ -505,7 +560,7 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
                 {/* Mood chips */}
                 <div>
                   <label className={fieldLabel}>
-                    {getCopy("Mood of experience", "אווירת החוויה")}
+                    {getCopy("Mood of experience", "אווירת החוויה", "L'ambiance souhaitée")}
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {categories?.map((cat) => {
@@ -520,7 +575,7 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
                       );
                     })}
                     <BubbleButton
-                      label={getCopy("Other", "אחר")}
+                      label={getCopy("Other", "אחר", "Autre")}
                       active={moods.includes("__other__")}
                       onClick={() => toggleMood("__other__")}
                     />
@@ -529,7 +584,7 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
                     <Input
                       value={otherMood}
                       onChange={(e) => setOtherMood(e.target.value)}
-                      placeholder={getCopy("Describe your mood…", "תאר את האווירה…")}
+                      placeholder={getCopy("Describe your mood…", "תאר את האווירה…", "Décrivez l'atmosphère…")}
                       className={cn("mt-2", cardInput)}
                       maxLength={200}
                     />
@@ -539,11 +594,15 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
                 {/* Timing */}
                 <div>
                   <label className={fieldLabel}>
-                    {getCopy("When would you like to travel?", "מתי תרצו לטייל?")}
+                    {getCopy(
+                      "When would you like to travel?",
+                      "מתי תרצו לטייל?",
+                      "Quand souhaitez-vous voyager ?"
+                    )}
                   </label>
                   <Select value={timing} onValueChange={setTiming}>
                     <SelectTrigger className={cn("w-full", cardInput)}>
-                      <SelectValue placeholder={getCopy("Select timing", "בחר תזמון")} />
+                      <SelectValue placeholder={getCopy("Select timing", "בחר תזמון", "Choisir une période")} />
                     </SelectTrigger>
                     <SelectContent>
                       {timings.map((t, i) => (
@@ -558,11 +617,11 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
                 {/* Budget */}
                 <div>
                   <label className={fieldLabel}>
-                    {getCopy("Budget", "תקציב")}
+                    {getCopy("Budget", "תקציב", "Budget")}
                   </label>
                   <Select value={budget} onValueChange={setBudget}>
                     <SelectTrigger className={cn("w-full", cardInput)}>
-                      <SelectValue placeholder={getCopy("Select budget", "בחר תקציב")} />
+                      <SelectValue placeholder={getCopy("Select budget", "בחר תקציב", "Choisir un budget")} />
                     </SelectTrigger>
                     <SelectContent>
                       {budgets.map((b, i) => (
@@ -577,14 +636,19 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
                 {/* Wishes */}
                 <div>
                   <label className={fieldLabel}>
-                    {getCopy("Any additional wishes?", "יש משאלות נוספות?")}
+                    {getCopy(
+                      "Any additional wishes?",
+                      "יש משאלות נוספות?",
+                      "Des souhaits particuliers ?"
+                    )}
                   </label>
                   <Textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder={getCopy(
                       "Describe your dream stay in a few words…",
-                      "תארו את השהייה החלומית שלכם בכמה מילים…"
+                      "תארו את השהייה החלומית שלכם בכמה מילים…",
+                      "Décrivez votre séjour idéal en quelques mots…"
                     )}
                     className={cn("min-h-[100px] resize-none", cardInput)}
                     maxLength={1000}
@@ -604,7 +668,7 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4" />
-                      {getCopy("Refine my stay", "דייקו את השהות שלי")}
+                      {getCopy("Refine my stay", "דייקו את השהות שלי", "Affiner mon séjour")}
                     </>
                   )}
                 </Button>
@@ -614,7 +678,7 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
                   onClick={() => setDialogOpen(false)}
                   className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors underline underline-offset-2 block mx-auto text-center"
                 >
-                  {getCopy("Skip for now", "דלג לעת עתה")}
+                  {getCopy("Skip for now", "דלג לעת עתה", "Passer pour l'instant")}
                 </button>
               </div>
             </>
@@ -625,12 +689,13 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
             <div className="text-center py-12 space-y-4 animate-in fade-in duration-500">
               <CheckCircle className="h-10 w-10 text-emerald-500 mx-auto" />
               <h3 className="font-sans text-2xl sm:text-3xl font-bold tracking-[-0.02em]">
-                {getCopy("You're all set!", "הכל מוכן!")}
+                {getCopy("You're all set!", "הכל מוכן!", "C'est tout bon !")}
               </h3>
               <p className="text-muted-foreground text-sm max-w-sm mx-auto leading-relaxed">
                 {getCopy(
                   "Thank you for sharing. We'll use your preferences to curate the perfect stay — and reach out as soon as we find a match.",
-                  "תודה על השיתוף. נשתמש בהעדפות שלך לאצור את השהות המושלמת וניצור קשר ברגע שנמצא התאמה."
+                  "תודה על השיתוף. נשתמש בהעדפות שלך לאצור את השהות המושלמת וניצור קשר ברגע שנמצא התאמה.",
+                  "Merci pour ces informations. Nous allons sélectionner le séjour parfait selon vos préférences et vous contacter dès qu'on a trouvé la bonne adresse."
                 )}
               </p>
               <Button
@@ -638,7 +703,7 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
                 className="rounded-full mt-2"
                 onClick={() => setDialogOpen(false)}
               >
-                {getCopy("Close", "סגור")}
+                {getCopy("Close", "סגור", "Fermer")}
               </Button>
             </div>
           )}

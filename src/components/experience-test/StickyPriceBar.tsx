@@ -82,11 +82,11 @@ const StickyPriceBar = ({
           <div className="flex flex-col min-w-0">
             <div className="flex items-baseline gap-1 flex-wrap">
               <span className="text-sm font-medium whitespace-nowrap" style={{ color: '#B85C4A' }}>
-                ● {lang === 'he' ? 'הכי משתלם' : 'Best rate'}
+                ● {lang === 'he' ? 'הכי משתלם' : lang === 'fr' ? 'Meilleur tarif' : 'Best rate'}
               </span>
-              <span className="text-sm text-muted-foreground whitespace-nowrap">—</span>
+              <span className="text-sm text-muted-foreground whitespace-nowrap">·</span>
               <span className="text-sm font-semibold text-foreground whitespace-nowrap">
-                {lang === 'he' ? `מ-${symbol}${displayPrice}` : `from ${symbol}${displayPrice}`}
+                {lang === 'he' ? `מ-${symbol}${displayPrice}` : lang === 'fr' ? `à partir de ${symbol}${displayPrice}` : `from ${symbol}${displayPrice}`}
               </span>
             </div>
             <span className="text-[11px] text-muted-foreground">
@@ -96,7 +96,7 @@ const StickyPriceBar = ({
           <span className="text-xs font-medium uppercase tracking-wider text-foreground shrink-0 ml-2 whitespace-nowrap"
             style={{ borderBottom: '1px solid currentColor' }}
           >
-            {lang === 'he' ? 'לתאריכים' : 'VIEW DATES'}
+            {lang === 'he' ? 'לתאריכים' : lang === 'fr' ? 'VOIR LES DATES' : 'VIEW DATES'}
           </span>
         </button>
       </div>

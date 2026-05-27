@@ -21,8 +21,8 @@ const LaunchHeader = ({ forceScrolled = false }: { forceScrolled?: boolean }) =>
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { lang, setLanguage } = useLanguage();
-  const { displayCurrency, setDisplayCurrency } = useCurrency();
-  const handleLang = (l: "en" | "he") => {
+  const { displayCurrency, cycleCurrency } = useCurrency();
+  const handleLang = (l: "en" | "he" | "fr") => {
     setLanguage(l);
   };
   const { getLocalizedPath, navigateLocalized } = useLocalizedNavigation();
@@ -104,6 +104,17 @@ const LaunchHeader = ({ forceScrolled = false }: { forceScrolled?: boolean }) =>
             </button>
             <span className={`w-[8px] text-center text-[11px] select-none ${!isScrolled ? "text-white/35" : "text-muted-foreground/50"}`}>|</span>
             <button
+              onClick={() => handleLang("fr")}
+              className={`w-[22px] text-center text-[11px] leading-none tracking-[0.05em] transition-colors ${
+                lang === "fr"
+                  ? !isScrolled ? "text-white font-medium" : "text-foreground font-medium"
+                  : !isScrolled ? "text-white/60 hover:text-white/80" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              FR
+            </button>
+            <span className={`w-[8px] text-center text-[11px] select-none ${!isScrolled ? "text-white/35" : "text-muted-foreground/50"}`}>|</span>
+            <button
               onClick={() => handleLang("he")}
               className={`w-[22px] text-center text-[13px] leading-none tracking-[0.05em] transition-colors ${
                 lang === "he"
@@ -114,12 +125,12 @@ const LaunchHeader = ({ forceScrolled = false }: { forceScrolled?: boolean }) =>
               עב
             </button>
             <button
-              onClick={() => setDisplayCurrency(displayCurrency === "USD" ? "ILS" : "USD")}
+              onClick={cycleCurrency}
               className={`ml-1 w-[18px] text-center text-[11px] font-medium leading-none tracking-[0.05em] transition-colors ${
                 !isScrolled ? "text-white/70 hover:text-white" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {displayCurrency === "USD" ? "$" : "₪"}
+              {displayCurrency === "USD" ? "$" : displayCurrency === "EUR" ? "€" : "₪"}
             </button>
           </div>
 

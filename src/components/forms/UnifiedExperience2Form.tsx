@@ -79,17 +79,21 @@ const optNum = (min = 0) =>
 
 const experience2Schema = z.object({
   title: z.string().min(1, "English title is required"),
+  title_fr: z.string().optional(),
   title_he: z.string().optional(),
   subtitle: z.string().optional(),
+  subtitle_fr: z.string().optional(),
   subtitle_he: z.string().optional(),
   category_id: z.string().min(1, "Category is required"),
   long_copy: z.string().min(100, "English description must be at least 100 characters"),
+  long_copy_fr: z.string().optional(),
   long_copy_he: z.string().optional(),
   min_nights: optNum(1),
   max_nights: optNum(1),
   min_party: z.number().min(1).max(100),
   max_party: z.number().min(1).max(100),
   cancellation_policy: z.string().optional(),
+  cancellation_policy_fr: z.string().optional(),
   cancellation_policy_he: z.string().optional(),
   hotel_id: z.string().optional(),
   seo_title_en: z.string().optional(),
@@ -263,11 +267,14 @@ export function UnifiedExperience2Form({
     resolver: zodResolver(experience2Schema),
     defaultValues: {
       title: "",
+      title_fr: "",
       title_he: "",
       subtitle: "",
+      subtitle_fr: "",
       subtitle_he: "",
       category_id: "",
       long_copy: "",
+      long_copy_fr: "",
       long_copy_he: "",
       hotel_id: propHotelId || "",
       min_nights: 1,
@@ -275,6 +282,7 @@ export function UnifiedExperience2Form({
       min_party: 2,
       max_party: 4,
       cancellation_policy: "",
+      cancellation_policy_fr: "",
       cancellation_policy_he: "",
       seo_title_en: "",
       seo_title_he: "",
@@ -435,11 +443,14 @@ export function UnifiedExperience2Form({
   useEffect(() => {
     if (existingExperience) {
       setValue("title", existingExperience.title || "");
+      setValue("title_fr", existingExperience.title_fr || "");
       setValue("title_he", existingExperience.title_he || "");
       setValue("subtitle", existingExperience.subtitle || "");
+      setValue("subtitle_fr", existingExperience.subtitle_fr || "");
       setValue("subtitle_he", existingExperience.subtitle_he || "");
       setValue("category_id", existingExperience.category_id || "", { shouldValidate: true });
       setValue("long_copy", existingExperience.long_copy || "");
+      setValue("long_copy_fr", existingExperience.long_copy_fr || "");
       setValue("long_copy_he", existingExperience.long_copy_he || "");
       setValue("min_nights", existingExperience.min_nights || 1);
       setValue("max_nights", existingExperience.max_nights || 4);
@@ -447,6 +458,7 @@ export function UnifiedExperience2Form({
       setValue("max_party", existingExperience.max_party || 4);
       setValue("hotel_id", existingExperience.hotel_id || propHotelId || "");
       setValue("cancellation_policy", existingExperience.cancellation_policy || "");
+      setValue("cancellation_policy_fr", existingExperience.cancellation_policy_fr || "");
       setValue("cancellation_policy_he", existingExperience.cancellation_policy_he || "");
       setValue("seo_title_en", existingExperience.seo_title_en || "");
       setValue("seo_title_he", existingExperience.seo_title_he || "");
@@ -667,11 +679,14 @@ export function UnifiedExperience2Form({
 
     return {
       title: data.title,
+      title_fr: data.title_fr || null,
       title_he: data.title_he || null,
       subtitle: data.subtitle || null,
+      subtitle_fr: data.subtitle_fr || null,
       subtitle_he: data.subtitle_he || null,
       category_id: data.category_id,
       long_copy: data.long_copy || null,
+      long_copy_fr: data.long_copy_fr || null,
       long_copy_he: data.long_copy_he || null,
       min_nights: data.min_nights,
       max_nights: data.max_nights,
@@ -682,6 +697,7 @@ export function UnifiedExperience2Form({
       base_price_type: "per_person" as const,
       hotel_id: primaryHotelId,
       cancellation_policy: data.cancellation_policy || null,
+      cancellation_policy_fr: data.cancellation_policy_fr || null,
       cancellation_policy_he: data.cancellation_policy_he || null,
       hero_image: heroImageUrl || null,
       thumbnail_image: heroImageUrl || null,
@@ -1374,11 +1390,11 @@ export function UnifiedExperience2Form({
             <Card>
               <CardHeader>
                 <CardTitle>Titres & Description</CardTitle>
-                <CardDescription>Contenu principal de la fiche expérience (EN + HE)</CardDescription>
+                <CardDescription>Contenu principal de la fiche expérience (EN + FR + HE)</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Titres */}
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="title" className="flex items-center gap-1.5">
                       <span>🇬🇧</span> Titre (EN) <span className="text-destructive">*</span>
@@ -1390,6 +1406,17 @@ export function UnifiedExperience2Form({
                       disabled={isSaving}
                     />
                     {errors.title && <p className="text-destructive text-xs">{errors.title.message}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="title_fr" className="flex items-center gap-1.5">
+                      <span>🇫🇷</span> Titre (FR)
+                    </Label>
+                    <Input
+                      id="title_fr"
+                      {...register("title_fr")}
+                      placeholder="Ex: Week-end au bord de la mer"
+                      disabled={isSaving}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="title_he" className="flex items-center gap-1.5">
@@ -1407,7 +1434,7 @@ export function UnifiedExperience2Form({
                 </div>
 
                 {/* Sous-titres */}
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="subtitle" className="flex items-center gap-1.5">
                       <span>🇬🇧</span> Sous-titre (EN)
@@ -1416,6 +1443,17 @@ export function UnifiedExperience2Form({
                       id="subtitle"
                       {...register("subtitle")}
                       placeholder="Courte accroche"
+                      disabled={isSaving}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="subtitle_fr" className="flex items-center gap-1.5">
+                      <span>🇫🇷</span> Sous-titre (FR)
+                    </Label>
+                    <Input
+                      id="subtitle_fr"
+                      {...register("subtitle_fr")}
+                      placeholder="Courte accroche en français"
                       disabled={isSaving}
                     />
                   </div>
@@ -1451,6 +1489,23 @@ export function UnifiedExperience2Form({
                     )}
                   />
                   {errors.long_copy && <p className="text-destructive text-xs">{errors.long_copy.message}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    <span>🇫🇷</span> Description longue (FR)
+                  </Label>
+                  <Controller
+                    name="long_copy_fr"
+                    control={control}
+                    render={({ field }) => (
+                      <RichTextEditor
+                        content={field.value || ""}
+                        onChange={field.onChange}
+                        placeholder="Description complète de l'expérience en français..."
+                      />
+                    )}
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -2220,12 +2275,18 @@ export function UnifiedExperience2Form({
                 <CardDescription>Politique d'annulation de l'expérience</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-3 gap-6">
                   <div>
                     <Label className="flex items-center gap-1.5 mb-1">
                       <span>🇬🇧</span> Politique d'annulation (EN)
                     </Label>
                     <Input id="cancellation_policy" {...register("cancellation_policy")} />
+                  </div>
+                  <div>
+                    <Label className="flex items-center gap-1.5 mb-1">
+                      <span>🇫🇷</span> Politique d'annulation (FR)
+                    </Label>
+                    <Input id="cancellation_policy_fr" {...register("cancellation_policy_fr")} />
                   </div>
                   <div>
                     <Label className="flex items-center gap-1.5 mb-1">

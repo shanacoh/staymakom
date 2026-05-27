@@ -58,17 +58,21 @@ import { generateSlug } from "@/lib/utils";
 
 const experienceSchema = z.object({
   title: z.string().min(1, "English title is required"),
+  title_fr: z.string().optional(),
   title_he: z.string().optional(),
   subtitle: z.string().optional(),
+  subtitle_fr: z.string().optional(),
   subtitle_he: z.string().optional(),
   category_id: z.string().min(1, "Category is required"),
   long_copy: z.string().min(100, "English description must be at least 100 characters"),
+  long_copy_fr: z.string().optional(),
   long_copy_he: z.string().optional(),
   min_nights: z.number().min(1).max(8).optional(),
   max_nights: z.number().min(1).max(8).optional(),
   min_party: z.number().min(1).max(100),
   max_party: z.number().min(1).max(100),
   cancellation_policy: z.string().optional(),
+  cancellation_policy_fr: z.string().optional(),
   cancellation_policy_he: z.string().optional(),
   base_price: z.number().min(0.01, "Price must be greater than 0"),
   currency: z.string(),
@@ -173,11 +177,14 @@ export function UnifiedExperienceForm({
     resolver: zodResolver(experienceSchema),
     defaultValues: {
       title: "",
+      title_fr: "",
       title_he: "",
       subtitle: "",
+      subtitle_fr: "",
       subtitle_he: "",
       category_id: "",
       long_copy: "",
+      long_copy_fr: "",
       long_copy_he: "",
       hotel_id: propHotelId || "",
       min_nights: 1,
@@ -188,6 +195,7 @@ export function UnifiedExperienceForm({
       currency: "ILS",
       base_price_type: "per_person",
       cancellation_policy: "",
+      cancellation_policy_fr: "",
       cancellation_policy_he: "",
       seo_title_en: "",
       seo_title_he: "",
@@ -216,11 +224,14 @@ export function UnifiedExperienceForm({
   useEffect(() => {
     if (existingExperience) {
       setValue("title", existingExperience.title || "");
+      setValue("title_fr", existingExperience.title_fr || "");
       setValue("title_he", existingExperience.title_he || "");
       setValue("subtitle", existingExperience.subtitle || "");
+      setValue("subtitle_fr", existingExperience.subtitle_fr || "");
       setValue("subtitle_he", existingExperience.subtitle_he || "");
       setValue("category_id", existingExperience.category_id || "", { shouldValidate: true });
       setValue("long_copy", existingExperience.long_copy || "");
+      setValue("long_copy_fr", existingExperience.long_copy_fr || "");
       setValue("long_copy_he", existingExperience.long_copy_he || "");
       setValue("min_nights", existingExperience.min_nights || 1);
       setValue("max_nights", existingExperience.max_nights || 4);
@@ -231,6 +242,7 @@ export function UnifiedExperienceForm({
       setValue("base_price_type", existingExperience.base_price_type || "per_person");
       setValue("hotel_id", existingExperience.hotel_id || propHotelId || "");
       setValue("cancellation_policy", existingExperience.cancellation_policy || "");
+      setValue("cancellation_policy_fr", existingExperience.cancellation_policy_fr || "");
       setValue("cancellation_policy_he", existingExperience.cancellation_policy_he || "");
       setValue("seo_title_en", existingExperience.seo_title_en || "");
       setValue("seo_title_he", existingExperience.seo_title_he || "");
@@ -325,11 +337,14 @@ export function UnifiedExperienceForm({
 
       const experienceData: any = {
         title: data.title,
+        title_fr: data.title_fr,
         title_he: data.title_he,
         subtitle: data.subtitle,
+        subtitle_fr: data.subtitle_fr,
         subtitle_he: data.subtitle_he,
         category_id: data.category_id,
         long_copy: data.long_copy,
+        long_copy_fr: data.long_copy_fr,
         long_copy_he: data.long_copy_he,
         min_nights: data.min_nights,
         max_nights: data.max_nights,
@@ -340,6 +355,7 @@ export function UnifiedExperienceForm({
         base_price_type: data.base_price_type,
         hotel_id: data.hotel_id,
         cancellation_policy: data.cancellation_policy,
+        cancellation_policy_fr: data.cancellation_policy_fr,
         cancellation_policy_he: data.cancellation_policy_he,
         hero_image: heroImageUrl,
         photos: photoUrls,
@@ -401,11 +417,14 @@ export function UnifiedExperienceForm({
 
       const experienceData: any = {
         title: data.title,
+        title_fr: data.title_fr,
         title_he: data.title_he,
         subtitle: data.subtitle,
+        subtitle_fr: data.subtitle_fr,
         subtitle_he: data.subtitle_he,
         category_id: data.category_id,
         long_copy: data.long_copy,
+        long_copy_fr: data.long_copy_fr,
         long_copy_he: data.long_copy_he,
         min_nights: data.min_nights,
         max_nights: data.max_nights,
@@ -416,6 +435,7 @@ export function UnifiedExperienceForm({
         base_price_type: data.base_price_type,
         hotel_id: data.hotel_id,
         cancellation_policy: data.cancellation_policy,
+        cancellation_policy_fr: data.cancellation_policy_fr,
         cancellation_policy_he: data.cancellation_policy_he,
         hero_image: heroImageUrl,
         photos: photoUrls,
@@ -569,14 +589,14 @@ export function UnifiedExperienceForm({
         <Card>
           <CardHeader>
             <CardTitle>Basic Information</CardTitle>
-            <CardDescription>Core details in English and Hebrew</CardDescription>
+            <CardDescription>Core details in English, French and Hebrew</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-3 gap-6">
               {/* English Column */}
               <div className="space-y-4">
                 <div className="font-medium text-sm text-muted-foreground">English Version</div>
-                
+
                 <div>
                   <Label htmlFor="title">Title (EN) *</Label>
                   <Input id="title" {...register("title")} />
@@ -617,10 +637,45 @@ export function UnifiedExperienceForm({
                 </div>
               </div>
 
+              {/* French Column */}
+              <div className="space-y-4">
+                <div className="font-medium text-sm text-muted-foreground">Version française 🇫🇷</div>
+
+                <div>
+                  <Label htmlFor="title_fr">Titre (FR)</Label>
+                  <Input id="title_fr" {...register("title_fr")} />
+                </div>
+
+                <div>
+                  <Label htmlFor="subtitle_fr">Sous-titre (FR)</Label>
+                  <Input id="subtitle_fr" {...register("subtitle_fr")} />
+                </div>
+
+                <div>
+                  <Label htmlFor="long_copy_fr">Description (FR)</Label>
+                  <Controller
+                    name="long_copy_fr"
+                    control={control}
+                    render={({ field }) => (
+                      <RichTextEditor
+                        content={field.value || ''}
+                        onChange={field.onChange}
+                        placeholder="Décrivez l'expérience en français..."
+                      />
+                    )}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="cancellation_policy_fr">Politique d'annulation (FR)</Label>
+                  <Input id="cancellation_policy_fr" {...register("cancellation_policy_fr")} />
+                </div>
+              </div>
+
               {/* Hebrew Column */}
               <div className="space-y-4">
                 <div className="font-medium text-sm text-muted-foreground">Hebrew Version (עברית)</div>
-                
+
                 <div>
                   <Label htmlFor="title_he">Title (HE)</Label>
                   <Input id="title_he" {...register("title_he")} dir="rtl" className="bg-hebrew-input" />

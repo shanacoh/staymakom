@@ -90,7 +90,7 @@ const LaunchExperiences = () => {
           ),
           experience2_highlight_tags(
             highlight_tags(
-              id, slug, label_en, label_he
+              id, slug, label_en, label_he, label_fr
             )
           ),
           experience2_addons(type, value, is_active)
@@ -172,7 +172,7 @@ const LaunchExperiences = () => {
         if (tag && !map.has(tag.slug)) {
           map.set(tag.slug, {
             slug: tag.slug,
-            label: isRTL ? tag.label_he : tag.label_en,
+            label: isRTL ? tag.label_he : lang === 'fr' && tag.label_fr ? tag.label_fr : tag.label_en,
           });
         }
       });

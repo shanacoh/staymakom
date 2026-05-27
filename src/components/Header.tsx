@@ -38,8 +38,8 @@ const Header = () => {
   const navigate = useNavigate();
   const hasCart = useCartExists();
   const { lang, setLanguage } = useLanguage();
-  const { displayCurrency, setDisplayCurrency } = useCurrency();
-  const handleLang = (l: "en" | "he") => {
+  const { displayCurrency, cycleCurrency } = useCurrency();
+  const handleLang = (l: "en" | "he" | "fr") => {
     setLanguage(l);
   };
   const { getLocalizedPath, navigateLocalized } = useLocalizedNavigation();
@@ -130,6 +130,29 @@ const Header = () => {
               |
             </span>
             <button
+              onClick={() => handleLang("fr")}
+              className={`text-xs transition-colors px-0.5 ${
+                lang === "fr"
+                  ? isTransparentPage && !isScrolled
+                    ? "text-white font-semibold"
+                    : "text-foreground font-semibold"
+                  : isTransparentPage && !isScrolled
+                    ? "text-white/60 hover:text-white/80"
+                    : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              FR
+            </button>
+            <span
+              className={`text-xs select-none ${
+                isTransparentPage && !isScrolled
+                  ? "text-white/40"
+                  : "text-muted-foreground/40"
+              }`}
+            >
+              |
+            </span>
+            <button
               onClick={() => handleLang("he")}
               className={`text-[13px] leading-none transition-colors px-0.5 ${
                 lang === "he"
@@ -144,14 +167,14 @@ const Header = () => {
               עב
             </button>
             <button
-              onClick={() => setDisplayCurrency(displayCurrency === "USD" ? "ILS" : "USD")}
+              onClick={cycleCurrency}
               className={`text-xs transition-colors ml-1 ${
                 isTransparentPage && !isScrolled
                   ? "text-foreground/70 hover:text-foreground"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {displayCurrency === "USD" ? "$" : "₪"}
+              {displayCurrency === "USD" ? "$" : displayCurrency === "EUR" ? "€" : "₪"}
             </button>
           </div>
 

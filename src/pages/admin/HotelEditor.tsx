@@ -25,12 +25,16 @@ export const HotelEditor = ({ hotelId, onClose }: HotelEditorProps) => {
   const [formData, setFormData] = useState({
     name: "",
     name_he: "",
+    name_fr: "",
     region: "",
     region_he: "",
+    region_fr: "",
     city: "",
     city_he: "",
+    city_fr: "",
     story: "",
     story_he: "",
+    story_fr: "",
     hero_image: "",
     photos: [] as string[],
     contact_email: "",
@@ -39,6 +43,7 @@ export const HotelEditor = ({ hotelId, onClose }: HotelEditorProps) => {
     // Location fields
     address: "",
     address_he: "",
+    address_fr: "",
     latitude: null as number | null,
     longitude: null as number | null,
     // SEO fields
@@ -77,12 +82,16 @@ export const HotelEditor = ({ hotelId, onClose }: HotelEditorProps) => {
       setFormData({
         name: hotel.name || "",
         name_he: hotel.name_he || "",
+        name_fr: (hotel as any).name_fr || "",
         region: hotel.region || "",
         region_he: hotel.region_he || "",
+        region_fr: (hotel as any).region_fr || "",
         city: hotel.city || "",
         city_he: hotel.city_he || "",
+        city_fr: (hotel as any).city_fr || "",
         story: hotel.story || "",
         story_he: hotel.story_he || "",
+        story_fr: (hotel as any).story_fr || "",
         hero_image: hotel.hero_image || "",
         photos: hotel.photos || [],
         contact_email: hotel.contact_email || "",
@@ -91,6 +100,7 @@ export const HotelEditor = ({ hotelId, onClose }: HotelEditorProps) => {
         // Location fields
         address: (hotel as any).address || "",
         address_he: (hotel as any).address_he || "",
+        address_fr: (hotel as any).address_fr || "",
         latitude: hotel.latitude || null,
         longitude: hotel.longitude || null,
         // SEO fields
@@ -209,7 +219,7 @@ export const HotelEditor = ({ hotelId, onClose }: HotelEditorProps) => {
       <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader>
-            <CardTitle>Hotel Details - Bilingual</CardTitle>
+            <CardTitle>Hotel Details — EN | FR | HE</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Basic Fields */}
@@ -363,7 +373,7 @@ export const HotelEditor = ({ hotelId, onClose }: HotelEditorProps) => {
                 Set the hotel address and coordinates for map display
               </p>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="address">Address (English)</Label>
                   <Input
@@ -371,6 +381,15 @@ export const HotelEditor = ({ hotelId, onClose }: HotelEditorProps) => {
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     placeholder="e.g., 123 Hotel Street, Ayyelet HaShahar, Israel"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="address_fr">Adresse (Français) 🇫🇷</Label>
+                  <Input
+                    id="address_fr"
+                    value={formData.address_fr}
+                    onChange={(e) => setFormData({ ...formData, address_fr: e.target.value })}
+                    placeholder="ex. 123 rue de l'Hôtel, Ayyelet HaShahar, Israël"
                   />
                 </div>
                 <div className="space-y-2">
@@ -446,11 +465,11 @@ export const HotelEditor = ({ hotelId, onClose }: HotelEditorProps) => {
               )}
             </div>
 
-            {/* Bilingual Content - Side by Side */}
+            {/* Trilingual Content - Side by Side */}
             <div className="border-t pt-6">
-              <h3 className="text-lg font-semibold mb-4">Bilingual Content</h3>
-              
-              <div className="grid grid-cols-2 gap-6">
+              <h3 className="text-lg font-semibold mb-4">Contenu multilingue (EN | FR | HE)</h3>
+
+              <div className="grid grid-cols-3 gap-6">
                 {/* English Column */}
                 <div className="space-y-4">
                   <div className="bg-muted/30 p-2 rounded">
@@ -492,6 +511,54 @@ export const HotelEditor = ({ hotelId, onClose }: HotelEditorProps) => {
                       value={formData.story}
                       onChange={(e) => setFormData({ ...formData, story: e.target.value })}
                       rows={6}
+                    />
+                  </div>
+                </div>
+
+                {/* French Column */}
+                <div className="space-y-4">
+                  <div className="bg-blue-50 p-2 rounded border border-blue-100">
+                    <h4 className="font-medium text-sm">Version Française 🇫🇷</h4>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="name_fr">Nom de l'hôtel</Label>
+                    <Input
+                      id="name_fr"
+                      value={formData.name_fr}
+                      onChange={(e) => setFormData({ ...formData, name_fr: e.target.value })}
+                      placeholder="Nom en français"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="region_fr">Région</Label>
+                    <Input
+                      id="region_fr"
+                      value={formData.region_fr}
+                      onChange={(e) => setFormData({ ...formData, region_fr: e.target.value })}
+                      placeholder="ex. Galilée, Néguev…"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="city_fr">Ville</Label>
+                    <Input
+                      id="city_fr"
+                      value={formData.city_fr}
+                      onChange={(e) => setFormData({ ...formData, city_fr: e.target.value })}
+                      placeholder="ex. Tel Aviv, Jérusalem…"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="story_fr">Histoire de l'hôtel</Label>
+                    <Textarea
+                      id="story_fr"
+                      value={formData.story_fr}
+                      onChange={(e) => setFormData({ ...formData, story_fr: e.target.value })}
+                      rows={6}
+                      placeholder="Décrivez l'âme et l'histoire de cet hôtel en français…"
                     />
                   </div>
                 </div>

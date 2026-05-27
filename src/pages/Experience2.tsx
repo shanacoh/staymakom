@@ -340,13 +340,13 @@ export default function Experience2() {
   // Localized content
   // ---------------------------------------------------------------------------
 
-  const title = lang === "he" ? experience.title_he || experience.title : experience.title;
-  const subtitle = lang === "he" ? experience.subtitle_he || experience.subtitle : experience.subtitle;
+  const title = lang === "he" ? experience.title_he || experience.title : lang === "fr" ? (experience as any).title_fr || experience.title : experience.title;
+  const subtitle = lang === "he" ? experience.subtitle_he || experience.subtitle : lang === "fr" ? (experience as any).subtitle_fr || experience.subtitle : experience.subtitle;
   const primaryHotelName = lang === "he" ? primaryHotel?.name_he || primaryHotel?.name : primaryHotel?.name;
   const city = lang === "he" ? primaryHotel?.city_he || primaryHotel?.city : primaryHotel?.city;
   const region = lang === "he" ? primaryHotel?.region_he || primaryHotel?.region : primaryHotel?.region;
-  const categoryName = lang === "he" ? category?.name_he || category?.name : category?.name;
-  const longCopy = lang === "he" ? experience.long_copy_he || experience.long_copy : experience.long_copy;
+  const categoryName = lang === "he" ? category?.name_he || category?.name : lang === "fr" ? (category as any)?.name_fr || category?.name : category?.name;
+  const longCopy = lang === "he" ? experience.long_copy_he || experience.long_copy : lang === "fr" ? (experience as any).long_copy_fr || experience.long_copy : experience.long_copy;
 
   // ---------------------------------------------------------------------------
   // Build hotel data for YourStaySection (per hotel)

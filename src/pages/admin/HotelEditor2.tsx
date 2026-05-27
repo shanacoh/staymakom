@@ -56,12 +56,16 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
   const [formData, setFormData] = useState({
     name: "",
     name_he: "",
+    name_fr: "",
     region: "",
     region_he: "",
+    region_fr: "",
     city: "",
     city_he: "",
+    city_fr: "",
     story: "",
     story_he: "",
+    story_fr: "",
     hero_image: "",
     photos: [] as string[],
     contact_email: "",
@@ -69,6 +73,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
     status: "draft" as "draft" | "published" | "pending" | "archived",
     address: "",
     address_he: "",
+    address_fr: "",
     latitude: null as number | null,
     longitude: null as number | null,
     seo_title_en: "",
@@ -113,6 +118,8 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
     description_location: "",
     description_room_he: "",
     description_location_he: "",
+    description_room_fr: "",
+    description_location_fr: "",
   });
 
   const downloadHyperGuestImages = async (imageUrls: string[], heroUrl?: string | null) => {
@@ -295,12 +302,16 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
       setFormData({
         name: (h.name as string) || "",
         name_he: (h.name_he as string) || "",
+        name_fr: (h.name_fr as string) || "",
         region: (h.region as string) || "",
         region_he: (h.region_he as string) || "",
+        region_fr: (h.region_fr as string) || "",
         city: (h.city as string) || "",
         city_he: (h.city_he as string) || "",
+        city_fr: (h.city_fr as string) || "",
         story: (h.story as string) || "",
         story_he: (h.story_he as string) || "",
+        story_fr: (h.story_fr as string) || "",
         hero_image: (h.hero_image as string) || "",
         photos: (h.photos as string[]) || [],
         contact_email: (h.contact_email as string) || "",
@@ -308,6 +319,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
         status: (h.status as "draft" | "published") || "draft",
         address: (h.address as string) || "",
         address_he: (h.address_he as string) || "",
+        address_fr: (h.address_fr as string) || "",
         latitude: (h.latitude as number) || null,
         longitude: (h.longitude as number) || null,
         seo_title_en: (h.seo_title_en as string) || "",
@@ -351,6 +363,8 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
         description_location: (h.description_location as string) ?? "",
         description_room_he: (h.description_room_he as string) ?? "",
         description_location_he: (h.description_location_he as string) ?? "",
+        description_room_fr: (h.description_room_fr as string) ?? "",
+        description_location_fr: (h.description_location_fr as string) ?? "",
       });
 
       // Restore hyperguestId from existing hotel data
@@ -433,6 +447,13 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
         description_location: data.description_location || null,
         description_room_he: data.description_room_he || null,
         description_location_he: data.description_location_he || null,
+        description_room_fr: data.description_room_fr || null,
+        description_location_fr: data.description_location_fr || null,
+        name_fr: data.name_fr || null,
+        region_fr: data.region_fr || null,
+        city_fr: data.city_fr || null,
+        story_fr: data.story_fr || null,
+        address_fr: data.address_fr || null,
       };
 
       // ======== DEBUG START ========
@@ -601,11 +622,11 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
         ══════════════════════════════════════════════════════════ */}
         <Card>
           <CardHeader>
-            <CardTitle>Identité de l'hôtel</CardTitle>
-            <p className="text-sm text-muted-foreground">Nom, région, ville et description bilingues.</p>
+            <CardTitle>Identité de l'hôtel — EN | FR | HE</CardTitle>
+            <p className="text-sm text-muted-foreground">Nom, région, ville et description en trois langues.</p>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-3 gap-6">
               {/* Colonne EN */}
               <div className="space-y-4">
                 <div className="bg-muted/30 p-2 rounded">
@@ -643,6 +664,50 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
                     value={formData.story}
                     onChange={(e) => setFormData({ ...formData, story: e.target.value })}
                     rows={6}
+                  />
+                </div>
+              </div>
+
+              {/* Colonne FR */}
+              <div className="space-y-4">
+                <div className="bg-blue-50 p-2 rounded border border-blue-100">
+                  <h4 className="font-medium text-sm">Version Française 🇫🇷</h4>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="name_fr">Nom de l'hôtel</Label>
+                  <Input
+                    id="name_fr"
+                    value={formData.name_fr}
+                    onChange={(e) => setFormData({ ...formData, name_fr: e.target.value })}
+                    placeholder="Nom en français"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="region_fr">Région</Label>
+                  <Input
+                    id="region_fr"
+                    value={formData.region_fr}
+                    onChange={(e) => setFormData({ ...formData, region_fr: e.target.value })}
+                    placeholder="ex. Galilée, Néguev…"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="city_fr">Ville</Label>
+                  <Input
+                    id="city_fr"
+                    value={formData.city_fr}
+                    onChange={(e) => setFormData({ ...formData, city_fr: e.target.value })}
+                    placeholder="ex. Tel Aviv, Jérusalem…"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="story_fr">Histoire de l'hôtel</Label>
+                  <Textarea
+                    id="story_fr"
+                    value={formData.story_fr}
+                    onChange={(e) => setFormData({ ...formData, story_fr: e.target.value })}
+                    rows={6}
+                    placeholder="Décrivez l'âme et l'histoire de cet hôtel en français…"
                   />
                 </div>
               </div>
@@ -931,7 +996,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="address">Adresse (English)</Label>
                 <Input
@@ -939,6 +1004,15 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   placeholder="e.g., 123 Hotel Street, Ayyelet HaShahar, Israel"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="address_fr">Adresse (Français) 🇫🇷</Label>
+                <Input
+                  id="address_fr"
+                  value={formData.address_fr}
+                  onChange={(e) => setFormData({ ...formData, address_fr: e.target.value })}
+                  placeholder="ex. 123 rue de l'Hôtel, Ayyelet HaShahar, Israël"
                 />
               </div>
               <div className="space-y-2">

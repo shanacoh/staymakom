@@ -67,9 +67,9 @@ const WhatsIncludedPhotos2 = ({ experienceId, lang = "en", longCopy }: WhatsIncl
       )}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {includes.map((item) => {
-          const title = lang === "he" ? item.title_he || item.title : item.title;
+          const title = lang === "he" ? item.title_he || item.title : lang === "fr" ? (item as any).title_fr || item.title : item.title;
           const description =
-            lang === "he" ? item.description_he || item.description : item.description;
+            lang === "he" ? item.description_he || item.description : lang === "fr" ? (item as any).description_fr || item.description : item.description;
           const hasImageUrl = isImageUrl(item.icon_url);
           const IconComponent = getIconComponent(item.icon_url);
 

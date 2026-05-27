@@ -27,12 +27,14 @@ function openDesignMyStayDialog() {
 
 type RenderParams = {
   isRTL: boolean;
+  lang: string;
   onExpOnlyClick: () => void;
 };
 
 type FAQItem = {
   q_en: string;
   q_he: string;
+  q_fr: string;
   render: (p: RenderParams) => React.ReactNode;
 };
 
@@ -42,7 +44,8 @@ const FAQ_ITEMS: FAQItem[] = [
   {
     q_en: "Can I book an experience without staying overnight?",
     q_he: "האם אפשר להזמין חוויה בלי לינה במלון?",
-    render: ({ isRTL, onExpOnlyClick }) =>
+    q_fr: "Puis-je réserver une expérience sans passer la nuit ?",
+    render: ({ isRTL, lang, onExpOnlyClick }) =>
       isRTL ? (
         <>
           <p>כרגע, החוויות זמינות רק כחלק משהות במלון, מכיוון שהן נבנו כחוויה מלאה ומחוברת לסביבת המלון.</p>
@@ -53,6 +56,18 @@ const FAQ_ITEMS: FAQItem[] = [
               לחצו כאן
             </button>{" "}
             כדי להיות הראשונים להתעדכן כשהאפשרויות האלו יהיו זמינות.
+          </p>
+        </>
+      ) : lang === "fr" ? (
+        <>
+          <p>Pour l'instant, les expériences sont uniquement disponibles dans le cadre d'un séjour à l'hôtel. Elles sont conçues pour être vécues en immersion totale, en lien avec l'environnement de l'établissement.</p>
+          <p className="mt-3">Nous travaillons à offrir plus de flexibilité. Bientôt, vous pourrez réserver des expériences seules, accéder aux hôtels en journée, ou séjourner sans expérience.</p>
+          <p className="mt-3">
+            Si cela vous intéresse,{" "}
+            <button type="button" onClick={onExpOnlyClick} className={link}>
+              cliquez ici
+            </button>{" "}
+            pour être parmi les premiers informés dès que ces options seront disponibles.
           </p>
         </>
       ) : (
@@ -72,11 +87,17 @@ const FAQ_ITEMS: FAQItem[] = [
   {
     q_en: "Why book through STAYMAKOM?",
     q_he: "למה להזמין דרך STAYMAKOM?",
-    render: ({ isRTL }) =>
+    q_fr: "Pourquoi réserver via STAYMAKOM ?",
+    render: ({ isRTL, lang }) =>
       isRTL ? (
         <>
           <p>STAYMAKOM היא הרבה יותר מפלטפורמת הזמנת מלונות. אנחנו משלבים מלונות נבחרים עם חוויות ייחודיות בהזמנה אחת פשוטה, כדי להפוך את החופשה שלכם לקלה, מעוררת השראה וללא התעסקות מיותרת.</p>
           <p className="mt-3">במקום לבזבז זמן על חיפוש, תכנון ותיאומים, הכל כבר מחכה לכם במקום אחד. החבילות שלנו נועדו להציע חוויה חלקה ומשתלמת יותר מהזמנה נפרדת של כל מרכיב.</p>
+        </>
+      ) : lang === "fr" ? (
+        <>
+          <p>STAYMAKOM, c'est bien plus qu'une plateforme de réservation d'hôtels. Nous combinons des hôtels soigneusement sélectionnés avec des expériences uniques, en une seule réservation simple, pour que votre séjour soit facile, inspirant et sans prise de tête.</p>
+          <p className="mt-3">Au lieu de passer des heures à chercher, planifier et coordonner chaque élément séparément, tout est déjà réuni au même endroit. Nos formules sont pensées pour offrir une expérience plus fluide et plus avantageuse qu'une réservation à la carte.</p>
         </>
       ) : (
         <>
@@ -88,9 +109,12 @@ const FAQ_ITEMS: FAQItem[] = [
   {
     q_en: "Where are your experiences available?",
     q_he: "איפה החוויות זמינות?",
-    render: ({ isRTL }) =>
+    q_fr: "Où sont disponibles vos expériences ?",
+    render: ({ isRTL, lang }) =>
       isRTL ? (
         <p>אנחנו כרגע מתמקדים בישראל, עם חוויות בתל אביב, ירושלים ויעדים רבים נוספים שממתינים לגילוי. לישראל יש הרבה יותר להציע מעבר למסלולים הרגילים — מגוון עשיר של מקומות, אווירות וחוויות לאורך כל הארץ. אנחנו ממשיכים להוסיף יעדים חדשים ומזמינים מטיילים לגלות צד אחר של ישראל.</p>
+      ) : lang === "fr" ? (
+        <p>Nous nous concentrons actuellement sur Israël, avec des expériences à Tel Aviv, Jérusalem et de nombreuses autres destinations qui n'attendent qu'à être découvertes. Israël a bien plus à offrir que les circuits habituels : une richesse de lieux, d'ambiances et de sensations à travers tout le pays. Nous enrichissons continuellement notre catalogue et invitons les voyageurs à découvrir un Israël autrement.</p>
       ) : (
         <p>We are currently focused on Israel, with experiences across Tel Aviv, Jerusalem, and many more destinations waiting to be discovered. Israel has so much more to offer beyond the usual routes, with a wide variety of places, atmospheres, and experiences across the country. We're continuously adding new destinations and inviting travelers to discover a different side of Israel.</p>
       ),
@@ -98,9 +122,12 @@ const FAQ_ITEMS: FAQItem[] = [
   {
     q_en: "Who are these experiences for?",
     q_he: "למי החוויות מתאימות?",
-    render: ({ isRTL }) =>
+    q_fr: "À qui s'adressent ces expériences ?",
+    render: ({ isRTL, lang }) =>
       isRTL ? (
         <p>STAYMAKOM מיועדת הן למטיילים המגיעים לישראל והן למקומיים שרוצים לחוות את הארץ אחרת. בין אם זו הפעם הראשונה שאתם מגלים את ישראל, ובין אם אתם מבלים כל קיץ כאן כבר שנים — STAYMAKOM עוזרת לכם לחקור מעבר לתוכניות הרגילות ולגלות חוויות שאולי לא הייתם מוצאים בדרך אחרת.</p>
+      ) : lang === "fr" ? (
+        <p>STAYMAKOM s'adresse aussi bien aux voyageurs qui découvrent Israël qu'aux locaux qui souhaitent vivre leur pays autrement. Que ce soit votre première fois en Israël ou que vous y passiez chaque été depuis des années, STAYMAKOM vous aide à explorer au-delà des sentiers battus et à vivre des expériences que vous n'auriez peut-être pas trouvées autrement.</p>
       ) : (
         <p>STAYMAKOM is designed both for travelers visiting Israel and for locals looking to experience the country differently. Whether it's your first time discovering Israel or you've been spending every summer here for years, STAYMAKOM helps you explore beyond the usual plans and discover experiences you might not have found otherwise.</p>
       ),
@@ -108,9 +135,12 @@ const FAQ_ITEMS: FAQItem[] = [
   {
     q_en: "Do I need to plan everything myself?",
     q_he: "האם צריך לתכנן הכל לבד?",
-    render: ({ isRTL }) =>
+    q_fr: "Dois-je tout organiser moi-même ?",
+    render: ({ isRTL, lang }) =>
       isRTL ? (
         <p>לא, וזה בדיוק הרעיון. כל חוויה כבר נבנתה ותוכננה עבורכם, כך שאין צורך להשקיע שעות בחיפושים, תיאומים או הזמנות נפרדות. פשוט בוחרים, מזמינים ונהנים.</p>
+      ) : lang === "fr" ? (
+        <p>Non, et c'est justement l'idée. Chaque expérience est déjà pensée et préparée pour vous, sans avoir à passer des heures à chercher, coordonner ou réserver plusieurs services séparément. Il suffit de choisir, réserver et profiter.</p>
       ) : (
         <p>No, that's exactly the point. Each experience is already thoughtfully designed for you, so you don't have to spend hours researching, coordinating, or booking multiple services separately. You simply choose, book, and enjoy.</p>
       ),
@@ -118,7 +148,8 @@ const FAQ_ITEMS: FAQItem[] = [
   {
     q_en: "Is it suitable for a special occasion?",
     q_he: "האם זה מתאים לאירוע מיוחד?",
-    render: ({ isRTL }) =>
+    q_fr: "Est-ce adapté à une occasion spéciale ?",
+    render: ({ isRTL, lang }) =>
       isRTL ? (
         <p>
           בהחלט. החוויות שלנו מושלמות לחגיגת רגע מיוחד או פשוט כדי לקחת זמן לעצמכם. אם יש לכם בקשה מסוימת, תוכלו גם{" "}
@@ -126,6 +157,14 @@ const FAQ_ITEMS: FAQItem[] = [
             לשלוח פנייה
           </button>{" "}
           ליצירת חוויה מותאמת אישית.
+        </p>
+      ) : lang === "fr" ? (
+        <p>
+          Absolument. Nos expériences sont parfaites pour marquer un moment unique ou simplement prendre du temps pour soi. Si vous avez quelque chose de particulier en tête, vous pouvez aussi{" "}
+          <button type="button" onClick={openDesignMyStayDialog} className={link}>
+            soumettre une demande
+          </button>{" "}
+          pour créer une expérience entièrement sur mesure.
         </p>
       ) : (
         <p>
@@ -140,7 +179,8 @@ const FAQ_ITEMS: FAQItem[] = [
   {
     q_en: "What if I want something more personalized?",
     q_he: "מה אם אני רוצה משהו יותר מותאם אישית?",
-    render: ({ isRTL }) =>
+    q_fr: "Et si je veux quelque chose de plus personnalisé ?",
+    render: ({ isRTL, lang }) =>
       isRTL ? (
         <p>
           אם אתם מחפשים חוויה ספציפית יותר, תוכלו למלא את{" "}
@@ -148,6 +188,14 @@ const FAQ_ITEMS: FAQItem[] = [
             טופס ה-Tailor-Made
           </button>{" "}
           שלנו. נעזור לכם ליצור חוויה מותאמת אישית לפי האירוע, ההעדפות וסגנון הטיול שלכם.
+        </p>
+      ) : lang === "fr" ? (
+        <p>
+          Si vous cherchez quelque chose de plus spécifique, vous pouvez soumettre une demande via notre{" "}
+          <button type="button" onClick={openDesignMyStayDialog} className={link}>
+            formulaire sur mesure
+          </button>
+          . Nous vous aiderons à créer une expérience adaptée à votre occasion, vos préférences et votre style de voyage.
         </p>
       ) : (
         <p>
@@ -162,9 +210,12 @@ const FAQ_ITEMS: FAQItem[] = [
   {
     q_en: "Can I cancel or modify my booking?",
     q_he: "אפשר לבטל או לשנות את ההזמנה?",
-    render: ({ isRTL }) =>
+    q_fr: "Puis-je annuler ou modifier ma réservation ?",
+    render: ({ isRTL, lang }) =>
       isRTL ? (
         <p>כן, תנאי הביטול והשינוי מוצגים בצורה ברורה לפני אישור ההזמנה. אנחנו עובדים בשיתוף פעולה עם שותפי המלון שלנו כדי להציע תנאים גמישים, שיאפשרו לכם להזמין בביטחון. ניתן גם לנהל את ההזמנה בקלות ישירות מחשבון הלקוח שלכם.</p>
+      ) : lang === "fr" ? (
+        <p>Oui, les conditions d'annulation et de modification sont clairement indiquées avant de confirmer votre réservation. Nous travaillons en étroite collaboration avec nos hôtels partenaires pour proposer des conditions flexibles, afin que vous puissiez réserver en toute confiance. Vous pouvez également gérer facilement votre réservation directement depuis votre espace client.</p>
       ) : (
         <p>Yes, cancellation and modification policies are clearly displayed before you confirm your booking. We work closely with our hotel partners to offer flexible conditions so you can book with confidence. You can also easily manage your booking directly from your customer account.</p>
       ),
@@ -195,6 +246,18 @@ const expOnlyTranslations = {
     close: "אולי מאוחר יותר",
     invalidEmail: "אימייל לא תקין",
     error: "משהו השתבש. נסה שנית.",
+  },
+  fr: {
+    title: "Bientôt : des expériences sans nuit d'hôtel",
+    description: "Signalez votre intérêt et nous vous préviendrons dès que c'est disponible.",
+    placeholder: "Votre email",
+    submit: "Me prévenir",
+    submitting: "Envoi…",
+    successTitle: "Vous êtes sur la liste !",
+    successDescription: "Nous vous informerons dès que les réservations d'expériences seules seront disponibles.",
+    close: "Peut-être plus tard",
+    invalidEmail: "Veuillez entrer un email valide",
+    error: "Une erreur s'est produite. Veuillez réessayer.",
   },
 };
 
@@ -237,16 +300,21 @@ const FAQSection = () => {
     }
   };
 
+  const sectionLabel =
+    lang === "he" ? "שאלות נפוצות" : lang === "fr" ? "Questions fréquentes" : "Questions & Answers";
+  const sectionTitle =
+    lang === "he" ? "כל מה שרציתם לדעת" : lang === "fr" ? "Tout ce que vous voulez savoir" : "Everything you need to know";
+
   return (
     <>
       <section className="py-10 sm:py-16 border-t border-border/40" dir={isRTL ? "rtl" : "ltr"}>
         <div className="container px-4 max-w-2xl mx-auto">
           <div className="text-center mb-7 sm:mb-10">
             <p className="text-[10px] sm:text-xs uppercase tracking-[0.18em] text-muted-foreground mb-2">
-              {isRTL ? "שאלות נפוצות" : "Questions & Answers"}
+              {sectionLabel}
             </p>
             <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold uppercase tracking-[-0.02em]">
-              {isRTL ? "כל מה שרציתם לדעת" : "Everything you need to know"}
+              {sectionTitle}
             </h2>
           </div>
 
@@ -258,10 +326,10 @@ const FAQSection = () => {
                 className="border-b border-border/50 last:border-b-0"
               >
                 <AccordionTrigger className="text-sm sm:text-base font-medium text-left hover:no-underline hover:text-primary py-4 [&[data-state=open]]:text-primary transition-colors duration-200 text-start">
-                  {isRTL ? item.q_he : item.q_en}
+                  {lang === "he" ? item.q_he : lang === "fr" ? item.q_fr : item.q_en}
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground text-sm leading-relaxed pb-5">
-                  {item.render({ isRTL, onExpOnlyClick: handleExpOnlyOpen })}
+                  {item.render({ isRTL, lang, onExpOnlyClick: handleExpOnlyOpen })}
                 </AccordionContent>
               </AccordionItem>
             ))}
@@ -305,7 +373,7 @@ const FAQSection = () => {
           ) : (
             <div className="pt-4 text-center">
               <Button type="button" onClick={() => setExpOnlyOpen(false)} variant="outline" className="w-full">
-                {isRTL ? "סגור" : "Close"}
+                {lang === "he" ? "סגור" : lang === "fr" ? "Fermer" : "Close"}
               </Button>
             </div>
           )}
