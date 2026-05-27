@@ -25,6 +25,7 @@ import NotFound from "./pages/NotFound";
 
 // ── Pages publiques secondaires : chargées à la demande ───────────────────
 const Index              = lazy(() => import("./pages/Index"));
+const IndexV2            = lazy(() => import("./pages/IndexV2"));
 const ComingSoon         = lazy(() => import("./pages/ComingSoon"));
 const Category           = lazy(() => import("./pages/Category"));
 const Experience         = lazy(() => import("./pages/Experience"));
@@ -36,6 +37,7 @@ const GiftCard           = lazy(() => import("./pages/GiftCard"));
 const GiftCardConfirmation = lazy(() => import("./pages/GiftCardConfirmation"));
 const Companies          = lazy(() => import("./pages/Companies"));
 const Partners           = lazy(() => import("./pages/Partners"));
+const PartnerExp         = lazy(() => import("./pages/PartnerExp"));
 const PartnerForm        = lazy(() => import("./pages/PartnerForm"));
 const Itineraries        = lazy(() => import("./pages/Itineraries"));
 const Journal            = lazy(() => import("./pages/Journal"));
@@ -144,6 +146,7 @@ const AppContent = () => {
           <Route path="/" element={<LaunchIndex />} />
           <Route path="/coming-soon" element={<ComingSoon />} />
           <Route path="/home" element={<Index />} />
+          <Route path="/v2" element={<IndexV2 />} />
           <Route path="/launch" element={<LaunchIndex />} />
           <Route path="/launch/experiences" element={<LaunchExperiences />} />
           <Route path="/mobile-login" element={<MobileAuthPrompt />} />
@@ -163,6 +166,7 @@ const AppContent = () => {
           <Route path="/companies" element={<Companies />} />
           <Route path="/corporate" element={<Companies />} />
           <Route path="/partners" element={<Partners />} />
+          <Route path="/partner-exp" element={<PartnerExp />} />
           <Route path="/partner-form" element={<PartnerForm />} />
           <Route path="/itineraries-AJ" element={<Itineraries />} />
           <Route path="/journal" element={<Journal />} />
