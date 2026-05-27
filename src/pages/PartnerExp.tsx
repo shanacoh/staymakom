@@ -214,16 +214,10 @@ const PartnerExp = () => {
                 ))}
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                <button
-                  onClick={() => goTo(2)}
-                  className="px-6 py-2.5 rounded-md bg-[#C2714A] hover:bg-[#B06540] text-white text-sm font-semibold uppercase tracking-wide transition-all duration-200 shadow-md hover:-translate-y-0.5"
-                >
-                  {tx("ctaPrimary", l)}
-                </button>
+              <div className="flex items-center justify-center pt-2">
                 <Link
                   to="/"
-                  className="px-6 py-2.5 rounded-md border border-white/50 text-white text-sm font-medium uppercase tracking-wide hover:bg-white/10 transition-all duration-200"
+                  className="px-8 py-3 rounded-md bg-[#C2714A] hover:bg-[#B06540] text-white text-sm font-semibold uppercase tracking-wide transition-all duration-200 shadow-md hover:-translate-y-0.5"
                 >
                   {tx("ctaSecondary", l)}
                 </Link>
