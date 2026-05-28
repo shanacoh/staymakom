@@ -18,6 +18,7 @@ import { RoomOptionsV2 } from "./RoomOptionsV2";
 import { PriceBreakdownV2 } from "./PriceBreakdownV2";
 import { useHyperGuestAvailability } from "@/hooks/useHyperGuestAvailability";
 import { useExperience2Price } from "@/hooks/useExperience2Price";
+import { useCustomerNationality } from "@/hooks/useCustomerNationality";
 import { formatGuests, calculateNights } from "@/services/hyperguest";
 
 export interface ExperienceAvailabilityPreviewProps {
@@ -133,6 +134,8 @@ export function ExperienceAvailabilityPreview({
   // State
   // -----------------------------------------------------------------------
 
+  const customerNationality = useCustomerNationality();
+
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [numberOfGuests, setNumberOfGuests] = useState(Math.max(minParty, 2));
   const [submittedRange, setSubmittedRange] = useState<{ from: Date; to: Date } | null>(null);
@@ -157,10 +160,10 @@ export function ExperienceAvailabilityPreview({
       nights,
       guests: formatGuests([{ adults: numberOfGuests, children: [] }]),
       hotelIds: [parseInt(hyperguestPropertyId, 10)],
-      customerNationality: "IL",
+      customerNationality,
       currency,
     };
-  }, [submittedRange, hyperguestPropertyId, numberOfGuests, currency]);
+  }, [submittedRange, hyperguestPropertyId, numberOfGuests, currency, customerNationality]);
 
   const {
     data: rawResult,

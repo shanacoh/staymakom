@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { addDays, format } from 'date-fns';
 import { searchHotelsRaw, formatGuests } from '@/services/hyperguest';
 import { normalizeBoardPreference, type BoardType } from '@/lib/boardTypePreference';
+import { useCustomerNationality } from '@/hooks/useCustomerNationality';
 
 interface AvailableDate {
   id: string;
@@ -36,6 +37,7 @@ async function fetchSpecificDates(
   adults: number,
   currency: string,
   preferredBoardType: BoardType | null,
+  customerNationality: string,
 ): Promise<AvailableDate[]> {
   const guests = formatGuests([{ adults, children: [] }]);
 
@@ -45,7 +47,7 @@ async function fetchSpecificDates(
       nights,
       guests,
       hotelIds: [propertyId],
-      customerNationality: 'IL',
+      customerNationality,
       currency,
     })
       .then((res) => {
@@ -123,9 +125,10 @@ export function useSpecificDateAvailability({
   preferredBoardType = null,
 }: UseSpecificDateAvailabilityOptions) {
   const board = normalizeBoardPreference(preferredBoardType);
+  const customerNationality = useCustomerNationality();
   return useQuery({
-    queryKey: ['specific-date-availability', specificDates, nights, propertyId, adults, currency, board],
-    queryFn: () => fetchSpecificDates(specificDates, nights, propertyId!, adults, currency, board),
+    queryKey: ['specific-date-availability', specificDates, nights, propertyId, adults, currency, board, customerNationality],
+    queryFn: () => fetchSpecificDates(specificDates, nights, propertyId!, adults, currency, board, customerNationality),
     enabled: enabled && !!propertyId && nights > 0 && specificDates.length > 0,
     staleTime: 1000 * 60 * 5,
     retry: 1,

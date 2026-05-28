@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { addDays, format } from 'date-fns';
 import { searchHotelsRaw, formatGuests } from '@/services/hyperguest';
 import { normalizeBoardPreference, type BoardType } from '@/lib/boardTypePreference';
+import { useCustomerNationality } from '@/hooks/useCustomerNationality';
 
 interface AvailableDate {
   id: string;
@@ -51,6 +52,7 @@ async function scanAvailability(
   adults: number,
   currency: string,
   preferredBoardType: BoardType | null,
+  customerNationality: string,
 ): Promise<AvailableDate[]> {
   const today = new Date();
   const startOffset = 3;
@@ -80,7 +82,7 @@ async function scanAvailability(
           nights,
           guests,
           hotelIds: [propertyId],
-          customerNationality: 'IL',
+          customerNationality,
           currency,
         })
           .then((res) => {
@@ -194,9 +196,10 @@ export function useQuickDateAvailability({
   preferredBoardType = null,
 }: UseQuickDateAvailabilityOptions) {
   const board = normalizeBoardPreference(preferredBoardType);
+  const customerNationality = useCustomerNationality();
   return useQuery({
-    queryKey: ['quick-date-availability', propertyId, nights, adults, currency, board],
-    queryFn: () => scanAvailability(propertyId!, nights, adults, currency, board),
+    queryKey: ['quick-date-availability', propertyId, nights, adults, currency, board, customerNationality],
+    queryFn: () => scanAvailability(propertyId!, nights, adults, currency, board, customerNationality),
     enabled: enabled && !!propertyId && nights > 0,
     staleTime: 1000 * 60 * 5, // 5 min cache
     retry: 1,
@@ -225,8 +228,9 @@ export function useSpecificDatePrices({
   preferredBoardType?: BoardType | string | null;
 }) {
   const board = normalizeBoardPreference(preferredBoardType);
+  const customerNationality = useCustomerNationality();
   return useQuery({
-    queryKey: ['specific-date-prices', propertyId, dates, nights, adults, currency, board],
+    queryKey: ['specific-date-prices', propertyId, dates, nights, adults, currency, board, customerNationality],
     queryFn: async (): Promise<Record<string, number | null>> => {
       if (!propertyId || dates.length === 0) return {};
       const guests = formatGuests([{ adults, children: [] }]);
@@ -239,7 +243,7 @@ export function useSpecificDatePrices({
             nights,
             guests,
             hotelIds: [propertyId],
-            customerNationality: 'IL',
+            customerNationality,
             currency,
           });
           const rooms = res?.results?.[0]?.rooms || [];

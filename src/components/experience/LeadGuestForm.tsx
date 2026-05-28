@@ -144,7 +144,7 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
         birthDate: "",
         address: "",
         city: customer?.city || "",
-        country: customer?.address_country || "IL",
+        country: customer?.address_country || "FR",
       };
 
       onChange(profileData);

@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import type { CheckoutState } from "@/pages/Checkout";
 import { trackDurationTabClicked, trackDateSelected, trackViewDatesClicked, trackGuestsSelected, trackRoomTypeSelected, trackBookThisStayClicked, trackNoAvailabilityShown } from "@/lib/analytics";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useCustomerNationality } from "@/hooks/useCustomerNationality";
 import { DateRange } from "react-day-picker";
 
 interface DateOption {
@@ -100,6 +101,7 @@ export function BookingPanel2({
 }: BookingPanel2Props) {
   const navigate = useNavigate();
   const { symbol: currencySymbol, convert } = useCurrency();
+  const customerNationality = useCustomerNationality();
 
   const t = {
     en: {
@@ -408,8 +410,8 @@ export function BookingPanel2({
     const rawNights = calculateNights(checkIn, dateRange.to.toISOString().split("T")[0]);
     const nights = Math.min(rawNights, MAX_NIGHTS);
     const guests = formatGuests([{ adults, children: childrenAges }]);
-    return { checkIn, nights, guests, hotelIds: [parseInt(hyperguestPropertyId)], customerNationality: "IL", currency };
-  }, [dateRange, adults, childrenAges, hyperguestPropertyId, currency]);
+    return { checkIn, nights, guests, hotelIds: [parseInt(hyperguestPropertyId)], customerNationality, currency };
+  }, [dateRange, adults, childrenAges, hyperguestPropertyId, currency, customerNationality]);
 
   const {
     data: searchResult,

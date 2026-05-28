@@ -906,7 +906,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
         search: {
           dates: { from: checkIn, to: checkOut },
           propertyId: parseInt(state.hyperguestPropertyId),
-          nationality: leadGuest.country || "IL",
+          nationality: leadGuest.country || "FR",
           pax: [{ adults: state.adults, children: state.childrenAges }],
         },
         rooms: [{
