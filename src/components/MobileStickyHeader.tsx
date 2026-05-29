@@ -8,8 +8,8 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 const MobileStickyHeader = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const { lang, setLanguage } = useLanguage();
-  const { displayCurrency, setDisplayCurrency } = useCurrency();
-  const handleLang = (l: "en" | "he") => {
+  const { displayCurrency, cycleCurrency } = useCurrency();
+  const handleLang = (l: "en" | "he" | "fr") => {
     setLanguage(l);
   };
   const location = useLocation();
@@ -54,7 +54,7 @@ const MobileStickyHeader = () => {
         </Link>
 
         {/* Right: Language + currency switcher */}
-        <div className="ml-auto flex items-center justify-end w-[96px] gap-0" dir="ltr">
+        <div className="ml-auto flex items-center justify-end w-[120px] gap-0" dir="ltr">
           <button
             onClick={() => handleLang("en")}
             className={`w-[22px] text-center text-[11px] leading-none tracking-[0.05em] transition-colors ${
@@ -64,6 +64,17 @@ const MobileStickyHeader = () => {
             }`}
           >
             EN
+          </button>
+          <span className="w-[8px] text-center text-[11px] text-muted-foreground/50 select-none">|</span>
+          <button
+            onClick={() => handleLang("fr")}
+            className={`w-[22px] text-center text-[11px] leading-none tracking-[0.05em] transition-colors ${
+              lang === "fr"
+                ? "text-foreground font-medium"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            FR
           </button>
           <span className="w-[8px] text-center text-[11px] text-muted-foreground/50 select-none">|</span>
           <button
@@ -77,11 +88,11 @@ const MobileStickyHeader = () => {
             עב
           </button>
           <button
-            onClick={() => setDisplayCurrency(displayCurrency === "USD" ? "ILS" : "USD")}
+            onClick={cycleCurrency}
             className="ml-1 w-[18px] text-center text-[11px] font-medium leading-none tracking-[0.05em] text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Toggle currency"
           >
-            {displayCurrency === "USD" ? "$" : "₪"}
+            {displayCurrency === "USD" ? "$" : displayCurrency === "EUR" ? "€" : "₪"}
           </button>
         </div>
       </div>
