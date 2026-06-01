@@ -263,7 +263,7 @@ const IndexV2 = () => {
                     key={m}
                     onClick={() => setMode(m)}
                     className={cn(
-                      "flex flex-col items-center gap-1.5 rounded-xl px-3 py-3 transition-all duration-300 border",
+                      "flex flex-col items-center gap-1.5 rounded-full px-3 py-3 transition-all duration-300 border",
                       mode === m
                         ? "bg-white text-foreground border-white shadow-lg"
                         : "bg-white/10 text-white border-white/30 hover:bg-white/20"
@@ -345,7 +345,7 @@ const IndexV2 = () => {
                 <p className="text-muted-foreground text-sm mb-3">
                   {isRTL ? "אין חוויות בקטגוריה זו עדיין." : lang === "fr" ? "Aucune expérience pour cette ambiance." : "No experiences for this mood yet."}
                 </p>
-                <button onClick={() => setSelectedCategoryId(null)} className="text-sm underline underline-offset-4 text-primary">
+                <button onClick={() => setSelectedVibe(null)} className="text-sm underline underline-offset-4 text-primary">
                   {isRTL ? "הצג הכל" : "Show all"}
                 </button>
               </div>
@@ -401,7 +401,7 @@ const IndexV2 = () => {
                 {isRTL ? <><span>מתנה מושלמת.</span><br /><span>מתנת הבריחה.</span></> : <><span>Perfect gift.</span><br /><span>The gift of escape.</span></>}
               </h2>
               <p className="text-muted-foreground text-sm md:text-base max-w-md">{t(lang, "giftCardSectionDesc")}</p>
-              <Button asChild className="group" onClick={() => trackGiftCardClicked("v2_page")}>
+              <Button asChild className="group rounded-full" onClick={() => trackGiftCardClicked("v2_page")}>
                 <Link to={getLocalizedPath("/gift-card")}>
                   {t(lang, "giftCardSectionCTA")}
                   <ArrowRight className={`h-4 w-4 transition-transform group-hover:translate-x-1 ${isRTL ? "mr-2 rotate-180 group-hover:-translate-x-1" : "ml-2"}`} />
