@@ -422,96 +422,11 @@ const IndexV2 = () => {
           </div>
         </section>
 
-        {/* ──────── 4. MARQUEE + THIS IS NOT TOURISM ── */}
+        {/* ──────── 4. MARQUEE ── */}
         <MarqueeBanner />
 
-        <section className="relative py-8 sm:py-14 md:py-18 overflow-hidden">
-          <div className="absolute inset-0">
-            <img src={handpickedHero} alt="" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/40" />
-          </div>
-          <div className="container max-w-3xl relative z-10 px-4 text-center">
-            <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold tracking-[-0.02em] mb-3 text-white">
-              {isRTL ? "זה לא תיירות." : lang === "fr" ? "Ce n'est pas du tourisme." : "This is not tourism."}
-            </h2>
-            <div className="text-[11px] sm:text-xs md:text-sm leading-relaxed text-white/95 max-w-2xl mx-auto space-y-2">
-              <p>{t(lang, "handpickedP1")}</p>
-              <p>{t(lang, "handpickedP2")}</p>
-              <p>{t(lang, "handpickedP3")}</p>
-            </div>
-          </div>
-        </section>
-
-        {/* ──────── 5. DESERT + SEA — côte à côte ── */}
-        {(isLoadingExp || desertExps.length > 0 || seaExps.length > 0) && (
-          <section className="py-10 sm:py-16">
-            <div className="container px-4 mx-auto max-w-6xl">
-              <div className="grid md:grid-cols-2 gap-10 md:gap-14 items-start">
-
-                {/* Gauche : Into the Desert */}
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-1">
-                    {isRTL ? "הדרום" : "The South"}
-                  </p>
-                  <div className={cn("flex items-baseline justify-between mb-1", isRTL && "flex-row-reverse")}>
-                    <h2 className="font-sans text-xl sm:text-2xl font-bold tracking-[-0.02em] uppercase">
-                      🏜️ {isRTL ? "אל המדבר" : "Into the Desert"}
-                    </h2>
-                    <button
-                      onClick={() => { trackViewAllExperiencesClicked("v2_desert"); navigate(getLocalizedPath("/experiences")); }}
-                      className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors flex-shrink-0 ml-4"
-                    >
-                      {isRTL ? "לכל ›" : "View all ›"}
-                    </button>
-                  </div>
-                  <p className="text-sm text-muted-foreground italic mb-5">
-                    {isRTL ? "שם שתיקה פוגשת אותך" : "Where silence hits different"}
-                  </p>
-                  {isLoadingExp ? (
-                    <div className="flex gap-3"><ExperienceCardSkeleton /><ExperienceCardSkeleton /></div>
-                  ) : desertExps.length > 0 ? (
-                    <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-                      <div className="flex gap-3 pb-1">{desertExps.slice(0, 4).map((e: any, i: number) => renderCard(e, i))}</div>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground italic">{isRTL ? "בקרוב..." : "Coming soon…"}</p>
-                  )}
-                </div>
-
-                {/* Droite : At Sea */}
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-1">
-                    {isRTL ? "החוף" : "The Coast"}
-                  </p>
-                  <div className={cn("flex items-baseline justify-between mb-1", isRTL && "flex-row-reverse")}>
-                    <h2 className="font-sans text-xl sm:text-2xl font-bold tracking-[-0.02em] uppercase">
-                      🌊 {isRTL ? "ליד הים" : "At Sea"}
-                    </h2>
-                    <button
-                      onClick={() => { trackViewAllExperiencesClicked("v2_sea"); navigate(getLocalizedPath("/experiences")); }}
-                      className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors flex-shrink-0 ml-4"
-                    >
-                      {isRTL ? "לכל ›" : "View all ›"}
-                    </button>
-                  </div>
-                  <p className="text-sm text-muted-foreground italic mb-5">
-                    {isRTL ? "אוויר מלח, בקרות שקטות" : "Salt air, slow mornings"}
-                  </p>
-                  {isLoadingExp ? (
-                    <div className="flex gap-3"><ExperienceCardSkeleton /><ExperienceCardSkeleton /></div>
-                  ) : seaExps.length > 0 ? (
-                    <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-                      <div className="flex gap-3 pb-1">{seaExps.slice(0, 4).map((e: any, i: number) => renderCard(e, i))}</div>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground italic">{isRTL ? "בקרוב..." : "Coming soon…"}</p>
-                  )}
-                </div>
-
-              </div>
-            </div>
-          </section>
-        )}
+        {/* ──────── 5. YOUR TRIP YOUR RULES ── */}
+        <TailoredRequestSection categories={categories || []} />
 
         {/* ──────── 6. GIFT CARD ── */}
         <section className="container py-8 md:py-14 px-4">
@@ -586,8 +501,23 @@ const IndexV2 = () => {
           </section>
         )}
 
-        {/* ──────── 9. YOUR TRIP YOUR RULES ── */}
-        <TailoredRequestSection categories={categories || []} />
+        {/* ──────── 9. THIS IS NOT TOURISM ── */}
+        <section className="relative py-8 sm:py-14 md:py-18 overflow-hidden">
+          <div className="absolute inset-0">
+            <img src={handpickedHero} alt="" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/40" />
+          </div>
+          <div className="container max-w-3xl relative z-10 px-4 text-center">
+            <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold tracking-[-0.02em] mb-3 text-white">
+              {isRTL ? "זה לא תיירות." : lang === "fr" ? "Ce n'est pas du tourisme." : "This is not tourism."}
+            </h2>
+            <div className="text-[11px] sm:text-xs md:text-sm leading-relaxed text-white/95 max-w-2xl mx-auto space-y-2">
+              <p>{t(lang, "handpickedP1")}</p>
+              <p>{t(lang, "handpickedP2")}</p>
+              <p>{t(lang, "handpickedP3")}</p>
+            </div>
+          </div>
+        </section>
 
         {/* ──────── 10. Q&A ── */}
         <FAQSection />
