@@ -18,26 +18,21 @@ import NewsletterPopup from "@/components/NewsletterPopup";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import {
-  ArrowRight, Moon, Sun, Sparkles, ShieldCheck, Ban, Minus, Plus,
-  Heart, Users, BookOpen, Leaf, Backpack, Waves, Wine, Zap,
-} from "lucide-react";
+import { ArrowRight, Moon, Sun, Sparkles, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trackVibeTabClicked, trackGiftCardClicked, trackViewAllExperiencesClicked } from "@/lib/analytics";
 import heroImage    from "@/assets/hero-road-desert.jpg";
 import handpickedHero from "@/assets/handpicked-hero.jpg";
 import giftCardHero   from "@/assets/gift-card-hero.jpg";
 
-/* ─── Vibes V2 ───────────────────────────────────────────────────────────── */
+/* ─── 6 vibes actifs ─────────────────────────────────────────────────────── */
 const VIBE_CHIPS = [
-  { id: "for-two",          Icon: Heart,    label: "For Two",          filter: (slug: string) => slug === "romantic" },
-  { id: "little-explorers", Icon: Users,    label: "Little Explorers", filter: null },
-  { id: "land-of-stories",  Icon: BookOpen, label: "Land of Stories",  filter: null },
-  { id: "into-the-wild",    Icon: Leaf,     label: "Into the Wild",    filter: (slug: string) => slug !== "romantic" },
-  { id: "lone-traveler",    Icon: Backpack, label: "Lone Traveler",    filter: null },
-  { id: "reset",            Icon: Waves,    label: "Reset",            filter: null },
-  { id: "taste-israel",     Icon: Wine,     label: "Taste Israel",     filter: null },
-  { id: "get-active",       Icon: Zap,      label: "Get Active",       filter: null },
+  { id: "for-two",          label: "For Two",          slugHints: ["romantic"] },
+  { id: "little-explorers", label: "Little Explorers", slugHints: ["family", "little"] },
+  { id: "taste-israel",     label: "Taste Israel",     slugHints: ["taste"] },
+  { id: "get-active",       label: "Get Active",       slugHints: ["active"] },
+  { id: "land-of-stories",  label: "Land of Stories",  slugHints: ["land", "stories", "nature", "beyond"] },
+  { id: "reset",            label: "Reset",            slugHints: ["reset", "mindful"] },
 ];
 
 /* ─── Geo helpers ─────────────────────────────────────────────────────────── */
@@ -170,9 +165,13 @@ const IndexV2 = () => {
   const categoryFilteredExperiences = useMemo(() => {
     if (!selectedVibe) return experiences2;
     const chip = VIBE_CHIPS.find((c) => c.id === selectedVibe);
-    if (!chip?.filter) return experiences2;
-    return experiences2?.filter((exp: any) => chip.filter!(exp.categories?.slug || ""));
-  }, [experiences2, selectedVibe]);
+    if (!chip) return experiences2;
+    const matchedCat = categories?.find((cat) =>
+      chip.slugHints.some((hint) => cat.slug.includes(hint))
+    );
+    if (!matchedCat) return experiences2;
+    return experiences2?.filter((exp: any) => exp.categories?.slug === matchedCat.slug);
+  }, [experiences2, selectedVibe, categories]);
 
   const desertExps    = useMemo(() => (experiences2 ?? []).filter((e: any) => matchesZone(primaryHotel(e), DESERT_KEYS)),    [experiences2]);
   const seaExps       = useMemo(() => (experiences2 ?? []).filter((e: any) => matchesZone(primaryHotel(e), SEA_KEYS)),       [experiences2]);
@@ -286,55 +285,6 @@ const IndexV2 = () => {
               </div>
             </div>
 
-            {/* Search bar avec date */}
-            <div
-              className="opacity-0 animate-hero-fade-up w-full max-w-[320px] sm:max-w-sm mb-5"
-              style={{ animationDelay: "380ms" }}
-              dir="ltr"
-            >
-              <div className="flex items-stretch bg-white rounded-xl overflow-hidden shadow-lg">
-                <div className="flex flex-1 items-center divide-x divide-gray-200">
-                  <label className="flex-1 px-3 py-2.5 cursor-pointer relative">
-                    <p className="text-[8px] font-semibold uppercase tracking-wider text-gray-400">{isRTL ? "מתי" : "When"}</p>
-                    <p className="text-[11px] text-gray-600 truncate">
-                      {fabDate
-                        ? new Date(fabDate).toLocaleDateString(lang === "fr" ? "fr-FR" : "en-GB", { day: "numeric", month: "short" })
-                        : (isRTL ? "בחר תאריך" : "Any date")}
-                    </p>
-                    <input type="date" value={fabDate} onChange={(e) => setFabDate(e.target.value)} className="absolute inset-0 opacity-0 cursor-pointer w-full" />
-                  </label>
-                  <div className="flex-1 px-3 py-2.5">
-                    <p className="text-[8px] font-semibold uppercase tracking-wider text-gray-400">
-                      {mode === "stay" ? (isRTL ? "אווירה" : "Mood") : (isRTL ? "פעילות" : "Activity")}
-                    </p>
-                    <p className="text-[11px] text-gray-600">{isRTL ? "כולם" : "Any"}</p>
-                  </div>
-                  <div className="flex-1 px-3 py-2.5">
-                    <p className="text-[8px] font-semibold uppercase tracking-wider text-gray-400">{isRTL ? "אורחים" : "Guests"}</p>
-                    <p className="text-[11px] text-gray-600">2</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => document.getElementById("v2-mood-section")?.scrollIntoView({ behavior: "smooth" })}
-                  className="bg-foreground text-white text-[10px] font-bold uppercase tracking-wider px-3 flex-shrink-0 hover:bg-foreground/90 transition-colors"
-                >
-                  {isRTL ? "חפש" : "EXPLORE"}
-                </button>
-              </div>
-            </div>
-
-            {/* Trust strip */}
-            <div
-              className="opacity-0 animate-hero-fade-up flex items-center justify-center gap-4 sm:gap-6 text-white/60 text-[10px] sm:text-[11px] uppercase tracking-wide"
-              style={{ animationDelay: "500ms" }}
-              dir={isRTL ? "rtl" : "ltr"}
-            >
-              <span className="flex items-center gap-1.5"><Ban      className="h-3 w-3 flex-shrink-0" strokeWidth={1.5} />{isRTL ? "ביטול חינם" : lang === "fr" ? "Annulation gratuite" : "Free cancellation"}</span>
-              <span className="w-px h-3 bg-white/20" />
-              <span className="flex items-center gap-1.5"><Sparkles className="h-3 w-3 flex-shrink-0" strokeWidth={1.5} />{isRTL ? "חוויה אמיתית" : lang === "fr" ? "Expérience authentique" : "Authentic experience"}</span>
-              <span className="w-px h-3 bg-white/20" />
-              <span className="flex items-center gap-1.5"><ShieldCheck className="h-3 w-3 flex-shrink-0" strokeWidth={1.5} />{isRTL ? "תשלום מאובטח" : lang === "fr" ? "Paiement sécurisé" : "Secure payment"}</span>
-            </div>
           </div>
         </section>
 
@@ -345,29 +295,41 @@ const IndexV2 = () => {
         <section id="v2-mood-section" className="bg-[#FAF8F4] py-10 sm:py-14 scroll-mt-14">
           <div className="container px-4 mx-auto">
 
-            {/* Vibe chips — rangée horizontale avec icônes */}
-            <div className={cn("flex items-start justify-start md:justify-center gap-8 sm:gap-12 overflow-x-auto scrollbar-hide pb-2 mb-8 sm:mb-10", isRTL && "flex-row-reverse")} dir="ltr">
+            {/* Cartes de catégories — une ligne */}
+            <div className="grid grid-cols-6 gap-2 sm:gap-3 mb-8 sm:mb-10" dir="ltr">
               {VIBE_CHIPS.map((chip) => {
                 const isSelected = selectedVibe === chip.id;
+                const catImage = categories?.find((cat) =>
+                  chip.slugHints.some((hint) => cat.slug.includes(hint))
+                )?.hero_image ?? null;
                 return (
                   <button
                     key={chip.id}
                     onClick={() => handleVibeClick(chip.id)}
                     className={cn(
-                      "flex flex-col items-center gap-2 flex-shrink-0 transition-all duration-200 pb-1.5 border-b-2",
-                      isSelected ? "border-foreground" : "border-transparent hover:border-foreground/30"
+                      "group relative overflow-hidden rounded-xl transition-all duration-300",
+                      "h-[70px] sm:h-[90px]",
+                      isSelected ? "ring-2 ring-foreground shadow-lg" : "hover:shadow-md"
                     )}
                   >
-                    <chip.Icon
-                      className={cn("h-6 w-6 transition-colors", isSelected ? "text-foreground" : "text-foreground/45")}
-                      strokeWidth={1.5}
-                    />
-                    <span className={cn(
-                      "text-[9px] sm:text-[10px] uppercase tracking-[0.07em] font-semibold text-center leading-tight max-w-[60px]",
-                      isSelected ? "text-foreground" : "text-foreground/45"
-                    )}>
-                      {chip.label}
-                    </span>
+                    {catImage ? (
+                      <img
+                        src={catImage}
+                        alt={chip.label}
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-stone-200" />
+                    )}
+                    <div className={cn(
+                      "absolute inset-0 transition-all duration-300",
+                      isSelected ? "bg-black/55" : "bg-black/30 group-hover:bg-black/45"
+                    )} />
+                    <div className="absolute inset-0 flex items-center justify-center p-1.5">
+                      <span className="font-sans text-[9px] sm:text-[10px] font-bold text-white uppercase tracking-tight text-center leading-tight drop-shadow-sm">
+                        {chip.label}
+                      </span>
+                    </div>
                   </button>
                 );
               })}
