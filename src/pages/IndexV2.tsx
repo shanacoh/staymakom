@@ -394,10 +394,7 @@ const IndexV2 = () => {
           </div>
         </section>
 
-        {/* ──────── 4. MARQUEE ── */}
-        <MarqueeBanner />
-
-        {/* ──────── 5. YOUR TRIP YOUR RULES ── */}
+        {/* ──────── 4. YOUR TRIP YOUR RULES ── */}
         <TailoredRequestSection categories={categories || []} />
 
         {/* ──────── 6. GIFT CARD ── */}
@@ -473,7 +470,9 @@ const IndexV2 = () => {
           </section>
         )}
 
-        {/* ──────── 9. THIS IS NOT TOURISM ── */}
+        {/* ──────── 9. MARQUEE + THIS IS NOT TOURISM ── */}
+        <MarqueeBanner />
+
         <section className="relative py-8 sm:py-14 md:py-18 overflow-hidden">
           <div className="absolute inset-0">
             <img src={handpickedHero} alt="" className="w-full h-full object-cover" />
