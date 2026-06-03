@@ -6,16 +6,16 @@ const HowItWorksBanner = () => {
   const isRTL = lang === 'he';
   const steps = lang === 'he' ? [{
     number: "1",
-    line1: "יום",
-    line2: "או לילה"
+    line1: "בחר",
+    line2: "את האווירה"
   }, {
     number: "2",
-    line1: "האווירה",
-    line2: "שלך"
+    line1: "בחר",
+    line2: "את החוויה"
   }, {
     number: "3",
-    line1: "הזמינו",
-    line2: "את הרגע"
+    line1: "הזמן",
+    line2: "את המלון"
   }] : lang === 'fr' ? [{
     number: "1",
     line1: "Aventure",
@@ -30,18 +30,18 @@ const HowItWorksBanner = () => {
     line2: "le séjour"
   }] : [{
     number: "1",
-    line1: "Day",
-    line2: "or Night"
+    line1: "Choose",
+    line2: "your vibe"
   }, {
     number: "2",
-    line1: "Your",
-    line2: "Mood"
+    line1: "Pick",
+    line2: "your experience"
   }, {
     number: "3",
     line1: "Book",
-    line2: "it"
+    line2: "your hotel"
   }];
-  return <section className="bg-[#1a1a1a] py-2.5 sm:py-4 cursor-default select-none" dir={isRTL ? 'rtl' : 'ltr'}>
+  return <section className="bg-foreground py-2.5 sm:py-4 cursor-default select-none" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="container px-4">
         <div className="flex flex-row flex-wrap items-center justify-center gap-2 sm:gap-0 md:gap-0">
           {steps.map((step, index) => <div key={index} className="flex items-center gap-2 sm:gap-0 md:gap-0">
