@@ -50,6 +50,18 @@ const CHIP_COLORS = [
   { iconSelected: "bg-indigo-100 text-indigo-600", iconHover: "group-hover:bg-indigo-50 group-hover:text-indigo-600", labelActive: "text-indigo-600", dot: "bg-indigo-400" },
 ];
 
+/* ─── Catégories V3 — ordre et labels fixes ─────────────────────────────── */
+const V3_CATEGORIES = [
+  { id: "romantic-escape", en: "Romantic Escape",  fr: "Escapade Romantique",  he: "בריחה רומנטית",    slugHints: ["romantic"],                   icon: "heart",   img: "/icons/icon-romantic.png"  },
+  { id: "family-fun",      en: "Family Fun",        fr: "Fun Famille",          he: "כיף משפחתי",       slugHints: ["family"],                     icon: "users",   img: "/icons/icon-family.png"    },
+  { id: "foody-discovery", en: "Foody Discovery",   fr: "Découverte Culinaire", he: "גילוי קולינרי",    slugHints: ["taste", "food", "culinar"],   icon: "wine",    img: "/icons/icon-foody.png"     },
+  { id: "land-of-stories", en: "Land of Stories",  fr: "Terre de Récits",      he: "ארץ הסיפורים",     slugHints: ["land", "stories"],            icon: "compass", img: "/icons/icon-stories.png"   },
+  { id: "sporty-break",    en: "Sporty Break",      fr: "Pause Sportive",       he: "הפסקה ספורטיבית",  slugHints: ["active", "sport"],            icon: "zap",     img: "/icons/icon-sporty.png"    },
+  { id: "nature-outdoor",  en: "Nature & Outdoor",  fr: "Nature & Plein Air",   he: "טבע ושטח",         slugHints: ["nature", "beyond", "outdoor"],icon: "leaf",    img: "/icons/icon-nature.png"    },
+  { id: "mindful-reset",   en: "Mindful Reset",     fr: "Pause Bien-être",      he: "איפוס מודע",       slugHints: ["mindful", "reset"],           icon: "brain",   img: "/icons/icon-mindful.png"   },
+  { id: "lone-traveler",   en: "Lone Traveler",     fr: "Voyageur Solo",        he: "טיול יחיד",        slugHints: ["solo", "lone", "single"],     icon: "globe",   img: "/icons/icon-solo.png"      },
+];
+
 /* ─── Helper hotel principal ─────────────────────────────────────────────── */
 function primaryHotel(exp: any) {
   return (
@@ -243,12 +255,17 @@ const IndexV3 = () => {
                 isRTL && "flex-row-reverse"
               )}
             >
-              {(categories as any[]).map((cat, idx) => {
+              {V3_CATEGORIES.map((v3cat, idx) => {
                 const colors = CHIP_COLORS[idx % CHIP_COLORS.length];
-                const isSelected = selectedCategory === cat.slug;
+                const dbCat = (categories as any[])?.find((cat) =>
+                  v3cat.slugHints.some((hint) => cat.slug.includes(hint))
+                );
+                const dbSlug = dbCat?.slug ?? null;
+                const isSelected = selectedCategory === dbSlug;
                 const isDimmed = !!selectedCategory && !isSelected;
-                const name = getLocalizedField(cat, "name", lang) as string;
-                const IconComponent: LucideIcon = cat.icon ? (iconMap[cat.icon] ?? Sparkles) : Sparkles;
+                const name = lang === "he" ? v3cat.he : lang === "fr" ? v3cat.fr : v3cat.en;
+                const IconComponent: LucideIcon =
+                  (dbCat?.icon ? iconMap[dbCat.icon] : null) ?? iconMap[v3cat.icon] ?? Sparkles;
 
                 const words = name.split(" ");
                 const mid = Math.ceil(words.length / 2);
@@ -257,8 +274,8 @@ const IndexV3 = () => {
 
                 return (
                   <button
-                    key={cat.id}
-                    onClick={() => setSelectedCategory((prev) => (prev === cat.slug ? null : cat.slug))}
+                    key={v3cat.id}
+                    onClick={() => setSelectedCategory((prev) => (prev === dbSlug ? null : dbSlug))}
                     className={cn(
                       "group flex flex-col items-center gap-2 flex-shrink-0 w-[72px] sm:w-[82px] py-2 px-1 rounded-2xl transition-all duration-300",
                       isSelected
@@ -270,13 +287,22 @@ const IndexV3 = () => {
                   >
                     <div
                       className={cn(
-                        "w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-300",
+                        "w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden",
                         isSelected
                           ? colors.iconSelected
                           : cn("bg-stone-100 text-stone-500", colors.iconHover)
                       )}
                     >
-                      <IconComponent className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={1.5} />
+                      {v3cat.img ? (
+                        <img
+                          src={v3cat.img}
+                          alt={name}
+                          className="w-7 h-7 sm:w-8 sm:h-8 object-contain"
+                          style={{ mixBlendMode: "multiply" }}
+                        />
+                      ) : (
+                        <IconComponent className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={1.5} />
+                      )}
                     </div>
                     <span
                       className={cn(
