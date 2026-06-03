@@ -1477,23 +1477,26 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
 
                 {/* Mobile: stacked */}
                 <div className="md:hidden space-y-3">
-                  {(amountAfterGiftCard === 0 || paymentStatus === "paid" || isBooking) && (
-                    <Button
-                      className="w-full uppercase tracking-[0.12em] text-[13px] bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
-                      style={{ height: '52px', borderRadius: '0px' }}
-                      disabled={totalIsNaN || isBooking}
-                      onClick={handleBook}
-                    >
-                      {isBooking ? (
-                        <span className="flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          {getBookingMessage()}
-                        </span>
-                      ) : (
-                        lang === "he" ? "אשר הזמנה" : lang === "fr" ? "CONFIRMER LA RÉSERVATION" : "CONFIRM BOOKING"
-                      )}
-                    </Button>
-                  )}
+                  <Button
+                    className="w-full uppercase tracking-[0.12em] text-[13px] bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
+                    style={{ height: '52px', borderRadius: '0px' }}
+                    disabled={totalIsNaN || isBooking || paymentStatus === "creating" || paymentStatus === "failed"}
+                    onClick={handleBook}
+                  >
+                    {isBooking ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {getBookingMessage()}
+                      </span>
+                    ) : paymentStatus === "creating" ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {lang === "he" ? "מכין תשלום..." : lang === "fr" ? "Préparation du paiement..." : "Preparing payment..."}
+                      </span>
+                    ) : (
+                      lang === "he" ? "שלם והזמן" : lang === "fr" ? "PAYER & RÉSERVER" : "CONFIRM BOOKING"
+                    )}
+                  </Button>
                   <button
                     className="w-full text-center text-[13px] py-2"
                     style={{ color: '#8C7B6B' }}
