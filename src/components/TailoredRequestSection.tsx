@@ -247,15 +247,15 @@ const TailoredRequestSection = ({ categories, ctaClassName }: TailoredRequestSec
     </button>
   );
 
-  const perksEN = ["Tailor-made", "Authentic", "Truly unique", "Best price guaranteed"];
-  const perksFR = ["Sur mesure", "Authentique", "Vraiment unique", "Meilleur prix garanti"];
+  const perksEN = ["Tailor-made", "Authentic", "Best price guaranteed"];
+  const perksFR = ["Sur mesure", "Authentique", "Meilleur prix garanti"];
   const perks = lang === "fr" ? perksFR : perksEN;
 
   return (
     <>
       {/* ─── Photo Hero Banner ─── */}
       <section
-        className="relative w-full bg-cover bg-center py-16 sm:py-20 md:py-24"
+        className="relative w-full bg-cover bg-center py-10 sm:py-14 md:py-16"
         style={{ backgroundImage: `url(${tailoredHero})` }}
         dir={isRTL ? "rtl" : "ltr"}
       >

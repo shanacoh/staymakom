@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,7 @@ import MarqueeBanner from "@/components/MarqueeBanner";
 import TailoredRequestSection from "@/components/TailoredRequestSection";
 import FAQSection from "@/components/FAQSection";
 import Experience2CardWithPrice from "@/components/Experience2CardWithPrice";
+import StandaloneExperienceCard from "@/components/StandaloneExperienceCard";
 import ExperienceCardSkeleton from "@/components/ExperienceCardSkeleton";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,49 @@ const V3_CATEGORIES = [
   { id: "lone-traveler",   en: "Lone Traveler",     fr: "Voyageur Solo",        he: "טיול יחיד",        slugHints: ["solo", "lone", "single"],     icon: "globe",   img: "/icons/icon-solo.png"      },
 ];
 
+/* ─── Animation CSS par icône de catégorie ──────────────────────────────── */
+const ICON_ANIM_CLASS: Record<string, string> = {
+  "romantic-escape":  "cat-icon-heart",
+  "family-fun":       "cat-icon-family",
+  "foody-discovery":  "cat-icon-wine",
+  "land-of-stories":  "cat-icon-compass",
+  "sporty-break":     "cat-icon-zap",
+  "nature-outdoor":   "cat-icon-leaf",
+  "mindful-reset":    "cat-icon-brain",
+  "lone-traveler":    "cat-icon-globe",
+};
+
+/* ─── Articles de blog ───────────────────────────────────────────────────── */
+const BLOG_ARTICLES = [
+  {
+    id: "tlv-june",
+    title: "5 Best Things to Do in TLV in June",
+    titleFr: "5 choses à faire à TLV en juin",
+    desc: "Sun, markets, rooftop bars, and hidden beaches — the ultimate June guide.",
+    descFr: "Soleil, marchés, rooftops et plages cachées — le guide ultime de juin.",
+    href: "/blog/5-best-things-tlv-june",
+    overlay: "bg-stone-900/40",
+  },
+  {
+    id: "jerusalem",
+    title: "Jerusalem Like You've Never Seen Before",
+    titleFr: "Jérusalem comme vous ne l'avez jamais vue",
+    desc: "Off-the-beaten-path neighborhoods, artisan bakeries, and golden-hour spots most tourists miss.",
+    descFr: "Quartiers secrets, boulangeries artisanales et lumières dorées hors des sentiers battus.",
+    href: "/blog/jerusalem-like-youve-never-seen",
+    overlay: "bg-teal-950/50",
+  },
+  {
+    id: "desert",
+    title: "5 Desert Escapes",
+    titleFr: "5 évasions dans le désert",
+    desc: "Silence, stars, and natural hot springs. The Negev beyond the postcards.",
+    descFr: "Silence, étoiles et sources chaudes naturelles. Le Néguev au-delà des cartes postales.",
+    href: "/blog/5-desert-escapes",
+    overlay: "bg-amber-950/55",
+  },
+];
+
 /* ─── Helper hotel principal ─────────────────────────────────────────────── */
 function primaryHotel(exp: any) {
   return (
@@ -70,6 +114,17 @@ const IndexV3 = () => {
 
   const [mode, setMode] = useState<"stay" | "live">("stay");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const carouselRef = useRef<HTMLDivElement>(null);
+
+  const carouselGoTo = (idx: number) => {
+    if (idx < 0 || idx >= BLOG_ARTICLES.length) return;
+    setCarouselIndex(idx);
+    if (!carouselRef.current) return;
+    const firstCard = carouselRef.current.firstElementChild as HTMLElement;
+    if (!firstCard) return;
+    carouselRef.current.scrollTo({ left: idx * (firstCard.offsetWidth + 16), behavior: "smooth" });
+  };
 
   /* ── Realtime ── */
   useEffect(() => {
@@ -82,15 +137,15 @@ const IndexV3 = () => {
     return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
 
-  /* ── Categories ── */
+  /* ── Categories — toutes les catégories publiées (pas seulement show_on_launch)
+        pour pouvoir trouver le slug DB de chaque chip V3 et filtrer correctement ── */
   const { data: categories } = useQuery({
-    queryKey: ["launch-categories"],
+    queryKey: ["all-categories"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("categories")
         .select("*")
         .eq("status", "published")
-        .eq("show_on_launch", true)
         .order("display_order", { ascending: true });
       if (error) throw error;
       return data;
@@ -129,6 +184,32 @@ const IndexV3 = () => {
     staleTime: 60_000,
     gcTime: 5 * 60_000,
   });
+
+  /* ── Standalone experiences (mode "live") ── */
+  const { data: standaloneExperiences, isLoading: isLoadingStandalone } = useQuery({
+    queryKey: ["v3-standalone-experiences"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("standalone_experiences")
+        .select("id, slug, title, title_he, title_fr, hero_image, photos, base_price, base_price_type, currency, min_party, max_party, has_time_slots, display_order, experience2_highlight_tags:categories(name)")
+        .eq("status", "published")
+        .order("display_order", { ascending: true, nullsFirst: false });
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: mode === "live",
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+  });
+
+  /* ── Filtrage standalone par catégorie ── */
+  const filteredStandalone = useMemo(() => {
+    if (!standaloneExperiences) return [];
+    if (!selectedCategory) return standaloneExperiences;
+    return standaloneExperiences.filter(
+      (exp: any) => exp.experience2_highlight_tags?.name === selectedCategory
+    );
+  }, [standaloneExperiences, selectedCategory]);
 
   /* ── Availability rules ── */
   const experienceIds = useMemo(
@@ -213,7 +294,7 @@ const IndexV3 = () => {
         </section>
 
         {/* ──── 2+3+4. Section unifiée : Handpicked + Catégories + Cartes ──── */}
-        <section className="bg-[#FAF8F4] pt-7 pb-9 sm:pt-9 sm:pb-12">
+        <section className="bg-white pt-7 pb-9 sm:pt-9 sm:pb-12">
 
           {/* Titre */}
           <div className="text-center px-4 mb-3">
@@ -249,7 +330,8 @@ const IndexV3 = () => {
                   v3cat.slugHints.some((hint) => cat.slug.includes(hint))
                 );
                 const dbSlug = dbCat?.slug ?? null;
-                const isSelected = dbSlug !== null && selectedCategory === dbSlug;
+                const categoryKey = dbSlug ?? v3cat.id;
+                const isSelected = selectedCategory === categoryKey;
                 const isDimmed = !!selectedCategory && !isSelected;
                 const name = lang === "he" ? v3cat.he : lang === "fr" ? v3cat.fr : v3cat.en;
                 const IconComponent: LucideIcon =
@@ -263,32 +345,29 @@ const IndexV3 = () => {
                 return (
                   <button
                     key={v3cat.id}
-                    onClick={() => setSelectedCategory((prev) => (prev === dbSlug ? null : dbSlug))}
+                    onClick={() => setSelectedCategory((prev) => (prev === categoryKey ? null : categoryKey))}
                     className={cn(
-                      "group flex flex-col items-center gap-2 flex-shrink-0 w-[72px] sm:w-[82px] py-2.5 px-1 rounded-2xl transition-all duration-200",
+                      "cat-chip group flex flex-col items-center gap-2 flex-shrink-0 w-[72px] sm:w-[82px] py-2.5 px-1 rounded-2xl transition-all duration-200",
                       isSelected
                         ? "bg-white border border-teal-500/60 shadow-sm"
                         : isDimmed
                           ? "opacity-35"
-                          : "hover:bg-[#EDE8DF]"
+                          : "hover:-translate-y-0.5"
                     )}
                   >
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center overflow-hidden bg-stone-100">
-                      {v3cat.img ? (
-                        <img
-                          src={v3cat.img}
-                          alt={name}
-                          className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
-                          style={{ mixBlendMode: "multiply" }}
-                        />
-                      ) : (
-                        <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 text-stone-500" strokeWidth={1.5} />
-                      )}
-                    </div>
+                    {v3cat.img ? (
+                      <img
+                        src={v3cat.img}
+                        alt={name}
+                        className={cn("w-10 h-10 sm:w-12 sm:h-12 object-contain", ICON_ANIM_CLASS[v3cat.id])}
+                      />
+                    ) : (
+                      <IconComponent className={cn("w-5 h-5 sm:w-6 sm:h-6 text-stone-500", ICON_ANIM_CLASS[v3cat.id])} strokeWidth={1.5} />
+                    )}
                     <span
                       className={cn(
                         "text-[9px] sm:text-[10px] font-semibold uppercase tracking-wide text-center leading-[13px] transition-colors duration-200",
-                        isSelected ? "text-teal-600" : "text-foreground/55 group-hover:text-foreground/75"
+                        isSelected ? "text-teal-600" : "text-foreground group-hover:text-foreground/80"
                       )}
                     >
                       {line1}{line2 && <><br />{line2}</>}
@@ -299,50 +378,75 @@ const IndexV3 = () => {
             </div>
           )}
 
-          {/* Grille de cartes */}
+          {/* Grille de cartes — conditionnelle selon le mode */}
           <div className="container px-4 mx-auto">
-            {isLoadingExp ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-                {Array.from({ length: 12 }).map((_, i) => <ExperienceCardSkeleton key={i} />)}
-              </div>
-            ) : filteredExperiences && filteredExperiences.length > 0 ? (
-              <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 transition-all duration-500">
-                  {(filteredExperiences as any[]).slice(0, 12).map((exp: any, idx: number) => {
-                    const hotel = primaryHotel(exp);
-                    return (
-                      <Experience2CardWithPrice
-                        key={exp.id}
-                        experience={exp}
-                        primaryHotel={hotel}
-                        hyperguestPropertyId={hotel?.hyperguest_property_id}
-                        availabilityRules={rulesMap[exp.id] ?? []}
-                        linkPrefix="/experience"
-                        linkSuffix="context=v3"
-                        index={idx}
-                        badge={mode === "live" ? "JUST GO" : undefined}
-                      />
-                    );
-                  })}
+            {mode === "live" ? (
+              /* ── Mode "Experience Only" : expériences standalone ── */
+              isLoadingStandalone ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                  {Array.from({ length: 8 }).map((_, i) => <ExperienceCardSkeleton key={i} />)}
                 </div>
-                <div className="text-center mt-8">
-                  <button
-                    onClick={() => { trackViewAllExperiencesClicked("v3_grid"); navigate(getLocalizedPath("/experiences")); }}
-                    className="inline-flex items-center gap-2 px-8 py-3 bg-foreground text-background text-xs font-bold uppercase tracking-widest rounded-full hover:bg-foreground/90 transition-colors"
-                  >
-                    {isRTL ? "לכל החוויות" : lang === "fr" ? "VOIR TOUTES LES EXPÉRIENCES" : "VIEW ALL EXPERIENCES"}
+              ) : filteredStandalone.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 transition-all duration-500">
+                  {filteredStandalone.slice(0, 12).map((exp: any, idx: number) => (
+                    <StandaloneExperienceCard
+                      key={exp.id}
+                      experience={exp}
+                      index={idx}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10">
+                  <p className="text-muted-foreground text-sm">
+                    {isRTL ? "אין חוויות Experience Only עדיין." : lang === "fr" ? "Aucune expérience disponible pour l'instant." : "No standalone experiences available yet."}
+                  </p>
+                </div>
+              )
+            ) : (
+              /* ── Mode "With Hotel" : expériences existantes (inchangé) ── */
+              isLoadingExp ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                  {Array.from({ length: 12 }).map((_, i) => <ExperienceCardSkeleton key={i} />)}
+                </div>
+              ) : filteredExperiences && filteredExperiences.length > 0 ? (
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 transition-all duration-500">
+                    {(filteredExperiences as any[]).slice(0, 12).map((exp: any, idx: number) => {
+                      const hotel = primaryHotel(exp);
+                      return (
+                        <Experience2CardWithPrice
+                          key={exp.id}
+                          experience={exp}
+                          primaryHotel={hotel}
+                          hyperguestPropertyId={hotel?.hyperguest_property_id}
+                          availabilityRules={rulesMap[exp.id] ?? []}
+                          linkPrefix="/experience"
+                          linkSuffix="context=v3"
+                          index={idx}
+                        />
+                      );
+                    })}
+                  </div>
+                  <div className="text-center mt-8">
+                    <button
+                      onClick={() => { trackViewAllExperiencesClicked("v3_grid"); navigate(getLocalizedPath("/experiences")); }}
+                      className="inline-flex items-center gap-2 px-8 py-3 bg-foreground text-background text-xs font-bold uppercase tracking-widest rounded-full hover:bg-foreground/90 transition-colors"
+                    >
+                      {isRTL ? "לכל החוויות" : lang === "fr" ? "VOIR TOUTES LES EXPÉRIENCES" : "VIEW ALL EXPERIENCES"}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-10">
+                  <p className="text-muted-foreground text-sm mb-3">
+                    {isRTL ? "אין חוויות בקטגוריה זו עדיין." : lang === "fr" ? "Aucune expérience pour cette catégorie." : "No experiences for this category yet."}
+                  </p>
+                  <button onClick={() => setSelectedCategory(null)} className="text-sm underline underline-offset-4 text-primary">
+                    {isRTL ? "הצג הכל" : lang === "fr" ? "Voir tout" : "Show all"}
                   </button>
                 </div>
-              </>
-            ) : (
-              <div className="text-center py-10">
-                <p className="text-muted-foreground text-sm mb-3">
-                  {isRTL ? "אין חוויות בקטגוריה זו עדיין." : lang === "fr" ? "Aucune expérience pour cette catégorie." : "No experiences for this category yet."}
-                </p>
-                <button onClick={() => setSelectedCategory(null)} className="text-sm underline underline-offset-4 text-primary">
-                  {isRTL ? "הצג הכל" : lang === "fr" ? "Voir tout" : "Show all"}
-                </button>
-              </div>
+              )
             )}
           </div>
 
@@ -414,49 +518,83 @@ const IndexV3 = () => {
           </div>
         </section>
 
-        {/* ──── 9. À LA UNE ──── */}
-        <section className="py-10 sm:py-14">
-          <div className="container px-4 mx-auto">
-            <div className="grid md:grid-cols-[1fr_2fr] gap-0 rounded-2xl overflow-hidden shadow-xl max-w-5xl mx-auto">
-              {/* Photo */}
-              <div className="relative h-52 md:h-auto min-h-[220px] overflow-hidden">
-                <img
-                  src={featuredPhoto}
-                  alt="À la une"
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-              </div>
+        {/* ──── 9. BLOG ARTICLES ──── */}
+        <section className="py-10 sm:py-14 overflow-hidden">
+          <div className="container px-4 mx-auto max-w-5xl">
 
-              {/* Bandeau texte */}
-              <div className="bg-[#1A1814] text-white flex flex-col justify-center p-8 sm:p-10 md:p-12">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 mb-3">
-                  {isRTL ? "אירוע" : lang === "fr" ? "Événement" : "Event"}
-                </span>
-                <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold leading-tight mb-3 text-white">
-                  {isRTL
-                    ? <>5 חוויות<br />בנכסים היפים ביותר</>
-                    : lang === "fr"
-                      ? <>5 expériences dans<br />les plus beaux domaines</>
-                      : <>5 experiences in<br />the most beautiful estates</>}
-                </h2>
-                <p className="text-white/70 text-sm mb-6">
-                  {isRTL
-                    ? "בריכות מוסתרות וארוחות צהריים בשמש"
-                    : lang === "fr"
-                      ? "Piscines cachées et déjeuners au soleil"
-                      : "Hidden pools and lunches under the sun"}
-                </p>
-                <div>
-                  <Link
-                    to={getLocalizedPath("/experiences")}
-                    className="inline-flex items-center gap-2 bg-[#FAF8F4] text-[#1A1814] text-xs font-semibold uppercase tracking-widest px-5 py-2.5 rounded-full hover:bg-white transition-colors"
-                  >
-                    {isRTL ? "צפה" : lang === "fr" ? "Voir l'événement" : "View event"}
-                    <ArrowRight className={cn("h-3.5 w-3.5", isRTL && "rotate-180")} />
-                  </Link>
-                </div>
+            {/* En-tête + flèches */}
+            <div className="flex items-center justify-between mb-5">
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-foreground/40">
+                {isRTL ? "מהבלוג" : lang === "fr" ? "Du blog" : "From the blog"}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => carouselGoTo(carouselIndex - 1)}
+                  disabled={carouselIndex === 0}
+                  className="w-9 h-9 rounded-full border border-foreground/20 flex items-center justify-center text-foreground/50 hover:border-foreground/50 hover:text-foreground disabled:opacity-25 transition-all"
+                  aria-label="Article précédent"
+                >
+                  <ArrowRight className="w-3.5 h-3.5 rotate-180" />
+                </button>
+                <button
+                  onClick={() => carouselGoTo(carouselIndex + 1)}
+                  disabled={carouselIndex === BLOG_ARTICLES.length - 1}
+                  className="w-9 h-9 rounded-full border border-foreground/20 flex items-center justify-center text-foreground/50 hover:border-foreground/50 hover:text-foreground disabled:opacity-25 transition-all"
+                  aria-label="Article suivant"
+                >
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
+
+            {/* Piste défilante */}
+            <div
+              ref={carouselRef}
+              className="flex gap-4 overflow-x-auto scrollbar-hide"
+              style={{ scrollSnapType: "x mandatory" }}
+            >
+              {BLOG_ARTICLES.map((article) => (
+                <div
+                  key={article.id}
+                  className="flex-shrink-0 w-[80%] sm:w-[72%] rounded-2xl overflow-hidden shadow-xl"
+                  style={{ scrollSnapAlign: "start" }}
+                >
+                  <div className="grid md:grid-cols-[1fr_2fr] gap-0 h-full">
+                    {/* Photo */}
+                    <div className="relative h-44 md:h-auto min-h-[180px] overflow-hidden">
+                      <img
+                        src={featuredPhoto}
+                        alt={article.title}
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                      <div className={`absolute inset-0 ${article.overlay}`} />
+                    </div>
+                    {/* Texte */}
+                    <div className="bg-[#1A1814] text-white flex flex-col justify-center p-7 sm:p-9">
+                      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 mb-3">
+                        {lang === "fr" ? "Blog" : "Blog"}
+                      </span>
+                      <h2 className="font-sans text-lg sm:text-xl md:text-2xl font-bold leading-tight mb-2 text-white">
+                        {lang === "fr" ? article.titleFr : article.title}
+                      </h2>
+                      <p className="text-white/70 text-sm mb-5">
+                        {lang === "fr" ? article.descFr : article.desc}
+                      </p>
+                      <div>
+                        <Link
+                          to={article.href}
+                          className="inline-flex items-center gap-2 bg-[#FAF8F4] text-[#1A1814] text-xs font-semibold uppercase tracking-widest px-5 py-2.5 rounded-full hover:bg-white transition-colors"
+                        >
+                          {isRTL ? "קרא מאמר" : lang === "fr" ? "Lire l'article" : "Read article"}
+                          <ArrowRight className={cn("h-3.5 w-3.5", isRTL && "rotate-180")} />
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
           </div>
         </section>
 

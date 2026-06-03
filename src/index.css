@@ -337,6 +337,69 @@ body {
   animation: scroll-line 2s ease-in-out infinite;
 }
 
+/* ── Category chip icon micro-animations ────────────────────────────────── */
+@keyframes icon-heartbeat {
+  0%   { transform: scale(1); }
+  14%  { transform: scale(1.22); }
+  28%  { transform: scale(1); }
+  42%  { transform: scale(1.14); }
+  56%  { transform: scale(1); }
+  100% { transform: scale(1); }
+}
+@keyframes icon-bounce {
+  0%, 100% { transform: translateY(0); }
+  30%       { transform: translateY(-7px); }
+  55%       { transform: translateY(-3px); }
+  75%       { transform: translateY(-5px); }
+  90%       { transform: translateY(-1px); }
+}
+@keyframes icon-wobble {
+  0%   { transform: rotate(0deg); }
+  18%  { transform: rotate(-10deg); }
+  44%  { transform: rotate(9deg); }
+  64%  { transform: rotate(-5deg); }
+  80%  { transform: rotate(3deg); }
+  92%  { transform: rotate(-1deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes icon-spin-once {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes icon-zap {
+  0%, 100% { transform: scale(1)    translateX(0); }
+  20%       { transform: scale(1.18) translateX(-2px); }
+  40%       { transform: scale(1.22) translateX(2px); }
+  60%       { transform: scale(1.12) translateX(-1px); }
+  80%       { transform: scale(1.06) translateX(1px); }
+}
+@keyframes icon-sway {
+  0%   { transform: rotate(0deg); }
+  25%  { transform: rotate(-12deg); }
+  55%  { transform: rotate(10deg); }
+  75%  { transform: rotate(-6deg); }
+  90%  { transform: rotate(3deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes icon-breathe {
+  0%, 100% { transform: scale(1);    opacity: 1; }
+  50%       { transform: scale(1.14); opacity: 0.82; }
+}
+@keyframes icon-globe-spin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* One animation per icon — fires once on hover, then resets */
+.cat-chip:hover .cat-icon-heart   { animation: icon-heartbeat 0.6s ease both; }
+.cat-chip:hover .cat-icon-family  { animation: icon-bounce    0.5s ease both; }
+.cat-chip:hover .cat-icon-wine    { animation: icon-wobble    0.65s ease both; }
+.cat-chip:hover .cat-icon-compass { animation: icon-spin-once 0.55s ease-out both; }
+.cat-chip:hover .cat-icon-zap     { animation: icon-zap       0.4s ease both; }
+.cat-chip:hover .cat-icon-leaf    { animation: icon-sway      0.7s ease both; }
+.cat-chip:hover .cat-icon-brain   { animation: icon-breathe   0.7s ease both; }
+.cat-chip:hover .cat-icon-globe   { animation: icon-globe-spin 0.8s linear both; }
+
 /* Leaflet map z-index — keep below calendar popovers */
 .leaflet-container {
   z-index: 1 !important;

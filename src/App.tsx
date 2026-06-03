@@ -82,6 +82,11 @@ const HyperGuestDebugPage    = lazy(() => import("./pages/admin/hyperguest/Debug
 const HyperGuestLogsPage     = lazy(() => import("./pages/admin/hyperguest/LogsPage"));
 const HyperGuestConfigPage   = lazy(() => import("./pages/admin/hyperguest/ConfigPage"));
 const RevolutDebugPage       = lazy(() => import("./pages/admin/revolut/DebugPage"));
+const StandaloneExperience       = lazy(() => import("./pages/StandaloneExperience"));
+const StandaloneBookingConfirmation = lazy(() => import("./pages/StandaloneBookingConfirmation"));
+const AdminStandaloneExperiences = lazy(() => import("./pages/admin/StandaloneExperiences"));
+const AdminStandaloneBookings    = lazy(() => import("./pages/admin/StandaloneBookings"));
+const AdminStandaloneBookingDetails = lazy(() => import("./pages/admin/StandaloneBookingDetails"));
 
 // ── Hotel admin (chargé uniquement si connecté hotel_admin) ───────────────
 const HotelAdminLayout       = lazy(() => import("@/components/hotel-admin/HotelAdminLayout").then(m => ({ default: m.HotelAdminLayout })));
@@ -190,6 +195,8 @@ const AppContent = () => {
           <Route path="/hotels/:slug" element={<Hotel />} />
           <Route path="/hotel-old/:slug" element={<HotelOld />} />
           <Route path="/booking/confirmation/:token" element={<BookingConfirmationPage />} />
+          <Route path="/standalone-experience/:slug" element={<StandaloneExperience />} />
+          <Route path="/standalone-booking/confirmation/:token" element={<StandaloneBookingConfirmation />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/cart" element={<Cart />} />
           <Route
@@ -237,6 +244,11 @@ const AppContent = () => {
             <Route path="bookings" element={<AdminBookings />} />
             <Route path="reservations" element={<AdminBookings />} />
             <Route path="reservations/:bookingId" element={<AdminReservationDetails />} />
+            <Route path="standalone-experiences" element={<AdminStandaloneExperiences />} />
+            <Route path="standalone-experiences/new" element={<AdminStandaloneExperiences key="new" />} />
+            <Route path="standalone-experiences/edit/:experienceId" element={<AdminStandaloneExperiences key="edit" />} />
+            <Route path="standalone-bookings" element={<AdminStandaloneBookings />} />
+            <Route path="standalone-bookings/:bookingId" element={<AdminStandaloneBookingDetails />} />
             <Route path="gift-cards" element={<AdminGiftCards />} />
             <Route path="gift-cards/:id" element={<AdminGiftCardDetails />} />
             <Route path="users" element={<AdminUsers />} />
