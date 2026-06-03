@@ -74,8 +74,8 @@ export default function HotelContact() {
             <CardContent className="space-y-3">
               <div className="flex items-center gap-2 text-sm">
                 <Mail className="h-4 w-4 text-muted-foreground" />
-                <a href="mailto:partners@staymakom.com" className="text-primary hover:underline">
-                  partners@staymakom.com
+                <a href="mailto:shana@staymakom.com" className="text-primary hover:underline">
+                  shana@staymakom.com
                 </a>
               </div>
               <p className="text-sm text-muted-foreground">

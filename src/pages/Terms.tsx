@@ -112,7 +112,7 @@ const Terms = () => {
 
           <h2 className="text-lg">11. Contact</h2>
           <p className="text-sm">
-            For any questions: <a href="mailto:hello@staymakom.com" className="text-primary hover:underline">hello@staymakom.com</a>
+            For any questions: <a href="mailto:shana@staymakom.com" className="text-primary hover:underline">shana@staymakom.com</a>
           </p>
         </article>
       </main>

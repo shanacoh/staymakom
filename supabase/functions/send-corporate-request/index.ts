@@ -133,7 +133,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         from: "Staymakom <onboarding@resend.dev>",
-        to: ["hello@staymakom.com"],
+        to: ["shana@staymakom.com"],
         reply_to: data.email,
         subject: `New Corporate Request: ${escapeHTML(requestTypeLabels[data.requestType] || data.requestType)}${data.companyName ? ` - ${escapeHTML(data.companyName)}` : ''}`,
         html: emailHtml,

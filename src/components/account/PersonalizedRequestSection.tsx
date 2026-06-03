@@ -68,7 +68,7 @@ const getCopy = (lang: string) => {
 export default function PersonalizedRequestSection({
   userName,
   userEmail,
-  contactEmail = "hello@staymakom.com",
+  contactEmail = "shana@staymakom.com",
 }: PersonalizedRequestSectionProps) {
   const { lang } = useLanguage();
   const copy = getCopy(lang);

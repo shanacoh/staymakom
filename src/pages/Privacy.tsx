@@ -95,7 +95,7 @@ const Privacy = () => {
             <li>request data portability (when applicable)</li>
           </ul>
           <p className="text-sm">
-            Contact: <a href="mailto:hello@staymakom.com" className="text-primary hover:underline">hello@staymakom.com</a>
+            Contact: <a href="mailto:shana@staymakom.com" className="text-primary hover:underline">shana@staymakom.com</a>
           </p>
 
           <h2 className="text-lg">7. Retention</h2>

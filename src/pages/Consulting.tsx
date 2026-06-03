@@ -366,14 +366,14 @@ const Consulting = () => {
               get international guests through your door.
             </p>
             <a
-              href="mailto:consulting@staymakom.com"
+              href="mailto:shana@staymakom.com"
               className="inline-block px-10 py-4 bg-white text-foreground font-semibold uppercase tracking-wide text-sm rounded-md shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer mb-6"
             >
               Start a conversation
             </a>
             <p className="flex items-center justify-center gap-2 text-sm text-primary-foreground/60">
               <Mail className="w-4 h-4" />
-              consulting@staymakom.com
+              shana@staymakom.com
             </p>
           </div>
         </section>

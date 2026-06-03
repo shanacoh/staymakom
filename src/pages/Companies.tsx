@@ -107,8 +107,8 @@ export default function Companies() {
     } catch (error) {
       
       toast.error(lang === 'he' 
-        ? "שליחת הבקשה נכשלה. אנא נסו שוב או צרו קשר ישירות hello@staymakom.com"
-        : "Failed to send request. Please try again or contact us directly at hello@staymakom.com"
+        ? "שליחת הבקשה נכשלה. אנא נסו שוב או צרו קשר ישירות shana@staymakom.com"
+        : "Failed to send request. Please try again or contact us directly at shana@staymakom.com"
       );
     } finally {
       setIsSubmitting(false);

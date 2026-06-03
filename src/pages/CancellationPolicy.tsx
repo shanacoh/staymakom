@@ -42,7 +42,7 @@ const CancellationPolicy = () => {
           <h2 className="text-lg">Questions?</h2>
           <p className="text-sm">
             For any questions regarding cancellations or refunds, please contact the hotel directly or reach out to us at{" "}
-            <a href="mailto:hello@staymakom.com" className="text-primary hover:underline">hello@staymakom.com</a>.
+            <a href="mailto:shana@staymakom.com" className="text-primary hover:underline">shana@staymakom.com</a>.
           </p>
         </article>
       </main>

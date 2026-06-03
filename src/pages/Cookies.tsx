@@ -35,7 +35,7 @@ const Cookies = () => {
           <h2 className="text-lg">Questions?</h2>
           <p className="text-sm">
             If you have any questions about our use of cookies, please contact us at{" "}
-            <a href="mailto:hello@staymakom.com" className="text-primary hover:underline">hello@staymakom.com</a>.
+            <a href="mailto:shana@staymakom.com" className="text-primary hover:underline">shana@staymakom.com</a>.
           </p>
         </article>
       </main>

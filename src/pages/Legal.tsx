@@ -24,7 +24,7 @@ const Legal = () => {
 
           <h2 className="text-lg">Contact</h2>
           <p className="text-sm">
-            <a href="mailto:hello@staymakom.com" className="text-primary hover:underline">hello@staymakom.com</a>
+            <a href="mailto:shana@staymakom.com" className="text-primary hover:underline">shana@staymakom.com</a>
           </p>
 
           <h2 className="text-lg">About</h2>
