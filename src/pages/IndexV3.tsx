@@ -261,7 +261,7 @@ const IndexV3 = () => {
                   v3cat.slugHints.some((hint) => cat.slug.includes(hint))
                 );
                 const dbSlug = dbCat?.slug ?? null;
-                const isSelected = selectedCategory === dbSlug;
+                const isSelected = dbSlug !== null && selectedCategory === dbSlug;
                 const isDimmed = !!selectedCategory && !isSelected;
                 const name = lang === "he" ? v3cat.he : lang === "fr" ? v3cat.fr : v3cat.en;
                 const IconComponent: LucideIcon =
