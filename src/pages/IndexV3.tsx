@@ -38,17 +38,6 @@ const iconMap: Record<string, LucideIcon> = {
   droplet: Droplet, wind: Wind, "tree-pine": TreePine, flower: Flower2,
 };
 
-/* ─── Palette couleur par position (cycle de 8 couleurs) ────────────────── */
-const CHIP_COLORS = [
-  { iconSelected: "bg-rose-100 text-rose-600",     iconHover: "group-hover:bg-rose-50 group-hover:text-rose-600",    labelActive: "text-rose-600",    dot: "bg-rose-400" },
-  { iconSelected: "bg-amber-100 text-amber-600",   iconHover: "group-hover:bg-amber-50 group-hover:text-amber-600",  labelActive: "text-amber-600",   dot: "bg-amber-400" },
-  { iconSelected: "bg-emerald-100 text-emerald-700", iconHover: "group-hover:bg-emerald-50 group-hover:text-emerald-700", labelActive: "text-emerald-700", dot: "bg-emerald-500" },
-  { iconSelected: "bg-purple-100 text-purple-600", iconHover: "group-hover:bg-purple-50 group-hover:text-purple-600", labelActive: "text-purple-600",  dot: "bg-purple-400" },
-  { iconSelected: "bg-yellow-100 text-yellow-600", iconHover: "group-hover:bg-yellow-50 group-hover:text-yellow-600", labelActive: "text-yellow-600",  dot: "bg-yellow-400" },
-  { iconSelected: "bg-blue-100 text-blue-600",     iconHover: "group-hover:bg-blue-50 group-hover:text-blue-600",    labelActive: "text-blue-600",    dot: "bg-blue-400" },
-  { iconSelected: "bg-teal-100 text-teal-700",     iconHover: "group-hover:bg-teal-50 group-hover:text-teal-700",    labelActive: "text-teal-700",    dot: "bg-teal-500" },
-  { iconSelected: "bg-indigo-100 text-indigo-600", iconHover: "group-hover:bg-indigo-50 group-hover:text-indigo-600", labelActive: "text-indigo-600", dot: "bg-indigo-400" },
-];
 
 /* ─── Catégories V3 — ordre et labels fixes ─────────────────────────────── */
 const V3_CATEGORIES = [
@@ -255,8 +244,7 @@ const IndexV3 = () => {
                 isRTL && "flex-row-reverse"
               )}
             >
-              {V3_CATEGORIES.map((v3cat, idx) => {
-                const colors = CHIP_COLORS[idx % CHIP_COLORS.length];
+              {V3_CATEGORIES.map((v3cat) => {
                 const dbCat = (categories as any[])?.find((cat) =>
                   v3cat.slugHints.some((hint) => cat.slug.includes(hint))
                 );
@@ -277,22 +265,15 @@ const IndexV3 = () => {
                     key={v3cat.id}
                     onClick={() => setSelectedCategory((prev) => (prev === dbSlug ? null : dbSlug))}
                     className={cn(
-                      "group flex flex-col items-center gap-2 flex-shrink-0 w-[72px] sm:w-[82px] py-2 px-1 rounded-2xl transition-all duration-300",
+                      "group flex flex-col items-center gap-2 flex-shrink-0 w-[72px] sm:w-[82px] py-2.5 px-1 rounded-2xl transition-all duration-200",
                       isSelected
-                        ? "scale-105 bg-white shadow-md"
+                        ? "bg-white border border-teal-500/60 shadow-sm"
                         : isDimmed
-                          ? "opacity-40 scale-95"
-                          : "hover:scale-105 hover:bg-white hover:shadow-sm"
+                          ? "opacity-35"
+                          : "hover:bg-[#EDE8DF]"
                     )}
                   >
-                    <div
-                      className={cn(
-                        "w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden",
-                        isSelected
-                          ? colors.iconSelected
-                          : cn("bg-stone-100 text-stone-500", colors.iconHover)
-                      )}
-                    >
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center overflow-hidden bg-stone-100">
                       {v3cat.img ? (
                         <img
                           src={v3cat.img}
@@ -301,18 +282,17 @@ const IndexV3 = () => {
                           style={{ mixBlendMode: "multiply" }}
                         />
                       ) : (
-                        <IconComponent className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={1.5} />
+                        <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 text-stone-500" strokeWidth={1.5} />
                       )}
                     </div>
                     <span
                       className={cn(
-                        "text-[9px] sm:text-[10px] font-semibold uppercase tracking-wide text-center leading-[13px] transition-colors duration-300",
-                        isSelected ? colors.labelActive : "text-foreground/55 group-hover:text-foreground/80"
+                        "text-[9px] sm:text-[10px] font-semibold uppercase tracking-wide text-center leading-[13px] transition-colors duration-200",
+                        isSelected ? "text-teal-600" : "text-foreground/55 group-hover:text-foreground/75"
                       )}
                     >
                       {line1}{line2 && <><br />{line2}</>}
                     </span>
-                    <div className={cn("h-1 w-6 rounded-full transition-all duration-300", isSelected ? colors.dot : "bg-transparent")} />
                   </button>
                 );
               })}
@@ -374,7 +354,67 @@ const IndexV3 = () => {
           ctaClassName="bg-foreground text-background hover:bg-foreground/90"
         />
 
-        {/* ──── 6. À LA UNE ──── */}
+        {/* ──── 6. GIFT CARD ──── */}
+        <section className="container py-8 md:py-14 px-4">
+          <div className={`grid md:grid-cols-2 gap-5 md:gap-8 items-center max-w-4xl mx-auto ${isRTL ? "md:grid-flow-col-dense" : ""}`}>
+            <div className={`relative overflow-hidden rounded-2xl ${isRTL ? "md:order-2" : ""}`}>
+              <img
+                src={giftCardHero}
+                alt="Gift Card"
+                className="w-full h-56 md:h-72 object-cover hover:scale-105 transition-transform duration-500"
+              />
+            </div>
+            <div className={`space-y-4 ${isRTL ? "text-right md:order-1" : ""}`}>
+              <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold tracking-[-0.02em] leading-tight">
+                {isRTL ? (
+                  <><span>מתנה מושלמת.</span><br /><span>מתנת הבריחה.</span></>
+                ) : lang === "fr" ? (
+                  <><span>Le cadeau parfait.</span><br /><span>Une évasion à offrir.</span></>
+                ) : (
+                  <><span>Perfect gift.</span><br /><span>The gift of escape.</span></>
+                )}
+              </h2>
+              <p className="text-muted-foreground text-sm md:text-base max-w-md">
+                {t(lang, "giftCardSectionDesc")}
+              </p>
+              <Button asChild className="group bg-foreground text-background hover:bg-foreground/90" onClick={() => trackGiftCardClicked("v3_page")}>
+                <Link to={getLocalizedPath("/gift-card")}>
+                  {t(lang, "giftCardSectionCTA")}
+                  <ArrowRight
+                    className={`h-4 w-4 transition-transform group-hover:translate-x-1 ${isRTL ? "mr-2 rotate-180 group-hover:-translate-x-1" : "ml-2"}`}
+                  />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* ──── 7. BANDEAU DÉFILANT ──── */}
+        <MarqueeBanner className="bg-[#FAF8F4]" />
+
+        {/* ──── 8. THIS IS NOT TOURISM ──── */}
+        <section className="relative py-8 sm:py-14 md:py-18 overflow-hidden">
+          <div className="absolute inset-0">
+            <img src={handpickedHero} alt="" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/40" />
+          </div>
+          <div className="container max-w-3xl relative z-10 px-4 text-center">
+            <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold tracking-[-0.02em] mb-3 text-white">
+              {isRTL
+                ? <><span>זה לא תיירות.</span><br /><span>זה משהו אחר.</span></>
+                : lang === "fr"
+                  ? <><span>Ce n'est pas du tourisme.</span><br /><span>C'est autre chose.</span></>
+                  : <><span>This is not tourism.</span><br /><span>This is something else.</span></>}
+            </h2>
+            <div className="text-[11px] sm:text-xs md:text-sm leading-relaxed text-white/95 max-w-2xl mx-auto space-y-2">
+              <p>{t(lang, "handpickedP1")}</p>
+              <p>{t(lang, "handpickedP2")}</p>
+              <p>{t(lang, "handpickedP3")}</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ──── 9. À LA UNE ──── */}
         <section className="py-10 sm:py-14">
           <div className="container px-4 mx-auto">
             <div className="grid md:grid-cols-[1fr_2fr] gap-0 rounded-2xl overflow-hidden shadow-xl max-w-5xl mx-auto">
@@ -416,66 +456,6 @@ const IndexV3 = () => {
                   </Link>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ──── 7. GIFT CARD ──── */}
-        <section className="container py-8 md:py-14 px-4">
-          <div className={`grid md:grid-cols-2 gap-5 md:gap-8 items-center max-w-4xl mx-auto ${isRTL ? "md:grid-flow-col-dense" : ""}`}>
-            <div className={`relative overflow-hidden rounded-2xl ${isRTL ? "md:order-2" : ""}`}>
-              <img
-                src={giftCardHero}
-                alt="Gift Card"
-                className="w-full h-56 md:h-72 object-cover hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-            <div className={`space-y-4 ${isRTL ? "text-right md:order-1" : ""}`}>
-              <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold tracking-[-0.02em] leading-tight">
-                {isRTL ? (
-                  <><span>מתנה מושלמת.</span><br /><span>מתנת הבריחה.</span></>
-                ) : lang === "fr" ? (
-                  <><span>Le cadeau parfait.</span><br /><span>Une évasion à offrir.</span></>
-                ) : (
-                  <><span>Perfect gift.</span><br /><span>The gift of escape.</span></>
-                )}
-              </h2>
-              <p className="text-muted-foreground text-sm md:text-base max-w-md">
-                {t(lang, "giftCardSectionDesc")}
-              </p>
-              <Button asChild className="group bg-foreground text-background hover:bg-foreground/90" onClick={() => trackGiftCardClicked("v3_page")}>
-                <Link to={getLocalizedPath("/gift-card")}>
-                  {t(lang, "giftCardSectionCTA")}
-                  <ArrowRight
-                    className={`h-4 w-4 transition-transform group-hover:translate-x-1 ${isRTL ? "mr-2 rotate-180 group-hover:-translate-x-1" : "ml-2"}`}
-                  />
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* ──── 8. BANDEAU DÉFILANT ──── */}
-        <MarqueeBanner className="bg-[#FAF8F4]" />
-
-        {/* ──── 9. THIS IS NOT TOURISM ──── */}
-        <section className="relative py-8 sm:py-14 md:py-18 overflow-hidden">
-          <div className="absolute inset-0">
-            <img src={handpickedHero} alt="" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/40" />
-          </div>
-          <div className="container max-w-3xl relative z-10 px-4 text-center">
-            <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold tracking-[-0.02em] mb-3 text-white">
-              {isRTL
-                ? <><span>זה לא תיירות.</span><br /><span>זה משהו אחר.</span></>
-                : lang === "fr"
-                  ? <><span>Ce n'est pas du tourisme.</span><br /><span>C'est autre chose.</span></>
-                  : <><span>This is not tourism.</span><br /><span>This is something else.</span></>}
-            </h2>
-            <div className="text-[11px] sm:text-xs md:text-sm leading-relaxed text-white/95 max-w-2xl mx-auto space-y-2">
-              <p>{t(lang, "handpickedP1")}</p>
-              <p>{t(lang, "handpickedP2")}</p>
-              <p>{t(lang, "handpickedP3")}</p>
             </div>
           </div>
         </section>
