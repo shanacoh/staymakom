@@ -25,6 +25,7 @@ import tailoredHero from "@/assets/tailored-request-hero.png";
 
 interface TailoredRequestSectionProps {
   categories?: Array<{ id: string; name: string; name_he?: string | null; slug: string }>;
+  ctaClassName?: string;
 }
 
 const OCCASIONS_EN = [
@@ -94,7 +95,7 @@ const PEOPLE = ["2", "3 – 4", "5 – 6", "6+"];
 
 type Step = "step1" | "transition" | "step2" | "done";
 
-const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => {
+const TailoredRequestSection = ({ categories, ctaClassName }: TailoredRequestSectionProps) => {
   const { lang } = useLanguage();
   const isRTL = lang === "he";
 
@@ -305,7 +306,7 @@ const TailoredRequestSection = ({ categories }: TailoredRequestSectionProps) => 
               resetForm();
               setDialogOpen(true);
             }}
-            className="group mt-2"
+            className={cn("group mt-2", ctaClassName)}
           >
             {getCopy("DESIGN MY STAY", "עצבו את השהייה שלכם", "CRÉER MON SÉJOUR")}
             <ArrowRight

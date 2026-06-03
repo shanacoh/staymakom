@@ -1,6 +1,7 @@
 import { useLanguage } from "@/hooks/useLanguage";
+import { cn } from "@/lib/utils";
 
-const MarqueeBanner = () => {
+const MarqueeBanner = ({ className }: { className?: string }) => {
   const { lang } = useLanguage();
   const isRTL = lang === 'he';
   
@@ -25,8 +26,8 @@ const MarqueeBanner = () => {
   ));
 
   return (
-    <section 
-      className="bg-white py-2 sm:py-3 overflow-hidden"
+    <section
+      className={cn("bg-white py-2 sm:py-3 overflow-hidden", className)}
       aria-hidden="true"
     >
       <div className={`flex whitespace-nowrap ${isRTL ? 'animate-marquee-rtl' : 'animate-marquee'}`}>

@@ -26,6 +26,7 @@ import NotFound from "./pages/NotFound";
 // ── Pages publiques secondaires : chargées à la demande ───────────────────
 const Index              = lazy(() => import("./pages/Index"));
 const IndexV2            = lazy(() => import("./pages/IndexV2"));
+const IndexV3            = lazy(() => import("./pages/IndexV3"));
 const ComingSoon         = lazy(() => import("./pages/ComingSoon"));
 const Category           = lazy(() => import("./pages/Category"));
 const Experience         = lazy(() => import("./pages/Experience"));
@@ -147,6 +148,7 @@ const AppContent = () => {
           <Route path="/coming-soon" element={<ComingSoon />} />
           <Route path="/home" element={<Index />} />
           <Route path="/v2" element={<IndexV2 />} />
+          <Route path="/v3" element={<IndexV3 />} />
           <Route path="/launch" element={<LaunchIndex />} />
           <Route path="/launch/experiences" element={<LaunchExperiences />} />
           <Route path="/mobile-login" element={<MobileAuthPrompt />} />
