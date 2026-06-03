@@ -297,7 +297,7 @@ const IndexV3 = () => {
                         <img
                           src={v3cat.img}
                           alt={name}
-                          className="w-7 h-7 sm:w-8 sm:h-8 object-contain"
+                          className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
                           style={{ mixBlendMode: "multiply" }}
                         />
                       ) : (
