@@ -30,11 +30,12 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { Search, X, AlertTriangle, CheckCircle, Mail } from "lucide-react";
+import { Search, X, AlertTriangle, CheckCircle, Mail, Building2, Zap, Clock } from "lucide-react";
 
 const AdminBookings = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [mode, setMode] = useState<"hotel" | "standalone">("hotel");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [hotelFilter, setHotelFilter] = useState<string>("all");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
@@ -84,6 +85,39 @@ const AdminBookings = () => {
       return data as any[];
     },
   });
+
+  const { data: standaloneBookings, isLoading: isLoadingStandalone } = useQuery({
+    queryKey: ["admin-standalone-bookings-hub", statusFilter, paymentFilter],
+    queryFn: async () => {
+      let query = supabase
+        .from("standalone_bookings")
+        .select("id, customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, status, is_cancelled, payment_status, refund_amount, created_at, standalone_experiences(title)")
+        .order("created_at", { ascending: false });
+      if (statusFilter === "cancelled") {
+        query = query.eq("is_cancelled", true);
+      } else if (statusFilter !== "all") {
+        query = query.eq("status", statusFilter).eq("is_cancelled", false);
+      }
+      if (paymentFilter !== "all") {
+        query = query.eq("payment_status", paymentFilter);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: mode === "standalone",
+  });
+
+  const filteredStandaloneBookings = useMemo(() => {
+    if (!standaloneBookings) return [];
+    if (!searchQuery.trim()) return standaloneBookings;
+    const q = searchQuery.toLowerCase();
+    return standaloneBookings.filter((b: any) =>
+      (b.customer_name || "").toLowerCase().includes(q) ||
+      (b.customer_email || "").toLowerCase().includes(q) ||
+      ((b.standalone_experiences as any)?.title || "").toLowerCase().includes(q)
+    );
+  }, [standaloneBookings, searchQuery]);
 
   const markRefundDoneMutation = useMutation({
     mutationFn: async ({ bookingId, revolut_refund_id }: { bookingId: string; revolut_refund_id: string }) => {
@@ -167,7 +201,29 @@ const AdminBookings = () => {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl sm:text-3xl font-bold">Bookings</h2>
-        <p className="text-sm text-muted-foreground">All reservations — HyperGuest system</p>
+        <p className="text-sm text-muted-foreground">All reservations</p>
+      </div>
+
+      {/* Toggle With Hotel / Experience Only */}
+      <div className="inline-flex items-center border border-[#1B2A4A]/20 rounded-full p-1 gap-0.5">
+        <button
+          onClick={() => setMode("hotel")}
+          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+            mode === "hotel" ? "bg-[#1B2A4A] text-white" : "text-[#1B2A4A]/60 hover:bg-muted/50"
+          }`}
+        >
+          <Building2 className="h-3.5 w-3.5" />
+          With Hotel
+        </button>
+        <button
+          onClick={() => setMode("standalone")}
+          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+            mode === "standalone" ? "bg-[#1B2A4A] text-white" : "text-[#1B2A4A]/60 hover:bg-muted/50"
+          }`}
+        >
+          <Zap className="h-3.5 w-3.5" />
+          Experience Only
+        </button>
       </div>
 
       {refundsPending.length > 0 && (
@@ -250,20 +306,23 @@ const AdminBookings = () => {
           </SelectContent>
         </Select>
 
-        <Select value={hotelFilter} onValueChange={setHotelFilter}>
-          <SelectTrigger className="w-full sm:w-[220px]">
-            <SelectValue placeholder="Hôtel" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les hôtels</SelectItem>
-            {hotels?.map((hotel) => (
-              <SelectItem key={hotel.id} value={hotel.id}>{hotel.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {mode === "hotel" && (
+          <Select value={hotelFilter} onValueChange={setHotelFilter}>
+            <SelectTrigger className="w-full sm:w-[220px]">
+              <SelectValue placeholder="Hôtel" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les hôtels</SelectItem>
+              {hotels?.map((hotel) => (
+                <SelectItem key={hotel.id} value={hotel.id}>{hotel.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
-      {isLoading ? (
+      {/* ── Table With Hotel ── */}
+      {mode === "hotel" && (isLoading ? (
         <div className="text-center py-12 text-muted-foreground">Chargement...</div>
       ) : filteredBookings.length > 0 ? (
         <div className="border rounded-lg bg-card overflow-x-auto">
@@ -354,7 +413,81 @@ const AdminBookings = () => {
             {searchQuery ? "Aucune réservation ne correspond à la recherche" : "Aucune réservation trouvée"}
           </p>
         </div>
-      )}
+      ))}
+
+      {/* ── Table Experience Only ── */}
+      {mode === "standalone" && (isLoadingStandalone ? (
+        <div className="text-center py-12 text-muted-foreground">Chargement...</div>
+      ) : filteredStandaloneBookings.length > 0 ? (
+        <div className="border rounded-lg bg-card overflow-x-auto">
+          <Table className="min-w-[700px]">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Réf</TableHead>
+                <TableHead>Client</TableHead>
+                <TableHead>Expérience</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Créneau</TableHead>
+                <TableHead>Pers.</TableHead>
+                <TableHead>Montant</TableHead>
+                <TableHead>Statut</TableHead>
+                <TableHead>Paiement</TableHead>
+                <TableHead>Créé le</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredStandaloneBookings.map((booking: any) => (
+                <TableRow key={booking.id} className={booking.is_cancelled ? "opacity-60" : ""}>
+                  <TableCell className="font-mono text-xs">{booking.id.slice(0, 8)}</TableCell>
+                  <TableCell>
+                    <div className="font-medium text-sm">{booking.customer_name || "—"}</div>
+                    {booking.customer_email && (
+                      <a href={`mailto:${booking.customer_email}`} className="text-xs text-muted-foreground hover:underline flex items-center gap-1">
+                        <Mail className="h-3 w-3" />{booking.customer_email}
+                      </a>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-sm">{(booking.standalone_experiences as any)?.title || "—"}</TableCell>
+                  <TableCell className="text-sm whitespace-nowrap">
+                    {booking.booking_date ? format(parseISO(booking.booking_date), "dd MMM yyyy") : "—"}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {booking.time_slot ? (
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3 text-muted-foreground" />{booking.time_slot}
+                      </span>
+                    ) : "—"}
+                  </TableCell>
+                  <TableCell>{booking.party_size}</TableCell>
+                  <TableCell>
+                    <div className="font-medium">{booking.sell_price} {booking.currency}</div>
+                    {booking.payment_status === "refund_pending" && booking.refund_amount > 0 && (
+                      <div className="text-xs text-destructive font-semibold">⚠ Remb. dû : {booking.refund_amount} {booking.currency}</div>
+                    )}
+                  </TableCell>
+                  <TableCell>{getStatusBadge(booking)}</TableCell>
+                  <TableCell>{getPaymentBadge(booking)}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                    {format(parseISO(booking.created_at), "dd MMM yyyy")}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/standalone-bookings/${booking.id}`)}>
+                      Voir
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <div className="text-center py-12 border rounded-lg bg-card">
+          <p className="text-muted-foreground">
+            {searchQuery ? "Aucune réservation ne correspond à la recherche" : "Aucune réservation standalone trouvée"}
+          </p>
+        </div>
+      ))}
 
       <Dialog
         open={refundDialog.open}

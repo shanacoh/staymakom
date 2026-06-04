@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit, Eye, EyeOff, Copy, Trash2, ExternalLink, MoreHorizontal, GripVertical } from "lucide-react";
+import { Plus, Edit, Eye, EyeOff, Copy, Trash2, ExternalLink, MoreHorizontal, GripVertical, Building2, Zap } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,10 +30,11 @@ const AdminExperiences2 = () => {
   const { experienceId } = useParams();
   const queryClient = useQueryClient();
 
+  const [mode, setMode] = useState<"hotel" | "standalone">("hotel");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [hotelFilter, setHotelFilter] = useState<string>("all");
-  const [activeTab, setActiveTab] = useState<"romantic" | "adventure">("adventure");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [experienceToDelete, setExperienceToDelete] = useState<string | null>(null);
   const [opsPanel, setOpsPanel] = useState<{ id: string; title: string } | null>(null);
@@ -54,7 +55,10 @@ const AdminExperiences2 = () => {
   const { data: categories } = useQuery({
     queryKey: ["admin-categories"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("categories").select("id, name").order("name");
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name, slug")
+        .order("display_order", { ascending: true });
       if (error) throw error;
       return data;
     },
@@ -80,14 +84,21 @@ const AdminExperiences2 = () => {
     },
   });
 
-  // Étape 1 — filtrer par onglet actif (catégorie)
-  const tabExperiences = experiences?.filter((exp) => {
-    const isRomantic = (exp as any).categories?.slug === "romantic";
-    return activeTab === "romantic" ? isRomantic : !isRomantic;
+  const { data: standaloneExps, isLoading: isLoadingStandalone } = useQuery({
+    queryKey: ["admin-standalone-exps-hub"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("standalone_experiences")
+        .select("id, slug, title, status, hero_image, photos, base_price, currency, display_order, categories(id, name, slug)")
+        .order("display_order", { ascending: true, nullsFirst: false });
+      if (error) throw error;
+      return data as any[];
+    },
   });
 
-  // Étape 2 — appliquer les autres filtres (search, statut, hôtel)
-  const displayedExperiences = tabExperiences?.filter((exp) => {
+  // Expériences avec hôtel filtrées
+  const displayedExperiences = experiences?.filter((exp) => {
+    const matchesCategory = !selectedCategory || (exp as any).categories?.slug === selectedCategory;
     const matchesSearch = exp.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || exp.status === statusFilter;
     let matchesHotel = true;
@@ -95,13 +106,25 @@ const AdminExperiences2 = () => {
       const ids = ((exp as any).experience2_hotels || []).map((eh: any) => eh.hotels2?.id);
       matchesHotel = exp.hotel_id === hotelFilter || ids.includes(hotelFilter);
     }
-    return matchesSearch && matchesStatus && matchesHotel;
+    return matchesCategory && matchesSearch && matchesStatus && matchesHotel;
   });
 
-  const romanticCount = experiences?.filter((e) => (e as any).categories?.slug === "romantic").length ?? 0;
-  const adventureCount = experiences?.filter((e) => (e as any).categories?.slug !== "romantic").length ?? 0;
+  // Expériences standalone filtrées
+  const displayedStandalone = (standaloneExps || []).filter((exp: any) => {
+    const matchesCategory = !selectedCategory || exp.categories?.slug === selectedCategory;
+    const matchesSearch = exp.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "all" || exp.status === statusFilter;
+    return matchesCategory && matchesSearch && matchesStatus;
+  });
 
-  const handleCreateNew = () => navigate("/admin/experiences2/new");
+  const handleCreateNew = () => {
+    if (mode === "hotel") {
+      navigate("/admin/experiences2/new");
+    } else {
+      navigate("/admin/standalone-experiences/new");
+    }
+  };
+
   const handleCloseForm = () => {
     navigate("/admin/experiences2");
     queryClient.invalidateQueries({ queryKey: ["admin-experiences2"] });
@@ -118,6 +141,19 @@ const AdminExperiences2 = () => {
       toast.success("Experience visibility updated");
     },
     onError: () => toast.error("Error updating visibility"),
+  });
+
+  const toggleStandaloneVisibilityMutation = useMutation({
+    mutationFn: async ({ id, currentStatus }: { id: string; currentStatus: string }) => {
+      const newStatus = currentStatus === "published" ? "draft" : "published";
+      const { error } = await supabase.from("standalone_experiences").update({ status: newStatus }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-standalone-exps-hub"] });
+      toast.success("Visibilité mise à jour");
+    },
+    onError: () => toast.error("Erreur"),
   });
 
   const duplicateMutation = useMutation({
@@ -186,13 +222,32 @@ const AdminExperiences2 = () => {
     onError: () => toast.error("Error deleting experience"),
   });
 
+  const deleteStandaloneMutation = useMutation({
+    mutationFn: async (expId: string) => {
+      const { error } = await supabase.from("standalone_experiences").delete().eq("id", expId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-standalone-exps-hub"] });
+      toast.success("Expérience supprimée");
+      setDeleteDialogOpen(false);
+      setExperienceToDelete(null);
+    },
+    onError: () => toast.error("Erreur lors de la suppression"),
+  });
+
   const handleDeleteClick = (expId: string) => {
     setExperienceToDelete(expId);
     setDeleteDialogOpen(true);
   };
 
   const handleConfirmDelete = () => {
-    if (experienceToDelete) deleteMutation.mutate(experienceToDelete);
+    if (!experienceToDelete) return;
+    if (mode === "standalone") {
+      deleteStandaloneMutation.mutate(experienceToDelete);
+    } else {
+      deleteMutation.mutate(experienceToDelete);
+    }
   };
 
   const reorderMutation = useMutation({
@@ -214,11 +269,7 @@ const AdminExperiences2 = () => {
     onError: () => toast.error("Erreur lors de la sauvegarde de l'ordre"),
   });
 
-  // Le filtre catégorie est autorisé avec le drag-and-drop (pour ordonner chaque catégorie indépendamment)
-  const hasActiveFilters =
-    searchQuery !== "" ||
-    statusFilter !== "all" ||
-    hotelFilter !== "all";
+  const hasActiveFilters = searchQuery !== "" || statusFilter !== "all" || hotelFilter !== "all";
 
   const handleDragStart = useCallback((idx: number) => {
     setDraggedIdx(idx);
@@ -234,13 +285,12 @@ const AdminExperiences2 = () => {
     const reordered = [...displayedExperiences];
     const [moved] = reordered.splice(draggedIdx, 1);
     reordered.splice(dropIdx, 0, moved);
-    // Romantic reçoit un décalage de 1000 pour éviter les conflits avec Adventure (0-999)
-    const offset = activeTab === "romantic" ? 1000 : 0;
+    const offset = selectedCategory === "romantic" ? 1000 : 0;
     const updates = reordered.map((e, i) => ({ id: e.id, display_order: offset + i }));
     reorderMutation.mutate(updates);
     setDraggedIdx(null);
     setDragOverIdx(null);
-  }, [draggedIdx, displayedExperiences, activeTab, reorderMutation]);
+  }, [draggedIdx, displayedExperiences, selectedCategory, reorderMutation]);
 
   const handleDragEnd = useCallback(() => {
     setDraggedIdx(null);
@@ -265,35 +315,66 @@ const AdminExperiences2 = () => {
           </div>
           <Button onClick={handleCreateNew} size="sm" className="self-start sm:self-auto">
             <Plus className="w-4 h-4 mr-1.5" />
-            Create Experience
+            {mode === "hotel" ? "Create Experience" : "Create Standalone"}
           </Button>
         </div>
 
-        {/* Toggle Romantic / Adventure */}
-        <div className="flex gap-2">
+        {/* Toggle With Hotel / Experience Only */}
+        <div className="inline-flex items-center border border-[#1B2A4A]/20 rounded-full p-1 gap-0.5">
           <button
-            onClick={() => setActiveTab("adventure")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-              activeTab === "adventure"
-                ? "bg-foreground text-background border-foreground"
-                : "bg-background text-muted-foreground border-border hover:border-foreground/40"
+            onClick={() => setMode("hotel")}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+              mode === "hotel"
+                ? "bg-[#1B2A4A] text-white"
+                : "text-[#1B2A4A]/60 hover:bg-muted/50"
             }`}
           >
-            Feeling Adventurous ({adventureCount})
+            <Building2 className="h-3.5 w-3.5" />
+            With Hotel
           </button>
           <button
-            onClick={() => setActiveTab("romantic")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-              activeTab === "romantic"
-                ? "bg-foreground text-background border-foreground"
-                : "bg-background text-muted-foreground border-border hover:border-foreground/40"
+            onClick={() => setMode("standalone")}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+              mode === "standalone"
+                ? "bg-[#1B2A4A] text-white"
+                : "text-[#1B2A4A]/60 hover:bg-muted/50"
             }`}
           >
-            Romantic Escape ({romanticCount})
+            <Zap className="h-3.5 w-3.5" />
+            Experience Only
           </button>
         </div>
 
-        {/* Filters */}
+        {/* Pills catégories */}
+        {categories && categories.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setSelectedCategory(null)}
+              className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                !selectedCategory
+                  ? "bg-[#1B2A4A] text-white border-[#1B2A4A]"
+                  : "border-border text-muted-foreground hover:border-foreground/40"
+              }`}
+            >
+              Toutes
+            </button>
+            {(categories as any[]).map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.slug === selectedCategory ? null : cat.slug)}
+                className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                  selectedCategory === cat.slug
+                    ? "bg-[#1B2A4A] text-white border-[#1B2A4A]"
+                    : "border-border text-muted-foreground hover:border-foreground/40"
+                }`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Filtres */}
         <Card>
           <CardContent className="pt-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -313,209 +394,322 @@ const AdminExperiences2 = () => {
                   <SelectItem value="published">Published</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={hotelFilter} onValueChange={setHotelFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All hotels" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All hotels</SelectItem>
-                  {hotels?.map((hotel) => (
-                    <SelectItem key={hotel.id} value={hotel.id}>
-                      {hotel.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {mode === "hotel" && (
+                <Select value={hotelFilter} onValueChange={setHotelFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All hotels" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All hotels</SelectItem>
+                    {hotels?.map((hotel) => (
+                      <SelectItem key={hotel.id} value={hotel.id}>
+                        {hotel.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Bandeau filtres actifs */}
-        {hasActiveFilters && (
+        {/* Bandeau filtres actifs (drag-and-drop) */}
+        {hasActiveFilters && mode === "hotel" && (
           <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-sm">
             <span>⚠</span>
             <span>Désactivez les filtres pour réordonner les expériences par glisser-déposer.</span>
           </div>
         )}
 
-        {/* Experiences List */}
-        {isLoading ? (
-          <div className="text-center py-12 text-muted-foreground">Loading experiences...</div>
-        ) : !displayedExperiences?.length ? (
-          <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">No experiences found</CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <div className="divide-y divide-border">
-              {displayedExperiences.map((experience, idx) => {
-                const addons = (experience as any).experience2_addons || [];
-                const activeAddons = addons.filter((a: any) => a.is_active !== false);
-                const hasNoCategory = !(experience as any).categories?.name;
-                const hasNoPhoto = !experience.hero_image && (!experience.photos || experience.photos.length === 0);
+        {/* ── Liste des expériences avec hôtel ── */}
+        {mode === "hotel" && (
+          isLoading ? (
+            <div className="text-center py-12 text-muted-foreground">Loading experiences...</div>
+          ) : !displayedExperiences?.length ? (
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">No experiences found</CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <div className="divide-y divide-border">
+                {displayedExperiences.map((experience, idx) => {
+                  const addons = (experience as any).experience2_addons || [];
+                  const activeAddons = addons.filter((a: any) => a.is_active !== false);
+                  const hasNoCategory = !(experience as any).categories?.name;
+                  const hasNoPhoto = !experience.hero_image && (!experience.photos || experience.photos.length === 0);
 
-                const junctionHotels = (experience as any).experience2_hotels || [];
-                const primaryHotel = junctionHotels.length > 0
-                  ? junctionHotels.sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0))[0]?.hotels2
-                  : (experience as any).hotels2;
-                const hasHyperguest = !!primaryHotel?.hyperguest_property_id;
+                  const junctionHotels = (experience as any).experience2_hotels || [];
+                  const primaryHotel = junctionHotels.length > 0
+                    ? junctionHotels.sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0))[0]?.hotels2
+                    : (experience as any).hotels2;
+                  const hasHyperguest = !!primaryHotel?.hyperguest_property_id;
 
-                const isBarRate = (experience as any).pricing_model === "bar_rate";
+                  const isBarRate = (experience as any).pricing_model === "bar_rate";
 
-                const hasNoPricing = isBarRate
-                  ? !((experience as any).room_net_rate > 0)
-                  : activeAddons.length === 0;
+                  const hasNoPricing = isBarRate
+                    ? !((experience as any).room_net_rate > 0)
+                    : activeAddons.length === 0;
 
-                const hasExperienceFee = isBarRate
-                  ? ((experience as any).experience_sell_fixed > 0 || (experience as any).experience_sell_per_person > 0)
-                  : activeAddons.some((a: any) => a.type === "fixed");
+                  const hasExperienceFee = isBarRate
+                    ? ((experience as any).experience_sell_fixed > 0 || (experience as any).experience_sell_per_person > 0)
+                    : activeAddons.some((a: any) => a.type === "fixed");
 
-                const hasCommission = isBarRate
-                  ? ((experience as any).bar_rate_markup_value > 0)
-                  : activeAddons.some((a: any) =>
-                      ["commission", "commission_room", "commission_experience", "commission_fixed"].includes(a.type)
-                    );
+                  const hasCommission = isBarRate
+                    ? ((experience as any).bar_rate_markup_value > 0)
+                    : activeAddons.some((a: any) =>
+                        ["commission", "commission_room", "commission_experience", "commission_fixed"].includes(a.type)
+                      );
 
-                const warnings: string[] = [];
-                if (hasNoCategory) warnings.push("No category");
-                if (hasNoPricing) warnings.push("No pricing");
-                if (hasNoPhoto) warnings.push("No photo");
-                if (experience.status === "published") {
-                  if (!hasExperienceFee) warnings.push("No experience fee");
-                  if (!hasCommission) warnings.push("No commission");
-                  if (!hasHyperguest) warnings.push("No HG link");
-                }
+                  const warnings: string[] = [];
+                  if (hasNoCategory) warnings.push("No category");
+                  if (hasNoPricing) warnings.push("No pricing");
+                  if (hasNoPhoto) warnings.push("No photo");
+                  if (experience.status === "published") {
+                    if (!hasExperienceFee) warnings.push("No experience fee");
+                    if (!hasCommission) warnings.push("No commission");
+                    if (!hasHyperguest) warnings.push("No HG link");
+                  }
 
-                const thumb = (experience as any).thumbnail_image || experience.hero_image || (experience.photos as any)?.[0];
+                  const thumb = (experience as any).thumbnail_image || experience.hero_image || (experience.photos as any)?.[0];
 
-                return (
-                  <div
-                    key={experience.id}
-                    draggable={!hasActiveFilters}
-                    onDragStart={() => handleDragStart(idx)}
-                    onDragOver={(e) => handleDragOver(e, idx)}
-                    onDrop={() => handleDrop(idx)}
-                    onDragEnd={handleDragEnd}
-                    className={`flex items-center gap-2 px-4 py-3 transition-colors group ${
-                      dragOverIdx === idx && draggedIdx !== idx
-                        ? "bg-accent/40 border-t-2 border-primary"
-                        : "hover:bg-muted/30"
-                    }`}
-                  >
-                    {/* Drag handle */}
-                    <div className={`shrink-0 ${hasActiveFilters ? "opacity-0 pointer-events-none" : "cursor-grab active:cursor-grabbing"}`}>
-                      <GripVertical className="h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
-                    </div>
-
-                    {/* Thumbnail */}
-                    <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-muted border border-border/50">
-                      {thumb ? (
-                        <img src={thumb} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground/30 text-xs">—</div>
-                      )}
-                    </div>
-
-                    {/* Main info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-sm text-foreground truncate">{experience.title}</span>
-                        <StatusBadge status={experience.status || "draft"} />
+                  return (
+                    <div
+                      key={experience.id}
+                      draggable={!hasActiveFilters}
+                      onDragStart={() => handleDragStart(idx)}
+                      onDragOver={(e) => handleDragOver(e, idx)}
+                      onDrop={() => handleDrop(idx)}
+                      onDragEnd={handleDragEnd}
+                      className={`flex items-center gap-2 px-4 py-3 transition-colors group ${
+                        dragOverIdx === idx && draggedIdx !== idx
+                          ? "bg-accent/40 border-t-2 border-primary"
+                          : "hover:bg-muted/30"
+                      }`}
+                    >
+                      <div className={`shrink-0 ${hasActiveFilters ? "opacity-0 pointer-events-none" : "cursor-grab active:cursor-grabbing"}`}>
+                        <GripVertical className="h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
                       </div>
-                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <span className="text-xs text-muted-foreground">
-                          {(experience as any).categories?.name || <span className="italic">No category</span>}
-                        </span>
-                        {junctionHotels.length > 0 && (
-                          <>
-                            <span className="text-muted-foreground/30">·</span>
-                            <span className="text-xs text-muted-foreground">
-                              {junctionHotels
-                                .sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0))
-                                .map((eh: any) => eh.hotels2?.name)
-                                .filter(Boolean)
-                                .join(" → ")}
-                            </span>
-                          </>
+
+                      <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-muted border border-border/50">
+                        {thumb ? (
+                          <img src={thumb} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground/30 text-xs">—</div>
                         )}
                       </div>
-                      {warnings.length > 0 && (
-                        <div className="flex gap-1 mt-1 flex-wrap">
-                          {warnings.map((w) => (
-                            <span key={w} className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-                              ⚠ {w}
-                            </span>
-                          ))}
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-sm text-foreground truncate">{experience.title}</span>
+                          <StatusBadge status={experience.status || "draft"} />
                         </div>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        onClick={() => setOpsPanel({ id: experience.id, title: experience.title })}
-                        className="h-7 text-[11px] font-medium px-[10px] rounded-[6px]"
-                        style={{ background: "#1A1814", color: "#FAF8F4" }}
-                      >
-                        Ops
-                      </button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 text-xs gap-1.5"
-                        onClick={() => navigate(`/admin/experiences2/edit/${experience.id}`)}
-                      >
-                        <Edit className="h-3.5 w-3.5" />
-                        Edit
-                      </Button>
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44">
-                          {experience.slug && experience.status === "published" && (
-                            <DropdownMenuItem asChild>
-                              <a href={`/experience/${experience.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
-                                <ExternalLink className="h-3.5 w-3.5" />
-                                View on site
-                              </a>
-                            </DropdownMenuItem>
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                          <span className="text-xs text-muted-foreground">
+                            {(experience as any).categories?.name || <span className="italic">No category</span>}
+                          </span>
+                          {junctionHotels.length > 0 && (
+                            <>
+                              <span className="text-muted-foreground/30">·</span>
+                              <span className="text-xs text-muted-foreground">
+                                {junctionHotels
+                                  .sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0))
+                                  .map((eh: any) => eh.hotels2?.name)
+                                  .filter(Boolean)
+                                  .join(" → ")}
+                              </span>
+                            </>
                           )}
-                          <DropdownMenuItem
-                            onClick={() => toggleVisibilityMutation.mutate({ id: experience.id, currentStatus: experience.status || "draft" })}
-                            className="flex items-center gap-2"
-                          >
-                            {experience.status === "published"
-                              ? <><EyeOff className="h-3.5 w-3.5" /> Unpublish</>
-                              : <><Eye className="h-3.5 w-3.5" /> Publish</>
-                            }
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => duplicateMutation.mutate(experience.id)}
-                            className="flex items-center gap-2"
-                          >
-                            <Copy className="h-3.5 w-3.5" />
-                            Duplicate
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteClick(experience.id)}
-                            className="flex items-center gap-2 text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                        </div>
+                        {warnings.length > 0 && (
+                          <div className="flex gap-1 mt-1 flex-wrap">
+                            {warnings.map((w) => (
+                              <span key={w} className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+                                ⚠ {w}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => setOpsPanel({ id: experience.id, title: experience.title })}
+                          className="h-7 text-[11px] font-medium px-[10px] rounded-[6px]"
+                          style={{ background: "#1A1814", color: "#FAF8F4" }}
+                        >
+                          Ops
+                        </button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs gap-1.5"
+                          onClick={() => navigate(`/admin/experiences2/edit/${experience.id}`)}
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                          Edit
+                        </Button>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            {experience.slug && experience.status === "published" && (
+                              <DropdownMenuItem asChild>
+                                <a href={`/experience/${experience.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                                  <ExternalLink className="h-3.5 w-3.5" />
+                                  View on site
+                                </a>
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              onClick={() => toggleVisibilityMutation.mutate({ id: experience.id, currentStatus: experience.status || "draft" })}
+                              className="flex items-center gap-2"
+                            >
+                              {experience.status === "published"
+                                ? <><EyeOff className="h-3.5 w-3.5" /> Unpublish</>
+                                : <><Eye className="h-3.5 w-3.5" /> Publish</>
+                              }
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => duplicateMutation.mutate(experience.id)}
+                              className="flex items-center gap-2"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                              Duplicate
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteClick(experience.id)}
+                              className="flex items-center gap-2 text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
+                  );
+                })}
+              </div>
+            </Card>
+          )
+        )}
+
+        {/* ── Liste des expériences standalone ── */}
+        {mode === "standalone" && (
+          isLoadingStandalone ? (
+            <div className="text-center py-12 text-muted-foreground">Chargement...</div>
+          ) : !displayedStandalone.length ? (
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">Aucune expérience trouvée</CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <div className="divide-y divide-border">
+                {displayedStandalone.map((exp: any) => {
+                  const thumb = exp.hero_image || exp.photos?.[0];
+                  const warnings: string[] = [];
+                  if (!exp.hero_image && (!exp.photos || exp.photos.length === 0)) warnings.push("Pas de photo");
+                  if (!exp.base_price) warnings.push("Pas de prix");
+
+                  return (
+                    <div
+                      key={exp.id}
+                      className="flex items-center gap-2 px-4 py-3 hover:bg-muted/30 transition-colors"
+                    >
+                      <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-muted border border-border/50">
+                        {thumb ? (
+                          <img src={thumb} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground/30 text-xs">—</div>
+                        )}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-sm text-foreground truncate">{exp.title}</span>
+                          <StatusBadge status={exp.status || "draft"} />
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                          <span className="text-xs text-muted-foreground">
+                            {exp.categories?.name || <span className="italic">No category</span>}
+                          </span>
+                          {exp.base_price > 0 && (
+                            <>
+                              <span className="text-muted-foreground/30">·</span>
+                              <span className="text-xs text-muted-foreground">
+                                {exp.base_price} {exp.currency || "USD"}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                        {warnings.length > 0 && (
+                          <div className="flex gap-1 mt-1 flex-wrap">
+                            {warnings.map((w) => (
+                              <span key={w} className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+                                ⚠ {w}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs gap-1.5"
+                          onClick={() => navigate(`/admin/standalone-experiences/edit/${exp.id}`)}
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                          Edit
+                        </Button>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            {exp.slug && exp.status === "published" && (
+                              <DropdownMenuItem asChild>
+                                <a href={`/standalone-experience/${exp.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                                  <ExternalLink className="h-3.5 w-3.5" />
+                                  View on site
+                                </a>
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              onClick={() => toggleStandaloneVisibilityMutation.mutate({ id: exp.id, currentStatus: exp.status || "draft" })}
+                              className="flex items-center gap-2"
+                            >
+                              {exp.status === "published"
+                                ? <><EyeOff className="h-3.5 w-3.5" /> Unpublish</>
+                                : <><Eye className="h-3.5 w-3.5" /> Publish</>
+                              }
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteClick(exp.id)}
+                              className="flex items-center gap-2 text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          )
         )}
 
         {/* Ops slide panel */}
@@ -528,7 +722,7 @@ const AdminExperiences2 = () => {
           />
         )}
 
-        {/* Delete Confirmation Dialog */}
+        {/* Dialogue de confirmation de suppression */}
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>

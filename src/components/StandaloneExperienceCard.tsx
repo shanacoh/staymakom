@@ -42,7 +42,7 @@ export default function StandaloneExperienceCard({
     ...experience,
     hotels: null,
     base_price: displayPrice,
-    experience_highlight_tags: experience.experience2_highlight_tags || [],
+    experience_highlight_tags: [],
   };
 
   return (

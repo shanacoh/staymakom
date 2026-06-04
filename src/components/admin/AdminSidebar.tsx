@@ -21,8 +21,6 @@ import {
   Cog,
   Plug,
   CreditCard,
-  Zap,
-  CalendarCheck,
 } from "lucide-react";
 import {
   Sidebar,
@@ -47,9 +45,7 @@ const mainMenuItems = [
   { title: "Categories", url: "/admin/categories", icon: FolderKanban },
   { title: "Hotels", url: "/admin/hotels2", icon: Building2 },
   { title: "Experiences", url: "/admin/experiences2", icon: Sparkles },
-  { title: "XP Standalone", url: "/admin/standalone-experiences", icon: Zap },
   { title: "Bookings", url: "/admin/bookings", icon: Calendar },
-  { title: "XP Bookings", url: "/admin/standalone-bookings", icon: CalendarCheck },
   { title: "Gift Cards", url: "/admin/gift-cards", icon: Gift },
   { title: "Leads", url: "/admin/leads", icon: Mail },
   { title: "Users", url: "/admin/users", icon: Users },

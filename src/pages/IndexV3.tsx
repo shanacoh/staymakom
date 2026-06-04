@@ -112,7 +112,7 @@ const IndexV3 = () => {
   const isRTL = lang === "he";
   const queryClient = useQueryClient();
 
-  const [mode, setMode] = useState<"stay" | "live">("stay");
+  const [mode, setMode] = useState<"stay" | "live">("live");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -197,7 +197,7 @@ const IndexV3 = () => {
       if (error) throw error;
       return data as any[];
     },
-    enabled: mode === "live",
+    enabled: true,
     staleTime: 60_000,
     gcTime: 5 * 60_000,
   });
