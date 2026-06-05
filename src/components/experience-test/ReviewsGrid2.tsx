@@ -43,9 +43,15 @@ const ReviewsGrid2 = ({ experienceId, lang = "en" }: ReviewsGrid2Props) => {
     );
   }
 
-  const getLocale = () => (lang === "he" ? he : fr);
+  const getLocale = () => (lang === "he" ? he : lang === "fr" ? fr : undefined);
   const averageRating = reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length;
   const displayedReviews = showAll ? reviews : reviews.slice(0, 6);
+
+  const getComment = (review: any) => {
+    if (lang === "en" && review.comment_en) return review.comment_en;
+    if (lang === "he" && review.comment_he) return review.comment_he;
+    return review.comment;
+  };
 
   return (
     <section className="py-6 border-b border-border">
@@ -97,9 +103,9 @@ const ReviewsGrid2 = ({ experienceId, lang = "en" }: ReviewsGrid2Props) => {
                 <span className="text-xs text-muted-foreground">· {timeAgo}</span>
               </div>
 
-              {review.comment && (
+              {getComment(review) && (
                 <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">
-                  {review.comment}
+                  {getComment(review)}
                 </p>
               )}
             </div>

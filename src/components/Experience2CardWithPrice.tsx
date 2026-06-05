@@ -21,6 +21,8 @@ interface Experience2CardWithPriceProps {
   linkSuffix?: string;
   index?: number;
   badge?: string | null;
+  reviewCount?: number;
+  rating?: number | null;
 }
 
 export default function Experience2CardWithPrice({
@@ -33,6 +35,8 @@ export default function Experience2CardWithPrice({
   linkSuffix,
   index = 0,
   badge,
+  reviewCount = 0,
+  rating = null,
 }: Experience2CardWithPriceProps) {
   const { convert } = useCurrency();
 
@@ -59,6 +63,8 @@ export default function Experience2CardWithPrice({
       linkSuffix={linkSuffix}
       index={index}
       badge={badge}
+      reviewCount={reviewCount}
+      rating={rating}
     />
   );
 }

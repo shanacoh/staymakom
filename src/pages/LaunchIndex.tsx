@@ -238,6 +238,38 @@ const LaunchIndex = () => {
     return map;
   }, [allAvailabilityRules]);
 
+  // Requête batch : note moyenne + nombre d'avis pour toutes les expériences
+  const { data: allReviewStats = [] } = useQuery({
+    queryKey: ["reviews_stats_batch", experienceIds],
+    queryFn: async () => {
+      if (experienceIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("experience2_reviews")
+        .select("experience_id, rating")
+        .in("experience_id", experienceIds)
+        .eq("is_visible", true);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: experienceIds.length > 0,
+    staleTime: 5 * 60_000,
+    gcTime: 10 * 60_000,
+  });
+
+  const reviewsMap = useMemo(() => {
+    const map: Record<string, { count: number; avg: number }> = {};
+    for (const r of allReviewStats) {
+      const eid = (r as any).experience_id;
+      if (!map[eid]) map[eid] = { count: 0, avg: 0 };
+      map[eid].count += 1;
+      map[eid].avg += (r as any).rating;
+    }
+    for (const eid of Object.keys(map)) {
+      map[eid].avg = map[eid].avg / map[eid].count;
+    }
+    return map;
+  }, [allReviewStats]);
+
   // Resolve category id from slug
   const getCategoryIdFromSlug = (slug: string) =>
   categories?.find((c) => c.slug === slug)?.id;
@@ -449,6 +481,8 @@ const LaunchIndex = () => {
                   hyperguestPropertyId={primaryHotelLink?.hyperguest_property_id}
                   addons={(experience as any).experience2_addons}
                   availabilityRules={rulesMap[experience.id] ?? []}
+                  reviewCount={reviewsMap[experience.id]?.count ?? 0}
+                  rating={reviewsMap[experience.id]?.avg ?? null}
                   linkPrefix="/experience"
                   linkSuffix="context=launch"
                   index={idx} />);

@@ -71,8 +71,8 @@ export default function ExperienceCard({
   badge,
   originalPrice,
   discountPercent,
-  rating = 9.1,
-  reviewCount = 14,
+  rating = null,
+  reviewCount = null,
   distance,
   userCity,
   isInWishlist: initialIsInWishlist = false,
@@ -302,9 +302,16 @@ export default function ExperienceCard({
             ) : <span />}
             <div className="flex items-center gap-0.5 shrink-0">
               <span className="text-foreground text-[11px]">★</span>
-              <span className="font-semibold text-[11px] text-foreground">
-                {lang === "he" ? "חדש" : "NEW"}
-              </span>
+              {reviewCount && reviewCount > 0 ? (
+                <span className="font-semibold text-[11px] text-foreground">
+                  {rating != null ? Number(rating).toFixed(1) : "5.0"}
+                  <span className="font-normal text-muted-foreground ml-0.5">({reviewCount})</span>
+                </span>
+              ) : (
+                <span className="font-semibold text-[11px] text-foreground">
+                  {lang === "he" ? "חדש" : lang === "fr" ? "Nouveau" : "NEW"}
+                </span>
+              )}
             </div>
           </div>
 
