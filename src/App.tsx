@@ -82,6 +82,7 @@ const HyperGuestDebugPage    = lazy(() => import("./pages/admin/hyperguest/Debug
 const HyperGuestLogsPage     = lazy(() => import("./pages/admin/hyperguest/LogsPage"));
 const HyperGuestConfigPage   = lazy(() => import("./pages/admin/hyperguest/ConfigPage"));
 const RevolutDebugPage       = lazy(() => import("./pages/admin/revolut/DebugPage"));
+const Celine30                   = lazy(() => import("./pages/Celine30"));
 const StandaloneExperience       = lazy(() => import("./pages/StandaloneExperience"));
 const StandaloneBookingConfirmation = lazy(() => import("./pages/StandaloneBookingConfirmation"));
 const AdminStandaloneExperiences = lazy(() => import("./pages/admin/StandaloneExperiences"));
@@ -171,6 +172,7 @@ const AppContent = () => {
           <Route path="/companies" element={<Companies />} />
           <Route path="/corporate" element={<Companies />} />
           <Route path="/partners" element={<Partners />} />
+          <Route path="/Celine30" element={<Celine30 />} />
           <Route path="/partner-exp" element={<PartnerExp />} />
           <Route path="/partner-form" element={<PartnerForm />} />
           <Route path="/itineraries-AJ" element={<Itineraries />} />
