@@ -7,6 +7,7 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import HeroSection from "@/components/experience-test/HeroSection";
 import PracticalInfo from "@/components/experience-test/PracticalInfo";
 import WhatsIncludedPhotos2 from "@/components/experience-test/WhatsIncludedPhotos2";
@@ -66,6 +67,8 @@ interface StandaloneExperienceData {
   accessibility_info?: string | null;
   category_id?: string | null;
   status: string;
+  available_days?: number[] | null;
+  blocked_dates?: string[] | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -83,6 +86,16 @@ function getCurrencySymbol(currency: string): string {
   if (currency === "EUR") return "€";
   return "₪";
 }
+
+function toLocalDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+const WEEKDAY_LABELS_BY_LANG: Record<string, Record<number, string>> = {
+  fr: { 0: "dimanche", 1: "lundi", 2: "mardi", 3: "mercredi", 4: "jeudi", 5: "vendredi", 6: "samedi" },
+  en: { 0: "Sunday", 1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 5: "Friday", 6: "Saturday" },
+  he: { 0: "ראשון", 1: "שני", 2: "שלישי", 3: "רביעי", 4: "חמישי", 5: "שישי", 6: "שבת" },
+};
 
 function computeTotal(
   basePrice: number,
@@ -370,6 +383,26 @@ export default function StandaloneExperience() {
   // -------------------------------------------------------------------------
 
   const renderBookingPanel = () => {
+    const availableDays: number[] = experience.available_days ?? [1, 2, 3, 4, 5, 6, 7];
+    const blockedDateStrings: string[] = (experience.blocked_dates as string[] | null) ?? [];
+    const hasWeekdayRestriction = availableDays.length < 7;
+
+    const isDateUnavailable = (date: Date): boolean => {
+      const minDateObj = new Date(minDate + "T00:00:00");
+      const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      if (d < minDateObj) return true;
+      if (hasWeekdayRestriction) {
+        const availableJsDays = availableDays.map((n) => (n === 7 ? 0 : n));
+        if (!availableJsDays.includes(date.getDay())) return true;
+      }
+      return blockedDateStrings.includes(toLocalDateStr(date));
+    };
+
+    const labelLang = lang === "he" ? "he" : lang === "fr" ? "fr" : "en";
+    const availabilityHint = hasWeekdayRestriction
+      ? availableDays.map((n) => WEEKDAY_LABELS_BY_LANG[labelLang][n === 7 ? 0 : n]).join(", ")
+      : null;
+
     // ── Payment step ──
     if (bookingStep === "payment" && revolutPublicId) {
       return (
@@ -432,13 +465,36 @@ export default function StandaloneExperience() {
             <Calendar className="h-3.5 w-3.5" />
             {lang === "he" ? "תאריך" : lang === "fr" ? "Date" : "Date"}
           </Label>
-          <Input
-            type="date"
-            min={minDate}
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-full"
-          />
+          {availabilityHint && (
+            <p className="text-xs text-muted-foreground">
+              {lang === "he"
+                ? `זמין: ${availabilityHint}`
+                : lang === "fr"
+                ? `Disponible : ${availabilityHint}`
+                : `Available: ${availabilityHint}`}
+            </p>
+          )}
+          <div className="border rounded-lg overflow-hidden">
+            <CalendarPicker
+              mode="single"
+              selected={selectedDate ? new Date(selectedDate + "T12:00:00") : undefined}
+              onSelect={(date) => setSelectedDate(date ? toLocalDateStr(date) : "")}
+              disabled={isDateUnavailable}
+              classNames={{
+                day_selected:
+                  "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                day_disabled: "text-muted-foreground/30 line-through cursor-not-allowed",
+              }}
+            />
+          </div>
+          {selectedDate && (
+            <p className="text-xs font-medium text-foreground">
+              {new Date(selectedDate + "T12:00:00").toLocaleDateString(
+                lang === "he" ? "he-IL" : lang === "fr" ? "fr-FR" : "en-US",
+                { weekday: "long", day: "numeric", month: "long", year: "numeric" },
+              )}
+            </p>
+          )}
         </div>
 
         {/* Time slots */}
@@ -625,6 +681,7 @@ export default function StandaloneExperience() {
                 experienceId={experience.id}
                 lang={lang}
                 longCopy={longCopy}
+                source="standalone"
               />
 
               {/* Share with Friends */}

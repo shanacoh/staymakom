@@ -152,7 +152,7 @@ const IndexV3 = () => {
     },
   });
 
-  /* ── Experiences ── */
+  /* ── Experiences (mode "stay" uniquement — pas d'appel inutile en mode Experience Only) ── */
   const { data: experiences2, isLoading: isLoadingExp } = useQuery({
     queryKey: ["v3-experiences2"],
     queryFn: async () => {
@@ -181,6 +181,7 @@ const IndexV3 = () => {
       if (error) throw error;
       return data;
     },
+    enabled: mode === "stay",
     staleTime: 60_000,
     gcTime: 5 * 60_000,
   });
@@ -191,7 +192,7 @@ const IndexV3 = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_experiences")
-        .select("id, slug, title, title_he, title_fr, hero_image, photos, base_price, base_price_type, currency, min_party, max_party, has_time_slots, display_order, experience2_highlight_tags:categories(name)")
+        .select("id, slug, title, title_he, title_fr, hero_image, photos, base_price, base_price_type, currency, min_party, max_party, has_time_slots, display_order, category:categories(slug), standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he))")
         .eq("status", "published")
         .order("display_order", { ascending: true, nullsFirst: false });
       if (error) throw error;
@@ -207,7 +208,7 @@ const IndexV3 = () => {
     if (!standaloneExperiences) return [];
     if (!selectedCategory) return standaloneExperiences;
     return standaloneExperiences.filter(
-      (exp: any) => exp.experience2_highlight_tags?.name === selectedCategory
+      (exp: any) => exp.category?.slug === selectedCategory
     );
   }, [standaloneExperiences, selectedCategory]);
 

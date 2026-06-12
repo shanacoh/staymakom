@@ -6,6 +6,17 @@
 import ExperienceCard from "@/components/ExperienceCard";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
+interface StandaloneHighlightTagLink {
+  tag_id: string;
+  position: number;
+  highlight_tags: {
+    id: string;
+    slug: string;
+    label_en: string;
+    label_he?: string | null;
+  };
+}
+
 interface StandaloneExperienceCardProps {
   experience: {
     id: string;
@@ -21,7 +32,7 @@ interface StandaloneExperienceCardProps {
     min_party?: number | null;
     max_party?: number | null;
     has_time_slots?: boolean;
-    experience2_highlight_tags?: any[];
+    standalone_experience_highlight_tags?: StandaloneHighlightTagLink[] | null;
   };
   index?: number;
   badge?: string | null;
@@ -42,7 +53,9 @@ export default function StandaloneExperienceCard({
     ...experience,
     hotels: null,
     base_price: displayPrice,
-    experience_highlight_tags: [],
+    experience_highlight_tags: (experience.standalone_experience_highlight_tags ?? [])
+      .sort((a, b) => a.position - b.position)
+      .map((link) => ({ highlight_tags: link.highlight_tags })),
   };
 
   return (

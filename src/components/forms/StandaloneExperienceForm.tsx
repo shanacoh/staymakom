@@ -11,6 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
+import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,24 +25,30 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Save, Rocket, X, Upload, Loader2, ArrowLeft, Plus, Star, Clock, MapPin, DollarSign, Check } from "lucide-react";
+import {
+  Save, Rocket, X, Upload, Loader2, ArrowLeft, Plus, Star, Clock,
+  MapPin, DollarSign, Check, Tag, Car, Utensils, Dumbbell, Waves, Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import RichTextEditor from "@/components/ui/rich-text-editor";
 import { generateSlug } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { HighlightTagsSelectorStandalone, type LocalTagEntry } from "@/components/admin/HighlightTagsSelectorStandalone";
+import IncludesManagerStandalone, { type LocalIncludeEntry } from "@/components/admin/IncludesManagerStandalone";
+import StandaloneExtrasManager, { type LocalExtraEntry } from "@/components/admin/StandaloneExtrasManager";
 
 // ---------------------------------------------------------------------------
 // Tabs
 // ---------------------------------------------------------------------------
 
 const TABS = [
-  { id: "photos_slots", label: "Photos & Créneaux" },
-  { id: "description", label: "Description" },
-  { id: "inclus", label: "Inclus" },
-  { id: "tarification", label: "Tarification" },
-  { id: "things", label: "Things to Know" },
+  { id: "medias", label: "Médias" },
+  { id: "contenu", label: "Contenu" },
+  { id: "pratique", label: "Infos pratiques" },
+  { id: "tarif_dispo", label: "Tarif & Dispo" },
+  { id: "seo", label: "SEO" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -66,8 +76,11 @@ const standaloneExperienceSchema = z.object({
   cancellation_policy: z.string().optional(),
   cancellation_policy_fr: z.string().optional(),
   cancellation_policy_he: z.string().optional(),
-  // Tarification standalone
-  base_price: z.number().min(0).default(0),
+  // Tarification
+  supplier_price_adult: z.number().min(0).default(0),
+  supplier_price_child: z.number().min(0).default(0),
+  has_child_price: z.boolean().default(false),
+  markup_percent: z.number().min(0).max(100).default(0),
   base_price_type: z.enum(["per_person", "fixed", "per_person_per_night"]).default("per_person"),
   currency: z.enum(["USD", "EUR", "ILS"]).default("ILS"),
   lead_time_days: optNum(0),
@@ -102,7 +115,7 @@ const standaloneExperienceSchema = z.object({
 type StandaloneFormData = z.infer<typeof standaloneExperienceSchema>;
 
 // ---------------------------------------------------------------------------
-// Simple list types for includes/not_includes/good_to_know
+// Types
 // ---------------------------------------------------------------------------
 
 interface SimpleListItem {
@@ -110,9 +123,34 @@ interface SimpleListItem {
   text: string;
 }
 
-// ---------------------------------------------------------------------------
-// Props
-// ---------------------------------------------------------------------------
+interface PracticalInfo {
+  parking: { enabled: boolean; price: string };
+  adults_only: { enabled: boolean; from_time: string };
+  kosher: boolean;
+  spa: boolean;
+  fitness: boolean;
+}
+
+// Jours de semaine pour la disponibilité (1=Lundi … 7=Dimanche)
+const WEEKDAYS = [
+  { id: 1, label: "L", full: "Lundi" },
+  { id: 2, label: "M", full: "Mardi" },
+  { id: 3, label: "M", full: "Mercredi" },
+  { id: 4, label: "J", full: "Jeudi" },
+  { id: 5, label: "V", full: "Vendredi" },
+  { id: 6, label: "S", full: "Samedi" },
+  { id: 7, label: "D", full: "Dimanche" },
+];
+
+const ALL_DAYS = WEEKDAYS.map((d) => d.id);
+
+const defaultPracticalInfo: PracticalInfo = {
+  parking: { enabled: false, price: "" },
+  adults_only: { enabled: false, from_time: "" },
+  kosher: false,
+  spa: false,
+  fitness: false,
+};
 
 interface StandaloneExperienceFormProps {
   experienceId?: string;
@@ -138,7 +176,7 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [createdExperienceId, setCreatedExperienceId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabId>("photos_slots");
+  const [activeTab, setActiveTab] = useState<TabId>("medias");
 
   // Auto-save
   const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
@@ -152,13 +190,33 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
   const [featuredOnHome, setFeaturedOnHome] = useState(false);
   const [homeDisplayOrder, setHomeDisplayOrder] = useState(0);
 
-  // Includes lists (stored as JSONB in standalone_experiences)
+  // Includes lists
   const [includes, setIncludes] = useState<SimpleListItem[]>([]);
   const [notIncludes, setNotIncludes] = useState<SimpleListItem[]>([]);
   const [goodToKnow, setGoodToKnow] = useState<SimpleListItem[]>([]);
   const [newInclude, setNewInclude] = useState("");
   const [newNotInclude, setNewNotInclude] = useState("");
   const [newGoodToKnow, setNewGoodToKnow] = useState("");
+
+  // Highlight tags (badges)
+  const [highlightTags, setHighlightTags] = useState<SimpleListItem[]>([]);
+  const [newHighlightTag, setNewHighlightTag] = useState("");
+
+  // Multi-categories
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+
+  // Practical info toggles
+  const [practicalInfo, setPracticalInfo] = useState<PracticalInfo>(defaultPracticalInfo);
+
+  // Disponibilités
+  const [availableDays, setAvailableDays] = useState<number[]>(ALL_DAYS);
+  const [blockedDates, setBlockedDates] = useState<Date[]>([]);
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+
+  // Local mode — badges / inclus / extras (actifs avant le premier save, puis le composant bascule en mode DB)
+  const [localTags, setLocalTags] = useState<LocalTagEntry[]>([]);
+  const [localStandaloneIncludes, setLocalStandaloneIncludes] = useState<LocalIncludeEntry[]>([]);
+  const [localStandaloneExtras, setLocalStandaloneExtras] = useState<LocalExtraEntry[]>([]);
 
   const currentExperienceId = experienceId || createdExperienceId;
 
@@ -223,7 +281,10 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
       cancellation_policy: "",
       cancellation_policy_fr: "",
       cancellation_policy_he: "",
-      base_price: 0,
+      supplier_price_adult: 0,
+      supplier_price_child: 0,
+      has_child_price: false,
+      markup_percent: 0,
       base_price_type: "per_person",
       currency: "ILS",
       lead_time_days: 0,
@@ -255,11 +316,18 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
   const title = watch("title");
   const longCopy = watch("long_copy");
   const hasTimeSlots = watch("has_time_slots");
-  const basePrice = watch("base_price");
-  const basePriceType = watch("base_price_type");
   const currency = watch("currency");
-  const minParty = watch("min_party");
-  const maxParty = watch("max_party");
+  const supplierPriceAdult = watch("supplier_price_adult") ?? 0;
+  const supplierPriceChild = watch("supplier_price_child") ?? 0;
+  const hasChildPrice = watch("has_child_price");
+  const markupPercent = watch("markup_percent") ?? 0;
+
+  // Derived computed prices
+  const computedAdultPrice = Math.round(supplierPriceAdult * (1 + markupPercent / 100));
+  const computedChildPrice = Math.round(supplierPriceChild * (1 + markupPercent / 100));
+  const margeUnitaireAdult = Math.round(supplierPriceAdult * markupPercent / 100);
+
+  const currencySymbol = currency === "USD" ? "$" : currency === "EUR" ? "€" : "₪";
 
   // -------------------------------------------------------------------------
   // Auto-save to localStorage
@@ -277,6 +345,11 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
         includes,
         notIncludes,
         goodToKnow,
+        highlightTags,
+        selectedCategoryIds,
+        practicalInfo,
+        availableDays,
+        blockedDates: blockedDates.map((d) => d.toISOString().split("T")[0]),
         featuredOnHome,
         homeDisplayOrder,
         savedAt: new Date().toISOString(),
@@ -286,7 +359,7 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
     } catch {
       // silent fail
     }
-  }, [getValues, heroImagePreview, galleryPreviews, timeSlots, includes, notIncludes, goodToKnow, featuredOnHome, homeDisplayOrder, autoSaveKey]);
+  }, [getValues, heroImagePreview, galleryPreviews, timeSlots, includes, notIncludes, goodToKnow, highlightTags, selectedCategoryIds, practicalInfo, availableDays, blockedDates, featuredOnHome, homeDisplayOrder, autoSaveKey]);
 
   useEffect(() => {
     autoSaveTimerRef.current = setInterval(doAutoSave, 30000);
@@ -318,7 +391,11 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
     setValue("cancellation_policy", exp.cancellation_policy || "");
     setValue("cancellation_policy_fr", exp.cancellation_policy_fr || "");
     setValue("cancellation_policy_he", exp.cancellation_policy_he || "");
-    setValue("base_price", exp.base_price ?? 0);
+    // Pricing — fallback to base_price for existing records without supplier_price_adult
+    setValue("supplier_price_adult", exp.supplier_price_adult ?? exp.base_price ?? 0);
+    setValue("supplier_price_child", exp.supplier_price_child ?? 0);
+    setValue("has_child_price", exp.has_child_price ?? false);
+    setValue("markup_percent", exp.markup_percent ?? 0);
     setValue("base_price_type", exp.base_price_type || "per_person");
     setValue("currency", exp.currency || "ILS");
     setValue("lead_time_days", exp.lead_time_days ?? 0);
@@ -351,7 +428,6 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
     setFeaturedOnHome(exp.featured_on_home ?? false);
     setHomeDisplayOrder(exp.home_display_order ?? 0);
 
-    // Restore lists from JSONB (noms de colonnes réels dans la table)
     if (Array.isArray(exp.includes)) {
       setIncludes(exp.includes.map((t: string, i: number) => ({ id: `inc-${i}`, text: t })));
     }
@@ -360,6 +436,24 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
     }
     if (Array.isArray(exp.good_to_know)) {
       setGoodToKnow(exp.good_to_know.map((t: string, i: number) => ({ id: `gtk-${i}`, text: t })));
+    }
+    if (Array.isArray(exp.highlight_tags)) {
+      setHighlightTags(exp.highlight_tags.map((t: string, i: number) => ({ id: `ht-${i}`, text: t })));
+    }
+    // Multi-categories: restore from category_ids, fallback to category_id
+    if (Array.isArray(exp.category_ids) && exp.category_ids.length > 0) {
+      setSelectedCategoryIds(exp.category_ids);
+    } else if (exp.category_id) {
+      setSelectedCategoryIds([exp.category_id]);
+    }
+    if (exp.practical_info && typeof exp.practical_info === "object") {
+      setPracticalInfo({ ...defaultPracticalInfo, ...exp.practical_info });
+    }
+    if (Array.isArray(exp.available_days) && exp.available_days.length > 0) {
+      setAvailableDays(exp.available_days);
+    }
+    if (Array.isArray(exp.blocked_dates)) {
+      setBlockedDates(exp.blocked_dates.map((s: string) => new Date(s + "T12:00:00")));
     }
   }, [existingExperience, setValue]);
 
@@ -464,6 +558,20 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
   };
 
   // -------------------------------------------------------------------------
+  // Category multi-select helper
+  // -------------------------------------------------------------------------
+
+  const toggleCategory = (catId: string) => {
+    setSelectedCategoryIds((prev) => {
+      const updated = prev.includes(catId)
+        ? prev.filter((id) => id !== catId)
+        : [...prev, catId];
+      setValue("category_id", updated[0] || "", { shouldValidate: true });
+      return updated;
+    });
+  };
+
+  // -------------------------------------------------------------------------
   // Build experience data object
   // -------------------------------------------------------------------------
 
@@ -483,6 +591,10 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
       }
     }
 
+    // base_price = prix client calculé depuis fournisseur + markup
+    const computedBasePrice =
+      Math.round(data.supplier_price_adult * (1 + data.markup_percent / 100) * 100) / 100;
+
     return {
       title: data.title,
       title_fr: data.title_fr || null,
@@ -490,7 +602,8 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
       subtitle: data.subtitle || null,
       subtitle_fr: data.subtitle_fr || null,
       subtitle_he: data.subtitle_he || null,
-      category_id: data.category_id,
+      category_id: selectedCategoryIds[0] || data.category_id || null,
+      category_ids: selectedCategoryIds,
       long_copy: data.long_copy || null,
       long_copy_fr: data.long_copy_fr || null,
       long_copy_he: data.long_copy_he || null,
@@ -499,7 +612,11 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
       cancellation_policy: data.cancellation_policy || null,
       cancellation_policy_fr: data.cancellation_policy_fr || null,
       cancellation_policy_he: data.cancellation_policy_he || null,
-      base_price: data.base_price,
+      supplier_price_adult: data.supplier_price_adult,
+      supplier_price_child: data.has_child_price ? data.supplier_price_child : null,
+      has_child_price: data.has_child_price,
+      markup_percent: data.markup_percent,
+      base_price: computedBasePrice,
       base_price_type: data.base_price_type,
       currency: data.currency,
       lead_time_days: data.lead_time_days ?? 0,
@@ -533,10 +650,13 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
       og_image: data.og_image || null,
       featured_on_home: featuredOnHome,
       home_display_order: homeDisplayOrder,
-      // Lists stored as JSONB (noms de colonnes réels dans la table)
       includes: includes.map((i) => i.text),
       not_includes: notIncludes.map((i) => i.text),
       good_to_know: goodToKnow.map((i) => i.text),
+      highlight_tags: highlightTags.map((t) => t.text),
+      practical_info: practicalInfo,
+      available_days: availableDays,
+      blocked_dates: blockedDates.map((d) => d.toISOString().split("T")[0]),
     };
   };
 
@@ -562,6 +682,11 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
           .select("id")
           .single();
         if (error) throw error;
+        if (localTags.length > 0) {
+          await (supabase as any)
+            .from("standalone_experience_highlight_tags")
+            .insert(localTags.map((t, i) => ({ experience_id: insertedData.id, tag_id: t.tag_id, position: i })));
+        }
         setCreatedExperienceId(insertedData.id);
         toast.success("Brouillon créé !");
       }
@@ -598,6 +723,11 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
           .select("id")
           .single();
         if (error) throw error;
+        if (localTags.length > 0) {
+          await (supabase as any)
+            .from("standalone_experience_highlight_tags")
+            .insert(localTags.map((t, i) => ({ experience_id: insertedData.id, tag_id: t.tag_id, position: i })));
+        }
         setCreatedExperienceId(insertedData.id);
         toast.success("Expérience publiée !");
       }
@@ -651,22 +781,20 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
   const onInvalidSubmit = (errs: Record<string, any>) => {
     const fieldNames: Record<string, string> = {
       title: "Title (EN)",
-      category_id: "Category",
+      category_id: "Catégorie",
       long_copy: "Description (EN)",
-      min_party: "Min Party Size",
-      max_party: "Max Party Size",
-      base_price: "Base Price",
+      min_party: "Participants min",
+      max_party: "Participants max",
+      supplier_price_adult: "Prix adulte",
     };
     const errorFields = Object.keys(errs).map((field) => fieldNames[field] || field);
     if (errorFields.length > 0) toast.error(`Champs requis manquants : ${errorFields.join(", ")}`);
 
     const errorField = Object.keys(errs)[0];
     if (["title", "title_he", "subtitle", "category_id", "long_copy"].includes(errorField)) {
-      setActiveTab("description");
-    } else if (["min_party", "max_party"].includes(errorField)) {
-      setActiveTab("things");
-    } else if (["base_price"].includes(errorField)) {
-      setActiveTab("tarification");
+      setActiveTab("contenu");
+    } else if (["min_party", "max_party", "supplier_price_adult"].includes(errorField)) {
+      setActiveTab("tarif_dispo");
     }
   };
 
@@ -678,15 +806,15 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
 
   const getTabCompletion = (tabId: TabId): boolean => {
     switch (tabId) {
-      case "photos_slots":
+      case "medias":
         return !!(heroImagePreview || galleryPreviews.length > 0);
-      case "description":
-        return !!(title && longCopy && longCopy.length >= 100 && watch("category_id"));
-      case "inclus":
+      case "contenu":
+        return !!(title && longCopy && longCopy.length >= 100 && selectedCategoryIds.length > 0);
+      case "pratique":
         return includes.length > 0;
-      case "tarification":
-        return (basePrice ?? 0) > 0;
-      case "things":
+      case "tarif_dispo":
+        return supplierPriceAdult > 0;
+      case "seo":
         return true;
     }
   };
@@ -697,9 +825,6 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
     if (diff < 1) return "Auto-sauvegardé à l'instant";
     return `Auto-sauvegardé il y a ${diff} min`;
   };
-
-  // Currency symbol helper
-  const currencySymbol = currency === "USD" ? "$" : currency === "EUR" ? "€" : "₪";
 
   // -------------------------------------------------------------------------
   // Loading state
@@ -738,7 +863,6 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
               )}
             </div>
           </div>
-          {/* Desktop save buttons */}
           <div className="hidden md:flex gap-2">
             {experienceId && (
               <Button type="button" variant="destructive" size="sm" onClick={handleDelete} disabled={isSaving}>
@@ -781,9 +905,7 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
                 >
                   <span className={cn(
                     "flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold",
-                    isComplete
-                      ? "bg-green-600 text-white"
-                      : "bg-muted text-muted-foreground"
+                    isComplete ? "bg-green-600 text-white" : "bg-muted text-muted-foreground"
                   )}>
                     {isComplete ? <Check className="h-3 w-3" /> : index + 1}
                   </span>
@@ -795,11 +917,10 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* TAB: Photos & Créneaux */}
+        {/* PAGE 1 : Médias */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {activeTab === "photos_slots" && (
+        {activeTab === "medias" && (
           <div className="space-y-6">
-            {/* Photos */}
             <Card>
               <CardHeader>
                 <CardTitle>Photos</CardTitle>
@@ -812,9 +933,7 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
                     <Star className="h-4 w-4" />
                     Photo de couverture
                   </Label>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Grande image affichée en haut de la fiche.
-                  </p>
+                  <p className="text-xs text-muted-foreground mb-2">Grande image affichée en haut de la fiche.</p>
                   <div
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleHeroDrop}
@@ -863,7 +982,9 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
                 {/* Gallery */}
                 <div>
                   <Label>Galerie (max. 8)</Label>
-                  <p className="text-xs text-muted-foreground mb-2">Glisser les images pour les ajouter. 1600×900px recommandé, max 5MB par image.</p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Glisser les images pour les ajouter. 1600×900px recommandé, max 5MB par image.
+                  </p>
                   <div
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleGalleryDrop}
@@ -914,80 +1035,13 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
                 </div>
               </CardContent>
             </Card>
-
-            {/* Créneaux horaires */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      Créneaux horaires
-                    </CardTitle>
-                    <CardDescription>Activez si l'expérience se déroule à des horaires précis</CardDescription>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-muted-foreground">{hasTimeSlots ? "Activés" : "Désactivés"}</span>
-                    <Controller
-                      name="has_time_slots"
-                      control={control}
-                      render={({ field }) => (
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      )}
-                    />
-                  </div>
-                </div>
-              </CardHeader>
-              {hasTimeSlots && (
-                <CardContent className="space-y-4">
-                  <div className="flex gap-2">
-                    <Input
-                      type="time"
-                      value={newSlot}
-                      onChange={(e) => setNewSlot(e.target.value)}
-                      className="w-40"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={addTimeSlot}
-                      disabled={!newSlot}
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Ajouter
-                    </Button>
-                  </div>
-                  {timeSlots.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {timeSlots.map((slot) => (
-                        <span
-                          key={slot}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium"
-                        >
-                          {slot}
-                          <button
-                            type="button"
-                            onClick={() => removeTimeSlot(slot)}
-                            className="hover:text-destructive transition-colors"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground italic">Aucun créneau ajouté.</p>
-                  )}
-                </CardContent>
-              )}
-            </Card>
           </div>
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* TAB: Description */}
+        {/* PAGE 2 : Contenu */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {activeTab === "description" && (
+        {activeTab === "contenu" && (
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -995,86 +1049,49 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
                 <CardDescription>Contenu principal de la fiche expérience (EN + FR + HE)</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Titres */}
                 <div className="grid grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="title" className="flex items-center gap-1.5">
                       <span>🇬🇧</span> Titre (EN) <span className="text-destructive">*</span>
                     </Label>
-                    <Input
-                      id="title"
-                      {...register("title")}
-                      placeholder="Ex: Wine tasting in the Galilee"
-                      disabled={isSaving}
-                    />
+                    <Input id="title" {...register("title")} placeholder="Ex: Wine tasting in the Galilee" disabled={isSaving} />
                     {errors.title && <p className="text-destructive text-xs">{errors.title.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="title_fr" className="flex items-center gap-1.5">
                       <span>🇫🇷</span> Titre (FR)
                     </Label>
-                    <Input
-                      id="title_fr"
-                      {...register("title_fr")}
-                      placeholder="Ex: Dégustation de vins en Galilée"
-                      disabled={isSaving}
-                    />
+                    <Input id="title_fr" {...register("title_fr")} placeholder="Ex: Dégustation de vins en Galilée" disabled={isSaving} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="title_he" className="flex items-center gap-1.5">
                       <span>🇮🇱</span> כותרת (HE)
                     </Label>
-                    <Input
-                      id="title_he"
-                      {...register("title_he")}
-                      placeholder="כותרת בעברית"
-                      dir="rtl"
-                      className="bg-hebrew-input"
-                      disabled={isSaving}
-                    />
+                    <Input id="title_he" {...register("title_he")} placeholder="כותרת בעברית" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
                   </div>
                 </div>
 
-                {/* Sous-titres */}
                 <div className="grid grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="subtitle" className="flex items-center gap-1.5">
                       <span>🇬🇧</span> Sous-titre (EN)
                     </Label>
-                    <Input
-                      id="subtitle"
-                      {...register("subtitle")}
-                      placeholder="Courte accroche"
-                      disabled={isSaving}
-                    />
+                    <Input id="subtitle" {...register("subtitle")} placeholder="Courte accroche" disabled={isSaving} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="subtitle_fr" className="flex items-center gap-1.5">
                       <span>🇫🇷</span> Sous-titre (FR)
                     </Label>
-                    <Input
-                      id="subtitle_fr"
-                      {...register("subtitle_fr")}
-                      placeholder="Courte accroche en français"
-                      disabled={isSaving}
-                    />
+                    <Input id="subtitle_fr" {...register("subtitle_fr")} placeholder="Courte accroche en français" disabled={isSaving} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="subtitle_he" className="flex items-center gap-1.5">
                       <span>🇮🇱</span> תת-כותרת (HE)
                     </Label>
-                    <Input
-                      id="subtitle_he"
-                      {...register("subtitle_he")}
-                      placeholder="תת-כותרת בעברית"
-                      dir="rtl"
-                      className="bg-hebrew-input"
-                      disabled={isSaving}
-                    />
+                    <Input id="subtitle_he" {...register("subtitle_he")} placeholder="תת-כותרת בעברית" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
                   </div>
                 </div>
 
-                {/* Descriptions longues */}
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1.5">
                     <span>🇬🇧</span> Description longue (EN) <span className="text-destructive">*</span>
@@ -1083,11 +1100,7 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
                     name="long_copy"
                     control={control}
                     render={({ field }) => (
-                      <RichTextEditor
-                        content={field.value || ""}
-                        onChange={field.onChange}
-                        placeholder="Description complète de l'expérience..."
-                      />
+                      <RichTextEditor content={field.value || ""} onChange={field.onChange} placeholder="Description complète de l'expérience..." />
                     )}
                   />
                   {errors.long_copy && <p className="text-destructive text-xs">{errors.long_copy.message}</p>}
@@ -1101,11 +1114,7 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
                     name="long_copy_fr"
                     control={control}
                     render={({ field }) => (
-                      <RichTextEditor
-                        content={field.value || ""}
-                        onChange={field.onChange}
-                        placeholder="Description complète de l'expérience en français..."
-                      />
+                      <RichTextEditor content={field.value || ""} onChange={field.onChange} placeholder="Description complète de l'expérience en français..." />
                     )}
                   />
                 </div>
@@ -1118,57 +1127,72 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
                     name="long_copy_he"
                     control={control}
                     render={({ field }) => (
-                      <RichTextEditor
-                        content={field.value || ""}
-                        onChange={field.onChange}
-                        placeholder="תיאור מלא של החוויה..."
-                        dir="rtl"
-                      />
+                      <RichTextEditor content={field.value || ""} onChange={field.onChange} placeholder="תיאור מלא של החוויה..." dir="rtl" />
                     )}
                   />
                 </div>
               </CardContent>
             </Card>
 
-            {/* Catégorie & mise en avant */}
+            {/* Catégories & Mise en avant */}
             <Card>
               <CardHeader>
-                <CardTitle>Catégorie & Mise en avant</CardTitle>
+                <CardTitle>Catégories & Mise en avant</CardTitle>
+                <CardDescription>
+                  Sélectionnez une ou plusieurs catégories — l'expérience apparaîtra dans chacune
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="category_id">
-                      Catégorie <span className="text-destructive">*</span>
-                    </Label>
-                    <Controller
-                      name="category_id"
-                      control={control}
-                      render={({ field }) => (
-                        <Select value={field.value || ""} onValueChange={field.onChange} disabled={isSaving}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner une catégorie" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories?.map((cat) => (
-                              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                    {errors.category_id && <p className="text-destructive text-xs">{errors.category_id.message}</p>}
+                <div>
+                  <Label className="mb-3 block">
+                    Catégories <span className="text-destructive">*</span>
+                  </Label>
+                  {selectedCategoryIds.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {selectedCategoryIds.map((catId) => {
+                        const cat = categories?.find((c) => c.id === catId);
+                        return cat ? (
+                          <Badge key={catId} variant="secondary" className="flex items-center gap-1 text-sm">
+                            {cat.name}
+                            <button
+                              type="button"
+                              onClick={() => toggleCategory(catId)}
+                              className="ml-1 hover:text-destructive"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 rounded-lg border p-3 max-h-48 overflow-y-auto">
+                    {categories?.map((cat) => (
+                      <label
+                        key={cat.id}
+                        className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 px-2 py-1.5 rounded text-sm"
+                      >
+                        <Checkbox
+                          checked={selectedCategoryIds.includes(cat.id)}
+                          onCheckedChange={() => toggleCategory(cat.id)}
+                        />
+                        {cat.name}
+                      </label>
+                    ))}
                   </div>
+                  {errors.category_id && (
+                    <p className="text-destructive text-xs mt-1">{errors.category_id.message}</p>
+                  )}
+                </div>
 
-                  <div className="space-y-2">
-                    <Label>Slug (URL)</Label>
-                    <Input
-                      value={generateSlug(watch("title") || "")}
-                      readOnly
-                      className="bg-muted text-muted-foreground text-sm"
-                    />
-                    <p className="text-xs text-muted-foreground">Généré automatiquement depuis le titre EN</p>
-                  </div>
+                <div className="space-y-2">
+                  <Label>Slug (URL)</Label>
+                  <Input
+                    value={generateSlug(watch("title") || "")}
+                    readOnly
+                    className="bg-muted text-muted-foreground text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">Généré automatiquement depuis le titre EN</p>
                 </div>
 
                 <div className="flex items-center justify-between p-4 rounded-lg border">
@@ -1198,363 +1222,138 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* TAB: Inclus */}
+        {/* PAGE 3 : Infos pratiques */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {activeTab === "inclus" && (
+        {activeTab === "pratique" && (
           <div className="space-y-6">
+            {/* Badges (Points forts) */}
+            <HighlightTagsSelectorStandalone
+              experienceId={currentExperienceId}
+              localTags={localTags}
+              onLocalTagsChange={setLocalTags}
+            />
+
             {/* Ce qui est inclus */}
             <Card>
               <CardHeader>
                 <CardTitle>Ce qui est inclus</CardTitle>
-                <CardDescription>Listez tout ce qui est compris dans le prix</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex gap-2">
-                  <Input
-                    value={newInclude}
-                    onChange={(e) => setNewInclude(e.target.value)}
-                    placeholder="Ex: Transport aller-retour depuis Tel Aviv"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addToList(setIncludes, newInclude, () => setNewInclude(""), "inc");
-                      }
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => addToList(setIncludes, newInclude, () => setNewInclude(""), "inc")}
-                    disabled={!newInclude.trim()}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="space-y-2">
-                  {includes.map((item) => (
-                    <div key={item.id} className="flex items-center gap-2">
-                      <span className="text-green-600 shrink-0">✓</span>
-                      <Input
-                        value={item.text}
-                        onChange={(e) => updateListItem(setIncludes, item.id, e.target.value)}
-                        className="flex-1 h-8 text-sm"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeFromList(setIncludes, item.id)}
-                        className="text-destructive hover:text-destructive/80 shrink-0"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                  {includes.length === 0 && (
-                    <p className="text-sm text-muted-foreground italic">Aucun élément. Ajoutez ce qui est inclus dans le prix.</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Ce qui n'est pas inclus */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Ce qui n'est pas inclus</CardTitle>
-                <CardDescription>Listez ce qui est à la charge du participant</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex gap-2">
-                  <Input
-                    value={newNotInclude}
-                    onChange={(e) => setNewNotInclude(e.target.value)}
-                    placeholder="Ex: Repas du midi"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addToList(setNotIncludes, newNotInclude, () => setNewNotInclude(""), "ninc");
-                      }
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => addToList(setNotIncludes, newNotInclude, () => setNewNotInclude(""), "ninc")}
-                    disabled={!newNotInclude.trim()}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="space-y-2">
-                  {notIncludes.map((item) => (
-                    <div key={item.id} className="flex items-center gap-2">
-                      <span className="text-destructive shrink-0">✗</span>
-                      <Input
-                        value={item.text}
-                        onChange={(e) => updateListItem(setNotIncludes, item.id, e.target.value)}
-                        className="flex-1 h-8 text-sm"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeFromList(setNotIncludes, item.id)}
-                        className="text-destructive hover:text-destructive/80 shrink-0"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                  {notIncludes.length === 0 && (
-                    <p className="text-sm text-muted-foreground italic">Aucun élément.</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Bon à savoir */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Bon à savoir</CardTitle>
-                <CardDescription>Informations utiles pour les participants</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex gap-2">
-                  <Input
-                    value={newGoodToKnow}
-                    onChange={(e) => setNewGoodToKnow(e.target.value)}
-                    placeholder="Ex: Prévoir des chaussures confortables"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addToList(setGoodToKnow, newGoodToKnow, () => setNewGoodToKnow(""), "gtk");
-                      }
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => addToList(setGoodToKnow, newGoodToKnow, () => setNewGoodToKnow(""), "gtk")}
-                    disabled={!newGoodToKnow.trim()}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="space-y-2">
-                  {goodToKnow.map((item) => (
-                    <div key={item.id} className="flex items-center gap-2">
-                      <span className="text-blue-500 shrink-0">ℹ</span>
-                      <Input
-                        value={item.text}
-                        onChange={(e) => updateListItem(setGoodToKnow, item.id, e.target.value)}
-                        className="flex-1 h-8 text-sm"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeFromList(setGoodToKnow, item.id)}
-                        className="text-destructive hover:text-destructive/80 shrink-0"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                  {goodToKnow.length === 0 && (
-                    <p className="text-sm text-muted-foreground italic">Aucun élément.</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* TAB: Tarification */}
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {activeTab === "tarification" && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
-                  Prix de l'expérience
-                </CardTitle>
-                <CardDescription>Définissez le tarif de base et la devise</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Prix & devise */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="base_price">
-                      Prix de base <span className="text-destructive">*</span>
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="base_price"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        {...register("base_price", { valueAsNumber: true })}
-                        placeholder="0"
-                        disabled={isSaving}
-                        className="pr-8"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                        {currencySymbol}
-                      </span>
-                    </div>
-                    {errors.base_price && <p className="text-destructive text-xs">{errors.base_price.message}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Type de tarification</Label>
-                    <Controller
-                      name="base_price_type"
-                      control={control}
-                      render={({ field }) => (
-                        <Select value={field.value} onValueChange={field.onChange} disabled={isSaving}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="per_person">Par personne</SelectItem>
-                            <SelectItem value="fixed">Forfait (prix fixe)</SelectItem>
-                            <SelectItem value="per_person_per_night">Par personne / nuit</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Devise</Label>
-                    <Controller
-                      name="currency"
-                      control={control}
-                      render={({ field }) => (
-                        <Select value={field.value} onValueChange={field.onChange} disabled={isSaving}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="ILS">₪ Shekel (ILS)</SelectItem>
-                            <SelectItem value="USD">$ Dollar (USD)</SelectItem>
-                            <SelectItem value="EUR">€ Euro (EUR)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                {/* Simulation rapide */}
-                {(basePrice ?? 0) > 0 && (
-                  <div className="rounded-lg bg-muted/40 border p-4 space-y-2">
-                    <p className="text-sm font-medium">Aperçu du prix</p>
-                    {basePriceType === "per_person" && (
-                      <div className="space-y-1 text-sm text-muted-foreground">
-                        <div className="flex justify-between">
-                          <span>Pour {minParty} personne{minParty > 1 ? "s" : ""} (min)</span>
-                          <span className="font-medium text-foreground">{currencySymbol}{((basePrice ?? 0) * minParty).toFixed(0)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Pour {maxParty} personne{maxParty > 1 ? "s" : ""} (max)</span>
-                          <span className="font-medium text-foreground">{currencySymbol}{((basePrice ?? 0) * maxParty).toFixed(0)}</span>
-                        </div>
-                      </div>
-                    )}
-                    {basePriceType === "fixed" && (
-                      <p className="text-sm">
-                        Prix forfaitaire : <span className="font-semibold">{currencySymbol}{(basePrice ?? 0).toFixed(0)}</span> (quel que soit le groupe)
-                      </p>
-                    )}
-                    {basePriceType === "per_person_per_night" && (
-                      <p className="text-sm">
-                        <span className="font-semibold">{currencySymbol}{(basePrice ?? 0).toFixed(0)}</span> / personne / nuit
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                <Separator />
-
-                {/* Participants */}
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="min_party">Participants min</Label>
-                    <Input
-                      id="min_party"
-                      type="number"
-                      min={1}
-                      max={100}
-                      {...register("min_party", { valueAsNumber: true })}
-                      disabled={isSaving}
-                    />
-                    {errors.min_party && <p className="text-destructive text-xs">{errors.min_party.message}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="max_party">Participants max</Label>
-                    <Input
-                      id="max_party"
-                      type="number"
-                      min={1}
-                      max={100}
-                      {...register("max_party", { valueAsNumber: true })}
-                      disabled={isSaving}
-                    />
-                    {errors.max_party && <p className="text-destructive text-xs">{errors.max_party.message}</p>}
-                  </div>
-                </div>
-
-                {/* Délai de réservation */}
-                <div className="space-y-2">
-                  <Label htmlFor="lead_time_days">Délai minimum avant réservation (jours)</Label>
-                  <div className="flex items-center gap-3">
-                    <Input
-                      id="lead_time_days"
-                      type="number"
-                      min={0}
-                      max={365}
-                      {...register("lead_time_days", { valueAsNumber: true })}
-                      disabled={isSaving}
-                      className="w-32"
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      Les clients devront réserver au moins {watch("lead_time_days") ?? 0} jour{(watch("lead_time_days") ?? 0) > 1 ? "s" : ""} à l'avance.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* TAB: Things to Know */}
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {activeTab === "things" && (
-          <div className="space-y-6">
-            {/* Conditions d'annulation */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Conditions d'annulation</CardTitle>
-                <CardDescription>Politique d'annulation de l'expérience (3 langues)</CardDescription>
+                <CardDescription>Listez tout ce qui est compris dans le prix (avec photo et traduction HE)</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-3 gap-6">
-                  <div>
-                    <Label className="flex items-center gap-1.5 mb-1">
-                      <span>🇬🇧</span> Politique d'annulation (EN)
-                    </Label>
-                    <Input {...register("cancellation_policy")} disabled={isSaving} />
+                <IncludesManagerStandalone
+                  experienceId={currentExperienceId}
+                  localIncludes={localStandaloneIncludes}
+                  onLocalIncludesChange={setLocalStandaloneIncludes}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Extras (options payantes) */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Extras (options payantes)</CardTitle>
+                <CardDescription>Options supplémentaires que le client peut ajouter à sa réservation</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <StandaloneExtrasManager
+                  experienceId={currentExperienceId}
+                  localExtras={localStandaloneExtras}
+                  onLocalExtrasChange={setLocalStandaloneExtras}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Informations pratiques (toggles) */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Informations pratiques</CardTitle>
+                <CardDescription>Activez les équipements et services disponibles pour cette expérience</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {/* Parking */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-3 rounded-lg border">
+                    <div className="flex items-center gap-3">
+                      <Car className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium text-sm">Parking</span>
+                    </div>
+                    <Switch
+                      checked={practicalInfo.parking.enabled}
+                      onCheckedChange={(v) => setPracticalInfo((prev) => ({ ...prev, parking: { ...prev.parking, enabled: v } }))}
+                    />
                   </div>
-                  <div>
-                    <Label className="flex items-center gap-1.5 mb-1">
-                      <span>🇫🇷</span> Politique d'annulation (FR)
-                    </Label>
-                    <Input {...register("cancellation_policy_fr")} disabled={isSaving} />
+                  {practicalInfo.parking.enabled && (
+                    <div className="ml-7 flex items-center gap-2">
+                      <Label className="text-sm text-muted-foreground shrink-0">Prix :</Label>
+                      <Input
+                        value={practicalInfo.parking.price}
+                        onChange={(e) => setPracticalInfo((prev) => ({ ...prev, parking: { ...prev.parking, price: e.target.value } }))}
+                        placeholder="Ex: Gratuit / 20₪ par jour"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Adults only */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-3 rounded-lg border">
+                    <div className="flex items-center gap-3">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium text-sm">Adults only</span>
+                    </div>
+                    <Switch
+                      checked={practicalInfo.adults_only.enabled}
+                      onCheckedChange={(v) => setPracticalInfo((prev) => ({ ...prev, adults_only: { ...prev.adults_only, enabled: v } }))}
+                    />
                   </div>
-                  <div>
-                    <Label className="flex items-center gap-1.5 mb-1">
-                      <span>🇮🇱</span> Politique d'annulation (HE)
-                    </Label>
-                    <Input {...register("cancellation_policy_he")} dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
+                  {practicalInfo.adults_only.enabled && (
+                    <div className="ml-7 flex items-center gap-2">
+                      <Label className="text-sm text-muted-foreground shrink-0">À partir de :</Label>
+                      <Input
+                        type="time"
+                        value={practicalInfo.adults_only.from_time}
+                        onChange={(e) => setPracticalInfo((prev) => ({ ...prev, adults_only: { ...prev.adults_only, from_time: e.target.value } }))}
+                        className="h-8 text-sm w-32"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Kasher */}
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    <Utensils className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium text-sm">Kasher</span>
                   </div>
+                  <Switch
+                    checked={practicalInfo.kosher}
+                    onCheckedChange={(v) => setPracticalInfo((prev) => ({ ...prev, kosher: v }))}
+                  />
+                </div>
+
+                {/* Spa */}
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    <Waves className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium text-sm">Spa</span>
+                  </div>
+                  <Switch
+                    checked={practicalInfo.spa}
+                    onCheckedChange={(v) => setPracticalInfo((prev) => ({ ...prev, spa: v }))}
+                  />
+                </div>
+
+                {/* Fitness */}
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    <Dumbbell className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium text-sm">Fitness</span>
+                  </div>
+                  <Switch
+                    checked={practicalInfo.fitness}
+                    onCheckedChange={(v) => setPracticalInfo((prev) => ({ ...prev, fitness: v }))}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -1574,46 +1373,22 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
                     <Label htmlFor="address" className="flex items-center gap-1.5">
                       <span>🇬🇧</span> Adresse (EN)
                     </Label>
-                    <Input
-                      id="address"
-                      {...register("address")}
-                      placeholder="Ex: 12 Rothschild Blvd, Tel Aviv"
-                      disabled={isSaving}
-                    />
+                    <Input id="address" {...register("address")} placeholder="Ex: 12 Rothschild Blvd, Tel Aviv" disabled={isSaving} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="address_he" className="flex items-center gap-1.5">
                       <span>🇮🇱</span> כתובת (HE)
                     </Label>
-                    <Input
-                      id="address_he"
-                      {...register("address_he")}
-                      placeholder="כתובת בעברית"
-                      dir="rtl"
-                      className="bg-hebrew-input"
-                      disabled={isSaving}
-                    />
+                    <Input id="address_he" {...register("address_he")} placeholder="כתובת בעברית" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
                   </div>
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="google_maps_link">Lien Google Maps</Label>
-                  <Input
-                    id="google_maps_link"
-                    {...register("google_maps_link")}
-                    placeholder="https://maps.google.com/..."
-                    disabled={isSaving}
-                  />
+                  <Input id="google_maps_link" {...register("google_maps_link")} placeholder="https://maps.google.com/..." disabled={isSaving} />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="region_type">Région / Zone</Label>
-                  <Input
-                    id="region_type"
-                    {...register("region_type")}
-                    placeholder="Ex: Tel Aviv, Galilee, Dead Sea..."
-                    disabled={isSaving}
-                  />
+                  <Input id="region_type" {...register("region_type")} placeholder="Ex: Tel Aviv, Galilee, Dead Sea..." disabled={isSaving} />
                 </div>
               </CardContent>
             </Card>
@@ -1629,36 +1404,19 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
                     <Label htmlFor="duration" className="flex items-center gap-1.5">
                       <span>🇬🇧</span> Duration (EN)
                     </Label>
-                    <Input
-                      id="duration"
-                      {...register("duration")}
-                      placeholder="Ex: 3 hours"
-                      disabled={isSaving}
-                    />
+                    <Input id="duration" {...register("duration")} placeholder="Ex: 3 hours" disabled={isSaving} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="duration_fr" className="flex items-center gap-1.5">
                       <span>🇫🇷</span> Durée (FR)
                     </Label>
-                    <Input
-                      id="duration_fr"
-                      {...register("duration_fr")}
-                      placeholder="Ex: 3 heures"
-                      disabled={isSaving}
-                    />
+                    <Input id="duration_fr" {...register("duration_fr")} placeholder="Ex: 3 heures" disabled={isSaving} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="duration_he" className="flex items-center gap-1.5">
                       <span>🇮🇱</span> משך (HE)
                     </Label>
-                    <Input
-                      id="duration_he"
-                      {...register("duration_he")}
-                      placeholder="Ex: 3 שעות"
-                      dir="rtl"
-                      className="bg-hebrew-input"
-                      disabled={isSaving}
-                    />
+                    <Input id="duration_he" {...register("duration_he")} placeholder="Ex: 3 שעות" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
                   </div>
                 </div>
               </CardContent>
@@ -1682,8 +1440,466 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
                 </div>
               </CardContent>
             </Card>
+          </div>
+        )}
 
-            {/* SEO */}
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {/* PAGE 4 : Tarif & Dispo */}
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {activeTab === "tarif_dispo" && (
+          <div className="space-y-6">
+            {/* Prix de l'expérience */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Prix de l'expérience
+                </CardTitle>
+                <CardDescription>Tarif fournisseur, markup STAYMAKOM, prix client affiché</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Paramètres de base */}
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Paramètres de base</p>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label>Type de tarification <span className="text-destructive">*</span></Label>
+                      <Controller
+                        name="base_price_type"
+                        control={control}
+                        render={({ field }) => (
+                          <Select value={field.value} onValueChange={field.onChange} disabled={isSaving}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="per_person">Par personne</SelectItem>
+                              <SelectItem value="fixed">Forfait (prix fixe)</SelectItem>
+                              <SelectItem value="per_person_per_night">Par personne / nuit</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Devise</Label>
+                      <Controller
+                        name="currency"
+                        control={control}
+                        render={({ field }) => (
+                          <Select value={field.value} onValueChange={field.onChange} disabled={isSaving}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="ILS">ILS ₪</SelectItem>
+                              <SelectItem value="USD">USD $</SelectItem>
+                              <SelectItem value="EUR">EUR €</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Participants min / max</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input type="number" min={1} max={100} {...register("min_party", { valueAsNumber: true })} placeholder="1" disabled={isSaving} />
+                        <Input type="number" min={1} max={100} {...register("max_party", { valueAsNumber: true })} placeholder="10" disabled={isSaving} />
+                      </div>
+                      {(errors.min_party || errors.max_party) && (
+                        <p className="text-destructive text-xs">Valeurs min/max invalides</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Tarif fournisseur */}
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Tarif fournisseur (Prix net achat)</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="supplier_price_adult">
+                        Prix adulte <span className="text-destructive">*</span>
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="supplier_price_adult"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          {...register("supplier_price_adult", { valueAsNumber: true })}
+                          placeholder="0"
+                          disabled={isSaving}
+                          className="pr-8"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Prix que vous payez au prestataire</p>
+                      {errors.supplier_price_adult && <p className="text-destructive text-xs">{errors.supplier_price_adult.message}</p>}
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="supplier_price_child">Prix enfant</Label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">Tarif différent</span>
+                          <Controller
+                            name="has_child_price"
+                            control={control}
+                            render={({ field }) => (
+                              <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            )}
+                          />
+                        </div>
+                      </div>
+                      <div className="relative">
+                        <Input
+                          id="supplier_price_child"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          {...register("supplier_price_child", { valueAsNumber: true })}
+                          placeholder="100"
+                          disabled={isSaving || !hasChildPrice}
+                          className={cn("pr-8", !hasChildPrice && "opacity-40")}
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {hasChildPrice ? "Prix enfant au prestataire" : "Activer pour saisir un prix enfant"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Markup STAYMAKOM */}
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Markup STAYMAKOM</p>
+                  <div className="rounded-lg border bg-muted/30 p-4">
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm text-muted-foreground shrink-0 w-16">Marge %</span>
+                      <Controller
+                        name="markup_percent"
+                        control={control}
+                        render={({ field }) => (
+                          <Slider
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={[field.value ?? 0]}
+                            onValueChange={([v]) => field.onChange(v)}
+                            className="flex-1"
+                          />
+                        )}
+                      />
+                      <span className="text-sm font-semibold w-12 text-right">{markupPercent}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Preview cards */}
+                {supplierPriceAdult > 0 && (
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="rounded-lg border p-4 bg-background">
+                      <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
+                        <Users className="h-3.5 w-3.5" /> Adulte
+                      </div>
+                      <p className="text-2xl font-bold">{computedAdultPrice} <span className="text-base font-normal">{currencySymbol}</span></p>
+                      <p className="text-xs text-muted-foreground mt-1">{supplierPriceAdult} + {markupPercent}% = {computedAdultPrice}</p>
+                    </div>
+                    <div className={cn("rounded-lg border p-4", hasChildPrice ? "bg-background" : "bg-muted/30")}>
+                      <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
+                        <Users className="h-3.5 w-3.5" /> Enfant
+                      </div>
+                      {hasChildPrice ? (
+                        <>
+                          <p className="text-2xl font-bold">{computedChildPrice} <span className="text-base font-normal">{currencySymbol}</span></p>
+                          <p className="text-xs text-muted-foreground mt-1">{supplierPriceChild} + {markupPercent}% = {computedChildPrice}</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-2xl font-bold text-muted-foreground">—</p>
+                          <p className="text-xs text-muted-foreground mt-1">Tarif enfant désactivé</p>
+                        </>
+                      )}
+                    </div>
+                    <div className="rounded-lg border p-4 bg-background">
+                      <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
+                        <span className="text-xs font-bold">%</span> Marge unitaire
+                      </div>
+                      <p className="text-2xl font-bold">{margeUnitaireAdult} <span className="text-base font-normal">{currencySymbol}</span></p>
+                      <p className="text-xs text-muted-foreground mt-1">par adulte</p>
+                    </div>
+                  </div>
+                )}
+
+                <Separator />
+
+                {/* Délai de réservation */}
+                <div className="space-y-2">
+                  <Label htmlFor="lead_time_days">Délai minimum avant réservation (jours)</Label>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      id="lead_time_days"
+                      type="number"
+                      min={0}
+                      max={365}
+                      {...register("lead_time_days", { valueAsNumber: true })}
+                      disabled={isSaving}
+                      className="w-32"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Les clients devront réserver au moins {watch("lead_time_days") ?? 0} jour{(watch("lead_time_days") ?? 0) > 1 ? "s" : ""} à l'avance.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Créneaux horaires */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Créneaux horaires
+                    </CardTitle>
+                    <CardDescription>Activez si l'expérience se déroule à des horaires précis</CardDescription>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground">{hasTimeSlots ? "Activés" : "Désactivés"}</span>
+                    <Controller
+                      name="has_time_slots"
+                      control={control}
+                      render={({ field }) => (
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      )}
+                    />
+                  </div>
+                </div>
+              </CardHeader>
+              {hasTimeSlots && (
+                <CardContent className="space-y-4">
+                  <div className="flex gap-2">
+                    <Input type="time" value={newSlot} onChange={(e) => setNewSlot(e.target.value)} className="w-40" />
+                    <Button type="button" variant="outline" onClick={addTimeSlot} disabled={!newSlot}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      Ajouter
+                    </Button>
+                  </div>
+                  {timeSlots.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {timeSlots.map((slot) => (
+                        <span key={slot} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                          {slot}
+                          <button type="button" onClick={() => removeTimeSlot(slot)} className="hover:text-destructive transition-colors">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">Aucun créneau ajouté.</p>
+                  )}
+                </CardContent>
+              )}
+            </Card>
+
+            {/* Disponibilités */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Disponibilités</CardTitle>
+                <CardDescription>
+                  Définissez les jours habituels, puis bloquez les dates exceptionnelles
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Jours de la semaine */}
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+                    Jours disponibles chaque semaine
+                  </p>
+                  <div className="flex gap-2 flex-wrap">
+                    {WEEKDAYS.map((day) => {
+                      const active = availableDays.includes(day.id);
+                      return (
+                        <button
+                          key={day.id}
+                          type="button"
+                          title={day.full}
+                          onClick={() =>
+                            setAvailableDays((prev) =>
+                              prev.includes(day.id)
+                                ? prev.filter((d) => d !== day.id)
+                                : [...prev, day.id].sort((a, b) => a - b)
+                            )
+                          }
+                          className={cn(
+                            "w-10 h-10 rounded-full text-sm font-semibold border-2 transition-colors",
+                            active
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-background text-muted-foreground border-muted hover:border-primary/50"
+                          )}
+                        >
+                          {day.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {availableDays.length === 0 && (
+                    <p className="text-xs text-destructive mt-2">Aucun jour sélectionné — l'expérience sera indisponible.</p>
+                  )}
+                  {availableDays.length > 0 && availableDays.length < 7 && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Disponible : {availableDays.map((id) => WEEKDAYS.find((d) => d.id === id)?.full).join(", ")}
+                    </p>
+                  )}
+                  {availableDays.length === 7 && (
+                    <p className="text-xs text-muted-foreground mt-2">Disponible tous les jours</p>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Calendrier d'exceptions */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                        Dates bloquées (exceptions)
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Cliquez sur une date pour la marquer comme indisponible — cliquez à nouveau pour la débloquer
+                      </p>
+                    </div>
+                    {blockedDates.length > 0 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setBlockedDates([])}
+                        className="text-destructive hover:text-destructive text-xs"
+                      >
+                        Tout débloquer
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="rounded-lg border bg-background overflow-hidden">
+                    <Calendar
+                      mode="multiple"
+                      selected={blockedDates}
+                      onSelect={(dates) => setBlockedDates(dates || [])}
+                      month={calendarMonth}
+                      onMonthChange={setCalendarMonth}
+                      numberOfMonths={2}
+                      fromDate={new Date()}
+                      modifiers={{
+                        weekdayUnavailable: (date: Date) => {
+                          if (availableDays.length === 7) return false;
+                          const availableJsDays = availableDays.map((d) => (d === 7 ? 0 : d));
+                          return !availableJsDays.includes(date.getDay());
+                        },
+                      }}
+                      modifiersClassNames={{
+                        weekdayUnavailable: "opacity-30",
+                      }}
+                      classNames={{
+                        day_selected:
+                          "bg-destructive text-destructive-foreground hover:bg-destructive hover:text-destructive-foreground focus:bg-destructive focus:text-destructive-foreground",
+                      }}
+                    />
+                  </div>
+                  {availableDays.length < 7 && (
+                    <p className="text-xs text-muted-foreground mt-2 italic">
+                      Les jours en fondu sont déjà indisponibles selon les restrictions de jours ci-dessus — les bloquer en rouge est optionnel.
+                    </p>
+                  )}
+
+                  {blockedDates.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {blockedDates
+                        .sort((a, b) => a.getTime() - b.getTime())
+                        .map((date) => {
+                          const label = date.toLocaleDateString("fr-FR", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          });
+                          return (
+                            <span
+                              key={date.toISOString()}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-destructive/10 text-destructive border border-destructive/20"
+                            >
+                              {label}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setBlockedDates((prev) =>
+                                    prev.filter((d) => d.toDateString() !== date.toDateString())
+                                  )
+                                }
+                                className="hover:opacity-70"
+                              >
+                                <X className="h-2.5 w-2.5" />
+                              </button>
+                            </span>
+                          );
+                        })}
+                    </div>
+                  )}
+
+                  {blockedDates.length === 0 && (
+                    <p className="text-xs text-muted-foreground mt-2 italic">
+                      Aucune date bloquée — l'expérience est disponible tous les jours autorisés ci-dessus.
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Conditions d'annulation */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Conditions d'annulation</CardTitle>
+                <CardDescription>Politique d'annulation de l'expérience (3 langues)</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-6">
+                  <div>
+                    <Label className="flex items-center gap-1.5 mb-1">
+                      <span>🇬🇧</span> Politique (EN)
+                    </Label>
+                    <Input {...register("cancellation_policy")} disabled={isSaving} />
+                  </div>
+                  <div>
+                    <Label className="flex items-center gap-1.5 mb-1">
+                      <span>🇫🇷</span> Politique (FR)
+                    </Label>
+                    <Input {...register("cancellation_policy_fr")} disabled={isSaving} />
+                  </div>
+                  <div>
+                    <Label className="flex items-center gap-1.5 mb-1">
+                      <span>🇮🇱</span> Politique (HE)
+                    </Label>
+                    <Input {...register("cancellation_policy_he")} dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {/* PAGE 5 : SEO */}
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {activeTab === "seo" && (
+          <div className="space-y-6">
             <Card className="bg-muted/30">
               <CardHeader>
                 <CardTitle>SEO Configuration</CardTitle>

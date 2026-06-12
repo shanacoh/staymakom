@@ -8,14 +8,17 @@ interface WhatsIncludedPhotos2Props {
   experienceId: string;
   lang?: string;
   longCopy?: string;
+  source?: "experience2" | "standalone";
 }
 
-const WhatsIncludedPhotos2 = ({ experienceId, lang = "en", longCopy }: WhatsIncludedPhotos2Props) => {
+const WhatsIncludedPhotos2 = ({ experienceId, lang = "en", longCopy, source = "experience2" }: WhatsIncludedPhotos2Props) => {
+  const table = source === "standalone" ? "standalone_experience_includes" : "experience2_includes";
+
   const { data: includes } = useQuery({
-    queryKey: ["experience2-includes", experienceId],
+    queryKey: ["experience-includes", experienceId, source],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("experience2_includes")
+      const { data, error } = await (supabase as any)
+        .from(table)
         .select("*")
         .eq("experience_id", experienceId)
         .eq("published", true)
