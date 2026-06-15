@@ -389,12 +389,18 @@ body {
   0%   { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+@keyframes icon-float-up {
+  0%   { transform: translateY(0)    scale(1); }
+  35%  { transform: translateY(-6px) scale(1.06); }
+  65%  { transform: translateY(-4px) scale(1.03); }
+  100% { transform: translateY(0)    scale(1); }
+}
 
 /* One animation per icon — fires once on hover, then resets */
-.cat-chip:hover .cat-icon-heart   { animation: icon-heartbeat 0.6s ease both; }
-.cat-chip:hover .cat-icon-family  { animation: icon-bounce    0.5s ease both; }
-.cat-chip:hover .cat-icon-wine    { animation: icon-wobble    0.65s ease both; }
-.cat-chip:hover .cat-icon-compass { animation: icon-spin-once 0.55s ease-out both; }
+.cat-chip:hover .cat-icon-heart   { animation: icon-heartbeat  0.6s ease both; }
+.cat-chip:hover .cat-icon-family  { animation: icon-bounce     0.5s ease both; }
+.cat-chip:hover .cat-icon-wine    { animation: icon-wobble     0.65s ease both; }
+.cat-chip:hover .cat-icon-compass { animation: icon-float-up   0.6s ease both; }
 .cat-chip:hover .cat-icon-zap     { animation: icon-zap       0.4s ease both; }
 .cat-chip:hover .cat-icon-leaf    { animation: icon-sway      0.7s ease both; }
 .cat-chip:hover .cat-icon-brain   { animation: icon-breathe   0.7s ease both; }
