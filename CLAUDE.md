@@ -37,6 +37,33 @@
 3. **Mettre à jour la documentation d'architecture** : si la feature a ajouté, modifié ou supprimé un comportement important, mettre à jour les fichiers concernés (schémas, descriptions de modules, flux de données, etc.) avant de clore la session.
 4. **Résumer ce qui a été fait** en 3-4 lignes simples, sans jargon, pour que Shana puisse en garder une trace ou le communiquer à son équipe.
 
+## Journal des modifications (obligatoire, à chaque session)
+
+À chaque session, maintenir un fichier `CHANGELOG.md` à la racine du projet avec un historique clair et en français de tout ce qui a été fait. Ce fichier est destiné au développeur pour qu'il comprenne rapidement ce qui a changé.
+
+**Format de chaque entrée :**
+
+```
+## [Date] — [Titre court de la feature ou correction]
+
+### Ce qui a changé côté code
+- Fichier modifié / créé / supprimé : brève explication de pourquoi
+
+### Ce qui a changé côté base de données
+- Nouvelle table / colonne / migration : explication simple de ce que ça stocke et pourquoi
+
+### Pourquoi ce changement
+- Contexte métier en 1-2 phrases (ce que l'utilisateur voulait accomplir)
+```
+
+**Règles :**
+- **Toujours mettre à jour `CHANGELOG.md` avant de clore une session**, même pour une petite correction.
+- **Langage simple, sans jargon** — le dev doit comprendre sans avoir suivi la conversation.
+- **Aucune entrée ne doit manquer** : si plusieurs features sont faites dans la même session, créer une entrée par feature.
+- Si une migration de base de données est créée (fichier `.sql`), la mentionner **explicitement** avec son nom de fichier.
+
+---
+
 ## Qualité du code (obligatoire, en arrière-plan)
 
 Ces principes s'appliquent à tout le code produit, sans avoir besoin de les demander :

@@ -30,6 +30,8 @@ type Props = {
   context?: "favorites" | "account" | "signup";
 };
 
+type Tab = "login" | "signup" | "forgot";
+
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
@@ -108,11 +110,12 @@ function copyFor(lang: Lang) {
           interests: "Qu'est-ce qui vous intéresse ?",
           referralSource: "Comment nous avez-vous connu ?",
         },
-        actions: { login: "Continuer", signup: "Créer mon compte" },
+        actions: { login: "Continuer", signup: "Créer mon compte", sendReset: "Envoyer le lien" },
         toasts: {
           okLogin: "Connecté !",
           okSignup: "Compte créé !",
           invalid: "Vérifiez vos informations.",
+          resetSent: "Un lien de réinitialisation a été envoyé à votre email.",
         },
         legal: {
           prefix: "En continuant, j'accepte les",
@@ -125,6 +128,12 @@ function copyFor(lang: Lang) {
           hasAccount: "Déjà un compte ?",
           signUp: "S'inscrire",
           signIn: "Se connecter",
+        },
+        forgot: {
+          link: "Mot de passe oublié ?",
+          title: "Réinitialiser le mot de passe",
+          subtitle: "Entrez votre email et nous vous enverrons un lien.",
+          back: "Retour à la connexion",
         },
       };
     case "he":
@@ -154,11 +163,12 @@ function copyFor(lang: Lang) {
           interests: "מה מעניין אותך?",
           referralSource: "איך שמעת עלינו?",
         },
-        actions: { login: "המשך", signup: "צור חשבון" },
+        actions: { login: "המשך", signup: "צור חשבון", sendReset: "שלח קישור" },
         toasts: {
           okLogin: "התחברת!",
           okSignup: "החשבון נוצר!",
           invalid: "בדקו את הפרטים.",
+          resetSent: "קישור איפוס נשלח לאימייל שלך.",
         },
         legal: {
           prefix: "בהמשך, אני מקבל/ת את",
@@ -171,6 +181,12 @@ function copyFor(lang: Lang) {
           hasAccount: "כבר יש לך חשבון?",
           signUp: "הרשמה",
           signIn: "התחברות",
+        },
+        forgot: {
+          link: "שכחת סיסמה?",
+          title: "איפוס סיסמה",
+          subtitle: "הזן את האימייל שלך ונשלח לך קישור.",
+          back: "חזרה להתחברות",
         },
       };
     default:
@@ -200,11 +216,12 @@ function copyFor(lang: Lang) {
           interests: "What interests you?",
           referralSource: "How did you hear about us?",
         },
-        actions: { login: "Continue", signup: "Create my account" },
+        actions: { login: "Continue", signup: "Create my account", sendReset: "Send link" },
         toasts: {
           okLogin: "Signed in!",
           okSignup: "Account created!",
           invalid: "Please check your details.",
+          resetSent: "A reset link has been sent to your email.",
         },
         legal: {
           prefix: "By continuing, I accept the",
@@ -217,6 +234,12 @@ function copyFor(lang: Lang) {
           hasAccount: "Already have an account?",
           signUp: "Sign up",
           signIn: "Sign in",
+        },
+        forgot: {
+          link: "Forgot password?",
+          title: "Reset your password",
+          subtitle: "Enter your email and we'll send you a link.",
+          back: "Back to sign in",
         },
       };
   }
@@ -234,8 +257,9 @@ export default function AuthPromptDialog({
   const { signIn, signUp } = useAuth();
   const isRTL = lang === "he";
 
-  const [tab, setTab] = useState<"login" | "signup">(defaultTab);
+  const [tab, setTab] = useState<Tab>(defaultTab);
   const [loading, setLoading] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [signupData, setSignupData] = useState({
     firstName: "",
@@ -255,6 +279,28 @@ export default function AuthPromptDialog({
         ? prev.interests.filter((i) => i !== id)
         : [...prev.interests, id],
     }));
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail) {
+      toast.error(c.toasts.invalid);
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success(c.toasts.resetSent);
+      setTab("login");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -339,9 +385,11 @@ export default function AuthPromptDialog({
         {/* Header - compact */}
         {(() => {
           // Determine header content based on context and current tab
-          const headerKey = context === "favorites" ? "favorites" : tab === "signup" ? "signup" : "account";
-          const header = c.headers[headerKey];
-          const HeaderIcon = context === "favorites" ? Heart : tab === "signup" ? UserPlus : User;
+          const headerKey = context === "favorites" && tab !== "forgot" ? "favorites" : tab === "signup" ? "signup" : "account";
+          const header = tab === "forgot"
+            ? { title: c.forgot.title, subtitle: "" }
+            : c.headers[headerKey];
+          const HeaderIcon = context === "favorites" && tab !== "forgot" ? Heart : tab === "signup" ? UserPlus : User;
           
           return (
             <div className="pt-5 pb-3 px-5 text-center bg-gradient-to-b from-muted/50 to-transparent shrink-0">
@@ -357,7 +405,7 @@ export default function AuthPromptDialog({
         {/* Scrollable content */}
         <div className="px-5 pb-5 overflow-y-auto flex-1">
           {/* Tabs */}
-          <div className="flex p-1 bg-muted/60 rounded-full mb-4">
+          <div className={`flex p-1 bg-muted/60 rounded-full mb-4 ${tab === "forgot" ? "hidden" : ""}`}>
             <button
               type="button"
               onClick={() => setTab("login")}
@@ -383,7 +431,7 @@ export default function AuthPromptDialog({
           </div>
 
           {/* OAuth */}
-          <OAuthButtons lang={lang} disabled={loading} />
+          {tab !== "forgot" && <OAuthButtons lang={lang} disabled={loading} />}
 
           {/* Login Form */}
           {tab === "login" && (
@@ -414,20 +462,63 @@ export default function AuthPromptDialog({
                   className="h-10 rounded-lg bg-muted/50 border-border/50 text-sm"
                 />
               </div>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => { setResetEmail(loginData.email); setTab("forgot"); }}
+                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                >
+                  {c.forgot.link}
+                </button>
+              </div>
+
               <Button type="submit" variant="cta" className="w-full h-10 text-sm mt-2" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {c.actions.login}
               </Button>
-              
+
               {/* Toggle to signup */}
               <p className="text-xs text-muted-foreground text-center pt-3">
                 {c.toggle.noAccount}{" "}
-                <button 
-                  type="button" 
-                  onClick={() => setTab("signup")} 
+                <button
+                  type="button"
+                  onClick={() => setTab("signup")}
                   className="text-foreground font-medium underline hover:no-underline"
                 >
                   {c.toggle.signUp}
+                </button>
+              </p>
+            </form>
+          )}
+
+          {/* Forgot Password Form */}
+          {tab === "forgot" && (
+            <form onSubmit={handleForgotPassword} className="space-y-3 animate-fade-in">
+              <p className="text-xs text-muted-foreground text-center">{c.forgot.subtitle}</p>
+              <div className="space-y-1">
+                <Label htmlFor="reset-email" className="text-xs font-medium">
+                  {c.fields.email}
+                </Label>
+                <Input
+                  id="reset-email"
+                  type="email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  disabled={loading}
+                  className="h-10 rounded-lg bg-muted/50 border-border/50 text-sm"
+                />
+              </div>
+              <Button type="submit" variant="cta" className="w-full h-10 text-sm mt-2" disabled={loading}>
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {c.actions.sendReset}
+              </Button>
+              <p className="text-xs text-muted-foreground text-center pt-1">
+                <button
+                  type="button"
+                  onClick={() => setTab("login")}
+                  className="text-foreground font-medium underline hover:no-underline"
+                >
+                  {c.forgot.back}
                 </button>
               </p>
             </form>

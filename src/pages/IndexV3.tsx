@@ -46,10 +46,7 @@ const V3_CATEGORIES = [
   { id: "family-fun",      en: "Family Fun",        fr: "Fun Famille",          he: "כיף משפחתי",       slugHints: ["family"],                     icon: "users",   img: "/icons/icon-family.png"    },
   { id: "foody-discovery", en: "Foody Discovery",   fr: "Découverte Culinaire", he: "גילוי קולינרי",    slugHints: ["taste", "food", "culinar"],   icon: "wine",    img: "/icons/icon-foody.png"     },
   { id: "land-of-stories", en: "Land of Stories",  fr: "Terre de Récits",      he: "ארץ הסיפורים",     slugHints: ["land", "stories"],            icon: "compass", img: "/icons/icon-stories.png"   },
-  { id: "sporty-break",    en: "Sporty Break",      fr: "Pause Sportive",       he: "הפסקה ספורטיבית",  slugHints: ["active", "sport"],            icon: "zap",     img: "/icons/icon-sporty.png"    },
   { id: "nature-outdoor",  en: "Nature & Outdoor",  fr: "Nature & Plein Air",   he: "טבע ושטח",         slugHints: ["nature", "beyond", "outdoor"],icon: "leaf",    img: "/icons/icon-nature.png"    },
-  { id: "mindful-reset",   en: "Mindful Reset",     fr: "Pause Bien-être",      he: "איפוס מודע",       slugHints: ["mindful", "reset"],           icon: "brain",   img: "/icons/icon-mindful.png"   },
-  { id: "lone-traveler",   en: "Lone Traveler",     fr: "Voyageur Solo",        he: "טיול יחיד",        slugHints: ["solo", "lone", "single"],     icon: "globe",   img: "/icons/icon-solo.png"      },
 ];
 
 /* ─── Animation CSS par icône de catégorie ──────────────────────────────── */
@@ -58,10 +55,7 @@ const ICON_ANIM_CLASS: Record<string, string> = {
   "family-fun":       "cat-icon-family",
   "foody-discovery":  "cat-icon-wine",
   "land-of-stories":  "cat-icon-compass",
-  "sporty-break":     "cat-icon-zap",
   "nature-outdoor":   "cat-icon-leaf",
-  "mindful-reset":    "cat-icon-brain",
-  "lone-traveler":    "cat-icon-globe",
 };
 
 /* ─── Articles de blog ───────────────────────────────────────────────────── */
@@ -192,7 +186,7 @@ const IndexV3 = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_experiences")
-        .select("id, slug, title, title_he, title_fr, hero_image, photos, base_price, base_price_type, currency, min_party, max_party, has_time_slots, display_order, category:categories(slug), standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he))")
+        .select("id, slug, title, title_he, title_fr, hero_image, photos, base_price, base_price_type, currency, min_party, max_party, has_time_slots, display_order, category_ids, category:categories(slug), standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he))")
         .eq("status", "published")
         .order("display_order", { ascending: true, nullsFirst: false });
       if (error) throw error;
@@ -207,10 +201,13 @@ const IndexV3 = () => {
   const filteredStandalone = useMemo(() => {
     if (!standaloneExperiences) return [];
     if (!selectedCategory) return standaloneExperiences;
-    return standaloneExperiences.filter(
-      (exp: any) => exp.category?.slug === selectedCategory
-    );
-  }, [standaloneExperiences, selectedCategory]);
+    const selectedCatId = (categories as any[])?.find((c) => c.slug === selectedCategory)?.id;
+    return standaloneExperiences.filter((exp: any) => {
+      if (exp.category?.slug === selectedCategory) return true;
+      if (selectedCatId && Array.isArray(exp.category_ids) && exp.category_ids.includes(selectedCatId)) return true;
+      return false;
+    });
+  }, [standaloneExperiences, selectedCategory, categories]);
 
   /* ── Availability rules ── */
   const experienceIds = useMemo(
