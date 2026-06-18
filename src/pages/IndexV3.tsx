@@ -58,6 +58,15 @@ const ICON_ANIM_CLASS: Record<string, string> = {
   "nature-outdoor":   "cat-icon-leaf",
 };
 
+/* ─── Formes de surlignage « feutre » — 5 variantes irrégulières pour un effet naturel ── */
+const HIGHLIGHT_SHAPES = [
+  "rotate-[-3deg] rounded-[60%_40%_75%_25%/35%_65%_45%_55%]",
+  "rotate-[2deg] rounded-[35%_65%_40%_60%/65%_40%_70%_30%]",
+  "rotate-[-5deg] rounded-[70%_30%_50%_50%/40%_60%_35%_65%]",
+  "rotate-[4deg] rounded-[45%_55%_65%_35%/55%_35%_60%_40%]",
+  "rotate-[-2deg] rounded-[55%_45%_30%_70%/45%_65%_55%_35%]",
+];
+
 /* ─── Articles de blog ───────────────────────────────────────────────────── */
 const BLOG_ARTICLES = [
   {
@@ -270,8 +279,8 @@ const IndexV3 = () => {
           />
           <div className="absolute inset-0 bg-black/15" />
 
-          <div className="relative z-10 text-center text-white px-4 sm:px-6 max-w-3xl mx-auto">
-            <h1 className="font-sans text-[28px] sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-[0.02em] leading-[1.1] mb-3 opacity-0 animate-hero-fade-up text-white text-center drop-shadow-lg">
+          <div className="relative z-10 text-center text-white px-4 sm:px-6 max-w-3xl mx-auto -translate-y-6 sm:-translate-y-8">
+            <h1 className="font-sans text-[28px] sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-[0.02em] leading-[1.1] mb-3 opacity-0 animate-hero-fade-up text-[#ad1414] text-center">
               {isRTL ? (
                 <><span className="whitespace-nowrap">אל תבחר עיר,</span><br /><span className="whitespace-nowrap">בחר את הבריחה שלך</span></>
               ) : (
@@ -279,7 +288,7 @@ const IndexV3 = () => {
               )}
             </h1>
             <p
-              className="font-sans italic text-white/90 max-w-xl mx-auto opacity-0 animate-hero-fade-up text-sm sm:text-lg md:text-xl drop-shadow-md"
+              className="font-sans not-italic text-[#ad1414] max-w-xl mx-auto opacity-0 animate-hero-fade-up text-xs sm:text-base md:text-lg"
               style={{ animationDelay: "250ms" }}
             >
               {isRTL
@@ -323,7 +332,7 @@ const IndexV3 = () => {
                 isRTL && "flex-row-reverse"
               )}
             >
-              {V3_CATEGORIES.map((v3cat) => {
+              {V3_CATEGORIES.map((v3cat, idx) => {
                 const dbCat = (categories as any[])?.find((cat) =>
                   v3cat.slugHints.some((hint) => cat.slug.includes(hint))
                 );
@@ -345,27 +354,58 @@ const IndexV3 = () => {
                     key={v3cat.id}
                     onClick={() => setSelectedCategory((prev) => (prev === categoryKey ? null : categoryKey))}
                     className={cn(
-                      "cat-chip group flex flex-col items-center gap-2 flex-shrink-0 w-[72px] sm:w-[82px] py-2.5 px-1 rounded-2xl transition-all duration-200",
-                      isSelected
-                        ? "bg-white border border-teal-500/60 shadow-sm"
-                        : isDimmed
-                          ? "opacity-35"
-                          : "hover:-translate-y-0.5"
+                      "cat-chip group relative flex flex-col items-center gap-2 flex-shrink-0 w-[72px] sm:w-[82px] py-2.5 px-1 rounded-2xl transition-all duration-200",
+                      isDimmed ? "opacity-35" : "hover:-translate-y-0.5"
                     )}
                   >
-                    {v3cat.img ? (
-                      <img
-                        src={v3cat.img}
-                        alt={name}
-                        className={cn("w-10 h-10 sm:w-12 sm:h-12 object-contain", ICON_ANIM_CLASS[v3cat.id])}
+                    {isSelected && (
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "absolute inset-x-0.5 top-0.5 bottom-0.5 bg-[#ad1414]/15",
+                          HIGHLIGHT_SHAPES[idx % HIGHLIGHT_SHAPES.length]
+                        )}
                       />
+                    )}
+                    {v3cat.img ? (
+                      isSelected ? (
+                        <span
+                          role="img"
+                          aria-label={name}
+                          className={cn("block w-10 h-10 sm:w-12 sm:h-12", ICON_ANIM_CLASS[v3cat.id])}
+                          style={{
+                            backgroundColor: "#ad1414",
+                            WebkitMaskImage: `url(${v3cat.img})`,
+                            maskImage: `url(${v3cat.img})`,
+                            WebkitMaskSize: "contain",
+                            maskSize: "contain",
+                            WebkitMaskRepeat: "no-repeat",
+                            maskRepeat: "no-repeat",
+                            WebkitMaskPosition: "center",
+                            maskPosition: "center",
+                          }}
+                        />
+                      ) : (
+                        <img
+                          src={v3cat.img}
+                          alt={name}
+                          className={cn("w-10 h-10 sm:w-12 sm:h-12 object-contain", ICON_ANIM_CLASS[v3cat.id])}
+                        />
+                      )
                     ) : (
-                      <IconComponent className={cn("w-5 h-5 sm:w-6 sm:h-6 text-stone-500", ICON_ANIM_CLASS[v3cat.id])} strokeWidth={1.5} />
+                      <IconComponent
+                        className={cn(
+                          "w-5 h-5 sm:w-6 sm:h-6",
+                          isSelected ? "text-[#ad1414]" : "text-stone-500",
+                          ICON_ANIM_CLASS[v3cat.id]
+                        )}
+                        strokeWidth={1.5}
+                      />
                     )}
                     <span
                       className={cn(
                         "text-[9px] sm:text-[10px] font-semibold uppercase tracking-wide text-center leading-[13px] transition-colors duration-200",
-                        isSelected ? "text-teal-600" : "text-foreground group-hover:text-foreground/80"
+                        isSelected ? "text-[#ad1414]" : "text-foreground group-hover:text-foreground/80"
                       )}
                     >
                       {line1}{line2 && <><br />{line2}</>}

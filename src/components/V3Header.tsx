@@ -44,7 +44,7 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
 
         {/* Center — Toggle */}
         <div className="flex-1 flex items-center justify-center" dir="ltr">
-          <div className="flex items-center bg-white border border-[#82BCC0] rounded-full p-1 gap-0.5">
+          <div className="flex items-center bg-white border border-[#C85555] rounded-full p-1 gap-0.5">
 
             {/* With Hotel */}
             <button
@@ -52,8 +52,8 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
               className={cn(
                 "w-[130px] flex flex-row items-center px-4 gap-3 py-1.5 rounded-full transition-all duration-200",
                 mode === "stay"
-                  ? "bg-gradient-to-br from-[#B8DAD8] to-[#8BC3BF] shadow-sm"
-                  : "hover:bg-[#F0FAF9]"
+                  ? "bg-gradient-to-br from-[#F2C4C4] to-[#D47070] shadow-sm"
+                  : "hover:bg-[#FDF2F2]"
               )}
             >
               <Moon className="h-3.5 w-3.5 flex-shrink-0 text-[#1A1814]" strokeWidth={1.5} />
@@ -73,8 +73,8 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
               className={cn(
                 "w-[130px] flex flex-row items-center px-4 gap-3 py-1.5 rounded-full transition-all duration-200",
                 mode === "live"
-                  ? "bg-gradient-to-br from-[#B8DAD8] to-[#8BC3BF] shadow-sm"
-                  : "hover:bg-[#F0FAF9]"
+                  ? "bg-gradient-to-br from-[#F2C4C4] to-[#D47070] shadow-sm"
+                  : "hover:bg-[#FDF2F2]"
               )}
             >
               <Sun className="h-3.5 w-3.5 flex-shrink-0 text-[#1A1814]" strokeWidth={1.5} />
