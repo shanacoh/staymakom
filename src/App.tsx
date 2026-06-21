@@ -85,7 +85,6 @@ const RevolutDebugPage       = lazy(() => import("./pages/admin/revolut/DebugPag
 const Celine30                   = lazy(() => import("./pages/Celine30"));
 const StandaloneExperience       = lazy(() => import("./pages/StandaloneExperience"));
 const StandaloneBookingConfirmation = lazy(() => import("./pages/StandaloneBookingConfirmation"));
-const AdminStandaloneExperiences = lazy(() => import("./pages/admin/StandaloneExperiences"));
 const AdminStandaloneBookings    = lazy(() => import("./pages/admin/StandaloneBookings"));
 const AdminStandaloneBookingDetails = lazy(() => import("./pages/admin/StandaloneBookingDetails"));
 
@@ -228,6 +227,8 @@ const AppContent = () => {
             <Route path="experiences2" element={<AdminExperiences2 />} />
             <Route path="experiences2/new" element={<AdminExperiences2 key="new" />} />
             <Route path="experiences2/edit/:experienceId" element={<AdminExperiences2 key="edit" />} />
+            <Route path="experiences2/standalone/new" element={<AdminExperiences2 key="standalone-new" />} />
+            <Route path="experiences2/standalone/edit/:experienceId" element={<AdminExperiences2 key="standalone-edit" />} />
             {/* Backup V1 */}
             <Route path="backup/dashboard" element={<AdminDashboard />} />
             <Route path="backup/hotels" element={<AdminHotels />} />
@@ -246,9 +247,6 @@ const AppContent = () => {
             <Route path="bookings" element={<AdminBookings />} />
             <Route path="reservations" element={<AdminBookings />} />
             <Route path="reservations/:bookingId" element={<AdminReservationDetails />} />
-            <Route path="standalone-experiences" element={<AdminStandaloneExperiences />} />
-            <Route path="standalone-experiences/new" element={<AdminStandaloneExperiences key="new" />} />
-            <Route path="standalone-experiences/edit/:experienceId" element={<AdminStandaloneExperiences key="edit" />} />
             <Route path="standalone-bookings" element={<AdminStandaloneBookings />} />
             <Route path="standalone-bookings/:bookingId" element={<AdminStandaloneBookingDetails />} />
             <Route path="gift-cards" element={<AdminGiftCards />} />
