@@ -6,6 +6,24 @@
 
 ---
 
+## [2026-06-22] — Barre de navigation mobile en pastille flottante + catégories resserrées sur /v3
+
+### Ce qui a changé côté code
+- `src/components/MobileBottomNav.tsx` : la barre de navigation du bas (Explorer, Favoris, Panier, Compte), utilisée sur tout le site mobile, devient une pastille flottante (coins arrondis, légèrement transparente, ne touche jamais les bords de l'écran) au lieu d'une barre rectangulaire pleine largeur.
+  - Au repos (en haut de page) : grande pastille avec les icônes et leur texte en dessous.
+  - Dès qu'on scrolle vers le bas : la pastille se réduit un peu et ne garde que les icônes (sans texte), pour prendre moins de place pendant la lecture.
+  - En remontant : elle redevient la grande pastille.
+  - Reproduit le comportement de la barre de navigation d'Instagram, sur demande de Shana.
+- `src/pages/IndexV3.tsx` : les 5 pastilles de catégories (Escapade Romantique, Fun Famille, Découverte Culinaire, Terre de Récits, Nature & Plein Air) sont resserrées (espacement et largeur réduits) pour tenir sur une seule ligne, sans défilement horizontal, sur la plupart des écrans de téléphone.
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+Shana voulait que la barre de navigation mobile du site reprenne le nouveau comportement d'Instagram (pastille flottante qui se réduit légèrement au scroll), et que les 5 catégories de la page /v3 soient visibles d'un coup d'œil sans avoir à glisser le doigt horizontalement.
+
+---
+
 ## [2026-06-22] — Nouvelle photo et nouveau bouton pour la section "Your trip, your rules" sur /v3
 
 ### Ce qui a changé côté code

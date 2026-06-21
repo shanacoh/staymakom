@@ -270,7 +270,7 @@ const IndexV3 = () => {
       {/* ──── HEADER toujours blanc avec toggle centré ──── */}
       <V3Header mode={mode} setMode={setMode} />
 
-      <main className="flex-1 pb-[80px] md:pb-0 pt-14">
+      <main className="flex-1 pb-[92px] md:pb-0 pt-14">
 
         {/* ──── 1. HERO ──── */}
         <section className="relative h-[49vh] md:h-[54vh] min-h-[300px] flex items-center justify-center">
@@ -328,7 +328,7 @@ const IndexV3 = () => {
           {categories && categories.length > 0 && (
             <div
               className={cn(
-                "flex flex-nowrap justify-start sm:justify-center gap-2 sm:gap-3",
+                "flex flex-nowrap justify-center gap-1 sm:gap-3",
                 "overflow-x-auto overflow-y-visible py-2 px-4 sm:px-6 scrollbar-hide mb-4 sm:mb-6",
                 isRTL && "flex-row-reverse"
               )}
@@ -355,7 +355,7 @@ const IndexV3 = () => {
                     key={v3cat.id}
                     onClick={() => setSelectedCategory((prev) => (prev === categoryKey ? null : categoryKey))}
                     className={cn(
-                      "cat-chip group relative flex flex-col items-center gap-2 flex-shrink-0 w-[72px] sm:w-[82px] py-2.5 px-1 rounded-2xl transition-all duration-200",
+                      "cat-chip group relative flex flex-col items-center gap-2 flex-shrink-0 w-16 sm:w-[82px] py-2.5 px-1 rounded-2xl transition-all duration-200",
                       isDimmed ? "opacity-35" : "hover:-translate-y-0.5"
                     )}
                   >
@@ -373,7 +373,7 @@ const IndexV3 = () => {
                         <span
                           role="img"
                           aria-label={name}
-                          className={cn("block w-10 h-10 sm:w-12 sm:h-12", ICON_ANIM_CLASS[v3cat.id])}
+                          className={cn("block w-9 h-9 sm:w-12 sm:h-12", ICON_ANIM_CLASS[v3cat.id])}
                           style={{
                             backgroundColor: "#ad1414",
                             WebkitMaskImage: `url(${v3cat.img})`,
@@ -390,7 +390,7 @@ const IndexV3 = () => {
                         <img
                           src={v3cat.img}
                           alt={name}
-                          className={cn("w-10 h-10 sm:w-12 sm:h-12 object-contain", ICON_ANIM_CLASS[v3cat.id])}
+                          className={cn("w-9 h-9 sm:w-12 sm:h-12 object-contain", ICON_ANIM_CLASS[v3cat.id])}
                         />
                       )
                     ) : (
