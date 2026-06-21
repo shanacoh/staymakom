@@ -29,6 +29,7 @@ import heroImage from "@/assets/hero-road-desert.jpg";
 import handpickedHero from "@/assets/handpicked-hero.jpg";
 import giftCardHero from "@/assets/gift-card-hero.jpg";
 import featuredPhoto from "@/assets/desert-hotel-pool.jpg";
+import tailoredRequestHeroV3 from "@/assets/tailored-request-hero-roadtrip.png";
 
 /* ─── Icon map (identique à /home) ──────────────────────────────────────── */
 const iconMap: Record<string, LucideIcon> = {
@@ -493,7 +494,9 @@ const IndexV3 = () => {
         {/* ──── 5. YOUR TRIP, YOUR RULES ──── */}
         <TailoredRequestSection
           categories={categories || []}
-          ctaClassName="bg-foreground text-background hover:bg-foreground/90"
+          ctaClassName="bg-transparent text-white hover:bg-transparent hover:text-white border-0 shadow-none"
+          ctaUnderlineClassName="bg-[#ad1414]/40"
+          heroImage={tailoredRequestHeroV3}
         />
 
         {/* ──── 6. GIFT CARD ──── */}

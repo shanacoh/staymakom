@@ -6,6 +6,25 @@
 
 ---
 
+## [2026-06-22] — Nouvelle photo et nouveau bouton pour la section "Your trip, your rules" sur /v3
+
+### Ce qui a changé côté code
+- `src/components/TailoredRequestSection.tsx` : ce composant est partagé entre la page d'accueil principale et `/v3`. Pour ne changer l'apparence que sur `/v3`, deux nouveaux réglages optionnels ont été ajoutés (la page d'accueil garde son apparence d'origine par défaut) :
+  - `heroImage` : permet de remplacer la photo de fond de la section sans toucher à la page d'accueil.
+  - `ctaUnderlineClassName` : ajoute un trait coloré façon "coup de surligneur" sous le bouton, sans dessiner de cadre autour.
+- `src/pages/IndexV3.tsx` : utilise ces deux réglages pour `/v3` uniquement —
+  - Nouvelle photo (un couple en voiture consultant une carte routière) à la place de l'ancienne photo de la section.
+  - Bouton "DESIGN MY STAY" : après plusieurs essais de bouton rouge avec contour irrégulier ("fait main") qui ne convainquaient pas visuellement, le bouton repasse en texte blanc simple, sans fond ni cadre, avec un trait rouge clair légèrement irrégulier souligné en dessous.
+- Nouveau fichier image `src/assets/tailored-request-hero-roadtrip.png`.
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+Suite du travail sur l'identité visuelle rouge de `/v3` commencé le 18 juin : Shana voulait une nouvelle photo pour cette section, et un bouton plus sobre après avoir testé plusieurs styles de bouton rouge en relief qui ne lui plaisaient pas visuellement.
+
+---
+
 ## [2026-06-21] — Réordonnancement des expériences standalone + fusion des deux pages de back office
 
 ### Ce qui a changé côté code
