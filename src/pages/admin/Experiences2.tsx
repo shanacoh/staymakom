@@ -3,12 +3,13 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit, Eye, EyeOff, Copy, Trash2, ExternalLink, MoreHorizontal, GripVertical, Building2, Zap } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { UnifiedExperience2Form } from "@/components/forms/UnifiedExperience2Form";
+import { StandaloneExperienceForm } from "@/components/forms/StandaloneExperienceForm";
 import { toast } from "sonner";
 import { generateSlug } from "@/lib/utils";
 import {
@@ -29,8 +30,11 @@ const AdminExperiences2 = () => {
   const navigate = useNavigate();
   const { experienceId } = useParams();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
 
-  const [mode, setMode] = useState<"hotel" | "standalone">("hotel");
+  const [mode, setMode] = useState<"hotel" | "standalone">(
+    searchParams.get("tab") === "standalone" ? "standalone" : "hotel"
+  );
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -41,7 +45,10 @@ const AdminExperiences2 = () => {
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
-  const isFormView = window.location.pathname.includes("/new") || window.location.pathname.includes("/edit");
+  const isStandaloneFormView = window.location.pathname.includes("/standalone/");
+  const isHotelFormView =
+    !isStandaloneFormView &&
+    (window.location.pathname.includes("/new") || window.location.pathname.includes("/edit"));
 
   const { data: hotels } = useQuery({
     queryKey: ["admin-hotels2-list"],
@@ -121,13 +128,19 @@ const AdminExperiences2 = () => {
     if (mode === "hotel") {
       navigate("/admin/experiences2/new");
     } else {
-      navigate("/admin/standalone-experiences/new");
+      navigate("/admin/experiences2/standalone/new");
     }
   };
 
   const handleCloseForm = () => {
     navigate("/admin/experiences2");
     queryClient.invalidateQueries({ queryKey: ["admin-experiences2"] });
+  };
+
+  const handleCloseStandaloneForm = () => {
+    navigate("/admin/experiences2?tab=standalone");
+    queryClient.invalidateQueries({ queryKey: ["admin-standalone-exps-hub"] });
+    queryClient.invalidateQueries({ queryKey: ["v3-standalone-experiences"] });
   };
 
   const toggleVisibilityMutation = useMutation({
@@ -252,13 +265,13 @@ const AdminExperiences2 = () => {
 
   const reorderMutation = useMutation({
     mutationFn: async (orderedIds: { id: string; display_order: number }[]) => {
-      for (const item of orderedIds) {
-        const { error } = await supabase
-          .from("experiences2")
-          .update({ display_order: item.display_order } as any)
-          .eq("id", item.id);
-        if (error) throw error;
-      }
+      const results = await Promise.all(
+        orderedIds.map((item) =>
+          supabase.from("experiences2").update({ display_order: item.display_order } as any).eq("id", item.id)
+        )
+      );
+      const failed = results.find((r) => r.error);
+      if (failed?.error) throw failed.error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-experiences2"] });
@@ -269,7 +282,26 @@ const AdminExperiences2 = () => {
     onError: () => toast.error("Erreur lors de la sauvegarde de l'ordre"),
   });
 
+  const reorderStandaloneMutation = useMutation({
+    mutationFn: async (orderedIds: { id: string; display_order: number }[]) => {
+      const results = await Promise.all(
+        orderedIds.map((item) =>
+          supabase.from("standalone_experiences").update({ display_order: item.display_order }).eq("id", item.id)
+        )
+      );
+      const failed = results.find((r) => r.error);
+      if (failed?.error) throw failed.error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-standalone-exps-hub"] });
+      queryClient.invalidateQueries({ queryKey: ["v3-standalone-experiences"] });
+      toast.success("Ordre mis à jour");
+    },
+    onError: () => toast.error("Erreur lors de la sauvegarde de l'ordre"),
+  });
+
   const hasActiveFilters = searchQuery !== "" || statusFilter !== "all" || hotelFilter !== "all";
+  const hasActiveFiltersStandalone = searchQuery !== "" || statusFilter !== "all";
 
   const handleDragStart = useCallback((idx: number) => {
     setDraggedIdx(idx);
@@ -286,8 +318,12 @@ const AdminExperiences2 = () => {
     const [moved] = reordered.splice(draggedIdx, 1);
     reordered.splice(dropIdx, 0, moved);
     const offset = selectedCategory === "romantic" ? 1000 : 0;
-    const updates = reordered.map((e, i) => ({ id: e.id, display_order: offset + i }));
-    reorderMutation.mutate(updates);
+    const updates = reordered
+      .map((e, i) => ({ id: e.id, display_order: offset + i }))
+      .filter((update, i) => update.display_order !== reordered[i].display_order);
+    if (updates.length > 0) {
+      reorderMutation.mutate(updates);
+    }
     setDraggedIdx(null);
     setDragOverIdx(null);
   }, [draggedIdx, displayedExperiences, selectedCategory, reorderMutation]);
@@ -297,7 +333,36 @@ const AdminExperiences2 = () => {
     setDragOverIdx(null);
   }, []);
 
-  if (isFormView) {
+  const handleDropStandalone = useCallback((dropIdx: number) => {
+    if (draggedIdx === null || draggedIdx === dropIdx || !displayedStandalone) return;
+    const reordered = [...displayedStandalone];
+    const [moved] = reordered.splice(draggedIdx, 1);
+    reordered.splice(dropIdx, 0, moved);
+    // Réutilise les valeurs de display_order déjà occupées par les lignes affichées
+    // (utile quand une catégorie est filtrée) pour ne jamais entrer en collision
+    // avec l'ordre des expériences d'autres catégories non affichées ici.
+    const slots = displayedStandalone
+      .map((exp: any, i: number) => exp.display_order ?? i)
+      .sort((a: number, b: number) => a - b);
+    const updates = reordered
+      .map((exp: any, i: number) => ({ id: exp.id, display_order: slots[i] }))
+      .filter((update, i) => update.display_order !== reordered[i].display_order);
+    if (updates.length > 0) {
+      reorderStandaloneMutation.mutate(updates);
+    }
+    setDraggedIdx(null);
+    setDragOverIdx(null);
+  }, [draggedIdx, displayedStandalone, reorderStandaloneMutation]);
+
+  if (isStandaloneFormView) {
+    return (
+      <div className="mx-auto p-2 sm:p-6">
+        <StandaloneExperienceForm experienceId={experienceId} onClose={handleCloseStandaloneForm} />
+      </div>
+    );
+  }
+
+  if (isHotelFormView) {
     return (
       <div className="mx-auto p-2 sm:p-6">
         <UnifiedExperience2Form experienceId={experienceId} onClose={handleCloseForm} />
@@ -599,6 +664,14 @@ const AdminExperiences2 = () => {
           )
         )}
 
+        {/* Bandeau filtres actifs (drag-and-drop standalone) */}
+        {hasActiveFiltersStandalone && mode === "standalone" && (
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-sm">
+            <span>⚠</span>
+            <span>Désactivez les filtres pour réordonner les expériences par glisser-déposer.</span>
+          </div>
+        )}
+
         {/* ── Liste des expériences standalone ── */}
         {mode === "standalone" && (
           isLoadingStandalone ? (
@@ -610,7 +683,7 @@ const AdminExperiences2 = () => {
           ) : (
             <Card>
               <div className="divide-y divide-border">
-                {displayedStandalone.map((exp: any) => {
+                {displayedStandalone.map((exp: any, idx: number) => {
                   const thumb = exp.hero_image || exp.photos?.[0];
                   const warnings: string[] = [];
                   if (!exp.hero_image && (!exp.photos || exp.photos.length === 0)) warnings.push("Pas de photo");
@@ -619,8 +692,21 @@ const AdminExperiences2 = () => {
                   return (
                     <div
                       key={exp.id}
-                      className="flex items-center gap-2 px-4 py-3 hover:bg-muted/30 transition-colors"
+                      draggable={!hasActiveFiltersStandalone}
+                      onDragStart={() => handleDragStart(idx)}
+                      onDragOver={(e) => handleDragOver(e, idx)}
+                      onDrop={() => handleDropStandalone(idx)}
+                      onDragEnd={handleDragEnd}
+                      className={`flex items-center gap-2 px-4 py-3 transition-colors group ${
+                        dragOverIdx === idx && draggedIdx !== idx
+                          ? "bg-accent/40 border-t-2 border-primary"
+                          : "hover:bg-muted/30"
+                      }`}
                     >
+                      <div className={`shrink-0 ${hasActiveFiltersStandalone ? "opacity-0 pointer-events-none" : "cursor-grab active:cursor-grabbing"}`}>
+                        <GripVertical className="h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
+                      </div>
+
                       <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-muted border border-border/50">
                         {thumb ? (
                           <img src={thumb} alt="" className="w-full h-full object-cover" />
@@ -663,7 +749,7 @@ const AdminExperiences2 = () => {
                           size="sm"
                           variant="outline"
                           className="h-8 text-xs gap-1.5"
-                          onClick={() => navigate(`/admin/standalone-experiences/edit/${exp.id}`)}
+                          onClick={() => navigate(`/admin/experiences2/standalone/edit/${exp.id}`)}
                         >
                           <Edit className="h-3.5 w-3.5" />
                           Edit

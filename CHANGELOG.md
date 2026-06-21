@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-06-21] — Réordonnancement des expériences standalone + fusion des deux pages de back office
+
+### Ce qui a changé côté code
+- `src/pages/admin/Experiences2.tsx` : ajout du glisser-déposer pour réordonner les expériences standalone (onglet "Experience Only"), comme c'était déjà possible côté "With Hotel". Le réordonnancement fonctionne désormais aussi quand une catégorie est filtrée, sans risquer de mélanger l'ordre avec celui des autres catégories.
+- `src/pages/admin/Experiences2.tsx` + `src/App.tsx` : fusion des deux pages qui géraient les expériences standalone. Avant, créer/éditer une expérience standalone redirigeait vers une page séparée (`/admin/standalone-experiences`) presque jamais visible ; maintenant tout se passe depuis `/admin/experiences2` (nouvelles routes `experiences2/standalone/new` et `experiences2/standalone/edit/:id`).
+- Suppression du fichier `src/pages/admin/StandaloneExperiences.tsx` et des anciennes routes `/admin/standalone-experiences*`, devenus inutiles après la fusion.
+- Correction de lenteur sur le glisser-déposer (les deux onglets, "With Hotel" et "Experience Only") : les sauvegardes d'ordre étaient envoyées une par une à la base de données ; elles sont maintenant envoyées en parallèle, et seules les lignes dont la position a réellement changé sont sauvegardées. Le résultat est identique, seule la vitesse change.
+
+### Ce qui a changé côté base de données
+- Aucune migration : la colonne `display_order` existait déjà sur `standalone_experiences`.
+
+### Pourquoi ce changement
+Shana avait besoin de pouvoir réordonner l'affichage des expériences standalone sur le site (/v3), comme c'était déjà possible pour les expériences avec hôtel. En creusant, on a découvert que le back office standalone était dupliqué entre deux pages non connectées entre elles, ce qui causait de la confusion sur où la fonctionnalité devait apparaître ; l'occasion a été prise de nettoyer cette duplication.
+
 ## [2026-06-18] — Ajout d'une expérience standalone (Drink & Paint, Tel Aviv)
 
 ### Ce qui a changé côté code
