@@ -26,6 +26,9 @@ import tailoredHero from "@/assets/tailored-request-hero.png";
 interface TailoredRequestSectionProps {
   categories?: Array<{ id: string; name: string; name_he?: string | null; slug: string }>;
   ctaClassName?: string;
+  heroImage?: string;
+  kickerClassName?: string;
+  ctaUnderlineClassName?: string;
 }
 
 const OCCASIONS_EN = [
@@ -95,7 +98,7 @@ const PEOPLE = ["2", "3 – 4", "5 – 6", "6+"];
 
 type Step = "step1" | "transition" | "step2" | "done";
 
-const TailoredRequestSection = ({ categories, ctaClassName }: TailoredRequestSectionProps) => {
+const TailoredRequestSection = ({ categories, ctaClassName, heroImage, kickerClassName, ctaUnderlineClassName }: TailoredRequestSectionProps) => {
   const { lang } = useLanguage();
   const isRTL = lang === "he";
 
@@ -256,13 +259,13 @@ const TailoredRequestSection = ({ categories, ctaClassName }: TailoredRequestSec
       {/* ─── Photo Hero Banner ─── */}
       <section
         className="relative w-full bg-cover bg-center py-10 sm:py-14 md:py-16"
-        style={{ backgroundImage: `url(${tailoredHero})` }}
+        style={{ backgroundImage: `url(${heroImage ?? tailoredHero})` }}
         dir={isRTL ? "rtl" : "ltr"}
       >
         <div className="absolute inset-0 bg-black/45" />
         <div className="relative z-10 max-w-2xl mx-auto text-center px-4 space-y-4">
           {lang !== "he" && (
-            <p className="text-[11px] tracking-[0.25em] uppercase font-medium text-white/55">
+            <p className={cn("text-[11px] tracking-[0.25em] uppercase font-medium", kickerClassName ?? "text-white/55")}>
               {lang === "fr" ? "VOS ENVIES. NOTRE SAVOIR-FAIRE." : "YOUR TRIP. YOUR RULES."}
             </p>
           )}
@@ -301,21 +304,32 @@ const TailoredRequestSection = ({ categories, ctaClassName }: TailoredRequestSec
               ))}
             </div>
           )}
-          <Button
-            onClick={() => {
-              resetForm();
-              setDialogOpen(true);
-            }}
-            className={cn("group mt-2", ctaClassName)}
-          >
-            {getCopy("DESIGN MY STAY", "עצבו את השהייה שלכם", "CRÉER MON SÉJOUR")}
-            <ArrowRight
-              className={cn(
-                "h-4 w-4 transition-transform group-hover:translate-x-1",
-                isRTL ? "mr-2 rotate-180 group-hover:-translate-x-1" : "ml-2"
-              )}
-            />
-          </Button>
+          <div className="relative inline-block mt-2">
+            {ctaUnderlineClassName && (
+              <span
+                aria-hidden
+                className={cn(
+                  "absolute inset-x-2 bottom-1.5 h-3 sm:h-3.5 rounded-[60%_40%_70%_30%/40%_60%_30%_70%] -rotate-1",
+                  ctaUnderlineClassName
+                )}
+              />
+            )}
+            <Button
+              onClick={() => {
+                resetForm();
+                setDialogOpen(true);
+              }}
+              className={cn("group relative", ctaClassName)}
+            >
+              {getCopy("DESIGN MY STAY", "עצבו את השהייה שלכם", "CRÉER MON SÉJOUR")}
+              <ArrowRight
+                className={cn(
+                  "h-4 w-4 transition-transform group-hover:translate-x-1",
+                  isRTL ? "mr-2 rotate-180 group-hover:-translate-x-1" : "ml-2"
+                )}
+              />
+            </Button>
+          </div>
         </div>
       </section>
 
