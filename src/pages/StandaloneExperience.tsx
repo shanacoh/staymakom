@@ -9,6 +9,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import HeroSection from "@/components/experience-test/HeroSection";
+import LocationMap from "@/components/experience-test/LocationMap";
+import LocationPopover from "@/components/experience/LocationPopover";
 import PracticalInfo from "@/components/experience-test/PracticalInfo";
 import WhatsIncludedPhotos2 from "@/components/experience-test/WhatsIncludedPhotos2";
 import ShareWithFriendsSection from "@/components/experience/ShareWithFriendsSection";
@@ -22,7 +24,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useLanguage } from "@/hooks/useLanguage";
+import { useLanguage, type Language } from "@/hooks/useLanguage";
+import { Badge } from "@/components/ui/badge";
+import { getAutoBadgesFromPracticalInfo, normalizeLegacyPracticalInfo } from "@/lib/standaloneBadges";
 import { SEOHead } from "@/components/SEOHead";
 import { trackExperiencePageViewed, trackTimeOnExperiencePage } from "@/lib/analytics";
 import { useScrollDepth } from "@/hooks/useScrollDepth";
@@ -64,11 +68,26 @@ interface StandaloneExperienceData {
   duration_he?: string | null;
   address?: string | null;
   address_he?: string | null;
+  address_fr?: string | null;
+  city?: string | null;
+  city_he?: string | null;
+  city_fr?: string | null;
+  region?: string | null;
+  region_he?: string | null;
+  region_fr?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   accessibility_info?: string | null;
   category_id?: string | null;
   status: string;
   available_days?: number[] | null;
   blocked_dates?: string[] | null;
+  practical_info?: unknown;
+  standalone_experience_highlight_tags?: {
+    tag_id: string;
+    position: number;
+    highlight_tags: { id: string; slug: string; label_en: string; label_he?: string | null };
+  }[] | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -160,9 +179,29 @@ export default function StandaloneExperience() {
   const { data: experience, isLoading, error } = useQuery({
     queryKey: ["standalone-experience-public", slug],
     queryFn: async () => {
+      // Liste explicite (jamais "*") : exclut volontairement les colonnes admin-only
+      // (supplier_price_adult, supplier_price_child, markup_percent) qui ne doivent
+      // jamais transiter vers le navigateur d'un visiteur.
+      const PUBLIC_COLUMNS = [
+        "id", "slug", "title", "title_fr", "title_he",
+        "subtitle", "subtitle_fr", "subtitle_he",
+        "long_copy", "long_copy_fr", "long_copy_he",
+        "hero_image", "photos",
+        "base_price", "base_price_type", "currency", "min_party", "max_party",
+        "lead_time_days", "has_time_slots", "time_slots",
+        "cancellation_policy", "cancellation_policy_fr", "cancellation_policy_he",
+        "duration", "duration_fr", "duration_he",
+        "address", "address_he", "address_fr",
+        "city", "city_he", "city_fr",
+        "region", "region_he", "region_fr",
+        "latitude", "longitude",
+        "accessibility_info", "category_id", "status",
+        "available_days", "blocked_dates", "practical_info",
+      ].join(", ");
+
       const { data, error } = await (supabase as any)
         .from("standalone_experiences")
-        .select("*")
+        .select(`${PUBLIC_COLUMNS}, standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he))`)
         .eq("slug", slug!)
         .eq("status", "published")
         .single();
@@ -197,6 +236,23 @@ export default function StandaloneExperience() {
   // -------------------------------------------------------------------------
   // Derived data
   // -------------------------------------------------------------------------
+
+  const editorialBadges = (experience?.standalone_experience_highlight_tags ?? [])
+    .slice()
+    .sort((a, b) => a.position - b.position)
+    .map((link) => ({
+      key: `tag-${link.tag_id}`,
+      label: lang === "he" && link.highlight_tags.label_he ? link.highlight_tags.label_he : link.highlight_tags.label_en,
+    }));
+
+  const autoBadges = experience
+    ? getAutoBadgesFromPracticalInfo(normalizeLegacyPracticalInfo(experience.practical_info), lang as Language)
+    : [];
+
+  const allBadges = [...editorialBadges, ...autoBadges];
+
+  const locCity = lang === "he" ? experience?.city_he || experience?.city : lang === "fr" ? experience?.city_fr || experience?.city : experience?.city;
+  const locRegion = lang === "he" ? experience?.region_he || experience?.region : lang === "fr" ? experience?.region_fr || experience?.region : experience?.region;
 
   const currencySymbol = experience ? getCurrencySymbol(experience.currency) : "₪";
   const leadTimeDays = experience?.lead_time_days ?? 0;
@@ -676,6 +732,37 @@ export default function StandaloneExperience() {
           <div className="grid md:grid-cols-[65%_35%] gap-6 lg:gap-10">
             {/* Left Column */}
             <div className="space-y-10 md:space-y-12 min-w-0 overflow-x-hidden">
+              {/* Badges */}
+              {allBadges.length > 0 && (
+                <div className="flex flex-wrap gap-2 -mb-6 md:-mb-8">
+                  {allBadges.map((b) => (
+                    <Badge key={b.key} variant="secondary" className="font-normal">
+                      {b.label}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {/* Localisation */}
+              {(locCity || locRegion) && (
+                <LocationPopover
+                  city={locCity ?? undefined}
+                  region={locRegion ?? undefined}
+                  hotelName={title}
+                  latitude={experience.latitude ?? undefined}
+                  longitude={experience.longitude ?? undefined}
+                  lang={lang as "en" | "he" | "fr"}
+                />
+              )}
+              {experience.latitude && experience.longitude && (
+                <LocationMap
+                  latitude={experience.latitude}
+                  longitude={experience.longitude}
+                  hotelName={title}
+                  lang={lang as "en" | "he" | "fr"}
+                />
+              )}
+
               {/* What's on the program */}
               <WhatsIncludedPhotos2
                 experienceId={experience.id}

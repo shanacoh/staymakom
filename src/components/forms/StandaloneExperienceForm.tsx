@@ -28,6 +28,7 @@ import {
 import {
   Save, Rocket, X, Upload, Loader2, ArrowLeft, Plus, Star, Clock,
   MapPin, DollarSign, Check, Tag, Car, Utensils, Dumbbell, Waves, Users,
+  type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import RichTextEditor from "@/components/ui/rich-text-editor";
@@ -35,6 +36,15 @@ import { generateSlug } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  type PracticalBadgesInfo,
+  type TriState,
+  defaultPracticalBadgesInfo,
+  normalizeLegacyPracticalInfo,
+  getAutoBadgesFromPracticalInfo,
+  getPracticalInfoCompleteness,
+} from "@/lib/standaloneBadges";
 import { HighlightTagsSelectorStandalone, type LocalTagEntry } from "@/components/admin/HighlightTagsSelectorStandalone";
 import IncludesManagerStandalone, { type LocalIncludeEntry } from "@/components/admin/IncludesManagerStandalone";
 import StandaloneExtrasManager, { type LocalExtraEntry } from "@/components/admin/StandaloneExtrasManager";
@@ -81,6 +91,7 @@ const standaloneExperienceSchema = z.object({
   supplier_price_child: z.number().min(0).default(0),
   has_child_price: z.boolean().default(false),
   markup_percent: z.number().min(0).max(100).default(0),
+  supplier_booking_url: z.string().optional(),
   base_price_type: z.enum(["per_person", "fixed", "per_person_per_night"]).default("per_person"),
   currency: z.enum(["USD", "EUR", "ILS"]).default("ILS"),
   lead_time_days: optNum(0),
@@ -88,8 +99,16 @@ const standaloneExperienceSchema = z.object({
   // Localisation
   address: z.string().optional(),
   address_he: z.string().optional(),
+  address_fr: z.string().optional(),
   google_maps_link: z.string().optional(),
-  region_type: z.string().optional(),
+  city: z.string().optional(),
+  city_he: z.string().optional(),
+  city_fr: z.string().optional(),
+  region: z.string().optional(),
+  region_he: z.string().optional(),
+  region_fr: z.string().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
   // Durée
   duration: z.string().optional(),
   duration_fr: z.string().optional(),
@@ -123,14 +142,6 @@ interface SimpleListItem {
   text: string;
 }
 
-interface PracticalInfo {
-  parking: { enabled: boolean; price: string };
-  adults_only: { enabled: boolean; from_time: string };
-  kosher: boolean;
-  spa: boolean;
-  fitness: boolean;
-}
-
 // Jours de semaine pour la disponibilité (1=Lundi … 7=Dimanche)
 const WEEKDAYS = [
   { id: 1, label: "L", full: "Lundi" },
@@ -144,13 +155,55 @@ const WEEKDAYS = [
 
 const ALL_DAYS = WEEKDAYS.map((d) => d.id);
 
-const defaultPracticalInfo: PracticalInfo = {
-  parking: { enabled: false, price: "" },
-  adults_only: { enabled: false, from_time: "" },
-  kosher: false,
-  spa: false,
-  fitness: false,
-};
+function CompletionPill() {
+  return (
+    <span className="text-[11px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+      à compléter
+    </span>
+  );
+}
+
+function PracticalTriStateField({
+  id,
+  icon: Icon,
+  label,
+  value,
+  onChange,
+}: {
+  id: string;
+  icon: LucideIcon;
+  label: string;
+  value: TriState;
+  onChange: (v: TriState) => void;
+}) {
+  return (
+    <div className="p-3 rounded-lg border space-y-2">
+      <div className="flex items-center gap-3">
+        <Icon className="h-4 w-4 text-muted-foreground" />
+        <span className="font-medium text-sm flex-1">{label}</span>
+        {value === null && <CompletionPill />}
+      </div>
+      <RadioGroup
+        value={value ?? undefined}
+        onValueChange={(v) => onChange(v as TriState)}
+        className="flex gap-4 ml-7"
+      >
+        <div className="flex items-center gap-2">
+          <RadioGroupItem value="yes" id={`${id}-yes`} />
+          <Label htmlFor={`${id}-yes`} className="text-sm font-normal cursor-pointer">Oui</Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <RadioGroupItem value="no" id={`${id}-no`} />
+          <Label htmlFor={`${id}-no`} className="text-sm font-normal cursor-pointer">Non</Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <RadioGroupItem value="not_relevant" id={`${id}-nr`} />
+          <Label htmlFor={`${id}-nr`} className="text-sm font-normal cursor-pointer">Non pertinent</Label>
+        </div>
+      </RadioGroup>
+    </div>
+  );
+}
 
 interface StandaloneExperienceFormProps {
   experienceId?: string;
@@ -177,6 +230,7 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [createdExperienceId, setCreatedExperienceId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>("medias");
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   // Auto-save
   const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
@@ -205,8 +259,8 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
   // Multi-categories
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
 
-  // Practical info toggles
-  const [practicalInfo, setPracticalInfo] = useState<PracticalInfo>(defaultPracticalInfo);
+  // Informations clés → badges (kosher, enfants, parking, fitness, spa)
+  const [practicalInfo, setPracticalInfo] = useState<PracticalBadgesInfo>(defaultPracticalBadgesInfo);
 
   // Disponibilités
   const [availableDays, setAvailableDays] = useState<number[]>(ALL_DAYS);
@@ -285,14 +339,23 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
       supplier_price_child: 0,
       has_child_price: false,
       markup_percent: 0,
+      supplier_booking_url: "",
       base_price_type: "per_person",
       currency: "ILS",
       lead_time_days: 0,
       has_time_slots: false,
       address: "",
       address_he: "",
+      address_fr: "",
       google_maps_link: "",
-      region_type: "",
+      city: "",
+      city_he: "",
+      city_fr: "",
+      region: "",
+      region_he: "",
+      region_fr: "",
+      latitude: undefined,
+      longitude: undefined,
       duration: "",
       duration_fr: "",
       duration_he: "",
@@ -396,14 +459,23 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
     setValue("supplier_price_child", exp.supplier_price_child ?? 0);
     setValue("has_child_price", exp.has_child_price ?? false);
     setValue("markup_percent", exp.markup_percent ?? 0);
+    setValue("supplier_booking_url", exp.supplier_booking_url || "");
     setValue("base_price_type", exp.base_price_type || "per_person");
     setValue("currency", exp.currency || "ILS");
     setValue("lead_time_days", exp.lead_time_days ?? 0);
     setValue("has_time_slots", exp.has_time_slots ?? false);
     setValue("address", exp.address || "");
     setValue("address_he", exp.address_he || "");
+    setValue("address_fr", exp.address_fr || "");
     setValue("google_maps_link", exp.google_maps_link || "");
-    setValue("region_type", exp.region_type || "");
+    setValue("city", exp.city || "");
+    setValue("city_he", exp.city_he || "");
+    setValue("city_fr", exp.city_fr || "");
+    setValue("region", exp.region || exp.region_type || "");
+    setValue("region_he", exp.region_he || "");
+    setValue("region_fr", exp.region_fr || "");
+    setValue("latitude", exp.latitude ?? undefined);
+    setValue("longitude", exp.longitude ?? undefined);
     setValue("duration", exp.duration || "");
     setValue("duration_fr", exp.duration_fr || "");
     setValue("duration_he", exp.duration_he || "");
@@ -447,7 +519,7 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
       setSelectedCategoryIds([exp.category_id]);
     }
     if (exp.practical_info && typeof exp.practical_info === "object") {
-      setPracticalInfo({ ...defaultPracticalInfo, ...exp.practical_info });
+      setPracticalInfo(normalizeLegacyPracticalInfo(exp.practical_info));
     }
     if (Array.isArray(exp.available_days) && exp.available_days.length > 0) {
       setAvailableDays(exp.available_days);
@@ -511,6 +583,40 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
   const handleGalleryDrop = (e: React.DragEvent) => {
     e.preventDefault();
     handleGalleryImagesChange(e.dataTransfer.files);
+  };
+
+  // -------------------------------------------------------------------------
+  // Géocodage (même fonction Supabase que les hôtels, générique)
+  // -------------------------------------------------------------------------
+
+  const handleGeocode = async () => {
+    const address = getValues("address");
+    const city = getValues("city");
+    const region = getValues("region");
+    const addressToGeocode = address || [city, region].filter(Boolean).join(", ");
+    if (!addressToGeocode.trim()) {
+      toast.error("Renseignez une adresse, une ville ou une région d'abord");
+      return;
+    }
+    setIsGeocoding(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("geocode-hotel", {
+        body: { address: addressToGeocode },
+      });
+      if (error) throw error;
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
+      setValue("latitude", data.latitude);
+      setValue("longitude", data.longitude);
+      toast.success(`Position trouvée : ${data.displayName}`);
+    } catch (err) {
+      console.error("Geocoding error:", err);
+      toast.error("Impossible de trouver la position. Essayez une adresse plus précise.");
+    } finally {
+      setIsGeocoding(false);
+    }
   };
 
   // -------------------------------------------------------------------------
@@ -616,6 +722,7 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
       supplier_price_child: data.has_child_price ? data.supplier_price_child : null,
       has_child_price: data.has_child_price,
       markup_percent: data.markup_percent,
+      supplier_booking_url: data.supplier_booking_url || null,
       base_price: computedBasePrice,
       base_price_type: data.base_price_type,
       currency: data.currency,
@@ -624,8 +731,16 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
       time_slots: data.has_time_slots ? timeSlots : [],
       address: data.address || null,
       address_he: data.address_he || null,
+      address_fr: data.address_fr || null,
       google_maps_link: data.google_maps_link || null,
-      region_type: data.region_type || null,
+      city: data.city || null,
+      city_he: data.city_he || null,
+      city_fr: data.city_fr || null,
+      region: data.region || null,
+      region_he: data.region_he || null,
+      region_fr: data.region_fr || null,
+      latitude: data.latitude ?? null,
+      longitude: data.longitude ?? null,
       duration: data.duration || null,
       duration_fr: data.duration_fr || null,
       duration_he: data.duration_he || null,
@@ -841,6 +956,9 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
   // -------------------------------------------------------------------------
   // Render
   // -------------------------------------------------------------------------
+
+  const practicalCompleteness = getPracticalInfoCompleteness(practicalInfo);
+  const autoBadgesPreview = getAutoBadgesFromPracticalInfo(practicalInfo, "fr");
 
   return (
     <div className="space-y-6 pb-24">
@@ -1226,12 +1344,186 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
         {/* ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === "pratique" && (
           <div className="space-y-6">
-            {/* Badges (Points forts) */}
-            <HighlightTagsSelectorStandalone
-              experienceId={currentExperienceId}
-              localTags={localTags}
-              onLocalTagsChange={setLocalTags}
-            />
+            {/* Badges : points forts éditoriaux + informations clés (badges automatiques) */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Badges</CardTitle>
+                  <span className={cn(
+                    "text-xs font-medium px-2 py-0.5 rounded-full",
+                    practicalCompleteness.answered === practicalCompleteness.total
+                      ? "text-emerald-700 bg-emerald-50"
+                      : "text-amber-600 bg-amber-50"
+                  )}>
+                    {practicalCompleteness.answered}/{practicalCompleteness.total} informations clés répondues
+                  </span>
+                </div>
+                <CardDescription>
+                  Mettez en avant des points forts personnalisés, et répondez aux informations clés ci-dessous :
+                  un badge apparaît automatiquement sur la fiche publique dès que la réponse le justifie.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <HighlightTagsSelectorStandalone
+                  experienceId={currentExperienceId}
+                  localTags={localTags}
+                  onLocalTagsChange={setLocalTags}
+                />
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <p className="text-sm font-medium text-foreground">Informations clés</p>
+
+                  <PracticalTriStateField
+                    id="kosher"
+                    icon={Utensils}
+                    label="Kosher"
+                    value={practicalInfo.kosher}
+                    onChange={(v) => setPracticalInfo((prev) => ({ ...prev, kosher: v }))}
+                  />
+
+                  {/* Enfants */}
+                  <div className="p-3 rounded-lg border space-y-2">
+                    <div className="flex items-center gap-3">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium text-sm flex-1">Enfants</span>
+                      {practicalInfo.kids.status === null && <CompletionPill />}
+                    </div>
+                    <RadioGroup
+                      value={practicalInfo.kids.status ?? undefined}
+                      onValueChange={(v) =>
+                        setPracticalInfo((prev) => ({
+                          ...prev,
+                          kids: { status: v as "yes" | "no", from_age: v === "yes" ? prev.kids.from_age : null },
+                        }))
+                      }
+                      className="flex gap-4 ml-7"
+                    >
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem value="yes" id="kids-yes" />
+                        <Label htmlFor="kids-yes" className="text-sm font-normal cursor-pointer">Oui</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem value="no" id="kids-no" />
+                        <Label htmlFor="kids-no" className="text-sm font-normal cursor-pointer">Non</Label>
+                      </div>
+                    </RadioGroup>
+                    {practicalInfo.kids.status === "yes" && (
+                      <div className="ml-7 flex items-center gap-2">
+                        <Label className="text-sm text-muted-foreground shrink-0">À partir de :</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={practicalInfo.kids.from_age ?? ""}
+                          onChange={(e) =>
+                            setPracticalInfo((prev) => ({
+                              ...prev,
+                              kids: { ...prev.kids, from_age: e.target.value ? parseInt(e.target.value) : null },
+                            }))
+                          }
+                          placeholder="Âge"
+                          className="h-8 text-sm w-24"
+                        />
+                        <span className="text-sm text-muted-foreground">ans (badge "KIDS from X")</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Parking */}
+                  <div className="p-3 rounded-lg border space-y-2">
+                    <div className="flex items-center gap-3">
+                      <Car className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium text-sm flex-1">Parking</span>
+                      {practicalInfo.parking.status === null && <CompletionPill />}
+                    </div>
+                    <RadioGroup
+                      value={practicalInfo.parking.status ?? undefined}
+                      onValueChange={(v) =>
+                        setPracticalInfo((prev) => ({
+                          ...prev,
+                          parking: {
+                            status: v as "yes" | "no",
+                            price_type: v === "yes" ? prev.parking.price_type : null,
+                            price_amount: v === "yes" ? prev.parking.price_amount : null,
+                          },
+                        }))
+                      }
+                      className="flex gap-4 ml-7"
+                    >
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem value="yes" id="parking-yes" />
+                        <Label htmlFor="parking-yes" className="text-sm font-normal cursor-pointer">Oui</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <RadioGroupItem value="no" id="parking-no" />
+                        <Label htmlFor="parking-no" className="text-sm font-normal cursor-pointer">Non</Label>
+                      </div>
+                    </RadioGroup>
+                    {practicalInfo.parking.status === "yes" && (
+                      <div className="ml-7 space-y-2">
+                        <RadioGroup
+                          value={practicalInfo.parking.price_type ?? undefined}
+                          onValueChange={(v) =>
+                            setPracticalInfo((prev) => ({ ...prev, parking: { ...prev.parking, price_type: v as "free" | "paid" } }))
+                          }
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center gap-2">
+                            <RadioGroupItem value="free" id="parking-free" />
+                            <Label htmlFor="parking-free" className="text-sm font-normal cursor-pointer">Gratuit</Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <RadioGroupItem value="paid" id="parking-paid" />
+                            <Label htmlFor="parking-paid" className="text-sm font-normal cursor-pointer">Payant</Label>
+                          </div>
+                        </RadioGroup>
+                        {practicalInfo.parking.price_type === "paid" && (
+                          <div className="flex items-center gap-2">
+                            <Label className="text-sm text-muted-foreground shrink-0">Montant :</Label>
+                            <Input
+                              value={practicalInfo.parking.price_amount ?? ""}
+                              onChange={(e) =>
+                                setPracticalInfo((prev) => ({ ...prev, parking: { ...prev.parking, price_amount: e.target.value } }))
+                              }
+                              placeholder="Ex: 20₪ par jour"
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <PracticalTriStateField
+                    id="fitness"
+                    icon={Dumbbell}
+                    label="Centre fitness"
+                    value={practicalInfo.fitness}
+                    onChange={(v) => setPracticalInfo((prev) => ({ ...prev, fitness: v }))}
+                  />
+
+                  <PracticalTriStateField
+                    id="spa"
+                    icon={Waves}
+                    label="Spa"
+                    value={practicalInfo.spa}
+                    onChange={(v) => setPracticalInfo((prev) => ({ ...prev, spa: v }))}
+                  />
+                </div>
+
+                {autoBadgesPreview.length > 0 && (
+                  <div className="pt-3 border-t">
+                    <p className="text-xs text-muted-foreground mb-2">Aperçu des badges générés automatiquement sur la fiche publique :</p>
+                    <div className="flex flex-wrap gap-2">
+                      {autoBadgesPreview.map((b) => (
+                        <Badge key={b.key} variant="secondary">{b.label}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Ce qui est inclus */}
             <Card>
@@ -1263,101 +1555,6 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
               </CardContent>
             </Card>
 
-            {/* Informations pratiques (toggles) */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Informations pratiques</CardTitle>
-                <CardDescription>Activez les équipements et services disponibles pour cette expérience</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {/* Parking */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-3 rounded-lg border">
-                    <div className="flex items-center gap-3">
-                      <Car className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium text-sm">Parking</span>
-                    </div>
-                    <Switch
-                      checked={practicalInfo.parking.enabled}
-                      onCheckedChange={(v) => setPracticalInfo((prev) => ({ ...prev, parking: { ...prev.parking, enabled: v } }))}
-                    />
-                  </div>
-                  {practicalInfo.parking.enabled && (
-                    <div className="ml-7 flex items-center gap-2">
-                      <Label className="text-sm text-muted-foreground shrink-0">Prix :</Label>
-                      <Input
-                        value={practicalInfo.parking.price}
-                        onChange={(e) => setPracticalInfo((prev) => ({ ...prev, parking: { ...prev.parking, price: e.target.value } }))}
-                        placeholder="Ex: Gratuit / 20₪ par jour"
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* Adults only */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-3 rounded-lg border">
-                    <div className="flex items-center gap-3">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium text-sm">Adults only</span>
-                    </div>
-                    <Switch
-                      checked={practicalInfo.adults_only.enabled}
-                      onCheckedChange={(v) => setPracticalInfo((prev) => ({ ...prev, adults_only: { ...prev.adults_only, enabled: v } }))}
-                    />
-                  </div>
-                  {practicalInfo.adults_only.enabled && (
-                    <div className="ml-7 flex items-center gap-2">
-                      <Label className="text-sm text-muted-foreground shrink-0">À partir de :</Label>
-                      <Input
-                        type="time"
-                        value={practicalInfo.adults_only.from_time}
-                        onChange={(e) => setPracticalInfo((prev) => ({ ...prev, adults_only: { ...prev.adults_only, from_time: e.target.value } }))}
-                        className="h-8 text-sm w-32"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* Kasher */}
-                <div className="flex items-center justify-between p-3 rounded-lg border">
-                  <div className="flex items-center gap-3">
-                    <Utensils className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium text-sm">Kasher</span>
-                  </div>
-                  <Switch
-                    checked={practicalInfo.kosher}
-                    onCheckedChange={(v) => setPracticalInfo((prev) => ({ ...prev, kosher: v }))}
-                  />
-                </div>
-
-                {/* Spa */}
-                <div className="flex items-center justify-between p-3 rounded-lg border">
-                  <div className="flex items-center gap-3">
-                    <Waves className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium text-sm">Spa</span>
-                  </div>
-                  <Switch
-                    checked={practicalInfo.spa}
-                    onCheckedChange={(v) => setPracticalInfo((prev) => ({ ...prev, spa: v }))}
-                  />
-                </div>
-
-                {/* Fitness */}
-                <div className="flex items-center justify-between p-3 rounded-lg border">
-                  <div className="flex items-center gap-3">
-                    <Dumbbell className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium text-sm">Fitness</span>
-                  </div>
-                  <Switch
-                    checked={practicalInfo.fitness}
-                    onCheckedChange={(v) => setPracticalInfo((prev) => ({ ...prev, fitness: v }))}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Localisation */}
             <Card>
               <CardHeader>
@@ -1368,12 +1565,58 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
                 <CardDescription>Adresse et informations géographiques de l'expérience</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="city" className="flex items-center gap-1.5">
+                      <span>🇬🇧</span> Ville (EN)
+                    </Label>
+                    <Input id="city" {...register("city")} placeholder="Ex: Tel Aviv" disabled={isSaving} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="city_fr" className="flex items-center gap-1.5">
+                      <span>🇫🇷</span> Ville (FR)
+                    </Label>
+                    <Input id="city_fr" {...register("city_fr")} placeholder="Ex: Tel Aviv" disabled={isSaving} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="city_he" className="flex items-center gap-1.5">
+                      <span>🇮🇱</span> עיר (HE)
+                    </Label>
+                    <Input id="city_he" {...register("city_he")} placeholder="תל אביב" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="region" className="flex items-center gap-1.5">
+                      <span>🇬🇧</span> Région (EN)
+                    </Label>
+                    <Input id="region" {...register("region")} placeholder="Ex: Tel Aviv, Galilee, Dead Sea..." disabled={isSaving} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="region_fr" className="flex items-center gap-1.5">
+                      <span>🇫🇷</span> Région (FR)
+                    </Label>
+                    <Input id="region_fr" {...register("region_fr")} placeholder="Ex: Galilée, Mer Morte..." disabled={isSaving} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="region_he" className="flex items-center gap-1.5">
+                      <span>🇮🇱</span> אזור (HE)
+                    </Label>
+                    <Input id="region_he" {...register("region_he")} placeholder="אזור" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="address" className="flex items-center gap-1.5">
                       <span>🇬🇧</span> Adresse (EN)
                     </Label>
                     <Input id="address" {...register("address")} placeholder="Ex: 12 Rothschild Blvd, Tel Aviv" disabled={isSaving} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="address_fr" className="flex items-center gap-1.5">
+                      <span>🇫🇷</span> Adresse (FR)
+                    </Label>
+                    <Input id="address_fr" {...register("address_fr")} placeholder="Ex: 12 Rothschild Blvd, Tel Aviv" disabled={isSaving} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="address_he" className="flex items-center gap-1.5">
@@ -1386,9 +1629,45 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
                   <Label htmlFor="google_maps_link">Lien Google Maps</Label>
                   <Input id="google_maps_link" {...register("google_maps_link")} placeholder="https://maps.google.com/..." disabled={isSaving} />
                 </div>
+
+                <Separator />
+
                 <div className="space-y-2">
-                  <Label htmlFor="region_type">Région / Zone</Label>
-                  <Input id="region_type" {...register("region_type")} placeholder="Ex: Tel Aviv, Galilee, Dead Sea..." disabled={isSaving} />
+                  <Label className="text-sm font-medium">Coordonnées GPS</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      type="number"
+                      step="any"
+                      placeholder="Latitude"
+                      {...register("latitude", { valueAsNumber: true })}
+                      disabled={isSaving}
+                    />
+                    <Input
+                      type="number"
+                      step="any"
+                      placeholder="Longitude"
+                      {...register("longitude", { valueAsNumber: true })}
+                      disabled={isSaving}
+                    />
+                  </div>
+                  <Button type="button" variant="outline" onClick={handleGeocode} disabled={isGeocoding} className="w-full">
+                    {isGeocoding ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Détection...
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="mr-2 h-4 w-4" />
+                        Auto-détecter coordonnées
+                      </>
+                    )}
+                  </Button>
+                  {watch("latitude") && watch("longitude") && (
+                    <p className="text-sm text-emerald-600">
+                      ✓ Coordonnées : {Number(watch("latitude")).toFixed(4)}, {Number(watch("longitude")).toFixed(4)}
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -1598,6 +1877,29 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
                       />
                       <span className="text-sm font-semibold w-12 text-right">{markupPercent}%</span>
                     </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Lien de réservation fournisseur — usage interne uniquement */}
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+                    Lien de réservation fournisseur (usage interne, jamais visible des clients)
+                  </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="supplier_booking_url">URL de réservation chez le prestataire</Label>
+                    <Input
+                      id="supplier_booking_url"
+                      type="url"
+                      {...register("supplier_booking_url")}
+                      placeholder="https://..."
+                      disabled={isSaving}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Pour les expériences que vous réservez vous-même chez le fournisseur : ce lien apparaîtra
+                      uniquement dans le récapitulatif de vos réservations, jamais sur le site public.
+                    </p>
                   </div>
                 </div>
 

@@ -34,9 +34,9 @@ interface ExperienceCardProps {
     currency?: string | null;
     base_price_type?: string | null;
     hotels?: {
-      name: string;
+      name?: string;
       name_he?: string | null;
-      city: string;
+      city?: string;
       city_he?: string | null;
       region?: string | null;
       region_he?: string | null;
@@ -295,7 +295,7 @@ export default function ExperienceCard({
         <div className="space-y-1 px-0.5">
           {/* Row: City | Region + Rating */}
           <div className="flex items-center justify-between">
-            {hotelName ? (
+            {hotelName || experience.hotels?.city || region ? (
               <p className="text-[11px] sm:text-xs text-muted-foreground tracking-wide truncate">
                 {experience.hotels?.city ? (getLocalizedField(experience.hotels, 'city', lang) as string) : ''}{region ? ` | ${region}` : ''}
               </p>

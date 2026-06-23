@@ -33,6 +33,10 @@ interface StandaloneExperienceCardProps {
     max_party?: number | null;
     has_time_slots?: boolean;
     standalone_experience_highlight_tags?: StandaloneHighlightTagLink[] | null;
+    city?: string | null;
+    city_he?: string | null;
+    region?: string | null;
+    region_he?: string | null;
   };
   index?: number;
   badge?: string | null;
@@ -51,7 +55,11 @@ export default function StandaloneExperienceCard({
 
   const cardExperience = {
     ...experience,
-    hotels: null,
+    // Pas d'hôtel pour une expérience standalone : on réutilise simplement la forme
+    // attendue par ExperienceCard pour afficher ville/région sous la photo.
+    hotels: (experience.city || experience.region)
+      ? { city: experience.city ?? undefined, city_he: experience.city_he, region: experience.region, region_he: experience.region_he }
+      : null,
     base_price: displayPrice,
     experience_highlight_tags: (experience.standalone_experience_highlight_tags ?? [])
       .sort((a, b) => a.position - b.position)

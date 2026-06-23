@@ -6,6 +6,38 @@
 
 ---
 
+## [2026-06-23] — Localisation des expériences standalone + lien de réservation fournisseur (back office)
+
+### Ce qui a changé côté code
+- `src/components/forms/StandaloneExperienceForm.tsx` : la Card "Localisation" du formulaire de gestion d'une expérience standalone propose désormais Ville et Région en trois langues (anglais, français, hébreu), une adresse en français en plus de l'anglais/hébreu déjà présents, et deux champs Latitude/Longitude avec un bouton "Auto-détecter coordonnées" — même outil que celui déjà utilisé pour les hôtels. Ajout aussi d'un champ "Lien de réservation fournisseur" (onglet Tarif & Dispo), réservé à un usage interne : il sert pour les expériences que Shana réserve elle-même chez un prestataire externe.
+- `src/pages/StandaloneExperience.tsx` (fiche publique d'une expérience standalone) : affiche maintenant un bouton de localisation cliquable (avec liens Google Maps/Waze/Apple Maps) et une carte interactive sous la photo principale, dès que la ville/région/coordonnées sont renseignées — comme c'est déjà le cas pour les expériences avec hôtel. La requête qui charge la page a aussi été changée pour ne plus charger "toutes les colonnes" de la base, mais une liste précise de colonnes publiques : ça évite que des informations internes (prix fournisseur, lien de réservation fournisseur) ne soient techniquement visibles dans le navigateur d'un client.
+- `src/components/ExperienceCard.tsx`, `src/components/StandaloneExperienceCard.tsx`, `src/pages/IndexV3.tsx` : les cartes d'expériences standalone affichent maintenant "Ville | Région" sous la photo, comme pour les cartes d'hôtel (aucun changement de comportement pour ces dernières).
+- `src/pages/admin/StandaloneBookings.tsx` et `src/pages/admin/StandaloneBookingDetails.tsx` : le tableau récapitulatif des réservations standalone et la page de détail d'une réservation affichent désormais un lien cliquable vers la page de réservation fournisseur, quand il est renseigné sur l'expérience.
+
+### Ce qui a changé côté base de données
+- Migration `20260623000000_add_standalone_experience_location.sql` : ajoute les colonnes `city`, `city_he`, `city_fr`, `region`, `region_he`, `region_fr`, `latitude`, `longitude`, `address_fr` à la table `standalone_experiences`. L'ancien champ libre `region_type` est repris automatiquement dans le nouveau champ `region` (aucune perte de donnée), et reste en base sans être réutilisé par le code.
+- Migration `20260623010000_add_standalone_supplier_booking_url.sql` : ajoute la colonne `supplier_booking_url` à `standalone_experiences`, jamais exposée publiquement.
+
+### Pourquoi ce changement
+Les expériences standalone (sans hôtel) n'avaient aucune localisation structurée affichée aux clients, contrairement aux expériences liées à un hôtel. Shana voulait que ces expériences bénéficient du même système (ville, région, carte). Par ailleurs, pour certaines expériences qu'elle réserve elle-même chez un prestataire externe ("dropshipping" d'expérience), elle voulait pouvoir noter en amont le lien de réservation et le retrouver rapidement dans son tableau de réservations, sans que ce lien ne soit jamais visible des clients.
+
+---
+
+## [2026-06-23] — Fusion des informations pratiques dans les badges (expériences standalone)
+
+### Ce qui a changé côté code
+- `src/components/forms/StandaloneExperienceForm.tsx` : la section "Informations pratiques" (anciens interrupteurs Parking / Adults only / Kasher / Spa / Fitness) a été remplacée par une section unique "Badges", regroupant les badges éditoriaux existants et 5 informations clés à renseigner (Kosher, Enfants, Parking, Centre fitness, Spa), chacune avec un repère visuel "à compléter" tant qu'elle n'a pas de réponse (sans bloquer la sauvegarde). Le champ "Adults only" (horaire) est remplacé par "Enfants à partir de X ans".
+- `src/lib/standaloneBadges.ts` (nouveau fichier) : logique partagée qui transforme ces réponses en badges (ex : "Kosher", "KIDS from 5", "Parking payant – 20₪/jour"), utilisée à la fois dans l'aperçu du formulaire et sur la fiche publique.
+- `src/pages/StandaloneExperience.tsx` : la fiche publique affiche désormais une rangée de badges (éditoriaux + générés automatiquement) sous la photo principale — ces informations n'étaient auparavant jamais montrées aux clients.
+
+### Ce qui a changé côté base de données
+- Aucune nouvelle colonne : la colonne JSONB `practical_info` (déjà existante sur `standalone_experiences`) change simplement de structure interne pour porter les nouvelles réponses (Kosher/Enfants/Parking/Fitness/Spa). Les anciennes fiches sont relues automatiquement par le code, sans script de migration nécessaire.
+
+### Pourquoi ce changement
+Shana voulait que les informations pratiques (kosher, enfants, parking, etc.) ne soient plus une catégorie séparée et invisible des clients, mais deviennent directement des badges affichés sur la fiche publique, avec une incitation claire en back office à répondre à ces questions pour chaque expérience.
+
+---
+
 ## [2026-06-22] — Barre de navigation mobile en pastille flottante + catégories resserrées sur /v3
 
 ### Ce qui a changé côté code

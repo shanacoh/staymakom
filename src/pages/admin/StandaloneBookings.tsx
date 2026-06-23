@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { format, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { Search, X, Mail, Clock } from "lucide-react";
+import { Search, X, Mail, Clock, ExternalLink } from "lucide-react";
 
 const AdminStandaloneBookings = () => {
   const navigate = useNavigate();
@@ -26,7 +26,7 @@ const AdminStandaloneBookings = () => {
       let query = supabase
         .from("standalone_bookings")
         .select(
-          "id, customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, status, is_cancelled, payment_status, refund_amount, created_at, standalone_experiences(title)"
+          "id, customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, status, is_cancelled, payment_status, refund_amount, created_at, standalone_experiences(title, supplier_booking_url)"
         )
         .order("created_at", { ascending: false });
 
@@ -147,6 +147,7 @@ const AdminStandaloneBookings = () => {
                 <TableHead>Montant</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead>Paiement</TableHead>
+                <TableHead>Lien résa</TableHead>
                 <TableHead>Créé le</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -183,6 +184,21 @@ const AdminStandaloneBookings = () => {
                   </TableCell>
                   <TableCell>{getStatusBadge(booking)}</TableCell>
                   <TableCell>{getPaymentBadge(booking)}</TableCell>
+                  <TableCell>
+                    {booking.standalone_experiences?.supplier_booking_url ? (
+                      <a
+                        href={booking.standalone_experiences.supplier_booking_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        Réserver
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                     {format(parseISO(booking.created_at), "dd MMM yyyy")}
                   </TableCell>

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ArrowLeft, CheckCircle, Mail, AlertTriangle, CreditCard, Calendar, Users, Clock, MapPin } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle, Mail, AlertTriangle, CreditCard, Calendar, Users, Clock, MapPin, ExternalLink } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -26,7 +26,7 @@ export default function AdminStandaloneBookingDetails() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_bookings")
-        .select("*, standalone_experiences(title, slug, address, has_time_slots)")
+        .select("*, standalone_experiences(title, slug, address, has_time_slots, supplier_booking_url)")
         .eq("id", bookingId!)
         .single();
       if (error) throw error;
@@ -259,6 +259,20 @@ export default function AdminStandaloneBookingDetails() {
                   <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
                   {booking.standalone_experiences.address}
                 </p>
+              </div>
+            )}
+            {booking.standalone_experiences?.supplier_booking_url && (
+              <div>
+                <p className="text-xs text-muted-foreground">Lien de réservation fournisseur</p>
+                <a
+                  href={booking.standalone_experiences.supplier_booking_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary hover:underline flex items-center gap-1.5"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Réserver chez le fournisseur
+                </a>
               </div>
             )}
           </CardContent>
