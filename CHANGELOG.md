@@ -6,6 +6,30 @@
 
 ---
 
+## [2026-06-25] — Optimisation des performances back office et site public
+
+### Ce qui a changé côté code
+- `src/App.tsx` : cache React Query global activé — les données ne sont plus rechargées à chaque changement d'onglet (staleTime 5 min, pas de refetch au focus)
+- `src/contexts/AuthContext.tsx` : connexion accélérée — 1 seul appel base de données pour les utilisateurs déjà connus (au lieu de 4 à 6 appels en cascade) ; suppression d'un appel dupliqué au chargement
+- `src/components/forms/StandaloneExperienceForm.tsx` : formulaire d'expérience standalone ne se re-rendait plus entièrement à chaque frappe dans le champ description ; timer d'auto-sauvegarde stabilisé (il se réinitialisait à chaque changement d'état)
+- `src/pages/admin/Dashboard.tsx` : requête limitée à 365 jours maximum (était illimitée) ; sélection de colonnes précises au lieu de tout charger ; algorithme de graphique corrigé de O(n²) à O(n) — plus de gel du navigateur sur "période complète"
+- `src/pages/admin/Leads.tsx` : colonnes spécifiques, limite réduite de 500 à 200 entrées
+- `src/pages/admin/AIInsights.tsx` : colonnes spécifiques sur les 2 requêtes, limites réduites (200→100 et 500→200)
+- `src/pages/admin/Experiences2.tsx` : colonnes spécifiques sur la liste (exclut les longs textes inutiles pour l'affichage en liste)
+- `src/pages/admin/Customers.tsx` : colonnes spécifiques sur user_profiles et user_roles (liste et panneau de détail)
+- `src/pages/admin/GiftCards.tsx` : limite de 500 ajoutée (requête était sans limite)
+- `src/main.tsx` : enregistrement des sessions Amplitude réduit de 100% à 60%
+- `src/pages/Index.tsx`, `src/pages/Category.tsx` : catégories et paramètres SEO chargés avec colonnes précises
+- Images : `loading="lazy"` ajouté sur CategoryCard, LaunchIndex, Itineraries, ExtrasSection2, Experiences2 admin
+
+### Ce qui a changé côté base de données
+- Aucune migration — les optimisations sont uniquement côté requêtes et cache
+
+### Pourquoi ce changement
+Le back office et le site étaient très lents : connexion lente, pages admin qui ramaient, dashboard qui gelait sur "toute la période". Audit complet effectué, corrections sur 3 niveaux : cache global, requêtes admin lourdes, images non différées.
+
+---
+
 ## [2026-06-23] — Localisation des expériences standalone + lien de réservation fournisseur (back office)
 
 ### Ce qui a changé côté code
