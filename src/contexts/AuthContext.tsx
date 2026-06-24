@@ -54,17 +54,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     );
 
-    // THEN check for existing session
+    // THEN check for existing session — onAuthStateChange handles role fetching
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        setTimeout(() => {
-          fetchUserRole(session.user.id, session.user.email || "");
-        }, 0);
-      }
-      
       setLoading(false);
     });
 
@@ -139,22 +132,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const fetchUserRole = async (userId: string, userEmail: string) => {
-    // First provision the user (idempotent - creates missing records)
-    const provisionedRole = await provisionUser(userId, userEmail);
-    
-    // Then fetch the role
+    // Fast path: check if role already exists (true for all returning users)
     const { data } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId)
       .maybeSingle();
-    
+
     if (data) {
       const userRole = data.role as AppRole;
       setRole(userRole);
       setRoles([userRole]);
 
-      // Analytics identify
       const isMobile = window.innerWidth < 768;
       const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
       identifyUser(userId, {
@@ -163,7 +152,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isReturningUser: true,
       });
     } else {
-      // Fallback to provisioned role
+      // Slow path: first-time user — provision all tables
+      const provisionedRole = await provisionUser(userId, userEmail);
       setRole(provisionedRole);
       setRoles([provisionedRole]);
     }

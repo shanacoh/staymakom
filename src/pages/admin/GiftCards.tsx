@@ -92,7 +92,8 @@ export default function GiftCards() {
       const { data, error } = await supabase
         .from("gift_cards")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(500);
 
       if (error) throw error;
       return data as GiftCard[];

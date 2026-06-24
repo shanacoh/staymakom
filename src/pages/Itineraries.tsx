@@ -355,7 +355,7 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
                     style={{ backgroundColor: exp.highlight ? "#F8F3EC" : "#FFFFFF" }}
                   >
                     {exp.image && !exp.highlight && (
-                      <img src={exp.image} alt={exp.title} className="w-full h-40 object-cover" />
+                      <img src={exp.image} alt={exp.title} loading="lazy" className="w-full h-40 object-cover" />
                     )}
                     <div className="px-6 py-5 flex gap-4 items-start">
                       {exp.icon && (

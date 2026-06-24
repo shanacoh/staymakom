@@ -74,50 +74,79 @@ Deno.serve(async (req) => {
     }
 
     if (paymentStatus) {
-      const updateData: Record<string, unknown> = { payment_status: paymentStatus };
-      if (paidAt) updateData.paid_at = paidAt;
+      // Tente la mise à jour sur une table par revolut_order_id, renvoie les lignes affectées.
+      async function updateBookingTable(table: string, updateData: Record<string, unknown>, selectCols: string) {
+        return await supabase
+          .from(table)
+          .update(updateData)
+          .eq('revolut_order_id', orderId)
+          .select(selectCols);
+      }
+
+      const hgUpdateData: Record<string, unknown> = { payment_status: paymentStatus };
+      if (paidAt) hgUpdateData.paid_at = paidAt;
 
       const paymentId = event.data?.payments?.[0]?.id;
-      if (paymentId) updateData.revolut_payment_id = paymentId;
+      if (paymentId) hgUpdateData.revolut_payment_id = paymentId;
 
       const paymentMethod = event.data?.payments?.[0]?.payment_method?.type;
-      if (paymentMethod) updateData.payment_method = paymentMethod;
+      if (paymentMethod) hgUpdateData.payment_method = paymentMethod;
 
       // Update + récupérer les lignes affectées pour détecter les paiements orphelins
       // (paid event reçu pour un revolut_order_id qui n'a pas de booking en base).
-      const { data: updatedRows, error } = await supabase
-        .from('bookings_hg')
-        .update(updateData)
-        .eq('revolut_order_id', orderId)
-        .select('id, hg_booking_id');
+      const { data: hgRows, error: hgError } = await updateBookingTable('bookings_hg', hgUpdateData, 'id, hg_booking_id');
 
-      if (error) {
-        console.error('Failed to update booking payment status:', error);
-      } else if (!updatedRows || updatedRows.length === 0) {
-        // ⚠️ ORPHAN PAYMENT : un paiement a réussi côté Revolut mais aucune réservation
-        // associée en base. Ça veut dire que le frontend a planté entre la création de
-        // l'ordre Revolut et l'insert dans bookings_hg. Le client a été débité mais n'a
-        // pas sa résa.
-        // Ce log doit être très visible dans Supabase → Logs → Edge Functions pour
-        // qu'un admin puisse intervenir manuellement (vérifier chez HyperGuest, rembourser
-        // si besoin, contacter le client).
-        console.error('🚨 ORPHAN_PAYMENT_DETECTED 🚨', JSON.stringify({
-          orderId,
-          eventType,
-          paymentStatus,
-          revolutPaymentId: event.data?.payments?.[0]?.id,
-          paymentMethod: event.data?.payments?.[0]?.payment_method?.type,
-          customerEmail: event.data?.customer?.email,
-          customerName: event.data?.customer?.full_name,
-          totalAmount: event.data?.total_amount,
-          currency: event.data?.currency,
-          merchantOrderRef: event.data?.merchant_order_ext_ref,
-          completedAt: event.data?.completed_at || event.completed_at,
-          fullEvent: event,
-          message: 'A Revolut payment succeeded but no matching bookings_hg row exists. Frontend likely crashed before creating the booking. Manual reconciliation required: check HyperGuest for booking, refund customer if no booking found.',
-        }, null, 2));
+      if (hgError) {
+        console.error('Failed to update bookings_hg payment status:', hgError);
+      } else if (hgRows && hgRows.length > 0) {
+        console.log(`Updated bookings_hg payment_status=${paymentStatus} for order ${orderId}`);
       } else {
-        console.log(`Updated booking payment_status=${paymentStatus} for order ${orderId}`);
+        // Pas trouvé côté hôtel : on tente standalone_bookings (table distincte, mêmes
+        // revolut_order_id ne peuvent matcher qu'une seule des deux tables).
+        // standalone_bookings n'a pas de colonnes paid_at/revolut_payment_id/payment_method,
+        // on ne met à jour que ce qui existe réellement sur cette table.
+        const standaloneUpdateData: Record<string, unknown> = { payment_status: paymentStatus };
+        if (paymentStatus === 'paid') {
+          standaloneUpdateData.status = 'confirmed';
+        } else if (paymentStatus === 'refunded') {
+          standaloneUpdateData.status = 'cancelled';
+          standaloneUpdateData.is_cancelled = true;
+          standaloneUpdateData.cancelled_at = new Date().toISOString();
+        }
+
+        const { data: standaloneRows, error: standaloneError } = await updateBookingTable(
+          'standalone_bookings',
+          standaloneUpdateData,
+          'id, confirmation_token',
+        );
+
+        if (standaloneError) {
+          console.error('Failed to update standalone_bookings payment status:', standaloneError);
+        } else if (standaloneRows && standaloneRows.length > 0) {
+          console.log(`Updated standalone_bookings payment_status=${paymentStatus} (status=${standaloneUpdateData.status ?? 'unchanged'}) for order ${orderId}`);
+        } else {
+          // ⚠️ ORPHAN PAYMENT : un paiement a réussi côté Revolut mais aucune réservation
+          // (hôtel ou standalone) associée en base. Le frontend a probablement planté entre
+          // la création de l'ordre Revolut et l'insert de la réservation. Le client a été
+          // débité mais n'a pas sa résa.
+          // Ce log doit être très visible dans Supabase → Logs → Edge Functions pour
+          // qu'un admin puisse intervenir manuellement (rembourser si besoin, contacter le client).
+          console.error('🚨 ORPHAN_PAYMENT_DETECTED 🚨', JSON.stringify({
+            orderId,
+            eventType,
+            paymentStatus,
+            revolutPaymentId: event.data?.payments?.[0]?.id,
+            paymentMethod: event.data?.payments?.[0]?.payment_method?.type,
+            customerEmail: event.data?.customer?.email,
+            customerName: event.data?.customer?.full_name,
+            totalAmount: event.data?.total_amount,
+            currency: event.data?.currency,
+            merchantOrderRef: event.data?.merchant_order_ext_ref,
+            completedAt: event.data?.completed_at || event.completed_at,
+            fullEvent: event,
+            message: 'A Revolut payment succeeded but no matching bookings_hg or standalone_bookings row exists. Frontend likely crashed before creating the booking. Manual reconciliation required.',
+          }, null, 2));
+        }
       }
     }
 

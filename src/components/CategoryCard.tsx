@@ -30,9 +30,10 @@ const CategoryCard = ({ category }: CategoryCardProps) => {
       className="group relative overflow-hidden rounded-xl shadow-soft hover:shadow-strong transition-smooth"
     >
       <div className="aspect-square relative">
-        <img 
-          src={image} 
+        <img
+          src={image}
           alt={title}
+          loading="lazy"
           className="w-full h-full object-cover group-hover:scale-105 transition-smooth"
         />
         <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-smooth" />

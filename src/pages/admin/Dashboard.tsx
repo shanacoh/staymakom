@@ -61,8 +61,7 @@ const AdminDashboard = () => {
   const [granularity, setGranularity] = useState<ChartGranularity>("day");
 
   const dateFrom = useMemo(() => {
-    if (period === "all") return null;
-    const days = period === "7d" ? 7 : period === "30d" ? 30 : 90;
+    const days = period === "7d" ? 7 : period === "30d" ? 30 : period === "90d" ? 90 : 365;
     return startOfDay(subDays(new Date(), days));
   }, [period]);
 
@@ -70,13 +69,11 @@ const AdminDashboard = () => {
   const { data: bookings, isLoading } = useQuery({
     queryKey: ["dashboard-bookings-hg", period],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await (supabase
         .from("bookings_hg" as any)
-        .select("*");
-      if (dateFrom) {
-        query = query.gte("created_at", dateFrom.toISOString());
-      }
-      const { data, error } = await query as any;
+        .select("id, is_cancelled, sell_price, commission_amount, nights, created_at, status, hotel_id, board_type")
+        .gte("created_at", dateFrom.toISOString())
+        .limit(10000) as any);
       if (error) throw error;
       return (data || []) as any[];
     },
@@ -171,42 +168,54 @@ const AdminDashboard = () => {
   // ─── Revenue over time chart data ───
   const revenueChartData = useMemo(() => {
     if (!bookings) return [];
-    const active = bookings.filter((b: any) => !b.is_cancelled);
     const now = new Date();
-    const start = dateFrom || subDays(now, 365);
+    const start = dateFrom;
 
     let intervals: Date[];
     let formatStr: string;
+    let keyFn: (d: Date) => string;
 
     if (granularity === "day") {
       intervals = eachDayOfInterval({ start, end: now });
       formatStr = "dd/MM";
+      keyFn = (d) => format(d, "yyyy-MM-dd");
     } else if (granularity === "week") {
       intervals = eachWeekOfInterval({ start, end: now }, { weekStartsOn: 1 });
       formatStr = "dd/MM";
+      keyFn = (d) => format(startOfDay(d), "yyyy-MM-dd");
     } else {
       intervals = eachMonthOfInterval({ start, end: now });
       formatStr = "MMM yy";
+      keyFn = (d) => format(d, "yyyy-MM");
     }
 
+    // Construire un index O(n) au lieu de filtrer O(n²)
+    const index = new Map<string, { revenue: number; commission: number; count: number }>();
+    bookings.forEach((b: any) => {
+      if (b.is_cancelled) return;
+      const bDate = new Date(b.created_at);
+      let key: string;
+      if (granularity === "day") {
+        key = format(bDate, "yyyy-MM-dd");
+      } else if (granularity === "week") {
+        const weekStart = new Date(bDate);
+        const day = weekStart.getDay();
+        const diff = day === 0 ? -6 : 1 - day;
+        weekStart.setDate(weekStart.getDate() + diff);
+        key = format(startOfDay(weekStart), "yyyy-MM-dd");
+      } else {
+        key = format(bDate, "yyyy-MM");
+      }
+      const existing = index.get(key) || { revenue: 0, commission: 0, count: 0 };
+      existing.revenue += parseFloat(b.sell_price || "0");
+      existing.commission += parseFloat(b.commission_amount || "0");
+      existing.count++;
+      index.set(key, existing);
+    });
+
     return intervals.map((d) => {
-      const nextD = granularity === "day"
-        ? new Date(d.getTime() + 86400000)
-        : granularity === "week"
-        ? new Date(d.getTime() + 7 * 86400000)
-        : new Date(d.getFullYear(), d.getMonth() + 1, 1);
-
-      const periodBookings = active.filter((b: any) => {
-        const bDate = new Date(b.created_at);
-        return bDate >= d && bDate < nextD;
-      });
-
-      return {
-        label: format(d, formatStr),
-        revenue: periodBookings.reduce((s: number, b: any) => s + parseFloat(b.sell_price || "0"), 0),
-        commission: periodBookings.reduce((s: number, b: any) => s + parseFloat(b.commission_amount || "0"), 0),
-        count: periodBookings.length,
-      };
+      const slot = index.get(keyFn(d)) || { revenue: 0, commission: 0, count: 0 };
+      return { label: format(d, formatStr), ...slot };
     });
   }, [bookings, dateFrom, granularity]);
 

@@ -59,3 +59,9 @@ verify_jwt = false
 
 [functions.revolut-webhook]
 verify_jwt = false
+
+[functions.process-standalone-payment]
+verify_jwt = false
+
+[functions.send-standalone-booking-confirmation]
+verify_jwt = false

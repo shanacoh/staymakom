@@ -131,7 +131,11 @@ const AdminLeads = () => {
   const { data: leads, isLoading, refetch } = useQuery({
     queryKey: ["admin-leads", sourceFilter, statusFilter],
     queryFn: async () => {
-      let query = supabase.from("leads").select("*").order("created_at", { ascending: false }).limit(500);
+      let query = supabase
+        .from("leads")
+        .select("id, created_at, updated_at, source, email, name, first_name, last_name, phone, country, city, status, is_b2b, property_name, property_type, interests, message, marketing_opt_in, metadata, notes")
+        .order("created_at", { ascending: false })
+        .limit(200);
       if (sourceFilter !== "all") query = query.eq("source", sourceFilter);
       if (statusFilter !== "all") query = query.eq("status", statusFilter);
       const { data, error } = await query;

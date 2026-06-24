@@ -103,7 +103,16 @@ const HotelReviews           = lazy(() => import("./pages/hotel-admin/Reviews"))
 const HotelPaymentInfo       = lazy(() => import("./pages/hotel-admin/PaymentInfo"));
 const HotelContact           = lazy(() => import("./pages/hotel-admin/Contact"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Détection automatique du domaine custom vs preview Lovable
 const isCustomDomain = () => !window.location.hostname.includes('lovable.app');

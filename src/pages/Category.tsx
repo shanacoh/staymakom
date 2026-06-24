@@ -32,7 +32,7 @@ const Category = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("categories")
-        .select("*")
+        .select("id, slug, name, name_he, hero_image, seo_title_en, seo_title_he, meta_description_en, meta_description_he, og_title_en, og_title_he, og_description_en, og_description_he, og_image")
         .eq("slug", slug)
         .eq("status", "published")
         .single();

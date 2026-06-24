@@ -1,6 +1,10 @@
 // send-standalone-booking-confirmation — Edge Function
 // Envoie l'email de confirmation pour une réservation "Experience Only".
 // Reprend le même pattern que send-booking-confirmation mais sans les sections hôtel.
+// Ne reçoit qu'un confirmation_token : va chercher les données en base elle-même,
+// pour ne jamais dépendre de ce que le navigateur du client a pu envoyer/altérer.
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 
@@ -202,21 +206,10 @@ Deno.serve(async (req: Request) => {
 
   try {
     const body = await req.json();
-    const {
-      to,
-      guestName,
-      experienceTitle,
-      bookingDate,
-      timeSlot,
-      partySize,
-      totalPrice,
-      currency,
-      confirmationToken,
-      address,
-    } = body;
+    const { confirmation_token } = body;
 
-    if (!to || !guestName || !experienceTitle || !bookingDate) {
-      return new Response(JSON.stringify({ error: 'Champs requis manquants' }), {
+    if (!confirmation_token) {
+      return new Response(JSON.stringify({ error: 'confirmation_token manquant' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -230,16 +223,35 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { data: booking, error: bookingError } = await supabase
+      .from('standalone_bookings')
+      .select('customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, confirmation_token, standalone_experiences(title, address, address_he)')
+      .eq('confirmation_token', confirmation_token)
+      .single();
+
+    if (bookingError || !booking) {
+      return new Response(JSON.stringify({ error: 'Réservation introuvable' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const experience = booking.standalone_experiences as unknown as { title: string; address?: string; address_he?: string } | null;
+
     const html = buildEmailHtml({
-      guestName,
-      experienceTitle,
-      bookingDate,
-      timeSlot,
-      partySize,
-      totalPrice,
-      currency: currency || 'USD',
-      confirmationToken,
-      address,
+      guestName: booking.customer_name,
+      experienceTitle: experience?.title || '',
+      bookingDate: booking.booking_date,
+      timeSlot: booking.time_slot || undefined,
+      partySize: booking.party_size,
+      totalPrice: booking.sell_price,
+      currency: booking.currency || 'USD',
+      confirmationToken: booking.confirmation_token,
+      address: experience?.address,
     });
 
     const emailResponse = await fetch('https://api.resend.com/emails', {
@@ -250,8 +262,8 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         from: 'StayMakom <hello@staymakom.com>',
-        to: [to],
-        subject: `✓ Your experience is confirmed — ${experienceTitle}`,
+        to: [booking.customer_email],
+        subject: `✓ Your experience is confirmed — ${experience?.title || ''}`,
         html,
       }),
     });

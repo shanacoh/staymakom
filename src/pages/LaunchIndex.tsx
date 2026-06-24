@@ -599,7 +599,7 @@ const LaunchIndex = () => {
                         onClick={() => handleCategoryClick(category)}
                         className="group relative overflow-hidden rounded-xl shadow-soft hover:shadow-strong transition-all duration-300 text-left cursor-pointer">
                           <div className="aspect-[4/3] md:aspect-square relative">
-                            <img src={image} alt={catTitle} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                            <img src={image} alt={catTitle} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                             <div className="absolute inset-0 bg-black/25 group-hover:bg-black/55 transition-all duration-300" />
                             {/* Title - centered */}
                             <div className="absolute inset-0 flex items-center justify-center p-3 md:p-4 group-hover:opacity-0 transition-opacity duration-300">

@@ -78,7 +78,9 @@ const AdminExperiences2 = () => {
         .from("experiences2")
         .select(
           `
-          *,
+          id, title, status, slug, hero_image, photos, thumbnail_image, hotel_id, display_order,
+          pricing_model, room_net_rate, bar_rate_markup_value, bar_rate,
+          experience_net_cost, commission_room_pct, commission_addons_pct,
           hotels2 (id, name, hyperguest_property_id),
           categories (id, name, slug),
           experience2_addons (id, type, name, value, is_percentage, is_active),
@@ -557,7 +559,7 @@ const AdminExperiences2 = () => {
 
                       <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-muted border border-border/50">
                         {thumb ? (
-                          <img src={thumb} alt="" className="w-full h-full object-cover" />
+                          <img src={thumb} alt="" loading="lazy" className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-muted-foreground/30 text-xs">—</div>
                         )}
@@ -709,7 +711,7 @@ const AdminExperiences2 = () => {
 
                       <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-muted border border-border/50">
                         {thumb ? (
-                          <img src={thumb} alt="" className="w-full h-full object-cover" />
+                          <img src={thumb} alt="" loading="lazy" className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-muted-foreground/30 text-xs">—</div>
                         )}

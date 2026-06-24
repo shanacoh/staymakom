@@ -309,25 +309,23 @@ export default function StandaloneExperience() {
     if (!experience || !canBook) return;
     setIsBookingLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("process-standalone-booking", {
+      const { data, error } = await supabase.functions.invoke("process-standalone-payment", {
         body: {
           experience_id: experience.id,
-          experience_slug: experience.slug,
-          selected_date: selectedDate,
-          selected_slot: selectedSlot || null,
+          booking_date: selectedDate,
+          time_slot: selectedSlot || null,
           party_size: partySize,
-          guest_name: guestName.trim(),
-          guest_email: guestEmail.trim(),
-          guest_phone: guestPhone.trim() || null,
-          total_price: totalPrice,
-          currency: experience.currency,
+          customer_name: guestName.trim(),
+          customer_email: guestEmail.trim(),
+          customer_phone: guestPhone.trim() || null,
         },
       });
       if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Impossible de créer la réservation.");
       setRevolutPublicId(data.revolut_public_id);
       setRevolutPublicKey(data.merchant_public_key);
       setRevolutEnvironment(data.environment ?? "dev");
-      setBookingToken(data.booking_token);
+      setBookingToken(data.confirmation_token);
       setBookingStep("payment");
     } catch (err: any) {
       toast.error(err.message || "Impossible de créer la réservation. Réessayez.");
@@ -340,7 +338,7 @@ export default function StandaloneExperience() {
     if (!bookingToken) return;
     try {
       await supabase.functions.invoke("send-standalone-booking-confirmation", {
-        body: { booking_token: bookingToken },
+        body: { confirmation_token: bookingToken },
       });
     } catch {
       // non-blocking — confirmation email failure should not block the UX

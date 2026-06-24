@@ -106,8 +106,8 @@ const AdminCustomers = () => {
       const userIds = customersWithEmails.map((c) => c.user_id);
 
       const [{ data: profiles }, { data: roles }, { data: hotelAdmins }] = await Promise.all([
-        supabase.from("user_profiles").select("*").in("user_id", userIds),
-        supabase.from("user_roles").select("*").in("user_id", userIds),
+        supabase.from("user_profiles").select("user_id, phone, membership_progress, display_name").in("user_id", userIds),
+        supabase.from("user_roles").select("id, user_id, role").in("user_id", userIds),
         supabase.from("hotel_admins").select("user_id, hotel_id, hotels(name)").in("user_id", userIds),
       ]);
 
@@ -320,8 +320,8 @@ const AdminCustomers = () => {
       const { data: customer, error } = await supabase.from("customers").select("*").eq("user_id", selectedCustomerId).single();
       if (error) throw error;
       const [{ data: profile }, { data: role }, { data: hotelAdmin }] = await Promise.all([
-        supabase.from("user_profiles").select("*").eq("user_id", selectedCustomerId).single(),
-        supabase.from("user_roles").select("*").eq("user_id", selectedCustomerId).single(),
+        supabase.from("user_profiles").select("user_id, phone, membership_progress, display_name").eq("user_id", selectedCustomerId).single(),
+        supabase.from("user_roles").select("id, user_id, role").eq("user_id", selectedCustomerId).single(),
         supabase.from("hotel_admins").select("*, hotels(name)").eq("user_id", selectedCustomerId).single(),
       ]);
       const { data: bookings } = await supabase

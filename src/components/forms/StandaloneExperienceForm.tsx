@@ -235,6 +235,7 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
   // Auto-save
   const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
   const autoSaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const autoSaveFnRef = useRef<() => void>(() => {});
 
   // Time slots state
   const [timeSlots, setTimeSlots] = useState<string[]>([]);
@@ -377,7 +378,6 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
   });
 
   const title = watch("title");
-  const longCopy = watch("long_copy");
   const hasTimeSlots = watch("has_time_slots");
   const currency = watch("currency");
   const supplierPriceAdult = watch("supplier_price_adult") ?? 0;
@@ -424,12 +424,14 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
     }
   }, [getValues, heroImagePreview, galleryPreviews, timeSlots, includes, notIncludes, goodToKnow, highlightTags, selectedCategoryIds, practicalInfo, availableDays, blockedDates, featuredOnHome, homeDisplayOrder, autoSaveKey]);
 
+  autoSaveFnRef.current = doAutoSave;
+
   useEffect(() => {
-    autoSaveTimerRef.current = setInterval(doAutoSave, 30000);
+    autoSaveTimerRef.current = setInterval(() => autoSaveFnRef.current(), 30000);
     return () => {
       if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current);
     };
-  }, [doAutoSave]);
+  }, []);
 
   // -------------------------------------------------------------------------
   // Pre-fill form when editing
@@ -913,7 +915,7 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
     }
   };
 
-  const canPublish = !!(title && longCopy && longCopy.length >= 100);
+  const canPublish = !!title;
 
   // -------------------------------------------------------------------------
   // Tab completion indicators
@@ -924,7 +926,7 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
       case "medias":
         return !!(heroImagePreview || galleryPreviews.length > 0);
       case "contenu":
-        return !!(title && longCopy && longCopy.length >= 100 && selectedCategoryIds.length > 0);
+        return !!(title && selectedCategoryIds.length > 0 && (getValues("long_copy")?.length ?? 0) >= 100);
       case "pratique":
         return includes.length > 0;
       case "tarif_dispo":

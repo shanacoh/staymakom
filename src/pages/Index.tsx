@@ -98,7 +98,7 @@ const Index = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("categories")
-        .select("*")
+        .select("id, slug, name, name_he, icon")
         .eq("status", "published")
         .eq("show_on_home", true)
         .order("display_order", { ascending: true });
@@ -233,7 +233,7 @@ const Index = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("global_settings")
-        .select("*")
+        .select("key, seo_title_en, seo_title_he, meta_description_en, meta_description_he, og_title_en, og_title_he, og_description_en, og_description_he, og_image")
         .eq("key", "homepage")
         .single();
       if (error) throw error;

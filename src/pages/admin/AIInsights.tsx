@@ -87,9 +87,9 @@ const AIInsights = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ai_search_queries")
-        .select("*")
+        .select("id, query, lang, recommendation_count, created_at, user_agent, session_id, converted, conversion_experience_id")
         .order("created_at", { ascending: false })
-        .limit(200);
+        .limit(100);
 
       if (error) throw error;
       return data as AIQuery[];
@@ -101,9 +101,9 @@ const AIInsights = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ai_search_events")
-        .select("*")
+        .select("id, search_id, session_id, event_type, experience_id, booking_id, position, created_at")
         .order("created_at", { ascending: false })
-        .limit(500);
+        .limit(200);
 
       if (error) throw error;
       return data as AIEvent[];
