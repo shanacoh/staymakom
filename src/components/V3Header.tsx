@@ -75,14 +75,14 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
             <button
               onClick={() => setMode("stay")}
               className={cn(
-                "flex flex-row items-center justify-center gap-2 px-4 sm:px-5 py-1.5 rounded-full transition-all duration-200 min-w-[108px] sm:min-w-[130px]",
+                "flex flex-row items-center gap-2 px-4 sm:px-5 py-1.5 rounded-full transition-all duration-200 min-w-[108px] sm:min-w-[130px]",
                 mode === "stay"
                   ? "bg-gradient-to-br from-[#F2C4C4] to-[#D47070] shadow-sm"
                   : "hover:bg-[#FDF2F2]"
               )}
             >
               <Moon className="h-3.5 w-3.5 flex-shrink-0 text-[#1A1814]" strokeWidth={1.5} />
-              <span className="text-center">
+              <span className="flex-1 text-center">
                 <span className="block font-bold text-[9px] sm:text-[10px] uppercase tracking-wider text-[#1A1814] leading-[13px]">
                   {lang === "he" ? "עם" : lang === "fr" ? "Avec" : "With"}
                 </span>
@@ -90,20 +90,21 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
                   {lang === "he" ? "מלון" : lang === "fr" ? "Hôtel" : "Hotel"}
                 </span>
               </span>
+              <span className="w-3.5 flex-shrink-0" aria-hidden />
             </button>
 
             {/* Experience Only */}
             <button
               onClick={() => setMode("live")}
               className={cn(
-                "flex flex-row items-center justify-center gap-2 px-4 sm:px-5 py-1.5 rounded-full transition-all duration-200 min-w-[108px] sm:min-w-[130px]",
+                "flex flex-row items-center gap-2 px-4 sm:px-5 py-1.5 rounded-full transition-all duration-200 min-w-[108px] sm:min-w-[130px]",
                 mode === "live"
                   ? "bg-gradient-to-br from-[#F2C4C4] to-[#D47070] shadow-sm"
                   : "hover:bg-[#FDF2F2]"
               )}
             >
               <Sun className="h-3.5 w-3.5 flex-shrink-0 text-[#1A1814]" strokeWidth={1.5} />
-              <span className="text-center">
+              <span className="flex-1 text-center">
                 <span className="block font-bold text-[9px] sm:text-[10px] uppercase tracking-wider text-[#1A1814] leading-[13px]">
                   {lang === "he" ? "חוויות" : lang === "fr" ? "Expériences" : "Experience"}
                 </span>
@@ -111,6 +112,7 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
                   {lang === "he" ? "בלבד" : lang === "fr" ? "seules" : "Only"}
                 </span>
               </span>
+              <span className="w-3.5 flex-shrink-0" aria-hidden />
             </button>
 
           </div>
