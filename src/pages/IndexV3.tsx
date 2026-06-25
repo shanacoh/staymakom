@@ -418,7 +418,7 @@ const IndexV3 = () => {
           )}
 
           {/* Grille de cartes — conditionnelle selon le mode */}
-          <div className="container px-4 mx-auto">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
             {mode === "live" ? (
               /* ── Mode "Experience Only" : expériences standalone ── */
               isLoadingStandalone ? (
