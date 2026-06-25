@@ -298,7 +298,7 @@ const IndexV3 = () => {
               {isRTL
                 ? "הישראל שרוב האנשים לא מוצאים."
                 : lang === "fr"
-                  ? "L'Israël que la plupart des gens ne trouvent jamais."
+                  ? "Israël comme vous ne l'avez jamais vu."
                   : "The Israel most people never find."}
             </p>
           </div>
