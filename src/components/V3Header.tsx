@@ -75,14 +75,14 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
             <button
               onClick={() => setMode("stay")}
               className={cn(
-                "w-[100px] sm:w-[130px] flex flex-row items-center px-3 sm:px-4 gap-2 sm:gap-3 py-1.5 rounded-full transition-all duration-200",
+                "flex flex-row items-center justify-center gap-2 px-4 sm:px-5 py-1.5 rounded-full transition-all duration-200 min-w-[108px] sm:min-w-[130px]",
                 mode === "stay"
                   ? "bg-gradient-to-br from-[#F2C4C4] to-[#D47070] shadow-sm"
                   : "hover:bg-[#FDF2F2]"
               )}
             >
               <Moon className="h-3.5 w-3.5 flex-shrink-0 text-[#1A1814]" strokeWidth={1.5} />
-              <span className="text-center ml-1 sm:ml-2">
+              <span className="text-center">
                 <span className="block font-bold text-[9px] sm:text-[10px] uppercase tracking-wider text-[#1A1814] leading-[13px]">
                   {lang === "he" ? "עם" : lang === "fr" ? "Avec" : "With"}
                 </span>
@@ -96,7 +96,7 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
             <button
               onClick={() => setMode("live")}
               className={cn(
-                "w-[100px] sm:w-[130px] flex flex-row items-center px-3 sm:px-4 gap-2 sm:gap-3 py-1.5 rounded-full transition-all duration-200",
+                "flex flex-row items-center justify-center gap-2 px-4 sm:px-5 py-1.5 rounded-full transition-all duration-200 min-w-[108px] sm:min-w-[130px]",
                 mode === "live"
                   ? "bg-gradient-to-br from-[#F2C4C4] to-[#D47070] shadow-sm"
                   : "hover:bg-[#FDF2F2]"
