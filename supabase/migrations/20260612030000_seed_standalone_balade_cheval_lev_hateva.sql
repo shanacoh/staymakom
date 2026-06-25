@@ -61,9 +61,9 @@ BEGIN
     'רכיבה על סוסים בחוות לב הטבע',
 
     -- Sous-titres
-    'A guided horseback ride through the open fields of Moshav Ein Vered, on a working farm where the horses know every trail.',
-    'Une balade à cheval guidée dans les champs du moshav Ein Vered, dans une ferme vivante où les chevaux connaissent chaque sentier.',
-    'טיול רכיבה מודרך בשדות הפתוחים של מושב עין ורד, בחווה חיה שבה הסוסים מכירים כל שביל.',
+    'A guided horseback ride through the open fields of Moshav Ein Vered, 30 minutes from Tel Aviv, on a working farm where the horses know every trail.',
+    'Une balade à cheval guidée dans les champs du moshav Ein Vered, à 30 minutes de Tel Aviv, dans une ferme vivante où les chevaux connaissent chaque sentier.',
+    'טיול רכיבה מודרך בשדות הפתוחים של מושב עין ורד, 30 דקות מתל אביב, בחווה חיה שבה הסוסים מכירים כל שביל.',
 
     -- Description longue EN
     'A horseback ride at Lev HaTeva Farm, Moshav Ein Vered. The Sharon fields, at ground level, at the horse''s pace.

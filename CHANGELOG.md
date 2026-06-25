@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-06-25] — Mise à jour Lev HaTeva : sous-titre et espaces dans les descriptions
+
+### Ce qui a changé côté code
+- Aucun changement côté front-end.
+
+### Ce qui a changé côté base de données
+- `20260625070000_update_lev_hateva_subtitle_paragraphs.sql` : mise à jour de l'expérience standalone "Horseback Ride at Lev HaTeva Farm". Les sous-titres EN, FR et HE mentionnent désormais "30 minutes from Tel Aviv / à 30 minutes de Tel Aviv / 30 דקות מתל אביב". Les descriptions longues (EN, FR, HE) ont été resynchronisées avec des lignes vides entre chaque paragraphe.
+- `20260612030000_seed_standalone_balade_cheval_lev_hateva.sql` : sous-titres mis à jour dans le fichier seed original pour rester cohérent avec la base.
+
+### Pourquoi ce changement
+- Shana voulait que les visiteurs voient immédiatement la proximité de Tel Aviv dès le sous-titre, et que les descriptions affichent clairement les espacements entre paragraphes.
+
+---
+
 ## [2026-06-25] — Nouvelle expérience standalone : Dégustation au Vignoble du Désert, Mitzpe Ramon
 
 ### Ce qui a changé côté code
