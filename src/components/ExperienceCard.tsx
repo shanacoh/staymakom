@@ -331,6 +331,9 @@ export default function ExperienceCard({
               {originalPrice && originalPrice > displayPrice && (
                 <span className="text-[11px] text-muted-foreground line-through">{displaySymbol}{originalPrice}</span>
               )}
+              <span className="text-[10px] text-muted-foreground">
+                {lang === 'he' ? '/ לאדם' : lang === 'fr' ? '/ pers.' : '/ person'}
+              </span>
               {discountPercent && (
                 <span className="inline-block ml-1 px-1.5 py-px bg-accent text-accent-foreground text-[9px] font-medium rounded">
                   -{discountPercent}%
