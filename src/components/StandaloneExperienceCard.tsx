@@ -81,6 +81,7 @@ export default function StandaloneExperienceCard({
       linkPrefix="/standalone-experience"
       index={index}
       badge={badge}
+      isStandaloneExperience
     />
   );
 }

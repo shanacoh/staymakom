@@ -64,6 +64,7 @@ interface ExperienceCardProps {
   userId?: string | null;
   linkPrefix?: string;
   linkSuffix?: string;
+  isStandaloneExperience?: boolean;
 }
 
 export default function ExperienceCard({
@@ -80,6 +81,7 @@ export default function ExperienceCard({
   linkPrefix = "/experience",
   linkSuffix = "",
   index = 0,
+  isStandaloneExperience = false,
 }: ExperienceCardProps & { index?: number }) {
   const { lang } = useLanguage();
   const { symbol: currencySymbol } = useCurrency();
@@ -335,7 +337,9 @@ export default function ExperienceCard({
                 </span>
               )}
               <span className="text-[10px] text-muted-foreground">
-                / {lang === 'he' ? 'לילה ל-2 אנשים' : lang === 'fr' ? 'nuit · 2 personnes' : 'night · 2 guests'}
+                {isStandaloneExperience
+                  ? (lang === 'he' ? '/ לאדם' : lang === 'fr' ? '/ par pers.' : '/ per person')
+                  : `/ ${lang === 'he' ? 'לילה ל-2 אנשים' : lang === 'fr' ? 'nuit · 2 personnes' : 'night · 2 guests'}`}
               </span>
               {discountPercent && (
                 <span className="inline-block ml-1 px-1.5 py-px bg-accent text-accent-foreground text-[9px] font-medium rounded">
