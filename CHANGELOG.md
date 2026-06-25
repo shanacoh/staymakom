@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-06-25] — Nouvelle expérience standalone : Dégustation au Vignoble du Désert, Mitzpe Ramon
+
+### Ce qui a changé côté code
+- Aucun changement côté front-end.
+
+### Ce qui a changé côté base de données
+- `20260625060000_seed_standalone_desert_winery_mitzpe_ramon.sql` : insertion d'une expérience standalone en statut `draft` — dégustation de 5 vins dans un vignoble isolé du Néguev (via Negev Safari). Inclut la liste "ce qui est inclus" (6 éléments), les tags Wine Tasting et Guided Tour, et le SEO complet EN/FR/HE.
+
+### Pourquoi ce changement
+- Shana a fourni la fiche complète de cette expérience (catégorie Foody Discovery, prix 350 ILS fournisseur / 420 ILS affiché, réservation par couple). L'adresse et la durée sont à compléter avant publication — le fournisseur ne les communique qu'après réservation.
+
+---
+
 ## [2026-06-25] — Visibilité V3 : publier des expériences sur /v3 sans les afficher sur la homepage
 
 ### Ce qui a changé côté code
