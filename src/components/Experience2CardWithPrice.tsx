@@ -9,6 +9,7 @@
 import ExperienceCard from "@/components/ExperienceCard";
 import { useFromPrice } from "@/hooks/useExperience2Price";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { getAutoBadgeTagsFromPracticalInfo, normalizeLegacyPracticalInfo } from "@/lib/standaloneBadges";
 import type { AvailabilityRule } from "@/lib/availabilityUtils";
 
 interface Experience2CardWithPriceProps {
@@ -49,10 +50,16 @@ export default function Experience2CardWithPrice({
 
   const displayPrice = fromPriceILS ? Math.round(convert(fromPriceILS)) : 0;
 
+  const autoBadgeTags = getAutoBadgeTagsFromPracticalInfo(
+    normalizeLegacyPracticalInfo((primaryHotel as any)?.practical_info)
+  ).map((tag) => ({ highlight_tags: tag }));
+
+  const editorialTags = (experience.experience2_highlight_tags ?? []);
+
   const cardExperience = {
     ...experience,
     hotels: primaryHotel || null,
-    experience_highlight_tags: experience.experience2_highlight_tags || [],
+    experience_highlight_tags: [...autoBadgeTags, ...editorialTags],
     base_price: displayPrice,
   };
 

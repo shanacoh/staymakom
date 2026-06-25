@@ -173,7 +173,8 @@ const IndexV3 = () => {
               id, name, name_he, name_fr,
               city, city_he, city_fr,
               region, region_he, region_fr,
-              hero_image, hyperguest_property_id
+              hero_image, hyperguest_property_id,
+              practical_info
             )
           ),
           experience2_highlight_tags(
