@@ -33,6 +33,7 @@ interface StandaloneExperienceCardProps {
     currency?: string | null;
     min_party?: number | null;
     max_party?: number | null;
+    has_child_price?: boolean | null;
     has_time_slots?: boolean;
     standalone_experience_highlight_tags?: StandaloneHighlightTagLink[] | null;
     city?: string | null;
@@ -52,9 +53,17 @@ export default function StandaloneExperienceCard({
 }: StandaloneExperienceCardProps) {
   const { convert } = useCurrency();
 
-  // Convertir le prix de base dans la devise d'affichage de l'utilisateur.
-  // base_price est en USD par défaut — on utilise convert() comme partout ailleurs.
-  const displayPrice = experience.base_price ? Math.round(convert(experience.base_price)) : 0;
+  // Pour un forfait (fixed), on affiche le prix "à partir de" = prix total / max participants.
+  // Pour un prix par personne, on affiche directement le prix converti.
+  const rawConverted = experience.base_price ? convert(experience.base_price) : 0;
+  const isFixed = experience.base_price_type === 'fixed';
+  const maxParty = experience.max_party ?? 0;
+  const displayPrice = isFixed && maxParty > 0
+    ? Math.ceil(rawConverted / maxParty)
+    : Math.round(rawConverted);
+
+  // "à partir de" s'affiche pour les forfaits et quand il y a un tarif enfant
+  const showFromPrefix = isFixed || (experience.has_child_price ?? false);
 
   const editorialTags = (experience.standalone_experience_highlight_tags ?? [])
     .sort((a, b) => a.position - b.position)
@@ -82,6 +91,7 @@ export default function StandaloneExperienceCard({
       index={index}
       badge={badge}
       isStandaloneExperience
+      showFromPrefix={showFromPrefix}
     />
   );
 }

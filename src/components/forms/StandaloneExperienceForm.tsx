@@ -442,11 +442,18 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
   const supplierPriceChild = watch("supplier_price_child") ?? 0;
   const hasChildPrice = watch("has_child_price");
   const markupPercent = watch("markup_percent") ?? 0;
+  const basePriceType = watch("base_price_type");
+  const maxPartyWatch = watch("max_party") ?? 0;
+  const isFixed = basePriceType === "fixed";
 
   // Derived computed prices
   const computedAdultPrice = Math.round(supplierPriceAdult * (1 + markupPercent / 100));
   const computedChildPrice = Math.round(supplierPriceChild * (1 + markupPercent / 100));
   const margeUnitaireAdult = Math.round(supplierPriceAdult * markupPercent / 100);
+  // Pour un forfait : prix affiché par personne = prix total / max participants
+  const prixParPersonneAffiche = isFixed && maxPartyWatch > 0
+    ? Math.ceil(computedAdultPrice / maxPartyWatch)
+    : computedAdultPrice;
 
   const currencySymbol = currency === "USD" ? "$" : currency === "EUR" ? "€" : "₪";
 
@@ -1824,8 +1831,8 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="per_person">Par personne</SelectItem>
-                              <SelectItem value="fixed">Forfait (prix fixe)</SelectItem>
+                              <SelectItem value="per_person">Par personne (× nb. participants)</SelectItem>
+                              <SelectItem value="fixed">Forfait (prix unique, tout groupe)</SelectItem>
                               <SelectItem value="per_person_per_night">Par personne / nuit</SelectItem>
                             </SelectContent>
                           </Select>
@@ -1872,7 +1879,7 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="supplier_price_adult">
-                        Prix adulte <span className="text-destructive">*</span>
+                        {isFixed ? "Prix total forfait" : "Prix adulte"} <span className="text-destructive">*</span>
                       </Label>
                       <div className="relative">
                         <Input
@@ -1887,41 +1894,53 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground">Prix que vous payez au prestataire</p>
+                      <p className="text-xs text-muted-foreground">
+                        {isFixed
+                          ? "Prix total que vous payez au prestataire, pour tout le groupe"
+                          : "Prix que vous payez au prestataire"}
+                      </p>
                       {errors.supplier_price_adult && <p className="text-destructive text-xs">{errors.supplier_price_adult.message}</p>}
                     </div>
 
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="supplier_price_child">Prix enfant</Label>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">Tarif différent</span>
-                          <Controller
-                            name="has_child_price"
-                            control={control}
-                            render={({ field }) => (
-                              <Switch checked={field.value} onCheckedChange={field.onChange} />
-                            )}
-                          />
+                    {isFixed ? (
+                      <div className="space-y-2 flex items-center">
+                        <p className="text-xs text-muted-foreground italic">
+                          Le tarif enfant n'est pas applicable pour un forfait — le prix est le même pour tout le groupe.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="supplier_price_child">Prix enfant</Label>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">Tarif différent</span>
+                            <Controller
+                              name="has_child_price"
+                              control={control}
+                              render={({ field }) => (
+                                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                              )}
+                            />
+                          </div>
                         </div>
+                        <div className="relative">
+                          <Input
+                            id="supplier_price_child"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            {...register("supplier_price_child", { valueAsNumber: true })}
+                            placeholder="100"
+                            disabled={isSaving || !hasChildPrice}
+                            className={cn("pr-8", !hasChildPrice && "opacity-40")}
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {hasChildPrice ? "Prix enfant au prestataire" : "Activer pour saisir un prix enfant"}
+                        </p>
                       </div>
-                      <div className="relative">
-                        <Input
-                          id="supplier_price_child"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          {...register("supplier_price_child", { valueAsNumber: true })}
-                          placeholder="100"
-                          disabled={isSaving || !hasChildPrice}
-                          className={cn("pr-8", !hasChildPrice && "opacity-40")}
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {hasChildPrice ? "Prix enfant au prestataire" : "Activer pour saisir un prix enfant"}
-                      </p>
-                    </div>
+                    )}
                   </div>
                 </div>
 
@@ -1980,33 +1999,57 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
                   <div className="grid grid-cols-3 gap-3">
                     <div className="rounded-lg border p-4 bg-background">
                       <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
-                        <Users className="h-3.5 w-3.5" /> Adulte
+                        <Users className="h-3.5 w-3.5" />
+                        {isFixed ? "Prix total affiché" : "Adulte"}
                       </div>
                       <p className="text-2xl font-bold">{computedAdultPrice} <span className="text-base font-normal">{currencySymbol}</span></p>
-                      <p className="text-xs text-muted-foreground mt-1">{supplierPriceAdult} + {markupPercent}% = {computedAdultPrice}</p>
-                    </div>
-                    <div className={cn("rounded-lg border p-4", hasChildPrice ? "bg-background" : "bg-muted/30")}>
-                      <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
-                        <Users className="h-3.5 w-3.5" /> Enfant
-                      </div>
-                      {hasChildPrice ? (
-                        <>
-                          <p className="text-2xl font-bold">{computedChildPrice} <span className="text-base font-normal">{currencySymbol}</span></p>
-                          <p className="text-xs text-muted-foreground mt-1">{supplierPriceChild} + {markupPercent}% = {computedChildPrice}</p>
-                        </>
+                      {isFixed ? (
+                        <p className="text-xs text-muted-foreground mt-1">Prix forfait tout groupe</p>
                       ) : (
-                        <>
-                          <p className="text-2xl font-bold text-muted-foreground">—</p>
-                          <p className="text-xs text-muted-foreground mt-1">Tarif enfant désactivé</p>
-                        </>
+                        <p className="text-xs text-muted-foreground mt-1">{supplierPriceAdult} + {markupPercent}% = {computedAdultPrice}</p>
                       )}
                     </div>
+                    {isFixed ? (
+                      <div className="rounded-lg border p-4 bg-accent/20">
+                        <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
+                          <Users className="h-3.5 w-3.5" /> À partir de
+                        </div>
+                        {maxPartyWatch > 0 ? (
+                          <>
+                            <p className="text-2xl font-bold">{prixParPersonneAffiche} <span className="text-base font-normal">{currencySymbol}</span></p>
+                            <p className="text-xs text-muted-foreground mt-1">/ pers. (groupe de {maxPartyWatch})</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-2xl font-bold text-muted-foreground">—</p>
+                            <p className="text-xs text-muted-foreground mt-1">Renseigner max participants</p>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <div className={cn("rounded-lg border p-4", hasChildPrice ? "bg-background" : "bg-muted/30")}>
+                        <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
+                          <Users className="h-3.5 w-3.5" /> Enfant
+                        </div>
+                        {hasChildPrice ? (
+                          <>
+                            <p className="text-2xl font-bold">{computedChildPrice} <span className="text-base font-normal">{currencySymbol}</span></p>
+                            <p className="text-xs text-muted-foreground mt-1">{supplierPriceChild} + {markupPercent}% = {computedChildPrice}</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-2xl font-bold text-muted-foreground">—</p>
+                            <p className="text-xs text-muted-foreground mt-1">Tarif enfant désactivé</p>
+                          </>
+                        )}
+                      </div>
+                    )}
                     <div className="rounded-lg border p-4 bg-background">
                       <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
                         <span className="text-xs font-bold">%</span> Marge unitaire
                       </div>
                       <p className="text-2xl font-bold">{margeUnitaireAdult} <span className="text-base font-normal">{currencySymbol}</span></p>
-                      <p className="text-xs text-muted-foreground mt-1">par adulte</p>
+                      <p className="text-xs text-muted-foreground mt-1">{isFixed ? "sur le forfait" : "par adulte"}</p>
                     </div>
                   </div>
                 )}
