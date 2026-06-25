@@ -6,6 +6,24 @@
 
 ---
 
+## [2026-06-25] — Gestion des dates de fin de disponibilité et mode dates spécifiques (standalone)
+
+### Ce qui a changé côté code
+- `src/components/forms/StandaloneExperienceForm.tsx` : refonte de l'onglet Disponibilités avec deux modes (jours récurrents / dates spécifiques), champ "Disponible jusqu'au" directement éditable, indicateur visuel coloré (vert/orange/rouge), correction bug timezone sur les dates affichées
+- `src/pages/StandaloneExperience.tsx` : le calendrier public bloque désormais les dates au-delà de `availability_end_date` ; en mode dates spécifiques, seules les dates sélectionnées sont ouvertes
+- `src/pages/admin/Experiences2.tsx` : badge d'alerte de disponibilité (créneaux restants + jours avant fermeture) sur chaque expérience standalone dans la liste admin
+
+### Ce qui a changé côté base de données
+- Migration `20260625000000_add_availability_end_date.sql` : ajout de `availability_end_date DATE` (initialisée à aujourd'hui + 6 mois pour toutes les expériences existantes)
+- Migration `add_standalone_availability_mode` (appliquée via MCP) : ajout de `availability_mode TEXT DEFAULT 'blacklist'` et `whitelisted_dates JSONB DEFAULT '[]'` pour le mode dates spécifiques
+
+### Pourquoi ce changement
+- Les calendriers standalone n'avaient pas de limite de date, un client pouvait théoriquement réserver dans 3 ans
+- Shana avait besoin de pouvoir fermer une expérience à une date précise quand le partenaire n'a des dispo que pour une période limitée
+- Certaines expériences n'ont que 2-3 dates disponibles : le mode "dates spécifiques" évite de devoir bloquer tous les autres jours un par un
+
+---
+
 ## [2026-06-25] — Optimisation des performances back office et site public
 
 ### Ce qui a changé côté code
