@@ -83,10 +83,10 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
             >
               <Moon className="h-3.5 w-3.5 flex-shrink-0 text-[#1A1814]" strokeWidth={1.5} />
               <span className="flex-1 text-center">
-                <span className={cn("block font-bold uppercase tracking-wider text-[#1A1814] leading-[14px]", lang === "he" ? "text-[11px] sm:text-[12px]" : "text-[9px] sm:text-[10px]")}>
+                <span className={cn("block font-bold uppercase tracking-wider text-[#1A1814] leading-[13px]", lang === "he" ? "text-[11px] sm:text-[12px]" : "text-[9px] sm:text-[10px]")}>
                   {lang === "he" ? "עם" : lang === "fr" ? "Avec" : "With"}
                 </span>
-                <span className={cn("block font-bold uppercase tracking-wider text-[#1A1814] leading-[14px]", lang === "he" ? "text-[11px] sm:text-[12px]" : "text-[9px] sm:text-[10px]")}>
+                <span className={cn("block font-bold uppercase tracking-wider text-[#1A1814] leading-[13px]", lang === "he" ? "text-[11px] sm:text-[12px]" : "text-[9px] sm:text-[10px]")}>
                   {lang === "he" ? "מלון" : lang === "fr" ? "Hôtel" : "Hotel"}
                 </span>
               </span>
@@ -105,10 +105,10 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
             >
               <Sun className="h-3.5 w-3.5 flex-shrink-0 text-[#1A1814]" strokeWidth={1.5} />
               <span className="flex-1 text-center">
-                <span className={cn("block font-bold uppercase tracking-wider text-[#1A1814] leading-[14px]", lang === "he" ? "text-[11px] sm:text-[12px]" : "text-[9px] sm:text-[10px]")}>
+                <span className={cn("block font-bold uppercase tracking-wider text-[#1A1814] leading-[13px]", lang === "he" ? "text-[11px] sm:text-[12px]" : "text-[9px] sm:text-[10px]")}>
                   {lang === "he" ? "חוויות" : lang === "fr" ? "Expériences" : "Experience"}
                 </span>
-                <span className={cn("block font-bold uppercase tracking-wider text-[#1A1814] leading-[14px]", lang === "he" ? "text-[11px] sm:text-[12px]" : "text-[9px] sm:text-[10px]")}>
+                <span className={cn("block font-bold uppercase tracking-wider text-[#1A1814] leading-[13px]", lang === "he" ? "text-[11px] sm:text-[12px]" : "text-[9px] sm:text-[10px]")}>
                   {lang === "he" ? "בלבד" : lang === "fr" ? "seules" : "Only"}
                 </span>
               </span>
