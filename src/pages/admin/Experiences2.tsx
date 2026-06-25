@@ -117,7 +117,7 @@ const AdminExperiences2 = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_experiences")
-        .select("id, slug, title, status, hero_image, photos, base_price, currency, display_order, availability_end_date, available_days, blocked_dates, categories(id, name, slug)")
+        .select("id, slug, title, status, hero_image, photos, base_price, currency, display_order, availability_end_date, available_days, blocked_dates, show_on_v3_only, categories(id, name, slug)")
         .order("display_order", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return data as any[];
@@ -188,6 +188,20 @@ const AdminExperiences2 = () => {
       toast.success("Visibilité mise à jour");
     },
     onError: () => toast.error("Erreur"),
+  });
+
+  const toggleStandaloneV3OnlyMutation = useMutation({
+    mutationFn: async ({ id, current }: { id: string; current: boolean }) => {
+      const { error } = await supabase.from("standalone_experiences").update({ show_on_v3_only: !current }).eq("id", id);
+      if (error) throw error;
+      return !current;
+    },
+    onSuccess: (newValue) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-standalone-exps-hub"] });
+      queryClient.invalidateQueries({ queryKey: ["v3-standalone-experiences"] });
+      toast.success(newValue ? "Visible uniquement sur /v3" : "Visible sur la homepage");
+    },
+    onError: () => toast.error("Erreur lors de la mise à jour"),
   });
 
   const toggleV3OnlyMutation = useMutation({
@@ -811,6 +825,13 @@ const AdminExperiences2 = () => {
                       </div>
 
                       <div className="flex items-center gap-1 shrink-0">
+                        <div className="flex items-center gap-1.5 mr-1">
+                          <Switch
+                            checked={exp.show_on_v3_only ?? false}
+                            onCheckedChange={() => toggleStandaloneV3OnlyMutation.mutate({ id: exp.id, current: exp.show_on_v3_only ?? false })}
+                          />
+                          <span className="text-[10px] text-muted-foreground font-medium">V3</span>
+                        </div>
                         <Button
                           size="sm"
                           variant="outline"
