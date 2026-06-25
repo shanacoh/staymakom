@@ -72,10 +72,7 @@ const LaunchHeader = ({ forceScrolled = false }: { forceScrolled?: boolean }) =>
 
   return (
     <header className={`${headerClasses} hidden md:block`} dir="ltr">
-      <div className={cn(
-        "container flex items-center bg-transparent h-14",
-        isRTL ? "flex-row-reverse" : "flex-row"
-      )}>
+      <div className="container flex flex-row items-center bg-transparent h-14">
         <Link to="/launch" className="flex items-center space-x-2">
           <span className={`font-sans font-bold tracking-[-0.04em] uppercase text-xl ${logoClasses}`}>
             STAYMAKOM
@@ -84,10 +81,7 @@ const LaunchHeader = ({ forceScrolled = false }: { forceScrolled?: boolean }) =>
 
         <div className="flex-1"></div>
 
-        <div className={cn(
-          "flex items-center space-x-3",
-          isRTL && "flex-row-reverse space-x-reverse"
-        )}>
+        <div className="flex items-center space-x-3">
           <div
             className="hidden md:flex items-center gap-0"
             dir="ltr"

@@ -53,10 +53,7 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
       dir="ltr"
     >
       <div
-        className={cn(
-          "container flex items-center h-14",
-          isRTL ? "flex-row-reverse" : "flex-row"
-        )}
+        className="container flex flex-row items-center h-14"
       >
         {/* Left — Logo */}
         <Link to="/v3" className="flex items-center">
@@ -120,7 +117,7 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
         </div>
 
         {/* Right — Actions */}
-        <div className={cn("flex items-center space-x-2 sm:space-x-3", isRTL && "flex-row-reverse space-x-reverse")}>
+        <div className="flex items-center space-x-2 sm:space-x-3">
 
           {/* Desktop : langue + devise en texte */}
           <div className="hidden md:flex items-center gap-0" dir="ltr">
