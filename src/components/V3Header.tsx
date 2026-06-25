@@ -75,7 +75,7 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
             <button
               onClick={() => setMode("stay")}
               className={cn(
-                "flex flex-row items-center gap-2 px-4 sm:px-5 py-1.5 rounded-full transition-all duration-200 min-w-[108px] sm:min-w-[130px]",
+                "flex flex-row items-center gap-2 px-4 sm:px-5 py-1.5 rounded-full transition-all duration-200 w-[126px] sm:w-[140px]",
                 mode === "stay"
                   ? "bg-gradient-to-br from-[#F2C4C4] to-[#D47070] shadow-sm"
                   : "hover:bg-[#FDF2F2]"
@@ -83,10 +83,10 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
             >
               <Moon className="h-3.5 w-3.5 flex-shrink-0 text-[#1A1814]" strokeWidth={1.5} />
               <span className="flex-1 text-center">
-                <span className="block font-bold text-[9px] sm:text-[10px] uppercase tracking-wider text-[#1A1814] leading-[13px]">
+                <span className={cn("block font-bold uppercase tracking-wider text-[#1A1814] leading-[14px]", lang === "he" ? "text-[11px] sm:text-[12px]" : "text-[9px] sm:text-[10px]")}>
                   {lang === "he" ? "עם" : lang === "fr" ? "Avec" : "With"}
                 </span>
-                <span className="block font-bold text-[9px] sm:text-[10px] uppercase tracking-wider text-[#1A1814] leading-[13px]">
+                <span className={cn("block font-bold uppercase tracking-wider text-[#1A1814] leading-[14px]", lang === "he" ? "text-[11px] sm:text-[12px]" : "text-[9px] sm:text-[10px]")}>
                   {lang === "he" ? "מלון" : lang === "fr" ? "Hôtel" : "Hotel"}
                 </span>
               </span>
@@ -97,7 +97,7 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
             <button
               onClick={() => setMode("live")}
               className={cn(
-                "flex flex-row items-center gap-2 px-4 sm:px-5 py-1.5 rounded-full transition-all duration-200 min-w-[108px] sm:min-w-[130px]",
+                "flex flex-row items-center gap-2 px-4 sm:px-5 py-1.5 rounded-full transition-all duration-200 w-[126px] sm:w-[140px]",
                 mode === "live"
                   ? "bg-gradient-to-br from-[#F2C4C4] to-[#D47070] shadow-sm"
                   : "hover:bg-[#FDF2F2]"
@@ -105,10 +105,10 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
             >
               <Sun className="h-3.5 w-3.5 flex-shrink-0 text-[#1A1814]" strokeWidth={1.5} />
               <span className="flex-1 text-center">
-                <span className="block font-bold text-[9px] sm:text-[10px] uppercase tracking-wider text-[#1A1814] leading-[13px]">
+                <span className={cn("block font-bold uppercase tracking-wider text-[#1A1814] leading-[14px]", lang === "he" ? "text-[11px] sm:text-[12px]" : "text-[9px] sm:text-[10px]")}>
                   {lang === "he" ? "חוויות" : lang === "fr" ? "Expériences" : "Experience"}
                 </span>
-                <span className="block font-bold text-[9px] sm:text-[10px] uppercase tracking-wider text-[#1A1814] leading-[13px]">
+                <span className={cn("block font-bold uppercase tracking-wider text-[#1A1814] leading-[14px]", lang === "he" ? "text-[11px] sm:text-[12px]" : "text-[9px] sm:text-[10px]")}>
                   {lang === "he" ? "בלבד" : lang === "fr" ? "seules" : "Only"}
                 </span>
               </span>
