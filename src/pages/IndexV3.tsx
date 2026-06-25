@@ -273,14 +273,14 @@ const IndexV3 = () => {
       <main className="flex-1 pb-[92px] md:pb-0 pt-14">
 
         {/* ──── 1. HERO ──── */}
-        <section className="relative h-[49vh] md:h-[54vh] min-h-[300px] flex items-center justify-center">
+        <section className="relative h-[38vh] md:h-[54vh] min-h-[240px] flex items-center justify-center">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: `url(${heroImage})` }}
           />
           <div className="absolute inset-0 bg-black/15" />
 
-          <div className="relative z-10 text-center text-white px-4 sm:px-6 max-w-3xl mx-auto -translate-y-6 sm:-translate-y-8">
+          <div className="relative z-10 text-center text-white px-4 sm:px-6 max-w-3xl mx-auto -translate-y-10 sm:-translate-y-8">
             <span className="md:hidden block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-[#ad1414] mb-4 opacity-0 animate-hero-fade-up">
               STAYMAKOM
             </span>
