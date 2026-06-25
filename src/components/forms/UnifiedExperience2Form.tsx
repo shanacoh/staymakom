@@ -1605,7 +1605,7 @@ export function UnifiedExperience2Form({
         {/* ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === "inclus" && (
           <div className="space-y-6">
-            {/* Highlight Tags */}
+            {/* Highlight Tags — par expérience */}
             <HighlightTagsSelector2
               experienceId={currentExperienceId || undefined}
               localTags={!currentExperienceId ? localTags : undefined}

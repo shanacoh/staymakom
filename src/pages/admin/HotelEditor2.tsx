@@ -12,9 +12,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, MapPin, Sparkles, Image as ImageIcon, Save, Star } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Sparkles, Image as ImageIcon, Save, Star, Car, Dumbbell, Waves, Users } from "lucide-react";
 import { generateSlug } from "@/lib/utils";
 import { Hotel2ExtrasManager } from "@/components/admin/Hotel2ExtrasManager";
+import { HighlightTagsSelectorHotel2 } from "@/components/admin/HighlightTagsSelectorHotel2";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  type PracticalBadgesInfo,
+  type TriState,
+  defaultPracticalBadgesInfo,
+  normalizeLegacyPracticalInfo,
+} from "@/lib/standaloneBadges";
 import { Link } from "react-router-dom";
 import HyperGuestHotelSearch from "@/components/admin/HyperGuestHotelSearch";
 import type {
@@ -27,6 +35,52 @@ import type {
 interface HotelEditor2Props {
   hotelId?: string;
   onClose: () => void;
+}
+
+function PracticalTriStateField({
+  id,
+  icon: Icon,
+  label,
+  value,
+  onChange,
+}: {
+  id: string;
+  icon: React.ElementType;
+  label: string;
+  value: TriState;
+  onChange: (v: TriState) => void;
+}) {
+  return (
+    <div className="p-3 rounded-lg border space-y-2">
+      <div className="flex items-center gap-3">
+        <Icon className="h-4 w-4 text-muted-foreground" />
+        <span className="font-medium text-sm flex-1">{label}</span>
+        {value === null && (
+          <span className="text-[11px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+            à compléter
+          </span>
+        )}
+      </div>
+      <RadioGroup
+        value={value ?? undefined}
+        onValueChange={(v) => onChange(v as TriState)}
+        className="flex gap-4 ml-7"
+      >
+        <div className="flex items-center gap-2">
+          <RadioGroupItem value="yes" id={`${id}-yes`} />
+          <Label htmlFor={`${id}-yes`} className="text-sm font-normal cursor-pointer">Oui</Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <RadioGroupItem value="no" id={`${id}-no`} />
+          <Label htmlFor={`${id}-no`} className="text-sm font-normal cursor-pointer">Non</Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <RadioGroupItem value="not_relevant" id={`${id}-nr`} />
+          <Label htmlFor={`${id}-nr`} className="text-sm font-normal cursor-pointer">Non pertinent</Label>
+        </div>
+      </RadioGroup>
+    </div>
+  );
 }
 
 const DEFAULT_HOTEL_EXTRAS = [
@@ -49,6 +103,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
   const [isTranslating, setIsTranslating] = useState(false);
   const [_justSaved, setJustSaved] = useState(false);
   const [hyperguestId, setHyperguestId] = useState<number | null>(null);
+  const [practicalInfo, setPracticalInfo] = useState<PracticalBadgesInfo>(defaultPracticalBadgesInfo);
   const [pendingImages, setPendingImages] = useState<string[]>([]);
   const [hyperguestPhotos, setHyperguestPhotos] = useState<HyperGuestPhoto[]>([]);
   const [selectedHGPhotos, setSelectedHGPhotos] = useState<string[]>([]);
@@ -367,6 +422,8 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
         description_location_fr: (h.description_location_fr as string) ?? "",
       });
 
+      setPracticalInfo(normalizeLegacyPracticalInfo(h.practical_info));
+
       // Restore hyperguestId from existing hotel data
       if (h.hyperguest_property_id) {
         setHyperguestId(Number(h.hyperguest_property_id));
@@ -454,6 +511,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
         city_fr: data.city_fr || null,
         story_fr: data.story_fr || null,
         address_fr: data.address_fr || null,
+        practical_info: practicalInfo as unknown as Json,
       };
 
       // ======== DEBUG START ========
@@ -1534,6 +1592,155 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
             </CardContent>
           </Card>
         )}
+
+        {/* Badges pratiques de l'hôtel */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Infos pratiques (badges auto)</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Ces informations génèrent automatiquement des badges sur toutes les expériences de cet hôtel
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <PracticalTriStateField
+              id="hotel-kosher"
+              icon={Star}
+              label="Casher"
+              value={practicalInfo.kosher}
+              onChange={(v) => setPracticalInfo((p) => ({ ...p, kosher: v }))}
+            />
+            <PracticalTriStateField
+              id="hotel-fitness"
+              icon={Dumbbell}
+              label="Centre fitness"
+              value={practicalInfo.fitness}
+              onChange={(v) => setPracticalInfo((p) => ({ ...p, fitness: v }))}
+            />
+            <PracticalTriStateField
+              id="hotel-spa"
+              icon={Waves}
+              label="Spa"
+              value={practicalInfo.spa}
+              onChange={(v) => setPracticalInfo((p) => ({ ...p, spa: v }))}
+            />
+
+            {/* Parking */}
+            <div className="p-3 rounded-lg border space-y-2">
+              <div className="flex items-center gap-3">
+                <Car className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium text-sm flex-1">Parking</span>
+                {practicalInfo.parking.status === null && (
+                  <span className="text-[11px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">à compléter</span>
+                )}
+              </div>
+              <RadioGroup
+                value={practicalInfo.parking.status ?? undefined}
+                onValueChange={(v) =>
+                  setPracticalInfo((p) => ({
+                    ...p,
+                    parking: { ...p.parking, status: v as "yes" | "no" },
+                  }))
+                }
+                className="flex gap-4 ml-7"
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="yes" id="hotel-parking-yes" />
+                  <Label htmlFor="hotel-parking-yes" className="text-sm font-normal cursor-pointer">Oui</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="no" id="hotel-parking-no" />
+                  <Label htmlFor="hotel-parking-no" className="text-sm font-normal cursor-pointer">Non</Label>
+                </div>
+              </RadioGroup>
+              {practicalInfo.parking.status === "yes" && (
+                <div className="ml-7 space-y-2">
+                  <RadioGroup
+                    value={practicalInfo.parking.price_type ?? undefined}
+                    onValueChange={(v) =>
+                      setPracticalInfo((p) => ({
+                        ...p,
+                        parking: { ...p.parking, price_type: v as "free" | "paid" },
+                      }))
+                    }
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="free" id="hotel-parking-free" />
+                      <Label htmlFor="hotel-parking-free" className="text-sm font-normal cursor-pointer">Gratuit</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="paid" id="hotel-parking-paid" />
+                      <Label htmlFor="hotel-parking-paid" className="text-sm font-normal cursor-pointer">Payant</Label>
+                    </div>
+                  </RadioGroup>
+                  {practicalInfo.parking.price_type === "paid" && (
+                    <Input
+                      placeholder="ex : 30₪ / nuit"
+                      value={practicalInfo.parking.price_amount ?? ""}
+                      onChange={(e) =>
+                        setPracticalInfo((p) => ({
+                          ...p,
+                          parking: { ...p.parking, price_amount: e.target.value },
+                        }))
+                      }
+                      className="max-w-xs"
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Enfants */}
+            <div className="p-3 rounded-lg border space-y-2">
+              <div className="flex items-center gap-3">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium text-sm flex-1">Enfants acceptés</span>
+                {practicalInfo.kids.status === null && (
+                  <span className="text-[11px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">à compléter</span>
+                )}
+              </div>
+              <RadioGroup
+                value={practicalInfo.kids.status ?? undefined}
+                onValueChange={(v) =>
+                  setPracticalInfo((p) => ({
+                    ...p,
+                    kids: { ...p.kids, status: v as "yes" | "no" },
+                  }))
+                }
+                className="flex gap-4 ml-7"
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="yes" id="hotel-kids-yes" />
+                  <Label htmlFor="hotel-kids-yes" className="text-sm font-normal cursor-pointer">Oui</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="no" id="hotel-kids-no" />
+                  <Label htmlFor="hotel-kids-no" className="text-sm font-normal cursor-pointer">Non</Label>
+                </div>
+              </RadioGroup>
+              {practicalInfo.kids.status === "yes" && (
+                <div className="ml-7 flex items-center gap-2">
+                  <Label className="text-sm whitespace-nowrap">À partir de</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={18}
+                    placeholder="0"
+                    value={practicalInfo.kids.from_age ?? ""}
+                    onChange={(e) =>
+                      setPracticalInfo((p) => ({
+                        ...p,
+                        kids: { ...p.kids, from_age: e.target.value ? Number(e.target.value) : null },
+                      }))
+                    }
+                    className="w-20"
+                  />
+                  <Label className="text-sm">ans</Label>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Boutons Save/Publish */}
         <div className="flex gap-2 justify-end pb-8">

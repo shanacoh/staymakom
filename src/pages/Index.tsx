@@ -47,6 +47,7 @@ import CategoryCard from "@/components/CategoryCard";
 import RotatingText from "@/components/RotatingText";
 import ContactDialog from "@/components/ContactDialog";
 import ExperienceCard from "@/components/ExperienceCard";
+import { getAutoBadgeTagsFromPracticalInfo, normalizeLegacyPracticalInfo } from "@/lib/standaloneBadges";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { SEOHead } from "@/components/SEOHead";
@@ -119,7 +120,8 @@ const Index = () => {
             position,
             nights,
             hotel:hotels2(
-              id, name, name_he, city, city_he, region, region_he, hero_image
+              id, name, name_he, city, city_he, region, region_he, hero_image,
+              practical_info
             )
           ),
           experience2_highlight_tags(
@@ -182,10 +184,14 @@ const Index = () => {
         const primaryHotel = exp.experience2_hotels
           ?.sort((a: any, b: any) => (a.position || 0) - (b.position || 0))
           ?.[0]?.hotel;
+        const autoBadgeTags = getAutoBadgeTagsFromPracticalInfo(
+          normalizeLegacyPracticalInfo(primaryHotel?.practical_info)
+        ).map((tag: any) => ({ highlight_tags: tag }));
+        const editorialTags = exp.experience2_highlight_tags || [];
         return {
           ...exp,
           hotels: primaryHotel || null,
-          experience_highlight_tags: exp.experience2_highlight_tags || [],
+          experience_highlight_tags: [...autoBadgeTags, ...editorialTags],
         };
       });
     }
@@ -202,7 +208,8 @@ const Index = () => {
             position,
             nights,
             hotel:hotels2(
-              id, name, name_he, city, city_he, region, region_he, hero_image
+              id, name, name_he, city, city_he, region, region_he, hero_image,
+              practical_info
             )
           ),
           experience2_highlight_tags(
@@ -221,10 +228,14 @@ const Index = () => {
         const primaryHotel = exp.experience2_hotels
           ?.sort((a: any, b: any) => (a.position || 0) - (b.position || 0))
           ?.[0]?.hotel;
+        const autoBadgeTags = getAutoBadgeTagsFromPracticalInfo(
+          normalizeLegacyPracticalInfo(primaryHotel?.practical_info)
+        ).map((tag: any) => ({ highlight_tags: tag }));
+        const editorialTags = exp.experience2_highlight_tags || [];
         return {
           ...exp,
           hotels: primaryHotel || null,
-          experience_highlight_tags: exp.experience2_highlight_tags || [],
+          experience_highlight_tags: [...autoBadgeTags, ...editorialTags],
         };
       });
     }
