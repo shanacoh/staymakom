@@ -6,6 +6,39 @@
 
 ---
 
+## [2026-06-25] — Tarification flexible : prix par personne vs forfait total
+
+### Ce qui a changé côté code
+- `src/components/forms/StandaloneExperienceForm.tsx` : le sélecteur de type de prix est maintenant explicite ("Par personne × nb. participants" vs "Forfait prix unique tout groupe"). Le label du champ prix fournisseur change dynamiquement selon le type choisi. La section "Prix enfant" se masque automatiquement quand le type est Forfait. La preview à 3 cartes s'adapte : la carte du milieu devient "À partir de X / pers. (groupe de Y)" pour les forfaits.
+- `src/components/StandaloneExperienceCard.tsx` : ajout de `has_child_price` dans l'interface. Calcul du `displayPrice` pour les forfaits = prix total ÷ max participants (arrondi au-dessus). Calcul du flag `showFromPrefix` (vrai si forfait ou tarif enfant).
+- `src/components/ExperienceCard.tsx` : ajout du prop `showFromPrefix`. Affichage conditionnel du préfixe "à partir de" sur les cartes standalone.
+- `src/pages/IndexV3.tsx` : ajout de `has_child_price` dans la requête Supabase de la homepage.
+
+### Ce qui a changé côté base de données
+- Aucun changement — les colonnes `base_price_type`, `max_party` et `has_child_price` existaient déjà.
+
+### Pourquoi ce changement
+- Certaines expériences (comme les bateaux Seamona) ont un prix total identique quel que soit le nombre de participants. Il fallait pouvoir distinguer "prix par personne" et "forfait total" dans le back office, et afficher "à partir de X ₪ / pers." sur la homepage en divisant le prix total par le nombre max de participants.
+
+---
+
+## [2026-06-25] — Refonte de l'architecture des cartes expériences
+
+### Ce qui a changé côté code
+- `src/components/ExperienceCard.tsx` : restructuration complète du bloc d'informations sous l'image.
+  - **Ligne 1 (toutes cartes)** : badges de catégorie à gauche + ★ suivi de "NEW" ou de la note à droite — jamais les deux en même temps, l'étoile est toujours présente.
+  - **Ligne 2 standalone** : Ville · [à partir de] Prix — ville en gris moyen, séparateur et "à partir de" en gris clair, prix en gras noir.
+  - **Ligne 2 hôtel** : Nom de l'hôtel · Ville — nom en texte principal, ville en gris, tronqué si trop long. La région (Tsafon/Darom/Jérusalem) est supprimée car redondante.
+  - **Ligne 3 hôtel** : Prix / nuit · 2 pers. — sans "à partir de", version courte "2 pers." au lieu de "2 personnes".
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Les cartes affichaient trop d'informations sur trop de lignes, ce qui alourdissait visuellement la page. La nouvelle architecture est plus aérée et hiérarchisée : badges en premier, lieu et prix en deuxième.
+
+---
+
 ## [2026-06-25] — Toggle v3 : taille et police uniformisées pour les 3 langues
 
 ### Ce qui a changé côté code
