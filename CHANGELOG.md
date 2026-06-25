@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-06-25] — Nouvelle expérience standalone : Coucher de Soleil en Jeep, Mont Yoash, Eilat
+
+### Ce qui a changé côté code
+- Aucun changement côté front-end.
+
+### Ce qui a changé côté base de données
+- `20260625080000_seed_standalone_sunset_jeep_mount_yoash_eilat.sql` : insertion d'une expérience standalone en statut `draft` — balade en jeep dans les montagnes d'Eilat jusqu'au mont Yoash (725 m) pour le coucher de soleil, avec halte thé/pita/labané au feu de camp. Inclut 4 éléments "ce qui est inclus", les tags Tour et Sunset Drinks, et le SEO complet EN/FR/HE. Base_price à 0, à compléter avant publication (prix fournisseur non confirmé). Catégorie : nature.
+
+### Pourquoi ce changement
+- Ajout d'une nouvelle expérience standalone pour Eilat, sans hôtel associé. Le prix et le format privatif vs groupe partagé sont à confirmer avec le partenaire avant publication.
+
+---
+
 ## [2026-06-25] — Mise à jour Lev HaTeva : sous-titre et espaces dans les descriptions
 
 ### Ce qui a changé côté code
