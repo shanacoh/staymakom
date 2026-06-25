@@ -26,6 +26,24 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { OpsSlidePanel } from "@/components/admin/OpsSlidePanel";
 
+function computeAvailabilityAlert(exp: any): { daysToEnd: number; remainingDates: number } | null {
+  if (!exp.availability_end_date) return null;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const end = new Date(exp.availability_end_date + "T00:00:00");
+  const daysToEnd = Math.ceil((end.getTime() - today.getTime()) / 86400000);
+  const blockedSet = new Set<string>(Array.isArray(exp.blocked_dates) ? exp.blocked_dates : []);
+  const availDays: number[] = Array.isArray(exp.available_days) ? exp.available_days : [1, 2, 3, 4, 5, 6, 7];
+  const jsDays = availDays.map((d: number) => (d === 7 ? 0 : d));
+  let remainingDates = 0;
+  const cursor = new Date(today);
+  while (cursor <= end) {
+    const iso = cursor.toISOString().split("T")[0];
+    if (jsDays.includes(cursor.getDay()) && !blockedSet.has(iso)) remainingDates++;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return { daysToEnd, remainingDates };
+}
+
 const AdminExperiences2 = () => {
   const navigate = useNavigate();
   const { experienceId } = useParams();
@@ -98,7 +116,7 @@ const AdminExperiences2 = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_experiences")
-        .select("id, slug, title, status, hero_image, photos, base_price, currency, display_order, categories(id, name, slug)")
+        .select("id, slug, title, status, hero_image, photos, base_price, currency, display_order, availability_end_date, available_days, blocked_dates, categories(id, name, slug)")
         .order("display_order", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return data as any[];
@@ -690,6 +708,14 @@ const AdminExperiences2 = () => {
                   const warnings: string[] = [];
                   if (!exp.hero_image && (!exp.photos || exp.photos.length === 0)) warnings.push("Pas de photo");
                   if (!exp.base_price) warnings.push("Pas de prix");
+                  const availAlert = computeAvailabilityAlert(exp);
+                  const availAlertLevel = availAlert
+                    ? (availAlert.daysToEnd <= 10 || availAlert.remainingDates <= 5)
+                      ? "red"
+                      : (availAlert.daysToEnd <= 30 || availAlert.remainingDates <= 10)
+                      ? "orange"
+                      : "green"
+                    : null;
 
                   return (
                     <div
@@ -742,6 +768,20 @@ const AdminExperiences2 = () => {
                                 ⚠ {w}
                               </span>
                             ))}
+                          </div>
+                        )}
+                        {availAlert && availAlertLevel && (
+                          <div className="flex gap-1 mt-1">
+                            <span className={`inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded border ${
+                              availAlertLevel === "red"
+                                ? "bg-red-50 text-red-700 border-red-200"
+                                : availAlertLevel === "orange"
+                                ? "bg-orange-50 text-orange-700 border-orange-200"
+                                : "bg-green-50 text-green-700 border-green-200"
+                            }`}>
+                              {availAlertLevel === "red" ? "🔴" : availAlertLevel === "orange" ? "🟠" : "🟢"}{" "}
+                              {availAlert.remainingDates} créneaux · {availAlert.daysToEnd}j restants
+                            </span>
                           </div>
                         )}
                       </div>

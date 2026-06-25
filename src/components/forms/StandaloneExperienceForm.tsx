@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -267,6 +267,64 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
   const [availableDays, setAvailableDays] = useState<number[]>(ALL_DAYS);
   const [blockedDates, setBlockedDates] = useState<Date[]>([]);
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+  const [availabilityEndDate, setAvailabilityEndDate] = useState<string | null>(null);
+  const [availabilityMode, setAvailabilityMode] = useState<"blacklist" | "whitelist">("blacklist");
+  const [whitelistedDates, setWhitelistedDates] = useState<Date[]>([]);
+
+  const defaultEndDate = useMemo(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + 6);
+    return d.toISOString().split("T")[0];
+  }, []);
+  const effectiveEndDate = availabilityEndDate ?? defaultEndDate;
+
+  const toLocalIso = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+  const lastAvailableDate = useMemo(() => {
+    if (availabilityMode === "whitelist") {
+      if (whitelistedDates.length === 0) return null;
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const future = whitelistedDates
+        .filter((d) => d >= today)
+        .sort((a, b) => b.getTime() - a.getTime());
+      return future.length > 0 ? toLocalIso(future[0]) : null;
+    }
+    const end = new Date(effectiveEndDate + "T00:00:00");
+    const blockedSet = new Set(blockedDates.map((d) => toLocalIso(d)));
+    const jsDays = availableDays.map((d) => (d === 7 ? 0 : d));
+    const cursor = new Date(end);
+    for (let i = 0; i < 365; i++) {
+      const iso = toLocalIso(cursor);
+      if (jsDays.includes(cursor.getDay()) && !blockedSet.has(iso)) return iso;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return null;
+  }, [effectiveEndDate, availableDays, blockedDates, availabilityMode, whitelistedDates]);
+
+  const daysRemaining = lastAvailableDate
+    ? Math.ceil((new Date(lastAvailableDate + "T12:00:00").getTime() - Date.now()) / 86400000)
+    : 0;
+
+  const remainingDatesCount = useMemo(() => {
+    if (availabilityMode === "whitelist") {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      return whitelistedDates.filter((d) => d >= today).length;
+    }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const end = new Date(effectiveEndDate + "T00:00:00");
+    const blockedSet = new Set(blockedDates.map((d) => toLocalIso(d)));
+    const jsDays = availableDays.map((d) => (d === 7 ? 0 : d));
+    let count = 0;
+    const cursor = new Date(today);
+    while (cursor <= end) {
+      const iso = toLocalIso(cursor);
+      if (jsDays.includes(cursor.getDay()) && !blockedSet.has(iso)) count++;
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return count;
+  }, [effectiveEndDate, availableDays, blockedDates, availabilityMode, whitelistedDates]);
 
   // Local mode — badges / inclus / extras (actifs avant le premier save, puis le composant bascule en mode DB)
   const [localTags, setLocalTags] = useState<LocalTagEntry[]>([]);
@@ -529,6 +587,15 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
     if (Array.isArray(exp.blocked_dates)) {
       setBlockedDates(exp.blocked_dates.map((s: string) => new Date(s + "T12:00:00")));
     }
+    if (exp.availability_end_date) {
+      setAvailabilityEndDate(exp.availability_end_date);
+    }
+    if (exp.availability_mode === "whitelist") {
+      setAvailabilityMode("whitelist");
+    }
+    if (Array.isArray(exp.whitelisted_dates)) {
+      setWhitelistedDates(exp.whitelisted_dates.map((s: string) => new Date(s + "T12:00:00")));
+    }
   }, [existingExperience, setValue]);
 
   // -------------------------------------------------------------------------
@@ -774,6 +841,9 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
       practical_info: practicalInfo,
       available_days: availableDays,
       blocked_dates: blockedDates.map((d) => d.toISOString().split("T")[0]),
+      availability_end_date: effectiveEndDate,
+      availability_mode: availabilityMode,
+      whitelisted_dates: whitelistedDates.map((d) => d.toISOString().split("T")[0]),
     };
   };
 
@@ -2019,151 +2089,293 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
               <CardHeader>
                 <CardTitle>Disponibilités</CardTitle>
                 <CardDescription>
-                  Définissez les jours habituels, puis bloquez les dates exceptionnelles
+                  Choisissez le mode qui correspond à votre situation
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Jours de la semaine */}
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                    Jours disponibles chaque semaine
-                  </p>
-                  <div className="flex gap-2 flex-wrap">
-                    {WEEKDAYS.map((day) => {
-                      const active = availableDays.includes(day.id);
-                      return (
-                        <button
-                          key={day.id}
-                          type="button"
-                          title={day.full}
-                          onClick={() =>
-                            setAvailableDays((prev) =>
-                              prev.includes(day.id)
-                                ? prev.filter((d) => d !== day.id)
-                                : [...prev, day.id].sort((a, b) => a - b)
-                            )
-                          }
-                          className={cn(
-                            "w-10 h-10 rounded-full text-sm font-semibold border-2 transition-colors",
-                            active
-                              ? "bg-primary text-primary-foreground border-primary"
-                              : "bg-background text-muted-foreground border-muted hover:border-primary/50"
-                          )}
-                        >
-                          {day.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {availableDays.length === 0 && (
-                    <p className="text-xs text-destructive mt-2">Aucun jour sélectionné — l'expérience sera indisponible.</p>
-                  )}
-                  {availableDays.length > 0 && availableDays.length < 7 && (
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Disponible : {availableDays.map((id) => WEEKDAYS.find((d) => d.id === id)?.full).join(", ")}
-                    </p>
-                  )}
-                  {availableDays.length === 7 && (
-                    <p className="text-xs text-muted-foreground mt-2">Disponible tous les jours</p>
-                  )}
+
+                {/* Toggle mode */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAvailabilityMode("blacklist")}
+                    className={cn(
+                      "flex flex-col items-start gap-0.5 rounded-lg border-2 px-4 py-3 text-left transition-colors",
+                      availabilityMode === "blacklist"
+                        ? "border-primary bg-primary/5"
+                        : "border-muted bg-background hover:border-primary/30"
+                    )}
+                  >
+                    <span className="text-sm font-semibold">Jours récurrents</span>
+                    <span className="text-xs text-muted-foreground">Ouvert selon les jours de la semaine, avec des exceptions</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAvailabilityMode("whitelist")}
+                    className={cn(
+                      "flex flex-col items-start gap-0.5 rounded-lg border-2 px-4 py-3 text-left transition-colors",
+                      availabilityMode === "whitelist"
+                        ? "border-primary bg-primary/5"
+                        : "border-muted bg-background hover:border-primary/30"
+                    )}
+                  >
+                    <span className="text-sm font-semibold">Dates spécifiques</span>
+                    <span className="text-xs text-muted-foreground">Seulement 2-3 dates précises à ouvrir</span>
+                  </button>
                 </div>
 
                 <Separator />
 
-                {/* Calendrier d'exceptions */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
+                {/* ── Mode Jours récurrents (blacklist) ── */}
+                {availabilityMode === "blacklist" && (
+                  <>
+                    {/* Jours de la semaine */}
                     <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-                        Dates bloquées (exceptions)
+                      <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+                        Jours disponibles chaque semaine
                       </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Cliquez sur une date pour la marquer comme indisponible — cliquez à nouveau pour la débloquer
-                      </p>
-                    </div>
-                    {blockedDates.length > 0 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setBlockedDates([])}
-                        className="text-destructive hover:text-destructive text-xs"
-                      >
-                        Tout débloquer
-                      </Button>
-                    )}
-                  </div>
-
-                  <div className="rounded-lg border bg-background overflow-hidden">
-                    <Calendar
-                      mode="multiple"
-                      selected={blockedDates}
-                      onSelect={(dates) => setBlockedDates(dates || [])}
-                      month={calendarMonth}
-                      onMonthChange={setCalendarMonth}
-                      numberOfMonths={2}
-                      fromDate={new Date()}
-                      modifiers={{
-                        weekdayUnavailable: (date: Date) => {
-                          if (availableDays.length === 7) return false;
-                          const availableJsDays = availableDays.map((d) => (d === 7 ? 0 : d));
-                          return !availableJsDays.includes(date.getDay());
-                        },
-                      }}
-                      modifiersClassNames={{
-                        weekdayUnavailable: "opacity-30",
-                      }}
-                      classNames={{
-                        day_selected:
-                          "bg-destructive text-destructive-foreground hover:bg-destructive hover:text-destructive-foreground focus:bg-destructive focus:text-destructive-foreground",
-                      }}
-                    />
-                  </div>
-                  {availableDays.length < 7 && (
-                    <p className="text-xs text-muted-foreground mt-2 italic">
-                      Les jours en fondu sont déjà indisponibles selon les restrictions de jours ci-dessus — les bloquer en rouge est optionnel.
-                    </p>
-                  )}
-
-                  {blockedDates.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {blockedDates
-                        .sort((a, b) => a.getTime() - b.getTime())
-                        .map((date) => {
-                          const label = date.toLocaleDateString("fr-FR", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          });
+                      <div className="flex gap-2 flex-wrap">
+                        {WEEKDAYS.map((day) => {
+                          const active = availableDays.includes(day.id);
                           return (
-                            <span
-                              key={date.toISOString()}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-destructive/10 text-destructive border border-destructive/20"
+                            <button
+                              key={day.id}
+                              type="button"
+                              title={day.full}
+                              onClick={() =>
+                                setAvailableDays((prev) =>
+                                  prev.includes(day.id)
+                                    ? prev.filter((d) => d !== day.id)
+                                    : [...prev, day.id].sort((a, b) => a - b)
+                                )
+                              }
+                              className={cn(
+                                "w-10 h-10 rounded-full text-sm font-semibold border-2 transition-colors",
+                                active
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "bg-background text-muted-foreground border-muted hover:border-primary/50"
+                              )}
                             >
-                              {label}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setBlockedDates((prev) =>
-                                    prev.filter((d) => d.toDateString() !== date.toDateString())
-                                  )
-                                }
-                                className="hover:opacity-70"
-                              >
-                                <X className="h-2.5 w-2.5" />
-                              </button>
-                            </span>
+                              {day.label}
+                            </button>
                           );
                         })}
+                      </div>
+                      {availableDays.length === 0 && (
+                        <p className="text-xs text-destructive mt-2">Aucun jour sélectionné — l'expérience sera indisponible.</p>
+                      )}
+                      {availableDays.length > 0 && availableDays.length < 7 && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Disponible : {availableDays.map((id) => WEEKDAYS.find((d) => d.id === id)?.full).join(", ")}
+                        </p>
+                      )}
+                      {availableDays.length === 7 && (
+                        <p className="text-xs text-muted-foreground mt-2">Disponible tous les jours</p>
+                      )}
                     </div>
-                  )}
 
-                  {blockedDates.length === 0 && (
-                    <p className="text-xs text-muted-foreground mt-2 italic">
-                      Aucune date bloquée — l'expérience est disponible tous les jours autorisés ci-dessus.
+                    <Separator />
+
+                    {/* Dates bloquées */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            Dates bloquées (exceptions)
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Cliquez sur une date pour la marquer comme indisponible — cliquez à nouveau pour la débloquer
+                          </p>
+                        </div>
+                        {blockedDates.length > 0 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setBlockedDates([])}
+                            className="text-destructive hover:text-destructive text-xs"
+                          >
+                            Tout débloquer
+                          </Button>
+                        )}
+                      </div>
+                      <div className="rounded-lg border bg-background overflow-hidden">
+                        <Calendar
+                          mode="multiple"
+                          selected={blockedDates}
+                          onSelect={(dates) => setBlockedDates(dates || [])}
+                          month={calendarMonth}
+                          onMonthChange={setCalendarMonth}
+                          numberOfMonths={2}
+                          fromDate={new Date()}
+                          modifiers={{
+                            weekdayUnavailable: (date: Date) => {
+                              if (availableDays.length === 7) return false;
+                              const availableJsDays = availableDays.map((d) => (d === 7 ? 0 : d));
+                              return !availableJsDays.includes(date.getDay());
+                            },
+                          }}
+                          modifiersClassNames={{ weekdayUnavailable: "opacity-30" }}
+                          classNames={{
+                            day_selected:
+                              "bg-destructive text-destructive-foreground hover:bg-destructive hover:text-destructive-foreground focus:bg-destructive focus:text-destructive-foreground",
+                          }}
+                        />
+                      </div>
+                      {availableDays.length < 7 && (
+                        <p className="text-xs text-muted-foreground mt-2 italic">
+                          Les jours en fondu sont déjà indisponibles selon les restrictions ci-dessus.
+                        </p>
+                      )}
+                      {blockedDates.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {blockedDates
+                            .sort((a, b) => a.getTime() - b.getTime())
+                            .map((date) => (
+                              <span
+                                key={date.toISOString()}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-destructive/10 text-destructive border border-destructive/20"
+                              >
+                                {date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                                <button
+                                  type="button"
+                                  onClick={() => setBlockedDates((prev) => prev.filter((d) => d.toDateString() !== date.toDateString()))}
+                                  className="hover:opacity-70"
+                                >
+                                  <X className="h-2.5 w-2.5" />
+                                </button>
+                              </span>
+                            ))}
+                        </div>
+                      )}
+                      {blockedDates.length === 0 && (
+                        <p className="text-xs text-muted-foreground mt-2 italic">
+                          Aucune date bloquée — disponible tous les jours autorisés ci-dessus.
+                        </p>
+                      )}
+                    </div>
+
+                    <Separator />
+
+                    {/* Date de fermeture */}
+                    <div className="space-y-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                        Disponible jusqu'au
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Le calendrier se ferme automatiquement après cette date. Par défaut : 6 mois.
+                      </p>
+                      <Input
+                        type="date"
+                        value={availabilityEndDate ?? defaultEndDate}
+                        min={new Date().toISOString().split("T")[0]}
+                        onChange={(e) => setAvailabilityEndDate(e.target.value || null)}
+                        className="w-48"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* ── Mode Dates spécifiques (whitelist) ── */}
+                {availabilityMode === "whitelist" && (
+                  <>
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            Dates disponibles
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Cliquez sur les dates pour les ouvrir — tout le reste sera fermé
+                          </p>
+                        </div>
+                        {whitelistedDates.length > 0 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setWhitelistedDates([])}
+                            className="text-destructive hover:text-destructive text-xs"
+                          >
+                            Tout effacer
+                          </Button>
+                        )}
+                      </div>
+                      <div className="rounded-lg border bg-background overflow-hidden">
+                        <Calendar
+                          mode="multiple"
+                          selected={whitelistedDates}
+                          onSelect={(dates) => setWhitelistedDates(dates || [])}
+                          month={calendarMonth}
+                          onMonthChange={setCalendarMonth}
+                          numberOfMonths={2}
+                          fromDate={new Date()}
+                          classNames={{
+                            day_selected:
+                              "bg-green-600 text-white hover:bg-green-600 hover:text-white focus:bg-green-600 focus:text-white",
+                          }}
+                        />
+                      </div>
+                      {whitelistedDates.length > 0 ? (
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {whitelistedDates
+                            .sort((a, b) => a.getTime() - b.getTime())
+                            .map((date) => (
+                              <span
+                                key={date.toISOString()}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-700 border border-green-200"
+                              >
+                                {date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                                <button
+                                  type="button"
+                                  onClick={() => setWhitelistedDates((prev) => prev.filter((d) => d.toDateString() !== date.toDateString()))}
+                                  className="hover:opacity-70"
+                                >
+                                  <X className="h-2.5 w-2.5" />
+                                </button>
+                              </span>
+                            ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground mt-2 italic">
+                          Aucune date sélectionnée — l'expérience sera invisible dans le calendrier.
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                <Separator />
+
+                {/* Indicateur dernière date disponible */}
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                      Dernière date disponible
                     </p>
-                  )}
+                    <p className="text-sm font-medium mt-0.5">
+                      {lastAvailableDate
+                        ? new Date(lastAvailableDate + "T12:00:00").toLocaleDateString("fr-FR", {
+                            day: "numeric", month: "long", year: "numeric",
+                          })
+                        : "Aucune date disponible"}
+                    </p>
+                    {remainingDatesCount > 0 && remainingDatesCount <= 10 && (
+                      <p className="text-xs text-destructive mt-0.5 font-medium">
+                        Il ne reste que {remainingDatesCount} créneau{remainingDatesCount > 1 ? "x" : ""} disponible{remainingDatesCount > 1 ? "s" : ""}
+                      </p>
+                    )}
+                  </div>
+                  <Badge
+                    variant={daysRemaining > 30 ? "default" : daysRemaining > 10 ? "outline" : "destructive"}
+                    className={daysRemaining > 10 && daysRemaining <= 30 ? "border-orange-400 text-orange-600 bg-orange-50" : ""}
+                  >
+                    {availabilityMode === "whitelist"
+                      ? `${remainingDatesCount} date${remainingDatesCount > 1 ? "s" : ""}`
+                      : daysRemaining > 0 ? `${daysRemaining}j restants` : "Expiré"}
+                  </Badge>
                 </div>
+
               </CardContent>
             </Card>
 

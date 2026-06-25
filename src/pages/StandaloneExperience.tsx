@@ -82,6 +82,9 @@ interface StandaloneExperienceData {
   status: string;
   available_days?: number[] | null;
   blocked_dates?: string[] | null;
+  availability_end_date?: string | null;
+  availability_mode?: string | null;
+  whitelisted_dates?: string[] | null;
   practical_info?: unknown;
   standalone_experience_highlight_tags?: {
     tag_id: string;
@@ -196,7 +199,8 @@ export default function StandaloneExperience() {
         "region", "region_he", "region_fr",
         "latitude", "longitude",
         "accessibility_info", "category_id", "status",
-        "available_days", "blocked_dates", "practical_info",
+        "available_days", "blocked_dates", "availability_end_date",
+        "availability_mode", "whitelisted_dates", "practical_info",
       ].join(", ");
 
       const { data, error } = await (supabase as any)
@@ -261,6 +265,9 @@ export default function StandaloneExperience() {
     d.setDate(d.getDate() + leadTimeDays);
     return d.toISOString().split("T")[0];
   })();
+  const maxDate = experience?.availability_end_date
+    ? new Date(experience.availability_end_date + "T23:59:59")
+    : undefined;
 
   const totalPrice = experience
     ? computeTotal(experience.base_price, experience.base_price_type, partySize)
@@ -440,11 +447,19 @@ export default function StandaloneExperience() {
     const availableDays: number[] = experience.available_days ?? [1, 2, 3, 4, 5, 6, 7];
     const blockedDateStrings: string[] = (experience.blocked_dates as string[] | null) ?? [];
     const hasWeekdayRestriction = availableDays.length < 7;
+    const isWhitelistMode = experience.availability_mode === "whitelist";
+    const whitelistedSet = new Set<string>(
+      isWhitelistMode ? (experience.whitelisted_dates as string[] | null) ?? [] : []
+    );
 
     const isDateUnavailable = (date: Date): boolean => {
       const minDateObj = new Date(minDate + "T00:00:00");
       const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       if (d < minDateObj) return true;
+      if (isWhitelistMode) {
+        return !whitelistedSet.has(toLocalDateStr(date));
+      }
+      if (maxDate && d > maxDate) return true;
       if (hasWeekdayRestriction) {
         const availableJsDays = availableDays.map((n) => (n === 7 ? 0 : n));
         if (!availableJsDays.includes(date.getDay())) return true;
@@ -534,6 +549,7 @@ export default function StandaloneExperience() {
               selected={selectedDate ? new Date(selectedDate + "T12:00:00") : undefined}
               onSelect={(date) => setSelectedDate(date ? toLocalDateStr(date) : "")}
               disabled={isDateUnavailable}
+              toDate={maxDate}
               classNames={{
                 day_selected:
                   "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
