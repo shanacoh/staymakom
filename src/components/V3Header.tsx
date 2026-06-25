@@ -39,7 +39,7 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { lang, setLanguage } = useLanguage();
-  const { displayCurrency, cycleCurrency, setDisplayCurrency } = useCurrency();
+  const { displayCurrency, setDisplayCurrency } = useCurrency();
 
   const handleFavoritesClick = () => {
     navigate(user ? "/account?tab=wishlist" : "/auth");
@@ -121,49 +121,10 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
         {/* Right — Actions */}
         <div className="flex items-center space-x-2 sm:space-x-3">
 
-          {/* Desktop : langue + devise en texte */}
-          <div className="hidden md:flex items-center gap-0" dir="ltr">
-            <button
-              onClick={() => setLanguage("en")}
-              className={cn(
-                "w-[22px] text-center text-[11px] leading-none tracking-[0.05em] transition-colors",
-                lang === "en" ? "text-foreground font-medium" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              EN
-            </button>
-            <span className="w-[8px] text-center text-[11px] select-none text-muted-foreground/50">|</span>
-            <button
-              onClick={() => setLanguage("fr")}
-              className={cn(
-                "w-[22px] text-center text-[11px] leading-none tracking-[0.05em] transition-colors",
-                lang === "fr" ? "text-foreground font-medium" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              FR
-            </button>
-            <span className="w-[8px] text-center text-[11px] select-none text-muted-foreground/50">|</span>
-            <button
-              onClick={() => setLanguage("he")}
-              className={cn(
-                "w-[22px] text-center text-[13px] leading-none tracking-[0.05em] transition-colors",
-                lang === "he" ? "text-foreground font-medium" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              עב
-            </button>
-            <button
-              onClick={cycleCurrency}
-              className="ml-1 w-[18px] text-center text-[11px] font-medium leading-none tracking-[0.05em] transition-colors text-muted-foreground hover:text-foreground"
-            >
-              {displayCurrency === "USD" ? "$" : displayCurrency === "EUR" ? "€" : "₪"}
-            </button>
-          </div>
-
-          {/* Mobile : icône globe ouvrant un popover compact */}
+          {/* Globe — langue et devise, mobile ET desktop */}
           <Popover>
             <PopoverTrigger asChild>
-              <button className="md:hidden p-1.5 rounded-full hover:bg-[#F0EBE3] transition-colors" aria-label="Langue et devise">
+              <button className="p-1.5 rounded-full hover:bg-[#F0EBE3] transition-colors" aria-label="Langue et devise">
                 <Globe className="h-[18px] w-[18px] text-[#1A1814]" strokeWidth={1.5} />
               </button>
             </PopoverTrigger>

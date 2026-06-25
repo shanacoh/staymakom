@@ -6,6 +6,42 @@
 
 ---
 
+## [2026-06-25] — V3Header : Globe langue/devise visible sur desktop aussi
+
+### Ce qui a changé côté code
+- `src/components/V3Header.tsx` : suppression des anciens boutons texte EN|FR|עב|$ sur desktop (`hidden md:flex`) — remplacés par le Globe+Popover déjà présent pour mobile, désormais affiché sur toutes les tailles d'écran (suppression de `md:hidden`)
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- Les anciens boutons texte masquaient le Globe sur desktop, rendant l'icône Globe invisible sur `/v3` en mode écran large. Désormais Globe+Popover fonctionne sur toutes les tailles d'écran sur la page v3.
+
+---
+
+## [2026-06-25] — Ajout des 4 expériences standalone Seamona (marina d'Herzliya)
+
+### Ce qui a changé côté code
+- Aucun changement de code. Données uniquement.
+
+### Ce qui a changé côté base de données
+- Migration `20260625010000_seed_seamona_yacht_herzliya.sql` : insertion de 4 nouvelles expériences standalone en statut `draft`, avec leurs éléments inclus et badges, pour le partenaire Seamona (סימונה ושירות ימאות), marina d'Herzliya, tél. 052-6284442
+  - **Exp 1 — Une heure romantique en yacht** (`romantic-yacht-hour-herzliya`) : catégorie Romantic Escape, 1h pour 2 personnes, 690 NIS fournisseur → 828 NIS affiché. Badges : Sunset Drinks, Kosher, Couples Treatment.
+  - **Exp 2 — Coucher de soleil et dîner en yacht** (`sunset-sail-dinner-herzliya`) : catégorie Romantic Escape, 3h pour 2 personnes, 1 680 NIS fournisseur → 2 016 NIS affiché. Badges : Dinner, Sunset Drinks, Couples Treatment.
+  - **Exp 3 — Sortie bateau en groupe** (`group-yacht-day-herzliya`) : catégorie Nature & Outdoor, 1h30–3h pour 1–13 personnes, 1 290 NIS fournisseur → 1 548 NIS affiché. Badge : Boat tour.
+  - **Exp 4 — Catamaran événementiel** (`celebration-catamaran-herzliya`) : catégorie Nature & Outdoor, 2–3h pour 1–21 personnes, 2 500 NIS fournisseur → 3 000 NIS affiché. Badge : Boat tour.
+
+### Pourquoi ce changement
+- Shana a fourni le brief complet des 4 expériences Seamona (contenu trilingue EN/FR/HE, prix, inclus, badges, SEO). Les expériences sont en draft — à valider et publier une fois les points ouverts confirmés avec Simona (voir notes dans la migration).
+
+### Points en attente avant publication (à confirmer avec Simona)
+- Exp 2 : prix exact du supplément massage duo (estimé +300 NIS, non confirmé)
+- Exp 2 : repas casher inclus par défaut ou supplément +100 NIS/couple ?
+- Exps 1–4 : supplément weekend/jours fériés (+100 NIS) non appliqué selon décision Shana — à reconfirmer
+- Exp 3 : badge « Kids Activities » non ajouté — confirmation Shana nécessaire avant d'activer
+
+---
+
 ## [2026-06-25] — Gestion des dates de fin de disponibilité et mode dates spécifiques (standalone)
 
 ### Ce qui a changé côté code
