@@ -75,7 +75,7 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
             <button
               onClick={() => setMode("stay")}
               className={cn(
-                "flex flex-row items-center gap-2 px-4 sm:px-5 py-1.5 rounded-full transition-all duration-200 w-[126px] sm:w-[140px]",
+                "flex flex-row items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full transition-all duration-200 w-[108px] sm:w-[130px]",
                 mode === "stay"
                   ? "bg-gradient-to-br from-[#F2C4C4] to-[#D47070] shadow-sm"
                   : "hover:bg-[#FDF2F2]"
@@ -97,7 +97,7 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
             <button
               onClick={() => setMode("live")}
               className={cn(
-                "flex flex-row items-center gap-2 px-4 sm:px-5 py-1.5 rounded-full transition-all duration-200 w-[126px] sm:w-[140px]",
+                "flex flex-row items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full transition-all duration-200 w-[108px] sm:w-[130px]",
                 mode === "live"
                   ? "bg-gradient-to-br from-[#F2C4C4] to-[#D47070] shadow-sm"
                   : "hover:bg-[#FDF2F2]"
