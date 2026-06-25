@@ -5,6 +5,7 @@
  */
 import ExperienceCard from "@/components/ExperienceCard";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { getAutoBadgeTagsFromPracticalInfo, normalizeLegacyPracticalInfo } from "@/lib/standaloneBadges";
 
 interface StandaloneHighlightTagLink {
   tag_id: string;
@@ -14,6 +15,7 @@ interface StandaloneHighlightTagLink {
     slug: string;
     label_en: string;
     label_he?: string | null;
+    label_fr?: string | null;
   };
 }
 
@@ -37,6 +39,7 @@ interface StandaloneExperienceCardProps {
     city_he?: string | null;
     region?: string | null;
     region_he?: string | null;
+    practical_info?: unknown;
   };
   index?: number;
   badge?: string | null;
@@ -53,6 +56,14 @@ export default function StandaloneExperienceCard({
   // base_price est en USD par défaut — on utilise convert() comme partout ailleurs.
   const displayPrice = experience.base_price ? Math.round(convert(experience.base_price)) : 0;
 
+  const editorialTags = (experience.standalone_experience_highlight_tags ?? [])
+    .sort((a, b) => a.position - b.position)
+    .map((link) => ({ highlight_tags: link.highlight_tags }));
+
+  const autoBadgeTags = getAutoBadgeTagsFromPracticalInfo(
+    normalizeLegacyPracticalInfo(experience.practical_info)
+  ).map((tag) => ({ highlight_tags: tag }));
+
   const cardExperience = {
     ...experience,
     // Pas d'hôtel pour une expérience standalone : on réutilise simplement la forme
@@ -61,9 +72,7 @@ export default function StandaloneExperienceCard({
       ? { city: experience.city ?? undefined, city_he: experience.city_he, region: experience.region, region_he: experience.region_he }
       : null,
     base_price: displayPrice,
-    experience_highlight_tags: (experience.standalone_experience_highlight_tags ?? [])
-      .sort((a, b) => a.position - b.position)
-      .map((link) => ({ highlight_tags: link.highlight_tags })),
+    experience_highlight_tags: [...editorialTags, ...autoBadgeTags],
   };
 
   return (

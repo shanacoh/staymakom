@@ -75,6 +75,62 @@ const LABELS: Record<string, Record<Language, string>> = {
   parking_paid: { en: "Paid parking", he: "חניה בתשלום", fr: "Parking payant" },
 };
 
+const kidsLabel = (age: number, lang: Language): string => {
+  if (lang === "fr") return `Enfants dès ${age} ans`;
+  if (lang === "he") return `ילדים מגיל ${age}`;
+  return `Kids from ${age}`;
+};
+
+export interface AutoBadgeTag {
+  id: string;
+  slug: string;
+  label_en: string;
+  label_he: string | null;
+  label_fr: string | null;
+}
+
+export function getAutoBadgeTagsFromPracticalInfo(info: PracticalBadgesInfo): AutoBadgeTag[] {
+  const tags: AutoBadgeTag[] = [];
+
+  if (info.kosher === "yes") tags.push({
+    id: "auto-kosher", slug: "auto-kosher",
+    label_en: LABELS.kosher.en, label_he: LABELS.kosher.he, label_fr: LABELS.kosher.fr,
+  });
+
+  if (info.kids.status === "yes" && info.kids.from_age != null) {
+    const age = info.kids.from_age;
+    tags.push({
+      id: "auto-kids", slug: "auto-kids",
+      label_en: kidsLabel(age, "en"),
+      label_he: kidsLabel(age, "he"),
+      label_fr: kidsLabel(age, "fr"),
+    });
+  }
+
+  if (info.parking.status === "yes") {
+    const isPaid = info.parking.price_type === "paid";
+    const amount = isPaid && info.parking.price_amount ? ` – ${info.parking.price_amount}` : "";
+    tags.push({
+      id: "auto-parking", slug: "auto-parking",
+      label_en: (isPaid ? LABELS.parking_paid.en : LABELS.parking_free.en) + amount,
+      label_he: (isPaid ? LABELS.parking_paid.he : LABELS.parking_free.he) + amount,
+      label_fr: (isPaid ? LABELS.parking_paid.fr : LABELS.parking_free.fr) + amount,
+    });
+  }
+
+  if (info.fitness === "yes") tags.push({
+    id: "auto-fitness", slug: "auto-fitness",
+    label_en: LABELS.fitness.en, label_he: LABELS.fitness.he, label_fr: LABELS.fitness.fr,
+  });
+
+  if (info.spa === "yes") tags.push({
+    id: "auto-spa", slug: "auto-spa",
+    label_en: LABELS.spa.en, label_he: LABELS.spa.he, label_fr: LABELS.spa.fr,
+  });
+
+  return tags;
+}
+
 export function getAutoBadgesFromPracticalInfo(
   info: PracticalBadgesInfo,
   lang: Language = "en"
@@ -84,7 +140,7 @@ export function getAutoBadgesFromPracticalInfo(
   if (info.kosher === "yes") badges.push({ key: "kosher", label: LABELS.kosher[lang] });
 
   if (info.kids.status === "yes" && info.kids.from_age != null) {
-    badges.push({ key: "kids", label: `KIDS from ${info.kids.from_age}` });
+    badges.push({ key: "kids", label: kidsLabel(info.kids.from_age, lang) });
   }
 
   if (info.parking.status === "yes") {

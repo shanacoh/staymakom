@@ -196,7 +196,7 @@ const IndexV3 = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_experiences")
-        .select("id, slug, title, title_he, title_fr, hero_image, photos, base_price, base_price_type, currency, min_party, max_party, has_time_slots, display_order, category_ids, city, city_he, region, region_he, category:categories(slug), standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he))")
+        .select("id, slug, title, title_he, title_fr, hero_image, photos, base_price, base_price_type, currency, min_party, max_party, has_time_slots, display_order, category_ids, city, city_he, region, region_he, practical_info, category:categories(slug), standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he, label_fr))")
         .eq("status", "published")
         .order("display_order", { ascending: true, nullsFirst: false });
       if (error) throw error;
