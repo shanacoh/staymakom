@@ -276,7 +276,7 @@ export default function ExperienceCard({
 
         {/* Tags - just below the photo */}
         {highlightTags.length > 0 && (
-          <div className="flex flex-nowrap gap-1 overflow-hidden px-0.5 -mt-0.5 mb-1">
+          <div className="hidden sm:flex flex-nowrap gap-1 overflow-hidden px-0.5 -mt-0.5 mb-1">
             {highlightTags.slice(0, maxTags).map((tag) => (
               <span
                 key={tag.id}

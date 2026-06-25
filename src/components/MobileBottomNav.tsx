@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Compass, Heart, ShoppingBag, User } from "lucide-react";
+import { Compass, Heart, Luggage, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { useCartExists } from "@/hooks/useCart";
@@ -18,7 +18,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { icon: Compass, labelEn: "Explore", labelHe: "גלה", path: "/launch" },
   { icon: Heart, labelEn: "Saved", labelHe: "שמור", path: "/account?tab=wishlist", requiresAuth: true, authContext: "wishlist" },
-  { icon: ShoppingBag, labelEn: "Cart", labelHe: "עגלה", path: "/cart", showCartDot: true },
+  { icon: Luggage, labelEn: "Trips", labelHe: "טיולים", path: "/cart", showCartDot: true },
   { icon: User, labelEn: "Account", labelHe: "חשבון", path: "/account", requiresAuth: true, authContext: "account" },
 ];
 
@@ -100,7 +100,7 @@ const MobileBottomNav = () => {
     >
       <div
         className={cn(
-          "pointer-events-auto flex items-center justify-around transition-all duration-300 ease-out rounded-full bg-[hsl(var(--mobile-header)/0.85)] backdrop-blur-md border border-mobile-border/60 shadow-lg",
+          "pointer-events-auto flex items-center justify-around transition-all duration-300 ease-out rounded-full bg-white/15 backdrop-blur-[8px] border border-white/25 shadow-[0_4px_20px_rgba(0,0,0,0.06)]",
           isScrolled
             ? "w-auto gap-1 h-14 mb-3 px-3"
             : "w-auto gap-2 h-[68px] mb-4 px-5"
