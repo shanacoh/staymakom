@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-06-25] — Toggle v3 : taille et police uniformisées pour les 3 langues
+
+### Ce qui a changé côté code
+- `src/components/V3Header.tsx` : suppression de la taille de police spécifique à l'hébreu — les 4 textes du toggle (With Hotel, Hôtel Inclus, עם מלון…) utilisent désormais `text-[9px] sm:text-[10px]` quelle que soit la langue active
+- Largeur des pills ramenée à `w-[108px] sm:w-[130px]` (contre `w-[126px] sm:w-[140px]` qui avait été élargi à tort)
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- Le toggle paraissait trop large et l'hébreu ne correspondait pas visuellement aux autres langues. Seule la taille de police avait été demandée par Shana ; la largeur avait été modifiée sans demande → rétablie à une valeur compacte.
+
+---
+
 ## [2026-06-25] — V3Header : Globe langue/devise visible sur desktop aussi
 
 ### Ce qui a changé côté code
