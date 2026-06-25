@@ -180,7 +180,7 @@ const IndexV3 = () => {
             highlight_tags(id, slug, label_en, label_he, label_fr, display_order, is_common, icon)
           )
         `)
-        .eq("status", "published")
+        .or("status.eq.published,show_on_v3_only.eq.true")
         .order("display_order", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return data;

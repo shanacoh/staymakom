@@ -6,6 +6,39 @@
 
 ---
 
+## [2026-06-25] — Visibilité V3 : publier des expériences sur /v3 sans les afficher sur la homepage
+
+### Ce qui a changé côté code
+- `src/pages/admin/Experiences2.tsx` : ajout d'un toggle "V3" dans la liste des expériences (à gauche du bouton Ops). Un clic active/désactive la visibilité exclusive sur /v3. Toast de confirmation après chaque action. Invalidation automatique des caches homepage + /v3 au changement.
+- `src/pages/Index.tsx` : les 3 requêtes d'expériences (vedettes, récentes, toutes) excluent désormais les expériences marquées `show_on_v3_only = true`.
+- `src/pages/IndexV3.tsx` : la requête affiche les expériences publiées **ou** celles avec `show_on_v3_only = true` (même en draft) — via un filtre OR Supabase.
+- `src/components/forms/UnifiedExperience2Form.tsx` : le champ `show_on_v3_only` est lu et sauvegardé lors de l'édition complète d'une expérience (pas de bouton UI dans le formulaire — contrôle depuis la liste).
+
+### Ce qui a changé côté base de données
+- `20260625060000_add_show_on_v3_only_to_experiences2.sql` : nouvelle colonne `show_on_v3_only boolean NOT NULL DEFAULT false` sur la table `experiences2`. Toutes les expériences existantes héritent de la valeur `false` (aucun changement de comportement).
+
+### Pourquoi ce changement
+- Shana voulait pouvoir publier des expériences visibles uniquement sur /v3 (page de test) sans qu'elles apparaissent sur la homepage actuelle, pour préparer le lancement de la v3 en parallèle.
+
+---
+
+## [2026-06-25] — Insertion batch Isrotel : 4 expériences avec hôtel
+
+### Ce qui a changé côté code
+- Aucun changement côté front-end.
+
+### Ce qui a changé côté base de données
+- `20260625020000_insert_experience_wine_tasting_beresheet.sql` : nouvelle expérience "Wine Tasting in the Negev's Lone Farms" liée à **Beresheet by Isrotel Exclusive**. Dégustation privée dans une ferme isolée du Néguev + villa avec piscine privée face au mכתש רמון. Tags : Night, Wine Tasting, Guided Tour, Pool, Spa Access, Kosher.
+- `20260625030000_insert_experience_chocolate_galita_kinneret.sql` : nouvelle expérience "Chocolate Workshop at Galita" liée à **Hotel Lake House Kinneret**. Atelier chocolat (6 thèmes au choix) à Dégania Beit + accès gratuit aux sources chaudes de Tibériade. Tags : Night, Breakfast, Cooking Class, Pool, Kids Activities, Kosher.
+- `20260625040000_insert_experience_jeep_springs_kedma.sql` : nouvelle expérience "Jeep Tour to the Hidden Springs of Nahal Tzin" liée à **Kedma by Isrotel Design**. Tour 4h au départ du parking Kedma vers Ein Akev et Ein Ziq + hammam turc. Tags : Night, Breakfast, Guided Tour, Pool, Spa Access, Kids Activities, Kosher.
+- `20260625050000_insert_experience_tsfat_mizpe_hayamim.sql` : nouvelle expérience "Guided Walk Through the Old City of Tsfat" liée à **Mizpe Hayamim by Isrotel Exclusive**. Visite guidée des synagogues et rובע האמנים + dîner laitier farm-to-table. Tags : Night, Breakfast, Dinner, Guided Tour, Spa Access, Pool, Kosher.
+- Chaque expérience est en **statut draft** (à valider avant publication), avec 6 items inclus, et les textes en 3 langues (EN / HE / FR) y compris `title_fr`, `subtitle_fr`, `long_copy_fr` et les champs SEO.
+
+### Pourquoi ce changement
+- Saisie du batch Isrotel fourni par Shana : 4 fiches expériences complètes (descriptions, inclus, SEO) pour les hôtels Beresheet, Lake House Kinneret, Kedma et Mizpe Hayamim.
+
+---
+
 ## [2026-06-25] — Tarification flexible : prix par personne vs forfait total
 
 ### Ce qui a changé côté code

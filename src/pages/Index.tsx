@@ -133,6 +133,7 @@ const Index = () => {
         `)
         .eq("status", "published")
         .eq("featured_on_home", true)
+        .eq("show_on_v3_only", false)
         .order("home_display_order", { ascending: true });
       if (featuredError) throw featuredError;
 
@@ -162,6 +163,7 @@ const Index = () => {
             )
           `)
           .eq("status", "published")
+          .eq("show_on_v3_only", false)
           .order("created_at", { ascending: false })
           .limit(8 - featuredIds.length);
 
@@ -212,7 +214,8 @@ const Index = () => {
             )
           )
         `)
-        .eq("status", "published");
+        .eq("status", "published")
+        .eq("show_on_v3_only", false);
       if (error) throw error;
       return (data || []).map((exp: any) => {
         const primaryHotel = exp.experience2_hotels
