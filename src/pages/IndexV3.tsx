@@ -526,11 +526,11 @@ const IndexV3 = () => {
               <p className="text-muted-foreground text-sm md:text-base max-w-md">
                 {t(lang, "giftCardSectionDesc")}
               </p>
-              <Button asChild className="group bg-foreground text-background hover:bg-foreground/90" onClick={() => trackGiftCardClicked("v3_page")}>
+              <Button asChild className="group rounded-full border border-foreground bg-transparent text-foreground hover:bg-foreground hover:text-background transition-colors duration-300 px-7 py-2.5 text-xs font-bold uppercase tracking-widest shadow-none" onClick={() => trackGiftCardClicked("v3_page")}>
                 <Link to={getLocalizedPath("/gift-card")}>
                   {t(lang, "giftCardSectionCTA")}
                   <ArrowRight
-                    className={`h-4 w-4 transition-transform group-hover:translate-x-1 ${isRTL ? "mr-2 rotate-180 group-hover:-translate-x-1" : "ml-2"}`}
+                    className={`h-3.5 w-3.5 transition-transform group-hover:translate-x-1 ${isRTL ? "mr-2 rotate-180 group-hover:-translate-x-1" : "ml-2"}`}
                   />
                 </Link>
               </Button>
