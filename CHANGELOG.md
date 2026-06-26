@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-06-26] — Calendrier standalone : délai minimum avant réservation effectif
+
+### Ce qui a changé côté code
+- `src/pages/StandaloneExperience.tsx` : calcul de `minDate` revu pour utiliser la date locale (et non UTC) — évite un décalage d'un jour en fin de soirée selon le fuseau horaire
+- `src/pages/StandaloneExperience.tsx` : ajout du prop `defaultMonth` sur le `CalendarPicker` pour que le calendrier s'ouvre directement sur le premier mois où des dates sont disponibles
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- Le champ "délai minimum avant réservation" (`lead_time_days`) était bien sauvegardé en back office, mais le calendrier s'ouvrait toujours sur le mois en cours — l'utilisateur voyait aujourd'hui (grisé) au lieu du premier jour réservable. Le calcul UTC pouvait aussi décaler d'un jour la date minimale en fin de soirée.
+
+---
+
 ## [2026-06-26] — Carte cadeau et code promo fonctionnels dans le checkout standalone
 
 ### Ce qui a changé côté code

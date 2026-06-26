@@ -14,10 +14,10 @@ import {
   AlertTriangle,
   ShieldCheck,
   User,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +25,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import RevolutPaymentWidget from "@/components/experience/RevolutPaymentWidget";
 import LaunchHeader from "@/components/LaunchHeader";
+import { LeadGuestForm, LeadGuestData, EMPTY_LEAD_GUEST, saveProfileFields } from "@/components/experience/LeadGuestForm";
+import AuthPromptDialog from "@/components/auth/AuthPromptDialog";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -198,12 +201,13 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
     },
   }[lang];
 
-  // ── States ──────────────────────────────────────────────────────────────
+  // ── Auth & States ────────────────────────────────────────────────────────
+  const { user } = useAuth();
   const [step, setStep] = useState<CheckoutStep>(2);
-  const [guestFirstName, setGuestFirstName] = useState("");
-  const [guestLastName, setGuestLastName] = useState("");
-  const [guestEmail, setGuestEmail] = useState("");
-  const [guestPhone, setGuestPhone] = useState("");
+  const [leadGuest, setLeadGuest] = useState<LeadGuestData>(EMPTY_LEAD_GUEST);
+  const [authDialog, setAuthDialog] = useState<{
+    open: boolean; tab: "login" | "signup"; context: "favorites" | "account" | "signup";
+  }>({ open: false, tab: "login", context: "account" });
   const [guestSpecialRequests, setGuestSpecialRequests] = useState("");
   const [giftCardCode, setGiftCardCode] = useState("");
   const [appliedGiftCard, setAppliedGiftCard] = useState<{
@@ -230,7 +234,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
 
   // ── Derived ─────────────────────────────────────────────────────────────
   const currencySymbol = getCurrencySymbol(state.currency);
-  const isGuestValid = !!guestFirstName.trim() && !!guestLastName.trim() && !!guestEmail.trim() && !!guestPhone.trim();
+  const isGuestValid = !!leadGuest.firstName.trim() && !!leadGuest.lastName.trim() && !!leadGuest.email.trim() && !!leadGuest.phone.trim();
   const promoDiscount = appliedPromo ? Math.round((state.totalPrice * appliedPromo.discountPct) / 100) : 0;
   const afterPromo = Math.max(0, state.totalPrice - promoDiscount);
   const giftCardApplied = appliedGiftCard ? Math.min(appliedGiftCard.availableBalance, afterPromo) : 0;
@@ -316,7 +320,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
 
   const handleApplyPromo = useCallback(async () => {
     if (!promoCodeValue.trim()) return;
-    if (!guestEmail.trim()) {
+    if (!leadGuest.email.trim()) {
       setPromoError(lang === "he" ? "הזן/י קודם את האימייל שלך" : lang === "fr" ? "Renseigne d'abord ton email" : "Enter your email first");
       return;
     }
@@ -325,7 +329,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
     try {
       const { data, error } = await (supabase.rpc as any)("validate_promo_code", {
         p_code: promoCodeValue.trim().toUpperCase(),
-        p_email: guestEmail.trim(),
+        p_email: leadGuest.email.trim(),
       });
       if (error || !data) {
         setPromoError(lang === "he" ? "לא ניתן לאמת את הקוד. נסה שוב." : lang === "fr" ? "Impossible de valider le code. Réessayez." : "Unable to validate the code. Please try again.");
@@ -354,7 +358,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
     } finally {
       setIsValidatingPromo(false);
     }
-  }, [promoCodeValue, guestEmail, lang]);
+  }, [promoCodeValue, leadGuest.email, lang]);
 
   const handleBook = useCallback(async () => {
     setIsBookingLoading(true);
@@ -367,9 +371,9 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
           time_slot: state.selectedSlot || null,
           adults: state.adults,
           children: state.children,
-          customer_name: `${guestFirstName.trim()} ${guestLastName.trim()}`,
-          customer_email: guestEmail.trim(),
-          customer_phone: guestPhone.trim() || null,
+          customer_name: `${leadGuest.firstName.trim()} ${leadGuest.lastName.trim()}`,
+          customer_email: leadGuest.email.trim(),
+          customer_phone: leadGuest.phone.trim() || null,
           promo_code: appliedPromo ? {
             id: appliedPromo.id,
             code: appliedPromo.code,
@@ -388,6 +392,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || "Impossible de créer la réservation.");
       // Cas carte cadeau couvre 100% : pas de widget Revolut, on va directement à la confirmation
+      if (user) saveProfileFields(user.id, leadGuest).catch(() => {/* non-bloquant */});
       if (data.no_payment_required) {
         setBookingToken(data.confirmation_token);
         setPaymentStatus("paid");
@@ -412,7 +417,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
     } finally {
       setIsBookingLoading(false);
     }
-  }, [state, guestFirstName, guestLastName, guestEmail, guestPhone, appliedPromo, promoDiscount]);
+  }, [state, leadGuest, user, appliedPromo, promoDiscount, appliedGiftCard, giftCardApplied]);
 
   const handlePaymentSuccess = useCallback(async () => {
     setPaymentDialogOpen(false);
@@ -585,65 +590,49 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                   <BookingSummaryCard />
                 </div>
 
+                {/* Carte connexion — visible uniquement si non connecté */}
+                {!user && (
+                  <div className="rounded-lg border border-border bg-muted/40 px-4 py-3.5 space-y-3">
+                    <div className="flex items-start gap-2.5">
+                      <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium leading-snug">
+                          {lang === "fr" ? "Remplissez vos infos en un clic" : lang === "he" ? "מלא את הפרטים בלחיצה אחת" : "Fill in your details instantly"}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {lang === "fr" ? "Connectez-vous ou créez un compte pour gagner du temps à chaque réservation." : lang === "he" ? "התחבר או צור חשבון כדי לחסוך זמן בכל הזמנה." : "Sign in or create an account to save time on every booking."}
+                        </p>
+                      </div>
+                    </div>
+                    <div className={cn("flex gap-2", lang === "he" && "flex-row-reverse")}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 text-xs"
+                        style={{ borderRadius: "0px", border: "1px solid #1A1814" }}
+                        onClick={() => setAuthDialog({ open: true, tab: "login", context: "account" })}
+                      >
+                        {lang === "fr" ? "Se connecter" : lang === "he" ? "התחבר" : "Sign in"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="flex-1 text-xs bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
+                        style={{ borderRadius: "0px" }}
+                        onClick={() => setAuthDialog({ open: true, tab: "signup", context: "signup" })}
+                      >
+                        {lang === "fr" ? "Créer un compte" : lang === "he" ? "צור חשבון" : "Create account"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Formulaire client */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      {t.guestInfo}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {/* Prénom + Nom */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-1">
-                        <Label className="text-xs">{t.firstName}</Label>
-                        <Input
-                          value={guestFirstName}
-                          onChange={(e) => setGuestFirstName(e.target.value)}
-                          placeholder={lang === "he" ? "ישראל" : lang === "fr" ? "Jean" : "John"}
-                          style={inputStyle}
-                          className={showGuestErrors && !guestFirstName.trim() ? "border-destructive" : ""}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">{t.lastName}</Label>
-                        <Input
-                          value={guestLastName}
-                          onChange={(e) => setGuestLastName(e.target.value)}
-                          placeholder={lang === "he" ? "ישראלי" : lang === "fr" ? "Dupont" : "Smith"}
-                          style={inputStyle}
-                          className={showGuestErrors && !guestLastName.trim() ? "border-destructive" : ""}
-                        />
-                      </div>
-                    </div>
-                    {/* Email + Téléphone */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-1">
-                        <Label className="text-xs">{t.email}</Label>
-                        <Input
-                          type="email"
-                          value={guestEmail}
-                          onChange={(e) => setGuestEmail(e.target.value)}
-                          placeholder="email@example.com"
-                          style={inputStyle}
-                          className={showGuestErrors && !guestEmail.trim() ? "border-destructive" : ""}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">{t.phone}</Label>
-                        <Input
-                          type="tel"
-                          value={guestPhone}
-                          onChange={(e) => setGuestPhone(e.target.value)}
-                          placeholder="+972 50 000 0000"
-                          style={inputStyle}
-                          className={showGuestErrors && !guestPhone.trim() ? "border-destructive" : ""}
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <LeadGuestForm
+                  value={leadGuest}
+                  onChange={setLeadGuest}
+                  lang={lang}
+                  showErrors={showGuestErrors}
+                />
 
                 {/* Demandes spéciales */}
                 <Card>
@@ -822,9 +811,9 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
               <div className="rounded-xl border border-border bg-card p-4 space-y-3">
                 <p className="text-sm font-semibold">{t.guestDetails}</p>
                 <div className="text-xs space-y-1">
-                  <p className="font-medium">{guestFirstName} {guestLastName}</p>
-                  <p className="text-muted-foreground">{guestEmail}</p>
-                  {guestPhone && <p className="text-muted-foreground">{guestPhone}</p>}
+                  <p className="font-medium">{leadGuest.firstName} {leadGuest.lastName}</p>
+                  <p className="text-muted-foreground">{leadGuest.email}</p>
+                  {leadGuest.phone && <p className="text-muted-foreground">{leadGuest.phone}</p>}
                   {guestSpecialRequests.trim() && <p className="text-muted-foreground italic">{guestSpecialRequests.trim()}</p>}
                 </div>
               </div>
@@ -973,7 +962,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
               currency={state.currency}
               lang={lang}
               environment={revolutEnvironment}
-              customerEmail={guestEmail}
+              customerEmail={leadGuest.email}
               onPaymentSuccess={handlePaymentSuccess}
               onPaymentError={handlePaymentError}
               onPaymentCancel={handlePaymentCancel}
@@ -981,6 +970,14 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
           )}
         </DialogContent>
       </Dialog>
+
+      <AuthPromptDialog
+        open={authDialog.open}
+        onOpenChange={(open) => setAuthDialog(prev => ({ ...prev, open }))}
+        lang={lang}
+        defaultTab={authDialog.tab}
+        context={authDialog.context}
+      />
     </div>
   );
 }
