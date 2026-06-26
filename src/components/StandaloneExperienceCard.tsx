@@ -71,7 +71,9 @@ export default function StandaloneExperienceCard({
 
   const autoBadgeTags = getAutoBadgeTagsFromPracticalInfo(
     normalizeLegacyPracticalInfo(experience.practical_info)
-  ).map((tag) => ({ highlight_tags: tag }));
+  )
+    .filter((tag) => tag.slug === "auto-kosher" || tag.slug === "auto-kids")
+    .map((tag) => ({ highlight_tags: tag }));
 
   const cardExperience = {
     ...experience,
