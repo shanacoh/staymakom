@@ -62,7 +62,7 @@ const OtherExperiencesFromHotel = ({ hotelId, currentExperienceId, hotelName }: 
 
               {/* Content */}
               <div className="space-y-0.5 sm:space-y-1">
-                <h3 className="font-semibold text-xs sm:text-base leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+                <h3 className="font-semibold text-xs sm:text-base leading-tight line-clamp-2 text-foreground group-hover:text-primary transition-colors">
                   {title}
                 </h3>
                 

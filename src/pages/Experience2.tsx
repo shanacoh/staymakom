@@ -425,7 +425,7 @@ export default function Experience2() {
                         />
                       )}
                       <div className="space-y-1">
-                        <h3 className="font-semibold text-lg">{hotelName}</h3>
+                        <h3 className="font-semibold text-lg text-foreground">{hotelName}</h3>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Moon className="h-4 w-4" />
                           <span>
