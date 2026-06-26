@@ -116,6 +116,35 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
     enabled: !!customer?.id,
   });
 
+  // Get current user email for standalone bookings (user_id not populated in standalone_bookings)
+  const { data: currentUser } = useQuery({
+    queryKey: ["current-user-auth"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      return user;
+    },
+  });
+  const userEmail = currentUser?.email;
+
+  const { data: standaloneBookings, isLoading: loadingStandalone } = useQuery({
+    queryKey: ["my-standalone-bookings", userEmail, timeFilter],
+    queryFn: async () => {
+      if (!userEmail) return [];
+      let query = supabase
+        .from("standalone_bookings")
+        .select("*, standalone_experiences(title, title_he, title_fr, hero_image)")
+        .eq("customer_email", userEmail)
+        .order("created_at", { ascending: false });
+      const today = new Date().toISOString().split("T")[0];
+      if (timeFilter === "upcoming") query = query.gte("booking_date", today);
+      else if (timeFilter === "past") query = query.lt("booking_date", today);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!userEmail,
+  });
+
   // ✅ #4: Simulate cancellation before showing dialog
   const handleCancelClick = async (bookingId: string) => {
     const booking = bookingsHg?.find((b: any) => b.id === bookingId);
@@ -282,7 +311,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
     );
   };
 
-  const isLoading = loadingHg || loadingV1;
+  const isLoading = loadingHg || loadingV1 || loadingStandalone;
 
   // Merge both V1 and V2 bookings into a unified list
   const allBookings = [
@@ -324,6 +353,31 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
       hgBookingId: null,
       slug: b.experiences?.slug,
       heroImage: null,
+      raw: b,
+    })),
+    ...(standaloneBookings || []).map((b: any) => ({
+      id: b.id,
+      type: "standalone" as const,
+      title: isHebrew
+        ? (b.standalone_experiences?.title_he || b.standalone_experiences?.title)
+        : isFrench
+        ? (b.standalone_experiences?.title_fr || b.standalone_experiences?.title)
+        : (b.standalone_experiences?.title || "Experience"),
+      hotelName: isHebrew ? "חוויה בלבד" : isFrench ? "Expérience uniquement" : "Experience only",
+      hotelCity: "",
+      checkin: b.booking_date,
+      checkout: b.booking_date,
+      nights: 0,
+      partySize: b.party_size,
+      totalPrice: b.sell_price,
+      currency: b.currency,
+      status: b.status,
+      isCancelled: b.is_cancelled ?? false,
+      roomName: b.time_slot ? `🕐 ${b.time_slot}` : null,
+      hgBookingId: null,
+      slug: null,
+      heroImage: b.standalone_experiences?.hero_image || null,
+      confirmationToken: b.confirmation_token,
       raw: b,
     })),
   ].sort((a, b) => new Date(b.raw.created_at || b.checkin).getTime() - new Date(a.raw.created_at || a.checkin).getTime());
@@ -468,7 +522,8 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
         <div className="grid gap-4">
           {allBookings.map((booking) => {
             const _isUpcoming = !isPast(parseISO(booking.checkin));
-            const showCancel = booking.type === "v2" && canCancel(booking.raw);
+            const isStandalone = booking.type === "standalone";
+            const showCancel = !isStandalone && booking.type === "v2" && canCancel(booking.raw);
             // ✅ #8: Modify button — same conditions as cancel
             const showModify = showCancel;
 
@@ -517,29 +572,48 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <div className="grid grid-cols-3 gap-4 mb-4">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <div className="text-sm min-w-0">
-                        <p className="text-muted-foreground text-xs">{isHebrew ? "צ'ק-אין" : isFrench ? "Arrivée" : "Check-in"}</p>
-                        <p className="font-medium truncate">{format(parseISO(booking.checkin), "MMM d, yyyy")}</p>
+                  {isStandalone ? (
+                    <div className="grid grid-cols-3 gap-4 mb-4">
+                      <div className="flex items-center gap-2 col-span-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <div className="text-sm">
+                          <p className="text-muted-foreground text-xs">{isHebrew ? "תאריך" : isFrench ? "Date" : "Date"}</p>
+                          <p className="font-medium">{format(parseISO(booking.checkin), "MMM d, yyyy")}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <div className="text-sm">
+                          <p className="text-muted-foreground text-xs">{isHebrew ? "אורחים" : isFrench ? "Personnes" : "Guests"}</p>
+                          <p className="font-medium">{booking.partySize}</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <div className="text-sm min-w-0">
-                        <p className="text-muted-foreground text-xs">{isHebrew ? "צ'ק-אאוט" : isFrench ? "Départ" : "Check-out"}</p>
-                        <p className="font-medium truncate">{format(parseISO(booking.checkout), "MMM d, yyyy")}</p>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-4 mb-4">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <div className="text-sm min-w-0">
+                          <p className="text-muted-foreground text-xs">{isHebrew ? "צ'ק-אין" : isFrench ? "Arrivée" : "Check-in"}</p>
+                          <p className="font-medium truncate">{format(parseISO(booking.checkin), "MMM d, yyyy")}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <div className="text-sm min-w-0">
+                          <p className="text-muted-foreground text-xs">{isHebrew ? "צ'ק-אאוט" : isFrench ? "Départ" : "Check-out"}</p>
+                          <p className="font-medium truncate">{format(parseISO(booking.checkout), "MMM d, yyyy")}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <div className="text-sm">
+                          <p className="text-muted-foreground text-xs">{isHebrew ? "אורחים" : isFrench ? "Voyageurs" : "Guests"}</p>
+                          <p className="font-medium">{booking.partySize}</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <div className="text-sm">
-                        <p className="text-muted-foreground text-xs">{isHebrew ? "אורחים" : isFrench ? "Voyageurs" : "Guests"}</p>
-                        <p className="font-medium">{booking.partySize}</p>
-                      </div>
-                    </div>
-                  </div>
+                  )}
 
                   {cancellation?.badgeText && (
                     <div className={`flex items-center gap-1.5 text-xs mt-1 mb-3 ${cancellation.isNonRefundable ? "text-destructive" : "text-emerald-600"}`}>
@@ -599,7 +673,17 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
                           {isHebrew ? "ביטול" : isFrench ? "Annuler" : "Cancel"}
                         </Button>
                       )}
-                      {booking.slug && (
+                      {isStandalone && (booking as any).confirmationToken && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/standalone-booking/confirmation/${(booking as any).confirmationToken}`)}
+                        >
+                          {isHebrew ? "צפה" : isFrench ? "Voir" : "View"}
+                          <ChevronRight className="ml-1 h-4 w-4" />
+                        </Button>
+                      )}
+                      {!isStandalone && booking.slug && (
                         <Button
                           variant="outline"
                           size="sm"

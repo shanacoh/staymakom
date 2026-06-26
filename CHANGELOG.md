@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-06-26] — Réservations "Experience Only" visibles dans l'espace client
+
+### Ce qui a changé côté code
+- `src/components/account/MyStaymakomSection.tsx` : ajout d'une 3ème requête qui récupère les réservations `standalone_bookings` filtrées par email (`customer_email = email connecté`). Les réservations standalone apparaissent maintenant dans l'espace "Mes réservations" avec : la date (au lieu de check-in/check-out), le nombre de personnes, le label "Expérience uniquement" à la place du nom d'hôtel, et un bouton "Voir" qui pointe vers `/standalone-booking/confirmation/:token`. Les boutons Annuler et Modifier sont désactivés pour ce type (pas de flow d'annulation côté client pour l'instant). Le loader global inclut maintenant les trois sources de données.
+
+### Ce qui a changé côté base de données
+- Aucun changement. La table `standalone_bookings` existait déjà. Aucune migration nécessaire.
+
+### Pourquoi ce changement
+- Après un paiement standalone réussi, la réservation apparaissait bien en base mais n'était pas visible dans l'espace client. L'email est utilisé comme filtre (et non l'identifiant utilisateur) car la colonne `user_id` n'est pas peuplée par l'Edge Function de paiement (endpoint public sans JWT).
+
+---
+
 ## [2026-06-26] — Calendrier standalone : délai minimum avant réservation effectif
 
 ### Ce qui a changé côté code
