@@ -53,7 +53,7 @@ export default function Experience2CardWithPrice({
   const autoBadgeTags = getAutoBadgeTagsFromPracticalInfo(
     normalizeLegacyPracticalInfo((primaryHotel as any)?.practical_info)
   )
-    .filter((tag) => tag.slug === "auto-kosher" || tag.slug === "auto-kids")
+    .filter((tag) => tag.slug === "auto-kosher" || (tag.slug === "auto-kids" && (experience as any).categories?.slug === "family"))
     .map((tag) => ({ highlight_tags: tag }));
 
   const editorialTags = (experience.experience2_highlight_tags ?? []);

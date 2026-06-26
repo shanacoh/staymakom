@@ -116,6 +116,7 @@ const Index = () => {
         .from("experiences2")
         .select(`
           *,
+          categories(slug),
           experience2_hotels(
             position,
             nights,
@@ -184,9 +185,12 @@ const Index = () => {
         const primaryHotel = exp.experience2_hotels
           ?.sort((a: any, b: any) => (a.position || 0) - (b.position || 0))
           ?.[0]?.hotel;
+        const isFamilyCategory = exp.categories?.slug === "family";
         const autoBadgeTags = getAutoBadgeTagsFromPracticalInfo(
           normalizeLegacyPracticalInfo(primaryHotel?.practical_info)
-        ).map((tag: any) => ({ highlight_tags: tag }));
+        )
+          .filter((tag: any) => tag.slug === "auto-kosher" || (tag.slug === "auto-kids" && isFamilyCategory))
+          .map((tag: any) => ({ highlight_tags: tag }));
         const editorialTags = exp.experience2_highlight_tags || [];
         return {
           ...exp,
@@ -204,6 +208,7 @@ const Index = () => {
         .from("experiences2")
         .select(`
           *,
+          categories(slug),
           experience2_hotels(
             position,
             nights,
@@ -228,9 +233,12 @@ const Index = () => {
         const primaryHotel = exp.experience2_hotels
           ?.sort((a: any, b: any) => (a.position || 0) - (b.position || 0))
           ?.[0]?.hotel;
+        const isFamilyCategory = exp.categories?.slug === "family";
         const autoBadgeTags = getAutoBadgeTagsFromPracticalInfo(
           normalizeLegacyPracticalInfo(primaryHotel?.practical_info)
-        ).map((tag: any) => ({ highlight_tags: tag }));
+        )
+          .filter((tag: any) => tag.slug === "auto-kosher" || (tag.slug === "auto-kids" && isFamilyCategory))
+          .map((tag: any) => ({ highlight_tags: tag }));
         const editorialTags = exp.experience2_highlight_tags || [];
         return {
           ...exp,
