@@ -169,9 +169,10 @@ body {
   }
 
   /* Pages exclues de la nouvelle DA (homepage, /launch) */
-  .preserve-heading-colors h1,
-  .preserve-heading-colors h2,
-  .preserve-heading-colors h3 {
+  /* :where() réduit la spécificité à 0 pour que text-white Tailwind l'emporte */
+  :where(.preserve-heading-colors) h1,
+  :where(.preserve-heading-colors) h2,
+  :where(.preserve-heading-colors) h3 {
     color: hsl(var(--foreground));
   }
 

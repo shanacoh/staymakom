@@ -527,7 +527,7 @@ const Index = () => {
           
           <div className="container relative z-10 max-w-4xl px-4">
             {/* Title */}
-            <h2 className="text-center font-sans text-xl sm:text-2xl md:text-3xl font-bold tracking-[-0.02em] text-foreground mb-8 md:mb-10">
+            <h2 className="text-center font-sans text-xl sm:text-2xl md:text-3xl font-bold tracking-[-0.02em] text-white mb-8 md:mb-10">
               {lang === 'he' ? 'למי STAYMAKOM מיועד' : 'Who STAYMAKOM is for'}
             </h2>
             
