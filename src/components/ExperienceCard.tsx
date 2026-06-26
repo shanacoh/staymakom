@@ -14,6 +14,34 @@ import HeartBurst from "@/components/ui/HeartBurst";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { trackWishlistClicked, trackExperienceCardClicked } from "@/lib/analytics";
 
+// Force les titres courts sur 2 lignes équilibrées en coupant au mot le plus proche du milieu.
+// Les titres longs (≥ 55 chars) s'étalent naturellement et ne sont pas modifiés.
+function splitTitleBalanced(title: string): React.ReactNode {
+  const words = title.trim().split(/\s+/);
+  if (words.length < 2 || title.length >= 55) return title;
+
+  const mid = title.length / 2;
+  let bestSplit = 1;
+  let bestDiff = Infinity;
+
+  for (let i = 1; i < words.length; i++) {
+    const lineOneLen = words.slice(0, i).join(' ').length;
+    const diff = Math.abs(lineOneLen - mid);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      bestSplit = i;
+    }
+  }
+
+  return (
+    <>
+      {words.slice(0, bestSplit).join(' ')}
+      <br />
+      {words.slice(bestSplit).join(' ')}
+    </>
+  );
+}
+
 interface HighlightTag {
   id: string;
   slug: string;
@@ -270,8 +298,8 @@ export default function ExperienceCard({
 
           {/* Title on image - bottom left */}
           <div className="absolute bottom-3 left-3 right-3">
-            <h3 className="font-sans text-base sm:text-lg md:text-xl font-bold text-white leading-tight line-clamp-2 drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
-              {title}
+            <h3 className="font-sans text-base sm:text-lg md:text-xl font-bold text-white leading-tight line-clamp-2 min-h-[2.5em] drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
+              {splitTitleBalanced(title)}
             </h3>
           </div>
         </div>
