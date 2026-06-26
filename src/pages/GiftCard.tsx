@@ -283,22 +283,25 @@ export default function GiftCard() {
       <LaunchHeader forceScrolled={true} />
 
       {/* Hero Section */}
-      <section className="relative h-[35vh] min-h-[260px] sm:min-h-[300px] overflow-hidden">
-        <img
-          src={giftCardHero}
-          alt={t(lang, "giftCardHeroTitle")}
-          className="absolute inset-0 w-full h-full object-cover"
+      <section className="relative h-[38vh] md:h-[54vh] min-h-[240px] flex items-center justify-center">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${giftCardHero})` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/60" />
-        <div className="relative h-full flex items-center justify-center text-center px-4">
-          <div className="max-w-3xl space-y-3" dir={isRTL ? "rtl" : "ltr"}>
-            <h1 className="font-sans text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
-              {t(lang, "giftCardHeroTitle")}
-            </h1>
-            <p className="text-sm sm:text-base text-white/90 font-light max-w-md mx-auto">
-              {t(lang, "giftCardHeroSubtitle")}
-            </p>
-          </div>
+        <div className="absolute inset-0 bg-black/15" />
+        <div className="relative z-10 text-center px-4 sm:px-6 max-w-3xl mx-auto" dir={isRTL ? "rtl" : "ltr"}>
+          <span className="block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-white mb-4 opacity-0 animate-hero-fade-up">
+            {lang === "he" ? "כרטיס מתנה" : lang === "fr" ? "CARTE CADEAU" : "GIFT CARD"}
+          </span>
+          <h1 className="font-sans text-[28px] sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-[0.02em] leading-[1.1] mb-3 opacity-0 animate-hero-fade-up text-white text-center">
+            {t(lang, "giftCardHeroTitle")}
+          </h1>
+          <p
+            className="font-sans not-italic text-white max-w-xl mx-auto opacity-0 animate-hero-fade-up text-xs sm:text-base md:text-lg"
+            style={{ animationDelay: "250ms" }}
+          >
+            {t(lang, "giftCardHeroSubtitle")}
+          </p>
         </div>
       </section>
 
@@ -603,32 +606,37 @@ export default function GiftCard() {
         </div>
 
         {/* FAQ Section */}
-        <section className="max-w-2xl mx-auto mt-16 mb-8">
-          <h2 className="font-sans text-xl font-bold text-center mb-6">
-            {t(lang, "giftCardFaqTitle")}
-          </h2>
+        <section className="max-w-2xl mx-auto mt-16 mb-8 border-t border-border/40 pt-10" dir={isRTL ? "rtl" : "ltr"}>
+          <div className="text-center mb-7">
+            <p className="text-[10px] sm:text-xs uppercase tracking-[0.18em] text-[#a83c3c] mb-2">
+              {lang === "he" ? "שאלות נפוצות" : lang === "fr" ? "Questions fréquentes" : "Questions & Answers"}
+            </p>
+            <h2 className="font-sans text-xl sm:text-2xl font-bold uppercase tracking-[-0.02em] text-foreground">
+              {lang === "he" ? "כל מה שרציתם לדעת" : lang === "fr" ? "Tout ce que vous voulez savoir" : "Everything you need to know"}
+            </h2>
+          </div>
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="item-1">
-              <AccordionTrigger className="text-left text-sm">
+            <AccordionItem value="item-1" className="border-b border-border/50 last:border-b-0">
+              <AccordionTrigger className="text-sm sm:text-base font-medium text-left hover:no-underline text-foreground hover:text-[#a83c3c] py-4 [&[data-state=open]]:text-[#a83c3c] transition-colors duration-200 text-start">
                 {t(lang, "giftCardFaq1Q")}
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground text-sm">
+              <AccordionContent className="text-muted-foreground text-sm leading-relaxed pb-5">
                 {t(lang, "giftCardFaq1A")}
               </AccordionContent>
             </AccordionItem>
-            <AccordionItem value="item-2">
-              <AccordionTrigger className="text-left text-sm">
+            <AccordionItem value="item-2" className="border-b border-border/50 last:border-b-0">
+              <AccordionTrigger className="text-sm sm:text-base font-medium text-left hover:no-underline text-foreground hover:text-[#a83c3c] py-4 [&[data-state=open]]:text-[#a83c3c] transition-colors duration-200 text-start">
                 {t(lang, "giftCardFaq2Q")}
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground text-sm">
+              <AccordionContent className="text-muted-foreground text-sm leading-relaxed pb-5">
                 {t(lang, "giftCardFaq2A")}
               </AccordionContent>
             </AccordionItem>
-            <AccordionItem value="item-3">
-              <AccordionTrigger className="text-left text-sm">
+            <AccordionItem value="item-3" className="border-b border-border/50 last:border-b-0">
+              <AccordionTrigger className="text-sm sm:text-base font-medium text-left hover:no-underline text-foreground hover:text-[#a83c3c] py-4 [&[data-state=open]]:text-[#a83c3c] transition-colors duration-200 text-start">
                 {t(lang, "giftCardFaq3Q")}
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground text-sm">
+              <AccordionContent className="text-muted-foreground text-sm leading-relaxed pb-5">
                 {t(lang, "giftCardFaq3A")}
               </AccordionContent>
             </AccordionItem>

@@ -58,7 +58,7 @@ const OPTIONS = [
 
 const Celine30 = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF8F4]">
+    <div className="min-h-screen flex flex-col bg-white">
       <LaunchHeader forceScrolled={true} />
 
       {/* ── Hero ── */}
@@ -86,10 +86,10 @@ const Celine30 = () => {
       </section>
 
       {/* ── Intro callout ── */}
-      <section className="bg-[#FAF8F4] py-12 px-6">
+      <section className="bg-white py-12 px-6">
         <div className="max-w-2xl mx-auto">
-          <div className="border-l-4 border-[#C2714A] bg-white/60 backdrop-blur-sm rounded-r-xl px-5 py-4">
-            <p className="font-sans text-sm text-[#1a1814] leading-relaxed italic">
+          <div className="border-l-4 border-[#ad1414] bg-white/60 backdrop-blur-sm rounded-r-xl px-5 py-4">
+            <p className="font-sans text-sm text-foreground leading-relaxed italic">
               Voici 4 idées de pistes à explorer. Si l'une te plaît, je peux t'aider à regarder les dates, le budget et les détails, dis-moi juste laquelle t'attire.
             </p>
           </div>
@@ -100,8 +100,8 @@ const Celine30 = () => {
       <section id="options" className="pb-16 px-4 scroll-mt-16">
         <div className="max-w-4xl mx-auto space-y-3">
           <div className="text-center mb-8 space-y-1">
-            <p className="text-xs uppercase tracking-[0.18em] text-[#8C7B6B] font-sans">UNE SÉLECTION POUR VOUS</p>
-            <h2 className="font-sans text-2xl sm:text-3xl font-bold uppercase tracking-[-0.02em] text-[#1a1814]">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground font-sans">UNE SÉLECTION POUR VOUS</p>
+            <h2 className="font-sans text-2xl sm:text-3xl font-bold uppercase tracking-[-0.02em] text-foreground">
               4 Pistes à Explorer
             </h2>
           </div>
@@ -138,7 +138,7 @@ const Celine30 = () => {
                   <ul className="space-y-1 pt-1">
                     {opt.highlights.map((h) => (
                       <li key={h} className="flex items-start gap-1.5 text-xs text-white/80">
-                        <span className="text-[#C2714A] mt-0.5 leading-none">•</span>
+                        <span className="text-[#ad1414] mt-0.5 leading-none">•</span>
                         {h}
                       </li>
                     ))}
@@ -151,8 +151,8 @@ const Celine30 = () => {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="bg-[#FAF8F4] border-t border-[#E8E0D4] py-6 text-center">
-        <p className="font-sans text-[11px] uppercase tracking-[0.15em] text-[#8C7B6B]">
+      <footer className="bg-white border-t border-border py-6 text-center">
+        <p className="font-sans text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
           © STAYMAKOM · Expériences sur-mesure en Israël
         </p>
       </footer>

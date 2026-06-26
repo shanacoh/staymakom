@@ -29,7 +29,7 @@ const Journal = () => {
   const remainingPosts = posts?.slice(1);
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5]">
+    <div className="min-h-screen bg-white">
       <Header />
 
       <main className="max-w-6xl mx-auto px-6 py-12 pt-24">
@@ -89,7 +89,7 @@ const Journal = () => {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
                     <div className="flex items-center gap-3 mb-3">
-                      <span className="inline-block px-3 py-1 text-[11px] font-medium uppercase tracking-[0.1em] rounded-full bg-[#E8E0D4] text-[#1A1814]">
+                      <span className="inline-block px-3 py-1 text-[11px] font-medium uppercase tracking-[0.1em] rounded-full bg-muted text-foreground">
                         {featuredPost.category}
                       </span>
                       {featuredPost.published_at && (
@@ -110,7 +110,7 @@ const Journal = () => {
                         {getLocalizedField(featuredPost, "excerpt", lang) || featuredPost.excerpt_en}
                       </p>
                     )}
-                    <span className="inline-flex items-center gap-1 text-[#B8935A] text-sm font-medium group-hover:gap-2 transition-all">
+                    <span className="inline-flex items-center gap-1 text-[#ad1414] text-sm font-medium group-hover:gap-2 transition-all">
                       Read the story <ArrowRight className="w-4 h-4" />
                     </span>
                   </div>
@@ -135,7 +135,7 @@ const Journal = () => {
                       )}
                       <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="inline-block px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.1em] rounded-full bg-[#E8E0D4] text-[#1A1814]">
+                          <span className="inline-block px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.1em] rounded-full bg-muted text-foreground">
                             {post.category}
                           </span>
                           {post.published_at && (

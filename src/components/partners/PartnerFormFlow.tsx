@@ -144,7 +144,7 @@ export const PartnerFormFlow = ({ lang }: PartnerFormFlowProps) => {
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onStep1Submit)}
-            className="space-y-5 bg-white rounded-2xl p-8 shadow-sm border border-[#EDE8E0]"
+            className="space-y-5 bg-white rounded-2xl p-8 shadow-sm border border-border"
           >
             <div className="grid sm:grid-cols-2 gap-5">
               <FormField
@@ -152,13 +152,13 @@ export const PartnerFormFlow = ({ lang }: PartnerFormFlowProps) => {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-medium tracking-wide text-[#6B6560] uppercase">
+                    <FormLabel className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                       {t(lang, "partnersName")} *
                     </FormLabel>
                     <FormControl>
                       <Input
                         placeholder={lang === "he" ? "השם שלכם" : "Your full name"}
-                        className="h-11 border-[#DDD8D0] focus:border-[#1A1814] rounded-xl bg-[#FAFAF8] text-[#1A1814]"
+                        className="h-11 border-border focus:border-foreground rounded-xl bg-muted text-foreground"
                         {...field}
                       />
                     </FormControl>
@@ -171,13 +171,13 @@ export const PartnerFormFlow = ({ lang }: PartnerFormFlowProps) => {
                 name="hotel_name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-medium tracking-wide text-[#6B6560] uppercase">
+                    <FormLabel className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                       {t(lang, "partnersHotelName")} *
                     </FormLabel>
                     <FormControl>
                       <Input
                         placeholder={lang === "he" ? "שם המלון שלכם" : "Your hotel name"}
-                        className="h-11 border-[#DDD8D0] focus:border-[#1A1814] rounded-xl bg-[#FAFAF8] text-[#1A1814]"
+                        className="h-11 border-border focus:border-foreground rounded-xl bg-muted text-foreground"
                         {...field}
                       />
                     </FormControl>
@@ -192,14 +192,14 @@ export const PartnerFormFlow = ({ lang }: PartnerFormFlowProps) => {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-medium tracking-wide text-[#6B6560] uppercase">
+                  <FormLabel className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                     {t(lang, "partnersEmail")} *
                   </FormLabel>
                   <FormControl>
                     <Input
                       type="email"
                       placeholder="your@email.com"
-                      className="h-11 border-[#DDD8D0] focus:border-[#1A1814] rounded-xl bg-[#FAFAF8] text-[#1A1814]"
+                      className="h-11 border-border focus:border-foreground rounded-xl bg-muted text-foreground"
                       {...field}
                     />
                   </FormControl>
@@ -213,9 +213,9 @@ export const PartnerFormFlow = ({ lang }: PartnerFormFlowProps) => {
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-medium tracking-wide text-[#6B6560] uppercase">
+                  <FormLabel className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                     {t(lang, "partnersPhone")}
-                    <span className="ml-1 normal-case text-[#9E9890] font-normal">
+                    <span className="ml-1 normal-case text-muted-foreground font-normal">
                       {lang === "he" ? "(אופציונלי)" : "(optional)"}
                     </span>
                   </FormLabel>
@@ -223,7 +223,7 @@ export const PartnerFormFlow = ({ lang }: PartnerFormFlowProps) => {
                     <Input
                       type="tel"
                       placeholder="+972 XX XXX XXXX"
-                      className="h-11 border-[#DDD8D0] focus:border-[#1A1814] rounded-xl bg-[#FAFAF8] text-[#1A1814]"
+                      className="h-11 border-border focus:border-foreground rounded-xl bg-muted text-foreground"
                       {...field}
                     />
                   </FormControl>
@@ -237,16 +237,16 @@ export const PartnerFormFlow = ({ lang }: PartnerFormFlowProps) => {
               name="message"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-medium tracking-wide text-[#6B6560] uppercase">
+                  <FormLabel className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                     {lang === "he" ? "מידע נוסף" : "Message / Additional Information"}
-                    <span className="ml-1 normal-case text-[#9E9890] font-normal">
+                    <span className="ml-1 normal-case text-muted-foreground font-normal">
                       {lang === "he" ? "(אופציונלי)" : "(optional)"}
                     </span>
                   </FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder={t(lang, "partnersPropertyPlaceholder")}
-                      className="min-h-[90px] border-[#DDD8D0] focus:border-[#1A1814] rounded-xl bg-[#FAFAF8] text-[#1A1814] resize-none"
+                      className="min-h-[90px] border-border focus:border-foreground rounded-xl bg-muted text-foreground resize-none"
                       {...field}
                     />
                   </FormControl>
@@ -258,7 +258,7 @@ export const PartnerFormFlow = ({ lang }: PartnerFormFlowProps) => {
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-12 bg-[#1A1814] hover:bg-[#1A1814]/85 text-white rounded-xl text-sm font-medium tracking-wide transition-all duration-200"
+              className="w-full h-12 bg-foreground hover:bg-foreground/85 text-background rounded-xl text-sm font-medium tracking-wide transition-all duration-200"
             >
               {isSubmitting ? t(lang, "partnersSending") : t(lang, "partnersSendRequest")}
             </Button>
@@ -277,33 +277,33 @@ export const PartnerFormFlow = ({ lang }: PartnerFormFlowProps) => {
     >
       {/* Confirmation banner */}
       <div className="text-center mb-10">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#F0EDE6] mb-5">
-          <Check className="w-6 h-6 text-[#1A1814]" strokeWidth={2.5} />
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-muted mb-5">
+          <Check className="w-6 h-6 text-foreground" strokeWidth={2.5} />
         </div>
-        <h3 className="font-serif text-2xl sm:text-3xl text-[#1A1814] mb-4 leading-snug">
+        <h3 className="font-serif text-2xl sm:text-3xl text-foreground mb-4 leading-snug">
           {t(lang, "partnersStep2Title")}
         </h3>
-        <p className="text-sm text-[#6B6560] leading-relaxed max-w-md mx-auto">
+        <p className="text-sm text-muted-foreground leading-relaxed max-w-md mx-auto">
           {t(lang, "partnersStep2Subtitle")}
         </p>
       </div>
 
       {/* Qualification form */}
       {qualDone ? (
-        <div className="animate-in fade-in duration-300 text-center py-8 px-6 bg-[#F8F5EF] rounded-2xl">
-          <p className="text-sm font-medium text-[#1A1814]">
+        <div className="animate-in fade-in duration-300 text-center py-8 px-6 bg-muted rounded-2xl">
+          <p className="text-sm font-medium text-foreground">
             {t(lang, "partnersStep2QualDone")}
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-[#EDE8E0] p-8 space-y-8">
-          <p className="text-sm text-[#6B6560] leading-relaxed">
+        <div className="bg-white rounded-2xl border border-border p-8 space-y-8">
+          <p className="text-sm text-muted-foreground leading-relaxed">
             {t(lang, "partnersStep2QualTitle")}
           </p>
 
           {/* Goals */}
           <div className="space-y-3">
-            <p className="text-xs font-medium tracking-wide text-[#6B6560] uppercase">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
               {t(lang, "partnersStep2Goals")}
             </p>
             <div className="grid gap-2">
@@ -315,8 +315,8 @@ export const PartnerFormFlow = ({ lang }: PartnerFormFlowProps) => {
                   className={cn(
                     "w-full text-left px-4 py-3 rounded-xl border transition-all duration-200 flex items-center gap-3 text-sm",
                     goals.includes(option.value)
-                      ? "border-[#1A1814] bg-[#1A1814] text-white"
-                      : "border-[#E5E0D8] bg-[#FAFAF8] text-[#1A1814] hover:border-[#1A1814]/40"
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border bg-muted text-foreground hover:border-foreground/40"
                   )}
                 >
                   <div
@@ -337,20 +337,20 @@ export const PartnerFormFlow = ({ lang }: PartnerFormFlowProps) => {
 
           {/* PMS */}
           <div className="space-y-2">
-            <label className="text-xs font-medium tracking-wide text-[#6B6560] uppercase block">
+            <label className="text-xs font-medium tracking-wide text-muted-foreground uppercase block">
               {t(lang, "partnersStep2PMS")}
             </label>
             <Input
               value={pms}
               onChange={e => setPms(e.target.value)}
               placeholder={t(lang, "partnersPMSPlaceholder")}
-              className="h-11 border-[#DDD8D0] focus:border-[#1A1814] rounded-xl bg-[#FAFAF8] text-[#1A1814]"
+              className="h-11 border-border focus:border-foreground rounded-xl bg-muted text-foreground"
             />
           </div>
 
           {/* Num properties */}
           <div className="space-y-2">
-            <label className="text-xs font-medium tracking-wide text-[#6B6560] uppercase block">
+            <label className="text-xs font-medium tracking-wide text-muted-foreground uppercase block">
               {t(lang, "partnersStep2NumProperties")}
             </label>
             <Input
@@ -359,13 +359,13 @@ export const PartnerFormFlow = ({ lang }: PartnerFormFlowProps) => {
               value={numProperties}
               onChange={e => setNumProperties(e.target.value)}
               placeholder="1"
-              className="h-11 border-[#DDD8D0] focus:border-[#1A1814] rounded-xl bg-[#FAFAF8] text-[#1A1814] w-32"
+              className="h-11 border-border focus:border-foreground rounded-xl bg-muted text-foreground w-32"
             />
           </div>
 
           {/* Facilities */}
           <div className="space-y-3">
-            <p className="text-xs font-medium tracking-wide text-[#6B6560] uppercase">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
               {t(lang, "partnersStep2Facilities")}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -377,8 +377,8 @@ export const PartnerFormFlow = ({ lang }: PartnerFormFlowProps) => {
                   className={cn(
                     "px-4 py-2 rounded-full border text-sm transition-all duration-200 font-medium",
                     facilities.includes(option.value)
-                      ? "border-[#1A1814] bg-[#1A1814] text-white"
-                      : "border-[#E5E0D8] bg-[#FAFAF8] text-[#1A1814] hover:border-[#1A1814]/40"
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border bg-muted text-foreground hover:border-foreground/40"
                   )}
                 >
                   {t(lang, option.key)}
@@ -393,7 +393,7 @@ export const PartnerFormFlow = ({ lang }: PartnerFormFlowProps) => {
               type="button"
               onClick={saveQualification}
               disabled={isQualSaving}
-              className="flex-1 h-12 bg-[#1A1814] hover:bg-[#1A1814]/85 text-white rounded-xl text-sm font-medium tracking-wide"
+              className="flex-1 h-12 bg-foreground hover:bg-foreground/85 text-background rounded-xl text-sm font-medium tracking-wide"
             >
               {isQualSaving ? t(lang, "partnersStep2SubmitSending") : t(lang, "partnersStep2Submit")}
             </Button>
@@ -401,7 +401,7 @@ export const PartnerFormFlow = ({ lang }: PartnerFormFlowProps) => {
               type="button"
               variant="ghost"
               onClick={() => setQualDone(true)}
-              className="h-12 text-[#9E9890] hover:text-[#6B6560] text-sm rounded-xl"
+              className="h-12 text-muted-foreground hover:text-muted-foreground text-sm rounded-xl"
             >
               {t(lang, "partnersStep2Skip")}
             </Button>

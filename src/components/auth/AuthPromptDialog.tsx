@@ -290,7 +290,7 @@ export default function AuthPromptDialog({
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: `${window.location.origin}/auth`,
       });
       if (error) {
         toast.error(error.message);

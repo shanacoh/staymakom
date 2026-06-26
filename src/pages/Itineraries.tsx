@@ -113,13 +113,13 @@ const GateScreen = ({ onUnlock }: { onUnlock: (row: ItineraryRow) => void }) => 
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F2EC] flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm text-center space-y-10 animate-in fade-in duration-700">
         <div className="space-y-3">
-          <span className="font-sans font-bold tracking-[-0.04em] uppercase text-2xl text-[#1A1814]">
+          <span className="font-sans font-bold tracking-[-0.04em] uppercase text-2xl text-foreground">
             STAYMAKOM
           </span>
-          <p className="text-sm text-[#9E9890] tracking-wide">
+          <p className="text-sm text-muted-foreground tracking-wide">
             Your journey is waiting.
           </p>
         </div>
@@ -136,14 +136,14 @@ const GateScreen = ({ onUnlock }: { onUnlock: (row: ItineraryRow) => void }) => 
               "h-12 text-center text-base border rounded-xl bg-white tracking-widest transition-colors",
               error
                 ? "border-red-300 focus:border-red-400"
-                : "border-[#DDD8D0] focus:border-[#1A1814]"
+                : "border-border focus:border-foreground"
             )}
           />
 
           {error && (
-            <p className="text-xs text-[#6B6560] animate-in fade-in duration-300">
+            <p className="text-xs text-muted-foreground animate-in fade-in duration-300">
               We don't recognize this code. Check with us at{" "}
-              <a href="mailto:shana@staymakom.com" className="text-[#1A1814] underline underline-offset-2">
+              <a href="mailto:shana@staymakom.com" className="text-foreground underline underline-offset-2">
                 shana@staymakom.com
               </a>
             </p>
@@ -152,7 +152,7 @@ const GateScreen = ({ onUnlock }: { onUnlock: (row: ItineraryRow) => void }) => 
           <Button
             type="submit"
             disabled={loading || !password.trim()}
-            className="w-full h-12 bg-[#1A1814] hover:bg-[#1A1814]/85 text-white rounded-xl text-sm font-medium tracking-wide"
+            className="w-full h-12 bg-foreground hover:bg-foreground/85 text-white rounded-xl text-sm font-medium tracking-wide"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Enter"}
           </Button>
@@ -194,7 +194,7 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
   }, [c.chapters.length]);
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#F5F2EC" }}>
+    <div className="min-h-screen bg-white">
 
       {/* ── 1. HERO ────────────────────────────────────────────────────────── */}
       <section className="relative h-screen min-h-[600px] flex flex-col justify-end overflow-hidden">
@@ -267,7 +267,7 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
       {c.intro && (
         <div className="py-16 px-6 max-w-2xl mx-auto">
           {c.intro.split("\n\n").map((para, i) => (
-            <p key={i} className="text-[15px] text-[#6B6560] leading-[1.9] mb-5 last:mb-0">
+            <p key={i} className="text-[15px] text-muted-foreground leading-[1.9] mb-5 last:mb-0">
               {para}
             </p>
           ))}
@@ -275,7 +275,7 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
       )}
 
       {/* ── 3. STICKY CHAPTER NAV ──────────────────────────────────────────── */}
-      <div className="sticky top-0 z-30 bg-[#F5F2EC]/95 backdrop-blur-sm border-b border-[#EDE8E0]">
+      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
         <div ref={navRef} className="flex overflow-x-auto scrollbar-hide px-4 sm:px-8">
           {c.chapters.map((chapter, i) => (
             <button
@@ -284,12 +284,12 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
               className={cn(
                 "flex-shrink-0 px-5 py-4 text-[11px] font-medium tracking-[0.1em] uppercase transition-colors border-b-2 whitespace-nowrap",
                 activeChapter === i
-                  ? "border-[#1A1814] text-[#1A1814]"
-                  : "border-transparent text-[#9E9890] hover:text-[#6B6560]"
+                  ? "border-foreground text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-muted-foreground"
               )}
             >
               {chapter.number && (
-                <span className="text-[#C4A882] mr-1.5">{chapter.number}</span>
+                <span className="text-[#ad1414]/60 mr-1.5">{chapter.number}</span>
               )}
               {chapter.title}
             </button>
@@ -304,7 +304,7 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
           id={`chapter-${i}`}
           ref={(el) => { chapterRefs.current[i] = el; }}
           style={{ scrollMarginTop: "56px" }}
-          className="py-20 border-t border-[#EDE8E0]"
+          className="py-20 border-t border-border"
         >
           {/* Chapter header */}
           <div className="max-w-5xl mx-auto px-6 overflow-hidden">
@@ -319,11 +319,11 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
               )}
               <div className="pt-0 sm:pt-8 flex-1">
                 {chapter.period && (
-                  <p className="text-[10px] uppercase tracking-[0.22em] text-[#C4A882] mb-3">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-[#ad1414]/60 mb-3">
                     {chapter.period}
                   </p>
                 )}
-                <h2 className="font-display font-light leading-[1.0] text-[#1A1814]"
+                <h2 className="font-display font-light leading-[1.0] text-foreground"
                   style={{ fontSize: "clamp(32px, 5vw, 56px)" }}>
                   {chapter.title}
                 </h2>
@@ -334,14 +334,14 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
           {/* Body text */}
           {chapter.body && (
             <div className="max-w-2xl mx-auto px-6 mb-14">
-              <p className="text-[14px] text-[#4A4540] leading-[1.9]">{chapter.body}</p>
+              <p className="text-[14px] text-foreground/80 leading-[1.9]">{chapter.body}</p>
             </div>
           )}
 
           {/* Experiences grid */}
           {chapter.experiences && chapter.experiences.length > 0 && (
             <div className="max-w-5xl mx-auto px-6 mb-14">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-[#9E9890] mb-6">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-6">
                 Experiences
               </p>
               <div className="grid md:grid-cols-2 gap-4">
@@ -349,7 +349,7 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
                   <div
                     key={j}
                     className={cn(
-                      "rounded-2xl border border-[#EDE8E0] overflow-hidden",
+                      "rounded-2xl border border-border overflow-hidden",
                       exp.highlight ? "md:col-span-2" : ""
                     )}
                     style={{ backgroundColor: exp.highlight ? "#F8F3EC" : "#FFFFFF" }}
@@ -363,18 +363,18 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
                       )}
                       <div className="flex-1 min-w-0">
                         {exp.time && (
-                          <p className="text-[10px] text-[#C4A882] tracking-widest uppercase mb-1.5">
+                          <p className="text-[10px] text-[#ad1414]/60 tracking-widest uppercase mb-1.5">
                             {exp.time}
                           </p>
                         )}
                         <p className={cn(
-                          "font-medium text-[#1A1814] leading-snug",
+                          "font-medium text-foreground leading-snug",
                           exp.highlight ? "text-[15px]" : "text-sm"
                         )}>
                           {exp.title}
                         </p>
                         {exp.description && (
-                          <p className="text-xs text-[#6B6560] leading-relaxed mt-2">
+                          <p className="text-xs text-muted-foreground leading-relaxed mt-2">
                             {exp.description}
                           </p>
                         )}
@@ -390,7 +390,7 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
           {chapter.daytrips && chapter.daytrips.length > 0 && (
             <div className="mb-14" style={{ backgroundColor: "#1C1915" }}>
               <div className="max-w-5xl mx-auto px-6 py-10">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-[#C4A882] mb-4">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-[#ad1414]/60 mb-4">
                   Day Trips
                 </p>
                 {chapter.daytrips_intro && (
@@ -422,12 +422,12 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
           {/* Destination blocks (road trip chapters) */}
           {chapter.destinations && chapter.destinations.length > 0 && (
             <div className="max-w-5xl mx-auto px-6 mb-14">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-[#9E9890] mb-6">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-6">
                 Destinations
               </p>
               <div className="space-y-5">
                 {chapter.destinations.map((dest, j) => (
-                  <div key={j} className="bg-white rounded-2xl border border-[#EDE8E0] overflow-hidden">
+                  <div key={j} className="bg-white rounded-2xl border border-border overflow-hidden">
 
                     {/* A — Header teinté */}
                     <div className="px-6 py-5" style={{ backgroundColor: "#F8F5F0" }}>
@@ -436,27 +436,27 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
                       </p>
                       <div className="flex items-center gap-2.5">
                         {dest.icon && <span className="text-xl shrink-0">{dest.icon}</span>}
-                        <p className="font-medium text-[#1A1814] text-base leading-snug">{dest.title}</p>
+                        <p className="font-medium text-foreground text-base leading-snug">{dest.title}</p>
                       </div>
                     </div>
 
                     {/* B — Bande d'infos rapides */}
                     {(dest.distance || dest.nights || dest.stay) && (
-                      <div className="px-6 py-3 flex flex-wrap gap-x-5 gap-y-1.5 border-b border-[#EDE8E0]">
+                      <div className="px-6 py-3 flex flex-wrap gap-x-5 gap-y-1.5 border-b border-border">
                         {dest.distance && (
-                          <span className="flex items-center gap-1.5 text-xs text-[#4A4540]">
+                          <span className="flex items-center gap-1.5 text-xs text-foreground/80">
                             <span className="text-sm">📍</span>
                             <span className="font-medium">{dest.distance}</span>
                           </span>
                         )}
                         {dest.nights && (
-                          <span className="flex items-center gap-1.5 text-xs text-[#4A4540]">
+                          <span className="flex items-center gap-1.5 text-xs text-foreground/80">
                             <span className="text-sm">🌙</span>
                             {dest.nights}
                           </span>
                         )}
                         {dest.stay && (
-                          <span className="flex items-center gap-1.5 text-xs text-[#4A4540]">
+                          <span className="flex items-center gap-1.5 text-xs text-foreground/80">
                             <span className="text-sm">🏨</span>
                             {dest.stay}
                           </span>
@@ -466,20 +466,20 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
 
                     {/* C — Corps */}
                     <div className="px-6 pt-5 pb-2">
-                      <p className="text-sm text-[#4A4540] leading-[1.85]">{dest.body}</p>
+                      <p className="text-sm text-foreground/80 leading-[1.85]">{dest.body}</p>
                     </div>
 
                     {/* D — Grille d'activités */}
                     {dest.highlights && dest.highlights.length > 0 && (
                       <div className="px-6 pb-6 pt-4">
-                        <p className="text-[10px] uppercase tracking-widest text-[#9E9890] mb-3">
+                        <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
                           Things to do
                         </p>
                         <div className="grid grid-cols-2 gap-2">
                           {dest.highlights.map((h, k) => (
                             <div
                               key={k}
-                              className="rounded-xl px-3 py-2.5 text-xs text-[#4A4540] leading-snug"
+                              className="rounded-xl px-3 py-2.5 text-xs text-foreground/80 leading-snug"
                               style={{ backgroundColor: "#F8F5F0" }}
                             >
                               {h}
@@ -499,10 +499,10 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
             <div className="max-w-5xl mx-auto px-6">
               <div className="pl-5 py-4 pr-6 rounded-r-xl"
                 style={{ borderLeft: "3px solid #C4A882", backgroundColor: "#FAF7F3" }}>
-                <p className="text-[10px] uppercase tracking-[0.18em] text-[#C4A882] mb-1.5">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-[#ad1414]/60 mb-1.5">
                   Accommodation
                 </p>
-                <p className="text-sm text-[#4A4540] leading-relaxed">
+                <p className="text-sm text-foreground/80 leading-relaxed">
                   {chapter.accommodation_note}
                 </p>
               </div>
@@ -513,17 +513,17 @@ const ItineraryDisplay = ({ row }: { row: ItineraryRow }) => {
 
       {/* ── 5. CLOSING ─────────────────────────────────────────────────────── */}
       {c.closing && (
-        <section className="py-28 px-6 text-center border-t border-[#EDE8E0]">
+        <section className="py-28 px-6 text-center border-t border-border">
           <div className="max-w-lg mx-auto space-y-6">
             <div className="w-10 h-px mx-auto" style={{ backgroundColor: "#C4A882" }} />
-            <h2 className="font-display text-3xl sm:text-4xl italic text-[#1A1814] font-light">
+            <h2 className="font-display text-3xl sm:text-4xl italic text-foreground font-light">
               {c.closing.title}
             </h2>
-            <p className="text-sm text-[#6B6560] leading-[1.9]">{c.closing.body}</p>
+            <p className="text-sm text-muted-foreground leading-[1.9]">{c.closing.body}</p>
             {c.contact && (
               <a
                 href={`mailto:${c.contact}`}
-                className="inline-block mt-2 text-sm font-medium text-[#1A1814] transition-colors hover:text-[#C4A882]"
+                className="inline-block mt-2 text-sm font-medium text-foreground transition-colors hover:text-[#ad1414]/60"
                 style={{ borderBottom: "1px solid #C4A882", paddingBottom: "2px" }}
               >
                 {c.contact}

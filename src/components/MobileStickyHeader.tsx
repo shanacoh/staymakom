@@ -28,7 +28,7 @@ const MobileStickyHeader = () => {
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-50 md:hidden transition-all duration-300 bg-[#FAF8F4] border-b border-[#E8E0D4]"
+      className="fixed top-0 left-0 right-0 z-50 md:hidden transition-all duration-300 bg-white border-b border-border"
       style={{ height: MOBILE_HEADER_HEIGHT }}
     >
       <div className="relative flex items-center h-full px-2">
@@ -39,7 +39,7 @@ const MobileStickyHeader = () => {
             className="flex items-center justify-center w-11 h-11 -ml-1 shrink-0"
             aria-label="Go back"
           >
-            <ChevronLeft className="h-5 w-5 text-[#1A1814]" />
+            <ChevronLeft className="h-5 w-5 text-foreground" />
           </button>
         ) : (
           <div className="w-11 shrink-0" />
@@ -48,7 +48,7 @@ const MobileStickyHeader = () => {
         {/* Center: Logo */}
         <Link
           to="/launch"
-          className="absolute left-1/2 -translate-x-1/2 font-sans font-bold tracking-[-0.04em] uppercase text-[20px] leading-none text-[#1A1814]"
+          className="absolute left-1/2 -translate-x-1/2 font-sans font-bold tracking-[-0.04em] uppercase text-[20px] leading-none text-foreground"
         >
           STAYMAKOM
         </Link>

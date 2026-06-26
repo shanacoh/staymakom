@@ -58,11 +58,11 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
         {/* Left — Logo */}
         <Link to="/v3" className="flex items-center">
           {/* Desktop : wordmark complet */}
-          <span className="hidden md:block font-sans font-bold tracking-[-0.04em] uppercase text-xl text-[#1A1814]">
+          <span className="hidden md:block font-sans font-bold tracking-[-0.04em] uppercase text-xl text-foreground">
             STAYMAKOM
           </span>
           {/* Mobile : monogramme compact */}
-          <span className="md:hidden font-sans font-bold tracking-[-0.04em] uppercase text-lg text-[#1A1814]">
+          <span className="md:hidden font-sans font-bold tracking-[-0.04em] uppercase text-lg text-foreground">
             SM
           </span>
         </Link>
@@ -81,12 +81,12 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
                   : "hover:bg-[#FDF2F2]"
               )}
             >
-              <Moon className="h-3.5 w-3.5 flex-shrink-0 text-[#1A1814]" strokeWidth={1.5} />
+              <Moon className="h-3.5 w-3.5 flex-shrink-0 text-foreground" strokeWidth={1.5} />
               <span className="flex-1 text-center">
-                <span className={cn("block font-bold uppercase tracking-wider text-[#1A1814] leading-[13px]", "text-[9px] sm:text-[10px]")}>
+                <span className={cn("block font-bold uppercase tracking-wider text-foreground leading-[13px]", "text-[9px] sm:text-[10px]")}>
                   {lang === "he" ? "עם" : lang === "fr" ? "Avec" : "With"}
                 </span>
-                <span className={cn("block font-bold uppercase tracking-wider text-[#1A1814] leading-[13px]", "text-[9px] sm:text-[10px]")}>
+                <span className={cn("block font-bold uppercase tracking-wider text-foreground leading-[13px]", "text-[9px] sm:text-[10px]")}>
                   {lang === "he" ? "מלון" : lang === "fr" ? "Hôtel" : "Hotel"}
                 </span>
               </span>
@@ -103,12 +103,12 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
                   : "hover:bg-[#FDF2F2]"
               )}
             >
-              <Sun className="h-3.5 w-3.5 flex-shrink-0 text-[#1A1814]" strokeWidth={1.5} />
+              <Sun className="h-3.5 w-3.5 flex-shrink-0 text-foreground" strokeWidth={1.5} />
               <span className="flex-1 text-center">
-                <span className={cn("block font-bold uppercase tracking-wider text-[#1A1814] leading-[13px]", "text-[9px] sm:text-[10px]")}>
+                <span className={cn("block font-bold uppercase tracking-wider text-foreground leading-[13px]", "text-[9px] sm:text-[10px]")}>
                   {lang === "he" ? "חוויות" : lang === "fr" ? "Expériences" : "Experience"}
                 </span>
-                <span className={cn("block font-bold uppercase tracking-wider text-[#1A1814] leading-[13px]", "text-[9px] sm:text-[10px]")}>
+                <span className={cn("block font-bold uppercase tracking-wider text-foreground leading-[13px]", "text-[9px] sm:text-[10px]")}>
                   {lang === "he" ? "בלבד" : lang === "fr" ? "seules" : "Only"}
                 </span>
               </span>
@@ -124,8 +124,8 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
           {/* Globe — langue et devise, mobile ET desktop */}
           <Popover>
             <PopoverTrigger asChild>
-              <button className="p-1.5 rounded-full hover:bg-[#F0EBE3] transition-colors" aria-label="Langue et devise">
-                <Globe className="h-[18px] w-[18px] text-[#1A1814]" strokeWidth={1.5} />
+              <button className="p-1.5 rounded-full hover:bg-muted transition-colors" aria-label="Langue et devise">
+                <Globe className="h-[18px] w-[18px] text-foreground" strokeWidth={1.5} />
               </button>
             </PopoverTrigger>
             <PopoverContent
@@ -198,7 +198,7 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
             variant="ghost"
             size="icon"
             onClick={handleFavoritesClick}
-            className="hidden sm:flex h-8 w-8 rounded-none text-[#1A1814] hover:bg-[#F0EBE3]"
+            className="hidden sm:flex h-8 w-8 rounded-none text-foreground hover:bg-muted"
           >
             <Heart className="h-5 w-5" />
           </Button>

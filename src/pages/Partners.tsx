@@ -33,49 +33,53 @@ const Partners = () => {
   });
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5]">
+    <div className="min-h-screen bg-white">
       <LaunchHeader forceScrolled={true} />
 
       {/* Hero Section */}
-      <section className="relative h-[50vh] min-h-[350px] sm:min-h-[400px] flex items-center justify-center">
-        <div className="absolute inset-0">
-          <img src={partnersHero} alt="Boutique hotel" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-black/30" />
-        </div>
-        <div className="relative z-10 max-w-3xl mx-auto px-6 text-center text-white" dir={isRTL ? 'rtl' : 'ltr'}>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl mb-4 font-sans font-bold text-slate-50">
+      <section className="relative h-[38vh] md:h-[54vh] min-h-[240px] flex items-center justify-center">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${partnersHero})` }}
+        />
+        <div className="absolute inset-0 bg-black/15" />
+        <div className="relative z-10 text-center px-4 sm:px-6 max-w-3xl mx-auto" dir={isRTL ? 'rtl' : 'ltr'}>
+          <span className="block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-white mb-4 opacity-0 animate-hero-fade-up">
+            {lang === 'he' ? 'שותפים' : lang === 'fr' ? 'PARTENAIRES' : 'PARTNERS'}
+          </span>
+          <h1 className="font-sans text-[28px] sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-[0.02em] leading-[1.1] mb-3 opacity-0 animate-hero-fade-up text-white text-center">
             {t(lang, 'partnersHeroTitle')}
           </h1>
-          <p className="text-sm sm:text-base md:text-lg mb-6 text-white/90">
+          <p
+            className="font-sans not-italic text-white max-w-xl mx-auto opacity-0 animate-hero-fade-up text-xs sm:text-base md:text-lg"
+            style={{ animationDelay: "250ms" }}
+          >
             {t(lang, 'partnersHeroSubtitle')}
           </p>
-          <Button onClick={() => navigateLocalized("/auth")} size="default" className="bg-slate-50 text-slate-950">
-            {t(lang, 'partnersLoginBtn')}
-          </Button>
         </div>
       </section>
 
       <main className="max-w-4xl mx-auto px-6 py-12" dir={isRTL ? 'rtl' : 'ltr'}>
         {/* Why Join Section */}
         <section className="mb-16">
-          <h2 className="font-serif text-2xl md:text-3xl text-center mb-10">
+          <h2 className="font-sans text-2xl md:text-3xl text-center mb-10">
             {t(lang, 'partnersWhyJoin')}
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div>
-              <h3 className="font-serif text-lg mb-3">{t(lang, 'partnersCuratedVisibility')}</h3>
+              <h3 className="font-sans text-lg mb-3">{t(lang, 'partnersCuratedVisibility')}</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {t(lang, 'partnersCuratedVisibilityDesc')}
               </p>
             </div>
             <div>
-              <h3 className="font-serif text-lg mb-3">{t(lang, 'partnersExperienceFirst')}</h3>
+              <h3 className="font-sans text-lg mb-3">{t(lang, 'partnersExperienceFirst')}</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {t(lang, 'partnersExperienceFirstDesc')}
               </p>
             </div>
             <div>
-              <h3 className="font-serif text-lg mb-3">{t(lang, 'partnersNoRisk')}</h3>
+              <h3 className="font-sans text-lg mb-3">{t(lang, 'partnersNoRisk')}</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {t(lang, 'partnersNoRiskDesc')}
               </p>
@@ -85,7 +89,7 @@ const Partners = () => {
 
         {/* What We Offer Section */}
         <section className="mb-16 bg-white rounded-lg p-8">
-          <h2 className="font-serif text-2xl md:text-3xl text-center mb-6">
+          <h2 className="font-sans text-2xl md:text-3xl text-center mb-6">
             {t(lang, 'partnersWhatWeOffer')}
           </h2>
           <p className="text-sm text-center mb-8 max-w-2xl mx-auto text-muted-foreground">
@@ -93,23 +97,23 @@ const Partners = () => {
           </p>
           <ul className="space-y-3 max-w-md mx-auto text-sm">
             <li className="flex items-start gap-3">
-              <span className="text-[#D72638] mt-0.5">•</span>
+              <span className="text-[#ad1414] mt-0.5">•</span>
               <span>{t(lang, 'partnersOfferItem1')}</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-[#D72638] mt-0.5">•</span>
+              <span className="text-[#ad1414] mt-0.5">•</span>
               <span>{t(lang, 'partnersOfferItem2')}</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-[#D72638] mt-0.5">•</span>
+              <span className="text-[#ad1414] mt-0.5">•</span>
               <span>{t(lang, 'partnersOfferItem3')}</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-[#D72638] mt-0.5">•</span>
+              <span className="text-[#ad1414] mt-0.5">•</span>
               <span>{t(lang, 'partnersOfferItem4')}</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-[#D72638] mt-0.5">•</span>
+              <span className="text-[#ad1414] mt-0.5">•</span>
               <span>{t(lang, 'partnersOfferItem5')}</span>
             </li>
           </ul>
@@ -117,7 +121,7 @@ const Partners = () => {
 
         {/* Partner Form Section */}
         <section id="partner-form" className="max-w-lg mx-auto">
-          <h2 className="font-serif text-2xl md:text-3xl text-center mb-8">
+          <h2 className="font-sans text-2xl md:text-3xl text-center mb-8">
             {t(lang, 'partnersBecomePartner')}
           </h2>
           <PartnerFormFlow lang={lang} />
@@ -126,8 +130,8 @@ const Partners = () => {
         {/* Direct Contact Section */}
         {settings?.partners_email && (
           <section className="text-center border-t pt-8 mt-8">
-            <h3 className="font-serif text-lg mb-4">{t(lang, 'partnersDirectContact')}</h3>
-            <a href={`mailto:${settings.partners_email}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-[#D72638] transition-colors">
+            <h3 className="font-sans text-lg mb-4">{t(lang, 'partnersDirectContact')}</h3>
+            <a href={`mailto:${settings.partners_email}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-[#ad1414] transition-colors">
               <Mail className="w-4 h-4" />
               {settings.partners_email}
             </a>

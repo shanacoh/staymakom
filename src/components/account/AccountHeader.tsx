@@ -111,7 +111,7 @@ export default function AccountHeader({ userId, userEmail }: AccountHeaderProps)
 
   if (isLoading) {
     return (
-      <div className="bg-[#1A1814] h-16 rounded-lg mb-6 flex items-center justify-between px-6">
+      <div className="bg-foreground h-16 rounded-lg mb-6 flex items-center justify-between px-6">
         <div className="flex items-center gap-4">
           <Skeleton className="h-12 w-12 rounded-full" />
           <Skeleton className="h-4 w-32" />
@@ -140,7 +140,7 @@ export default function AccountHeader({ userId, userEmail }: AccountHeaderProps)
 
   return (
     <>
-      <div className="bg-[#1A1814] h-16 rounded-lg mb-6 flex items-center justify-between px-6">
+      <div className="bg-foreground h-16 rounded-lg mb-6 flex items-center justify-between px-6">
         {/* Left: Avatar + Name + Tier */}
         <div className="flex items-center gap-4">
           <Avatar className="h-12 w-12 bg-[#B8935A]">

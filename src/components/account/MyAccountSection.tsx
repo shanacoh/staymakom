@@ -242,7 +242,7 @@ export default function MyAccountSection({ userId, userEmail, mobile }: MyAccoun
           <button
             type="submit"
             disabled={saveMutation.isPending}
-            className="w-full h-12 mt-6 rounded-lg bg-[#1A1A1A] text-white text-[15px] font-medium disabled:opacity-50 transition-colors active:bg-[#333]"
+            className="w-full h-12 mt-6 rounded-lg bg-foreground text-background text-[15px] font-medium disabled:opacity-50 transition-colors active:bg-foreground/80"
           >
             {saveMutation.isPending ? "Saving…" : "Save Changes"}
           </button>

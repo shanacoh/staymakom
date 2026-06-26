@@ -26,16 +26,17 @@ const About = () => {
       <LaunchHeader forceScrolled={true} />
 
       {/* HERO */}
-      <section className="relative h-[60vh] min-h-[400px] flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0">
-          <img src={aboutHero} alt="Desert road journey" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-black/45" />
-        </div>
-        <div className="relative z-10 text-center text-white px-6 max-w-3xl">
-          <p className="font-sans text-xs sm:text-sm uppercase tracking-[0.2em] text-white/80 mb-4 animate-hero-fade-up [animation-delay:200ms]">
-            STAYMAKOM
-          </p>
-          <h1 className="font-sans text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold uppercase tracking-[-0.02em] text-white animate-hero-fade-up [animation-delay:400ms]">
+      <section className="relative h-[38vh] md:h-[54vh] min-h-[240px] flex items-center justify-center overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${aboutHero})` }}
+        />
+        <div className="absolute inset-0 bg-black/15" />
+        <div className="relative z-10 text-center px-4 sm:px-6 max-w-3xl mx-auto">
+          <span className="block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-white mb-4 opacity-0 animate-hero-fade-up [animation-delay:200ms]">
+            {lang === 'he' ? 'אודות' : lang === 'fr' ? 'À PROPOS' : 'ABOUT'}
+          </span>
+          <h1 className="font-sans text-[28px] sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-[0.02em] leading-[1.1] mb-3 opacity-0 animate-hero-fade-up [animation-delay:400ms] text-white text-center">
             {t(lang, 'aboutHeroTagline')}
           </h1>
         </div>
@@ -64,7 +65,7 @@ const About = () => {
         </section>
 
         {/* TWO AUDIENCES */}
-        <section className="py-16 px-6 bg-[#FAF8F5] md:py-[52px]">
+        <section className="py-16 px-6 bg-muted/40 md:py-[52px]">
           <div className="max-w-5xl mx-auto">
             <div className="grid md:grid-cols-2 gap-12 md:gap-16">
               <div className="border-t border-border/40 pt-8">
@@ -123,7 +124,7 @@ const About = () => {
         </section>
 
         {/* THE NAME */}
-        <section className="py-20 px-6 bg-[#FAF8F5] md:py-[52px]">
+        <section className="py-20 px-6 bg-muted/40 md:py-[52px]">
           <div className="max-w-3xl mx-auto text-center">
             <p className="font-sans text-xs uppercase tracking-[0.15em] text-muted-foreground mb-6">
               {t(lang, 'aboutNameTitle')}
@@ -179,7 +180,7 @@ const About = () => {
         </section>
 
         {/* FINAL CTA */}
-        <section className="py-20 px-6 bg-[#FAF8F5] md:py-[52px]">
+        <section className="py-20 px-6 bg-muted/40 md:py-[52px]">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="font-sans text-3xl md:text-4xl lg:text-5xl font-bold uppercase tracking-[-0.02em] mb-10 text-foreground">
               {t(lang, 'aboutCTATitle')}

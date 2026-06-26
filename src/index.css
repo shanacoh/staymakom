@@ -10,34 +10,34 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 36 40% 93%;
-    --foreground: 23 10% 15%;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 7%;
 
     --card: 0 0% 100%;
-    --card-foreground: 23 10% 15%;
+    --card-foreground: 0 0% 7%;
 
-    --popover: 37 40% 96%;
-    --popover-foreground: 23 10% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 7%;
 
     --primary: 207 62% 15%;
     --primary-foreground: 40 33% 93%;
     --primary-glow: 208 61% 20%;
 
     --secondary: 36 38% 78%;
-    --secondary-foreground: 23 10% 15%;
+    --secondary-foreground: 0 0% 7%;
 
-    --muted: 35 20% 88%;
-    --muted-foreground: 30 8% 45%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 42%;
 
     --accent: 29 48% 55%;
     --accent-foreground: 40 33% 93%;
 
-    /* CTA Premium - Terracotta/Clay tone */
-    --cta: 15 45% 52%;
-    --cta-hover: 15 50% 48%;
-    --cta-foreground: 0 0% 100%;
-    --cta-border: 15 40% 42%;
-    --cta-shadow: 15 45% 35%;
+    /* CTA — fond rouge clair, texte rouge, forme organique */
+    --cta: 0 100% 97%;
+    --cta-hover: 0 100% 93%;
+    --cta-foreground: 0 80% 38%;
+    --cta-border: 0 80% 38%;
+    --cta-shadow: 0 80% 38%;
 
     /* Mobile warm system */
     --mobile-header: 37 40% 96%;
@@ -69,7 +69,7 @@ All colors MUST be HSL.
 
     /* Custom tokens */
     --gradient-primary: linear-gradient(135deg, hsl(207 62% 15%), hsl(208 61% 20%));
-    --gradient-warm: linear-gradient(180deg, hsl(36 40% 93%), hsl(36 38% 78%));
+    --gradient-warm: linear-gradient(180deg, hsl(0 0% 100%), hsl(0 0% 96%));
     --gradient-hero: linear-gradient(135deg, hsl(207 62% 15%) 0%, hsl(208 61% 20%) 50%, hsl(29 48% 55%) 100%);
     --shadow-soft: 0 2px 8px -2px hsl(23 10% 15% / 0.06);
     --shadow-medium: 0 4px 16px -4px hsl(23 10% 15% / 0.08);
@@ -161,7 +161,21 @@ body {
     line-height: 1.65;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1, h2, h3 {
+    @apply font-sans tracking-tight;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #ad1414;
+  }
+
+  /* Pages exclues de la nouvelle DA (homepage, /launch) */
+  .preserve-heading-colors h1,
+  .preserve-heading-colors h2,
+  .preserve-heading-colors h3 {
+    color: hsl(var(--foreground));
+  }
+
+  h4, h5, h6 {
     @apply font-sans tracking-tight text-foreground;
     font-weight: 700;
     letter-spacing: -0.02em;
@@ -200,6 +214,11 @@ body {
   /* Hebrew input background utility */
   .hebrew-input {
     background-color: hsl(var(--input-hebrew-bg));
+  }
+
+  /* Bouton CTA — forme organique/blob asymétrique */
+  .btn-organic {
+    border-radius: 40% 60% 55% 45% / 45% 55% 45% 55%;
   }
   
   /* Skeleton shimmer — StayMakom (warm beige sweep, subtle) */

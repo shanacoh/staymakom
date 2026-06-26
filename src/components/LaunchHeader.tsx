@@ -87,9 +87,9 @@ const LaunchHeader = ({ forceScrolled = false }: { forceScrolled?: boolean }) =>
 
   const headerClasses = !isScrolled
     ? `fixed left-0 right-0 z-50 w-full bg-transparent backdrop-blur-none border-b border-transparent transition-all duration-300 ease-in-out ${isVisible ? "top-0" : "-top-full"}`
-    : `fixed left-0 right-0 z-50 w-full bg-[#FAF8F4]/95 backdrop-blur-[12px] border-b border-[#E8E0D4] transition-all duration-300 ease-in-out ${isVisible ? "top-0" : "-top-full"}`;
+    : `fixed left-0 right-0 z-50 w-full bg-white/95 backdrop-blur-[12px] border-b border-border transition-all duration-300 ease-in-out ${isVisible ? "top-0" : "-top-full"}`;
 
-  const logoClasses = !isScrolled ? "text-white" : "text-[#1A1814]";
+  const logoClasses = !isScrolled ? "text-white" : "text-foreground";
 
   const isRTL = lang === "he";
 
@@ -110,7 +110,7 @@ const LaunchHeader = ({ forceScrolled = false }: { forceScrolled?: boolean }) =>
               <button
                 className={cn(
                   "p-1.5 rounded-full transition-colors",
-                  !isScrolled ? "text-white/80 hover:text-white hover:bg-white/10" : "text-[#1A1814] hover:bg-[#F0EBE3]"
+                  !isScrolled ? "text-white/80 hover:text-white hover:bg-white/10" : "text-foreground hover:bg-muted"
                 )}
                 aria-label="Langue et devise"
               >
@@ -203,7 +203,7 @@ const LaunchHeader = ({ forceScrolled = false }: { forceScrolled?: boolean }) =>
             variant="ghost"
             size="icon"
             onClick={handleFavoritesClick}
-            className={`h-8 w-8 rounded-none ${!isScrolled ? "text-white hover:bg-white/10" : "text-[#1A1814] hover:bg-[#F0EBE3]"}`}
+            className={`h-8 w-8 rounded-none ${!isScrolled ? "text-white hover:bg-white/10" : "text-foreground hover:bg-muted"}`}
           >
             <Heart className="h-5 w-5" />
           </Button>

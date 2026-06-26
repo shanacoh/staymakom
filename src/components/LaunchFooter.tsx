@@ -12,18 +12,24 @@ const LaunchFooter = () => {
       <div className="container py-6 space-y-4">
         {/* Bandeau newsletter — toujours accessible pour récupérer le code WELCOME10 */}
         <div className="flex items-center justify-center">
-          <button
-            type="button"
-            onClick={openNewsletterPopup}
-            className="group inline-flex items-center gap-2 rounded-full border border-white/30 px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/80 transition-all hover:border-white hover:text-white"
-          >
-            <Gift className="h-3.5 w-3.5" />
-            {lang === "he"
-              ? "הירשם/י לניוזלטר ותקבל/י 10% הנחה"
-              : lang === "fr"
-                ? "S'inscrire à la newsletter — 10 % offerts"
-                : "Subscribe & get 10% off"}
-          </button>
+          <div className="relative inline-block">
+            <span
+              aria-hidden
+              className="absolute inset-x-2 bottom-1.5 h-3 sm:h-3.5 rounded-[60%_40%_70%_30%/40%_60%_30%_70%] -rotate-1 bg-[#ad1414]/40"
+            />
+            <button
+              type="button"
+              onClick={openNewsletterPopup}
+              className="group relative inline-flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/85 transition-all duration-200 ease-out hover:text-white"
+            >
+              <Gift className="h-3.5 w-3.5" />
+              {lang === "he"
+                ? "הירשם/י לניוזלטר ותקבל/י 10% הנחה"
+                : lang === "fr"
+                  ? "S'inscrire à la newsletter — 10 % offerts"
+                  : "Subscribe & get 10% off"}
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">

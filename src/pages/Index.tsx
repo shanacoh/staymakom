@@ -301,7 +301,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen flex flex-col preserve-heading-colors" dir={isRTL ? 'rtl' : 'ltr'}>
       <SEOHead
         titleEn={homepageSEO?.seo_title_en}
         titleHe={homepageSEO?.seo_title_he}

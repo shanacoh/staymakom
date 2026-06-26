@@ -282,10 +282,10 @@ const IndexV3 = () => {
           <div className="absolute inset-0 bg-black/15" />
 
           <div className="relative z-10 text-center text-white px-4 sm:px-6 max-w-3xl mx-auto -translate-y-10 sm:-translate-y-8">
-            <span className="md:hidden block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-[#ad1414] mb-4 opacity-0 animate-hero-fade-up">
+            <span className="md:hidden block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-white/70 mb-4 opacity-0 animate-hero-fade-up">
               STAYMAKOM
             </span>
-            <h1 className="font-sans text-[28px] sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-[0.02em] leading-[1.1] mb-3 opacity-0 animate-hero-fade-up text-[#ad1414] text-center">
+            <h1 className="font-sans text-[28px] sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-[0.02em] leading-[1.1] mb-3 opacity-0 animate-hero-fade-up text-white text-center">
               {isRTL ? (
                 <><span className="whitespace-nowrap">אל תבחר עיר,</span><br /><span className="whitespace-nowrap">בחר את הבריחה שלך</span></>
               ) : (
@@ -293,7 +293,7 @@ const IndexV3 = () => {
               )}
             </h1>
             <p
-              className="font-sans not-italic text-[#ad1414] max-w-xl mx-auto opacity-0 animate-hero-fade-up text-xs sm:text-base md:text-lg"
+              className="font-sans not-italic text-white/90 max-w-xl mx-auto opacity-0 animate-hero-fade-up text-xs sm:text-base md:text-lg"
               style={{ animationDelay: "250ms" }}
             >
               {isRTL
@@ -310,7 +310,7 @@ const IndexV3 = () => {
 
           {/* Titre */}
           <div className="text-center px-4 mb-3">
-            <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold uppercase tracking-[-0.02em] mb-1 leading-tight">
+            <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold uppercase tracking-[-0.02em] mb-1 leading-tight text-foreground">
               {isRTL ? (
                 <>מלונות שנבחרו בקפידה.<br />חוויות בלתי נשכחות.</>
               ) : lang === "fr" ? (
@@ -514,7 +514,7 @@ const IndexV3 = () => {
               />
             </div>
             <div className={`space-y-4 ${isRTL ? "text-right md:order-1" : ""}`}>
-              <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold tracking-[-0.02em] leading-tight">
+              <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold tracking-[-0.02em] leading-tight text-foreground">
                 {isRTL ? (
                   <><span>מתנה מושלמת.</span><br /><span>מתנת הבריחה.</span></>
                 ) : lang === "fr" ? (
@@ -539,7 +539,7 @@ const IndexV3 = () => {
         </section>
 
         {/* ──── 7. BANDEAU DÉFILANT ──── */}
-        <MarqueeBanner className="bg-[#FAF8F4]" />
+        <MarqueeBanner className="bg-muted" />
 
         {/* ──── 8. THIS IS NOT TOURISM ──── */}
         <section className="relative py-8 sm:py-14 md:py-18 overflow-hidden">
@@ -615,7 +615,7 @@ const IndexV3 = () => {
                       <div className={`absolute inset-0 ${article.overlay}`} />
                     </div>
                     {/* Texte */}
-                    <div className="bg-[#1A1814] text-white flex flex-col justify-center p-7 sm:p-9">
+                    <div className="bg-foreground text-background flex flex-col justify-center p-7 sm:p-9">
                       <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 mb-3">
                         {lang === "fr" ? "Blog" : "Blog"}
                       </span>
@@ -628,7 +628,7 @@ const IndexV3 = () => {
                       <div>
                         <Link
                           to={article.href}
-                          className="inline-flex items-center gap-2 bg-[#FAF8F4] text-[#1A1814] text-xs font-semibold uppercase tracking-widest px-5 py-2.5 rounded-full hover:bg-white transition-colors"
+                          className="inline-flex items-center gap-2 bg-white text-foreground text-xs font-semibold uppercase tracking-widest px-5 py-2.5 rounded-full hover:bg-muted transition-colors"
                         >
                           {isRTL ? "קרא מאמר" : lang === "fr" ? "Lire l'article" : "Read article"}
                           <ArrowRight className={cn("h-3.5 w-3.5", isRTL && "rotate-180")} />

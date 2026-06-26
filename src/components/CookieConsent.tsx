@@ -93,7 +93,7 @@ const CookieConsent = ({ onAccept, onDecline }: CookieConsentProps) => {
                 />
                 <button
                   onClick={onAccept}
-                  className="relative rounded-full bg-[#1A1814] text-white text-xs font-bold uppercase tracking-widest px-5 py-2 hover:bg-[#1A1814]/90 transition-colors"
+                  className="relative rounded-full bg-foreground text-background text-xs font-bold uppercase tracking-widest px-5 py-2 hover:bg-foreground/90 transition-colors"
                 >
                   {t.accept}
                 </button>

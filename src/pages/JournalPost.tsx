@@ -419,7 +419,7 @@ const JournalPost = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#FAF8F5]">
+      <div className="min-h-screen bg-white">
         <Header />
         <div className="max-w-4xl mx-auto px-6 pt-24 pb-20">
           {/* Back breadcrumb */}
@@ -462,7 +462,7 @@ const JournalPost = () => {
   const isRTL = lang === "he";
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5]">
+    <div className="min-h-screen bg-white">
       <ReadingProgressBar />
       <SEOHead
         titleEn={post.seo_title_en || post.title_en}
@@ -492,7 +492,7 @@ const JournalPost = () => {
         <article>
           {/* Category & Date */}
           <div className="flex items-center gap-3 mb-6">
-            <span className="inline-block px-3 py-1 text-[11px] font-medium uppercase tracking-[0.1em] rounded-full bg-[#E8E0D4] text-[#1A1814]">
+            <span className="inline-block px-3 py-1 text-[11px] font-medium uppercase tracking-[0.1em] rounded-full bg-muted text-foreground">
               {post.category}
             </span>
             {post.published_at && (
@@ -638,7 +638,7 @@ const JournalPost = () => {
                       className="w-full aspect-[16/10] object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   </div>
-                  <span className="inline-block px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.1em] rounded-full bg-[#E8E0D4] text-[#1A1814] mb-2">
+                  <span className="inline-block px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.1em] rounded-full bg-muted text-foreground mb-2">
                     {rp.category}
                   </span>
                   <h4 className="font-serif text-lg group-hover:text-primary transition-colors line-clamp-2">

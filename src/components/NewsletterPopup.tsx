@@ -190,7 +190,7 @@ export function NewsletterPopup({
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#ad1414]/70">
                 {t.kicker}
               </p>
-              <h2 className="font-sans text-2xl font-bold uppercase tracking-[-0.02em] text-[#1A1814] leading-tight">
+              <h2 className="font-sans text-2xl font-bold uppercase tracking-[-0.02em] text-foreground leading-tight">
                 {t.title}
               </h2>
               <p className="text-sm text-black/50 leading-relaxed">
@@ -220,7 +220,7 @@ export function NewsletterPopup({
                 <Button
                   type="submit"
                   disabled={submitting}
-                  className="group relative w-full rounded-full bg-[#1A1814] text-white hover:bg-[#1A1814]/90 font-bold uppercase tracking-widest text-xs py-5"
+                  className="group relative w-full rounded-full bg-foreground text-background hover:bg-foreground/90 font-bold uppercase tracking-widest text-xs py-5"
                 >
                   {submitting ? t.submitting : (
                     <>
@@ -248,7 +248,7 @@ export function NewsletterPopup({
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#ad1414]/70">
                 {t.successKicker}
               </p>
-              <h2 className="font-sans text-2xl font-bold uppercase tracking-[-0.02em] text-[#1A1814] leading-tight">
+              <h2 className="font-sans text-2xl font-bold uppercase tracking-[-0.02em] text-foreground leading-tight">
                 {t.successTitle}
               </h2>
               <p className="text-sm text-black/50 leading-relaxed">

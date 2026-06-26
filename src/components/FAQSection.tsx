@@ -38,7 +38,7 @@ type FAQItem = {
   render: (p: RenderParams) => React.ReactNode;
 };
 
-const link = "underline underline-offset-2 cursor-pointer hover:opacity-70 transition-opacity";
+const link = "underline underline-offset-2 cursor-pointer hover:text-[#a83c3c] transition-colors";
 
 const FAQ_ITEMS: FAQItem[] = [
   {
@@ -310,10 +310,10 @@ const FAQSection = () => {
       <section className="py-10 sm:py-16 border-t border-border/40" dir={isRTL ? "rtl" : "ltr"}>
         <div className="container px-4 max-w-2xl mx-auto">
           <div className="text-center mb-7 sm:mb-10">
-            <p className="text-[10px] sm:text-xs uppercase tracking-[0.18em] text-muted-foreground mb-2">
+            <p className="text-[10px] sm:text-xs uppercase tracking-[0.18em] text-[#a83c3c] mb-2">
               {sectionLabel}
             </p>
-            <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold uppercase tracking-[-0.02em]">
+            <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold uppercase tracking-[-0.02em] text-foreground">
               {sectionTitle}
             </h2>
           </div>
@@ -325,7 +325,7 @@ const FAQSection = () => {
                 value={`faq-${index}`}
                 className="border-b border-border/50 last:border-b-0"
               >
-                <AccordionTrigger className="text-sm sm:text-base font-medium text-left hover:no-underline hover:text-primary py-4 [&[data-state=open]]:text-primary transition-colors duration-200 text-start">
+                <AccordionTrigger className="text-sm sm:text-base font-medium text-left hover:no-underline text-foreground hover:text-[#a83c3c] py-4 [&[data-state=open]]:text-[#a83c3c] transition-colors duration-200 text-start">
                   {lang === "he" ? item.q_he : lang === "fr" ? item.q_fr : item.q_en}
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground text-sm leading-relaxed pb-5">

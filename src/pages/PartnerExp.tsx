@@ -161,7 +161,7 @@ const PartnerExp = () => {
   const slideImgs = [heroImg, partnersHeroImg, desertJourneyImg];
 
   return (
-    <div className="min-h-screen flex flex-col overflow-x-clip bg-[#FAF8F4]" dir={isRTL ? "rtl" : "ltr"}>
+    <div className="min-h-screen flex flex-col overflow-x-clip bg-white" dir={isRTL ? "rtl" : "ltr"}>
       <LaunchHeader forceScrolled={true} />
 
       <main
@@ -217,7 +217,7 @@ const PartnerExp = () => {
               <div className="flex items-center justify-center pt-2">
                 <Link
                   to="/"
-                  className="px-8 py-3 rounded-md bg-[#C2714A] hover:bg-[#B06540] text-white text-sm font-semibold uppercase tracking-wide transition-all duration-200 shadow-md hover:-translate-y-0.5"
+                  className="px-8 py-3 rounded-md bg-[#ad1414] hover:bg-[#B06540] text-white text-sm font-semibold uppercase tracking-wide transition-all duration-200 shadow-md hover:-translate-y-0.5"
                 >
                   {tx("ctaSecondary", l)}
                 </Link>
@@ -266,7 +266,7 @@ const PartnerExp = () => {
                 ))}
               </div>
 
-              <div className="border-l-4 border-[#C2714A] bg-white/8 backdrop-blur-sm rounded-r-xl px-5 py-4">
+              <div className="border-l-4 border-[#ad1414] bg-white/8 backdrop-blur-sm rounded-r-xl px-5 py-4">
                 <p className="text-white text-xs sm:text-sm leading-relaxed font-medium italic">
                   {tx("callout", l)}
                 </p>
@@ -303,7 +303,7 @@ const PartnerExp = () => {
                   <div className="space-y-3">
                     {(["step1", "step2", "step3", "step4"] as const).map((k, i) => (
                       <div key={k} className="flex gap-3 items-start">
-                        <span className="shrink-0 w-6 h-6 rounded-full bg-[#C2714A] text-white text-xs font-bold flex items-center justify-center mt-0.5">
+                        <span className="shrink-0 w-6 h-6 rounded-full bg-[#ad1414] text-white text-xs font-bold flex items-center justify-center mt-0.5">
                           {i + 1}
                         </span>
                         <p className="text-white/90 text-xs sm:text-sm leading-relaxed">{tx(k, l)}</p>
@@ -314,7 +314,7 @@ const PartnerExp = () => {
                   <div className="bg-white/8 backdrop-blur-sm rounded-xl border border-white/15 p-3 space-y-2">
                     {(["notif1", "notif2", "notif3"] as const).map((k) => (
                       <div key={k} className="flex items-center gap-2">
-                        <Check className="h-3.5 w-3.5 text-[#C2714A] shrink-0" />
+                        <Check className="h-3.5 w-3.5 text-[#ad1414] shrink-0" />
                         <span className="text-white/85 text-xs">{tx(k, l)}</span>
                       </div>
                     ))}
@@ -394,7 +394,7 @@ const AppMockup = ({ lang, isRTL }: { lang: Lang; isRTL: boolean }) => {
 
   return (
     <div
-      className="bg-[#1a1814]/80 backdrop-blur-md border border-white/15 rounded-2xl p-4 space-y-3 max-w-xs mx-auto w-full"
+      className="bg-black/80 backdrop-blur-md border border-white/15 rounded-2xl p-4 space-y-3 max-w-xs mx-auto w-full"
       dir={isRTL ? "rtl" : "ltr"}
     >
       <div className="grid grid-cols-7 gap-0.5 text-center">
@@ -425,7 +425,7 @@ const AppMockup = ({ lang, isRTL }: { lang: Lang; isRTL: boolean }) => {
             <div
               className={cn(
                 "w-8 h-4 rounded-full flex items-center px-0.5 transition-colors",
-                on ? "bg-[#C2714A]" : "bg-white/20"
+                on ? "bg-[#ad1414]" : "bg-white/20"
               )}
             >
               <div
@@ -448,7 +448,7 @@ const AppMockup = ({ lang, isRTL }: { lang: Lang; isRTL: boolean }) => {
         </div>
         <div className="bg-white/8 rounded-lg p-2 text-center">
           <p className="text-[9px] text-white/50 uppercase tracking-wide">{tx("mockupRevenue", lang)}</p>
-          <p className="text-base font-bold text-[#C2714A] mt-0.5">3 060 ₪</p>
+          <p className="text-base font-bold text-[#ad1414] mt-0.5">3 060 ₪</p>
         </div>
       </div>
     </div>

@@ -350,7 +350,7 @@ const LaunchIndex = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col overflow-x-clip" dir={isRTL ? "rtl" : "ltr"}>
+    <div className="min-h-screen flex flex-col overflow-x-clip preserve-heading-colors" dir={isRTL ? "rtl" : "ltr"}>
       <SEOHead
         title={lang === 'he' ? "STAYMAKOM — מלונות וחוויות נבחרים בישראל" : lang === 'fr' ? "STAYMAKOM — Hôtels & Expériences d'exception en Israël" : "STAYMAKOM — Handpicked Hotels & Experiences in Israel"}
         description={lang === 'he' ? "אנחנו אוצרים את המלונות הבוטיק הטובים בישראל ומשלבים אותם עם חוויות מקומיות ייחודיות." : lang === 'fr' ? "Nous sélectionnons les meilleurs hôtels boutique d'Israël et les associons à des expériences locales uniques." : "We curate Israel's best boutique hotels and pair them with unique local experiences."} />
