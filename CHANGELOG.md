@@ -6,6 +6,24 @@
 
 ---
 
+## [2026-06-26] — Mise à jour des titres de 4 expériences standalone (EN, FR, HE)
+
+### Ce qui a changé côté code
+- `supabase/migrations/20260626000000_update_titles_4_standalone_experiences.sql` : nouvelle migration qui met à jour les titres EN, FR et HE des 4 expériences concernées
+
+### Ce qui a changé côté base de données
+- `standalone_experiences` : titres mis à jour pour 4 fiches :
+  - `family-winery-wine-tasting-zichron-yaakov` → GENERATIONS OF VINES / VIGNOBLE EN FAMILLE / כרם המשפחה
+  - `balade-cheval-lev-hateva` → HORSES ARE FAMILY / AU GALOP / בדהרה
+  - `sunset-jeep-mount-yoash-eilat` → DESERT SUNSET FOR TWO / COUCHER DE SOLEIL À DEUX / שקיעה לשניים
+  - `desert-winery-tasting-mitzpe-ramon` → TIPSY IN THE NEGEV / VIN DU NÉGUEV / יין מהנגב
+- ⚠️ Les titres hébreux n'ont pas encore été validés par un natif — à faire relire avant publication.
+
+### Pourquoi ce changement
+- Les titres originaux étaient descriptifs (type "Family Winery Wine Tasting, Zichron Yaakov"). Les nouveaux titres sont courts, évocateurs et en majuscules, dans le style éditorial de la marque.
+
+---
+
 ## [2026-06-26] — Réservations "Experience Only" visibles dans l'espace client
 
 ### Ce qui a changé côté code
