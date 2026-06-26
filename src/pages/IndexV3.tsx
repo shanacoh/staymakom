@@ -282,10 +282,10 @@ const IndexV3 = () => {
           <div className="absolute inset-0 bg-black/15" />
 
           <div className="relative z-10 text-center text-white px-4 sm:px-6 max-w-3xl mx-auto -translate-y-10 sm:-translate-y-8">
-            <span className="md:hidden block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-white/70 mb-4 opacity-0 animate-hero-fade-up">
+            <span className="md:hidden block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-[#ad1414] mb-4 opacity-0 animate-hero-fade-up">
               STAYMAKOM
             </span>
-            <h1 className="font-sans text-[28px] sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-[0.02em] leading-[1.1] mb-3 opacity-0 animate-hero-fade-up text-white text-center">
+            <h1 className="font-sans text-[28px] sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-[0.02em] leading-[1.1] mb-3 opacity-0 animate-hero-fade-up text-[#ad1414] text-center">
               {isRTL ? (
                 <><span className="whitespace-nowrap">אל תבחר עיר,</span><br /><span className="whitespace-nowrap">בחר את הבריחה שלך</span></>
               ) : (
@@ -293,7 +293,7 @@ const IndexV3 = () => {
               )}
             </h1>
             <p
-              className="font-sans not-italic text-white/90 max-w-xl mx-auto opacity-0 animate-hero-fade-up text-xs sm:text-base md:text-lg"
+              className="font-sans not-italic text-[#ad1414] max-w-xl mx-auto opacity-0 animate-hero-fade-up text-xs sm:text-base md:text-lg"
               style={{ animationDelay: "250ms" }}
             >
               {isRTL
