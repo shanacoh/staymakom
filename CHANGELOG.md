@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-06-26] — Page /v3 : CTA « Give an Escape » redessiné en pill élégant
+
+### Ce qui a changé côté code
+- `src/pages/IndexV3.tsx` : le bouton "Give an Escape" de la section gift card passe d'un bouton sombre plein à un pill transparent avec contour fin, qui s'inverse au survol (fond sombre, texte blanc)
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- Le style pill contour est plus élégant et cohérent avec le ton de la marque que le bouton plein précédent
+
+---
+
 ## [2026-06-26] — Mise à jour des titres de 4 expériences standalone (EN, FR, HE)
 
 ### Ce qui a changé côté code
