@@ -116,15 +116,29 @@ Deno.serve(async (req: Request) => {
       experience_id,
       booking_date,
       time_slot,
-      party_size,
+      // Nouveau : adultes et enfants distincts. Rétrocompatibilité : si absent, party_size est utilisé.
+      adults: adultsRaw,
+      children: childrenRaw,
+      party_size: legacyPartySize,
       customer_name,
       customer_email,
       customer_phone,
     } = body;
 
+    const adults: number = typeof adultsRaw === 'number' ? adultsRaw : (legacyPartySize ?? 1);
+    const children: number = typeof childrenRaw === 'number' ? childrenRaw : 0;
+    const totalParty = adults + children;
+
     // ── Validation des champs requis ──────────────────────────────────────────
-    if (!experience_id || !booking_date || !party_size || !customer_name || !customer_email) {
+    if (!experience_id || !booking_date || !customer_name || !customer_email) {
       return new Response(JSON.stringify({ success: false, error: 'Champs requis manquants' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (adults < 1) {
+      return new Response(JSON.stringify({ success: false, error: 'Au moins 1 adulte est requis' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -133,7 +147,7 @@ Deno.serve(async (req: Request) => {
     // ── Récupérer l'expérience ────────────────────────────────────────────────
     const { data: experience, error: expError } = await supabase
       .from('standalone_experiences')
-      .select('id, title, base_price, base_price_type, currency, min_party, max_party, has_time_slots, time_slots, status')
+      .select('id, title, base_price, base_price_child, has_child_price, base_price_type, currency, min_party, max_party, has_time_slots, time_slots, status')
       .eq('id', experience_id)
       .single();
 
@@ -152,10 +166,10 @@ Deno.serve(async (req: Request) => {
     }
 
     // ── Valider la taille du groupe ───────────────────────────────────────────
-    if (party_size < experience.min_party || party_size > experience.max_party) {
+    if (totalParty < experience.min_party || totalParty > experience.max_party) {
       return new Response(JSON.stringify({
         success: false,
-        error: `Groupe de ${party_size} personnes non accepté (min ${experience.min_party}, max ${experience.max_party})`,
+        error: `Groupe de ${totalParty} personnes non accepté (min ${experience.min_party}, max ${experience.max_party})`,
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -176,14 +190,22 @@ Deno.serve(async (req: Request) => {
     }
 
     // ── Calculer le prix total côté serveur (jamais confiance au client) ─────
-    let sellPrice = experience.base_price;
-    if (experience.base_price_type === 'per_person' || experience.base_price_type === 'per_person_per_night') {
-      sellPrice = experience.base_price * party_size;
+    // Formule : adultes × prix_adulte + enfants × prix_enfant (si tarif enfant activé)
+    let sellPrice: number;
+    if (experience.base_price_type === 'fixed') {
+      sellPrice = experience.base_price;
+    } else if (experience.has_child_price && experience.base_price_child && children > 0) {
+      sellPrice = experience.base_price * adults + experience.base_price_child * children;
+    } else {
+      sellPrice = experience.base_price * totalParty;
     }
 
     // ── Créer l'ordre Revolut AVANT la réservation ────────────────────────────
     const bookingId = crypto.randomUUID();
-    const description = `StayMakom — ${experience.title} · ${party_size} pers.`;
+    const childSuffix = experience.has_child_price && children > 0
+      ? ` (${adults} adultes + ${children} enfants)`
+      : ` (${totalParty} pers.)`;
+    const description = `StayMakom — ${experience.title}${childSuffix}`;
     let revolut: { orderId: string; publicId: string };
 
     try {
@@ -214,7 +236,9 @@ Deno.serve(async (req: Request) => {
         customer_phone: customer_phone || null,
         booking_date,
         time_slot: validatedTimeSlot,
-        party_size,
+        party_size: totalParty,
+        adults_count: adults,
+        children_count: children,
         sell_price: sellPrice,
         currency: experience.currency,
         status: 'pending',

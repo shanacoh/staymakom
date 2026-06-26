@@ -776,6 +776,9 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
     // base_price = prix client calculé depuis fournisseur + markup
     const computedBasePrice =
       Math.round(data.supplier_price_adult * (1 + data.markup_percent / 100) * 100) / 100;
+    const computedBasePriceChild = data.has_child_price
+      ? Math.round(data.supplier_price_child * (1 + data.markup_percent / 100) * 100) / 100
+      : 0;
 
     return {
       title: data.title,
@@ -800,6 +803,7 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
       markup_percent: data.markup_percent,
       supplier_booking_url: data.supplier_booking_url || null,
       base_price: computedBasePrice,
+      base_price_child: computedBasePriceChild,
       base_price_type: data.base_price_type,
       currency: data.currency,
       lead_time_days: data.lead_time_days ?? 0,

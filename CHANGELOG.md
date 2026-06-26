@@ -6,6 +6,40 @@
 
 ---
 
+## [2026-06-26] — Panel de réservation expérience standalone : flow en 2 étapes + tarif enfant
+
+### Ce qui a changé côté code
+- `src/pages/StandaloneExperience.tsx` : refonte complète du panel de réservation standalone. Passage d'un formulaire unique à un flow en 2 étapes claires : étape 1 (participants + date), étape 2 (infos client + paiement). Calendrier affiché avec les jours hors mois grisés (`showOutsideDays`). Plus de texte répétant la date sous le calendrier. Suppression de la mention "Available: tuesday..." au-dessus du calendrier. Quand un tarif enfant est renseigné : deux compteurs distincts Adultes / Enfants avec le prix unitaire de chaque catégorie. Quand pas de tarif enfant : un seul compteur "Participants" sans distinction. Suppression de la mention min/max personnes.
+- `src/components/forms/StandaloneExperienceForm.tsx` : ajout de la sauvegarde du champ `base_price_child` (prix enfant public = prix fournisseur enfant + markup), calculé automatiquement au même titre que `base_price`.
+- `supabase/functions/process-standalone-payment/index.ts` : la fonction de paiement reçoit désormais `adults` et `children` séparément (rétrocompatible avec l'ancien `party_size`). Le prix total est calculé côté serveur selon la formule : `adults × base_price + children × base_price_child` (ou `total × base_price` si pas de tarif enfant).
+
+### Ce qui a changé côté base de données
+- Migration `20260626000000_add_child_price_and_booking_breakdown.sql` : ajout colonne `base_price_child` (NUMERIC 10,2) sur `standalone_experiences` — prix enfant public affiché aux visiteurs. Ajout colonnes `adults_count` et `children_count` (INTEGER, nullable) sur `standalone_bookings` — permet au back office de voir la composition exacte du groupe réservé.
+
+### Pourquoi ce changement
+Le panel de réservation standalone mélangeait toutes les informations sur un seul écran sans hiérarchie. La refonte en 2 étapes améliore la clarté : l'utilisateur choisit d'abord le créneau et le groupe, puis saisit ses coordonnées. Le tarif enfant différencié était calculé mais jamais affiché — les visiteurs ne comprenaient pas pourquoi le total changeait différemment selon le nombre d'adultes et d'enfants.
+
+---
+
+## [2026-06-26] — Badges hôtel+expérience : infos pratiques gérées au niveau hôtel
+
+### Ce qui a changé côté code
+- `src/pages/admin/HotelEditor2.tsx` : nouvelle section "Infos pratiques" en bas de la fiche hôtel avec 5 toggles (Casher / Fitness / Spa / Parking / Enfants) — oui / non / non pertinent. Sauvegardé dans `hotels2.practical_info`.
+- `src/components/admin/HighlightTagsSelectorHotel2.tsx` : nouveau composant créé (sélecteur de tags éditoriaux au niveau hôtel) — non utilisé pour l'instant, conservé pour usage futur.
+- `src/components/forms/UnifiedExperience2Form.tsx` : section badges inchangée — les tags éditoriaux restent gérés par expérience via `HighlightTagsSelector2`.
+- `src/components/Experience2CardWithPrice.tsx` : les cartes affichent maintenant la combinaison des auto-badges (depuis `hotels2.practical_info`) + tags éditoriaux (depuis `experience2_highlight_tags`).
+- `src/pages/Index.tsx`, `IndexV3.tsx`, `Experiences2.tsx`, `LaunchIndex.tsx`, `LaunchExperiences.tsx` : queries mises à jour pour inclure `practical_info` dans le join `hotels2`.
+
+### Ce qui a changé côté base de données
+- Migration `20260626010000_add_practical_info_to_hotels2.sql` : ajout colonne `practical_info` (JSONB) sur la table `hotels2`. Stocke les infos pratiques de l'hôtel (casher, parking, spa, fitness, enfants).
+- Migration `20260626020000_create_hotel2_highlight_tags.sql` : création table `hotel2_highlight_tags` (hotel_id, tag_id, position) pour future gestion de tags éditoriaux au niveau hôtel.
+- Migration `20260626030000_migrate_experience_tags_to_hotel2_highlight_tags.sql` : copie one-shot des 149 badges existants depuis `experience2_highlight_tags` vers `hotel2_highlight_tags` (données historiques migrées, non utilisées pour l'affichage).
+
+### Pourquoi ce changement
+Casher, parking, spa, fitness, enfants sont des caractéristiques de l'hôtel — pas d'une expérience en particulier. Il était donc plus logique de les gérer une seule fois sur la fiche hôtel plutôt que de les ressaisir sur chaque expérience. Les tags éditoriaux libres (ex : "Petit-déjeuner", "Vue mer") restent par expérience comme avant.
+
+---
+
 ## [2026-06-25] — Nouvelle expérience standalone : Coucher de Soleil en Jeep, Mont Yoash, Eilat
 
 ### Ce qui a changé côté code
