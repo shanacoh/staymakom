@@ -181,7 +181,7 @@ const IndexV3 = () => {
             highlight_tags(id, slug, label_en, label_he, label_fr, display_order, is_common, icon)
           )
         `)
-        .eq("status", "published")
+        .or("status.eq.published,show_on_v3_only.eq.true")
         .order("display_order", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return data;
@@ -197,8 +197,8 @@ const IndexV3 = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_experiences")
-        .select("id, slug, title, title_he, title_fr, hero_image, photos, base_price, base_price_type, currency, min_party, max_party, has_time_slots, display_order, category_ids, city, city_he, region, region_he, practical_info, category:categories(slug), standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he, label_fr))")
-        .eq("status", "published")
+        .select("id, slug, title, title_he, title_fr, hero_image, photos, base_price, base_price_type, currency, min_party, max_party, has_child_price, has_time_slots, display_order, category_ids, city, city_he, region, region_he, practical_info, show_on_v3_only, category:categories(slug), standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he, label_fr))")
+        .or("status.eq.published,show_on_v3_only.eq.true")
         .order("display_order", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return data as any[];
@@ -274,14 +274,17 @@ const IndexV3 = () => {
       <main className="flex-1 pb-[92px] md:pb-0 pt-14">
 
         {/* ──── 1. HERO ──── */}
-        <section className="relative h-[49vh] md:h-[54vh] min-h-[300px] flex items-center justify-center">
+        <section className="relative h-[38vh] md:h-[54vh] min-h-[240px] flex items-center justify-center">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: `url(${heroImage})` }}
           />
           <div className="absolute inset-0 bg-black/15" />
 
-          <div className="relative z-10 text-center text-white px-4 sm:px-6 max-w-3xl mx-auto -translate-y-6 sm:-translate-y-8">
+          <div className="relative z-10 text-center text-white px-4 sm:px-6 max-w-3xl mx-auto -translate-y-10 sm:-translate-y-8">
+            <span className="md:hidden block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-[#ad1414] mb-4 opacity-0 animate-hero-fade-up">
+              STAYMAKOM
+            </span>
             <h1 className="font-sans text-[28px] sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-[0.02em] leading-[1.1] mb-3 opacity-0 animate-hero-fade-up text-[#ad1414] text-center">
               {isRTL ? (
                 <><span className="whitespace-nowrap">אל תבחר עיר,</span><br /><span className="whitespace-nowrap">בחר את הבריחה שלך</span></>
@@ -296,7 +299,7 @@ const IndexV3 = () => {
               {isRTL
                 ? "הישראל שרוב האנשים לא מוצאים."
                 : lang === "fr"
-                  ? "L'Israël que la plupart des gens ne trouvent jamais."
+                  ? "Israël comme vous ne l'avez jamais vu."
                   : "The Israel most people never find."}
             </p>
           </div>

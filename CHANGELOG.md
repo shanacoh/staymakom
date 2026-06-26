@@ -6,6 +6,239 @@
 
 ---
 
+## [2026-06-26] — Carte cadeau et code promo fonctionnels dans le checkout standalone
+
+### Ce qui a changé côté code
+- `src/pages/StandaloneCheckout.tsx` : carte cadeau et code promo entièrement connectés. Formulaire étape 2 : Prénom + Nom séparés, Téléphone obligatoire, Demandes spéciales. Carte cadeau : validation via RPC `validate_gift_card`, déduction du total, badge vert quand appliquée (avec bouton "Retirer"). Code promo : validation via RPC `validate_promo_code`, calcul de la réduction en %. Les deux sont cumulables (promo d'abord, puis carte cadeau sur ce qui reste). Si la carte cadeau couvre 100% du montant : Revolut est ignoré, la réservation est créée directement comme confirmée et l'email de confirmation est envoyé.
+- `supabase/functions/process-standalone-payment/index.ts` : gère désormais `promo_code` et `gift_card` dans le body. Le prix final est calculé côté serveur (base → -promo% → -carte cadeau). Si le montant restant est 0 : crée la réservation en statut `confirmed`/`paid` sans ordre Revolut et retourne `no_payment_required: true`. Si montant > 0 : flux Revolut normal avec le prix réduit. Dans les deux cas, met à jour `amount_used` sur `gift_cards` et enregistre dans `promo_code_redemptions`.
+
+### Ce qui a changé côté base de données
+- Aucune migration. Les tables `gift_cards`, `promo_codes` et `promo_code_redemptions` et les RPCs existaient déjà.
+
+### Pourquoi ce changement
+Les boutons APPLIQUER de la carte cadeau et du code promo affichaient "bientôt disponible". Désormais les deux sont opérationnels et cumulables, exactement comme dans le flow expérience+hôtel.
+
+---
+
+## [2026-06-26] — Code promo fonctionnel dans le checkout standalone
+
+### Ce qui a changé côté code
+- `src/pages/StandaloneCheckout.tsx` : formulaire étape 2 revu (Prénom + Nom séparés, Téléphone obligatoire, Demandes spéciales, Carte cadeau, Code promo). Le bouton APPLIQUER du code promo appelle désormais la vraie RPC `validate_promo_code` en base — vérification de validité, d'expiration, d'usage maximum, et d'utilisation déjà faite par cet email. Quand un code est valide, le prix est recalculé avec la réduction affichée (prix barré + nouveau prix). Le code promo est transmis à l'edge function avec `id`, `code`, `discount_pct` et `amount_discounted`.
+- `supabase/functions/process-standalone-payment/index.ts` : accepte désormais `promo_code` dans le body. Re-valide le code côté serveur (jamais confiance au client pour le discount_pct). Applique la réduction sur `sellPrice` avant de créer l'ordre Revolut. Après création de la réservation, enregistre une ligne dans `promo_code_redemptions` et incrémente `used_count` sur `promo_codes` (non-bloquant).
+
+### Ce qui a changé côté base de données
+- Aucune nouvelle migration — la table `promo_codes`, la table `promo_code_redemptions` et la RPC `validate_promo_code` existaient déjà (migration `20260507000000_create_promo_codes.sql`). Le code WELCOME10 (10%) est actif.
+
+### Pourquoi ce changement
+Le code promo WELCOME10 existait en base mais n'était pas connecté au checkout standalone — le bouton APPLIQUER affichait juste "bientôt disponible". Désormais le flow est complet : validation, réduction, paiement au bon montant, et traçabilité de l'utilisation.
+
+---
+
+## [2026-06-26] — Expérience standalone : checkout sur page dédiée (comme expérience+hôtel)
+
+### Ce qui a changé côté code
+- `src/pages/StandaloneCheckout.tsx` : **nouveau fichier**. Page de checkout dédiée pour les expériences standalone, calquée sur `Checkout.tsx` (flow expérience+hôtel). Barre de progression en 3 étapes (Sélection ✓ → Informations client → Confirmation), mise en page 2 colonnes sur l'étape 2, résumé de réservation sticky à droite. Étape 3 : récapitulatif de la réservation + infos client + total + bouton "PAYER & RÉSERVER" qui ouvre la Dialog Revolut. Export de l'interface `StandaloneCheckoutState` pour typer les données transmises depuis `StandaloneExperience.tsx`.
+- `src/pages/StandaloneExperience.tsx` : simplifié. Ne garde que l'étape 1 (choix participants + date). Le bouton "Continuer" navigue désormais vers `/standalone-checkout` en passant toutes les données de réservation via le state du routeur (même pattern que `BookingPanel2.tsx` → `/checkout`). Tous les handlers de paiement, états de formulaire client et blocs de rendu step2/step3 ont été supprimés — ils vivent maintenant dans `StandaloneCheckout.tsx`. Imports nettoyés (suppression de Dialog, Alert, Card, Separator, RevolutPaymentWidget, etc.).
+- `src/App.tsx` : ajout de la route `/standalone-checkout` → `StandaloneCheckout` (lazy-loaded).
+
+### Ce qui a changé côté base de données
+- Aucune migration. Le flow de paiement appelle les mêmes edge functions (`process-standalone-payment`, `send-standalone-booking-confirmation`).
+
+### Pourquoi ce changement
+Le clic sur "Réserver" dans une expérience standalone restait sur la même page, sans la mise en page professionnelle du checkout expérience+hôtel. La demande était d'ouvrir une nouvelle page dédiée — avec la même barre de progression, la même mise en page 2 colonnes et le même widget de paiement Revolut — pour une expérience cohérente entre les deux types de réservation.
+
+---
+
+## [2026-06-26] — Panel de réservation expérience standalone : flow en 2 étapes + tarif enfant
+
+### Ce qui a changé côté code
+- `src/pages/StandaloneExperience.tsx` : refonte complète du panel de réservation standalone. Passage d'un formulaire unique à un flow en 2 étapes claires : étape 1 (participants + date), étape 2 (infos client + paiement). Calendrier affiché avec les jours hors mois grisés (`showOutsideDays`). Plus de texte répétant la date sous le calendrier. Suppression de la mention "Available: tuesday..." au-dessus du calendrier. Quand un tarif enfant est renseigné : deux compteurs distincts Adultes / Enfants avec le prix unitaire de chaque catégorie. Quand pas de tarif enfant : un seul compteur "Participants" sans distinction. Suppression de la mention min/max personnes.
+- `src/components/forms/StandaloneExperienceForm.tsx` : ajout de la sauvegarde du champ `base_price_child` (prix enfant public = prix fournisseur enfant + markup), calculé automatiquement au même titre que `base_price`.
+- `supabase/functions/process-standalone-payment/index.ts` : la fonction de paiement reçoit désormais `adults` et `children` séparément (rétrocompatible avec l'ancien `party_size`). Le prix total est calculé côté serveur selon la formule : `adults × base_price + children × base_price_child` (ou `total × base_price` si pas de tarif enfant).
+
+### Ce qui a changé côté base de données
+- Migration `20260626000000_add_child_price_and_booking_breakdown.sql` : ajout colonne `base_price_child` (NUMERIC 10,2) sur `standalone_experiences` — prix enfant public affiché aux visiteurs. Ajout colonnes `adults_count` et `children_count` (INTEGER, nullable) sur `standalone_bookings` — permet au back office de voir la composition exacte du groupe réservé.
+
+### Pourquoi ce changement
+Le panel de réservation standalone mélangeait toutes les informations sur un seul écran sans hiérarchie. La refonte en 2 étapes améliore la clarté : l'utilisateur choisit d'abord le créneau et le groupe, puis saisit ses coordonnées. Le tarif enfant différencié était calculé mais jamais affiché — les visiteurs ne comprenaient pas pourquoi le total changeait différemment selon le nombre d'adultes et d'enfants.
+
+---
+
+## [2026-06-26] — Badges hôtel+expérience : infos pratiques gérées au niveau hôtel
+
+### Ce qui a changé côté code
+- `src/pages/admin/HotelEditor2.tsx` : nouvelle section "Infos pratiques" en bas de la fiche hôtel avec 5 toggles (Casher / Fitness / Spa / Parking / Enfants) — oui / non / non pertinent. Sauvegardé dans `hotels2.practical_info`.
+- `src/components/admin/HighlightTagsSelectorHotel2.tsx` : nouveau composant créé (sélecteur de tags éditoriaux au niveau hôtel) — non utilisé pour l'instant, conservé pour usage futur.
+- `src/components/forms/UnifiedExperience2Form.tsx` : section badges inchangée — les tags éditoriaux restent gérés par expérience via `HighlightTagsSelector2`.
+- `src/components/Experience2CardWithPrice.tsx` : les cartes affichent maintenant la combinaison des auto-badges (depuis `hotels2.practical_info`) + tags éditoriaux (depuis `experience2_highlight_tags`).
+- `src/pages/Index.tsx`, `IndexV3.tsx`, `Experiences2.tsx`, `LaunchIndex.tsx`, `LaunchExperiences.tsx` : queries mises à jour pour inclure `practical_info` dans le join `hotels2`.
+
+### Ce qui a changé côté base de données
+- Migration `20260626010000_add_practical_info_to_hotels2.sql` : ajout colonne `practical_info` (JSONB) sur la table `hotels2`. Stocke les infos pratiques de l'hôtel (casher, parking, spa, fitness, enfants).
+- Migration `20260626020000_create_hotel2_highlight_tags.sql` : création table `hotel2_highlight_tags` (hotel_id, tag_id, position) pour future gestion de tags éditoriaux au niveau hôtel.
+- Migration `20260626030000_migrate_experience_tags_to_hotel2_highlight_tags.sql` : copie one-shot des 149 badges existants depuis `experience2_highlight_tags` vers `hotel2_highlight_tags` (données historiques migrées, non utilisées pour l'affichage).
+
+### Pourquoi ce changement
+Casher, parking, spa, fitness, enfants sont des caractéristiques de l'hôtel — pas d'une expérience en particulier. Il était donc plus logique de les gérer une seule fois sur la fiche hôtel plutôt que de les ressaisir sur chaque expérience. Les tags éditoriaux libres (ex : "Petit-déjeuner", "Vue mer") restent par expérience comme avant.
+
+---
+
+## [2026-06-25] — Nouvelle expérience standalone : Coucher de Soleil en Jeep, Mont Yoash, Eilat
+
+### Ce qui a changé côté code
+- Aucun changement côté front-end.
+
+### Ce qui a changé côté base de données
+- `20260625080000_seed_standalone_sunset_jeep_mount_yoash_eilat.sql` : insertion d'une expérience standalone en statut `draft` — balade en jeep dans les montagnes d'Eilat jusqu'au mont Yoash (725 m) pour le coucher de soleil, avec halte thé/pita/labané au feu de camp. Inclut 4 éléments "ce qui est inclus", les tags Tour et Sunset Drinks, et le SEO complet EN/FR/HE. Base_price à 0, à compléter avant publication (prix fournisseur non confirmé). Catégorie : nature.
+
+### Pourquoi ce changement
+- Ajout d'une nouvelle expérience standalone pour Eilat, sans hôtel associé. Le prix et le format privatif vs groupe partagé sont à confirmer avec le partenaire avant publication.
+
+---
+
+## [2026-06-25] — Mise à jour Lev HaTeva : sous-titre et espaces dans les descriptions
+
+### Ce qui a changé côté code
+- Aucun changement côté front-end.
+
+### Ce qui a changé côté base de données
+- `20260625070000_update_lev_hateva_subtitle_paragraphs.sql` : mise à jour de l'expérience standalone "Horseback Ride at Lev HaTeva Farm". Les sous-titres EN, FR et HE mentionnent désormais "30 minutes from Tel Aviv / à 30 minutes de Tel Aviv / 30 דקות מתל אביב". Les descriptions longues (EN, FR, HE) ont été resynchronisées avec des lignes vides entre chaque paragraphe.
+- `20260612030000_seed_standalone_balade_cheval_lev_hateva.sql` : sous-titres mis à jour dans le fichier seed original pour rester cohérent avec la base.
+
+### Pourquoi ce changement
+- Shana voulait que les visiteurs voient immédiatement la proximité de Tel Aviv dès le sous-titre, et que les descriptions affichent clairement les espacements entre paragraphes.
+
+---
+
+## [2026-06-25] — Nouvelle expérience standalone : Dégustation au Vignoble du Désert, Mitzpe Ramon
+
+### Ce qui a changé côté code
+- Aucun changement côté front-end.
+
+### Ce qui a changé côté base de données
+- `20260625060000_seed_standalone_desert_winery_mitzpe_ramon.sql` : insertion d'une expérience standalone en statut `draft` — dégustation de 5 vins dans un vignoble isolé du Néguev (via Negev Safari). Inclut la liste "ce qui est inclus" (6 éléments), les tags Wine Tasting et Guided Tour, et le SEO complet EN/FR/HE.
+
+### Pourquoi ce changement
+- Shana a fourni la fiche complète de cette expérience (catégorie Foody Discovery, prix 350 ILS fournisseur / 420 ILS affiché, réservation par couple). L'adresse et la durée sont à compléter avant publication — le fournisseur ne les communique qu'après réservation.
+
+---
+
+## [2026-06-25] — Visibilité V3 : publier des expériences sur /v3 sans les afficher sur la homepage
+
+### Ce qui a changé côté code
+- `src/pages/admin/Experiences2.tsx` : ajout d'un toggle "V3" dans la liste des expériences (à gauche du bouton Ops). Un clic active/désactive la visibilité exclusive sur /v3. Toast de confirmation après chaque action. Invalidation automatique des caches homepage + /v3 au changement.
+- `src/pages/Index.tsx` : les 3 requêtes d'expériences (vedettes, récentes, toutes) excluent désormais les expériences marquées `show_on_v3_only = true`.
+- `src/pages/IndexV3.tsx` : la requête affiche les expériences publiées **ou** celles avec `show_on_v3_only = true` (même en draft) — via un filtre OR Supabase.
+- `src/components/forms/UnifiedExperience2Form.tsx` : le champ `show_on_v3_only` est lu et sauvegardé lors de l'édition complète d'une expérience (pas de bouton UI dans le formulaire — contrôle depuis la liste).
+
+### Ce qui a changé côté base de données
+- `20260625060000_add_show_on_v3_only_to_experiences2.sql` : nouvelle colonne `show_on_v3_only boolean NOT NULL DEFAULT false` sur la table `experiences2`. Toutes les expériences existantes héritent de la valeur `false` (aucun changement de comportement).
+
+### Pourquoi ce changement
+- Shana voulait pouvoir publier des expériences visibles uniquement sur /v3 (page de test) sans qu'elles apparaissent sur la homepage actuelle, pour préparer le lancement de la v3 en parallèle.
+
+---
+
+## [2026-06-25] — Insertion batch Isrotel : 4 expériences avec hôtel
+
+### Ce qui a changé côté code
+- Aucun changement côté front-end.
+
+### Ce qui a changé côté base de données
+- `20260625020000_insert_experience_wine_tasting_beresheet.sql` : nouvelle expérience "Wine Tasting in the Negev's Lone Farms" liée à **Beresheet by Isrotel Exclusive**. Dégustation privée dans une ferme isolée du Néguev + villa avec piscine privée face au mכתש רמון. Tags : Night, Wine Tasting, Guided Tour, Pool, Spa Access, Kosher.
+- `20260625030000_insert_experience_chocolate_galita_kinneret.sql` : nouvelle expérience "Chocolate Workshop at Galita" liée à **Hotel Lake House Kinneret**. Atelier chocolat (6 thèmes au choix) à Dégania Beit + accès gratuit aux sources chaudes de Tibériade. Tags : Night, Breakfast, Cooking Class, Pool, Kids Activities, Kosher.
+- `20260625040000_insert_experience_jeep_springs_kedma.sql` : nouvelle expérience "Jeep Tour to the Hidden Springs of Nahal Tzin" liée à **Kedma by Isrotel Design**. Tour 4h au départ du parking Kedma vers Ein Akev et Ein Ziq + hammam turc. Tags : Night, Breakfast, Guided Tour, Pool, Spa Access, Kids Activities, Kosher.
+- `20260625050000_insert_experience_tsfat_mizpe_hayamim.sql` : nouvelle expérience "Guided Walk Through the Old City of Tsfat" liée à **Mizpe Hayamim by Isrotel Exclusive**. Visite guidée des synagogues et rובע האמנים + dîner laitier farm-to-table. Tags : Night, Breakfast, Dinner, Guided Tour, Spa Access, Pool, Kosher.
+- Chaque expérience est en **statut draft** (à valider avant publication), avec 6 items inclus, et les textes en 3 langues (EN / HE / FR) y compris `title_fr`, `subtitle_fr`, `long_copy_fr` et les champs SEO.
+
+### Pourquoi ce changement
+- Saisie du batch Isrotel fourni par Shana : 4 fiches expériences complètes (descriptions, inclus, SEO) pour les hôtels Beresheet, Lake House Kinneret, Kedma et Mizpe Hayamim.
+
+---
+
+## [2026-06-25] — Tarification flexible : prix par personne vs forfait total
+
+### Ce qui a changé côté code
+- `src/components/forms/StandaloneExperienceForm.tsx` : le sélecteur de type de prix est maintenant explicite ("Par personne × nb. participants" vs "Forfait prix unique tout groupe"). Le label du champ prix fournisseur change dynamiquement selon le type choisi. La section "Prix enfant" se masque automatiquement quand le type est Forfait. La preview à 3 cartes s'adapte : la carte du milieu devient "À partir de X / pers. (groupe de Y)" pour les forfaits.
+- `src/components/StandaloneExperienceCard.tsx` : ajout de `has_child_price` dans l'interface. Calcul du `displayPrice` pour les forfaits = prix total ÷ max participants (arrondi au-dessus). Calcul du flag `showFromPrefix` (vrai si forfait ou tarif enfant).
+- `src/components/ExperienceCard.tsx` : ajout du prop `showFromPrefix`. Affichage conditionnel du préfixe "à partir de" sur les cartes standalone.
+- `src/pages/IndexV3.tsx` : ajout de `has_child_price` dans la requête Supabase de la homepage.
+
+### Ce qui a changé côté base de données
+- Aucun changement — les colonnes `base_price_type`, `max_party` et `has_child_price` existaient déjà.
+
+### Pourquoi ce changement
+- Certaines expériences (comme les bateaux Seamona) ont un prix total identique quel que soit le nombre de participants. Il fallait pouvoir distinguer "prix par personne" et "forfait total" dans le back office, et afficher "à partir de X ₪ / pers." sur la homepage en divisant le prix total par le nombre max de participants.
+
+---
+
+## [2026-06-25] — Refonte de l'architecture des cartes expériences
+
+### Ce qui a changé côté code
+- `src/components/ExperienceCard.tsx` : restructuration complète du bloc d'informations sous l'image.
+  - **Ligne 1 (toutes cartes)** : badges de catégorie à gauche + ★ suivi de "NEW" ou de la note à droite — jamais les deux en même temps, l'étoile est toujours présente.
+  - **Ligne 2 standalone** : Ville · [à partir de] Prix — ville en gris moyen, séparateur et "à partir de" en gris clair, prix en gras noir.
+  - **Ligne 2 hôtel** : Nom de l'hôtel · Ville — nom en texte principal, ville en gris, tronqué si trop long. La région (Tsafon/Darom/Jérusalem) est supprimée car redondante.
+  - **Ligne 3 hôtel** : Prix / nuit · 2 pers. — sans "à partir de", version courte "2 pers." au lieu de "2 personnes".
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Les cartes affichaient trop d'informations sur trop de lignes, ce qui alourdissait visuellement la page. La nouvelle architecture est plus aérée et hiérarchisée : badges en premier, lieu et prix en deuxième.
+
+---
+
+## [2026-06-25] — Toggle v3 : taille et police uniformisées pour les 3 langues
+
+### Ce qui a changé côté code
+- `src/components/V3Header.tsx` : suppression de la taille de police spécifique à l'hébreu — les 4 textes du toggle (With Hotel, Hôtel Inclus, עם מלון…) utilisent désormais `text-[9px] sm:text-[10px]` quelle que soit la langue active
+- Largeur des pills ramenée à `w-[108px] sm:w-[130px]` (contre `w-[126px] sm:w-[140px]` qui avait été élargi à tort)
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- Le toggle paraissait trop large et l'hébreu ne correspondait pas visuellement aux autres langues. Seule la taille de police avait été demandée par Shana ; la largeur avait été modifiée sans demande → rétablie à une valeur compacte.
+
+---
+
+## [2026-06-25] — V3Header : Globe langue/devise visible sur desktop aussi
+
+### Ce qui a changé côté code
+- `src/components/V3Header.tsx` : suppression des anciens boutons texte EN|FR|עב|$ sur desktop (`hidden md:flex`) — remplacés par le Globe+Popover déjà présent pour mobile, désormais affiché sur toutes les tailles d'écran (suppression de `md:hidden`)
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- Les anciens boutons texte masquaient le Globe sur desktop, rendant l'icône Globe invisible sur `/v3` en mode écran large. Désormais Globe+Popover fonctionne sur toutes les tailles d'écran sur la page v3.
+
+---
+
+## [2026-06-25] — Ajout des 4 expériences standalone Seamona (marina d'Herzliya)
+
+### Ce qui a changé côté code
+- Aucun changement de code. Données uniquement.
+
+### Ce qui a changé côté base de données
+- Migration `20260625010000_seed_seamona_yacht_herzliya.sql` : insertion de 4 nouvelles expériences standalone en statut `draft`, avec leurs éléments inclus et badges, pour le partenaire Seamona (סימונה ושירות ימאות), marina d'Herzliya, tél. 052-6284442
+  - **Exp 1 — Une heure romantique en yacht** (`romantic-yacht-hour-herzliya`) : catégorie Romantic Escape, 1h pour 2 personnes, 690 NIS fournisseur → 828 NIS affiché. Badges : Sunset Drinks, Kosher, Couples Treatment.
+  - **Exp 2 — Coucher de soleil et dîner en yacht** (`sunset-sail-dinner-herzliya`) : catégorie Romantic Escape, 3h pour 2 personnes, 1 680 NIS fournisseur → 2 016 NIS affiché. Badges : Dinner, Sunset Drinks, Couples Treatment.
+  - **Exp 3 — Sortie bateau en groupe** (`group-yacht-day-herzliya`) : catégorie Nature & Outdoor, 1h30–3h pour 1–13 personnes, 1 290 NIS fournisseur → 1 548 NIS affiché. Badge : Boat tour.
+  - **Exp 4 — Catamaran événementiel** (`celebration-catamaran-herzliya`) : catégorie Nature & Outdoor, 2–3h pour 1–21 personnes, 2 500 NIS fournisseur → 3 000 NIS affiché. Badge : Boat tour.
+
+### Pourquoi ce changement
+- Shana a fourni le brief complet des 4 expériences Seamona (contenu trilingue EN/FR/HE, prix, inclus, badges, SEO). Les expériences sont en draft — à valider et publier une fois les points ouverts confirmés avec Simona (voir notes dans la migration).
+
+### Points en attente avant publication (à confirmer avec Simona)
+- Exp 2 : prix exact du supplément massage duo (estimé +300 NIS, non confirmé)
+- Exp 2 : repas casher inclus par défaut ou supplément +100 NIS/couple ?
+- Exps 1–4 : supplément weekend/jours fériés (+100 NIS) non appliqué selon décision Shana — à reconfirmer
+- Exp 3 : badge « Kids Activities » non ajouté — confirmation Shana nécessaire avant d'activer
+
+---
+
 ## [2026-06-25] — Gestion des dates de fin de disponibilité et mode dates spécifiques (standalone)
 
 ### Ce qui a changé côté code

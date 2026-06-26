@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, Copy, Gift } from "lucide-react";
+import { Check, Copy, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "sonner";
@@ -23,10 +23,6 @@ import { toast } from "sonner";
 
 export const NEWSLETTER_OPEN_EVENT = "staymakom-open-newsletter";
 
-/**
- * Helper pour ouvrir la popup newsletter depuis n'importe où dans l'app.
- * Usage : `<button onClick={openNewsletterPopup}>Subscribe</button>`
- */
 export function openNewsletterPopup() {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent(NEWSLETTER_OPEN_EVENT));
@@ -37,48 +33,54 @@ const DEFAULT_DELAY_MS = 20_000;
 
 interface NewsletterPopupProps {
   delayMs?: number;
-  promoCode?: string; // par défaut WELCOME10
-  discountPct?: number; // par défaut 10
+  promoCode?: string;
+  discountPct?: number;
 }
 
 const translations = {
   en: {
+    kicker: "Exclusive offer",
     title: "Get 10% off your first stay",
     description: "Subscribe to our newsletter and we'll send you a discount code right now.",
     emailPlaceholder: "Your email",
     submit: "Get my code",
     submitting: "Subscribing…",
-    successTitle: "Welcome to STAYMAKOM",
+    successKicker: "Welcome to STAYMAKOM",
+    successTitle: "Your code is ready",
     successDescription: "Use this code at checkout for 10% off your first stay:",
-    copy: "Copy",
+    copy: "Copy code",
     copied: "Copied!",
     close: "Maybe later",
     invalidEmail: "Please enter a valid email",
     error: "Something went wrong. Please try again.",
   },
   fr: {
+    kicker: "Offre exclusive",
     title: "10 % de réduction sur ton premier séjour",
     description: "Inscris-toi à la newsletter et reçois ton code de réduction tout de suite.",
     emailPlaceholder: "Ton email",
     submit: "Recevoir mon code",
     submitting: "Inscription…",
-    successTitle: "Bienvenue chez STAYMAKOM",
+    successKicker: "Bienvenue chez STAYMAKOM",
+    successTitle: "Ton code est prêt",
     successDescription: "Utilise ce code au paiement pour avoir 10 % sur ton premier séjour :",
-    copy: "Copier",
+    copy: "Copier le code",
     copied: "Copié !",
     close: "Plus tard",
     invalidEmail: "Email invalide",
     error: "Une erreur est survenue. Réessaye.",
   },
   he: {
+    kicker: "הצעה בלעדית",
     title: "10% הנחה על השהייה הראשונה שלך",
     description: "הירשם/י לניוזלטר וקבל/י את קוד ההנחה מיד.",
     emailPlaceholder: "האימייל שלך",
     submit: "קבל/י את הקוד",
     submitting: "רישום...",
-    successTitle: "ברוך/ה הבא/ה ל-STAYMAKOM",
+    successKicker: "ברוך/ה הבא/ה ל-STAYMAKOM",
+    successTitle: "הקוד שלך מוכן",
     successDescription: "השתמש/י בקוד הזה בקופה לקבלת 10% הנחה על השהייה הראשונה:",
-    copy: "העתק",
+    copy: "העתק קוד",
     copied: "הועתק!",
     close: "אולי מאוחר יותר",
     invalidEmail: "אימייל לא תקין",
@@ -95,13 +97,13 @@ export function NewsletterPopup({
 }: NewsletterPopupProps) {
   const { lang } = useLanguage();
   const t = translations[lang as keyof typeof translations] || translations.en;
+  const isRTL = lang === "he";
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Auto-ouverture après délai (une seule fois par appareil, géré par localStorage)
   useEffect(() => {
     try {
       if (localStorage.getItem(STORAGE_KEY) === "1") return;
@@ -112,11 +114,8 @@ export function NewsletterPopup({
     return () => clearTimeout(timer);
   }, [delayMs]);
 
-  // Ouverture manuelle via événement global (bouton "Get 10% off" dans le footer, etc.)
-  // Ignore le flag localStorage : si tu veux ouvrir la popup, on l'ouvre.
   useEffect(() => {
     const handler = () => {
-      // Réinitialise le formulaire pour permettre une nouvelle saisie
       setEmail("");
       setSubmitted(false);
       setCopied(false);
@@ -135,10 +134,7 @@ export function NewsletterPopup({
   };
 
   const handleClose = (next: boolean) => {
-    if (!next) {
-      // L'utilisateur ferme : on note qu'il a vu la popup, on ne le harcèle pas
-      markSeen();
-    }
+    if (!next) markSeen();
     setOpen(next);
   };
 
@@ -150,7 +146,6 @@ export function NewsletterPopup({
     }
     setSubmitting(true);
     try {
-      // Enregistrement du lead (non bloquant — si ça échoue on affiche le code quand même)
       await supabase.functions
         .invoke("collect-lead", {
           body: {
@@ -160,7 +155,6 @@ export function NewsletterPopup({
           },
         })
         .catch((err) => {
-          // Log silencieux — on ne bloque pas la promesse au visiteur
           console.warn("Newsletter signup: collect-lead failed (non-blocking)", err);
         });
       setSubmitted(true);
@@ -184,66 +178,109 @@ export function NewsletterPopup({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <Gift className="h-6 w-6 text-primary" />
-          </div>
-          <DialogTitle className="text-center font-sans text-xl font-bold tracking-[-0.02em]">
-            {submitted ? t.successTitle : t.title}
-          </DialogTitle>
-          <DialogDescription className="text-center text-muted-foreground">
-            {submitted ? t.successDescription : t.description}
-          </DialogDescription>
-        </DialogHeader>
-
+      <DialogContent
+        className="sm:max-w-md bg-white border-0 shadow-2xl rounded-3xl p-8"
+        dir={isRTL ? "rtl" : "ltr"}
+      >
         {!submitted ? (
-          <form onSubmit={handleSubmit} className="space-y-3 pt-2">
-            <Input
-              type="email"
-              required
-              placeholder={t.emailPlaceholder}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              autoFocus
-            />
-            <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? t.submitting : t.submit}
-            </Button>
-            <button
-              type="button"
-              onClick={() => handleClose(false)}
-              className="block w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {t.close}
-            </button>
-          </form>
+          /* ── État formulaire ── */
+          <div className="space-y-6">
+            {/* Kicker + Titre */}
+            <div className="space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#ad1414]/70">
+                {t.kicker}
+              </p>
+              <h2 className="font-sans text-2xl font-bold uppercase tracking-[-0.02em] text-[#1A1814] leading-tight">
+                {t.title}
+              </h2>
+              <p className="text-sm text-black/50 leading-relaxed">
+                {t.description}
+              </p>
+            </div>
+
+            {/* Formulaire */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Input
+                type="email"
+                required
+                placeholder={t.emailPlaceholder}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                autoFocus
+                className="rounded-xl border-black/10 bg-black/[0.03] focus-visible:ring-[#ad1414]/30 placeholder:text-black/30"
+              />
+
+              {/* CTA avec trait rouge irrégulier — même pattern que "Design My Stay" */}
+              <div className="relative inline-block w-full">
+                <span
+                  aria-hidden
+                  className="absolute inset-x-2 bottom-1.5 h-3 rounded-[60%_40%_70%_30%/40%_60%_30%_70%] -rotate-1 bg-[#ad1414]/40"
+                />
+                <Button
+                  type="submit"
+                  disabled={submitting}
+                  className="group relative w-full rounded-full bg-[#1A1814] text-white hover:bg-[#1A1814]/90 font-bold uppercase tracking-widest text-xs py-5"
+                >
+                  {submitting ? t.submitting : (
+                    <>
+                      {t.submit}
+                      <ArrowRight className="ml-2 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleClose(false)}
+                className="block w-full text-center text-xs text-black/25 hover:text-black/45 transition-colors"
+              >
+                {t.close}
+              </button>
+            </form>
+          </div>
         ) : (
-          <div className="space-y-4 pt-2">
-            <div className="rounded-lg border-2 border-primary/40 bg-primary/5 p-4 text-center">
-              <p className="font-mono text-2xl font-bold tracking-wider text-primary">
+          /* ── État succès ── */
+          <div className="space-y-6">
+            {/* Kicker + Titre */}
+            <div className="space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#ad1414]/70">
+                {t.successKicker}
+              </p>
+              <h2 className="font-sans text-2xl font-bold uppercase tracking-[-0.02em] text-[#1A1814] leading-tight">
+                {t.successTitle}
+              </h2>
+              <p className="text-sm text-black/50 leading-relaxed">
+                {t.successDescription}
+              </p>
+            </div>
+
+            {/* Bloc code promo */}
+            <div className="rounded-2xl bg-[#ad1414]/8 border border-[#ad1414]/20 p-5 text-center">
+              <p className="font-mono text-3xl font-bold tracking-[0.15em] text-[#ad1414]">
                 {promoCode}
               </p>
             </div>
-            <Button
+
+            {/* Bouton copy */}
+            <button
               type="button"
               onClick={handleCopy}
-              variant="outline"
-              className="w-full gap-2"
+              className="w-full flex items-center justify-center gap-2 rounded-full border border-black/15 py-3 text-xs font-semibold uppercase tracking-widest text-black/60 hover:border-black/30 hover:text-black transition-all"
             >
               {copied ? (
                 <>
-                  <Check className="h-4 w-4" />
+                  <Check className="h-3.5 w-3.5 text-emerald-500" />
                   {t.copied}
                 </>
               ) : (
                 <>
-                  <Copy className="h-4 w-4" />
+                  <Copy className="h-3.5 w-3.5" />
                   {t.copy}
                 </>
               )}
-            </Button>
+            </button>
           </div>
         )}
       </DialogContent>

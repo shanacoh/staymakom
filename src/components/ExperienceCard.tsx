@@ -65,6 +65,7 @@ interface ExperienceCardProps {
   linkPrefix?: string;
   linkSuffix?: string;
   isStandaloneExperience?: boolean;
+  showFromPrefix?: boolean;
 }
 
 export default function ExperienceCard({
@@ -82,6 +83,7 @@ export default function ExperienceCard({
   linkSuffix = "",
   index = 0,
   isStandaloneExperience = false,
+  showFromPrefix = false,
 }: ExperienceCardProps & { index?: number }) {
   const { lang } = useLanguage();
   const { symbol: currencySymbol } = useCurrency();
@@ -95,7 +97,7 @@ export default function ExperienceCard({
 
   const title = getLocalizedField(experience, 'title', lang) as string;
   const hotelName = experience.hotels ? (getLocalizedField(experience.hotels, 'name', lang) as string) : '';
-  const region = experience.hotels ? (getLocalizedField(experience.hotels, 'region', lang) as string || getLocalizedField(experience.hotels, 'city', lang) as string) : '';
+  const city = experience.hotels ? (getLocalizedField(experience.hotels, 'city', lang) as string || '') : '';
 
   // Get highlight tags
   const highlightTags = experience.experience_highlight_tags?.map(eht => eht.highlight_tags) || [];
@@ -274,33 +276,27 @@ export default function ExperienceCard({
           </div>
         </div>
 
-        {/* Tags - just below the photo */}
-        {highlightTags.length > 0 && (
-          <div className="flex flex-nowrap gap-1 overflow-hidden px-0.5 -mt-0.5 mb-1">
-            {highlightTags.slice(0, maxTags).map((tag) => (
-              <span
-                key={tag.id}
-                className="inline-block whitespace-nowrap px-1.5 py-px bg-muted/60 rounded-full text-[9px] font-normal tracking-wide text-muted-foreground border border-border/40"
-              >
-                {lang === 'he' && tag.label_he ? tag.label_he : lang === 'fr' && tag.label_fr ? tag.label_fr : tag.label_en}
-              </span>
-            ))}
-            {highlightTags.length > maxTags && (
-              <span className="inline-block whitespace-nowrap px-1 py-px text-[9px] text-muted-foreground">
-                +{highlightTags.length - maxTags}
-              </span>
-            )}
-          </div>
-        )}
-
         {/* Metadata below image */}
-        <div className="space-y-1 px-0.5">
-          {/* Row: City | Region + Rating */}
-          <div className="flex items-center justify-between">
-            {hotelName || experience.hotels?.city || region ? (
-              <p className="text-[11px] sm:text-xs text-muted-foreground tracking-wide truncate">
-                {experience.hotels?.city ? (getLocalizedField(experience.hotels, 'city', lang) as string) : ''}{region ? ` | ${region}` : ''}
-              </p>
+        <div className="space-y-0.5 px-0.5 pt-1">
+
+          {/* LIGNE 1 : Badges (gauche) + NEW ou note (droite) */}
+          <div className="flex items-center justify-between gap-2 min-h-[18px]">
+            {highlightTags.length > 0 ? (
+              <div className="flex flex-nowrap gap-1 overflow-hidden min-w-0">
+                {highlightTags.slice(0, maxTags).map((tag) => (
+                  <span
+                    key={tag.id}
+                    className="inline-block whitespace-nowrap shrink-0 px-1.5 py-px bg-muted/60 rounded-full text-[9px] font-normal tracking-wide text-muted-foreground border border-border/40"
+                  >
+                    {lang === 'he' && tag.label_he ? tag.label_he : lang === 'fr' && tag.label_fr ? tag.label_fr : tag.label_en}
+                  </span>
+                ))}
+                {highlightTags.length > maxTags && (
+                  <span className="inline-block whitespace-nowrap px-1 py-px text-[9px] text-muted-foreground">
+                    +{highlightTags.length - maxTags}
+                  </span>
+                )}
+              </div>
             ) : <span />}
             <div className="flex items-center gap-0.5 shrink-0">
               <span className="text-foreground text-[11px]">★</span>
@@ -317,37 +313,62 @@ export default function ExperienceCard({
             </div>
           </div>
 
-          {/* Hotel name */}
-          {hotelName && (
-            <p className="text-xs sm:text-sm font-semibold text-foreground leading-snug line-clamp-1">
-              {hotelName}
-            </p>
-          )}
-
-
-          {/* Price row */}
-          {displayPrice > 0 && (
-            <div className="flex items-baseline gap-1 pt-0.5">
-              <span className="font-bold text-sm sm:text-base text-foreground">
-                {displaySymbol}{displayPrice}
-              </span>
-              {originalPrice && originalPrice > displayPrice && (
-                <span className="text-[11px] text-muted-foreground line-through">
-                  {displaySymbol}{originalPrice}
+          {/* LIGNE 2 standalone : Ville · [à partir de] Prix */}
+          {isStandaloneExperience && displayPrice > 0 && (
+            <div className="flex items-baseline gap-1 flex-wrap pt-0.5">
+              {city && (
+                <>
+                  <span className="text-[11px] text-muted-foreground">{city}</span>
+                  <span className="text-[10px] text-muted-foreground/50">·</span>
+                </>
+              )}
+              {showFromPrefix && (
+                <span className="text-[10px] text-muted-foreground/60">
+                  {lang === 'he' ? 'מ-' : lang === 'fr' ? 'à partir de' : 'from'}
                 </span>
               )}
+              <span className="font-bold text-sm text-foreground">{displaySymbol}{displayPrice}</span>
+              {originalPrice && originalPrice > displayPrice && (
+                <span className="text-[11px] text-muted-foreground line-through">{displaySymbol}{originalPrice}</span>
+              )}
               <span className="text-[10px] text-muted-foreground">
-                {isStandaloneExperience
-                  ? (lang === 'he' ? '/ לאדם' : lang === 'fr' ? '/ par pers.' : '/ per person')
-                  : `/ ${lang === 'he' ? 'לילה ל-2 אנשים' : lang === 'fr' ? 'nuit · 2 personnes' : 'night · 2 guests'}`}
+                {lang === 'he' ? '/ לאדם' : lang === 'fr' ? '/ pers.' : '/ person'}
               </span>
               {discountPercent && (
                 <span className="inline-block ml-1 px-1.5 py-px bg-accent text-accent-foreground text-[9px] font-medium rounded">
-                  -{discountPercent} %
+                  -{discountPercent}%
                 </span>
               )}
             </div>
           )}
+
+          {/* LIGNE 2 hôtel : Nom hôtel · Ville (tronqué, sans région) */}
+          {!isStandaloneExperience && (hotelName || city) && (
+            <p className="text-[11px] sm:text-xs text-muted-foreground truncate pt-0.5">
+              {hotelName && <span className="font-medium text-foreground">{hotelName}</span>}
+              {hotelName && city && <span className="text-muted-foreground/50"> · </span>}
+              {city && <span>{city}</span>}
+            </p>
+          )}
+
+          {/* LIGNE 3 hôtel : Prix / nuit */}
+          {!isStandaloneExperience && displayPrice > 0 && (
+            <div className="flex items-baseline gap-1 flex-wrap pt-0.5">
+              <span className="font-bold text-sm text-foreground">{displaySymbol}{displayPrice}</span>
+              {originalPrice && originalPrice > displayPrice && (
+                <span className="text-[11px] text-muted-foreground line-through">{displaySymbol}{originalPrice}</span>
+              )}
+              <span className="text-[10px] text-muted-foreground">
+                {lang === 'he' ? '/ לילה ל-2 אנש׳' : lang === 'fr' ? '/ nuit · 2 pers.' : '/ night · 2 pers.'}
+              </span>
+              {discountPercent && (
+                <span className="inline-block ml-1 px-1.5 py-px bg-accent text-accent-foreground text-[9px] font-medium rounded">
+                  -{discountPercent}%
+                </span>
+              )}
+            </div>
+          )}
+
         </div>
       </Link>
     </>

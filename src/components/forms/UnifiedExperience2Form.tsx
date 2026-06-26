@@ -177,6 +177,7 @@ export function UnifiedExperience2Form({
   const [showExtras, setShowExtras] = useState(false);
   const [featuredOnHome, setFeaturedOnHome] = useState(false);
   const [homeDisplayOrder, setHomeDisplayOrder] = useState(0);
+  const [showOnV3Only, setShowOnV3Only] = useState(false);
   const [barRateRefreshEnabled, setBarRateRefreshEnabled] = useState(false);
   const [simulatorNights, setSimulatorNights] = useState(1);
   const [simulatorGuests, setSimulatorGuests] = useState(2);
@@ -511,6 +512,7 @@ export function UnifiedExperience2Form({
       // Featured on home
       setFeaturedOnHome((existingExperience as any).featured_on_home ?? false);
       setHomeDisplayOrder((existingExperience as any).home_display_order ?? 0);
+      setShowOnV3Only((existingExperience as any).show_on_v3_only ?? false);
     }
   }, [existingExperience, setValue, propHotelId]);
 
@@ -725,6 +727,7 @@ export function UnifiedExperience2Form({
       promo_is_percentage: data.promo_is_percentage ?? true,
       featured_on_home: featuredOnHome,
       home_display_order: homeDisplayOrder,
+      show_on_v3_only: showOnV3Only,
       // Modèle BAR RATE (toujours actif)
       pricing_model: "bar_rate",
       bar_rate: data.bar_rate ?? null,
