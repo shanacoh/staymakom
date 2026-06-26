@@ -6,6 +6,49 @@
 
 ---
 
+## [2026-06-26] — Carte cadeau et code promo fonctionnels dans le checkout standalone
+
+### Ce qui a changé côté code
+- `src/pages/StandaloneCheckout.tsx` : carte cadeau et code promo entièrement connectés. Formulaire étape 2 : Prénom + Nom séparés, Téléphone obligatoire, Demandes spéciales. Carte cadeau : validation via RPC `validate_gift_card`, déduction du total, badge vert quand appliquée (avec bouton "Retirer"). Code promo : validation via RPC `validate_promo_code`, calcul de la réduction en %. Les deux sont cumulables (promo d'abord, puis carte cadeau sur ce qui reste). Si la carte cadeau couvre 100% du montant : Revolut est ignoré, la réservation est créée directement comme confirmée et l'email de confirmation est envoyé.
+- `supabase/functions/process-standalone-payment/index.ts` : gère désormais `promo_code` et `gift_card` dans le body. Le prix final est calculé côté serveur (base → -promo% → -carte cadeau). Si le montant restant est 0 : crée la réservation en statut `confirmed`/`paid` sans ordre Revolut et retourne `no_payment_required: true`. Si montant > 0 : flux Revolut normal avec le prix réduit. Dans les deux cas, met à jour `amount_used` sur `gift_cards` et enregistre dans `promo_code_redemptions`.
+
+### Ce qui a changé côté base de données
+- Aucune migration. Les tables `gift_cards`, `promo_codes` et `promo_code_redemptions` et les RPCs existaient déjà.
+
+### Pourquoi ce changement
+Les boutons APPLIQUER de la carte cadeau et du code promo affichaient "bientôt disponible". Désormais les deux sont opérationnels et cumulables, exactement comme dans le flow expérience+hôtel.
+
+---
+
+## [2026-06-26] — Code promo fonctionnel dans le checkout standalone
+
+### Ce qui a changé côté code
+- `src/pages/StandaloneCheckout.tsx` : formulaire étape 2 revu (Prénom + Nom séparés, Téléphone obligatoire, Demandes spéciales, Carte cadeau, Code promo). Le bouton APPLIQUER du code promo appelle désormais la vraie RPC `validate_promo_code` en base — vérification de validité, d'expiration, d'usage maximum, et d'utilisation déjà faite par cet email. Quand un code est valide, le prix est recalculé avec la réduction affichée (prix barré + nouveau prix). Le code promo est transmis à l'edge function avec `id`, `code`, `discount_pct` et `amount_discounted`.
+- `supabase/functions/process-standalone-payment/index.ts` : accepte désormais `promo_code` dans le body. Re-valide le code côté serveur (jamais confiance au client pour le discount_pct). Applique la réduction sur `sellPrice` avant de créer l'ordre Revolut. Après création de la réservation, enregistre une ligne dans `promo_code_redemptions` et incrémente `used_count` sur `promo_codes` (non-bloquant).
+
+### Ce qui a changé côté base de données
+- Aucune nouvelle migration — la table `promo_codes`, la table `promo_code_redemptions` et la RPC `validate_promo_code` existaient déjà (migration `20260507000000_create_promo_codes.sql`). Le code WELCOME10 (10%) est actif.
+
+### Pourquoi ce changement
+Le code promo WELCOME10 existait en base mais n'était pas connecté au checkout standalone — le bouton APPLIQUER affichait juste "bientôt disponible". Désormais le flow est complet : validation, réduction, paiement au bon montant, et traçabilité de l'utilisation.
+
+---
+
+## [2026-06-26] — Expérience standalone : checkout sur page dédiée (comme expérience+hôtel)
+
+### Ce qui a changé côté code
+- `src/pages/StandaloneCheckout.tsx` : **nouveau fichier**. Page de checkout dédiée pour les expériences standalone, calquée sur `Checkout.tsx` (flow expérience+hôtel). Barre de progression en 3 étapes (Sélection ✓ → Informations client → Confirmation), mise en page 2 colonnes sur l'étape 2, résumé de réservation sticky à droite. Étape 3 : récapitulatif de la réservation + infos client + total + bouton "PAYER & RÉSERVER" qui ouvre la Dialog Revolut. Export de l'interface `StandaloneCheckoutState` pour typer les données transmises depuis `StandaloneExperience.tsx`.
+- `src/pages/StandaloneExperience.tsx` : simplifié. Ne garde que l'étape 1 (choix participants + date). Le bouton "Continuer" navigue désormais vers `/standalone-checkout` en passant toutes les données de réservation via le state du routeur (même pattern que `BookingPanel2.tsx` → `/checkout`). Tous les handlers de paiement, états de formulaire client et blocs de rendu step2/step3 ont été supprimés — ils vivent maintenant dans `StandaloneCheckout.tsx`. Imports nettoyés (suppression de Dialog, Alert, Card, Separator, RevolutPaymentWidget, etc.).
+- `src/App.tsx` : ajout de la route `/standalone-checkout` → `StandaloneCheckout` (lazy-loaded).
+
+### Ce qui a changé côté base de données
+- Aucune migration. Le flow de paiement appelle les mêmes edge functions (`process-standalone-payment`, `send-standalone-booking-confirmation`).
+
+### Pourquoi ce changement
+Le clic sur "Réserver" dans une expérience standalone restait sur la même page, sans la mise en page professionnelle du checkout expérience+hôtel. La demande était d'ouvrir une nouvelle page dédiée — avec la même barre de progression, la même mise en page 2 colonnes et le même widget de paiement Revolut — pour une expérience cohérente entre les deux types de réservation.
+
+---
+
 ## [2026-06-26] — Panel de réservation expérience standalone : flow en 2 étapes + tarif enfant
 
 ### Ce qui a changé côté code

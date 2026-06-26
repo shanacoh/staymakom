@@ -84,6 +84,7 @@ const HyperGuestConfigPage   = lazy(() => import("./pages/admin/hyperguest/Confi
 const RevolutDebugPage       = lazy(() => import("./pages/admin/revolut/DebugPage"));
 const Celine30                   = lazy(() => import("./pages/Celine30"));
 const StandaloneExperience       = lazy(() => import("./pages/StandaloneExperience"));
+const StandaloneCheckout         = lazy(() => import("./pages/StandaloneCheckout"));
 const StandaloneBookingConfirmation = lazy(() => import("./pages/StandaloneBookingConfirmation"));
 const AdminStandaloneBookings    = lazy(() => import("./pages/admin/StandaloneBookings"));
 const AdminStandaloneBookingDetails = lazy(() => import("./pages/admin/StandaloneBookingDetails"));
@@ -206,6 +207,7 @@ const AppContent = () => {
           <Route path="/hotel-old/:slug" element={<HotelOld />} />
           <Route path="/booking/confirmation/:token" element={<BookingConfirmationPage />} />
           <Route path="/standalone-experience/:slug" element={<StandaloneExperience />} />
+          <Route path="/standalone-checkout" element={<StandaloneCheckout />} />
           <Route path="/standalone-booking/confirmation/:token" element={<StandaloneBookingConfirmation />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/cart" element={<Cart />} />

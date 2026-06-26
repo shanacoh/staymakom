@@ -123,6 +123,8 @@ Deno.serve(async (req: Request) => {
       customer_name,
       customer_email,
       customer_phone,
+      promo_code: promoCodePayload,
+      gift_card: giftCardPayload,
     } = body;
 
     const adults: number = typeof adultsRaw === 'number' ? adultsRaw : (legacyPartySize ?? 1);
@@ -191,13 +193,96 @@ Deno.serve(async (req: Request) => {
 
     // ── Calculer le prix total côté serveur (jamais confiance au client) ─────
     // Formule : adultes × prix_adulte + enfants × prix_enfant (si tarif enfant activé)
-    let sellPrice: number;
+    let basePrice: number;
     if (experience.base_price_type === 'fixed') {
-      sellPrice = experience.base_price;
+      basePrice = experience.base_price;
     } else if (experience.has_child_price && experience.base_price_child && children > 0) {
-      sellPrice = experience.base_price * adults + experience.base_price_child * children;
+      basePrice = experience.base_price * adults + experience.base_price_child * children;
     } else {
-      sellPrice = experience.base_price * totalParty;
+      basePrice = experience.base_price * totalParty;
+    }
+
+    // ── Appliquer le code promo (re-validé côté serveur) ─────────────────────
+    let promoDiscount = 0;
+    let validatedPromo: { id: string; code: string; discount_pct: number } | null = null;
+
+    if (promoCodePayload?.id && promoCodePayload?.code && customer_email) {
+      const { data: promoRow } = await supabase
+        .from('promo_codes')
+        .select('id, code, discount_pct, valid_from, valid_until, max_uses, used_count, is_active')
+        .eq('id', promoCodePayload.id)
+        .single();
+
+      if (promoRow && promoRow.is_active && new Date(promoRow.valid_from) <= new Date() && new Date(promoRow.valid_until) >= new Date()) {
+        if (promoRow.max_uses === null || promoRow.used_count < promoRow.max_uses) {
+          promoDiscount = Math.round((basePrice * promoRow.discount_pct) / 100);
+          validatedPromo = { id: promoRow.id, code: promoRow.code, discount_pct: promoRow.discount_pct };
+        }
+      }
+    }
+
+    const priceAfterPromo = Math.max(0, basePrice - promoDiscount);
+
+    // ── Appliquer la carte cadeau ─────────────────────────────────────────────
+    let giftCardApplied = 0;
+    if (giftCardPayload?.id && giftCardPayload?.amount_to_apply > 0) {
+      const { data: gcRow } = await supabase
+        .from('gift_cards')
+        .select('id, amount, amount_used, status, expires_at')
+        .eq('id', giftCardPayload.id)
+        .maybeSingle();
+      if (gcRow && gcRow.status !== 'redeemed' && new Date(gcRow.expires_at) >= new Date()) {
+        const availableBalance = gcRow.amount - (gcRow.amount_used ?? 0);
+        giftCardApplied = Math.min(availableBalance, priceAfterPromo, giftCardPayload.amount_to_apply);
+      }
+    }
+
+    const sellPrice = Math.max(0, priceAfterPromo - giftCardApplied);
+
+    // ── Cas carte cadeau couvre 100% : pas d'ordre Revolut nécessaire ─────────
+    if (sellPrice === 0) {
+      const bookingId = crypto.randomUUID();
+      const { data: booking, error: bookingError } = await supabase
+        .from('standalone_bookings')
+        .insert([{
+          id: bookingId,
+          standalone_experience_id: experience_id,
+          customer_name, customer_email,
+          customer_phone: customer_phone || null,
+          booking_date, time_slot: validatedTimeSlot,
+          party_size: totalParty, adults_count: adults, children_count: children,
+          sell_price: 0,
+          currency: experience.currency,
+          status: 'confirmed', payment_status: 'paid',
+        }])
+        .select('id, confirmation_token')
+        .single();
+
+      if (bookingError || !booking) {
+        return new Response(JSON.stringify({ success: false, error: 'Impossible de créer la réservation' }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Mettre à jour le solde de la carte cadeau (non-bloquant)
+      if (giftCardPayload?.id && giftCardApplied > 0) {
+        try {
+          await supabase.from('gift_cards').update({
+            amount_used: giftCardPayload.new_amount_used,
+            status: giftCardPayload.is_fully_redeemed ? 'redeemed' : 'sent',
+            ...(giftCardPayload.is_fully_redeemed ? { redeemed_at: new Date().toISOString() } : {}),
+          }).eq('id', giftCardPayload.id);
+        } catch (gcErr) {
+          console.error('⚠️ Gift card update failed (non-blocking):', gcErr);
+        }
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        no_payment_required: true,
+        booking_id: booking.id,
+        confirmation_token: booking.confirmation_token,
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     // ── Créer l'ordre Revolut AVANT la réservation ────────────────────────────
@@ -264,6 +349,45 @@ Deno.serve(async (req: Request) => {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // ── Mettre à jour le solde carte cadeau (utilisation partielle, non-bloquant) ──
+    if (giftCardPayload?.id && giftCardApplied > 0) {
+      try {
+        await supabase.from('gift_cards').update({
+          amount_used: giftCardPayload.new_amount_used,
+          status: giftCardPayload.is_fully_redeemed ? 'redeemed' : 'sent',
+          ...(giftCardPayload.is_fully_redeemed ? { redeemed_at: new Date().toISOString() } : {}),
+        }).eq('id', giftCardPayload.id);
+      } catch (gcErr) {
+        console.error('⚠️ Gift card update failed (non-blocking):', gcErr);
+      }
+    }
+
+    // ── Enregistrer l'utilisation du code promo (non-bloquant) ───────────────
+    if (validatedPromo && customer_email) {
+      try {
+        await supabase.from('promo_code_redemptions').insert({
+          promo_code_id: validatedPromo.id,
+          email: String(customer_email).toLowerCase().trim(),
+          booking_id: booking.id,
+          amount_discounted: promoDiscount,
+        });
+        // Incrémenter le compteur d'utilisations
+        const { data: existing } = await supabase
+          .from('promo_codes')
+          .select('used_count')
+          .eq('id', validatedPromo.id)
+          .maybeSingle();
+        if (existing) {
+          await supabase
+            .from('promo_codes')
+            .update({ used_count: (existing.used_count ?? 0) + 1 })
+            .eq('id', validatedPromo.id);
+        }
+      } catch (promoErr) {
+        console.error('⚠️ Promo redemption insert failed (non-blocking):', promoErr);
+      }
     }
 
     // ── Réponse au frontend ───────────────────────────────────────────────────

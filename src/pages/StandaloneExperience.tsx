@@ -1,9 +1,10 @@
 /**
  * Page publique pour afficher une expérience "standalone" (sans hôtel).
  * Source de données : standalone_experiences (pas useExperience2).
- * Réservation inline avec RevolutPaymentWidget.
+ * Étape 1 uniquement : sélection des participants et de la date.
+ * Le checkout (infos client + paiement) est délégué à StandaloneCheckout.tsx.
  */
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +15,6 @@ import LocationPopover from "@/components/experience/LocationPopover";
 import PracticalInfo from "@/components/experience-test/PracticalInfo";
 import WhatsIncludedPhotos2 from "@/components/experience-test/WhatsIncludedPhotos2";
 import ShareWithFriendsSection from "@/components/experience/ShareWithFriendsSection";
-import RevolutPaymentWidget from "@/components/experience/RevolutPaymentWidget";
 import Header from "@/components/Header";
 import LaunchHeader from "@/components/LaunchHeader";
 import Footer from "@/components/Footer";
@@ -22,16 +22,13 @@ import LaunchFooter from "@/components/LaunchFooter";
 import MobileFooterMinimal from "@/components/MobileFooterMinimal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useLanguage, type Language } from "@/hooks/useLanguage";
 import { Badge } from "@/components/ui/badge";
 import { getAutoBadgesFromPracticalInfo, normalizeLegacyPracticalInfo } from "@/lib/standaloneBadges";
 import { SEOHead } from "@/components/SEOHead";
 import { trackExperiencePageViewed, trackTimeOnExperiencePage } from "@/lib/analytics";
 import { useScrollDepth } from "@/hooks/useScrollDepth";
-import { toast } from "sonner";
-import { Loader2, Users, Calendar, Clock } from "lucide-react";
+import { Users, Calendar, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -96,12 +93,6 @@ interface StandaloneExperienceData {
 }
 
 // ---------------------------------------------------------------------------
-// Booking states
-// ---------------------------------------------------------------------------
-
-type BookingStep = "step1" | "step2" | "payment" | "success";
-
-// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -141,20 +132,11 @@ export default function StandaloneExperience() {
   const { lang } = useLanguage();
   const footerRef = useRef<HTMLElement>(null);
 
-  // Booking form state
-  const [bookingStep, setBookingStep] = useState<BookingStep>("step1");
+  // Booking form state (étape 1 uniquement — les étapes 2 et 3 sont dans StandaloneCheckout.tsx)
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedSlot, setSelectedSlot] = useState<string>("");
   const [adults, setAdults] = useState<number>(1);
   const [children, setChildren] = useState<number>(0);
-  const [guestName, setGuestName] = useState<string>("");
-  const [guestEmail, setGuestEmail] = useState<string>("");
-  const [guestPhone, setGuestPhone] = useState<string>("");
-  const [isBookingLoading, setIsBookingLoading] = useState(false);
-  const [revolutPublicId, setRevolutPublicId] = useState<string | null>(null);
-  const [revolutPublicKey, setRevolutPublicKey] = useState<string | undefined>(undefined);
-  const [revolutEnvironment, setRevolutEnvironment] = useState<"production" | "dev">("dev");
-  const [bookingToken, setBookingToken] = useState<string | null>(null);
 
   // Sticky top tracking
   const [stickyTop, setStickyTop] = useState(80);
@@ -317,64 +299,6 @@ export default function StandaloneExperience() {
     return gallery;
   })();
 
-  const canBook = !!guestName.trim() && !!guestEmail.trim();
-
-  // -------------------------------------------------------------------------
-  // Booking handlers
-  // -------------------------------------------------------------------------
-
-  const handleBook = useCallback(async () => {
-    if (!experience || !canBook) return;
-    setIsBookingLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("process-standalone-payment", {
-        body: {
-          experience_id: experience.id,
-          booking_date: selectedDate,
-          time_slot: selectedSlot || null,
-          adults,
-          children,
-          customer_name: guestName.trim(),
-          customer_email: guestEmail.trim(),
-          customer_phone: guestPhone.trim() || null,
-        },
-      });
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || "Impossible de créer la réservation.");
-      setRevolutPublicId(data.revolut_public_id);
-      setRevolutPublicKey(data.merchant_public_key);
-      setRevolutEnvironment(data.environment ?? "dev");
-      setBookingToken(data.confirmation_token);
-      setBookingStep("payment");
-    } catch (err: any) {
-      toast.error(err.message || "Impossible de créer la réservation. Réessayez.");
-    } finally {
-      setIsBookingLoading(false);
-    }
-  }, [experience, canBook, selectedDate, selectedSlot, adults, children, guestName, guestEmail, guestPhone]);
-
-  const handlePaymentSuccess = useCallback(async () => {
-    if (!bookingToken) return;
-    try {
-      await supabase.functions.invoke("send-standalone-booking-confirmation", {
-        body: { confirmation_token: bookingToken },
-      });
-    } catch {
-      // non-blocking — confirmation email failure should not block the UX
-    }
-    setBookingStep("success");
-    navigate(`/standalone-booking/confirmation/${bookingToken}`);
-  }, [bookingToken, navigate]);
-
-  const handlePaymentError = useCallback((errorMessage: string) => {
-    toast.error(errorMessage || "Le paiement a échoué. Veuillez réessayer.");
-  }, []);
-
-  const handlePaymentCancel = useCallback(() => {
-    setBookingStep("step2");
-    toast.info("Paiement annulé.");
-  }, []);
-
   // -------------------------------------------------------------------------
   // Loading state
   // -------------------------------------------------------------------------
@@ -480,172 +404,6 @@ export default function StandaloneExperience() {
     };
 
     const totalParty = adults + children;
-
-    // ── Étape paiement ──────────────────────────────────────────────────────
-    if (bookingStep === "payment" && revolutPublicId) {
-      return (
-        <div className="rounded-2xl border p-5 space-y-4">
-          <div className="space-y-1">
-            <p className="font-semibold text-base">
-              {lang === "he" ? "תשלום" : lang === "fr" ? "Paiement" : "Payment"}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {lang === "fr"
-                ? `Total à payer : ${currencySymbol}${totalPrice.toFixed(0)}`
-                : lang === "he"
-                ? `סה"כ לתשלום: ${currencySymbol}${totalPrice.toFixed(0)}`
-                : `Total due: ${currencySymbol}${totalPrice.toFixed(0)}`}
-            </p>
-          </div>
-          <RevolutPaymentWidget
-            publicId={revolutPublicId}
-            merchantPublicKey={revolutPublicKey}
-            currency={experience.currency}
-            lang={lang as "en" | "he" | "fr"}
-            environment={revolutEnvironment}
-            customerEmail={guestEmail}
-            onPaymentSuccess={handlePaymentSuccess}
-            onPaymentError={handlePaymentError}
-            onPaymentCancel={handlePaymentCancel}
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="w-full text-muted-foreground"
-            onClick={() => setBookingStep("step2")}
-          >
-            {lang === "he" ? "חזרה לטופס" : lang === "fr" ? "Retour" : "Back"}
-          </Button>
-        </div>
-      );
-    }
-
-    // ── Étape 2 : infos client + paiement ───────────────────────────────────
-    if (bookingStep === "step2") {
-      const dateLabel = selectedDate
-        ? new Date(selectedDate + "T12:00:00").toLocaleDateString(
-            lang === "he" ? "he-IL" : lang === "fr" ? "fr-FR" : "en-US",
-            { weekday: "long", day: "numeric", month: "long", year: "numeric" },
-          )
-        : "";
-
-      const adultsLabel =
-        lang === "he"
-          ? `${adults} מבוגר${adults > 1 ? "ים" : ""}`
-          : lang === "fr"
-          ? `${adults} adulte${adults > 1 ? "s" : ""}`
-          : `${adults} adult${adults > 1 ? "s" : ""}`;
-
-      const childrenLabel =
-        children > 0
-          ? lang === "he"
-            ? `، ${children} ילד${children > 1 ? "ים" : ""}`
-            : lang === "fr"
-            ? `, ${children} enfant${children > 1 ? "s" : ""}`
-            : `, ${children} child${children > 1 ? "ren" : ""}`
-          : "";
-
-      return (
-        <div className="rounded-2xl border p-5 space-y-5">
-          {/* Résumé + lien retour */}
-          <div className="space-y-2">
-            <button
-              type="button"
-              onClick={() => setBookingStep("step1")}
-              className="text-sm text-primary hover:underline"
-            >
-              ← {lang === "he" ? "חזור לשלב 1" : lang === "fr" ? "Modifier" : "Edit"}
-            </button>
-            <div className="bg-muted/50 rounded-xl p-3 space-y-1.5 text-sm">
-              <div className="flex items-center gap-2 font-medium">
-                <Calendar className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                <span className="capitalize">{dateLabel}</span>
-              </div>
-              {selectedSlot && (
-                <div className="flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  <span>{selectedSlot}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Users className="h-3.5 w-3.5 shrink-0" />
-                <span>{adultsLabel}{childrenLabel}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Infos client */}
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label className="text-sm">
-                {lang === "he" ? "שם מלא *" : lang === "fr" ? "Nom complet *" : "Full name *"}
-              </Label>
-              <Input
-                value={guestName}
-                onChange={(e) => setGuestName(e.target.value)}
-                placeholder={lang === "he" ? "ישראל ישראלי" : lang === "fr" ? "Jean Dupont" : "John Smith"}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-sm">
-                {lang === "he" ? "אימייל *" : lang === "fr" ? "Email *" : "Email *"}
-              </Label>
-              <Input
-                type="email"
-                value={guestEmail}
-                onChange={(e) => setGuestEmail(e.target.value)}
-                placeholder="email@example.com"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-sm">
-                {lang === "he" ? "טלפון (אופציונלי)" : lang === "fr" ? "Téléphone (optionnel)" : "Phone (optional)"}
-              </Label>
-              <Input
-                type="tel"
-                value={guestPhone}
-                onChange={(e) => setGuestPhone(e.target.value)}
-                placeholder="+972 50 000 0000"
-              />
-            </div>
-          </div>
-
-          {/* Total */}
-          <div className="border-t pt-3 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">
-              {lang === "he" ? "סה\"כ" : lang === "fr" ? "Total" : "Total"}
-            </span>
-            <span className="font-bold text-lg">
-              {currencySymbol}{totalPrice.toFixed(0)}
-            </span>
-          </div>
-
-          {/* CTA paiement */}
-          <Button
-            className="w-full rounded-full text-base font-semibold h-12"
-            onClick={handleBook}
-            disabled={!canBook || isBookingLoading}
-          >
-            {isBookingLoading ? (
-              <><Loader2 className="h-4 w-4 animate-spin mr-2" />
-                {lang === "he" ? "מעבד..." : lang === "fr" ? "Traitement..." : "Processing..."}
-              </>
-            ) : (
-              lang === "he" ? "הזמן ושלם" : lang === "fr" ? "Réserver & Payer" : "Book & Pay"
-            )}
-          </Button>
-
-          <p className="text-xs text-center text-muted-foreground">
-            {lang === "he"
-              ? "תשלום מאובטח באמצעות Revolut"
-              : lang === "fr"
-              ? "Paiement sécurisé via Revolut"
-              : "Secured payment via Revolut"}
-          </p>
-        </div>
-      );
-    }
 
     // ── Étape 1 : participants + date ────────────────────────────────────────
     const priceLabel =
@@ -835,10 +593,32 @@ export default function StandaloneExperience() {
           </div>
         )}
 
-        {/* Bouton Continuer */}
+        {/* Bouton Continuer — navigue vers la page de checkout dédiée */}
         <Button
           className="w-full rounded-full text-base font-semibold h-12"
-          onClick={() => setBookingStep("step2")}
+          onClick={() => {
+            navigate("/standalone-checkout", {
+              state: {
+                experienceId: experience.id,
+                experienceSlug: experience.slug,
+                experienceTitle: experience.title,
+                experienceTitleFr: experience.title_fr,
+                experienceTitleHe: experience.title_he,
+                heroImage: experience.hero_image,
+                selectedDate,
+                selectedSlot: selectedSlot || null,
+                adults,
+                children,
+                basePrice: experience.base_price,
+                basePriceChild: experience.base_price_child,
+                hasChildPrice: experience.has_child_price,
+                basePriceType: experience.base_price_type,
+                currency: experience.currency,
+                lang,
+                totalPrice,
+              },
+            });
+          }}
           disabled={!canProceedStep1}
         >
           {lang === "he" ? "המשך ←" : lang === "fr" ? "Continuer →" : "Continue →"}
@@ -968,29 +748,27 @@ export default function StandaloneExperience() {
 
         {/* Mobile Booking Panel — fixed bottom sheet trigger */}
         <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-sm border-t px-4 py-3">
-          {bookingStep === "step1" ? (
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <span className="font-bold text-lg">
-                  {currencySymbol}{experience.base_price.toFixed(0)}
-                </span>
-                <span className="text-sm text-muted-foreground ml-1.5">
-                  {experience.base_price_type === "fixed"
-                    ? (lang === "fr" ? "forfait" : "fixed")
-                    : (lang === "he" ? "לאדם" : lang === "fr" ? "/ pers." : "/ person")}
-                </span>
-              </div>
-              <Button
-                className="rounded-full px-6"
-                onClick={() => {
-                  const panel = document.getElementById("standalone-booking-panel-mobile");
-                  panel?.scrollIntoView({ behavior: "smooth" });
-                }}
-              >
-                {lang === "he" ? "הזמן" : lang === "fr" ? "Réserver" : "Book"}
-              </Button>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <span className="font-bold text-lg">
+                {currencySymbol}{experience.base_price.toFixed(0)}
+              </span>
+              <span className="text-sm text-muted-foreground ml-1.5">
+                {experience.base_price_type === "fixed"
+                  ? (lang === "fr" ? "forfait" : "fixed")
+                  : (lang === "he" ? "לאדם" : lang === "fr" ? "/ pers." : "/ person")}
+              </span>
             </div>
-          ) : null}
+            <Button
+              className="rounded-full px-6"
+              onClick={() => {
+                const panel = document.getElementById("standalone-booking-panel-mobile");
+                panel?.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
+              {lang === "he" ? "הזמן" : lang === "fr" ? "Réserver" : "Book"}
+            </Button>
+          </div>
         </div>
 
         {/* Mobile full booking panel (scrolled to) */}
@@ -1005,6 +783,7 @@ export default function StandaloneExperience() {
         </div>
         <MobileFooterMinimal />
       </footer>
+
     </div>
   );
 }
