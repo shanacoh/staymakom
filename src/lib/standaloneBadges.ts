@@ -4,6 +4,8 @@ export type TriState = "yes" | "no" | "not_relevant" | null;
 
 export interface PracticalBadgesInfo {
   kosher: TriState;
+  synagogue: TriState;
+  pool: "yes" | "no" | null;
   kids: { status: "yes" | "no" | null; from_age: number | null };
   parking: { status: "yes" | "no" | null; price_type: "free" | "paid" | null; price_amount: string | null };
   fitness: TriState;
@@ -12,6 +14,8 @@ export interface PracticalBadgesInfo {
 
 export const defaultPracticalBadgesInfo: PracticalBadgesInfo = {
   kosher: null,
+  synagogue: null,
+  pool: null,
   kids: { status: null, from_age: null },
   parking: { status: null, price_type: null, price_amount: null },
   fitness: null,
@@ -20,6 +24,8 @@ export const defaultPracticalBadgesInfo: PracticalBadgesInfo = {
 
 interface RawPracticalInfo {
   kosher?: unknown;
+  synagogue?: unknown;
+  pool?: unknown;
   spa?: unknown;
   fitness?: unknown;
   kids?: { status?: unknown; from_age?: unknown };
@@ -41,8 +47,13 @@ export function normalizeLegacyPracticalInfo(raw: unknown): PracticalBadgesInfo 
   const isNewKidsShape = !!r.kids && typeof r.kids === "object" && "from_age" in r.kids;
   const isNewParkingShape = !!r.parking && typeof r.parking === "object" && "status" in r.parking;
 
+  const toBinary = (v: unknown): "yes" | "no" | null =>
+    v === true || v === "yes" ? "yes" : v === false || v === "no" ? "no" : null;
+
   return {
     kosher: toTriState(r.kosher),
+    synagogue: toTriState(r.synagogue),
+    pool: toBinary(r.pool),
     kids: isNewKidsShape
       ? { status: (r.kids?.status as "yes" | "no" | null) ?? null, from_age: (r.kids?.from_age as number | null) ?? null }
       : { status: null, from_age: null }, // adults_only (ancienne forme) n'a pas d'équivalent direct
@@ -69,6 +80,8 @@ interface AutoBadge {
 
 const LABELS: Record<string, Record<Language, string>> = {
   kosher: { en: "Kosher", he: "כשר", fr: "Casher" },
+  synagogue: { en: "Synagogue nearby", he: "בית כנסת בסביבה", fr: "Synagogue à proximité" },
+  pool: { en: "Swimming pool", he: "בריכת שחייה", fr: "Piscine" },
   fitness: { en: "Fitness center", he: "חדר כושר", fr: "Centre fitness" },
   spa: { en: "Spa", he: "ספא", fr: "Spa" },
   parking_free: { en: "Free parking", he: "חניה חינם", fr: "Parking gratuit" },
@@ -95,6 +108,16 @@ export function getAutoBadgeTagsFromPracticalInfo(info: PracticalBadgesInfo): Au
   if (info.kosher === "yes") tags.push({
     id: "auto-kosher", slug: "auto-kosher",
     label_en: LABELS.kosher.en, label_he: LABELS.kosher.he, label_fr: LABELS.kosher.fr,
+  });
+
+  if (info.synagogue === "yes") tags.push({
+    id: "auto-synagogue", slug: "auto-synagogue",
+    label_en: LABELS.synagogue.en, label_he: LABELS.synagogue.he, label_fr: LABELS.synagogue.fr,
+  });
+
+  if (info.pool === "yes") tags.push({
+    id: "auto-pool", slug: "auto-pool",
+    label_en: LABELS.pool.en, label_he: LABELS.pool.he, label_fr: LABELS.pool.fr,
   });
 
   if (info.kids.status === "yes" && info.kids.from_age != null) {
@@ -138,6 +161,8 @@ export function getAutoBadgesFromPracticalInfo(
   const badges: AutoBadge[] = [];
 
   if (info.kosher === "yes") badges.push({ key: "kosher", label: LABELS.kosher[lang] });
+  if (info.synagogue === "yes") badges.push({ key: "synagogue", label: LABELS.synagogue[lang] });
+  if (info.pool === "yes") badges.push({ key: "pool", label: LABELS.pool[lang] });
 
   if (info.kids.status === "yes" && info.kids.from_age != null) {
     badges.push({ key: "kids", label: kidsLabel(info.kids.from_age, lang) });
@@ -158,6 +183,6 @@ export function getAutoBadgesFromPracticalInfo(
 }
 
 export function getPracticalInfoCompleteness(info: PracticalBadgesInfo): { answered: number; total: number } {
-  const fields = [info.kosher !== null, info.kids.status !== null, info.parking.status !== null, info.fitness !== null, info.spa !== null];
+  const fields = [info.kosher !== null, info.synagogue !== null, info.pool !== null, info.kids.status !== null, info.parking.status !== null, info.fitness !== null, info.spa !== null];
   return { answered: fields.filter(Boolean).length, total: fields.length };
 }

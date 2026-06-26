@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, MapPin, Sparkles, Image as ImageIcon, Save, Star, Car, Dumbbell, Waves, Users } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Sparkles, Image as ImageIcon, Save, Star, Car, Dumbbell, Waves, Users, Landmark, Droplets } from "lucide-react";
 import { generateSlug } from "@/lib/utils";
 import { Hotel2ExtrasManager } from "@/components/admin/Hotel2ExtrasManager";
 import { HighlightTagsSelectorHotel2 } from "@/components/admin/HighlightTagsSelectorHotel2";
@@ -77,6 +77,46 @@ function PracticalTriStateField({
         <div className="flex items-center gap-2">
           <RadioGroupItem value="not_relevant" id={`${id}-nr`} />
           <Label htmlFor={`${id}-nr`} className="text-sm font-normal cursor-pointer">Non pertinent</Label>
+        </div>
+      </RadioGroup>
+    </div>
+  );
+}
+
+function PracticalBinaryField({
+  id,
+  icon: Icon,
+  label,
+  value,
+  onChange,
+}: {
+  id: string;
+  icon: React.ElementType;
+  label: string;
+  value: "yes" | "no" | null;
+  onChange: (v: "yes" | "no" | null) => void;
+}) {
+  return (
+    <div className="p-3 rounded-lg border space-y-2">
+      <div className="flex items-center gap-3">
+        <Icon className="h-4 w-4 text-muted-foreground" />
+        <span className="font-medium text-sm flex-1">{label}</span>
+        {value === null && (
+          <span className="text-[11px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">à compléter</span>
+        )}
+      </div>
+      <RadioGroup
+        value={value ?? undefined}
+        onValueChange={(v) => onChange(v as "yes" | "no")}
+        className="flex gap-4 ml-7"
+      >
+        <div className="flex items-center gap-2">
+          <RadioGroupItem value="yes" id={`${id}-yes`} />
+          <Label htmlFor={`${id}-yes`} className="text-sm font-normal cursor-pointer">Oui</Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <RadioGroupItem value="no" id={`${id}-no`} />
+          <Label htmlFor={`${id}-no`} className="text-sm font-normal cursor-pointer">Non</Label>
         </div>
       </RadioGroup>
     </div>
@@ -1608,6 +1648,20 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
               label="Casher"
               value={practicalInfo.kosher}
               onChange={(v) => setPracticalInfo((p) => ({ ...p, kosher: v }))}
+            />
+            <PracticalTriStateField
+              id="hotel-synagogue"
+              icon={Landmark}
+              label="Synagogue à proximité"
+              value={practicalInfo.synagogue}
+              onChange={(v) => setPracticalInfo((p) => ({ ...p, synagogue: v }))}
+            />
+            <PracticalBinaryField
+              id="hotel-pool"
+              icon={Droplets}
+              label="Piscine"
+              value={practicalInfo.pool}
+              onChange={(v) => setPracticalInfo((p) => ({ ...p, pool: v }))}
             />
             <PracticalTriStateField
               id="hotel-fitness"
