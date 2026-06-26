@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-06-26] — Cartes d'expériences : badges auto limités à Casher et Enfants dès X ans
+
+### Ce qui a changé côté code
+- `src/components/StandaloneExperienceCard.tsx` : filtre ajouté sur les badges auto — seuls `auto-kosher` et `auto-kids` s'affichent sur les cartes Experience Only
+- `src/components/Experience2CardWithPrice.tsx` : même filtre pour les cartes With Hotel (piscine, parking, fitness, spa, synagogue ne s'affichent plus sur les cartes)
+
+### Ce qui a changé côté base de données
+- Aucun changement — les données restent intactes, on filtre seulement l'affichage
+
+### Pourquoi ce changement
+- Trop d'informations sur les cartes nuisait à la lisibilité ; seuls les critères de recherche courants (Casher, adapté aux enfants) sont pertinents à ce stade
+
+---
+
 ## [2026-06-26] — Page /v3 : CTA « Give an Escape » redessiné en pill élégant
 
 ### Ce qui a changé côté code
