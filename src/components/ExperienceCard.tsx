@@ -370,12 +370,12 @@ export default function ExperienceCard({
             </div>
           )}
 
-          {/* LIGNE 2 hôtel : Nom hôtel · Ville (tronqué, sans région) */}
+          {/* LIGNE 2 hôtel : Nom hôtel · Ville — la ville s'affiche toujours en entier, le nom d'hôtel se tronque si besoin */}
           {!isStandaloneExperience && (hotelName || city) && (
-            <p className="text-[11px] sm:text-xs text-muted-foreground truncate pt-0.5">
-              {hotelName && <span className="font-medium text-foreground">{hotelName}</span>}
-              {hotelName && city && <span className="text-muted-foreground/50"> · </span>}
-              {city && <span>{city}</span>}
+            <p className="flex items-baseline gap-0 text-[11px] sm:text-xs text-muted-foreground pt-0.5 min-w-0">
+              {hotelName && <span className="font-medium text-foreground truncate min-w-0">{hotelName}</span>}
+              {hotelName && city && <span className="text-muted-foreground/50 shrink-0 mx-1">·</span>}
+              {city && <span className="shrink-0">{city}</span>}
             </p>
           )}
 
