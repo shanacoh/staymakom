@@ -15,7 +15,7 @@ import PracticalInfo from "@/components/experience-test/PracticalInfo";
 import WhatsIncludedPhotos2 from "@/components/experience-test/WhatsIncludedPhotos2";
 import StandaloneExtrasSection from "@/components/experience-test/StandaloneExtrasSection";
 import ReviewsGrid2 from "@/components/experience-test/ReviewsGrid2";
-import OtherExperiences2 from "@/components/experience-test/OtherExperiences2";
+import OtherStandaloneExperiences from "@/components/experience-test/OtherStandaloneExperiences";
 import ShareWithFriendsSection from "@/components/experience/ShareWithFriendsSection";
 import Header from "@/components/Header";
 import LaunchHeader from "@/components/LaunchHeader";
@@ -79,6 +79,7 @@ interface StandaloneExperienceData {
   longitude?: number | null;
   accessibility_info?: string | null;
   category_id?: string | null;
+  categories?: { id: string; slug: string; name: string; name_fr?: string | null; name_he?: string | null; icon?: string | null } | null;
   status: string;
   available_days?: number[] | null;
   blocked_dates?: string[] | null;
@@ -198,7 +199,7 @@ export default function StandaloneExperience() {
 
       const { data, error } = await (supabase as any)
         .from("standalone_experiences")
-        .select(`${PUBLIC_COLUMNS}, standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he))`)
+        .select(`${PUBLIC_COLUMNS}, standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he)), categories(id, slug, name, name_fr, name_he, icon)`)
         .eq("slug", slug!)
         .eq("status", "published")
         .single();
@@ -244,6 +245,11 @@ export default function StandaloneExperience() {
 
   const locCity = lang === "he" ? experience?.city_he || experience?.city : lang === "fr" ? experience?.city_fr || experience?.city : experience?.city;
   const locRegion = lang === "he" ? experience?.region_he || experience?.region : lang === "fr" ? experience?.region_fr || experience?.region : experience?.region;
+
+  const categoryName = experience?.categories
+    ? (lang === "fr" ? experience.categories.name_fr || experience.categories.name : lang === "he" ? experience.categories.name_he || experience.categories.name : experience.categories.name)
+    : undefined;
+  const categorySlug = experience?.categories?.slug ?? undefined;
 
   const currencySymbol = experience ? getCurrencySymbol(experience.currency) : "₪";
   const leadTimeDays = experience?.lead_time_days ?? 0;
@@ -663,8 +669,9 @@ export default function StandaloneExperience() {
             lang={lang as "en" | "he" | "fr"}
             experienceId={experience.id}
             hotelId={undefined}
-            categoryName={undefined}
-            categorySlug={undefined}
+            categoryName={categoryName}
+            categorySlug={categorySlug}
+            categoryIcon={experience?.categories?.icon ?? undefined}
             minParty={experience.min_party}
             maxParty={experience.max_party}
             averageRating={null}
@@ -724,7 +731,7 @@ export default function StandaloneExperience() {
               />
 
               {/* Other Experiences */}
-              <OtherExperiences2
+              <OtherStandaloneExperiences
                 currentExperienceId={experience.id}
                 categoryId={experience.category_id ?? null}
                 lang={lang}

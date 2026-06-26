@@ -185,12 +185,12 @@ const ExtrasSection2 = ({
               <div className={`
                 w-12 h-12 rounded-xl mb-3
                 flex items-center justify-center overflow-hidden
-                ${hasImage ? '' : 'bg-gradient-to-br from-primary/5 via-muted/30 to-primary/10'}
+                ${hasImage ? '' : 'bg-gradient-to-br from-cta-foreground/5 via-muted/30 to-cta-foreground/10'}
               `}>
                 {hasImage ? (
                   <img src={extra.image_url!} alt={name} loading="lazy" className="w-full h-full object-cover" />
                 ) : IconComponent ? (
-                  <IconComponent size={26} weight="duotone" className="text-primary/60" />
+                  <IconComponent size={26} weight="duotone" className="text-cta-foreground/52" />
                 ) : null}
               </div>
 

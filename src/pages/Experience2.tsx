@@ -539,6 +539,7 @@ export default function Experience2() {
         hotelId={primaryHotel?.id}
         categoryName={categoryName || undefined}
         categorySlug={category?.slug || undefined}
+        categoryIcon={(category as any)?.icon || undefined}
         minParty={experience.min_party || 2}
         maxParty={experience.max_party || 4}
         averageRating={averageRating}
@@ -732,11 +733,7 @@ export default function Experience2() {
       </main>
 
       <footer ref={footerRef as React.RefObject<HTMLElement>}>
-        {/* Desktop: full footer, Mobile: minimal copyright */}
-        <div className="hidden md:block">
-          {isLaunch ? <LaunchFooter /> : <Footer />}
-        </div>
-        <MobileFooterMinimal />
+        <LaunchFooter />
       </footer>
     </div>
   );

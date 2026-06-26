@@ -6,6 +6,26 @@
 
 ---
 
+## [2026-06-26] — Pages expériences : unification design et footer compact
+
+### Ce qui a changé côté code
+- `src/components/experience-test/HeroSection.tsx` : suppression de "Feeling Adventurous", breadcrumb unifié (Home > Catégorie > Titre), icône PNG de la catégorie colorée en rouge désaturé avec animation hover, "Curated by STAYMAKOM" en rouge désaturé
+- `src/pages/StandaloneExperience.tsx` : ajout de la catégorie (nom, slug, icône) depuis Supabase, transmise à HeroSection ; utilise désormais `OtherStandaloneExperiences` au lieu de `OtherExperiences2`
+- `src/pages/Experience2.tsx` : passage de `categoryIcon` à HeroSection ; footer remplacé par `LaunchFooter` (footer compact sombre) à la place du grand footer colonnes
+- `src/components/experience-test/OtherExperiences2.tsx` : ajout des badges sous les cartes dans la section "autres expériences"
+- `src/components/experience-test/OtherStandaloneExperiences.tsx` : nouveau composant créé — affiche uniquement des expériences standalone dans la section "autres expériences" des pages experience only
+- `src/components/experience/BookingPanel2.tsx` : titre "Book this experience" masqué, padding ajouté au-dessus du sélecteur de participants, bouton CTA passé en noir avec hover gris foncé
+- `src/components/experience-test/ExtrasSection2.tsx` : icônes extras en rouge désaturé (`cta-foreground/52`) au lieu du bleu, fond en dégradé rouge/beige
+- `src/components/experience-test/StandaloneExtrasSection.tsx` : mêmes changements couleur que ExtrasSection2
+
+### Ce qui a changé côté base de données
+- Aucun changement — la catégorie est lue depuis la table existante `categories` via la jointure déjà en place
+
+### Pourquoi ce changement
+- Unifier le design des deux types de pages expérience (avec hôtel et sans hôtel) pour une identité visuelle cohérente ; remplacer le grand footer générique par le footer compact de la page /v3 sur les pages expériences+hôtel
+
+---
+
 ## [2026-06-26] — Cartes d'expériences : badges auto limités à Casher et Enfants dès X ans
 
 ### Ce qui a changé côté code

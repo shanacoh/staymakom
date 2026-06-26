@@ -608,10 +608,10 @@ export function BookingPanel2({
 
   return (
     <Card className="overflow-hidden will-change-transform flex-1 min-h-0" style={{ display: 'flex', flexDirection: 'column' }}>
-      <CardHeader className="pb-3 shrink-0">
+      <CardHeader className="pb-3 shrink-0 hidden">
         <CardTitle className="text-lg">{t.title}</CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 min-h-0 space-y-6 overflow-x-hidden overflow-y-auto overscroll-contain">
+      <CardContent className="flex-1 min-h-0 space-y-6 overflow-x-hidden overflow-y-auto overscroll-contain pt-5">
         {/* Guests — compact collapsible */}
         <div className="space-y-2">
           <button
@@ -1077,7 +1077,7 @@ export function BookingPanel2({
 
         {/* Continue to checkout */}
         <Button
-          className="w-full"
+          className="w-full bg-foreground text-background hover:bg-foreground/80"
           size="lg"
           disabled={!isStep1Complete}
           onClick={handleContinue}

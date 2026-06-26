@@ -1,7 +1,31 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Star, Share, Heart, ChevronRight, Sparkles } from "lucide-react";
+import { Star, Share, Heart, ChevronRight, Sparkles, Users, Leaf, Wine, Zap, Laptop, Brain, Mountain, Utensils, Plane, Camera, Music, Book, Coffee, Sun, Moon, Compass, Map, Globe, Briefcase, Award, Gift, Gem, Crown, Shield, Flame, Droplet, Wind, Cloud, TreePine, Flower2, type LucideIcon } from "lucide-react";
 import { Grid3X3 } from "lucide-react";
+
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  heart: Heart, users: Users, sparkles: Sparkles, leaf: Leaf, wine: Wine,
+  zap: Zap, laptop: Laptop, brain: Brain, mountain: Mountain, utensils: Utensils,
+  plane: Plane, camera: Camera, music: Music, book: Book, coffee: Coffee,
+  sun: Sun, moon: Moon, star: Star, compass: Compass, map: Map, globe: Globe,
+  briefcase: Briefcase, award: Award, gift: Gift, gem: Gem, crown: Crown,
+  shield: Shield, flame: Flame, droplet: Droplet, wind: Wind, cloud: Cloud,
+  "tree-pine": TreePine, flower: Flower2,
+};
+
+function getCategoryImage(slug?: string): string | null {
+  if (!slug) return null;
+  const s = slug.toLowerCase();
+  if (s.includes("romantic"))                                      return "/icons/icon-romantic.png";
+  if (s.includes("family"))                                        return "/icons/icon-family.png";
+  if (s.includes("taste") || s.includes("food") || s.includes("culinar") || s.includes("foody")) return "/icons/icon-foody.png";
+  if (s.includes("land") || s.includes("stories"))                return "/icons/icon-stories.png";
+  if (s.includes("nature") || s.includes("beyond") || s.includes("outdoor")) return "/icons/icon-nature.png";
+  if (s.includes("mindful"))                                       return "/icons/icon-mindful.png";
+  if (s.includes("solo"))                                          return "/icons/icon-solo.png";
+  if (s.includes("sporty"))                                        return "/icons/icon-sporty.png";
+  return null;
+}
 import {
   Carousel,
   CarouselContent,
@@ -54,6 +78,7 @@ interface HeroSectionProps {
   maxParty?: number;
   categoryName?: string;
   categorySlug?: string;
+  categoryIcon?: string;
   slug?: string;
 }
 
@@ -83,6 +108,7 @@ const HeroSection = ({
   maxParty = 4,
   categoryName,
   categorySlug,
+  categoryIcon,
   slug,
 }: HeroSectionProps) => {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
@@ -194,7 +220,7 @@ const HeroSection = ({
       );
     }
     return (
-      <div className="flex items-center gap-1.5 text-xs text-accent uppercase tracking-wider font-medium">
+      <div className="flex items-center gap-1.5 text-xs text-cta-foreground/60 uppercase tracking-wider font-medium">
         <Sparkles className="h-3.5 w-3.5" />
         <span>{lang === 'he' ? 'נבחר ע״י STAYMAKOM' : 'Curated by STAYMAKOM'}</span>
       </div>
@@ -205,21 +231,41 @@ const HeroSection = ({
   const renderHeaderBlock = (isMobile: boolean) => (
     <div className={cn("space-y-3", isMobile ? "text-center" : "text-center")}>
       {/* 1. Category tag — gold, uppercase */}
-      {categoryName && categorySlug && (
-        <Link 
-          to={isLaunch 
-            ? `/launch/experiences?filter=${categorySlug === 'romantic' ? 'romantic' : 'adventure'}`
-            : getLocalizedPath(`/category/${categorySlug}`)
-          }
-          className="inline-block text-[11px] font-semibold uppercase tracking-[0.15em] text-accent hover:text-accent/80 transition-colors"
-        >
-          {isLaunch 
-            ? (categorySlug === 'romantic' 
-              ? (lang === 'he' ? 'בריחה רומנטית' : 'Romantic Escape')
-              : (lang === 'he' ? 'הרפתקה' : 'Feeling Adventurous'))
-            : categoryName}
-        </Link>
-      )}
+      {categoryName && categorySlug && (() => {
+        const catImg = getCategoryImage(categorySlug);
+        const FallbackIcon = categoryIcon ? CATEGORY_ICONS[categoryIcon] : null;
+        return (
+          <Link
+            to={isLaunch
+              ? `/launch/experiences?filter=${categorySlug === 'romantic' ? 'romantic' : 'adventure'}`
+              : getLocalizedPath(`/category/${categorySlug}`)
+            }
+            className="inline-flex flex-col items-center gap-1 group/catlink"
+          >
+            {catImg ? (
+              <div
+                className="h-7 w-7 flex-shrink-0 transition-all duration-300 opacity-75 group-hover/catlink:opacity-100 group-hover/catlink:scale-110 group-hover/catlink:-translate-y-0.5"
+                style={{
+                  backgroundColor: 'hsl(var(--cta-foreground))',
+                  maskImage: `url(${catImg})`,
+                  WebkitMaskImage: `url(${catImg})`,
+                  maskSize: 'contain',
+                  WebkitMaskSize: 'contain',
+                  maskRepeat: 'no-repeat',
+                  WebkitMaskRepeat: 'no-repeat',
+                  maskPosition: 'center',
+                  WebkitMaskPosition: 'center',
+                }}
+              />
+            ) : FallbackIcon ? (
+              <FallbackIcon className="h-4 w-4 text-muted-foreground/60 group-hover/catlink:text-muted-foreground transition-colors" />
+            ) : null}
+            <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-cta-foreground/80 group-hover/catlink:text-cta-foreground transition-colors">
+              {categoryName}
+            </span>
+          </Link>
+        );
+      })()}
       
       {/* 2. Title — Inter bold */}
       <h1 className={cn(
@@ -306,36 +352,18 @@ const HeroSection = ({
             <Link to={isLaunch ? "/launch" : getLocalizedPath("/")} className="hover:text-foreground hover:underline underline-offset-2 transition-colors">
               {lang === 'he' ? 'בית' : 'Home'}
             </Link>
-            <ChevronRight className={cn("h-3 w-3 flex-shrink-0", lang === 'he' && "rotate-180")} />
-            {isLaunch ? (
+            {categoryName && categorySlug && (
               <>
-                <Link to="/launch#launch-experiences" className="hover:text-foreground hover:underline underline-offset-2 transition-colors">
-                  {lang === 'he' ? 'קטגוריות' : 'Categories'}
+                <ChevronRight className={cn("h-3 w-3 flex-shrink-0", lang === 'he' && "rotate-180")} />
+                <Link
+                  to={isLaunch
+                    ? `/launch/experiences?filter=${categorySlug === 'romantic' ? 'romantic' : 'adventure'}`
+                    : getLocalizedPath(`/category/${categorySlug}`)
+                  }
+                  className="hover:text-foreground hover:underline underline-offset-2 transition-colors"
+                >
+                  {categoryName}
                 </Link>
-                {categorySlug && (
-                  <>
-                    <ChevronRight className={cn("h-3 w-3 flex-shrink-0", lang === 'he' && "rotate-180")} />
-                    <Link to={`/launch/experiences?filter=${categorySlug === 'romantic' ? 'romantic' : 'adventure'}`} className="hover:text-foreground hover:underline underline-offset-2 transition-colors">
-                      {categorySlug === 'romantic'
-                        ? (lang === 'he' ? 'בריחה רומנטית' : 'Romantic Escape')
-                        : (lang === 'he' ? 'הרפתקה' : 'Feeling Adventurous')}
-                    </Link>
-                  </>
-                )}
-              </>
-            ) : (
-              <>
-                <Link to={getLocalizedPath("/#choose-escape")} className="hover:text-foreground hover:underline underline-offset-2 transition-colors">
-                  {lang === 'he' ? 'קטגוריות' : 'Categories'}
-                </Link>
-                {categoryName && categorySlug && (
-                  <>
-                    <ChevronRight className={cn("h-3 w-3 flex-shrink-0", lang === 'he' && "rotate-180")} />
-                    <Link to={getLocalizedPath(`/category/${categorySlug}`)} className="hover:text-foreground hover:underline underline-offset-2 transition-colors">
-                      {categoryName}
-                    </Link>
-                  </>
-                )}
               </>
             )}
             <ChevronRight className={cn("h-3 w-3 flex-shrink-0", lang === 'he' && "rotate-180")} />
