@@ -4,16 +4,18 @@
  * Étape 1 uniquement : sélection des participants et de la date.
  * Le checkout (infos client + paiement) est délégué à StandaloneCheckout.tsx.
  */
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import HeroSection from "@/components/experience-test/HeroSection";
 import LocationMap from "@/components/experience-test/LocationMap";
-import LocationPopover from "@/components/experience/LocationPopover";
 import PracticalInfo from "@/components/experience-test/PracticalInfo";
 import WhatsIncludedPhotos2 from "@/components/experience-test/WhatsIncludedPhotos2";
+import StandaloneExtrasSection from "@/components/experience-test/StandaloneExtrasSection";
+import ReviewsGrid2 from "@/components/experience-test/ReviewsGrid2";
+import OtherExperiences2 from "@/components/experience-test/OtherExperiences2";
 import ShareWithFriendsSection from "@/components/experience/ShareWithFriendsSection";
 import Header from "@/components/Header";
 import LaunchHeader from "@/components/LaunchHeader";
@@ -22,12 +24,11 @@ import LaunchFooter from "@/components/LaunchFooter";
 import MobileFooterMinimal from "@/components/MobileFooterMinimal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { useLanguage, type Language } from "@/hooks/useLanguage";
-import { Badge } from "@/components/ui/badge";
-import { getAutoBadgesFromPracticalInfo, normalizeLegacyPracticalInfo } from "@/lib/standaloneBadges";
+import { useLanguage } from "@/hooks/useLanguage";
 import { SEOHead } from "@/components/SEOHead";
 import { trackExperiencePageViewed, trackTimeOnExperiencePage } from "@/lib/analytics";
 import { useScrollDepth } from "@/hooks/useScrollDepth";
+import type { SelectedExtra } from "@/components/experience-test/ExtrasSection2";
 import { Users, Calendar, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -131,12 +132,22 @@ export default function StandaloneExperience() {
   const isLaunch = searchParams.get("context") === "launch";
   const { lang } = useLanguage();
   const footerRef = useRef<HTMLElement>(null);
+  const reviewsRef = useRef<HTMLDivElement>(null);
 
   // Booking form state (étape 1 uniquement — les étapes 2 et 3 sont dans StandaloneCheckout.tsx)
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedSlot, setSelectedSlot] = useState<string>("");
   const [adults, setAdults] = useState<number>(1);
   const [children, setChildren] = useState<number>(0);
+  const [selectedExtras, setSelectedExtras] = useState<SelectedExtra[]>([]);
+
+  const handleToggleExtra = useCallback((extra: SelectedExtra) => {
+    setSelectedExtras((prev) => {
+      const exists = prev.some((e) => e.id === extra.id);
+      if (exists) return prev.filter((e) => e.id !== extra.id);
+      return [...prev, extra];
+    });
+  }, []);
 
   // Sticky top tracking
   const [stickyTop, setStickyTop] = useState(80);
@@ -230,20 +241,6 @@ export default function StandaloneExperience() {
   // -------------------------------------------------------------------------
   // Derived data
   // -------------------------------------------------------------------------
-
-  const editorialBadges = (experience?.standalone_experience_highlight_tags ?? [])
-    .slice()
-    .sort((a, b) => a.position - b.position)
-    .map((link) => ({
-      key: `tag-${link.tag_id}`,
-      label: lang === "he" && link.highlight_tags.label_he ? link.highlight_tags.label_he : link.highlight_tags.label_en,
-    }));
-
-  const autoBadges = experience
-    ? getAutoBadgesFromPracticalInfo(normalizeLegacyPracticalInfo(experience.practical_info), lang as Language)
-    : [];
-
-  const allBadges = [...editorialBadges, ...autoBadges];
 
   const locCity = lang === "he" ? experience?.city_he || experience?.city : lang === "fr" ? experience?.city_fr || experience?.city : experience?.city;
   const locRegion = lang === "he" ? experience?.region_he || experience?.region : lang === "fr" ? experience?.region_fr || experience?.region : experience?.region;
@@ -616,6 +613,7 @@ export default function StandaloneExperience() {
                 currency: experience.currency,
                 lang,
                 totalPrice,
+                selectedExtras,
               },
             });
           }}
@@ -654,10 +652,10 @@ export default function StandaloneExperience() {
             subtitle={subtitle}
             hotelName={undefined}
             hotelImage={undefined}
-            city={undefined}
-            region={undefined}
-            latitude={undefined}
-            longitude={undefined}
+            city={locCity || undefined}
+            region={locRegion || undefined}
+            latitude={experience.latitude ?? undefined}
+            longitude={experience.longitude ?? undefined}
             lang={lang as "en" | "he" | "fr"}
             experienceId={experience.id}
             hotelId={undefined}
@@ -667,7 +665,7 @@ export default function StandaloneExperience() {
             maxParty={experience.max_party}
             averageRating={null}
             reviewsCount={0}
-            onScrollToReviews={() => {}}
+            onScrollToReviews={() => reviewsRef.current?.scrollIntoView({ behavior: "smooth" })}
             slug={experience.slug}
           />
         </section>
@@ -677,28 +675,24 @@ export default function StandaloneExperience() {
           <div className="grid md:grid-cols-[65%_35%] gap-6 lg:gap-10">
             {/* Left Column */}
             <div className="space-y-10 md:space-y-12 min-w-0 overflow-x-hidden">
-              {/* Badges */}
-              {allBadges.length > 0 && (
-                <div className="flex flex-wrap gap-2 -mb-6 md:-mb-8">
-                  {allBadges.map((b) => (
-                    <Badge key={b.key} variant="secondary" className="font-normal">
-                      {b.label}
-                    </Badge>
-                  ))}
-                </div>
-              )}
+              {/* What's on the program */}
+              <WhatsIncludedPhotos2
+                experienceId={experience.id}
+                lang={lang}
+                longCopy={longCopy}
+                source="standalone"
+              />
 
-              {/* Localisation */}
-              {(locCity || locRegion) && (
-                <LocationPopover
-                  city={locCity ?? undefined}
-                  region={locRegion ?? undefined}
-                  hotelName={title}
-                  latitude={experience.latitude ?? undefined}
-                  longitude={experience.longitude ?? undefined}
-                  lang={lang as "en" | "he" | "fr"}
-                />
-              )}
+              {/* Extras */}
+              <StandaloneExtrasSection
+                experienceId={experience.id}
+                lang={lang}
+                currency={experience.currency}
+                selectedExtras={selectedExtras}
+                onToggleExtra={handleToggleExtra}
+              />
+
+              {/* Map */}
               {experience.latitude && experience.longitude && (
                 <LocationMap
                   latitude={experience.latitude}
@@ -708,24 +702,28 @@ export default function StandaloneExperience() {
                 />
               )}
 
-              {/* What's on the program */}
-              <WhatsIncludedPhotos2
-                experienceId={experience.id}
-                lang={lang}
-                longCopy={longCopy}
-                source="standalone"
-              />
-
               {/* Share with Friends */}
               <ShareWithFriendsSection
                 title={title}
                 lang={lang as "en" | "he" | "fr"}
               />
 
-              {/* Practical Info */}
+              {/* Reviews */}
+              <div ref={reviewsRef}>
+                <ReviewsGrid2 experienceId={experience.id} lang={lang} />
+              </div>
+
+              {/* Things to know */}
               <PracticalInfo
                 experience={experience as any}
                 lang={lang as "en" | "he" | "fr"}
+              />
+
+              {/* Other Experiences */}
+              <OtherExperiences2
+                currentExperienceId={experience.id}
+                categoryId={experience.category_id ?? null}
+                lang={lang}
               />
             </div>
 
