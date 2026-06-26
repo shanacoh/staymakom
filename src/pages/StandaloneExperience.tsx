@@ -250,7 +250,10 @@ export default function StandaloneExperience() {
   const minDate = (() => {
     const d = new Date();
     d.setDate(d.getDate() + leadTimeDays);
-    return d.toISOString().split("T")[0];
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
   })();
   const maxDate = experience?.availability_end_date
     ? new Date(experience.availability_end_date + "T23:59:59")
@@ -540,6 +543,7 @@ export default function StandaloneExperience() {
               selected={selectedDate ? new Date(selectedDate + "T12:00:00") : undefined}
               onSelect={(date) => setSelectedDate(date ? toLocalDateStr(date) : "")}
               disabled={isDateUnavailable}
+              defaultMonth={new Date(minDate + "T12:00:00")}
               toDate={maxDate}
               classNames={{
                 day_selected:
