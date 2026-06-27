@@ -207,17 +207,19 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
             </PopoverContent>
           </Popover>
 
-          {/* Compte / Connexion */}
-          {user ? (
-            <UserDropdown user={user} isTransparent={false} onSignOut={handleSignOut} />
-          ) : (
-            <AccountBubble
-              lang={lang as "en" | "fr" | "he"}
-              isTransparent={false}
-              onSignIn={() => setAuthDialog({ open: true, tab: "login", context: "account" })}
-              onSignUp={() => setAuthDialog({ open: true, tab: "signup", context: "signup" })}
-            />
-          )}
+          {/* Compte / Connexion — masqué sur mobile (accessible via bottom nav) */}
+          <div className="hidden sm:block">
+            {user ? (
+              <UserDropdown user={user} isTransparent={false} onSignOut={handleSignOut} />
+            ) : (
+              <AccountBubble
+                lang={lang as "en" | "fr" | "he"}
+                isTransparent={false}
+                onSignIn={() => setAuthDialog({ open: true, tab: "login", context: "account" })}
+                onSignUp={() => setAuthDialog({ open: true, tab: "signup", context: "signup" })}
+              />
+            )}
+          </div>
 
           {/* Heart — masqué sur mobile (accessible via bottom nav "Saved") */}
           <Button
