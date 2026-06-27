@@ -6,6 +6,23 @@
 
 ---
 
+## [2026-06-28] — Popup et page Sign In : refonte visuelle alignée /v3
+
+### Ce qui a changé côté code
+- `src/components/auth/AccountBubble.tsx` : icône cœur rouge (#ad1414), titre Inter bold uppercase, blob rouge calé sur le texte "Sign In", bouton "Create Account" en pill sombre (rounded-full)
+- `src/components/auth/AuthPromptDialog.tsx` : même traitement (cœur rouge, titre Inter uppercase, blob sur "Continue", pill sur "Create Account"), labels en uppercase, champs en rounded-xl, liens en rouge
+- `src/pages/Auth.tsx` : refonte complète — plus de layout split gauche/droite, image hero /v3 (`hero-road-desert.jpg`) en fond plein écran, carte blanche centrée identique au popup, Inter partout, blob sur "Sign In", pill sur "Create Account"
+- `src/components/V3Header.tsx` : intégration de l'AccountBubble et de l'AuthPromptDialog dans le header /v3
+- `src/components/FAQSection.tsx` : nettoyage d'imports inutilisés
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- Aligner visuellement les deux points d'entrée (popup et page dédiée) avec la direction artistique de la page /v3 : rouge désaturé #ad1414, Inter bold uppercase, blob décoratif, pill CTA
+
+---
+
 ## [2026-06-26] — Pages expériences : unification design et footer compact
 
 ### Ce qui a changé côté code

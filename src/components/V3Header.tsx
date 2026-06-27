@@ -11,6 +11,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useState } from "react";
+import AccountBubble from "@/components/auth/AccountBubble";
+import AuthPromptDialog from "@/components/auth/AuthPromptDialog";
+import UserDropdown from "@/components/auth/UserDropdown";
 
 interface V3HeaderProps {
   mode: "stay" | "live";
@@ -36,10 +40,16 @@ const BLOB_SHAPES = [
 ];
 
 const V3Header = ({ mode, setMode }: V3HeaderProps) => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { lang, setLanguage } = useLanguage();
   const { displayCurrency, setDisplayCurrency } = useCurrency();
+  const [authDialog, setAuthDialog] = useState<{ open: boolean; tab: "login" | "signup"; context: "favorites" | "account" | "signup" }>({ open: false, tab: "login", context: "account" });
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/v3");
+  };
 
   const handleFavoritesClick = () => {
     navigate(user ? "/account?tab=wishlist" : "/auth");
@@ -193,6 +203,18 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
             </PopoverContent>
           </Popover>
 
+          {/* Compte / Connexion */}
+          {user ? (
+            <UserDropdown user={user} isTransparent={false} onSignOut={handleSignOut} />
+          ) : (
+            <AccountBubble
+              lang={lang as "en" | "fr" | "he"}
+              isTransparent={false}
+              onSignIn={() => setAuthDialog({ open: true, tab: "login", context: "account" })}
+              onSignUp={() => setAuthDialog({ open: true, tab: "signup", context: "signup" })}
+            />
+          )}
+
           {/* Heart — masqué sur mobile (accessible via bottom nav "Saved") */}
           <Button
             variant="ghost"
@@ -209,6 +231,17 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
         </div>
       </div>
 
+      <AuthPromptDialog
+        open={authDialog.open}
+        onOpenChange={(open) => setAuthDialog((prev) => ({ ...prev, open }))}
+        lang={lang as "en" | "fr" | "he"}
+        defaultTab={authDialog.tab}
+        context={authDialog.context}
+        onSignupSuccess={() => {
+          setAuthDialog({ open: false, tab: "login", context: "account" });
+          navigate("/account");
+        }}
+      />
     </header>
   );
 };
