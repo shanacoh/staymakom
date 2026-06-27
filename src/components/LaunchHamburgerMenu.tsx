@@ -35,26 +35,13 @@ const LaunchHamburgerMenu = ({ isScrolled = false }: LaunchHamburgerMenuProps) =
         sideOffset={8}
       >
         <nav className="flex flex-col" dir={isRTL ? "rtl" : "ltr"}>
-          {/* Explore Escapes with sub-items */}
-          <div className="px-4 py-3 text-[15px] text-foreground">
-            <span>{isRTL ? "גלה חוויות ›" : "Explore Escapes ›"}</span>
-          </div>
-          <div className={`${isRTL ? "mr-3 pr-2" : "ml-3 pl-2"}`}>
-            <Link
-              to="/launch/experiences?filter=adventure&context=launch"
-              onClick={handleNavClick}
-              className="px-4 py-2.5 text-[14px] text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-lg transition-colors block"
-            >
-              {isRTL ? "— הרפתקה" : "— Feeling Adventurous"}
-            </Link>
-            <Link
-              to="/launch/experiences?filter=romantic&context=launch"
-              onClick={handleNavClick}
-              className="px-4 py-2.5 text-[14px] text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-lg transition-colors block"
-            >
-              {isRTL ? "— בריחה רומנטית" : "— Romantic Escape"}
-            </Link>
-          </div>
+          <Link
+            to="/launch/experiences?context=launch"
+            onClick={handleNavClick}
+            className="px-4 py-3 text-[15px] text-foreground hover:bg-foreground/5 rounded-lg transition-colors"
+          >
+            {isRTL ? "גלה חוויות" : "Explore Escapes"}
+          </Link>
 
           <Link
             to="/gift-card"
