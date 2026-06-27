@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,7 +28,6 @@ import { trackGiftCardClicked, trackViewAllExperiencesClicked } from "@/lib/anal
 import heroImage from "@/assets/hero-road-desert.jpg";
 import handpickedHero from "@/assets/handpicked-hero.jpg";
 import giftCardHero from "@/assets/gift-card-hero.jpg";
-import featuredPhoto from "@/assets/desert-hotel-pool.jpg";
 import tailoredRequestHeroV3 from "@/assets/tailored-request-hero-roadtrip.png";
 
 /* ─── Icon map (identique à /home) ──────────────────────────────────────── */
@@ -68,36 +67,6 @@ const HIGHLIGHT_SHAPES = [
   "rotate-[-2deg] rounded-[55%_45%_30%_70%/45%_65%_55%_35%]",
 ];
 
-/* ─── Articles de blog ───────────────────────────────────────────────────── */
-const BLOG_ARTICLES = [
-  {
-    id: "tlv-june",
-    title: "5 Best Things to Do in TLV in June",
-    titleFr: "5 choses à faire à TLV en juin",
-    desc: "Sun, markets, rooftop bars, and hidden beaches — the ultimate June guide.",
-    descFr: "Soleil, marchés, rooftops et plages cachées — le guide ultime de juin.",
-    href: "/blog/5-best-things-tlv-june",
-    overlay: "bg-stone-900/40",
-  },
-  {
-    id: "jerusalem",
-    title: "Jerusalem Like You've Never Seen Before",
-    titleFr: "Jérusalem comme vous ne l'avez jamais vue",
-    desc: "Off-the-beaten-path neighborhoods, artisan bakeries, and golden-hour spots most tourists miss.",
-    descFr: "Quartiers secrets, boulangeries artisanales et lumières dorées hors des sentiers battus.",
-    href: "/blog/jerusalem-like-youve-never-seen",
-    overlay: "bg-teal-950/50",
-  },
-  {
-    id: "desert",
-    title: "5 Desert Escapes",
-    titleFr: "5 évasions dans le désert",
-    desc: "Silence, stars, and natural hot springs. The Negev beyond the postcards.",
-    descFr: "Silence, étoiles et sources chaudes naturelles. Le Néguev au-delà des cartes postales.",
-    href: "/blog/5-desert-escapes",
-    overlay: "bg-amber-950/55",
-  },
-];
 
 /* ─── Helper hotel principal ─────────────────────────────────────────────── */
 function primaryHotel(exp: any) {
@@ -118,17 +87,6 @@ const IndexV3 = () => {
 
   const [mode, setMode] = useState<"stay" | "live">("live");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [carouselIndex, setCarouselIndex] = useState(0);
-  const carouselRef = useRef<HTMLDivElement>(null);
-
-  const carouselGoTo = (idx: number) => {
-    if (idx < 0 || idx >= BLOG_ARTICLES.length) return;
-    setCarouselIndex(idx);
-    if (!carouselRef.current) return;
-    const firstCard = carouselRef.current.firstElementChild as HTMLElement;
-    if (!firstCard) return;
-    carouselRef.current.scrollTo({ left: idx * (firstCard.offsetWidth + 16), behavior: "smooth" });
-  };
 
   /* ── Realtime ── */
   useEffect(() => {
@@ -560,86 +518,6 @@ const IndexV3 = () => {
               <p>{t(lang, "handpickedP2")}</p>
               <p>{t(lang, "handpickedP3")}</p>
             </div>
-          </div>
-        </section>
-
-        {/* ──── 9. BLOG ARTICLES ──── */}
-        <section className="py-10 sm:py-14 overflow-hidden">
-          <div className="container px-4 mx-auto max-w-5xl">
-
-            {/* En-tête + flèches */}
-            <div className="flex items-center justify-between mb-5">
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-foreground/40">
-                {isRTL ? "מהבלוג" : lang === "fr" ? "Du blog" : "From the blog"}
-              </span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => carouselGoTo(carouselIndex - 1)}
-                  disabled={carouselIndex === 0}
-                  className="w-9 h-9 rounded-full border border-foreground/20 flex items-center justify-center text-foreground/50 hover:border-foreground/50 hover:text-foreground disabled:opacity-25 transition-all"
-                  aria-label="Article précédent"
-                >
-                  <ArrowRight className="w-3.5 h-3.5 rotate-180" />
-                </button>
-                <button
-                  onClick={() => carouselGoTo(carouselIndex + 1)}
-                  disabled={carouselIndex === BLOG_ARTICLES.length - 1}
-                  className="w-9 h-9 rounded-full border border-foreground/20 flex items-center justify-center text-foreground/50 hover:border-foreground/50 hover:text-foreground disabled:opacity-25 transition-all"
-                  aria-label="Article suivant"
-                >
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Piste défilante */}
-            <div
-              ref={carouselRef}
-              className="flex gap-4 overflow-x-auto scrollbar-hide"
-              style={{ scrollSnapType: "x mandatory" }}
-            >
-              {BLOG_ARTICLES.map((article) => (
-                <div
-                  key={article.id}
-                  className="flex-shrink-0 w-[80%] sm:w-[72%] rounded-2xl overflow-hidden shadow-xl"
-                  style={{ scrollSnapAlign: "start" }}
-                >
-                  <div className="grid md:grid-cols-[1fr_2fr] gap-0 h-full">
-                    {/* Photo */}
-                    <div className="relative h-44 md:h-auto min-h-[180px] overflow-hidden">
-                      <img
-                        src={featuredPhoto}
-                        alt={article.title}
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
-                      <div className={`absolute inset-0 ${article.overlay}`} />
-                    </div>
-                    {/* Texte */}
-                    <div className="bg-foreground text-background flex flex-col justify-center p-7 sm:p-9">
-                      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 mb-3">
-                        {lang === "fr" ? "Blog" : "Blog"}
-                      </span>
-                      <h2 className="font-sans text-lg sm:text-xl md:text-2xl font-bold leading-tight mb-2 text-white">
-                        {lang === "fr" ? article.titleFr : article.title}
-                      </h2>
-                      <p className="text-white/70 text-sm mb-5">
-                        {lang === "fr" ? article.descFr : article.desc}
-                      </p>
-                      <div>
-                        <Link
-                          to={article.href}
-                          className="inline-flex items-center gap-2 bg-white text-foreground text-xs font-semibold uppercase tracking-widest px-5 py-2.5 rounded-full hover:bg-muted transition-colors"
-                        >
-                          {isRTL ? "קרא מאמר" : lang === "fr" ? "Lire l'article" : "Read article"}
-                          <ArrowRight className={cn("h-3.5 w-3.5", isRTL && "rotate-180")} />
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
           </div>
         </section>
 
