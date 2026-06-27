@@ -114,13 +114,13 @@ const UserDropdown = ({ user, isTransparent, onSignOut }: UserDropdownProps) => 
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          className={`flex items-center justify-center h-8 w-8 rounded-full transition-all ${
+          className={`flex items-center justify-center h-[30px] w-[30px] rounded-full transition-all ${
             isTransparent
               ? "ring-2 ring-white/30 hover:ring-white/60"
               : "ring-2 ring-primary/20 hover:ring-primary/40"
           }`}
         >
-          <Avatar className="h-8 w-8">
+          <Avatar className="h-[30px] w-[30px]">
             {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} />}
             <AvatarFallback
               className={`text-xs font-medium ${

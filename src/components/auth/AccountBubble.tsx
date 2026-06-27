@@ -70,14 +70,13 @@ export default function AccountBubble({
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          size="icon"
-          className={`${
+          className={`h-[30px] w-[30px] p-0 rounded-full ${
             isTransparent
               ? "text-white hover:bg-white/10"
               : "hover:bg-foreground/5"
           }`}
         >
-          <User className="h-5 w-5" />
+          <User className="h-[18px] w-[18px]" />
         </Button>
       </PopoverTrigger>
       <PopoverContent

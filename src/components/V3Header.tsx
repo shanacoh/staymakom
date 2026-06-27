@@ -52,7 +52,11 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
   };
 
   const handleFavoritesClick = () => {
-    navigate(user ? "/account?tab=wishlist" : "/auth");
+    if (user) {
+      navigate("/account?tab=wishlist");
+    } else {
+      setAuthDialog({ open: true, tab: "login", context: "favorites" });
+    }
   };
 
   const isRTL = lang === "he";
@@ -220,9 +224,9 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
             variant="ghost"
             size="icon"
             onClick={handleFavoritesClick}
-            className="hidden sm:flex h-8 w-8 rounded-none text-foreground hover:bg-muted"
+            className="hidden sm:flex h-[30px] w-[30px] rounded-full text-foreground hover:bg-muted"
           >
-            <Heart className="h-5 w-5" />
+            <Heart className="h-[18px] w-[18px]" />
           </Button>
 
           <div className="hidden md:block">

@@ -23,8 +23,7 @@ const LaunchHamburgerMenu = ({ isScrolled = false }: LaunchHamburgerMenuProps) =
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          size="icon"
-          className={`${!isScrolled ? "text-white hover:bg-white/10" : "hover:bg-foreground/5"}`}
+          className={`h-[30px] w-[30px] p-0 rounded-full ${!isScrolled ? "text-white hover:bg-white/10" : "hover:bg-foreground/5"}`}
           aria-label="Open menu"
         >
           <Menu className="h-5 w-5" />
