@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-06-28] — Page 404 : refonte visuelle alignée DA /v3
+
+### Ce qui a changé côté code
+- `src/pages/NotFound.tsx` : réécriture complète — remplacement de l'ancien header/footer générique par `V3Header` + `LaunchFooter` + `MobileBottomNav`, hero image désert/route avec le "404" en rouge #ad1414 superposé, message de marque trilingue (EN/FR/HE) dans le ton poétique StayMakom, CTA `rounded-full` inversé au survol identique aux boutons de la page /v3
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- La page 404 affichait encore l'ancienne DA du site (header bleu, fond gris, texte anglais générique). Elle a été alignée avec la DA de la page /v3 pour que même les pages d'erreur restent dans l'univers visuel de la marque
+
+---
+
 ## [2026-06-28] — Page expériences launch : bandeau catégories V3 avec icônes et descriptions
 
 ### Ce qui a changé côté code
