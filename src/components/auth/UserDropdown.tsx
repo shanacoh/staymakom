@@ -116,8 +116,8 @@ const UserDropdown = ({ user, isTransparent, onSignOut }: UserDropdownProps) => 
         <button
           className={`flex items-center justify-center h-[30px] w-[30px] rounded-full transition-all ${
             isTransparent
-              ? "ring-2 ring-white/30 hover:ring-white/60"
-              : "ring-2 ring-primary/20 hover:ring-primary/40"
+              ? "ring-2 ring-white/30 hover:ring-white/60 hover:bg-white/10"
+              : "ring-2 ring-primary/20 hover:ring-primary/40 hover:bg-muted"
           }`}
         >
           <Avatar className="h-[30px] w-[30px]">
@@ -137,7 +137,7 @@ const UserDropdown = ({ user, isTransparent, onSignOut }: UserDropdownProps) => 
       <PopoverContent
         align="end"
         sideOffset={8}
-        className="w-72 p-0 rounded-2xl shadow-xl border-border/30 overflow-hidden"
+        className="w-72 p-0 rounded-2xl shadow-xl border border-border/30 overflow-hidden"
       >
         {/* Header with gradient */}
         <div className="p-4 bg-gradient-to-br from-muted/60 via-muted/30 to-transparent border-b border-border/20">

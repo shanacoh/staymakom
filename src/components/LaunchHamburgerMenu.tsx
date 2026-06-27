@@ -23,15 +23,15 @@ const LaunchHamburgerMenu = ({ isScrolled = false }: LaunchHamburgerMenuProps) =
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          className={`h-[30px] w-[30px] p-0 rounded-full ${!isScrolled ? "text-white hover:bg-white/10" : "hover:bg-foreground/5"}`}
+          className={`h-[30px] w-[30px] p-0 rounded-full ${!isScrolled ? "text-white hover:bg-white/10" : "hover:bg-muted"}`}
           aria-label="Open menu"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-[18px] w-[18px]" />
         </Button>
       </PopoverTrigger>
       <PopoverContent
         align="end"
-        className="w-[230px] p-2 bg-white border border-border/10 shadow-[0_4px_20px_rgba(0,0,0,0.08)] rounded-xl"
+        className="w-72 p-2 bg-white border border-border/30 shadow-xl rounded-2xl"
         sideOffset={8}
       >
         <nav className="flex flex-col" dir={isRTL ? "rtl" : "ltr"}>

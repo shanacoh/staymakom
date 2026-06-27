@@ -6,6 +6,22 @@
 
 ---
 
+## [2026-06-28] — Page expériences launch : bandeau catégories V3 avec icônes et descriptions
+
+### Ce qui a changé côté code
+- `src/pages/LaunchExperiences.tsx` : remplacement du toggle 2-boutons (Adventure / Romantic) par le bandeau des 5 catégories V3 (Romantic Escape, Family Fun, Foody Discovery, Land of Stories, Nature & Outdoor) — icônes PNG, chips interactives avec fond rouge au survol/sélection, grande icône PNG colorée en rouge au-dessus du titre, descriptions courtes par catégorie dans 3 langues (EN/FR/HE), filtrage dynamique des expériences selon la catégorie cliquée, URL mise à jour (`?filter=romantic-escape&context=launch`, etc.)
+- `src/components/V3Header.tsx` : popup langue élargi (w-48 → w-72), menu hamburger visible dès `sm:` au lieu de `md:`
+- `src/components/auth/AccountBubble.tsx` : ajustement hover (`foreground/5` → `muted`), popup compte harmonisée (w-80 → w-72, border ajoutée)
+- `src/components/auth/UserDropdown.tsx` / `LaunchHamburgerMenu.tsx` : petits ajustements visuels du header
+
+### Ce qui a changé côté base de données
+- Aucun changement — les descriptions de catégories sont codées en fallback côté front ; si le champ `launch_description` est renseigné dans la DB, il prend automatiquement le dessus
+
+### Pourquoi ce changement
+- Unifier l'expérience de navigation entre la page /v3 et la page /launch/experiences : même système de chips catégories, même DA rouge #ad1414, même logique d'icônes PNG
+
+---
+
 ## [2026-06-28] — Popup et page Sign In : refonte visuelle alignée /v3
 
 ### Ce qui a changé côté code

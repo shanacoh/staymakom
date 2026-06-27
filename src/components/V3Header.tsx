@@ -138,15 +138,15 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
           {/* Globe — langue et devise, mobile ET desktop */}
           <Popover>
             <PopoverTrigger asChild>
-              <button className="p-1.5 rounded-full hover:bg-muted transition-colors" aria-label="Langue et devise">
+              <Button variant="ghost" size="icon" className="h-[30px] w-[30px] rounded-full" aria-label="Langue et devise">
                 <Globe className="h-[18px] w-[18px] text-foreground" strokeWidth={1.5} />
-              </button>
+              </Button>
             </PopoverTrigger>
             <PopoverContent
               side="bottom"
               align="end"
               sideOffset={8}
-              className="w-48 p-4 rounded-2xl shadow-xl border border-border/40 bg-white"
+              className="w-72 p-4 rounded-2xl shadow-xl border border-border/30 bg-white"
               dir={isRTL ? "rtl" : "ltr"}
             >
               {/* Language */}
@@ -229,7 +229,7 @@ const V3Header = ({ mode, setMode }: V3HeaderProps) => {
             <Heart className="h-[18px] w-[18px]" />
           </Button>
 
-          <div className="hidden md:block">
+          <div className="hidden sm:block">
             <LaunchHamburgerMenu isScrolled={true} />
           </div>
         </div>

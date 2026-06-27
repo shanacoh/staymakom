@@ -73,14 +73,14 @@ export default function AccountBubble({
           className={`h-[30px] w-[30px] p-0 rounded-full ${
             isTransparent
               ? "text-white hover:bg-white/10"
-              : "hover:bg-foreground/5"
+              : "hover:bg-muted"
           }`}
         >
           <User className="h-[18px] w-[18px]" />
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-80 p-0 rounded-2xl border-0 shadow-2xl overflow-hidden bg-white"
+        className="w-72 p-0 rounded-2xl border border-border/30 shadow-xl overflow-hidden bg-white"
         align="end"
         sideOffset={8}
         dir={isRTL ? "rtl" : "ltr"}
