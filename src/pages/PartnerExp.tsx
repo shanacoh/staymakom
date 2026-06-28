@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
-import LaunchHeader from "@/components/LaunchHeader";
+import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import { useLanguage } from "@/hooks/useLanguage";
 import { cn } from "@/lib/utils";
@@ -162,7 +162,7 @@ const PartnerExp = () => {
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-clip bg-white" dir={isRTL ? "rtl" : "ltr"}>
-      <LaunchHeader forceScrolled={true} />
+      <V3Header />
 
       <main
         className="flex-1 relative overflow-hidden pt-14"

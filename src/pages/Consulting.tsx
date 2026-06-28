@@ -1,4 +1,4 @@
-import Header from "@/components/Header";
+import V3Header from "@/components/V3Header";
 import Footer from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
@@ -114,7 +114,7 @@ const Consulting = () => {
         descriptionEn="STAYMAKOM consulting helps Israeli hospitality brands reach international travelers through multilingual content, influencer strategy, and brand positioning."
       />
 
-      <Header />
+      <V3Header />
 
       <main>
         {/* ─── HERO ─── */}

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import LaunchHeader from "@/components/LaunchHeader";
+import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import { SEOHead } from "@/components/SEOHead";
 
@@ -132,7 +132,7 @@ export default function StandaloneBookingConfirmation() {
   if (!booking) {
     return (
       <div className="min-h-screen flex flex-col" dir={isRTL ? "rtl" : "ltr"}>
-        <LaunchHeader isScrolled />
+        <V3Header />
         <main className="flex-1 flex flex-col items-center justify-center gap-4 px-4">
           <XCircle className="h-12 w-12 text-muted-foreground" />
           <h1 className="text-2xl font-bold">{t.notFound}</h1>
@@ -167,7 +167,7 @@ export default function StandaloneBookingConfirmation() {
         descriptionHe="החוויה שלך הוזמנה."
       />
 
-      <LaunchHeader isScrolled />
+      <V3Header />
 
       <main className="flex-1 py-12 px-4">
         <div className="max-w-lg mx-auto space-y-6">

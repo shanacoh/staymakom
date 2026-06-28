@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { trackPartnersPageViewed } from "@/lib/analytics";
 import { useQuery } from "@tanstack/react-query";
-import LaunchHeader from "@/components/LaunchHeader";
+import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import { Button } from "@/components/ui/button";
 import { Mail } from "lucide-react";
@@ -34,7 +34,7 @@ const Partners = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <LaunchHeader forceScrolled={true} />
+      <V3Header />
 
       {/* Hero Section */}
       <section className="relative h-[38vh] md:h-[54vh] min-h-[240px] flex items-center justify-center">

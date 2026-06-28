@@ -17,8 +17,8 @@ import StandaloneExtrasSection from "@/components/experience-test/StandaloneExtr
 import ReviewsGrid2 from "@/components/experience-test/ReviewsGrid2";
 import OtherStandaloneExperiences from "@/components/experience-test/OtherStandaloneExperiences";
 import ShareWithFriendsSection from "@/components/experience/ShareWithFriendsSection";
-import Header from "@/components/Header";
-import LaunchHeader from "@/components/LaunchHeader";
+
+import V3Header from "@/components/V3Header";
 import Footer from "@/components/Footer";
 import LaunchFooter from "@/components/LaunchFooter";
 import MobileFooterMinimal from "@/components/MobileFooterMinimal";
@@ -312,7 +312,7 @@ export default function StandaloneExperience() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        {isLaunch ? <LaunchHeader forceScrolled /> : <Header />}
+        <V3Header />
         <div className="pt-16 max-w-6xl mx-auto px-4 pb-16">
           <Skeleton className="h-[55vh] w-full mt-4 rounded-xl" />
           <div className="grid grid-cols-1 lg:grid-cols-[65fr_35fr] gap-12 mt-10">
@@ -369,7 +369,7 @@ export default function StandaloneExperience() {
 
     return (
       <div className="min-h-screen bg-background">
-        {isLaunch ? <LaunchHeader forceScrolled /> : <Header />}
+        <V3Header />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center space-y-4">
             <h1 className="text-2xl font-semibold">{notFoundMsg.title}</h1>
@@ -651,7 +651,7 @@ export default function StandaloneExperience() {
         ogImage={experience.hero_image || undefined}
       />
 
-      {isLaunch ? <LaunchHeader forceScrolled /> : <Header />}
+      <V3Header />
 
       <main className="flex-1">
         {/* Hero Section */}

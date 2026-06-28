@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, Copy, Mail } from "lucide-react";
 import { toast } from "sonner";
-import Header from "@/components/Header";
+import V3Header from "@/components/V3Header";
 import Footer from "@/components/Footer";
 
 export default function GiftCardConfirmation() {
@@ -50,7 +50,7 @@ export default function GiftCardConfirmation() {
   if (!code) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+        <V3Header />
         <div className="container max-w-2xl mx-auto px-4 py-20 text-center">
           <h1 className="font-sans text-3xl font-bold mb-4">Gift card not found</h1>
           <p className="text-muted-foreground mb-8">The gift card code could not be found.</p>
@@ -65,7 +65,7 @@ export default function GiftCardConfirmation() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <V3Header />
       
       <div className="container max-w-3xl mx-auto px-4 py-20">
         <div className="text-center mb-12 space-y-4">

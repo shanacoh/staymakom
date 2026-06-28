@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import Header from "@/components/Header";
+import V3Header from "@/components/V3Header";
 import Footer from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
@@ -420,7 +420,7 @@ const JournalPost = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white">
-        <Header />
+        <V3Header />
         <div className="max-w-4xl mx-auto px-6 pt-24 pb-20">
           {/* Back breadcrumb */}
           <Skeleton className="h-3.5 w-20 mb-8" />
@@ -479,7 +479,7 @@ const JournalPost = () => {
         ogDescriptionFr={post.og_description_fr || post.meta_description_fr}
         ogImage={post.og_image || post.cover_image}
       />
-      <Header />
+      <V3Header />
 
       <main className="max-w-4xl mx-auto px-6 py-20" dir={isRTL ? "rtl" : "ltr"}>
         <Link to="/journal">

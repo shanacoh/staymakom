@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import Header from "@/components/Header";
+import V3Header from "@/components/V3Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Loader2, ExternalLink } from "lucide-react";
@@ -57,7 +57,7 @@ const Hotel = () => {
   if (!hotel) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Header />
+        <V3Header />
         <main className="flex-1 flex items-center justify-center">
           <p className="text-muted-foreground">{t(lang, 'hotelNotFound')}</p>
         </main>
@@ -93,7 +93,7 @@ const Hotel = () => {
         fallbackTitle={`${hotelName} - ${city || ''} - StayMakom`}
         fallbackDescription={story?.substring(0, 155) || ""}
       />
-      <Header />
+      <V3Header />
 
       <main className="flex-1">
         {/* Hero */}

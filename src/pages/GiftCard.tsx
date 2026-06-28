@@ -11,7 +11,7 @@ import { addYears } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import LaunchHeader from "@/components/LaunchHeader";
+import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import giftCardHero from "@/assets/gift-card-hero.jpg";
 import cardBg1 from "@/assets/desert-journey.jpg";
@@ -280,7 +280,7 @@ export default function GiftCard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <LaunchHeader forceScrolled={true} />
+      <V3Header />
 
       {/* Hero Section */}
       <section className="relative h-[38vh] md:h-[54vh] min-h-[240px] flex items-center justify-center">

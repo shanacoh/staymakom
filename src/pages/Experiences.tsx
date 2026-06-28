@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
-import Header from "@/components/Header";
+import V3Header from "@/components/V3Header";
 import Footer from "@/components/Footer";
 import ExperienceCard from "@/components/ExperienceCard";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -34,7 +34,7 @@ const Experiences = () => {
         descriptionEn="Discover all our curated hotel experiences across Israel"
         descriptionHe="גלו את כל חוויות המלון האצורות שלנו ברחבי ישראל"
       />
-      <Header />
+      <V3Header />
       
       <main className="flex-1">
         {/* Hero Section */}

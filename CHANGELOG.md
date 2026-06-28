@@ -6,6 +6,21 @@
 
 ---
 
+## [2026-06-28] — Header unifié : déploiement du V3Header sur tout le site
+
+### Ce qui a changé côté code
+- `src/components/V3Header.tsx` : ajout de la prop `showModeToggle` (optionnelle, défaut `false`) pour n'afficher le toggle "Avec Hôtel / Expériences seules" que sur `/v3` ; lien du logo modifié (`/v3` → `/`) ; redirection après déconnexion modifiée (`/v3` → `/`)
+- **28 pages publiques** : remplacement de l'ancien `<Header />` ou `<LaunchHeader />` par `<V3Header />` — toutes les pages du site partagent maintenant le même header visuel (fond blanc fixe, popup langue/devise, icône globe, compte, favoris)
+- `src/pages/IndexV3.tsx` : mise à jour pour passer `showModeToggle` — seule page qui conserve le toggle
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- Le header de `/v3` avait été amélioré visuellement (design plus compact, popup langue avec effet blob). L'objectif était de l'appliquer à l'ensemble du site pour assurer une cohérence visuelle totale, sans toucher aux flux de réservation ni de paiement
+
+---
+
 ## [2026-06-28] — Page 404 : refonte visuelle alignée DA /v3
 
 ### Ce qui a changé côté code

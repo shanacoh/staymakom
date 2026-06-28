@@ -24,7 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import RevolutPaymentWidget from "@/components/experience/RevolutPaymentWidget";
-import LaunchHeader from "@/components/LaunchHeader";
+import V3Header from "@/components/V3Header";
 import { LeadGuestForm, LeadGuestData, EMPTY_LEAD_GUEST, saveProfileFields } from "@/components/experience/LeadGuestForm";
 import AuthPromptDialog from "@/components/auth/AuthPromptDialog";
 import { useAuth } from "@/contexts/AuthContext";
@@ -522,7 +522,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
   // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen flex flex-col bg-background" dir={lang === "he" ? "rtl" : "ltr"}>
-      <LaunchHeader forceScrolled />
+      <V3Header />
 
       <main className="flex-1 w-full">
 

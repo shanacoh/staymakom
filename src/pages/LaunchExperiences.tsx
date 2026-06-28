@@ -3,7 +3,7 @@ import { useSearchParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
-import LaunchHeader from "@/components/LaunchHeader";
+import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import { SEOHead } from "@/components/SEOHead";
 import Experience2CardWithPrice from "@/components/Experience2CardWithPrice";
@@ -284,7 +284,7 @@ const LaunchExperiences = () => {
         description={heroDescription || (isRTL ? "גלה חוויות מלון ייחודיות בישראל" : "Discover unique hotel experiences in Israel")}
       />
 
-      <LaunchHeader forceScrolled={true} />
+      <V3Header />
 
       <main className="flex-1 pt-[56px] pb-[80px] md:pb-0">
 

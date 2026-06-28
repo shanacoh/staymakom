@@ -10,7 +10,7 @@ import { format, parseISO, formatDistanceToNow } from "date-fns";
 import { ShoppingBag, Trash2, ArrowRight, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import Header from "@/components/Header";
+import V3Header from "@/components/V3Header";
 import { DualPrice } from "@/components/ui/DualPrice";
 import type { CheckoutState } from "@/pages/Checkout";
 
@@ -61,7 +61,7 @@ export default function Cart() {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         {/* Desktop header only */}
-        <div className="hidden md:block"><Header /></div>
+        <div className="hidden md:block"><V3Header /></div>
 
         <div className="flex-1 flex flex-col items-center justify-center px-6 pb-24">
           <ShoppingBag size={40} strokeWidth={1.3} className="text-primary mb-4" />
@@ -88,7 +88,7 @@ export default function Cart() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Desktop header only */}
-      <div className="hidden md:block"><Header /></div>
+      <div className="hidden md:block"><V3Header /></div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-6 pb-24">
         <ShoppingBag size={40} strokeWidth={1.3} className="text-primary mb-6" />

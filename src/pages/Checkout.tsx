@@ -44,7 +44,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import LaunchHeader from "@/components/LaunchHeader";
+import V3Header from "@/components/V3Header";
 import { useQuery } from "@tanstack/react-query";
 
 interface SelectedExtra {
@@ -1003,7 +1003,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-background" dir={lang === 'he' ? 'rtl' : 'ltr'}>
-      <LaunchHeader forceScrolled />
+      <V3Header />
 
       <main className="flex-1 w-full">
         {/* Top bar with secure checkout + progress */}

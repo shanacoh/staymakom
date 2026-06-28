@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import LaunchHeader from "@/components/LaunchHeader";
+import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import { Loader2, ChevronLeft } from "lucide-react";
 import WishlistSection from "@/components/account/WishlistSection";
@@ -199,7 +199,7 @@ const Account = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <LaunchHeader forceScrolled={true} />
+      <V3Header />
       <main className="flex-1 pt-24 pb-16">
         {/* Full-width header area */}
         <div className="container">

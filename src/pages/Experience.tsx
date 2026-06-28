@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import Header from "@/components/Header";
+import V3Header from "@/components/V3Header";
 import Footer from "@/components/Footer";
 import { Loader2 } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -119,7 +119,7 @@ const Experience = () => {
   if (!experience) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Header />
+        <V3Header />
         <main className="flex-1 flex items-center justify-center">
           <p className="text-muted-foreground">{t(lang, 'experienceNotFound')}</p>
         </main>
@@ -170,7 +170,7 @@ const Experience = () => {
         fallbackTitle={`${title} - ${hotelName || ''} - StayMakom`}
         fallbackDescription={subtitle || experience.long_copy?.substring(0, 155) || ""}
       />
-      <Header />
+      <V3Header />
 
       <main className="flex-1">
         {/* Hero Section with 65/35 layout */}

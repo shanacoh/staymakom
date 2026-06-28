@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import Header from "@/components/Header";
+import V3Header from "@/components/V3Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
@@ -30,7 +30,7 @@ const Journal = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
+      <V3Header />
 
       <main className="max-w-6xl mx-auto px-6 py-12 pt-24">
         <div className="text-center mb-10">

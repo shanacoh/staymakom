@@ -41,7 +41,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import Header from "@/components/Header";
+import V3Header from "@/components/V3Header";
 import Footer from "@/components/Footer";
 import CategoryCard from "@/components/CategoryCard";
 import RotatingText from "@/components/RotatingText";
@@ -321,7 +321,7 @@ const Index = () => {
         ogDescriptionHe={homepageSEO?.og_description_he}
         ogImage={homepageSEO?.og_image}
       />
-      <Header />
+      <V3Header />
 
       <main className="flex-1">
         {/* Hero Section */}

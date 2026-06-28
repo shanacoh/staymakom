@@ -227,7 +227,7 @@ const IndexV3 = () => {
       />
 
       {/* ──── HEADER toujours blanc avec toggle centré ──── */}
-      <V3Header mode={mode} setMode={setMode} />
+      <V3Header showModeToggle mode={mode} setMode={setMode} />
 
       <main className="flex-1 pb-[92px] md:pb-0 pt-14">
 
