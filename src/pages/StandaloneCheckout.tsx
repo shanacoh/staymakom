@@ -54,6 +54,14 @@ export interface StandaloneCheckoutState {
   currency: string;
   lang: "en" | "he" | "fr";
   totalPrice: number;
+  selectedExtras?: Array<{
+    id: string;
+    name: string;
+    name_he: string | null;
+    price: number;
+    currency: string;
+    pricing_type: string;
+  }>;
 }
 
 type CheckoutStep = 2 | 3;
@@ -396,6 +404,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
           customer_name: `${leadGuest.firstName.trim()} ${leadGuest.lastName.trim()}`,
           customer_email: leadGuest.email.trim(),
           customer_phone: leadGuest.phone.trim() || null,
+          selected_extras_ids: state.selectedExtras?.map((e) => e.id) ?? [],
           promo_code: appliedPromo ? {
             id: appliedPromo.id,
             code: appliedPromo.code,
@@ -509,6 +518,19 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
         </div>
       </div>
       <Separator className="my-3" />
+      {state.selectedExtras && state.selectedExtras.length > 0 && (
+        <div className="space-y-1 text-xs text-muted-foreground mb-2">
+          {state.selectedExtras.map((extra) => {
+            const name = lang === "he" ? (extra.name_he || extra.name) : extra.name;
+            return (
+              <div key={extra.id} className="flex justify-between">
+                <span>{name}</span>
+                <span>+{currencySymbol}{extra.price.toFixed(0)}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
       {(promoDiscount > 0 || giftCardApplied > 0) && (
         <div className="space-y-1 text-xs text-muted-foreground">
           {promoDiscount > 0 && (

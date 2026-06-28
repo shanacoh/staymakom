@@ -276,6 +276,9 @@ export default function StandaloneExperience() {
       )
     : 0;
 
+  const extrasTotal = selectedExtras.reduce((sum, e) => sum + e.price, 0);
+  const grandTotal = totalPrice + extrasTotal;
+
   const title =
     lang === "he"
       ? experience?.title_he || experience?.title || ""
@@ -429,11 +432,31 @@ export default function StandaloneExperience() {
     return (
       <div className="rounded-2xl border p-5 space-y-5 shadow-medium">
         {/* Affichage du prix */}
-        <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold">
-            {currencySymbol}{experience.base_price.toFixed(0)}
-          </span>
-          <span className="text-sm text-muted-foreground">{priceLabel}</span>
+        <div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold">
+              {currencySymbol}{experience.base_price.toFixed(0)}
+            </span>
+            <span className="text-sm text-muted-foreground">{priceLabel}</span>
+          </div>
+          {experience.base_price_type === "fixed" && (
+            <div className="mt-2 space-y-1">
+              <p className="text-sm text-muted-foreground">
+                {lang === "he"
+                  ? `עד ${experience.max_party} משתתפים`
+                  : lang === "fr"
+                  ? `jusqu'à ${experience.max_party} participants`
+                  : `up to ${experience.max_party} participants`}
+              </p>
+              <p className="text-sm font-semibold text-[#ad1414]">
+                {lang === "he"
+                  ? `${currencySymbol}${(experience.base_price / totalParty).toFixed(0)} לאדם עבור ${totalParty} משתתף${totalParty > 1 ? "ים" : ""}`
+                  : lang === "fr"
+                  ? `soit ${currencySymbol}${(experience.base_price / totalParty).toFixed(0)} / personne pour ${totalParty} participant${totalParty > 1 ? "s" : ""}`
+                  : `i.e. ${currencySymbol}${(experience.base_price / totalParty).toFixed(0)} / person for ${totalParty} participant${totalParty > 1 ? "s" : ""}`}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Bloc participants — en premier */}
@@ -590,14 +613,29 @@ export default function StandaloneExperience() {
           </div>
         )}
 
-        {/* Total dynamique — masqué pour les prix fixes */}
-        {experience.base_price_type !== "fixed" && (
+        {/* Extras sélectionnés — ligne de détail par extra */}
+        {selectedExtras.length > 0 && (
+          <div className="space-y-1.5 border-t pt-3">
+            {selectedExtras.map((extra) => {
+              const name = lang === "he" ? (extra.name_he || extra.name) : extra.name;
+              return (
+                <div key={extra.id} className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{name}</span>
+                  <span className="font-medium">+{currencySymbol}{extra.price.toFixed(0)}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Total dynamique — masqué pour les prix fixes sans extras */}
+        {(experience.base_price_type !== "fixed" || extrasTotal > 0) && (
           <div className="border-t pt-3 flex items-center justify-between">
             <span className="text-sm text-muted-foreground">
               {lang === "he" ? "סה\"כ" : lang === "fr" ? "Total" : "Total"}
             </span>
             <span className="font-bold text-lg">
-              {currencySymbol}{totalPrice.toFixed(0)}
+              {currencySymbol}{grandTotal.toFixed(0)}
             </span>
           </div>
         )}
@@ -624,7 +662,7 @@ export default function StandaloneExperience() {
               basePriceType: experience.base_price_type,
               currency: experience.currency,
               lang,
-              totalPrice,
+              totalPrice: grandTotal,
               selectedExtras,
             };
             try {
@@ -769,14 +807,25 @@ export default function StandaloneExperience() {
         <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-sm border-t px-4 py-3">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <span className="font-bold text-lg">
-                {currencySymbol}{experience.base_price.toFixed(0)}
-              </span>
-              <span className="text-sm text-muted-foreground ml-1.5">
-                {experience.base_price_type === "fixed"
-                  ? (lang === "fr" ? "forfait" : "fixed")
-                  : (lang === "he" ? "לאדם" : lang === "fr" ? "/ pers." : "/ person")}
-              </span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="font-bold text-lg">
+                  {currencySymbol}{experience.base_price.toFixed(0)}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {experience.base_price_type === "fixed"
+                    ? (lang === "fr" ? "forfait" : "fixed")
+                    : (lang === "he" ? "לאדם" : lang === "fr" ? "/ pers." : "/ person")}
+                </span>
+              </div>
+              {experience.base_price_type === "fixed" && (
+                <p className="text-xs text-muted-foreground leading-tight">
+                  {lang === "he"
+                    ? `עד ${experience.max_party} משתתפים`
+                    : lang === "fr"
+                    ? `jusqu'à ${experience.max_party} participants`
+                    : `up to ${experience.max_party} participants`}
+                </p>
+              )}
             </div>
             <Button
               className="rounded-full px-6"
