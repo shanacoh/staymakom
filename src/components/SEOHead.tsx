@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { useLanguage } from "@/hooks/useLanguage";
 
+const BASE_URL = "https://staymakom.com";
+
 interface SEOHeadProps {
   title?: string;
   titleEn?: string;
@@ -96,7 +98,7 @@ export function SEOHead({
     updateMetaTag("og:title", finalOgTitle, true);
     updateMetaTag("og:description", finalOgDescription, true);
     updateMetaTag("og:type", "website", true);
-    updateMetaTag("og:url", window.location.href, true);
+    updateMetaTag("og:url", `${BASE_URL}${window.location.pathname}`, true);
     
     if (ogImage) {
       updateMetaTag("og:image", ogImage, true);
@@ -110,6 +112,33 @@ export function SEOHead({
     if (ogImage) {
       updateMetaTag("twitter:image", ogImage);
     }
+
+    // Canonical : URL propre sans paramètre ?lang=
+    const canonicalPath = window.location.pathname;
+    const canonicalUrl = `${BASE_URL}${canonicalPath}`;
+    const updateLinkTag = (rel: string, href: string, hreflang?: string) => {
+      const selector = hreflang
+        ? `link[rel="${rel}"][hreflang="${hreflang}"]`
+        : `link[rel="${rel}"][hreflang=""]`;
+      let el = document.querySelector<HTMLLinkElement>(
+        hreflang ? selector : `link[rel="canonical"]`
+      );
+      if (!el) {
+        el = document.createElement("link");
+        el.setAttribute("rel", rel);
+        if (hreflang) el.setAttribute("hreflang", hreflang);
+        document.head.appendChild(el);
+      }
+      el.setAttribute("href", href);
+    };
+
+    updateLinkTag("canonical", canonicalUrl);
+
+    // Hreflang : indiquer à Google les 3 versions linguistiques
+    updateLinkTag("alternate", `${canonicalUrl}?lang=en`, "en");
+    updateLinkTag("alternate", `${canonicalUrl}?lang=he`, "he");
+    updateLinkTag("alternate", `${canonicalUrl}?lang=fr`, "fr");
+    updateLinkTag("alternate", `${canonicalUrl}?lang=en`, "x-default");
   }, [
     lang,
     title,

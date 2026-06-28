@@ -6,6 +6,30 @@
 
 ---
 
+## [2026-06-28] — Optimisation SEO complète : meta tags OG, sitemap, canonical, hreflang, données structurées
+
+### Ce qui a changé côté code
+- `index.html` : meta tags OG et Twitter entièrement refaits — l'image "coming soon" de lovable.app est remplacée par la photo héro du site, les textes décrivent maintenant le service réel, et l'URL pointe vers staymakom.com
+- `public/og-image.jpg` : image héro exportée et compressée (175 Ko) pour les aperçus WhatsApp/Facebook/LinkedIn
+- `public/sitemap.xml` : sitemap XML généré automatiquement avec 89 URLs (pages statiques + toutes les expériences, hôtels, catégories, articles)
+- `scripts/generate-sitemap.mjs` : script Node.js qui interroge Supabase et génère le sitemap à chaque build — tourne automatiquement avant `vite build`
+- `package.json` : commande `build` mise à jour pour exécuter le script de sitemap avant la compilation
+- `public/robots.txt` : pages admin/panier/checkout bloquées aux robots, lien vers le sitemap ajouté
+- `src/components/SEOHead.tsx` : ajout des balises `canonical` (URL sans `?lang=`) et `hreflang` pour les 3 langues (EN/HE/FR) ; correction de `og:url` qui incluait le paramètre de langue
+- `src/pages/Experience2.tsx` : ajout du schéma JSON-LD `Product` avec prix pour les rich snippets Google
+- `src/pages/Hotel.tsx` : ajout du schéma JSON-LD `LodgingBusiness` avec coordonnées géographiques
+- `src/pages/JournalPost.tsx` : ajout du schéma JSON-LD `Article` avec date de publication
+
+### Ce qui a changé côté base de données
+- Aucune modification de schéma — les champs SEO existants (`seo_title_*`, `meta_description_*`, `og_title_*`, `og_description_*`, `og_image`) sont déjà remplis à ~90% dans les tables `experiences2`, `hotels2`, `categories`, `journal_posts`
+
+### Pourquoi ce changement
+- Les meta tags OG pointaient encore vers une image "coming soon" d'un ancien hébergeur (lovable.app), ce qui donnait une mauvaise impression sur WhatsApp/Facebook/LinkedIn
+- Google ne disposait d'aucun sitemap pour découvrir les pages dynamiques (expériences, hôtels, catégories)
+- Plusieurs balises SEO techniques essentielles manquaient (canonical, hreflang, données structurées)
+
+---
+
 ## [2026-06-28] — Correction : connexion Google ne connectait pas l'utilisateur
 
 ### Ce qui a changé côté code

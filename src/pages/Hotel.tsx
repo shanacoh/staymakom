@@ -131,7 +131,31 @@ const Hotel = () => {
         ogImage={hotel.og_image || hotel.hero_image}
         fallbackTitle={`${hotelName} - ${city || ''} - StayMakom`}
         fallbackDescription={story?.substring(0, 155) || ""} />
-      
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "LodgingBusiness",
+            "name": hotel.name,
+            "image": hotel.hero_image || hotel.og_image || undefined,
+            "url": `https://staymakom.com/hotel/${hotel.slug}`,
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": hotel.city || undefined,
+              "addressCountry": "IL"
+            },
+            ...(hotel.latitude && hotel.longitude && {
+              "geo": {
+                "@type": "GeoCoordinates",
+                "latitude": hotel.latitude,
+                "longitude": hotel.longitude
+              }
+            })
+          })
+        }}
+      />
+
       <V3Header />
 
       <main className="flex-1">

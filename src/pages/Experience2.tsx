@@ -518,6 +518,29 @@ export default function Experience2() {
         description={subtitle || undefined}
         ogImage={experience.hero_image || primaryHotel?.hero_image || undefined}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            "name": experience.title,
+            "description": experience.subtitle || undefined,
+            "image": experience.hero_image || primaryHotel?.hero_image || undefined,
+            "url": `https://staymakom.com/experience/${experience.slug}`,
+            "brand": { "@type": "Brand", "name": "STAYMAKOM" },
+            ...(experience.base_price != null && {
+              "offers": {
+                "@type": "Offer",
+                "price": experience.base_price,
+                "priceCurrency": experience.currency || "ILS",
+                "availability": "https://schema.org/InStock",
+                "url": `https://staymakom.com/experience/${experience.slug}`
+              }
+            })
+          })
+        }}
+      />
 
       <V3Header />
 

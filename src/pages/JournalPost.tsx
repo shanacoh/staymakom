@@ -479,6 +479,29 @@ const JournalPost = () => {
         ogDescriptionFr={post.og_description_fr || post.meta_description_fr}
         ogImage={post.og_image || post.cover_image}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            "headline": post.title_en,
+            "description": post.excerpt_en || undefined,
+            "image": post.og_image || post.cover_image || undefined,
+            "url": `https://staymakom.com/journal/${post.slug}`,
+            "datePublished": post.published_at,
+            "author": { "@type": "Organization", "name": "STAYMAKOM" },
+            "publisher": {
+              "@type": "Organization",
+              "name": "STAYMAKOM",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "https://staymakom.com/favicon.png"
+              }
+            }
+          })
+        }}
+      />
       <V3Header />
 
       <main className="max-w-4xl mx-auto px-6 py-20" dir={isRTL ? "rtl" : "ltr"}>
