@@ -498,12 +498,12 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
           <Card className="border-dashed hidden md:block">
             <CardContent className="py-16">
               <div className="text-center space-y-4">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-2">
-                  <Calendar className="h-10 w-10 text-primary" />
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[hsl(var(--cta)/0.15)] mb-2">
+                  <Calendar className="h-10 w-10 text-[hsl(var(--cta-foreground))]" />
                 </div>
                 <div>
                   <h3 className="text-xl mb-2">{isHebrew ? "אין הזמנות" : isFrench ? "Aucune réservation" : "No bookings found"}</h3>
-                  <p className="text-[hsl(var(--cta-foreground))] max-w-sm mx-auto">
+                  <p className="text-foreground max-w-sm mx-auto">
                     {isHebrew
                       ? "גלו את החוויות המיוחדות שלנו והזמינו את ההרפתקה הבאה שלכם!"
                       : isFrench
@@ -513,7 +513,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
                 </div>
                 <span
                   onClick={() => navigate("/")}
-                  className="inline-block cursor-pointer px-5 py-2 text-sm uppercase tracking-wide bg-[hsl(var(--cta))] text-[hsl(var(--cta-foreground))] border border-[hsl(var(--cta-border)/0.35)] btn-organic"
+                  className="inline-block cursor-pointer px-5 py-2 text-sm uppercase tracking-wide bg-[hsl(0_75%_62%)] text-black btn-organic"
                 >
                   {isHebrew ? "גלו חוויות" : isFrench ? "Découvrir les expériences" : "Explore Experiences"}
                 </span>
