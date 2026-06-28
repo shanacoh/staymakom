@@ -296,7 +296,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
   const stepLabels = [t.step2Title, t.step3Title];
 
   const inputStyle = {
-    backgroundColor: "#F5F0E8",
+    backgroundColor: "#FFFFFF",
     border: "1px solid #E8E0D4",
     borderRadius: "0px",
   };
@@ -568,7 +568,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
     <div className="min-h-screen flex flex-col bg-background" dir={lang === "he" ? "rtl" : "ltr"}>
       <V3Header />
 
-      <main className="flex-1 w-full">
+      <main className="flex-1 w-full pt-14">
 
         {/* Barre supérieure avec progression — identique à Checkout.tsx */}
         <div className="border-b border-border bg-card">
@@ -627,7 +627,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
             <div className="grid md:grid-cols-[1fr_320px] gap-6">
 
               {/* Colonne gauche */}
-              <div className="space-y-6">
+              <div className="flex flex-col gap-6">
 
                 {/* Récap mobile */}
                 <div className="md:hidden">
@@ -653,7 +653,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                         variant="outline"
                         size="sm"
                         className="flex-1 text-xs"
-                        style={{ borderRadius: "0px", border: "1px solid #1A1814" }}
+                        style={{ borderRadius: "10px", border: "1px solid #1A1814" }}
                         onClick={() => setAuthDialog({ open: true, tab: "login", context: "account" })}
                       >
                         {lang === "fr" ? "Se connecter" : lang === "he" ? "התחבר" : "Sign in"}
@@ -661,7 +661,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                       <Button
                         size="sm"
                         className="flex-1 text-xs bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
-                        style={{ borderRadius: "0px" }}
+                        style={{ borderRadius: "10px" }}
                         onClick={() => setAuthDialog({ open: true, tab: "signup", context: "signup" })}
                       >
                         {lang === "fr" ? "Créer un compte" : lang === "he" ? "צור חשבון" : "Create account"}
@@ -719,7 +719,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                         />
                         <Button
                           variant="outline"
-                          style={{ borderRadius: "0px", border: "1px solid #1A1814" }}
+                          style={{ borderRadius: "10px", border: "1px solid #1A1814" }}
                           disabled={isValidatingGiftCard || !giftCardCode.trim()}
                           onClick={handleApplyGiftCard}
                         >
@@ -761,7 +761,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                         />
                         <Button
                           variant="outline"
-                          style={{ borderRadius: "0px", border: "1px solid #1A1814" }}
+                          style={{ borderRadius: "10px", border: "1px solid #1A1814" }}
                           disabled={isValidatingPromo || !promoCodeValue.trim()}
                           onClick={handleApplyPromo}
                         >
@@ -776,16 +776,15 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                 <Separator />
 
                 {/* Navigation */}
-                <div className={cn("flex gap-3 pt-2", lang === "he" && "flex-row-reverse")}>
-                  <Button
-                    variant="outline"
-                    className="shrink-0"
-                    style={{ height: "52px", borderRadius: "0px", border: "1px solid #1A1814" }}
+                <div className={cn("flex items-center gap-3 pt-2", lang === "he" && "flex-row-reverse")}>
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0 py-2"
                     onClick={() => navigate(`/standalone-experience/${state.experienceSlug}?context=launch`)}
                   >
-                    {lang === "he" ? <ChevronRight className="h-4 w-4 ml-1" /> : <ChevronLeft className="h-4 w-4 mr-1" />}
+                    {lang === "he" ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
                     {t.back}
-                  </Button>
+                  </button>
                   <Button
                     className={cn(
                       "flex-1 uppercase tracking-[0.12em] text-[13px] transition-all duration-200",
@@ -793,7 +792,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                         ? "bg-[#1A1814] text-white hover:bg-[#1A1814]/90 hover:scale-[1.01] cursor-pointer"
                         : "bg-[#C8C0B4] text-white cursor-not-allowed hover:bg-[#C8C0B4]"
                     )}
-                    style={{ height: "52px", borderRadius: "0px" }}
+                    style={{ height: "52px", borderRadius: "10px" }}
                     disabled={!isGuestValid}
                     onClick={handleContinueToStep3}
                   >
@@ -917,19 +916,18 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
 
               {/* Navigation — desktop */}
               <div className="pt-2 pb-8">
-                <div className={cn("hidden md:flex gap-3", lang === "he" && "flex-row-reverse")}>
-                  <Button
-                    variant="outline"
-                    className="shrink-0 uppercase tracking-[0.12em] text-[13px]"
-                    style={{ height: "52px", borderRadius: "0px", border: "1px solid #1A1814", color: "#1A1814" }}
+                <div className={cn("hidden md:flex items-center gap-4", lang === "he" && "flex-row-reverse")}>
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0 py-2"
                     onClick={() => { setStep(2); setPaymentStatus("idle"); setPaymentErrorMessage(null); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                   >
-                    {lang === "he" ? <ChevronRight className="h-4 w-4 ml-1" /> : <ChevronLeft className="h-4 w-4 mr-1" />}
+                    {lang === "he" ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
                     {t.back}
-                  </Button>
+                  </button>
                   <Button
                     className="flex-1 uppercase tracking-[0.12em] text-[13px] bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
-                    style={{ height: "52px", borderRadius: "0px" }}
+                    style={{ height: "52px", borderRadius: "10px" }}
                     disabled={isBookingLoading || paymentStatus === "creating" || paymentStatus === "failed"}
                     onClick={handleBook}
                   >
@@ -946,7 +944,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                 <div className="md:hidden space-y-3">
                   <Button
                     className="w-full uppercase tracking-[0.12em] text-[13px] bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
-                    style={{ height: "52px", borderRadius: "0px" }}
+                    style={{ height: "52px", borderRadius: "10px" }}
                     disabled={isBookingLoading || paymentStatus === "creating" || paymentStatus === "failed"}
                     onClick={handleBook}
                   >

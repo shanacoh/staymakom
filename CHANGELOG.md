@@ -6,6 +6,29 @@
 
 ---
 
+## [2026-06-28] — Refonte UI/UX des pages de réservation (étapes 2 et 3)
+
+### Ce qui a changé côté code
+- `src/pages/StandaloneCheckout.tsx` : refonte visuelle des étapes 2 et 3 (mode expérience seule)
+- `src/pages/Checkout.tsx` : mêmes améliorations pour le mode hôtel + expérience
+- Suppression des imports `Card/CardContent/CardHeader/CardTitle` devenus inutiles dans StandaloneCheckout
+
+### Ce qui a changé côté base de données
+- Aucune modification de base de données
+
+### Pourquoi ce changement
+- Amélioration de l'expérience de réservation pour mieux coller à la nouvelle direction artistique de StayMakom
+- **Récapitulatif (sidebar)** : image en bannière pleine largeur, labels uppercase discrets (DATE, PARTICIPANTS…), montant total plus mis en avant
+- **Sections "Demandes spéciales / Carte cadeau / Code promo"** : remplacement des Card imbriquées par des sections plates — moins de bruit visuel
+- **Étape 3** : blocs plus aérés, hiérarchie label/valeur lisible au premier coup d'œil
+- **Bouton "Retour"** : transformé en lien texte discret pour créer une vraie hiérarchie primaire/secondaire
+- **Fond des champs de saisie** : blanc pur (#FFFFFF) au lieu du beige crème (#F5F0E8)
+- **Arrondi des boutons CTA** (Continuer, Appliquer, Payer & Réserver) : 10px au lieu de 0px
+- **Espacement sous le header fixe** : `pt-14` ajouté sur `<main>` pour éviter que le contenu soit masqué par le header fixe
+- **Alignement gauche/droite** : `space-y-6` remplacé par `flex flex-col gap-6` pour que la colonne formulaire s'aligne correctement avec la colonne récapitulatif
+
+---
+
 ## [2026-06-28] — Correction bug : bouton "Continuer" expérience standalone redirige vers la home
 
 ### Ce qui a changé côté code
