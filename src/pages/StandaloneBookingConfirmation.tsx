@@ -279,7 +279,7 @@ export default function StandaloneBookingConfirmation() {
           {/* CTA */}
           <div className="flex justify-center">
             <Button asChild variant="outline">
-              <Link to="/v3">{t.backHome}</Link>
+              <Link to="/">{t.backHome}</Link>
             </Button>
           </div>
 

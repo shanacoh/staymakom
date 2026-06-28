@@ -144,6 +144,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setRole(userRole);
       setRoles([userRole]);
 
+      // S'assurer que la fiche customers existe (le trigger DB ne la crée pas)
+      if (userRole === "customer") {
+        const { data: existingCustomer } = await supabase
+          .from("customers")
+          .select("user_id")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (!existingCustomer) {
+          await supabase.from("customers").insert({
+            user_id: userId,
+            first_name: "",
+            last_name: "",
+            default_party_size: 2,
+            address_country: null,
+            notes: null,
+          });
+        }
+      }
+
       const isMobile = window.innerWidth < 768;
       const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
       identifyUser(userId, {

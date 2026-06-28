@@ -199,7 +199,7 @@ const AdminExperiences2 = () => {
     onSuccess: (newValue) => {
       queryClient.invalidateQueries({ queryKey: ["admin-standalone-exps-hub"] });
       queryClient.invalidateQueries({ queryKey: ["v3-standalone-experiences"] });
-      toast.success(newValue ? "Visible uniquement sur /v3" : "Visible sur la homepage");
+      toast.success(newValue ? "Visible sur la homepage uniquement" : "Visible partout");
     },
     onError: () => toast.error("Erreur lors de la mise à jour"),
   });
@@ -215,7 +215,7 @@ const AdminExperiences2 = () => {
       queryClient.invalidateQueries({ queryKey: ["latest-experiences"] });
       queryClient.invalidateQueries({ queryKey: ["all-experiences"] });
       queryClient.invalidateQueries({ queryKey: ["v3-experiences2"] });
-      toast.success(newValue ? "Visible uniquement sur /v3" : "Visible sur la homepage");
+      toast.success(newValue ? "Visible sur la homepage uniquement" : "Visible partout");
     },
     onError: () => toast.error("Erreur lors de la mise à jour"),
   });

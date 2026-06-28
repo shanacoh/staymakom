@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import V3Header from "@/components/V3Header";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Heart, Users, Wine, Compass, Leaf, Sparkles, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import ExperienceCard from "@/components/ExperienceCard";
+import StandaloneExperienceCard from "@/components/StandaloneExperienceCard";
 import CategoryFilters, { FilterState } from "@/components/category/CategoryFilters";
 import ExperienceMap from "@/components/category/ExperienceMap";
 import { useState, useMemo, useEffect } from "react";
@@ -41,6 +42,8 @@ const HIGHLIGHT_SHAPES = [
 const Category = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const mode = (searchParams.get("mode") as "stay" | "live") || "stay";
   const { lang } = useLanguage();
   const isRTL = lang === "he";
   const [showMap, setShowMap] = useState(false);
@@ -49,6 +52,10 @@ const Category = () => {
     priceRange: [0, 10000],
     partySize: 1
   });
+
+  const handleSetMode = (newMode: "stay" | "live") => {
+    navigate(`/category/${slug}?mode=${newMode}`);
+  };
 
   useEffect(() => { if (slug) trackCategoryPageViewed(slug); }, [slug]);
 
@@ -132,6 +139,31 @@ const Category = () => {
     enabled: !!category?.id
   });
 
+  const { data: standaloneExperiences, isLoading: standaloneLoading } = useQuery({
+    queryKey: ["category-standalone-experiences", category?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("standalone_experiences")
+        .select(`
+          id, slug, title, title_he, title_fr,
+          hero_image, photos,
+          base_price, base_price_type, currency,
+          min_party, max_party, has_child_price, has_time_slots,
+          city, city_he, region, region_he, practical_info,
+          standalone_experience_highlight_tags(
+            tag_id, position,
+            highlight_tags(id, slug, label_en, label_he, label_fr)
+          )
+        `)
+        .eq("category_id", category?.id)
+        .eq("status", "published")
+        .order("display_order", { ascending: true, nullsFirst: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!category?.id && mode === "live",
+  });
+
   const filteredExperiences = useMemo(() => {
     if (!experiences) return [];
     let filtered = [...experiences];
@@ -159,6 +191,34 @@ const Category = () => {
     }
     return filtered;
   }, [experiences, filters]);
+
+  const filteredStandalone = useMemo(() => {
+    if (!standaloneExperiences) return [];
+    let filtered = [...standaloneExperiences] as any[];
+
+    if (filters.priceRange[1] < 10000) {
+      filtered = filtered.filter(exp => {
+        const price = Number(exp.base_price);
+        return price >= filters.priceRange[0] && price <= filters.priceRange[1];
+      });
+    }
+
+    if (filters.partySize > 1) {
+      filtered = filtered.filter(exp =>
+        exp.min_party <= filters.partySize && exp.max_party >= filters.partySize
+      );
+    }
+
+    switch (filters.sortBy) {
+      case "price_asc":
+        filtered.sort((a, b) => Number(a.base_price) - Number(b.base_price));
+        break;
+      case "price_desc":
+        filtered.sort((a, b) => Number(b.base_price) - Number(a.base_price));
+        break;
+    }
+    return filtered;
+  }, [standaloneExperiences, filters]);
 
   /* ── Matching catégorie active avec V3_CATEGORIES ── */
   const currentV3Cat = V3_CATEGORIES.find(v3cat =>
@@ -209,7 +269,7 @@ const Category = () => {
         fallbackTitle={`${categoryName} - StayMakom`}
         fallbackDescription={introText}
       />
-      <V3Header />
+      <V3Header showModeToggle mode={mode} setMode={handleSetMode} />
 
       <main className="flex-1">
 
@@ -268,7 +328,7 @@ const Category = () => {
               return (
                 <button
                   key={v3cat.id}
-                  onClick={() => { if (dbSlug && !isActive) navigate(`/category/${dbSlug}`); }}
+                  onClick={() => { if (dbSlug && !isActive) navigate(`/category/${dbSlug}?mode=${mode}`); }}
                   className={cn(
                     "group relative flex flex-col items-center gap-2 flex-shrink-0 w-16 sm:w-[82px] py-2.5 px-1 rounded-2xl transition-all duration-200",
                     isDimmed ? "opacity-35" : "hover:-translate-y-0.5",
@@ -348,18 +408,18 @@ const Category = () => {
             <div>
               <div className="mb-4">
                 <h2 className="text-xl font-bold mb-1">
-                  {t(lang, 'experiencesAvailable')(filteredExperiences.length)}
+                  {t(lang, 'experiencesAvailable')(mode === "stay" ? filteredExperiences.length : filteredStandalone.length)}
                 </h2>
                 <p className="text-sm text-muted-foreground">
                   {t(lang, 'discoverExtraordinaryStays')}
                 </p>
               </div>
 
-              {experiencesLoading ? (
+              {(mode === "stay" ? experiencesLoading : standaloneLoading) ? (
                 <div className="text-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin text-[#ad1414] mx-auto" />
                 </div>
-              ) : filteredExperiences.length === 0 ? (
+              ) : (mode === "stay" ? filteredExperiences : filteredStandalone).length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground mb-4">{t(lang, 'noExperiencesMatch')}</p>
                   <Button
@@ -373,7 +433,7 @@ const Category = () => {
                     {t(lang, 'resetFilters')}
                   </Button>
                 </div>
-              ) : (
+              ) : mode === "stay" ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredExperiences.map(experience => {
                     const originalPrice = Number(experience.base_price);
@@ -388,12 +448,22 @@ const Category = () => {
                     );
                   })}
                 </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredStandalone.map((experience, idx) => (
+                    <StandaloneExperienceCard
+                      key={experience.id}
+                      experience={experience}
+                      index={idx}
+                    />
+                  ))}
+                </div>
               )}
             </div>
 
             {showMap && (
               <div className="hidden lg:block">
-                <ExperienceMap experiences={filteredExperiences} />
+                <ExperienceMap experiences={mode === "stay" ? filteredExperiences : filteredStandalone} />
               </div>
             )}
           </div>
