@@ -470,18 +470,25 @@ const TailoredRequestSection = ({ categories, ctaClassName, heroImage, kickerCla
                 </div>
 
                 {/* CTA */}
-                <Button
-                  type="submit"
-                  disabled={submitting}
-                  variant="cta"
-                  className="w-full rounded-full py-6 text-sm font-semibold uppercase tracking-[0.12em]"
-                >
-                  {submitting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    getCopy("Send my request", "שלחו את הבקשה שלי", "Envoyer ma demande")
-                  )}
-                </Button>
+                <div className="flex justify-center">
+                  <div className="relative inline-block">
+                    <span
+                      aria-hidden
+                      className="absolute inset-x-2 bottom-1.5 h-3 rounded-[60%_40%_70%_30%/40%_60%_30%_70%] -rotate-1 bg-[#ad1414]/40"
+                    />
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="group relative inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold uppercase tracking-[0.12em] text-foreground transition-all duration-200 ease-out hover:opacity-80 disabled:opacity-50 disabled:pointer-events-none"
+                    >
+                      {submitting ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        getCopy("Send my request", "שלחו את הבקשה שלי", "Envoyer ma demande")
+                      )}
+                    </button>
+                  </div>
+                </div>
 
                 <p className="text-[10px] text-muted-foreground/60 text-center leading-relaxed">
                   {getCopy(
@@ -523,19 +530,25 @@ const TailoredRequestSection = ({ categories, ctaClassName, heroImage, kickerCla
                 </p>
               </div>
 
-              <div className="space-y-3 max-w-xs mx-auto">
-                <Button
-                  onClick={() => setStep("step2")}
-                  variant="cta"
-                  className="w-full rounded-full py-5 text-sm font-semibold uppercase tracking-[0.12em] gap-2"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  {getCopy(
-                    "Help us curate my stay",
-                    "עזרו לנו לאצור את השהות שלי",
-                    "Affiner mon séjour"
-                  )}
-                </Button>
+              <div className="space-y-3 max-w-xs mx-auto flex flex-col items-center">
+                <div className="relative inline-block">
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-2 bottom-1.5 h-3 rounded-[60%_40%_70%_30%/40%_60%_30%_70%] -rotate-1 bg-[#ad1414]/40"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setStep("step2")}
+                    className="group relative inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold uppercase tracking-[0.12em] text-foreground transition-all duration-200 ease-out hover:opacity-80"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    {getCopy(
+                      "Help us curate my stay",
+                      "עזרו לנו לאצור את השהות שלי",
+                      "Affiner mon séjour"
+                    )}
+                  </button>
+                </div>
                 <button
                   type="button"
                   onClick={() => setDialogOpen(false)}
@@ -671,22 +684,29 @@ const TailoredRequestSection = ({ categories, ctaClassName, heroImage, kickerCla
                 </div>
 
                 {/* CTA */}
-                <Button
-                  type="button"
-                  onClick={handleStep2Submit}
-                  disabled={submitting}
-                  variant="cta"
-                  className="w-full rounded-full py-6 text-sm font-semibold uppercase tracking-[0.12em] gap-2"
-                >
-                  {submitting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4" />
-                      {getCopy("Refine my stay", "דייקו את השהות שלי", "Affiner mon séjour")}
-                    </>
-                  )}
-                </Button>
+                <div className="flex justify-center">
+                  <div className="relative inline-block">
+                    <span
+                      aria-hidden
+                      className="absolute inset-x-2 bottom-1.5 h-3 rounded-[60%_40%_70%_30%/40%_60%_30%_70%] -rotate-1 bg-[#ad1414]/40"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleStep2Submit}
+                      disabled={submitting}
+                      className="group relative inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold uppercase tracking-[0.12em] text-foreground transition-all duration-200 ease-out hover:opacity-80 disabled:opacity-50 disabled:pointer-events-none"
+                    >
+                      {submitting ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4" />
+                          {getCopy("Refine my stay", "דייקו את השהות שלי", "Affiner mon séjour")}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
 
                 <button
                   type="button"
