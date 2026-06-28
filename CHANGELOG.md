@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-06-28] — Correction : connexion Google ne connectait pas l'utilisateur
+
+### Ce qui a changé côté code
+- `src/components/auth/OAuthButtons.tsx` : l'URL de redirection après Google OAuth pointait vers la page d'accueil (`/`) au lieu de `/auth` — la page d'accueil ne sait pas traiter le code de connexion retourné par Google, donc la session n'était jamais établie. Corrigé vers `${window.location.origin}/auth`.
+- `src/integrations/supabase/client.ts` : ajout explicite de `detectSessionInUrl: true` et `flowType: 'pkce'` dans la configuration Supabase — garantit que le client détecte et échange correctement le code de connexion présent dans l'URL au retour de Google.
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- La connexion via Google semblait fonctionner (Google était bien contacté) mais l'utilisateur arrivait sur le site sans être connecté. La cause : mauvaise destination de retour après l'authentification Google, combinée à une configuration Supabase incomplète pour le protocole PKCE.
+
+---
+
 ## [2026-06-28] — Refonte mobile des pages d'expériences : barre de réservation unifiée
 
 ### Ce qui a changé côté code
