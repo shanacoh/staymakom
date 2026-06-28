@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Provision and fetch user role after state is set (deferred)
         if (session?.user) {
           setTimeout(() => {
-            fetchUserRole(session.user.id, session.user.email || "");
+            fetchUserRole(session.user.id, session.user.email || "", session.user.user_metadata);
           }, 0);
         } else {
           setRole(null);
@@ -64,25 +64,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const provisionUser = async (userId: string, userEmail: string) => {
+  const extractNames = (metadata: Record<string, unknown> | null | undefined) => {
+    const fullName = ([metadata?.display_name, metadata?.full_name, metadata?.name]
+      .map(v => (typeof v === "string" ? v.trim() : ""))
+      .find(v => v !== "") ?? "");
+    const spaceIdx = fullName.indexOf(" ");
+    return {
+      displayName: fullName,
+      firstName: spaceIdx === -1 ? fullName : fullName.slice(0, spaceIdx),
+      lastName: spaceIdx === -1 ? "" : fullName.slice(spaceIdx + 1),
+    };
+  };
+
+  const provisionUser = async (userId: string, userEmail: string, userMetadata?: Record<string, unknown>) => {
     try {
+      const { displayName, firstName, lastName } = extractNames(userMetadata);
+
       // 1. Ensure user_profiles exists
       const { data: existingProfile } = await supabase
         .from("user_profiles")
-        .select("user_id")
+        .select("user_id, display_name")
         .eq("user_id", userId)
         .maybeSingle();
 
       if (!existingProfile) {
         await supabase.from("user_profiles").insert({
           user_id: userId,
-          display_name: userEmail,
+          display_name: displayName || userEmail,
           phone: null,
           locale: "en",
           marketing_opt_in: false,
           gdpr_consent_at: null,
           tos_accepted_at: new Date().toISOString(),
         });
+      } else if (displayName && !existingProfile.display_name?.trim()) {
+        await supabase.from("user_profiles")
+          .update({ display_name: displayName })
+          .eq("user_id", userId);
       }
 
       // 2. Ensure user_roles exists
@@ -93,7 +111,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .maybeSingle();
 
       let userRole: AppRole = "customer";
-      
+
       if (!existingRole) {
         // Create default customer role
         await supabase.from("user_roles").insert({
@@ -115,8 +133,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (!existingCustomer) {
           await supabase.from("customers").insert({
             user_id: userId,
-            first_name: "",
-            last_name: "",
+            first_name: firstName,
+            last_name: lastName,
             default_party_size: 2,
             address_country: null,
             notes: null,
@@ -131,7 +149,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const fetchUserRole = async (userId: string, userEmail: string) => {
+  const fetchUserRole = async (userId: string, userEmail: string, userMetadata?: Record<string, unknown>) => {
     // Fast path: check if role already exists (true for all returning users)
     const { data } = await supabase
       .from("user_roles")
@@ -144,6 +162,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setRole(userRole);
       setRoles([userRole]);
 
+      if (userRole === "customer") {
+        const { displayName, firstName, lastName } = extractNames(userMetadata);
+
+        // Mettre à jour le display_name si vide (cas Google OAuth)
+        if (displayName) {
+          const { data: profile } = await supabase
+            .from("user_profiles")
+            .select("display_name")
+            .eq("user_id", userId)
+            .maybeSingle();
+          if (profile && !profile.display_name?.trim()) {
+            await supabase.from("user_profiles")
+              .update({ display_name: displayName })
+              .eq("user_id", userId);
+          }
+        }
+
+        // S'assurer que la fiche customers existe (le trigger DB ne la crée pas)
+        const { data: existingCustomer } = await supabase
+          .from("customers")
+          .select("user_id")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (!existingCustomer) {
+          await supabase.from("customers").insert({
+            user_id: userId,
+            first_name: firstName,
+            last_name: lastName,
+            default_party_size: 2,
+            address_country: null,
+            notes: null,
+          });
+        }
+      }
+
       const isMobile = window.innerWidth < 768;
       const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
       identifyUser(userId, {
@@ -153,7 +207,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
     } else {
       // Slow path: first-time user — provision all tables
-      const provisionedRole = await provisionUser(userId, userEmail);
+      const provisionedRole = await provisionUser(userId, userEmail, userMetadata);
       setRole(provisionedRole);
       setRoles([provisionedRole]);
     }

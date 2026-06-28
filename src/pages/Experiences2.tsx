@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { trackExperiencesListViewed } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
-import Header from "@/components/Header";
+import V3Header from "@/components/V3Header";
 import Footer from "@/components/Footer";
 import Experience2CardWithPrice from "@/components/Experience2CardWithPrice";
 import ExperienceCardSkeleton from "@/components/ExperienceCardSkeleton";
@@ -80,7 +80,7 @@ const Experiences2 = () => {
         descriptionEn="Discover all our curated hotel experiences across Israel"
         descriptionHe="גלו את כל חוויות המלון האצורות שלנו ברחבי ישראל"
       />
-      <Header />
+      <V3Header />
       
       <main className="flex-1">
         {/* Hero Section */}

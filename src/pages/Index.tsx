@@ -41,7 +41,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import Header from "@/components/Header";
+import V3Header from "@/components/V3Header";
 import Footer from "@/components/Footer";
 import CategoryCard from "@/components/CategoryCard";
 import RotatingText from "@/components/RotatingText";
@@ -293,17 +293,17 @@ const Index = () => {
   // Category display names mapping
   const getCategoryDisplay = (slug: string) => {
     const displayMap: Record<string, string> = {
-      'romantic': lang === 'he' ? t(lang, 'categoryRomantic') : t('en', 'categoryRomantic'),
-      'family': lang === 'he' ? t(lang, 'categoryFamily') : t('en', 'categoryFamily'),
-      'golden-age': lang === 'he' ? t(lang, 'categoryGoldenAge') : t('en', 'categoryGoldenAge'),
-      'nature': lang === 'he' ? t(lang, 'categoryNature') : t('en', 'categoryNature'),
-      'beyond-nature': lang === 'he' ? t(lang, 'categoryNature') : t('en', 'categoryNature'),
-      'taste': lang === 'he' ? t(lang, 'categoryTaste') : t('en', 'categoryTaste'),
-      'taste-affair': lang === 'he' ? t(lang, 'categoryTaste') : t('en', 'categoryTaste'),
-      'active': lang === 'he' ? t(lang, 'categoryActive') : t('en', 'categoryActive'),
-      'active-break': lang === 'he' ? t(lang, 'categoryActive') : t('en', 'categoryActive'),
-      'work-unplugged': lang === 'he' ? t(lang, 'categoryWorkUnplugged') : t('en', 'categoryWorkUnplugged'),
-      'mindful-reset': lang === 'he' ? t(lang, 'categoryMindfulReset') : t('en', 'categoryMindfulReset'),
+      'romantic': t(lang, 'categoryRomantic'),
+      'family': t(lang, 'categoryFamily'),
+      'golden-age': t(lang, 'categoryGoldenAge'),
+      'nature': t(lang, 'categoryNature'),
+      'beyond-nature': t(lang, 'categoryNature'),
+      'taste': t(lang, 'categoryTaste'),
+      'taste-affair': t(lang, 'categoryTaste'),
+      'active': t(lang, 'categoryActive'),
+      'active-break': t(lang, 'categoryActive'),
+      'work-unplugged': t(lang, 'categoryWorkUnplugged'),
+      'mindful-reset': t(lang, 'categoryMindfulReset'),
     };
     return displayMap[slug] || slug;
   };
@@ -321,7 +321,7 @@ const Index = () => {
         ogDescriptionHe={homepageSEO?.og_description_he}
         ogImage={homepageSEO?.og_image}
       />
-      <Header />
+      <V3Header />
 
       <main className="flex-1">
         {/* Hero Section */}

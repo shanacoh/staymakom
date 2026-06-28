@@ -114,19 +114,19 @@ const UserDropdown = ({ user, isTransparent, onSignOut }: UserDropdownProps) => 
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          className={`flex items-center justify-center h-8 w-8 rounded-full transition-all ${
+          className={`flex items-center justify-center h-[30px] w-[30px] rounded-full transition-all ${
             isTransparent
-              ? "ring-2 ring-white/30 hover:ring-white/60"
-              : "ring-2 ring-primary/20 hover:ring-primary/40"
+              ? "ring-2 ring-white/30 hover:ring-white/60 hover:bg-white/10"
+              : "ring-2 ring-[#ad1414]/20 hover:ring-[#ad1414]/40 hover:bg-muted"
           }`}
         >
-          <Avatar className="h-8 w-8">
+          <Avatar className="h-[30px] w-[30px]">
             {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} />}
             <AvatarFallback
               className={`text-xs font-medium ${
                 isTransparent
                   ? "bg-white/20 text-white"
-                  : "bg-primary/10 text-primary"
+                  : "bg-[#ad1414]/10 text-[#ad1414]"
               }`}
             >
               {initials}
@@ -137,14 +137,14 @@ const UserDropdown = ({ user, isTransparent, onSignOut }: UserDropdownProps) => 
       <PopoverContent
         align="end"
         sideOffset={8}
-        className="w-72 p-0 rounded-2xl shadow-xl border-border/30 overflow-hidden"
+        className="w-72 p-0 rounded-2xl shadow-xl border border-border/30 overflow-hidden"
       >
         {/* Header with gradient */}
         <div className="p-4 bg-gradient-to-br from-muted/60 via-muted/30 to-transparent border-b border-border/20">
           <div className="flex items-center gap-3">
-            <Avatar className="h-12 w-12 ring-2 ring-primary/20">
+            <Avatar className="h-12 w-12 ring-2 ring-[#ad1414]/20">
               {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} />}
-              <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+              <AvatarFallback className="bg-[#ad1414]/10 text-[#ad1414] font-semibold">
                 {initials}
               </AvatarFallback>
             </Avatar>

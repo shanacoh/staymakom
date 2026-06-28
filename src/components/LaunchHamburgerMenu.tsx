@@ -23,39 +23,25 @@ const LaunchHamburgerMenu = ({ isScrolled = false }: LaunchHamburgerMenuProps) =
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          size="icon"
-          className={`${!isScrolled ? "text-white hover:bg-white/10" : "hover:bg-foreground/5"}`}
+          className={`h-[30px] w-[30px] p-0 rounded-full ${!isScrolled ? "text-white hover:bg-white/10" : "hover:bg-muted"}`}
           aria-label="Open menu"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-[18px] w-[18px]" />
         </Button>
       </PopoverTrigger>
       <PopoverContent
         align="end"
-        className="w-[230px] p-2 bg-white border border-border/10 shadow-[0_4px_20px_rgba(0,0,0,0.08)] rounded-xl"
+        className="w-72 p-2 bg-white border border-border/30 shadow-xl rounded-2xl"
         sideOffset={8}
       >
         <nav className="flex flex-col" dir={isRTL ? "rtl" : "ltr"}>
-          {/* Explore Escapes with sub-items */}
-          <div className="px-4 py-3 text-[15px] text-foreground">
-            <span>{isRTL ? "גלה חוויות ›" : "Explore Escapes ›"}</span>
-          </div>
-          <div className={`${isRTL ? "mr-3 pr-2" : "ml-3 pl-2"}`}>
-            <Link
-              to="/launch/experiences?filter=adventure&context=launch"
-              onClick={handleNavClick}
-              className="px-4 py-2.5 text-[14px] text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-lg transition-colors block"
-            >
-              {isRTL ? "— הרפתקה" : "— Feeling Adventurous"}
-            </Link>
-            <Link
-              to="/launch/experiences?filter=romantic&context=launch"
-              onClick={handleNavClick}
-              className="px-4 py-2.5 text-[14px] text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-lg transition-colors block"
-            >
-              {isRTL ? "— בריחה רומנטית" : "— Romantic Escape"}
-            </Link>
-          </div>
+          <Link
+            to="/launch/experiences?context=launch"
+            onClick={handleNavClick}
+            className="px-4 py-3 text-[15px] text-foreground hover:bg-foreground/5 rounded-lg transition-colors"
+          >
+            {isRTL ? "גלה חוויות" : "Explore Escapes"}
+          </Link>
 
           <Link
             to="/gift-card"

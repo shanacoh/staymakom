@@ -389,14 +389,14 @@ export default function AuthPromptDialog({
           const header = tab === "forgot"
             ? { title: c.forgot.title, subtitle: "" }
             : c.headers[headerKey];
-          const HeaderIcon = context === "favorites" && tab !== "forgot" ? Heart : tab === "signup" ? UserPlus : User;
-          
+          const HeaderIcon = Heart;
+
           return (
-            <div className="pt-5 pb-3 px-5 text-center bg-gradient-to-b from-muted/50 to-transparent shrink-0">
-              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 mb-2">
-                <HeaderIcon className="h-5 w-5 text-primary" />
+            <div className="pt-5 pb-3 px-5 text-center shrink-0">
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[#ad1414]/10 mb-2">
+                <HeaderIcon className="h-5 w-5 text-[#ad1414]" />
               </div>
-              <h2 className="font-serif text-xl text-foreground">{header.title}</h2>
+              <h2 className="font-sans text-lg font-bold uppercase tracking-[-0.02em] text-foreground">{header.title}</h2>
               <p className="text-xs text-muted-foreground mt-1">{header.subtitle}</p>
             </div>
           );
@@ -437,7 +437,7 @@ export default function AuthPromptDialog({
           {tab === "login" && (
             <form onSubmit={handleLogin} className="space-y-3 animate-fade-in">
               <div className="space-y-1">
-                <Label htmlFor="login-email" className="text-xs font-medium">
+                <Label htmlFor="login-email" className="text-xs font-semibold uppercase tracking-[0.10em]">
                   {c.fields.email}
                 </Label>
                 <Input
@@ -446,11 +446,11 @@ export default function AuthPromptDialog({
                   value={loginData.email}
                   onChange={(e) => setLoginData((p) => ({ ...p, email: e.target.value }))}
                   disabled={loading}
-                  className="h-10 rounded-lg bg-muted/50 border-border/50 text-sm"
+                  className="h-10 rounded-xl bg-muted/50 border-border/50 text-sm"
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="login-password" className="text-xs font-medium">
+                <Label htmlFor="login-password" className="text-xs font-semibold uppercase tracking-[0.10em]">
                   {c.fields.password}
                 </Label>
                 <Input
@@ -459,7 +459,7 @@ export default function AuthPromptDialog({
                   value={loginData.password}
                   onChange={(e) => setLoginData((p) => ({ ...p, password: e.target.value }))}
                   disabled={loading}
-                  className="h-10 rounded-lg bg-muted/50 border-border/50 text-sm"
+                  className="h-10 rounded-xl bg-muted/50 border-border/50 text-sm"
                 />
               </div>
               <div className="flex justify-end">
@@ -472,10 +472,22 @@ export default function AuthPromptDialog({
                 </button>
               </div>
 
-              <Button type="submit" variant="cta" className="w-full h-10 text-sm mt-2" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {c.actions.login}
-              </Button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-10 mt-2 flex items-center justify-center hover:opacity-80 transition-opacity disabled:opacity-50"
+              >
+                <span className="relative inline-flex items-center gap-2">
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-0 bottom-0.5 h-3 rounded-[60%_40%_70%_30%/40%_60%_30%_70%] -rotate-1 bg-[#ad1414]/40"
+                  />
+                  {loading && <Loader2 className="relative h-4 w-4 animate-spin" />}
+                  <span className="relative text-sm font-semibold uppercase tracking-[0.12em] text-foreground">
+                    {c.actions.login}
+                  </span>
+                </span>
+              </button>
 
               {/* Toggle to signup */}
               <p className="text-xs text-muted-foreground text-center pt-3">
@@ -483,7 +495,7 @@ export default function AuthPromptDialog({
                 <button
                   type="button"
                   onClick={() => setTab("signup")}
-                  className="text-foreground font-medium underline hover:no-underline"
+                  className="text-[#ad1414] font-medium hover:underline"
                 >
                   {c.toggle.signUp}
                 </button>
@@ -496,7 +508,7 @@ export default function AuthPromptDialog({
             <form onSubmit={handleForgotPassword} className="space-y-3 animate-fade-in">
               <p className="text-xs text-muted-foreground text-center">{c.forgot.subtitle}</p>
               <div className="space-y-1">
-                <Label htmlFor="reset-email" className="text-xs font-medium">
+                <Label htmlFor="reset-email" className="text-xs font-semibold uppercase tracking-[0.10em]">
                   {c.fields.email}
                 </Label>
                 <Input
@@ -505,18 +517,30 @@ export default function AuthPromptDialog({
                   value={resetEmail}
                   onChange={(e) => setResetEmail(e.target.value)}
                   disabled={loading}
-                  className="h-10 rounded-lg bg-muted/50 border-border/50 text-sm"
+                  className="h-10 rounded-xl bg-muted/50 border-border/50 text-sm"
                 />
               </div>
-              <Button type="submit" variant="cta" className="w-full h-10 text-sm mt-2" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {c.actions.sendReset}
-              </Button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-10 mt-2 flex items-center justify-center hover:opacity-80 transition-opacity disabled:opacity-50"
+              >
+                <span className="relative inline-flex items-center gap-2">
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-0 bottom-0.5 h-3 rounded-[60%_40%_70%_30%/40%_60%_30%_70%] -rotate-1 bg-[#ad1414]/40"
+                  />
+                  {loading && <Loader2 className="relative h-4 w-4 animate-spin" />}
+                  <span className="relative text-sm font-semibold uppercase tracking-[0.12em] text-foreground">
+                    {c.actions.sendReset}
+                  </span>
+                </span>
+              </button>
               <p className="text-xs text-muted-foreground text-center pt-1">
                 <button
                   type="button"
                   onClick={() => setTab("login")}
-                  className="text-foreground font-medium underline hover:no-underline"
+                  className="text-[#ad1414] font-medium hover:underline"
                 >
                   {c.forgot.back}
                 </button>
@@ -530,7 +554,7 @@ export default function AuthPromptDialog({
               {/* Row 1: First + Last Name */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label htmlFor="signup-firstname" className="text-xs font-medium">
+                  <Label htmlFor="signup-firstname" className="text-xs font-semibold uppercase tracking-[0.10em]">
                     {c.fields.firstName} *
                   </Label>
                   <Input
@@ -539,11 +563,11 @@ export default function AuthPromptDialog({
                     value={signupData.firstName}
                     onChange={(e) => setSignupData((p) => ({ ...p, firstName: e.target.value }))}
                     disabled={loading}
-                    className="h-10 rounded-lg bg-muted/50 border-border/50 text-sm"
+                    className="h-10 rounded-xl bg-muted/50 border-border/50 text-sm"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="signup-lastname" className="text-xs font-medium">
+                  <Label htmlFor="signup-lastname" className="text-xs font-semibold uppercase tracking-[0.10em]">
                     {c.fields.lastName} *
                   </Label>
                   <Input
@@ -552,7 +576,7 @@ export default function AuthPromptDialog({
                     value={signupData.lastName}
                     onChange={(e) => setSignupData((p) => ({ ...p, lastName: e.target.value }))}
                     disabled={loading}
-                    className="h-10 rounded-lg bg-muted/50 border-border/50 text-sm"
+                    className="h-10 rounded-xl bg-muted/50 border-border/50 text-sm"
                   />
                 </div>
               </div>
@@ -560,7 +584,7 @@ export default function AuthPromptDialog({
               {/* Row 2: Phone + Country */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label htmlFor="signup-phone" className="text-xs font-medium">
+                  <Label htmlFor="signup-phone" className="text-xs font-semibold uppercase tracking-[0.10em]">
                     {c.fields.phone}
                   </Label>
                   <Input
@@ -569,11 +593,11 @@ export default function AuthPromptDialog({
                     value={signupData.phone}
                     onChange={(e) => setSignupData((p) => ({ ...p, phone: e.target.value }))}
                     disabled={loading}
-                    className="h-10 rounded-lg bg-muted/50 border-border/50 text-sm"
+                    className="h-10 rounded-xl bg-muted/50 border-border/50 text-sm"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="signup-country" className="text-xs font-medium">
+                  <Label htmlFor="signup-country" className="text-xs font-semibold uppercase tracking-[0.10em]">
                     {c.fields.country} *
                   </Label>
                   <Select
@@ -581,7 +605,7 @@ export default function AuthPromptDialog({
                     onValueChange={(v) => setSignupData((p) => ({ ...p, country: v }))}
                     disabled={loading}
                   >
-                    <SelectTrigger className="h-10 rounded-lg bg-muted/50 border-border/50 text-sm">
+                    <SelectTrigger className="h-10 rounded-xl bg-muted/50 border-border/50 text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -597,7 +621,7 @@ export default function AuthPromptDialog({
 
               {/* Email */}
               <div className="space-y-1">
-                <Label htmlFor="signup-email" className="text-xs font-medium">
+                <Label htmlFor="signup-email" className="text-xs font-semibold uppercase tracking-[0.10em]">
                   {c.fields.email} *
                 </Label>
                 <Input
@@ -606,13 +630,13 @@ export default function AuthPromptDialog({
                   value={signupData.email}
                   onChange={(e) => setSignupData((p) => ({ ...p, email: e.target.value }))}
                   disabled={loading}
-                  className="h-10 rounded-lg bg-muted/50 border-border/50 text-sm"
+                  className="h-10 rounded-xl bg-muted/50 border-border/50 text-sm"
                 />
               </div>
 
               {/* Password */}
               <div className="space-y-1">
-                <Label htmlFor="signup-password" className="text-xs font-medium">
+                <Label htmlFor="signup-password" className="text-xs font-semibold uppercase tracking-[0.10em]">
                   {c.fields.password} *
                 </Label>
                 <Input
@@ -621,13 +645,13 @@ export default function AuthPromptDialog({
                   value={signupData.password}
                   onChange={(e) => setSignupData((p) => ({ ...p, password: e.target.value }))}
                   disabled={loading}
-                  className="h-10 rounded-lg bg-muted/50 border-border/50 text-sm"
+                  className="h-10 rounded-xl bg-muted/50 border-border/50 text-sm"
                 />
               </div>
 
               {/* Interests */}
               <div className="space-y-2 pt-2">
-                <Label className="text-xs font-medium">{c.fields.interests}</Label>
+                <Label className="text-xs font-semibold uppercase tracking-[0.10em]">{c.fields.interests}</Label>
                 <div className="flex flex-wrap gap-2">
                   {INTERESTS.map((interest) => {
                     const selected = signupData.interests.includes(interest.id);
@@ -640,7 +664,7 @@ export default function AuthPromptDialog({
                         className={cn(
                           "inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
                           selected
-                            ? "bg-primary text-primary-foreground border-primary"
+                            ? "bg-[#ad1414] text-white border-[#ad1414]"
                             : "bg-muted/50 text-foreground border-border/50 hover:bg-muted"
                         )}
                       >
@@ -654,7 +678,7 @@ export default function AuthPromptDialog({
 
               {/* Referral Source */}
               <div className="space-y-2 pt-2">
-                <Label className="text-xs font-medium">{c.fields.referralSource}</Label>
+                <Label className="text-xs font-semibold uppercase tracking-[0.10em]">{c.fields.referralSource}</Label>
                 <div className="flex flex-wrap gap-2">
                   {REFERRAL_SOURCES.map((source) => {
                     const selected = signupData.referralSource === source.id;
@@ -667,7 +691,7 @@ export default function AuthPromptDialog({
                         className={cn(
                           "inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
                           selected
-                            ? "bg-primary text-primary-foreground border-primary"
+                            ? "bg-[#ad1414] text-white border-[#ad1414]"
                             : "bg-muted/50 text-foreground border-border/50 hover:bg-muted"
                         )}
                       >
@@ -682,12 +706,16 @@ export default function AuthPromptDialog({
               {/* Legal acceptance text */}
               <p className="text-xs text-muted-foreground text-center leading-relaxed pt-3">
                 {c.legal.prefix}{" "}
-                <Link to="/terms" className="text-primary hover:underline">{c.legal.terms}</Link>
+                <Link to="/terms" className="text-[#ad1414] hover:underline">{c.legal.terms}</Link>
                 {" "}{c.legal.and}{" "}
-                <Link to="/privacy" className="text-primary hover:underline">{c.legal.privacy}</Link>.
+                <Link to="/privacy" className="text-[#ad1414] hover:underline">{c.legal.privacy}</Link>.
               </p>
 
-              <Button type="submit" variant="cta" className="w-full h-10 text-sm mt-3" disabled={loading}>
+              <Button
+                type="submit"
+                className="w-full rounded-full bg-foreground text-background text-xs font-bold uppercase tracking-widest py-2.5 mt-3 hover:bg-foreground/90 transition-colors"
+                disabled={loading}
+              >
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {c.actions.signup}
               </Button>
@@ -698,7 +726,7 @@ export default function AuthPromptDialog({
                 <button 
                   type="button" 
                   onClick={() => setTab("login")} 
-                  className="text-foreground font-medium underline hover:no-underline"
+                  className="text-[#ad1414] font-medium hover:underline"
                 >
                   {c.toggle.signIn}
                 </button>

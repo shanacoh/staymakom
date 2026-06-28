@@ -17,7 +17,7 @@ import { DualPrice } from "@/components/ui/DualPrice";
 import { getBoardTypeLabel } from "@/services/hyperguest";
 import { analyzeCancellationPolicies } from "@/utils/cancellationPolicy";
 import { toast } from "sonner";
-import LaunchHeader from "@/components/LaunchHeader";
+import V3Header from "@/components/V3Header";
 import Footer from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
 
@@ -185,7 +185,7 @@ export default function BookingConfirmationPage() {
   if (isLoading) {
     return (
       <>
-        <LaunchHeader forceScrolled />
+        <V3Header />
         <div className="min-h-screen flex items-center justify-center">
           <p className="text-muted-foreground">{labels.loading}</p>
         </div>
@@ -197,7 +197,7 @@ export default function BookingConfirmationPage() {
   if (error || !booking) {
     return (
       <>
-        <LaunchHeader forceScrolled />
+        <V3Header />
         <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-4">
           <AlertCircle className="h-12 w-12 text-muted-foreground" />
           <h1 className="text-xl font-semibold">{labels.notFound}</h1>
@@ -297,20 +297,20 @@ export default function BookingConfirmationPage() {
         title={labels.title}
         description={labels.title}
       />
-      <LaunchHeader forceScrolled />
+      <V3Header />
       <main className="min-h-screen bg-background py-8 md:py-16 px-4">
         <div className="max-w-2xl mx-auto space-y-6">
           {/* Animated check icon */}
           <div className="flex flex-col items-center text-center gap-3">
             <div className={`h-16 w-16 rounded-full flex items-center justify-center animate-in zoom-in-50 duration-500 ${
-              isCancelled ? "bg-destructive/10" : isConfirmed ? "bg-emerald-100" : "bg-blue-100"
+              isCancelled ? "bg-destructive/10" : isConfirmed ? "bg-emerald-100" : "bg-amber-100"
             }`}>
               {isCancelled ? (
                 <XCircle className="h-8 w-8 text-destructive" />
               ) : isConfirmed ? (
                 <Check className="h-8 w-8 text-emerald-600" />
               ) : (
-                <Clock className="h-8 w-8 text-blue-600" />
+                <Clock className="h-8 w-8 text-amber-600" />
               )}
             </div>
             <h1 className="text-2xl md:text-3xl font-semibold">
@@ -331,7 +331,7 @@ export default function BookingConfirmationPage() {
           {/* On-request warning — hide if cancelled */}
           {isOnRequest && !isCancelled && (
             <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50 border">
-              <Clock className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
+              <Clock className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
               <p className="text-sm text-muted-foreground">{labels.onRequest}</p>
             </div>
           )}

@@ -45,7 +45,7 @@ const AdminCategories = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("categories")
-        .select("*, experiences(id)")
+        .select("*, experiences2(id)")
         .order("display_order", { ascending: true });
 
       if (error) throw error;
@@ -168,7 +168,7 @@ const AdminCategories = () => {
             <div className="bg-card border rounded-lg p-4">
               <div className="text-sm text-muted-foreground">Total Experiences</div>
               <div className="text-2xl font-bold text-primary">
-                {categories.reduce((acc, c) => acc + (c.experiences?.length || 0), 0)}
+                {categories.reduce((acc, c) => acc + (c.experiences2?.length || 0), 0)}
               </div>
             </div>
           </div>
@@ -196,7 +196,7 @@ const AdminCategories = () => {
               </TableHeader>
               <TableBody>
                 {categories.map((category, idx) => {
-                  const expCount = category.experiences?.length || 0;
+                  const expCount = category.experiences2?.length || 0;
                   const isEmptyPublished = category.status === "published" && expCount === 0;
 
                   return (

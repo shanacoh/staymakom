@@ -20,11 +20,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import RevolutPaymentWidget from "@/components/experience/RevolutPaymentWidget";
-import LaunchHeader from "@/components/LaunchHeader";
+import V3Header from "@/components/V3Header";
 import { LeadGuestForm, LeadGuestData, EMPTY_LEAD_GUEST, saveProfileFields } from "@/components/experience/LeadGuestForm";
 import AuthPromptDialog from "@/components/auth/AuthPromptDialog";
 import { useAuth } from "@/contexts/AuthContext";
@@ -54,6 +53,14 @@ export interface StandaloneCheckoutState {
   currency: string;
   lang: "en" | "he" | "fr";
   totalPrice: number;
+  selectedExtras?: Array<{
+    id: string;
+    name: string;
+    name_he: string | null;
+    price: number;
+    currency: string;
+    pricing_type: string;
+  }>;
 }
 
 type CheckoutStep = 2 | 3;
@@ -72,14 +79,36 @@ function getCurrencySymbol(currency: string): string {
 // Entry point — validates router state
 // ---------------------------------------------------------------------------
 
+const CART_TTL_MS = 2 * 60 * 60 * 1000; // 2 heures
+
 export default function StandaloneCheckout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as StandaloneCheckoutState | null;
+  const routerState = location.state as StandaloneCheckoutState | null;
+
+  // useState lazy init : s'exécute UNE SEULE FOIS au montage du composant.
+  // Priorité 1 : router state (navigation directe depuis StandaloneExperience).
+  // Priorité 2 : localStorage (rechargement de page ou problème de router state).
+  const [state] = useState<StandaloneCheckoutState | null>(() => {
+    if (routerState?.experienceId) return routerState;
+    try {
+      const saved = localStorage.getItem("staymakom_standalone_cart");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const savedAt = parsed.savedAt ? new Date(parsed.savedAt).getTime() : 0;
+        if (Date.now() - savedAt > CART_TTL_MS) {
+          localStorage.removeItem("staymakom_standalone_cart");
+          return null;
+        }
+        return parsed as StandaloneCheckoutState;
+      }
+    } catch {}
+    return null;
+  });
 
   React.useEffect(() => {
     if (!state?.experienceId) {
-      navigate("/", { replace: true });
+      navigate("/launch/experiences?mode=live", { replace: true });
     }
   }, [state, navigate]);
 
@@ -267,7 +296,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
   const stepLabels = [t.step2Title, t.step3Title];
 
   const inputStyle = {
-    backgroundColor: "#F5F0E8",
+    backgroundColor: "#FFFFFF",
     border: "1px solid #E8E0D4",
     borderRadius: "0px",
   };
@@ -374,6 +403,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
           customer_name: `${leadGuest.firstName.trim()} ${leadGuest.lastName.trim()}`,
           customer_email: leadGuest.email.trim(),
           customer_phone: leadGuest.phone.trim() || null,
+          selected_extras_ids: state.selectedExtras?.map((e) => e.id) ?? [],
           promo_code: appliedPromo ? {
             id: appliedPromo.id,
             code: appliedPromo.code,
@@ -456,64 +486,78 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
 
   // ── Sidebar summary (réutilisé dans step 2 et step 3) ─────────────────
   const BookingSummaryCard = () => (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <div className="flex items-start gap-3 mb-3">
-        {state.heroImage && (
-          <img
-            src={state.heroImage}
-            alt={expTitle}
-            className="w-16 h-16 object-cover shrink-0"
-          />
-        )}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate">{expTitle}</p>
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      {state.heroImage && (
+        <img
+          src={state.heroImage}
+          alt={expTitle}
+          className="w-full h-40 object-cover"
+        />
+      )}
+      <div className="p-4">
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+          {lang === "fr" ? "Votre réservation" : lang === "he" ? "ההזמנה שלך" : "Your booking"}
+        </p>
+        <p className="text-sm font-semibold leading-snug mb-3">{expTitle}</p>
+        <Separator className="mb-3" />
+        <div className="space-y-2.5">
+          <div className="flex justify-between gap-2">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5 shrink-0">{t.date}</span>
+            <span className="text-xs font-medium text-right capitalize">{dateLabel}</span>
+          </div>
+          {state.selectedSlot && (
+            <div className="flex justify-between gap-2">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5 shrink-0">{t.timeSlot}</span>
+              <span className="text-xs font-medium">{state.selectedSlot}</span>
+            </div>
+          )}
+          <div className="flex justify-between gap-2">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5 shrink-0">{t.participants}</span>
+            <span className="text-xs font-medium">{adultsLabel}{childrenLabel}</span>
+          </div>
         </div>
-      </div>
-      <Separator className="mb-3" />
-      <div className="space-y-2 text-xs">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">{t.date}</span>
-          <span className="font-medium text-right capitalize">{dateLabel}</span>
-        </div>
-        {state.selectedSlot && (
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">{t.timeSlot}</span>
-            <span className="font-medium">{state.selectedSlot}</span>
+        <Separator className="my-3" />
+        {state.selectedExtras && state.selectedExtras.length > 0 && (
+          <div className="space-y-1 text-xs text-muted-foreground mb-2">
+            {state.selectedExtras.map((extra) => {
+              const name = lang === "he" ? (extra.name_he || extra.name) : extra.name;
+              return (
+                <div key={extra.id} className="flex justify-between">
+                  <span>{name}</span>
+                  <span>+{currencySymbol}{extra.price.toFixed(0)}</span>
+                </div>
+              );
+            })}
           </div>
         )}
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">{t.participants}</span>
-          <span className="font-medium">{adultsLabel}{childrenLabel}</span>
-        </div>
-      </div>
-      <Separator className="my-3" />
-      {(promoDiscount > 0 || giftCardApplied > 0) && (
-        <div className="space-y-1 text-xs text-muted-foreground">
-          {promoDiscount > 0 && (
-            <div className="flex justify-between">
-              <span>{appliedPromo?.code} (-{appliedPromo?.discountPct}%)</span>
-              <span>-{currencySymbol}{promoDiscount}</span>
-            </div>
-          )}
-          {giftCardApplied > 0 && (
-            <div className="flex justify-between">
-              <span>{appliedGiftCard?.code}</span>
-              <span>-{currencySymbol}{giftCardApplied}</span>
-            </div>
-          )}
-        </div>
-      )}
-      <div className="flex justify-between items-center">
-        <span className="font-bold" style={{ color: "#1A1814", fontSize: "18px" }}>{t.total}</span>
-        <div className="text-right">
-          {(promoDiscount > 0 || giftCardApplied > 0) && (
-            <span className="text-sm text-muted-foreground line-through mr-2">
-              {currencySymbol}{state.totalPrice.toFixed(0)}
+        {(promoDiscount > 0 || giftCardApplied > 0) && (
+          <div className="space-y-1 text-xs text-muted-foreground mb-2">
+            {promoDiscount > 0 && (
+              <div className="flex justify-between">
+                <span>{appliedPromo?.code} (-{appliedPromo?.discountPct}%)</span>
+                <span>-{currencySymbol}{promoDiscount}</span>
+              </div>
+            )}
+            {giftCardApplied > 0 && (
+              <div className="flex justify-between">
+                <span>{appliedGiftCard?.code}</span>
+                <span>-{currencySymbol}{giftCardApplied}</span>
+              </div>
+            )}
+          </div>
+        )}
+        <div className="flex justify-between items-center pt-1">
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{t.total}</span>
+          <div className="text-right">
+            {(promoDiscount > 0 || giftCardApplied > 0) && (
+              <span className="text-sm text-muted-foreground line-through mr-2">
+                {currencySymbol}{state.totalPrice.toFixed(0)}
+              </span>
+            )}
+            <span className="font-bold text-xl" style={{ color: "#1A1814" }}>
+              {currencySymbol}{finalTotal.toFixed(0)}
             </span>
-          )}
-          <span className="font-bold" style={{ color: "#1A1814", fontSize: "18px" }}>
-            {currencySymbol}{finalTotal.toFixed(0)}
-          </span>
+          </div>
         </div>
       </div>
     </div>
@@ -522,9 +566,9 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
   // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen flex flex-col bg-background" dir={lang === "he" ? "rtl" : "ltr"}>
-      <LaunchHeader forceScrolled />
+      <V3Header />
 
-      <main className="flex-1 w-full">
+      <main className="flex-1 w-full pt-14">
 
         {/* Barre supérieure avec progression — identique à Checkout.tsx */}
         <div className="border-b border-border bg-card">
@@ -583,7 +627,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
             <div className="grid md:grid-cols-[1fr_320px] gap-6">
 
               {/* Colonne gauche */}
-              <div className="space-y-6">
+              <div className="flex flex-col gap-6">
 
                 {/* Récap mobile */}
                 <div className="md:hidden">
@@ -609,7 +653,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                         variant="outline"
                         size="sm"
                         className="flex-1 text-xs"
-                        style={{ borderRadius: "0px", border: "1px solid #1A1814" }}
+                        style={{ borderRadius: "10px", border: "1px solid #1A1814" }}
                         onClick={() => setAuthDialog({ open: true, tab: "login", context: "account" })}
                       >
                         {lang === "fr" ? "Se connecter" : lang === "he" ? "התחבר" : "Sign in"}
@@ -617,7 +661,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                       <Button
                         size="sm"
                         className="flex-1 text-xs bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
-                        style={{ borderRadius: "0px" }}
+                        style={{ borderRadius: "10px" }}
                         onClick={() => setAuthDialog({ open: true, tab: "signup", context: "signup" })}
                       >
                         {lang === "fr" ? "Créer un compte" : lang === "he" ? "צור חשבון" : "Create account"}
@@ -635,125 +679,112 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                 />
 
                 {/* Demandes spéciales */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">{t.specialRequests}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Textarea
-                      value={guestSpecialRequests}
-                      onChange={(e) => setGuestSpecialRequests(e.target.value)}
-                      placeholder={t.specialRequestsPlaceholder}
-                      rows={3}
-                      style={{ ...inputStyle, resize: "none" }}
-                    />
-                  </CardContent>
-                </Card>
+                <div className="space-y-2">
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{t.specialRequests}</p>
+                  <Textarea
+                    value={guestSpecialRequests}
+                    onChange={(e) => setGuestSpecialRequests(e.target.value)}
+                    placeholder={t.specialRequestsPlaceholder}
+                    rows={3}
+                    style={{ ...inputStyle, resize: "none" }}
+                  />
+                </div>
 
                 {/* Carte cadeau */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">{t.giftCard}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {appliedGiftCard ? (
-                      <div className="flex items-center justify-between rounded px-3 py-2 bg-emerald-50 border border-emerald-200">
-                        <span className="text-sm text-emerald-800 font-medium">
-                          {appliedGiftCard.code} — -{currencySymbol}{giftCardApplied}
-                        </span>
-                        <button
-                          type="button"
-                          className="text-xs text-muted-foreground underline ml-3"
-                          onClick={() => setAppliedGiftCard(null)}
+                <div className="space-y-2">
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{t.giftCard}</p>
+                  {appliedGiftCard ? (
+                    <div className="flex items-center justify-between px-3 py-2 bg-emerald-50 border border-emerald-200">
+                      <span className="text-sm text-emerald-800 font-medium">
+                        {appliedGiftCard.code} — -{currencySymbol}{giftCardApplied}
+                      </span>
+                      <button
+                        type="button"
+                        className="text-xs text-muted-foreground underline ml-3"
+                        onClick={() => setAppliedGiftCard(null)}
+                      >
+                        {lang === "fr" ? "Retirer" : lang === "he" ? "הסר" : "Remove"}
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex gap-2">
+                        <Input
+                          value={giftCardCode}
+                          onChange={(e) => { setGiftCardCode(e.target.value); setGiftCardError(null); }}
+                          onKeyDown={(e) => e.key === "Enter" && handleApplyGiftCard()}
+                          placeholder={t.giftCardPlaceholder}
+                          style={inputStyle}
+                          className="flex-1"
+                        />
+                        <Button
+                          variant="outline"
+                          style={{ borderRadius: "10px", border: "1px solid #1A1814" }}
+                          disabled={isValidatingGiftCard || !giftCardCode.trim()}
+                          onClick={handleApplyGiftCard}
                         >
-                          {lang === "fr" ? "Retirer" : lang === "he" ? "הסר" : "Remove"}
-                        </button>
+                          {isValidatingGiftCard ? <Loader2 className="h-4 w-4 animate-spin" /> : t.apply}
+                        </Button>
                       </div>
-                    ) : (
-                      <>
-                        <div className="flex gap-2">
-                          <Input
-                            value={giftCardCode}
-                            onChange={(e) => { setGiftCardCode(e.target.value); setGiftCardError(null); }}
-                            onKeyDown={(e) => e.key === "Enter" && handleApplyGiftCard()}
-                            placeholder={t.giftCardPlaceholder}
-                            style={inputStyle}
-                            className="flex-1"
-                          />
-                          <Button
-                            variant="outline"
-                            style={{ borderRadius: "0px", border: "1px solid #1A1814" }}
-                            disabled={isValidatingGiftCard || !giftCardCode.trim()}
-                            onClick={handleApplyGiftCard}
-                          >
-                            {isValidatingGiftCard ? <Loader2 className="h-4 w-4 animate-spin" /> : t.apply}
-                          </Button>
-                        </div>
-                        {giftCardError && <p className="text-sm text-destructive">{giftCardError}</p>}
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
+                      {giftCardError && <p className="text-sm text-destructive">{giftCardError}</p>}
+                    </>
+                  )}
+                </div>
 
                 {/* Code promo */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">{t.promoCode}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {appliedPromo ? (
-                      <div className="flex items-center justify-between rounded px-3 py-2 bg-emerald-50 border border-emerald-200">
-                        <span className="text-sm text-emerald-800 font-medium">
-                          {appliedPromo.code} — -{appliedPromo.discountPct}%
-                          {" "}(-{currencySymbol}{promoDiscount})
-                        </span>
-                        <button
-                          type="button"
-                          className="text-xs text-muted-foreground underline ml-3"
-                          onClick={() => setAppliedPromo(null)}
+                <div className="space-y-2">
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{t.promoCode}</p>
+                  {appliedPromo ? (
+                    <div className="flex items-center justify-between px-3 py-2 bg-emerald-50 border border-emerald-200">
+                      <span className="text-sm text-emerald-800 font-medium">
+                        {appliedPromo.code} — -{appliedPromo.discountPct}%
+                        {" "}(-{currencySymbol}{promoDiscount})
+                      </span>
+                      <button
+                        type="button"
+                        className="text-xs text-muted-foreground underline ml-3"
+                        onClick={() => setAppliedPromo(null)}
+                      >
+                        {lang === "fr" ? "Retirer" : lang === "he" ? "הסר" : "Remove"}
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex gap-2">
+                        <Input
+                          value={promoCodeValue}
+                          onChange={(e) => { setPromoCodeValue(e.target.value); setPromoError(null); }}
+                          onKeyDown={(e) => e.key === "Enter" && handleApplyPromo()}
+                          placeholder={t.promoCodePlaceholder}
+                          style={inputStyle}
+                          className="flex-1"
+                        />
+                        <Button
+                          variant="outline"
+                          style={{ borderRadius: "10px", border: "1px solid #1A1814" }}
+                          disabled={isValidatingPromo || !promoCodeValue.trim()}
+                          onClick={handleApplyPromo}
                         >
-                          {lang === "fr" ? "Retirer" : lang === "he" ? "הסר" : "Remove"}
-                        </button>
+                          {isValidatingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : t.apply}
+                        </Button>
                       </div>
-                    ) : (
-                      <>
-                        <div className="flex gap-2">
-                          <Input
-                            value={promoCodeValue}
-                            onChange={(e) => { setPromoCodeValue(e.target.value); setPromoError(null); }}
-                            onKeyDown={(e) => e.key === "Enter" && handleApplyPromo()}
-                            placeholder={t.promoCodePlaceholder}
-                            style={inputStyle}
-                            className="flex-1"
-                          />
-                          <Button
-                            variant="outline"
-                            style={{ borderRadius: "0px", border: "1px solid #1A1814" }}
-                            disabled={isValidatingPromo || !promoCodeValue.trim()}
-                            onClick={handleApplyPromo}
-                          >
-                            {isValidatingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : t.apply}
-                          </Button>
-                        </div>
-                        {promoError && <p className="text-sm text-destructive">{promoError}</p>}
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
+                      {promoError && <p className="text-sm text-destructive">{promoError}</p>}
+                    </>
+                  )}
+                </div>
 
                 <Separator />
 
                 {/* Navigation */}
-                <div className={cn("flex gap-3 pt-2", lang === "he" && "flex-row-reverse")}>
-                  <Button
-                    variant="outline"
-                    className="shrink-0"
-                    style={{ height: "52px", borderRadius: "0px", border: "1px solid #1A1814" }}
+                <div className={cn("flex items-center gap-3 pt-2", lang === "he" && "flex-row-reverse")}>
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0 py-2"
                     onClick={() => navigate(`/standalone-experience/${state.experienceSlug}?context=launch`)}
                   >
-                    {lang === "he" ? <ChevronRight className="h-4 w-4 ml-1" /> : <ChevronLeft className="h-4 w-4 mr-1" />}
+                    {lang === "he" ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
                     {t.back}
-                  </Button>
+                  </button>
                   <Button
                     className={cn(
                       "flex-1 uppercase tracking-[0.12em] text-[13px] transition-all duration-200",
@@ -761,7 +792,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                         ? "bg-[#1A1814] text-white hover:bg-[#1A1814]/90 hover:scale-[1.01] cursor-pointer"
                         : "bg-[#C8C0B4] text-white cursor-not-allowed hover:bg-[#C8C0B4]"
                     )}
-                    style={{ height: "52px", borderRadius: "0px" }}
+                    style={{ height: "52px", borderRadius: "10px" }}
                     disabled={!isGuestValid}
                     onClick={handleContinueToStep3}
                   >
@@ -785,41 +816,43 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
             <div className="space-y-6 max-w-2xl mx-auto">
 
               {/* Détails de la réservation */}
-              <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-                <p className="text-sm font-semibold">{t.bookingDetails}</p>
-                <p className="text-sm font-medium">{expTitle}</p>
+              <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">{t.bookingDetails}</p>
+                  <p className="text-sm font-semibold">{expTitle}</p>
+                </div>
                 <Separator />
-                <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="grid grid-cols-2 gap-y-4 gap-x-6">
                   <div>
-                    <span className="text-muted-foreground">{t.date}</span>
-                    <p className="font-medium mt-0.5 capitalize">{dateLabel}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{t.date}</p>
+                    <p className="text-sm font-medium capitalize">{dateLabel}</p>
                   </div>
                   {state.selectedSlot && (
                     <div>
-                      <span className="text-muted-foreground">{t.timeSlot}</span>
-                      <p className="font-medium mt-0.5">{state.selectedSlot}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{t.timeSlot}</p>
+                      <p className="text-sm font-medium">{state.selectedSlot}</p>
                     </div>
                   )}
                   <div>
-                    <span className="text-muted-foreground">{t.participants}</span>
-                    <p className="font-medium mt-0.5">{adultsLabel}{childrenLabel}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{t.participants}</p>
+                    <p className="text-sm font-medium">{adultsLabel}{childrenLabel}</p>
                   </div>
                 </div>
               </div>
 
               {/* Informations client */}
-              <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-                <p className="text-sm font-semibold">{t.guestDetails}</p>
-                <div className="text-xs space-y-1">
-                  <p className="font-medium">{leadGuest.firstName} {leadGuest.lastName}</p>
-                  <p className="text-muted-foreground">{leadGuest.email}</p>
-                  {leadGuest.phone && <p className="text-muted-foreground">{leadGuest.phone}</p>}
-                  {guestSpecialRequests.trim() && <p className="text-muted-foreground italic">{guestSpecialRequests.trim()}</p>}
+              <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{t.guestDetails}</p>
+                <div className="space-y-0.5">
+                  <p className="text-sm font-semibold">{leadGuest.firstName} {leadGuest.lastName}</p>
+                  <p className="text-xs text-muted-foreground">{leadGuest.email}</p>
+                  {leadGuest.phone && <p className="text-xs text-muted-foreground">{leadGuest.phone}</p>}
+                  {guestSpecialRequests.trim() && <p className="text-xs text-muted-foreground italic mt-1">"{guestSpecialRequests.trim()}"</p>}
                 </div>
               </div>
 
               {/* Total */}
-              <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+              <div className="rounded-xl border border-border bg-card p-5 space-y-2">
                 {(promoDiscount > 0 || giftCardApplied > 0) && (
                   <div className="space-y-1 text-xs text-muted-foreground">
                     {promoDiscount > 0 && (
@@ -836,15 +869,15 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                     )}
                   </div>
                 )}
-                <div className="flex justify-between items-center">
-                  <span className="font-bold" style={{ color: "#1A1814", fontSize: "18px" }}>{t.total}</span>
+                <div className="flex justify-between items-center pt-1">
+                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{t.total}</span>
                   <div className="text-right">
                     {(promoDiscount > 0 || giftCardApplied > 0) && (
                       <span className="text-sm text-muted-foreground line-through mr-2">
                         {currencySymbol}{state.totalPrice.toFixed(0)}
                       </span>
                     )}
-                    <span className="font-bold" style={{ color: "#1A1814", fontSize: "18px" }}>
+                    <span className="font-bold text-2xl" style={{ color: "#1A1814" }}>
                       {currencySymbol}{finalTotal.toFixed(0)}
                     </span>
                   </div>
@@ -883,19 +916,18 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
 
               {/* Navigation — desktop */}
               <div className="pt-2 pb-8">
-                <div className={cn("hidden md:flex gap-3", lang === "he" && "flex-row-reverse")}>
-                  <Button
-                    variant="outline"
-                    className="shrink-0 uppercase tracking-[0.12em] text-[13px]"
-                    style={{ height: "52px", borderRadius: "0px", border: "1px solid #1A1814", color: "#1A1814" }}
+                <div className={cn("hidden md:flex items-center gap-4", lang === "he" && "flex-row-reverse")}>
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0 py-2"
                     onClick={() => { setStep(2); setPaymentStatus("idle"); setPaymentErrorMessage(null); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                   >
-                    {lang === "he" ? <ChevronRight className="h-4 w-4 ml-1" /> : <ChevronLeft className="h-4 w-4 mr-1" />}
+                    {lang === "he" ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
                     {t.back}
-                  </Button>
+                  </button>
                   <Button
                     className="flex-1 uppercase tracking-[0.12em] text-[13px] bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
-                    style={{ height: "52px", borderRadius: "0px" }}
+                    style={{ height: "52px", borderRadius: "10px" }}
                     disabled={isBookingLoading || paymentStatus === "creating" || paymentStatus === "failed"}
                     onClick={handleBook}
                   >
@@ -912,7 +944,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                 <div className="md:hidden space-y-3">
                   <Button
                     className="w-full uppercase tracking-[0.12em] text-[13px] bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
-                    style={{ height: "52px", borderRadius: "0px" }}
+                    style={{ height: "52px", borderRadius: "10px" }}
                     disabled={isBookingLoading || paymentStatus === "creating" || paymentStatus === "failed"}
                     onClick={handleBook}
                   >

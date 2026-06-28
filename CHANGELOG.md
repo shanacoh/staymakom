@@ -6,6 +6,143 @@
 
 ---
 
+## [2026-06-28] — Refonte UI/UX des pages de réservation (étapes 2 et 3)
+
+### Ce qui a changé côté code
+- `src/pages/StandaloneCheckout.tsx` : refonte visuelle des étapes 2 et 3 (mode expérience seule)
+- `src/pages/Checkout.tsx` : mêmes améliorations pour le mode hôtel + expérience
+- Suppression des imports `Card/CardContent/CardHeader/CardTitle` devenus inutiles dans StandaloneCheckout
+
+### Ce qui a changé côté base de données
+- Aucune modification de base de données
+
+### Pourquoi ce changement
+- Amélioration de l'expérience de réservation pour mieux coller à la nouvelle direction artistique de StayMakom
+- **Récapitulatif (sidebar)** : image en bannière pleine largeur, labels uppercase discrets (DATE, PARTICIPANTS…), montant total plus mis en avant
+- **Sections "Demandes spéciales / Carte cadeau / Code promo"** : remplacement des Card imbriquées par des sections plates — moins de bruit visuel
+- **Étape 3** : blocs plus aérés, hiérarchie label/valeur lisible au premier coup d'œil
+- **Bouton "Retour"** : transformé en lien texte discret pour créer une vraie hiérarchie primaire/secondaire
+- **Fond des champs de saisie** : blanc pur (#FFFFFF) au lieu du beige crème (#F5F0E8)
+- **Arrondi des boutons CTA** (Continuer, Appliquer, Payer & Réserver) : 10px au lieu de 0px
+- **Espacement sous le header fixe** : `pt-14` ajouté sur `<main>` pour éviter que le contenu soit masqué par le header fixe
+- **Alignement gauche/droite** : `space-y-6` remplacé par `flex flex-col gap-6` pour que la colonne formulaire s'aligne correctement avec la colonne récapitulatif
+
+---
+
+## [2026-06-28] — Correction bug : bouton "Continuer" expérience standalone redirige vers la home
+
+### Ce qui a changé côté code
+- `src/pages/StandaloneExperience.tsx` : le bouton "Continuer →" sauvegarde maintenant les données de réservation dans le `localStorage` du navigateur avant de naviguer vers la page de paiement. Ajout de `type="button"` pour prévenir tout comportement inattendu.
+- `src/pages/StandaloneCheckout.tsx` : remplacement du mécanisme de lecture des données (`useMemo` → `useState` avec initialisation lazy). La page lit les données exactement une fois à son ouverture, en cherchant d'abord dans l'état de navigation React Router, puis dans le `localStorage` en fallback. La redirection d'urgence pointe désormais vers `/launch/experiences?mode=live` (liste des expériences) plutôt que vers la home `/`.
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- Cliquer sur "Continuer →" dans la page d'une expérience standalone redirigait l'utilisateur vers la home au lieu d'ouvrir la page de paiement. Les données de réservation (date, participants, prix) n'arrivaient pas correctement à la page suivante. La double stratégie localStorage + router state rend le transfert de données fiable quelle que soit la cause du problème initial.
+
+---
+
+## [2026-06-28] — Panneau de réservation (expérience seule) : refonte UI selon nouvelle DA
+
+### Ce qui a changé côté code
+- `src/pages/StandaloneExperience.tsx` : mise à jour visuelle de la fonction `renderBookingPanel()` uniquement
+  - Icônes Participants / Date / Créneau passées en rouge bordeaux `#ad1414`
+  - Boutons +/− : hover rose pâle + bord rouge au survol (au lieu de gris neutre)
+  - Calendrier : jour sélectionné en rouge bordeaux (au lieu de bleu marine), suppression du carré doré sur la cellule, indicateur "aujourd'hui" en rose pâle
+  - Créneaux horaires : sélectionné en rouge bordeaux, hover en rose pâle
+  - Bouton "Continuer" : rouge bordeaux plein avec micro-élévation au hover
+  - Conteneur du panneau : ombre légère ajoutée (`shadow-medium`)
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- Aligner le panneau de réservation des expériences standalone avec la nouvelle direction artistique du site (rouge bordeaux `#ad1414` comme couleur signature, remplace l'ancien bleu marine primary)
+
+---
+
+## [2026-06-28] — Header unifié : déploiement du V3Header sur tout le site
+
+### Ce qui a changé côté code
+- `src/components/V3Header.tsx` : ajout de la prop `showModeToggle` (optionnelle, défaut `false`) pour n'afficher le toggle "Avec Hôtel / Expériences seules" que sur `/v3` ; lien du logo modifié (`/v3` → `/`) ; redirection après déconnexion modifiée (`/v3` → `/`)
+- **28 pages publiques** : remplacement de l'ancien `<Header />` ou `<LaunchHeader />` par `<V3Header />` — toutes les pages du site partagent maintenant le même header visuel (fond blanc fixe, popup langue/devise, icône globe, compte, favoris)
+- `src/pages/IndexV3.tsx` : mise à jour pour passer `showModeToggle` — seule page qui conserve le toggle
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- Le header de `/v3` avait été amélioré visuellement (design plus compact, popup langue avec effet blob). L'objectif était de l'appliquer à l'ensemble du site pour assurer une cohérence visuelle totale, sans toucher aux flux de réservation ni de paiement
+
+---
+
+## [2026-06-28] — Page 404 : refonte visuelle alignée DA /v3
+
+### Ce qui a changé côté code
+- `src/pages/NotFound.tsx` : réécriture complète — remplacement de l'ancien header/footer générique par `V3Header` + `LaunchFooter` + `MobileBottomNav`, hero image désert/route avec le "404" en rouge #ad1414 superposé, message de marque trilingue (EN/FR/HE) dans le ton poétique StayMakom, CTA `rounded-full` inversé au survol identique aux boutons de la page /v3
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- La page 404 affichait encore l'ancienne DA du site (header bleu, fond gris, texte anglais générique). Elle a été alignée avec la DA de la page /v3 pour que même les pages d'erreur restent dans l'univers visuel de la marque
+
+---
+
+## [2026-06-28] — Page expériences launch : bandeau catégories V3 avec icônes et descriptions
+
+### Ce qui a changé côté code
+- `src/pages/LaunchExperiences.tsx` : remplacement du toggle 2-boutons (Adventure / Romantic) par le bandeau des 5 catégories V3 (Romantic Escape, Family Fun, Foody Discovery, Land of Stories, Nature & Outdoor) — icônes PNG, chips interactives avec fond rouge au survol/sélection, grande icône PNG colorée en rouge au-dessus du titre, descriptions courtes par catégorie dans 3 langues (EN/FR/HE), filtrage dynamique des expériences selon la catégorie cliquée, URL mise à jour (`?filter=romantic-escape&context=launch`, etc.)
+- `src/components/V3Header.tsx` : popup langue élargi (w-48 → w-72), menu hamburger visible dès `sm:` au lieu de `md:`
+- `src/components/auth/AccountBubble.tsx` : ajustement hover (`foreground/5` → `muted`), popup compte harmonisée (w-80 → w-72, border ajoutée)
+- `src/components/auth/UserDropdown.tsx` / `LaunchHamburgerMenu.tsx` : petits ajustements visuels du header
+
+### Ce qui a changé côté base de données
+- Aucun changement — les descriptions de catégories sont codées en fallback côté front ; si le champ `launch_description` est renseigné dans la DB, il prend automatiquement le dessus
+
+### Pourquoi ce changement
+- Unifier l'expérience de navigation entre la page /v3 et la page /launch/experiences : même système de chips catégories, même DA rouge #ad1414, même logique d'icônes PNG
+
+---
+
+## [2026-06-28] — Popup et page Sign In : refonte visuelle alignée /v3
+
+### Ce qui a changé côté code
+- `src/components/auth/AccountBubble.tsx` : icône cœur rouge (#ad1414), titre Inter bold uppercase, blob rouge calé sur le texte "Sign In", bouton "Create Account" en pill sombre (rounded-full)
+- `src/components/auth/AuthPromptDialog.tsx` : même traitement (cœur rouge, titre Inter uppercase, blob sur "Continue", pill sur "Create Account"), labels en uppercase, champs en rounded-xl, liens en rouge
+- `src/pages/Auth.tsx` : refonte complète — plus de layout split gauche/droite, image hero /v3 (`hero-road-desert.jpg`) en fond plein écran, carte blanche centrée identique au popup, Inter partout, blob sur "Sign In", pill sur "Create Account"
+- `src/components/V3Header.tsx` : intégration de l'AccountBubble et de l'AuthPromptDialog dans le header /v3
+- `src/components/FAQSection.tsx` : nettoyage d'imports inutilisés
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- Aligner visuellement les deux points d'entrée (popup et page dédiée) avec la direction artistique de la page /v3 : rouge désaturé #ad1414, Inter bold uppercase, blob décoratif, pill CTA
+
+---
+
+## [2026-06-26] — Pages expériences : unification design et footer compact
+
+### Ce qui a changé côté code
+- `src/components/experience-test/HeroSection.tsx` : suppression de "Feeling Adventurous", breadcrumb unifié (Home > Catégorie > Titre), icône PNG de la catégorie colorée en rouge désaturé avec animation hover, "Curated by STAYMAKOM" en rouge désaturé
+- `src/pages/StandaloneExperience.tsx` : ajout de la catégorie (nom, slug, icône) depuis Supabase, transmise à HeroSection ; utilise désormais `OtherStandaloneExperiences` au lieu de `OtherExperiences2`
+- `src/pages/Experience2.tsx` : passage de `categoryIcon` à HeroSection ; footer remplacé par `LaunchFooter` (footer compact sombre) à la place du grand footer colonnes
+- `src/components/experience-test/OtherExperiences2.tsx` : ajout des badges sous les cartes dans la section "autres expériences"
+- `src/components/experience-test/OtherStandaloneExperiences.tsx` : nouveau composant créé — affiche uniquement des expériences standalone dans la section "autres expériences" des pages experience only
+- `src/components/experience/BookingPanel2.tsx` : titre "Book this experience" masqué, padding ajouté au-dessus du sélecteur de participants, bouton CTA passé en noir avec hover gris foncé
+- `src/components/experience-test/ExtrasSection2.tsx` : icônes extras en rouge désaturé (`cta-foreground/52`) au lieu du bleu, fond en dégradé rouge/beige
+- `src/components/experience-test/StandaloneExtrasSection.tsx` : mêmes changements couleur que ExtrasSection2
+
+### Ce qui a changé côté base de données
+- Aucun changement — la catégorie est lue depuis la table existante `categories` via la jointure déjà en place
+
+### Pourquoi ce changement
+- Unifier le design des deux types de pages expérience (avec hôtel et sans hôtel) pour une identité visuelle cohérente ; remplacer le grand footer générique par le footer compact de la page /v3 sur les pages expériences+hôtel
+
+---
+
 ## [2026-06-26] — Cartes d'expériences : badges auto limités à Casher et Enfants dès X ans
 
 ### Ce qui a changé côté code

@@ -128,8 +128,8 @@ const StandaloneExtrasSection = ({
                 }
               `}
             >
-              <div className="w-12 h-12 rounded-xl mb-3 flex items-center justify-center bg-gradient-to-br from-primary/5 via-muted/30 to-primary/10">
-                <IconComponent size={26} weight="duotone" className="text-primary/60" />
+              <div className="w-12 h-12 rounded-xl mb-3 flex items-center justify-center bg-gradient-to-br from-cta-foreground/5 via-muted/30 to-cta-foreground/10">
+                <IconComponent size={26} weight="duotone" className="text-cta-foreground/52" />
               </div>
 
               <div className="flex-1 flex items-start">

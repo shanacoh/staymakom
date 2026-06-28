@@ -21,8 +21,8 @@ import ExtrasSection2, { type SelectedExtra } from "@/components/experience-test
 import ShareWithFriendsSection from "@/components/experience/ShareWithFriendsSection";
 import OtherExperiences2 from "@/components/experience-test/OtherExperiences2";
 import WhatsIncludedPhotos2 from "@/components/experience-test/WhatsIncludedPhotos2";
-import Header from "@/components/Header";
-import LaunchHeader from "@/components/LaunchHeader";
+
+import V3Header from "@/components/V3Header";
 import Footer from "@/components/Footer";
 import LaunchFooter from "@/components/LaunchFooter";
 import MobileFooterMinimal from "@/components/MobileFooterMinimal";
@@ -245,7 +245,7 @@ export default function Experience2() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        {isLaunch ? <LaunchHeader forceScrolled /> : <Header />}
+        <V3Header />
         <div className="pt-16 max-w-6xl mx-auto px-4 pb-16">
           {/* Hero image */}
           <Skeleton className="h-[55vh] w-full mt-4 rounded-xl" />
@@ -299,7 +299,7 @@ export default function Experience2() {
   if (error || !experience) {
     return (
       <div className="min-h-screen bg-background">
-        {isLaunch ? <LaunchHeader forceScrolled /> : <Header />}
+        <V3Header />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center space-y-4">
             <h1 className="text-2xl font-semibold">{t.notFound}</h1>
@@ -519,7 +519,7 @@ export default function Experience2() {
         ogImage={experience.hero_image || primaryHotel?.hero_image || undefined}
       />
 
-      {isLaunch ? <LaunchHeader forceScrolled /> : <Header />}
+      <V3Header />
 
       <main className="flex-1">
         {/* Hero Section */}
@@ -539,6 +539,7 @@ export default function Experience2() {
         hotelId={primaryHotel?.id}
         categoryName={categoryName || undefined}
         categorySlug={category?.slug || undefined}
+        categoryIcon={(category as any)?.icon || undefined}
         minParty={experience.min_party || 2}
         maxParty={experience.max_party || 4}
         averageRating={averageRating}
@@ -732,11 +733,7 @@ export default function Experience2() {
       </main>
 
       <footer ref={footerRef as React.RefObject<HTMLElement>}>
-        {/* Desktop: full footer, Mobile: minimal copyright */}
-        <div className="hidden md:block">
-          {isLaunch ? <LaunchFooter /> : <Footer />}
-        </div>
-        <MobileFooterMinimal />
+        <LaunchFooter />
       </footer>
     </div>
   );

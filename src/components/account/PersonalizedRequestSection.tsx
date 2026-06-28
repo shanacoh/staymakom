@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -156,24 +155,32 @@ export default function PersonalizedRequestSection({
             />
           </div>
 
-          <Button
-            variant="cta"
-            onClick={handleSubmit}
-            disabled={isSubmitting || !requestType || !message.trim()}
-            className="w-full gap-2"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {copy.sending}
-              </>
-            ) : (
-              <>
-                <Send className="h-4 w-4" />
-                {copy.send}
-              </>
-            )}
-          </Button>
+          <div className="flex justify-center">
+            <div className="relative inline-block">
+              <span
+                aria-hidden
+                className="absolute inset-x-2 bottom-1.5 h-3 rounded-[60%_40%_70%_30%/40%_60%_30%_70%] -rotate-1 bg-[#ad1414]/40"
+              />
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isSubmitting || !requestType || !message.trim()}
+                className="group relative inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold uppercase tracking-[0.12em] text-foreground transition-all duration-200 ease-out hover:opacity-80 disabled:opacity-50 disabled:pointer-events-none"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {copy.sending}
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    {copy.send}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
 
           {/* Contact alternative */}
           <div className="flex items-center justify-center gap-2 pt-2 text-sm text-muted-foreground">

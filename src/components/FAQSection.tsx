@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useLanguage } from "@/hooks/useLanguage";
 import {
   Accordion,
@@ -6,19 +5,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function openDesignMyStayDialog() {
   if (typeof window === "undefined") return;
@@ -28,7 +14,6 @@ function openDesignMyStayDialog() {
 type RenderParams = {
   isRTL: boolean;
   lang: string;
-  onExpOnlyClick: () => void;
 };
 
 type FAQItem = {
@@ -41,49 +26,6 @@ type FAQItem = {
 const link = "underline underline-offset-2 cursor-pointer hover:text-[#a83c3c] transition-colors";
 
 const FAQ_ITEMS: FAQItem[] = [
-  {
-    q_en: "Can I book an experience without staying overnight?",
-    q_he: "האם אפשר להזמין חוויה בלי לינה במלון?",
-    q_fr: "Puis-je réserver une expérience sans passer la nuit ?",
-    render: ({ isRTL, lang, onExpOnlyClick }) =>
-      isRTL ? (
-        <>
-          <p>כרגע, החוויות זמינות רק כחלק משהות במלון, מכיוון שהן נבנו כחוויה מלאה ומחוברת לסביבת המלון.</p>
-          <p className="mt-3">בקרוב נציע גם אפשרות להזמין חוויות בלבד, מלונות ל-Day Use, או לינה ללא חוויה.</p>
-          <p className="mt-3">
-            אם זה מעניין אתכם,{" "}
-            <button type="button" onClick={onExpOnlyClick} className={link}>
-              לחצו כאן
-            </button>{" "}
-            כדי להיות הראשונים להתעדכן כשהאפשרויות האלו יהיו זמינות.
-          </p>
-        </>
-      ) : lang === "fr" ? (
-        <>
-          <p>Pour l'instant, les expériences sont uniquement disponibles dans le cadre d'un séjour à l'hôtel. Elles sont conçues pour être vécues en immersion totale, en lien avec l'environnement de l'établissement.</p>
-          <p className="mt-3">Nous travaillons à offrir plus de flexibilité. Bientôt, vous pourrez réserver des expériences seules, accéder aux hôtels en journée, ou séjourner sans expérience.</p>
-          <p className="mt-3">
-            Si cela vous intéresse,{" "}
-            <button type="button" onClick={onExpOnlyClick} className={link}>
-              cliquez ici
-            </button>{" "}
-            pour être parmi les premiers informés dès que ces options seront disponibles.
-          </p>
-        </>
-      ) : (
-        <>
-          <p>At the moment, experiences are only available as part of a stay. They are designed to be fully immersive and connected to the hotel environment.</p>
-          <p className="mt-3">However, we're currently working on offering more flexibility. Soon, you'll be able to book experiences on their own, day-use access to hotels, or hotel stays without experiences.</p>
-          <p className="mt-3">
-            If you're interested in one of these options,{" "}
-            <button type="button" onClick={onExpOnlyClick} className={link}>
-              click here
-            </button>{" "}
-            to let us know and be the first to hear when they become available.
-          </p>
-        </>
-      ),
-  },
   {
     q_en: "Why book through STAYMAKOM?",
     q_he: "למה להזמין דרך STAYMAKOM?",
@@ -117,6 +59,29 @@ const FAQ_ITEMS: FAQItem[] = [
         <p>Nous nous concentrons actuellement sur Israël, avec des expériences à Tel Aviv, Jérusalem et de nombreuses autres destinations qui n'attendent qu'à être découvertes. Israël a bien plus à offrir que les circuits habituels : une richesse de lieux, d'ambiances et de sensations à travers tout le pays. Nous enrichissons continuellement notre catalogue et invitons les voyageurs à découvrir un Israël autrement.</p>
       ) : (
         <p>We are currently focused on Israel, with experiences across Tel Aviv, Jerusalem, and many more destinations waiting to be discovered. Israel has so much more to offer beyond the usual routes, with a wide variety of places, atmospheres, and experiences across the country. We're continuously adding new destinations and inviting travelers to discover a different side of Israel.</p>
+      ),
+  },
+  {
+    q_en: "Can I book an experience without staying overnight?",
+    q_he: "האם אפשר להזמין חוויה בלי לינה במלון?",
+    q_fr: "Puis-je réserver une expérience sans passer la nuit à l'hôtel ?",
+    render: ({ isRTL, lang }) =>
+      isRTL ? (
+        <>
+          <p>כן. עכשיו אפשר להזמין חוויה בפני עצמה או כחלק משהות במלון.</p>
+          <p className="mt-3">בין אם אתם מחפשים פעילות מיוחדת, חופשה מלאה או שילוב של השניים – ב-STAYMAKOM תוכלו לבחור את האפשרות שמתאימה לכם.</p>
+          <p className="mt-3">חלק מהחוויות כוללות הטבות או מחירים מיוחדים כאשר מזמינים אותן יחד עם מלון, בעוד שאחרות זמינות גם כהזמנה נפרדת.</p>
+        </>
+      ) : lang === "fr" ? (
+        <>
+          <p>Oui. Vous pouvez désormais réserver une expérience seule ou l'associer à un séjour à l'hôtel. Que vous recherchiez simplement une activité, une escapade complète ou les deux, STAYMAKOM vous laisse choisir l'option qui correspond le mieux à vos envies.</p>
+          <p className="mt-3">Certaines expériences proposent des avantages exclusifs ou des tarifs préférentiels lorsqu'elles sont réservées avec un hôtel, tandis que d'autres sont disponibles indépendamment.</p>
+        </>
+      ) : (
+        <>
+          <p>Yes. You can now book experiences on their own or as part of a hotel stay. Whether you're looking for a unique activity, a complete getaway, or both, STAYMAKOM lets you choose the option that suits your plans.</p>
+          <p className="mt-3">Some experiences include exclusive benefits or special rates when booked together with a hotel, while others can be enjoyed independently.</p>
+        </>
       ),
   },
   {
@@ -222,83 +187,9 @@ const FAQ_ITEMS: FAQItem[] = [
   },
 ];
 
-const expOnlyTranslations = {
-  en: {
-    title: "Coming soon: experiences without an overnight stay",
-    description: "Let us know you're interested and we'll notify you as soon as it's available.",
-    placeholder: "Your email",
-    submit: "Notify me",
-    submitting: "Sending…",
-    successTitle: "You're on the list!",
-    successDescription: "We'll let you know as soon as experience-only bookings are available.",
-    close: "Maybe later",
-    invalidEmail: "Please enter a valid email",
-    error: "Something went wrong. Please try again.",
-  },
-  he: {
-    title: "בקרוב: חוויות ללא לינה",
-    description: "ספרו לנו שאתם מעוניינים ונהיה הראשונים ליידע אתכם כשהאפשרות תהיה זמינה.",
-    placeholder: "האימייל שלך",
-    submit: "עדכנו אותי",
-    submitting: "שולח...",
-    successTitle: "!אתם ברשימה",
-    successDescription: "ניידע אתכם ברגע שהזמנת חוויות בלבד תהיה זמינה.",
-    close: "אולי מאוחר יותר",
-    invalidEmail: "אימייל לא תקין",
-    error: "משהו השתבש. נסה שנית.",
-  },
-  fr: {
-    title: "Bientôt : des expériences sans nuit d'hôtel",
-    description: "Signalez votre intérêt et nous vous préviendrons dès que c'est disponible.",
-    placeholder: "Votre email",
-    submit: "Me prévenir",
-    submitting: "Envoi…",
-    successTitle: "Vous êtes sur la liste !",
-    successDescription: "Nous vous informerons dès que les réservations d'expériences seules seront disponibles.",
-    close: "Peut-être plus tard",
-    invalidEmail: "Veuillez entrer un email valide",
-    error: "Une erreur s'est produite. Veuillez réessayer.",
-  },
-};
-
 const FAQSection = () => {
   const { lang } = useLanguage();
   const isRTL = lang === "he";
-  const t = expOnlyTranslations[lang as keyof typeof expOnlyTranslations] || expOnlyTranslations.en;
-
-  const [expOnlyOpen, setExpOnlyOpen] = useState(false);
-  const [expEmail, setExpEmail] = useState("");
-  const [expSubmitting, setExpSubmitting] = useState(false);
-  const [expSubmitted, setExpSubmitted] = useState(false);
-
-  const handleExpOnlyOpen = () => {
-    setExpEmail("");
-    setExpSubmitted(false);
-    setExpOnlyOpen(true);
-  };
-
-  const handleExpOnlySubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!EMAIL_REGEX.test(expEmail.trim())) {
-      toast.error(t.invalidEmail);
-      return;
-    }
-    setExpSubmitting(true);
-    try {
-      await supabase.functions
-        .invoke("collect-lead", {
-          body: { email: expEmail.trim(), source: "experience_only" },
-        })
-        .catch((err) => {
-          console.warn("Experience-only signup failed (non-blocking)", err);
-        });
-      setExpSubmitted(true);
-    } catch {
-      toast.error(t.error);
-    } finally {
-      setExpSubmitting(false);
-    }
-  };
 
   const sectionLabel =
     lang === "he" ? "שאלות נפוצות" : lang === "fr" ? "Questions fréquentes" : "Questions & Answers";
@@ -329,56 +220,13 @@ const FAQSection = () => {
                   {lang === "he" ? item.q_he : lang === "fr" ? item.q_fr : item.q_en}
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground text-sm leading-relaxed pb-5">
-                  {item.render({ isRTL, lang, onExpOnlyClick: handleExpOnlyOpen })}
+                  {item.render({ isRTL, lang })}
                 </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
         </div>
       </section>
-
-      <Dialog open={expOnlyOpen} onOpenChange={setExpOnlyOpen}>
-        <DialogContent className="sm:max-w-md" dir={isRTL ? "rtl" : "ltr"}>
-          <DialogHeader>
-            <DialogTitle className="text-center font-sans text-xl font-bold tracking-[-0.02em]">
-              {expSubmitted ? t.successTitle : t.title}
-            </DialogTitle>
-            <DialogDescription className="text-center text-muted-foreground">
-              {expSubmitted ? t.successDescription : t.description}
-            </DialogDescription>
-          </DialogHeader>
-
-          {!expSubmitted ? (
-            <form onSubmit={handleExpOnlySubmit} className="space-y-3 pt-2">
-              <Input
-                type="email"
-                required
-                placeholder={t.placeholder}
-                value={expEmail}
-                onChange={(e) => setExpEmail(e.target.value)}
-                autoComplete="email"
-                autoFocus
-              />
-              <Button type="submit" className="w-full" disabled={expSubmitting}>
-                {expSubmitting ? t.submitting : t.submit}
-              </Button>
-              <button
-                type="button"
-                onClick={() => setExpOnlyOpen(false)}
-                className="block w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {t.close}
-              </button>
-            </form>
-          ) : (
-            <div className="pt-4 text-center">
-              <Button type="button" onClick={() => setExpOnlyOpen(false)} variant="outline" className="w-full">
-                {lang === "he" ? "סגור" : lang === "fr" ? "Fermer" : "Close"}
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </>
   );
 };

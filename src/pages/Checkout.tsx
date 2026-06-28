@@ -44,7 +44,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import LaunchHeader from "@/components/LaunchHeader";
+import V3Header from "@/components/V3Header";
 import { useQuery } from "@tanstack/react-query";
 
 interface SelectedExtra {
@@ -965,47 +965,48 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
 
   // Booking summary card component — reused in step 2 sidebar and step 3
   const BookingSummaryCard = ({ compact = false }: { compact?: boolean }) => (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <div className="flex items-start gap-3 mb-3">
-        {experienceHeroImage && (
-          <img
-            src={experienceHeroImage}
-            alt={state.experienceTitle}
-            className="w-16 h-16 object-cover shrink-0"
-          />
-        )}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate">{state.experienceTitle}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{state.hotelName}</p>
-        </div>
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      {experienceHeroImage && !compact && (
+        <img
+          src={experienceHeroImage}
+          alt={state.experienceTitle}
+          className="w-full h-40 object-cover"
+        />
+      )}
+      <div className="p-4">
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+          {lang === "fr" ? "Votre séjour" : lang === "he" ? "השהייה שלך" : "Your stay"}
+        </p>
+        <p className="text-sm font-semibold truncate">{state.experienceTitle}</p>
+        <p className="text-xs text-muted-foreground mb-3">{state.hotelName}</p>
+        {/* Full breakdown — passe giftCardApplied pour barrer le total quand une carte est appliquée */}
+        <PriceBreakdownV2
+          breakdown={priceBreakdown}
+          isLoading={false}
+          lang={lang}
+          ratePlanPrices={ratePlanPrices}
+          selectedExtras={state.selectedExtras.length > 0 ? state.selectedExtras : undefined}
+          extrasTotal={extrasTotal}
+          adults={state.adults}
+          nights={state.nights}
+          showFullBreakdown
+          hotelName={state.hotelName}
+          roomName={state.selectedRoomName}
+          dateLabel={`${format(dateFrom, "dd MMM")} → ${format(dateTo, "dd MMM yyyy")} · ${state.nights} ${state.nights === 1 ? (lang === "he" ? "לילה" : "night") : (lang === "he" ? "לילות" : "nights")}`}
+          giftCardDiscount={giftCardApplied}
+          promoDiscount={promoDiscount}
+          promoCode={appliedPromo?.code}
+          promoPct={appliedPromo?.discountPct}
+        />
       </div>
-      {/* Full breakdown — passe giftCardApplied pour barrer le total quand une carte est appliquée */}
-      <PriceBreakdownV2
-        breakdown={priceBreakdown}
-        isLoading={false}
-        lang={lang}
-        ratePlanPrices={ratePlanPrices}
-        selectedExtras={state.selectedExtras.length > 0 ? state.selectedExtras : undefined}
-        extrasTotal={extrasTotal}
-        adults={state.adults}
-        nights={state.nights}
-        showFullBreakdown
-        hotelName={state.hotelName}
-        roomName={state.selectedRoomName}
-        dateLabel={`${format(dateFrom, "dd MMM")} → ${format(dateTo, "dd MMM yyyy")} · ${state.nights} ${state.nights === 1 ? (lang === "he" ? "לילה" : "night") : (lang === "he" ? "לילות" : "nights")}`}
-        giftCardDiscount={giftCardApplied}
-        promoDiscount={promoDiscount}
-        promoCode={appliedPromo?.code}
-        promoPct={appliedPromo?.discountPct}
-      />
     </div>
   );
 
   return (
     <div className="min-h-screen flex flex-col bg-background" dir={lang === 'he' ? 'rtl' : 'ltr'}>
-      <LaunchHeader forceScrolled />
+      <V3Header />
 
-      <main className="flex-1 w-full">
+      <main className="flex-1 w-full pt-14">
         {/* Top bar with secure checkout + progress */}
         <div className="border-b border-border bg-card">
           <div className="max-w-4xl mx-auto px-4 py-4">
@@ -1062,7 +1063,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
           {step === 2 && (
             <div className="grid md:grid-cols-[1fr_320px] gap-6">
               {/* Left — form */}
-              <div className="space-y-6">
+              <div className="flex flex-col gap-6">
                 {/* Mobile recap */}
                 <div className="md:hidden">
                   <BookingSummaryCard compact />
@@ -1090,7 +1091,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                       }
                     }}
                     className="min-h-[60px] text-sm resize-none"
-                    style={{ backgroundColor: '#F5F0E8', border: '1px solid #E8E0D4', borderRadius: '0px' }}
+                    style={{ backgroundColor: '#FFFFFF', border: '1px solid #E8E0D4', borderRadius: '0px' }}
                     rows={2}
                   />
                 </div>
@@ -1110,13 +1111,13 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                           onChange={(e) => { setGiftCardCode(e.target.value.toUpperCase()); setGiftCardError(null); }}
                           onKeyDown={(e) => e.key === "Enter" && handleApplyGiftCard()}
                           className="font-mono tracking-wider text-sm"
-                          style={{ borderRadius: '0px', backgroundColor: '#F5F0E8', border: '1px solid #E8E0D4' }}
+                          style={{ borderRadius: '0px', backgroundColor: '#FFFFFF', border: '1px solid #E8E0D4' }}
                         />
                         <Button
                           type="button"
                           variant="outline"
                           className="shrink-0"
-                          style={{ borderRadius: '0px', border: '1px solid #1A1814' }}
+                          style={{ borderRadius: '10px', border: '1px solid #1A1814' }}
                           onClick={handleApplyGiftCard}
                           disabled={isValidatingGiftCard || !giftCardCode.trim()}
                         >
@@ -1161,13 +1162,13 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                           onChange={(e) => { setPromoCodeInput(e.target.value.toUpperCase()); setPromoError(null); }}
                           onKeyDown={(e) => e.key === "Enter" && handleApplyPromo()}
                           className="font-mono tracking-wider text-sm"
-                          style={{ borderRadius: '0px', backgroundColor: '#F5F0E8', border: '1px solid #E8E0D4' }}
+                          style={{ borderRadius: '0px', backgroundColor: '#FFFFFF', border: '1px solid #E8E0D4' }}
                         />
                         <Button
                           type="button"
                           variant="outline"
                           className="shrink-0"
-                          style={{ borderRadius: '0px', border: '1px solid #1A1814' }}
+                          style={{ borderRadius: '10px', border: '1px solid #1A1814' }}
                           onClick={handleApplyPromo}
                           disabled={isValidatingPromo || !promoCodeInput.trim()}
                         >
@@ -1196,16 +1197,15 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                 </div>
 
                 {/* Navigation */}
-                <div className={cn("flex gap-3 pt-2", lang === 'he' && "flex-row-reverse")}>
-                  <Button
-                    variant="outline"
-                    className="shrink-0"
-                    style={{ height: '52px', borderRadius: '0px', border: '1px solid #1A1814' }}
+                <div className={cn("flex items-center gap-4 pt-2", lang === 'he' && "flex-row-reverse")}>
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0 py-2"
                     onClick={() => { trackCheckoutBackClicked(state.experienceSlug, 'step2'); goBackToExperience(); }}
                   >
-                    {lang === 'he' ? <ChevronRight className="h-4 w-4 ml-1" /> : <ChevronLeft className="h-4 w-4 mr-1" />}
+                    {lang === 'he' ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
                     {t.back}
-                  </Button>
+                  </button>
                   <Button
                     className={cn(
                       "flex-1 uppercase tracking-[0.12em] text-[13px] transition-all duration-200",
@@ -1213,7 +1213,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                         ? "bg-[#1A1814] text-white hover:bg-[#1A1814]/90 hover:scale-[1.01] cursor-pointer"
                         : "bg-[#C8C0B4] text-white cursor-not-allowed hover:bg-[#C8C0B4]"
                     )}
-                    style={{ height: '52px', borderRadius: '0px' }}
+                    style={{ height: '52px', borderRadius: '10px' }}
                     disabled={!isGuestValid || isPreBooking}
                     onClick={handleContinueToStep3}
                   >
@@ -1245,44 +1245,46 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
           {step === 3 && (
             <div className="space-y-6 max-w-2xl mx-auto">
               {/* Stay details */}
-              <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-                <p className="text-sm font-semibold">{t.stayDetails}</p>
-                {state.experienceTitle && (
-                  <p className="text-sm font-medium">{state.experienceTitle}</p>
-                )}
-                {state.hotelName && (
-                  <p className="text-xs text-muted-foreground">{state.hotelName}</p>
-                )}
+              <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">{t.stayDetails}</p>
+                  {state.experienceTitle && (
+                    <p className="text-sm font-semibold">{state.experienceTitle}</p>
+                  )}
+                  {state.hotelName && (
+                    <p className="text-xs text-muted-foreground">{state.hotelName}</p>
+                  )}
+                </div>
                 <Separator />
-                <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="grid grid-cols-2 gap-y-4 gap-x-6">
                   <div>
-                    <span className="text-muted-foreground">{t.dates}</span>
-                    <p className="font-medium mt-0.5">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{t.dates}</p>
+                    <p className="text-sm font-medium">
                       {format(dateFrom, "dd MMM")} → {format(dateTo, "dd MMM yyyy")}
                     </p>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">{t.nightsLabel}</span>
-                    <p className="font-medium mt-0.5">{state.nights}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{t.nightsLabel}</p>
+                    <p className="text-sm font-medium">{state.nights}</p>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">{t.guestsLabel}</span>
-                    <p className="font-medium mt-0.5">{totalPartySize}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{t.guestsLabel}</p>
+                    <p className="text-sm font-medium">{totalPartySize}</p>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">{t.room}</span>
-                    <p className="font-medium mt-0.5 truncate">{state.selectedRoomName}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{t.room}</p>
+                    <p className="text-sm font-medium truncate">{state.selectedRoomName}</p>
                   </div>
                 </div>
               </div>
 
               {/* Guest details */}
-              <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-                <p className="text-sm font-semibold">{t.guestDetails}</p>
-                <div className="text-xs space-y-1">
-                  <p className="font-medium">{leadGuest.firstName} {leadGuest.lastName}</p>
-                  <p className="text-muted-foreground">{leadGuest.email}</p>
-                  <p className="text-muted-foreground">{leadGuest.phone}</p>
+              <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{t.guestDetails}</p>
+                <div className="space-y-0.5">
+                  <p className="text-sm font-semibold">{leadGuest.firstName} {leadGuest.lastName}</p>
+                  <p className="text-xs text-muted-foreground">{leadGuest.email}</p>
+                  <p className="text-xs text-muted-foreground">{leadGuest.phone}</p>
                 </div>
                 {specialRequests && (
                   <>
@@ -1443,19 +1445,18 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
               {/* Navigation — desktop: side by side, mobile: stacked */}
               <div className="pt-2 pb-8">
                 {/* Desktop */}
-                <div className={cn("hidden md:flex gap-3", lang === 'he' && "flex-row-reverse")}>
-                  <Button
-                    variant="outline"
-                    className="shrink-0 uppercase tracking-[0.12em] text-[13px]"
-                    style={{ height: '52px', borderRadius: '0px', border: '1px solid #1A1814', color: '#1A1814' }}
+                <div className={cn("hidden md:flex items-center gap-4", lang === 'he' && "flex-row-reverse")}>
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0 py-2"
                     onClick={() => { trackCheckoutBackClicked(state.experienceSlug, 'step3'); setStep(2); setPaymentStatus("idle"); setRevolutPublicId(null); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                   >
-                    {lang === 'he' ? <ChevronRight className="h-4 w-4 ml-1" /> : <ChevronLeft className="h-4 w-4 mr-1" />}
+                    {lang === 'he' ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
                     {t.back}
-                  </Button>
+                  </button>
                   <Button
                     className="flex-1 uppercase tracking-[0.12em] text-[13px] bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
-                    style={{ height: '52px', borderRadius: '0px' }}
+                    style={{ height: '52px', borderRadius: '10px' }}
                     disabled={totalIsNaN || isBooking || paymentStatus === "creating" || paymentStatus === "failed"}
                     onClick={handleBook}
                   >
@@ -1479,7 +1480,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                 <div className="md:hidden space-y-3">
                   <Button
                     className="w-full uppercase tracking-[0.12em] text-[13px] bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
-                    style={{ height: '52px', borderRadius: '0px' }}
+                    style={{ height: '52px', borderRadius: '10px' }}
                     disabled={totalIsNaN || isBooking || paymentStatus === "creating" || paymentStatus === "failed"}
                     onClick={handleBook}
                   >

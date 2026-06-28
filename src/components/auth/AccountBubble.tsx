@@ -70,29 +70,28 @@ export default function AccountBubble({
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          size="icon"
-          className={`${
+          className={`h-[30px] w-[30px] p-0 rounded-full ${
             isTransparent
               ? "text-white hover:bg-white/10"
-              : "hover:bg-foreground/5"
+              : "hover:bg-muted"
           }`}
         >
-          <User className="h-5 w-5" />
+          <User className="h-[18px] w-[18px]" />
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-80 p-0 rounded-2xl border-0 shadow-2xl overflow-hidden bg-white"
+        className="w-72 p-0 rounded-2xl border border-border/30 shadow-xl overflow-hidden bg-white"
         align="end"
         sideOffset={8}
         dir={isRTL ? "rtl" : "ltr"}
       >
         {/* Decorative header */}
-        <div className="pt-8 pb-4 px-6 text-center bg-gradient-to-b from-muted/50 to-transparent">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-4">
-            <Heart className="h-6 w-6 text-primary" />
+        <div className="pt-8 pb-4 px-6 text-center">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#ad1414]/10 mb-4">
+            <Heart className="h-6 w-6 text-[#ad1414]" />
           </div>
-          <h3 className="font-serif text-xl text-foreground mb-1">
-            {copy.welcome} <span className="font-bold">{copy.brand}</span>
+          <h3 className="font-sans text-lg font-bold uppercase tracking-[-0.02em] text-foreground mb-1">
+            {copy.welcome} {copy.brand}
           </h3>
           <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
             {copy.subtitle}
@@ -101,16 +100,24 @@ export default function AccountBubble({
 
         {/* Actions */}
         <div className="p-6 pt-4 space-y-3">
-          <Button
-            variant="cta"
-            className="w-full h-12 text-base"
+          {/* Sign In — style blob rouge calé sur le texte */}
+          <button
             onClick={handleSignIn}
+            className="w-full h-12 flex items-center justify-center hover:opacity-80 transition-opacity"
           >
-            {copy.signIn}
-          </Button>
+            <span className="relative inline-block">
+              <span
+                aria-hidden
+                className="absolute inset-x-0 bottom-0.5 h-3 rounded-[60%_40%_70%_30%/40%_60%_30%_70%] -rotate-1 bg-[#ad1414]/40"
+              />
+              <span className="relative text-sm font-semibold uppercase tracking-[0.12em] text-foreground">
+                {copy.signIn}
+              </span>
+            </span>
+          </button>
+          {/* Create Account — pill sombre */}
           <Button
-            variant="outline"
-            className="w-full h-12 text-base border-border/60 hover:bg-muted/50"
+            className="w-full rounded-full bg-foreground text-background text-xs font-bold uppercase tracking-widest py-3 hover:bg-foreground/90 transition-colors"
             onClick={handleSignUp}
           >
             {copy.createAccount}

@@ -15,10 +15,10 @@ import PracticalInfo from "@/components/experience-test/PracticalInfo";
 import WhatsIncludedPhotos2 from "@/components/experience-test/WhatsIncludedPhotos2";
 import StandaloneExtrasSection from "@/components/experience-test/StandaloneExtrasSection";
 import ReviewsGrid2 from "@/components/experience-test/ReviewsGrid2";
-import OtherExperiences2 from "@/components/experience-test/OtherExperiences2";
+import OtherStandaloneExperiences from "@/components/experience-test/OtherStandaloneExperiences";
 import ShareWithFriendsSection from "@/components/experience/ShareWithFriendsSection";
-import Header from "@/components/Header";
-import LaunchHeader from "@/components/LaunchHeader";
+
+import V3Header from "@/components/V3Header";
 import Footer from "@/components/Footer";
 import LaunchFooter from "@/components/LaunchFooter";
 import MobileFooterMinimal from "@/components/MobileFooterMinimal";
@@ -79,6 +79,7 @@ interface StandaloneExperienceData {
   longitude?: number | null;
   accessibility_info?: string | null;
   category_id?: string | null;
+  categories?: { id: string; slug: string; name: string; name_fr?: string | null; name_he?: string | null; icon?: string | null } | null;
   status: string;
   available_days?: number[] | null;
   blocked_dates?: string[] | null;
@@ -198,7 +199,7 @@ export default function StandaloneExperience() {
 
       const { data, error } = await (supabase as any)
         .from("standalone_experiences")
-        .select(`${PUBLIC_COLUMNS}, standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he))`)
+        .select(`${PUBLIC_COLUMNS}, standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he)), categories(id, slug, name, name_fr, name_he, icon)`)
         .eq("slug", slug!)
         .eq("status", "published")
         .single();
@@ -245,6 +246,11 @@ export default function StandaloneExperience() {
   const locCity = lang === "he" ? experience?.city_he || experience?.city : lang === "fr" ? experience?.city_fr || experience?.city : experience?.city;
   const locRegion = lang === "he" ? experience?.region_he || experience?.region : lang === "fr" ? experience?.region_fr || experience?.region : experience?.region;
 
+  const categoryName = experience?.categories
+    ? (lang === "fr" ? experience.categories.name_fr || experience.categories.name : lang === "he" ? experience.categories.name_he || experience.categories.name : experience.categories.name)
+    : undefined;
+  const categorySlug = experience?.categories?.slug ?? undefined;
+
   const currencySymbol = experience ? getCurrencySymbol(experience.currency) : "₪";
   const leadTimeDays = experience?.lead_time_days ?? 0;
   const minDate = (() => {
@@ -269,6 +275,9 @@ export default function StandaloneExperience() {
         children,
       )
     : 0;
+
+  const extrasTotal = selectedExtras.reduce((sum, e) => sum + e.price, 0);
+  const grandTotal = totalPrice + extrasTotal;
 
   const title =
     lang === "he"
@@ -306,7 +315,7 @@ export default function StandaloneExperience() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        {isLaunch ? <LaunchHeader forceScrolled /> : <Header />}
+        <V3Header />
         <div className="pt-16 max-w-6xl mx-auto px-4 pb-16">
           <Skeleton className="h-[55vh] w-full mt-4 rounded-xl" />
           <div className="grid grid-cols-1 lg:grid-cols-[65fr_35fr] gap-12 mt-10">
@@ -363,7 +372,7 @@ export default function StandaloneExperience() {
 
     return (
       <div className="min-h-screen bg-background">
-        {isLaunch ? <LaunchHeader forceScrolled /> : <Header />}
+        <V3Header />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center space-y-4">
             <h1 className="text-2xl font-semibold">{notFoundMsg.title}</h1>
@@ -421,19 +430,39 @@ export default function StandaloneExperience() {
       (!experience.has_time_slots || !!selectedSlot);
 
     return (
-      <div className="rounded-2xl border p-5 space-y-5">
+      <div className="rounded-2xl border p-5 space-y-5 shadow-medium">
         {/* Affichage du prix */}
-        <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold">
-            {currencySymbol}{experience.base_price.toFixed(0)}
-          </span>
-          <span className="text-sm text-muted-foreground">{priceLabel}</span>
+        <div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold">
+              {currencySymbol}{experience.base_price.toFixed(0)}
+            </span>
+            <span className="text-sm text-muted-foreground">{priceLabel}</span>
+          </div>
+          {experience.base_price_type === "fixed" && (
+            <div className="mt-2 space-y-1">
+              <p className="text-sm text-muted-foreground">
+                {lang === "he"
+                  ? `עד ${experience.max_party} משתתפים`
+                  : lang === "fr"
+                  ? `jusqu'à ${experience.max_party} participants`
+                  : `up to ${experience.max_party} participants`}
+              </p>
+              <p className="text-sm font-semibold text-[#ad1414]">
+                {lang === "he"
+                  ? `${currencySymbol}${(experience.base_price / totalParty).toFixed(0)} לאדם עבור ${totalParty} משתתף${totalParty > 1 ? "ים" : ""}`
+                  : lang === "fr"
+                  ? `soit ${currencySymbol}${(experience.base_price / totalParty).toFixed(0)} / personne pour ${totalParty} participant${totalParty > 1 ? "s" : ""}`
+                  : `i.e. ${currencySymbol}${(experience.base_price / totalParty).toFixed(0)} / person for ${totalParty} participant${totalParty > 1 ? "s" : ""}`}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Bloc participants — en premier */}
         <div className="space-y-3">
           <p className="flex items-center gap-1.5 text-sm font-semibold">
-            <Users className="h-3.5 w-3.5" />
+            <Users className="h-3.5 w-3.5 text-[#ad1414]" />
             {lang === "he" ? "משתתפים" : lang === "fr" ? "Participants" : "Participants"}
           </p>
 
@@ -454,7 +483,7 @@ export default function StandaloneExperience() {
                     type="button"
                     onClick={() => setAdults((a) => Math.max(1, a - 1))}
                     disabled={adults <= 1}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-muted disabled:opacity-40 transition-colors"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
                   >
                     −
                   </button>
@@ -463,7 +492,7 @@ export default function StandaloneExperience() {
                     type="button"
                     onClick={() => setAdults((a) => Math.min(experience.max_party - children, a + 1))}
                     disabled={totalParty >= experience.max_party}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-muted disabled:opacity-40 transition-colors"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
                   >
                     +
                   </button>
@@ -485,7 +514,7 @@ export default function StandaloneExperience() {
                     type="button"
                     onClick={() => setChildren((c) => Math.max(0, c - 1))}
                     disabled={children <= 0}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-muted disabled:opacity-40 transition-colors"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
                   >
                     −
                   </button>
@@ -494,7 +523,7 @@ export default function StandaloneExperience() {
                     type="button"
                     onClick={() => setChildren((c) => Math.min(experience.max_party - adults, c + 1))}
                     disabled={totalParty >= experience.max_party}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-muted disabled:opacity-40 transition-colors"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
                   >
                     +
                   </button>
@@ -512,7 +541,7 @@ export default function StandaloneExperience() {
                   type="button"
                   onClick={() => setAdults((a) => Math.max(experience.min_party, a - 1))}
                   disabled={adults <= experience.min_party}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-muted disabled:opacity-40 transition-colors"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
                 >
                   −
                 </button>
@@ -521,7 +550,7 @@ export default function StandaloneExperience() {
                   type="button"
                   onClick={() => setAdults((a) => Math.min(experience.max_party, a + 1))}
                   disabled={adults >= experience.max_party}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-muted disabled:opacity-40 transition-colors"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
                 >
                   +
                 </button>
@@ -533,7 +562,7 @@ export default function StandaloneExperience() {
         {/* Bloc date — en second */}
         <div className="space-y-1.5">
           <p className="flex items-center gap-1.5 text-sm font-semibold">
-            <Calendar className="h-3.5 w-3.5" />
+            <Calendar className="h-3.5 w-3.5 text-[#ad1414]" />
             {lang === "he" ? "תאריך" : lang === "fr" ? "Date" : "Date"}
           </p>
           <div className="border rounded-lg overflow-hidden">
@@ -546,8 +575,10 @@ export default function StandaloneExperience() {
               defaultMonth={new Date(minDate + "T12:00:00")}
               toDate={maxDate}
               classNames={{
+                cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
                 day_selected:
-                  "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                  "bg-[#ad1414] text-white hover:bg-[#ad1414] hover:text-white focus:bg-[#ad1414] focus:text-white",
+                day_today: "bg-[#FDF0F0] text-[#ad1414] font-semibold rounded-lg",
                 day_disabled: "text-muted-foreground/30 cursor-not-allowed",
                 day_outside: "text-muted-foreground/30",
               }}
@@ -559,7 +590,7 @@ export default function StandaloneExperience() {
         {experience.has_time_slots && (experience.time_slots?.length ?? 0) > 0 && (
           <div className="space-y-2">
             <p className="flex items-center gap-1.5 text-sm font-semibold">
-              <Clock className="h-3.5 w-3.5" />
+              <Clock className="h-3.5 w-3.5 text-[#ad1414]" />
               {lang === "he" ? "שעה" : lang === "fr" ? "Créneau" : "Time slot"}
             </p>
             <div className="grid grid-cols-3 gap-2">
@@ -571,8 +602,8 @@ export default function StandaloneExperience() {
                   className={cn(
                     "rounded-lg border py-2 text-sm font-medium transition-colors",
                     selectedSlot === slot
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border hover:border-primary/50 hover:bg-muted"
+                      ? "border-[#ad1414] bg-[#ad1414] text-white"
+                      : "border-border hover:border-[#ad1414]/50 hover:bg-[#FDF2F2]"
                   )}
                 >
                   {slot}
@@ -582,44 +613,67 @@ export default function StandaloneExperience() {
           </div>
         )}
 
-        {/* Total dynamique — masqué pour les prix fixes */}
-        {experience.base_price_type !== "fixed" && (
+        {/* Extras sélectionnés — ligne de détail par extra */}
+        {selectedExtras.length > 0 && (
+          <div className="space-y-1.5 border-t pt-3">
+            {selectedExtras.map((extra) => {
+              const name = lang === "he" ? (extra.name_he || extra.name) : extra.name;
+              return (
+                <div key={extra.id} className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{name}</span>
+                  <span className="font-medium">+{currencySymbol}{extra.price.toFixed(0)}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Total dynamique — masqué pour les prix fixes sans extras */}
+        {(experience.base_price_type !== "fixed" || extrasTotal > 0) && (
           <div className="border-t pt-3 flex items-center justify-between">
             <span className="text-sm text-muted-foreground">
               {lang === "he" ? "סה\"כ" : lang === "fr" ? "Total" : "Total"}
             </span>
             <span className="font-bold text-lg">
-              {currencySymbol}{totalPrice.toFixed(0)}
+              {currencySymbol}{grandTotal.toFixed(0)}
             </span>
           </div>
         )}
 
         {/* Bouton Continuer — navigue vers la page de checkout dédiée */}
         <Button
-          className="w-full rounded-full text-base font-semibold h-12"
+          type="button"
+          className="w-full rounded-full text-base font-semibold h-12 bg-[#ad1414] text-white hover:bg-[#9a1212] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_-4px_rgba(173,20,20,0.4)] transition-all duration-200 normal-case"
           onClick={() => {
-            navigate("/standalone-checkout", {
-              state: {
-                experienceId: experience.id,
-                experienceSlug: experience.slug,
-                experienceTitle: experience.title,
-                experienceTitleFr: experience.title_fr,
-                experienceTitleHe: experience.title_he,
-                heroImage: experience.hero_image,
-                selectedDate,
-                selectedSlot: selectedSlot || null,
-                adults,
-                children,
-                basePrice: experience.base_price,
-                basePriceChild: experience.base_price_child,
-                hasChildPrice: experience.has_child_price,
-                basePriceType: experience.base_price_type,
-                currency: experience.currency,
-                lang,
-                totalPrice,
-                selectedExtras,
-              },
-            });
+            const checkoutState = {
+              experienceId: experience.id,
+              experienceSlug: experience.slug,
+              experienceTitle: experience.title,
+              experienceTitleFr: experience.title_fr,
+              experienceTitleHe: experience.title_he,
+              heroImage: experience.hero_image,
+              selectedDate,
+              selectedSlot: selectedSlot || null,
+              adults,
+              children,
+              basePrice: experience.base_price,
+              basePriceChild: experience.base_price_child,
+              hasChildPrice: experience.has_child_price,
+              basePriceType: experience.base_price_type,
+              currency: experience.currency,
+              lang,
+              totalPrice: grandTotal,
+              selectedExtras,
+            };
+            try {
+              localStorage.setItem("staymakom_standalone_cart", JSON.stringify({
+                ...checkoutState,
+                savedAt: new Date().toISOString(),
+              }));
+            } catch {
+              // localStorage indisponible — on continue sans fallback
+            }
+            navigate("/standalone-checkout", { state: checkoutState });
           }}
           disabled={!canProceedStep1}
         >
@@ -645,7 +699,7 @@ export default function StandaloneExperience() {
         ogImage={experience.hero_image || undefined}
       />
 
-      {isLaunch ? <LaunchHeader forceScrolled /> : <Header />}
+      <V3Header />
 
       <main className="flex-1">
         {/* Hero Section */}
@@ -663,8 +717,9 @@ export default function StandaloneExperience() {
             lang={lang as "en" | "he" | "fr"}
             experienceId={experience.id}
             hotelId={undefined}
-            categoryName={undefined}
-            categorySlug={undefined}
+            categoryName={categoryName}
+            categorySlug={categorySlug}
+            categoryIcon={experience?.categories?.icon ?? undefined}
             minParty={experience.min_party}
             maxParty={experience.max_party}
             averageRating={null}
@@ -724,7 +779,7 @@ export default function StandaloneExperience() {
               />
 
               {/* Other Experiences */}
-              <OtherExperiences2
+              <OtherStandaloneExperiences
                 currentExperienceId={experience.id}
                 categoryId={experience.category_id ?? null}
                 lang={lang}
@@ -752,14 +807,25 @@ export default function StandaloneExperience() {
         <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-sm border-t px-4 py-3">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <span className="font-bold text-lg">
-                {currencySymbol}{experience.base_price.toFixed(0)}
-              </span>
-              <span className="text-sm text-muted-foreground ml-1.5">
-                {experience.base_price_type === "fixed"
-                  ? (lang === "fr" ? "forfait" : "fixed")
-                  : (lang === "he" ? "לאדם" : lang === "fr" ? "/ pers." : "/ person")}
-              </span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="font-bold text-lg">
+                  {currencySymbol}{experience.base_price.toFixed(0)}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {experience.base_price_type === "fixed"
+                    ? (lang === "fr" ? "forfait" : "fixed")
+                    : (lang === "he" ? "לאדם" : lang === "fr" ? "/ pers." : "/ person")}
+                </span>
+              </div>
+              {experience.base_price_type === "fixed" && (
+                <p className="text-xs text-muted-foreground leading-tight">
+                  {lang === "he"
+                    ? `עד ${experience.max_party} משתתפים`
+                    : lang === "fr"
+                    ? `jusqu'à ${experience.max_party} participants`
+                    : `up to ${experience.max_party} participants`}
+                </p>
+              )}
             </div>
             <Button
               className="rounded-full px-6"

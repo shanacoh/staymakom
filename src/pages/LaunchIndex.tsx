@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
 import { useLocalizedNavigation } from "@/hooks/useLocalizedNavigation";
 import { t } from "@/lib/translations";
-import LaunchHeader from "@/components/LaunchHeader";
+import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import { SEOHead } from "@/components/SEOHead";
 import MarqueeBanner from "@/components/MarqueeBanner";
@@ -355,7 +355,7 @@ const LaunchIndex = () => {
         title={lang === 'he' ? "STAYMAKOM — מלונות וחוויות נבחרים בישראל" : lang === 'fr' ? "STAYMAKOM — Hôtels & Expériences d'exception en Israël" : "STAYMAKOM — Handpicked Hotels & Experiences in Israel"}
         description={lang === 'he' ? "אנחנו אוצרים את המלונות הבוטיק הטובים בישראל ומשלבים אותם עם חוויות מקומיות ייחודיות." : lang === 'fr' ? "Nous sélectionnons les meilleurs hôtels boutique d'Israël et les associons à des expériences locales uniques." : "We curate Israel's best boutique hotels and pair them with unique local experiences."} />
 
-      <LaunchHeader />
+      <V3Header />
 
       <main className="flex-1 md:pt-0 pt-0 pb-[80px] md:pb-0">
         {/* ─── 1. HERO ─── */}

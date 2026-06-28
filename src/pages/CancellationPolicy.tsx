@@ -1,4 +1,4 @@
-import Header from "@/components/Header";
+import V3Header from "@/components/V3Header";
 import Footer from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
 
@@ -9,7 +9,7 @@ const CancellationPolicy = () => {
         title="Cancellation & Refund Policy | STAYMAKOM"
         description="Understand STAYMAKOM's cancellation and refund policies. Each hotel defines its own terms for cancellations, refunds, and modifications."
       />
-      <Header />
+      <V3Header />
       <main className="flex-1 container py-8 md:py-12">
         <article className="max-w-2xl mx-auto prose prose-sm prose-slate dark:prose-invert">
           <h1 className="text-2xl md:text-3xl font-bold mb-2">Cancellation & Refund Policy</h1>

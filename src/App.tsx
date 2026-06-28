@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -17,7 +17,7 @@ import { trackPageViewed, trackUtmCaptured } from "@/lib/analytics";
 import { Loader2 } from "lucide-react";
 
 // ── Chemin critique : chargement immédiat ──────────────────────────────────
-import LaunchIndex from "./pages/LaunchIndex";
+import IndexV3 from "./pages/IndexV3";
 import LaunchExperiences from "./pages/LaunchExperiences";
 import Experience2 from "./pages/Experience2";
 import Checkout from "./pages/Checkout";
@@ -25,7 +25,7 @@ import NotFound from "./pages/NotFound";
 
 // ── Pages publiques secondaires : chargées à la demande ───────────────────
 const Index              = lazy(() => import("./pages/Index"));
-const IndexV3            = lazy(() => import("./pages/IndexV3"));
+const LaunchIndex        = lazy(() => import("./pages/LaunchIndex"));
 const ComingSoon         = lazy(() => import("./pages/ComingSoon"));
 const Category           = lazy(() => import("./pages/Category"));
 const Experience         = lazy(() => import("./pages/Experience"));
@@ -156,12 +156,13 @@ const AppContent = () => {
       <MobileAppShell />
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          {/* Site live depuis 2026-05-07 : la racine pointe sur LaunchIndex (vrai site).
-              La page Coming Soon reste accessible sur /coming-soon si besoin. */}
-          <Route path="/" element={<LaunchIndex />} />
+          {/* Depuis 2026-06-28 : la racine pointe sur IndexV3 (nouvelle home).
+              /v3 redirige vers / pour compatibilité avec les anciens liens.
+              /launch reste accessible pour l'ancienne LaunchIndex. */}
+          <Route path="/" element={<IndexV3 />} />
           <Route path="/coming-soon" element={<ComingSoon />} />
           <Route path="/home" element={<Index />} />
-          <Route path="/v3" element={<IndexV3 />} />
+          <Route path="/v3" element={<Navigate to="/" replace />} />
           <Route path="/launch" element={<LaunchIndex />} />
           <Route path="/launch/experiences" element={<LaunchExperiences />} />
           <Route path="/mobile-login" element={<MobileAuthPrompt />} />

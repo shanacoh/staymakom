@@ -1,4 +1,4 @@
-import LaunchHeader from "@/components/LaunchHeader";
+import V3Header from "@/components/V3Header";
 import tasteImg from "@/assets/option1.jpg";
 import poolImg from "@/assets/option2.jpg";
 import desertImg from "@/assets/option3.png";
@@ -59,7 +59,7 @@ const OPTIONS = [
 const Celine30 = () => {
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <LaunchHeader forceScrolled={true} />
+      <V3Header />
 
       {/* ── Hero ── */}
       <section className="relative h-[49vh] md:h-[54vh] min-h-[300px] flex items-center justify-center">

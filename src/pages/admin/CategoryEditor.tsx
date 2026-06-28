@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,11 +52,14 @@ const availableIcons: { name: string; icon: LucideIcon }[] = [
 const CategoryEditor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isEditing = id && id !== "new";
+  const hasLoadedRef = useRef(false);
 
   const [formData, setFormData] = useState({
     name: "",
     name_he: "",
+    name_fr: "",
     hero_image: "",
     icon: "",
     presentation_title: "",
@@ -104,10 +107,12 @@ const CategoryEditor = () => {
   });
 
   useEffect(() => {
-    if (category) {
+    if (category && !hasLoadedRef.current) {
+      hasLoadedRef.current = true;
       setFormData({
         name: category.name || "",
         name_he: category.name_he || "",
+        name_fr: category.name_fr || "",
         hero_image: category.hero_image || "",
         icon: category.icon || "",
         presentation_title: category.presentation_title || "",
@@ -204,6 +209,11 @@ const CategoryEditor = () => {
       }
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          typeof query.queryKey[0] === "string" &&
+          query.queryKey[0].includes("categor"),
+      });
       toast.success(`Category ${isEditing ? "updated" : "created"} successfully`);
       navigate("/admin/categories");
     },
@@ -231,6 +241,11 @@ const CategoryEditor = () => {
       }
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          typeof query.queryKey[0] === "string" &&
+          query.queryKey[0].includes("categor"),
+      });
       toast.success("Category published successfully");
       navigate("/admin/categories");
     },
@@ -421,10 +436,10 @@ const CategoryEditor = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Bilingual Content</CardTitle>
+            <CardTitle>Trilingual Content</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-3 gap-6">
               {/* English Column */}
               <div className="space-y-4">
                 <div className="bg-muted/30 p-2 rounded">
@@ -563,6 +578,23 @@ const CategoryEditor = () => {
                   >
                     הוסף תכונה
                   </Button>
+                </div>
+              </div>
+
+              {/* French Column */}
+              <div className="space-y-4">
+                <div className="bg-muted/30 p-2 rounded">
+                  <h4 className="font-medium text-sm">Version française 🇫🇷</h4>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="name_fr">Nom de la catégorie</Label>
+                  <Input
+                    id="name_fr"
+                    value={formData.name_fr}
+                    onChange={(e) => setFormData({ ...formData, name_fr: e.target.value })}
+                    placeholder="ex. Escapade Romantique"
+                  />
                 </div>
               </div>
             </div>

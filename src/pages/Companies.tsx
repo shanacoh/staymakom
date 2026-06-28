@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CheckCircle2, Gift, Users, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import LaunchHeader from "@/components/LaunchHeader";
+import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import corporateHero from "@/assets/corporate-hero.jpg";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -121,7 +121,7 @@ export default function Companies() {
 
   return (
     <div className="min-h-screen bg-white">
-      <LaunchHeader forceScrolled={true} />
+      <V3Header />
       
       {/* Hero Section */}
       <section className="relative h-[380px] overflow-hidden">

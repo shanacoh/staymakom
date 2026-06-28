@@ -839,7 +839,7 @@ export const translations = {
 
     // Category display names
     categoryRomantic: "Slow\nMoments",
-    categoryFamily: "Escapade\nen Famille",
+    categoryFamily: "En\nFamille",
     categoryGoldenAge: "Art de\nRalentir",
     categoryNature: "Immersion\nNature",
     categoryTaste: "À\nTable",

@@ -278,7 +278,7 @@ export function RoomOptionsV2({
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {boardLabel}
                     {isOnRequest && (
-                      <span className="ml-2 inline-flex items-center gap-0.5 text-blue-600">
+                      <span className="ml-2 inline-flex items-center gap-0.5 text-red-500">
                         <Clock className="h-3 w-3 inline" />
                         {t.onRequest}
                       </span>

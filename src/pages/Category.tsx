@@ -1,12 +1,13 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import Header from "@/components/Header";
+import V3Header from "@/components/V3Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, Heart, Users, Wine, Compass, Leaf, Sparkles, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import ExperienceCard from "@/components/ExperienceCard";
+import StandaloneExperienceCard from "@/components/StandaloneExperienceCard";
 import CategoryFilters, { FilterState } from "@/components/category/CategoryFilters";
 import ExperienceMap from "@/components/category/ExperienceMap";
 import { useState, useMemo, useEffect } from "react";
@@ -14,10 +15,37 @@ import { trackCategoryPageViewed } from "@/lib/analytics";
 import { SEOHead } from "@/components/SEOHead";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
+import { cn } from "@/lib/utils";
+
+/* ─── Catégories V3 — ordre et labels fixes ─────────────────────────────── */
+const V3_CATEGORIES = [
+  { id: "romantic-escape", en: "Romantic Escape",  fr: "Escapade Romantique",  he: "בריחה רומנטית",    slugHints: ["romantic"],                   icon: "heart",   img: "/icons/icon-romantic.png"  },
+  { id: "family-fun",      en: "Family Fun",        fr: "Fun Famille",          he: "כיף משפחתי",       slugHints: ["family"],                     icon: "users",   img: "/icons/icon-family.png"    },
+  { id: "foody-discovery", en: "Foody Discovery",   fr: "Découverte Culinaire", he: "גילוי קולינרי",    slugHints: ["taste", "food", "culinar"],   icon: "wine",    img: "/icons/icon-foody.png"     },
+  { id: "land-of-stories", en: "Land of Stories",  fr: "Terre de Récits",      he: "ארץ הסיפורים",     slugHints: ["land", "stories"],            icon: "compass", img: "/icons/icon-stories.png"   },
+  { id: "nature-outdoor",  en: "Nature & Outdoor",  fr: "Nature & Plein Air",   he: "טבע ושטח",         slugHints: ["nature", "beyond", "outdoor"],icon: "leaf",    img: "/icons/icon-nature.png"    },
+];
+
+const iconMap: Record<string, LucideIcon> = {
+  heart: Heart, users: Users, wine: Wine, compass: Compass, leaf: Leaf,
+};
+
+/* ─── Formes de surlignage « feutre » ───────────────────────────────────── */
+const HIGHLIGHT_SHAPES = [
+  "rotate-[-3deg] rounded-[60%_40%_75%_25%/35%_65%_45%_55%]",
+  "rotate-[2deg] rounded-[35%_65%_40%_60%/65%_40%_70%_30%]",
+  "rotate-[-5deg] rounded-[70%_30%_50%_50%/40%_60%_35%_65%]",
+  "rotate-[4deg] rounded-[45%_55%_65%_35%/55%_35%_60%_40%]",
+  "rotate-[-2deg] rounded-[55%_45%_30%_70%/45%_65%_55%_35%]",
+];
 
 const Category = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const mode = (searchParams.get("mode") as "stay" | "live") || "stay";
   const { lang } = useLanguage();
+  const isRTL = lang === "he";
   const [showMap, setShowMap] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     sortBy: "recommended",
@@ -25,14 +53,32 @@ const Category = () => {
     partySize: 1
   });
 
+  const handleSetMode = (newMode: "stay" | "live") => {
+    navigate(`/category/${slug}?mode=${newMode}`);
+  };
+
   useEffect(() => { if (slug) trackCategoryPageViewed(slug); }, [slug]);
+
+  /* ── Toutes les catégories publiées (pour matcher les chips) ── */
+  const { data: allCategories } = useQuery({
+    queryKey: ["all-categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("*")
+        .eq("status", "published")
+        .order("display_order", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const { data: category, isLoading: categoryLoading } = useQuery({
     queryKey: ["category", slug],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("categories")
-        .select("id, slug, name, name_he, hero_image, seo_title_en, seo_title_he, meta_description_en, meta_description_he, og_title_en, og_title_he, og_description_en, og_description_he, og_image")
+        .select("id, slug, name, name_he, name_fr, hero_image, seo_title_en, seo_title_he, meta_description_en, meta_description_he, og_title_en, og_title_he, og_description_en, og_description_he, og_image, presentation_title, presentation_title_he, presentation_title_fr, intro_rich_text, intro_rich_text_he, intro_rich_text_fr")
         .eq("slug", slug)
         .eq("status", "published")
         .single();
@@ -77,7 +123,6 @@ const Category = () => {
         .eq("category_id", category?.id)
         .eq("status", "published");
       if (error) throw error;
-      // Map to ExperienceCard-compatible shape
       return (data || []).map((exp: any) => {
         const primaryHotel = exp.experience2_hotels
           ?.sort((a: any, b: any) => (a.position || 0) - (b.position || 0))
@@ -94,11 +139,35 @@ const Category = () => {
     enabled: !!category?.id
   });
 
+  const { data: standaloneExperiences, isLoading: standaloneLoading } = useQuery({
+    queryKey: ["category-standalone-experiences", category?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("standalone_experiences")
+        .select(`
+          id, slug, title, title_he, title_fr,
+          hero_image, photos,
+          base_price, base_price_type, currency,
+          min_party, max_party, has_child_price, has_time_slots,
+          city, city_he, region, region_he, practical_info,
+          standalone_experience_highlight_tags(
+            tag_id, position,
+            highlight_tags(id, slug, label_en, label_he, label_fr)
+          )
+        `)
+        .eq("category_id", category?.id)
+        .eq("status", "published")
+        .order("display_order", { ascending: true, nullsFirst: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!category?.id && mode === "live",
+  });
+
   const filteredExperiences = useMemo(() => {
     if (!experiences) return [];
     let filtered = [...experiences];
 
-    // Filter by price only if not at max range
     if (filters.priceRange[1] < 10000) {
       filtered = filtered.filter(exp => {
         const price = Number(exp.base_price);
@@ -106,14 +175,12 @@ const Category = () => {
       });
     }
 
-    // Filter by party size only if greater than 1
     if (filters.partySize > 1) {
       filtered = filtered.filter(exp => {
         return exp.min_party <= filters.partySize && exp.max_party >= filters.partySize;
       });
     }
 
-    // Sort
     switch (filters.sortBy) {
       case "price_asc":
         filtered.sort((a, b) => Number(a.base_price) - Number(b.base_price));
@@ -121,16 +188,47 @@ const Category = () => {
       case "price_desc":
         filtered.sort((a, b) => Number(b.base_price) - Number(a.base_price));
         break;
-      default:
-        break;
     }
     return filtered;
   }, [experiences, filters]);
 
+  const filteredStandalone = useMemo(() => {
+    if (!standaloneExperiences) return [];
+    let filtered = [...standaloneExperiences] as any[];
+
+    if (filters.priceRange[1] < 10000) {
+      filtered = filtered.filter(exp => {
+        const price = Number(exp.base_price);
+        return price >= filters.priceRange[0] && price <= filters.priceRange[1];
+      });
+    }
+
+    if (filters.partySize > 1) {
+      filtered = filtered.filter(exp =>
+        exp.min_party <= filters.partySize && exp.max_party >= filters.partySize
+      );
+    }
+
+    switch (filters.sortBy) {
+      case "price_asc":
+        filtered.sort((a, b) => Number(a.base_price) - Number(b.base_price));
+        break;
+      case "price_desc":
+        filtered.sort((a, b) => Number(b.base_price) - Number(a.base_price));
+        break;
+    }
+    return filtered;
+  }, [standaloneExperiences, filters]);
+
+  /* ── Matching catégorie active avec V3_CATEGORIES ── */
+  const currentV3Cat = V3_CATEGORIES.find(v3cat =>
+    v3cat.slugHints.some(hint => slug?.includes(hint))
+  );
+
   if (categoryLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#ad1414]" />
       </div>
     );
   }
@@ -138,7 +236,7 @@ const Category = () => {
   if (!category) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Header />
+        <V3Header />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <p className="text-muted-foreground mb-4">{t(lang, 'categoryNotFound')}</p>
@@ -152,13 +250,12 @@ const Category = () => {
     );
   }
 
-  // Get localized content
   const categoryName = getLocalizedField(category, 'name', lang) as string || category.name;
   const presentationTitle = getLocalizedField(category, 'presentation_title', lang) as string || categoryName;
   const introText = getLocalizedField(category, 'intro_rich_text', lang) as string || '';
 
   return (
-    <div className="min-h-screen flex flex-col" dir={lang === 'he' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
       <SEOHead
         titleEn={category.seo_title_en}
         titleHe={category.seo_title_he}
@@ -172,69 +269,165 @@ const Category = () => {
         fallbackTitle={`${categoryName} - StayMakom`}
         fallbackDescription={introText}
       />
-      <Header />
-      
+      <V3Header showModeToggle mode={mode} setMode={handleSetMode} />
+
       <main className="flex-1">
-        {/* Immersive Hero Section */}
-        <section className="relative h-[55vh] min-h-[450px] flex items-end">
-          <div 
-            className="absolute inset-0 bg-cover bg-center" 
-            style={{ backgroundImage: `url(${category.hero_image || '/placeholder.svg'})` }} 
-          />
-          
-          <div className="relative z-10 container text-white px-4 py-8">
-            <div className="grid md:grid-cols-2 gap-6 md:gap-10 items-end max-w-6xl mx-auto">
-              {/* Left side - Category name and Title */}
-              <div className="space-y-3">
-                <p className="text-[10px] sm:text-xs uppercase tracking-widest text-white/90 font-bold">
-                  {categoryName}
-                </p>
-                <h1 className="font-sans text-2xl sm:text-3xl md:text-4xl font-bold leading-tight uppercase text-white">
-                  {presentationTitle}
-                </h1>
-              </div>
-              
-              {/* Right side - Description only */}
-              <div>
-                <p className="text-xs sm:text-sm md:text-base leading-relaxed text-white">
-                  {introText}
-                </p>
-              </div>
-            </div>
-          </div>
+
+        {/* ──── Hero : icône + titre ──── */}
+        <section className="bg-white pt-10 pb-5 text-center px-4">
+          {currentV3Cat?.img && (
+            <div
+              className="mx-auto mb-4 w-16 h-16 sm:w-20 sm:h-20"
+              style={{
+                backgroundColor: "#ad1414",
+                WebkitMaskImage: `url(${currentV3Cat.img})`,
+                maskImage: `url(${currentV3Cat.img})`,
+                WebkitMaskSize: "contain",
+                maskSize: "contain",
+                WebkitMaskRepeat: "no-repeat",
+                maskRepeat: "no-repeat",
+                WebkitMaskPosition: "center",
+                maskPosition: "center",
+              }}
+            />
+          )}
+          <h1 className="font-sans text-2xl sm:text-3xl md:text-4xl font-bold uppercase tracking-[0.02em] text-[#ad1414]">
+            {presentationTitle}
+          </h1>
+          {introText && (
+            <p className="mt-2 text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
+              {introText}
+            </p>
+          )}
         </section>
 
-        {/* Filters */}
-        <CategoryFilters 
-          onFilterChange={setFilters} 
-          onShowMapToggle={setShowMap} 
-          showMap={showMap} 
-          className="my-0" 
+        {/* ──── Bandeau chips catégories ──── */}
+        <div className="border-b border-stone-100">
+          <div
+            className={cn(
+              "flex flex-nowrap justify-center gap-1 sm:gap-3",
+              "overflow-x-auto overflow-y-visible py-3 px-4 sm:px-6 scrollbar-hide",
+              isRTL && "flex-row-reverse"
+            )}
+          >
+            {V3_CATEGORIES.map((v3cat, idx) => {
+              const dbCat = (allCategories as any[])?.find((cat) =>
+                v3cat.slugHints.some((hint) => cat.slug.includes(hint))
+              );
+              const dbSlug = dbCat?.slug ?? null;
+              const isActive = !!dbSlug && slug === dbSlug;
+              const isDimmed = !!slug && !isActive;
+              const name = lang === "he"
+                ? (dbCat?.name_he || v3cat.he)
+                : lang === "fr"
+                ? (dbCat?.name_fr || v3cat.fr)
+                : (dbCat?.name || v3cat.en);
+              const IconComponent: LucideIcon = iconMap[v3cat.icon] ?? Sparkles;
+
+              const words = name.split(" ");
+              const mid = Math.ceil(words.length / 2);
+              const line1 = words.slice(0, mid).join(" ");
+              const line2 = words.slice(mid).join(" ");
+
+              return (
+                <button
+                  key={v3cat.id}
+                  onClick={() => { if (dbSlug && !isActive) navigate(`/category/${dbSlug}?mode=${mode}`); }}
+                  className={cn(
+                    "group relative flex flex-col items-center gap-2 flex-shrink-0 w-16 sm:w-[82px] py-2.5 px-1 rounded-2xl transition-all duration-200",
+                    isDimmed ? "opacity-35" : "hover:-translate-y-0.5",
+                    isActive ? "cursor-default" : "cursor-pointer"
+                  )}
+                >
+                  {isActive && (
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "absolute inset-x-0.5 top-0.5 bottom-0.5 bg-[#ad1414]/15",
+                        HIGHLIGHT_SHAPES[idx % HIGHLIGHT_SHAPES.length]
+                      )}
+                    />
+                  )}
+
+                  {v3cat.img ? (
+                    isActive ? (
+                      <span
+                        role="img"
+                        aria-label={name}
+                        className="block w-9 h-9 sm:w-12 sm:h-12"
+                        style={{
+                          backgroundColor: "#ad1414",
+                          WebkitMaskImage: `url(${v3cat.img})`,
+                          maskImage: `url(${v3cat.img})`,
+                          WebkitMaskSize: "contain",
+                          maskSize: "contain",
+                          WebkitMaskRepeat: "no-repeat",
+                          maskRepeat: "no-repeat",
+                          WebkitMaskPosition: "center",
+                          maskPosition: "center",
+                        }}
+                      />
+                    ) : (
+                      <img
+                        src={v3cat.img}
+                        alt={name}
+                        className="w-9 h-9 sm:w-12 sm:h-12 object-contain"
+                      />
+                    )
+                  ) : (
+                    <IconComponent
+                      className={cn(
+                        "w-5 h-5 sm:w-6 sm:h-6",
+                        isActive ? "text-[#ad1414]" : "text-stone-500"
+                      )}
+                      strokeWidth={1.5}
+                    />
+                  )}
+
+                  <span
+                    className={cn(
+                      "text-[9px] sm:text-[10px] font-semibold uppercase tracking-wide text-center leading-[13px] transition-colors duration-200",
+                      isActive ? "text-[#ad1414]" : "text-foreground group-hover:text-foreground/80"
+                    )}
+                  >
+                    {line1}{line2 && <><br />{line2}</>}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ──── Filtres ──── */}
+        <CategoryFilters
+          onFilterChange={setFilters}
+          onShowMapToggle={setShowMap}
+          showMap={showMap}
+          className="my-0"
         />
 
-        {/* Experiences List with Optional Map */}
+        {/* ──── Grille d'expériences ──── */}
         <section className="container py-6">
           <div className={`grid ${showMap ? 'lg:grid-cols-[1fr_500px]' : 'grid-cols-1'} gap-6`}>
-            {/* Experiences List */}
             <div>
               <div className="mb-4">
                 <h2 className="text-xl font-bold mb-1">
-                  {t(lang, 'experiencesAvailable')(filteredExperiences.length)}
+                  {t(lang, 'experiencesAvailable')(mode === "stay" ? filteredExperiences.length : filteredStandalone.length)}
                 </h2>
                 <p className="text-sm text-muted-foreground">
                   {t(lang, 'discoverExtraordinaryStays')}
                 </p>
               </div>
 
-              {experiencesLoading ? (
+              {(mode === "stay" ? experiencesLoading : standaloneLoading) ? (
                 <div className="text-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+                  <Loader2 className="h-8 w-8 animate-spin text-[#ad1414] mx-auto" />
                 </div>
-              ) : filteredExperiences.length === 0 ? (
+              ) : (mode === "stay" ? filteredExperiences : filteredStandalone).length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground mb-4">{t(lang, 'noExperiencesMatch')}</p>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => setFilters({
                       sortBy: "recommended",
                       priceRange: [0, 10000],
@@ -244,7 +437,7 @@ const Category = () => {
                     {t(lang, 'resetFilters')}
                   </Button>
                 </div>
-              ) : (
+              ) : mode === "stay" ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredExperiences.map(experience => {
                     const originalPrice = Number(experience.base_price);
@@ -259,13 +452,22 @@ const Category = () => {
                     );
                   })}
                 </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredStandalone.map((experience, idx) => (
+                    <StandaloneExperienceCard
+                      key={experience.id}
+                      experience={experience}
+                      index={idx}
+                    />
+                  ))}
+                </div>
               )}
             </div>
 
-            {/* Map */}
             {showMap && (
               <div className="hidden lg:block">
-                <ExperienceMap experiences={filteredExperiences} />
+                <ExperienceMap experiences={mode === "stay" ? filteredExperiences : filteredStandalone} />
               </div>
             )}
           </div>

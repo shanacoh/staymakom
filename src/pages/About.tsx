@@ -1,4 +1,4 @@
-import LaunchHeader from "@/components/LaunchHeader";
+import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import { Button } from "@/components/ui/button";
 import aboutHero from "@/assets/about-hero-desert-new.png";
@@ -23,7 +23,7 @@ const About = () => {
         descriptionEn="Discover STAYMAKOM - a curated booking platform combining boutique hotels and immersive local experiences in Israel."
         descriptionHe="גלו את STAYMAKOM - פלטפורמת הזמנות מובחרת המשלבת מלונות בוטיק וחוויות מקומיות סוחפות בישראל." />
 
-      <LaunchHeader forceScrolled={true} />
+      <V3Header />
 
       {/* HERO */}
       <section className="relative h-[38vh] md:h-[54vh] min-h-[240px] flex items-center justify-center overflow-hidden">

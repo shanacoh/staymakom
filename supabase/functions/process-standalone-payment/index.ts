@@ -123,6 +123,7 @@ Deno.serve(async (req: Request) => {
       customer_name,
       customer_email,
       customer_phone,
+      selected_extras_ids,
       promo_code: promoCodePayload,
       gift_card: giftCardPayload,
     } = body;
@@ -202,6 +203,21 @@ Deno.serve(async (req: Request) => {
       basePrice = experience.base_price * totalParty;
     }
 
+    // ── Re-valider les extras côté serveur (jamais confiance aux prix du client) ─
+    let extrasTotal = 0;
+    let extrasSnapshot: Array<{ id: string; title: string; price: number }> = [];
+    if (Array.isArray(selected_extras_ids) && selected_extras_ids.length > 0) {
+      const { data: extrasRows } = await supabase
+        .from('standalone_extras')
+        .select('id, title, price')
+        .eq('experience_id', experience_id)
+        .eq('is_available', true)
+        .in('id', selected_extras_ids);
+      extrasSnapshot = extrasRows ?? [];
+      extrasTotal = extrasSnapshot.reduce((s: number, e: { price: number }) => s + (e.price || 0), 0);
+    }
+    basePrice = basePrice + extrasTotal;
+
     // ── Appliquer le code promo (re-validé côté serveur) ─────────────────────
     let promoDiscount = 0;
     let validatedPromo: { id: string; code: string; discount_pct: number } | null = null;
@@ -254,6 +270,7 @@ Deno.serve(async (req: Request) => {
           sell_price: 0,
           currency: experience.currency,
           status: 'confirmed', payment_status: 'paid',
+          extras: extrasSnapshot.length > 0 ? extrasSnapshot : null,
         }])
         .select('id, confirmation_token')
         .single();
@@ -330,6 +347,7 @@ Deno.serve(async (req: Request) => {
         payment_status: 'pending',
         revolut_order_id: revolut.orderId,
         revolut_public_id: revolut.publicId,
+        extras: extrasSnapshot.length > 0 ? extrasSnapshot : null,
       }])
       .select('id, confirmation_token')
       .single();
