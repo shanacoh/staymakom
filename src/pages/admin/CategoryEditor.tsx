@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,7 +52,9 @@ const availableIcons: { name: string; icon: LucideIcon }[] = [
 const CategoryEditor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isEditing = id && id !== "new";
+  const hasLoadedRef = useRef(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -105,7 +107,8 @@ const CategoryEditor = () => {
   });
 
   useEffect(() => {
-    if (category) {
+    if (category && !hasLoadedRef.current) {
+      hasLoadedRef.current = true;
       setFormData({
         name: category.name || "",
         name_he: category.name_he || "",
@@ -206,6 +209,11 @@ const CategoryEditor = () => {
       }
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          typeof query.queryKey[0] === "string" &&
+          query.queryKey[0].includes("categor"),
+      });
       toast.success(`Category ${isEditing ? "updated" : "created"} successfully`);
       navigate("/admin/categories");
     },
@@ -233,6 +241,11 @@ const CategoryEditor = () => {
       }
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          typeof query.queryKey[0] === "string" &&
+          query.queryKey[0].includes("categor"),
+      });
       toast.success("Category published successfully");
       navigate("/admin/categories");
     },
