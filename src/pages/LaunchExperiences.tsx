@@ -193,6 +193,9 @@ const LaunchExperiences = () => {
 
   /* ── Catégorie V3 active ── */
   const selectedV3Cat = V3_CATEGORIES.find(c => c.id === selectedCatId) ?? null;
+  const selectedDbCat = selectedV3Cat && allCategories
+    ? (allCategories as any[]).find(cat => selectedV3Cat.slugHints.some(hint => cat.slug.includes(hint)))
+    : null;
 
   /* ── Filtrage par catégorie V3 ── */
   const categoryExperiences = useMemo(() => {
@@ -364,7 +367,11 @@ const LaunchExperiences = () => {
 
   /* ── Titre et description de la page ── */
   const pageTitle = selectedV3Cat
-    ? (lang === "he" ? selectedV3Cat.he : lang === "fr" ? selectedV3Cat.fr : selectedV3Cat.en)
+    ? (lang === "he"
+        ? (selectedDbCat?.name_he || selectedV3Cat.he)
+        : lang === "fr"
+        ? (selectedDbCat?.name_fr || selectedV3Cat.fr)
+        : (selectedDbCat?.name || selectedV3Cat.en))
     : (isRTL ? "כל החוויות" : lang === "fr" ? "Toutes les expériences" : "All Experiences");
 
   const heroDescription = selectedV3Cat
@@ -454,9 +461,16 @@ const LaunchExperiences = () => {
             )}
           >
             {V3_CATEGORIES.map((v3cat, idx) => {
+              const dbCat = (allCategories as any[])?.find((cat) =>
+                v3cat.slugHints.some((hint) => cat.slug.includes(hint))
+              );
               const isActive = selectedCatId === v3cat.id;
               const isDimmed = !!selectedCatId && !isActive;
-              const name = lang === "he" ? v3cat.he : lang === "fr" ? v3cat.fr : v3cat.en;
+              const name = lang === "he"
+                ? (dbCat?.name_he || v3cat.he)
+                : lang === "fr"
+                ? (dbCat?.name_fr || v3cat.fr)
+                : (dbCat?.name || v3cat.en);
               const IconComponent: LucideIcon = iconMap[v3cat.icon] ?? Sparkles;
 
               const words = name.split(" ");

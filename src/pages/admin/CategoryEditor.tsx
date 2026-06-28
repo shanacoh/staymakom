@@ -57,6 +57,7 @@ const CategoryEditor = () => {
   const [formData, setFormData] = useState({
     name: "",
     name_he: "",
+    name_fr: "",
     hero_image: "",
     icon: "",
     presentation_title: "",
@@ -108,6 +109,7 @@ const CategoryEditor = () => {
       setFormData({
         name: category.name || "",
         name_he: category.name_he || "",
+        name_fr: category.name_fr || "",
         hero_image: category.hero_image || "",
         icon: category.icon || "",
         presentation_title: category.presentation_title || "",
@@ -421,10 +423,10 @@ const CategoryEditor = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Bilingual Content</CardTitle>
+            <CardTitle>Trilingual Content</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-3 gap-6">
               {/* English Column */}
               <div className="space-y-4">
                 <div className="bg-muted/30 p-2 rounded">
@@ -563,6 +565,23 @@ const CategoryEditor = () => {
                   >
                     הוסף תכונה
                   </Button>
+                </div>
+              </div>
+
+              {/* French Column */}
+              <div className="space-y-4">
+                <div className="bg-muted/30 p-2 rounded">
+                  <h4 className="font-medium text-sm">Version française 🇫🇷</h4>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="name_fr">Nom de la catégorie</Label>
+                  <Input
+                    id="name_fr"
+                    value={formData.name_fr}
+                    onChange={(e) => setFormData({ ...formData, name_fr: e.target.value })}
+                    placeholder="ex. Escapade Romantique"
+                  />
                 </div>
               </div>
             </div>

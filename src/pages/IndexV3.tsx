@@ -303,7 +303,11 @@ const IndexV3 = () => {
                 const categoryKey = dbSlug ?? v3cat.id;
                 const isSelected = selectedCategory === categoryKey;
                 const isDimmed = !!selectedCategory && !isSelected;
-                const name = lang === "he" ? v3cat.he : lang === "fr" ? v3cat.fr : v3cat.en;
+                const name = lang === "he"
+                  ? (dbCat?.name_he || v3cat.he)
+                  : lang === "fr"
+                  ? (dbCat?.name_fr || v3cat.fr)
+                  : (dbCat?.name || v3cat.en);
                 const IconComponent: LucideIcon =
                   (dbCat?.icon ? iconMap[dbCat.icon] : null) ?? iconMap[v3cat.icon] ?? Sparkles;
 

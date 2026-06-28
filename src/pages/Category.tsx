@@ -317,7 +317,11 @@ const Category = () => {
               const dbSlug = dbCat?.slug ?? null;
               const isActive = !!dbSlug && slug === dbSlug;
               const isDimmed = !!slug && !isActive;
-              const name = lang === "he" ? v3cat.he : lang === "fr" ? v3cat.fr : v3cat.en;
+              const name = lang === "he"
+                ? (dbCat?.name_he || v3cat.he)
+                : lang === "fr"
+                ? (dbCat?.name_fr || v3cat.fr)
+                : (dbCat?.name || v3cat.en);
               const IconComponent: LucideIcon = iconMap[v3cat.icon] ?? Sparkles;
 
               const words = name.split(" ");
