@@ -76,7 +76,7 @@ const getStatusBadge = (
   }
   if (status === "scheduled") {
     return (
-      <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+      <Badge variant="secondary" className="bg-red-50 text-red-700 hover:bg-red-50">
         <Clock className="h-3 w-3 mr-1" />
         {copy.scheduled}
       </Badge>

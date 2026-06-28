@@ -30,7 +30,7 @@ const JournalSection = ({ lang }: JournalSectionProps) => {
     const colors: Record<string, string> = {
       Stories: "bg-amber-100 text-amber-800",
       Places: "bg-emerald-100 text-emerald-800",
-      Guides: "bg-blue-100 text-blue-800",
+      Guides: "bg-red-50 text-red-700",
       People: "bg-purple-100 text-purple-800",
     };
     return colors[category] || "bg-muted text-muted-foreground";

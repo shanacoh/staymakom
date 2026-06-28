@@ -303,14 +303,14 @@ export default function BookingConfirmationPage() {
           {/* Animated check icon */}
           <div className="flex flex-col items-center text-center gap-3">
             <div className={`h-16 w-16 rounded-full flex items-center justify-center animate-in zoom-in-50 duration-500 ${
-              isCancelled ? "bg-destructive/10" : isConfirmed ? "bg-emerald-100" : "bg-blue-100"
+              isCancelled ? "bg-destructive/10" : isConfirmed ? "bg-emerald-100" : "bg-amber-100"
             }`}>
               {isCancelled ? (
                 <XCircle className="h-8 w-8 text-destructive" />
               ) : isConfirmed ? (
                 <Check className="h-8 w-8 text-emerald-600" />
               ) : (
-                <Clock className="h-8 w-8 text-blue-600" />
+                <Clock className="h-8 w-8 text-amber-600" />
               )}
             </div>
             <h1 className="text-2xl md:text-3xl font-semibold">
@@ -331,7 +331,7 @@ export default function BookingConfirmationPage() {
           {/* On-request warning — hide if cancelled */}
           {isOnRequest && !isCancelled && (
             <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50 border">
-              <Clock className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
+              <Clock className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
               <p className="text-sm text-muted-foreground">{labels.onRequest}</p>
             </div>
           )}

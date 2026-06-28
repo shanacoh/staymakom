@@ -159,11 +159,11 @@ export function BookingConfirmationDialog({ open, onClose, data, lang = "en" }: 
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <div className={`h-10 w-10 rounded-full flex items-center justify-center ${isConfirmed ? 'bg-green-100' : 'bg-blue-100'}`}>
+            <div className={`h-10 w-10 rounded-full flex items-center justify-center ${isConfirmed ? 'bg-green-100' : 'bg-amber-100'}`}>
               {isConfirmed ? (
                 <Check className="h-5 w-5 text-green-600" />
               ) : (
-                <Clock className="h-5 w-5 text-blue-600" />
+                <Clock className="h-5 w-5 text-amber-600" />
               )}
             </div>
             <div>

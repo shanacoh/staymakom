@@ -87,10 +87,10 @@ const ShareDialog = ({ open, onOpenChange, url, title, lang }: ShareDialogProps)
 
         {/* Header with decorative icon */}
         <div className="pt-6 pb-3 px-4 text-center bg-gradient-to-b from-muted/50 to-transparent">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-primary/5 via-muted/30 to-primary/10 mb-3">
-            <ShareNetwork size={24} weight="duotone" className="text-primary/70" />
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-[#ad1414]/5 via-muted/30 to-[#ad1414]/10 mb-3">
+            <ShareNetwork size={24} weight="duotone" className="text-[#ad1414]/70" />
           </div>
-          <h2 className="font-serif text-xl text-foreground" aria-hidden="true">
+          <h2 className="font-sans text-xl text-foreground" aria-hidden="true">
             {t.shareTitle}
           </h2>
         </div>
@@ -114,8 +114,8 @@ const ShareDialog = ({ open, onOpenChange, url, title, lang }: ShareDialogProps)
               onClick={handleEmailShare}
               className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-all duration-200 hover:scale-[1.02] group min-w-0"
             >
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/5 via-muted/30 to-primary/10 flex items-center justify-center group-hover:from-primary/10 group-hover:to-primary/20 transition-all shrink-0">
-                <EnvelopeSimple size={20} weight="duotone" className="text-primary/60" />
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#ad1414]/5 via-muted/30 to-[#ad1414]/10 flex items-center justify-center group-hover:from-[#ad1414]/10 group-hover:to-[#ad1414]/20 transition-all shrink-0">
+                <EnvelopeSimple size={20} weight="duotone" className="text-[#ad1414]/60" />
               </div>
               <span className="text-[10px] font-medium text-foreground/70 truncate w-full text-center">
                 {t.email}
@@ -127,8 +127,8 @@ const ShareDialog = ({ open, onOpenChange, url, title, lang }: ShareDialogProps)
               onClick={handleMessengerShare}
               className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-all duration-200 hover:scale-[1.02] group min-w-0"
             >
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/5 via-muted/30 to-primary/10 flex items-center justify-center group-hover:from-primary/10 group-hover:to-primary/20 transition-all shrink-0">
-                <MessengerLogo size={20} weight="duotone" className="text-primary/60" />
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#ad1414]/5 via-muted/30 to-[#ad1414]/10 flex items-center justify-center group-hover:from-[#ad1414]/10 group-hover:to-[#ad1414]/20 transition-all shrink-0">
+                <MessengerLogo size={20} weight="duotone" className="text-[#ad1414]/60" />
               </div>
               <span className="text-[10px] font-medium text-foreground/70 truncate w-full text-center">
                 {t.messenger}
@@ -140,8 +140,8 @@ const ShareDialog = ({ open, onOpenChange, url, title, lang }: ShareDialogProps)
               onClick={handleWhatsAppShare}
               className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-all duration-200 hover:scale-[1.02] group min-w-0"
             >
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/5 via-muted/30 to-primary/10 flex items-center justify-center group-hover:from-primary/10 group-hover:to-primary/20 transition-all shrink-0">
-                <WhatsappLogo size={20} weight="duotone" className="text-primary/60" />
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#ad1414]/5 via-muted/30 to-[#ad1414]/10 flex items-center justify-center group-hover:from-[#ad1414]/10 group-hover:to-[#ad1414]/20 transition-all shrink-0">
+                <WhatsappLogo size={20} weight="duotone" className="text-[#ad1414]/60" />
               </div>
               <span className="text-[10px] font-medium text-foreground/70 truncate w-full text-center">
                 {t.whatsapp}
