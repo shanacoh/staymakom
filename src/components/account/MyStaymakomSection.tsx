@@ -511,12 +511,14 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
                       : "Start exploring our curated experiences and book your next adventure!"}
                   </p>
                 </div>
-                <span
-                  onClick={() => navigate("/")}
-                  className="inline-block cursor-pointer px-5 py-2 text-sm uppercase tracking-wide bg-[hsl(0_75%_62%)] text-black btn-organic"
-                >
-                  {isHebrew ? "גלו חוויות" : isFrench ? "Découvrir les expériences" : "Explore Experiences"}
-                </span>
+                <button onClick={() => navigate("/")} className="inline-flex items-center justify-center hover:opacity-80 transition-opacity">
+                  <span className="relative inline-block">
+                    <span aria-hidden className="absolute inset-x-0 bottom-0.5 h-3 rounded-[60%_40%_70%_30%/40%_60%_30%_70%] -rotate-1 bg-[#ad1414]/40" />
+                    <span className="relative text-sm font-semibold uppercase tracking-[0.12em] text-foreground">
+                      {isHebrew ? "גלו חוויות" : isFrench ? "Découvrir les expériences" : "Explore Experiences"}
+                    </span>
+                  </span>
+                </button>
               </div>
             </CardContent>
           </Card>
