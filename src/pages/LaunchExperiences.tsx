@@ -7,6 +7,7 @@ import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import { SEOHead } from "@/components/SEOHead";
 import Experience2CardWithPrice from "@/components/Experience2CardWithPrice";
+import StandaloneExperienceCard from "@/components/StandaloneExperienceCard";
 import ExperienceCardSkeleton from "@/components/ExperienceCardSkeleton";
 import MultiPinMap from "@/components/experience/MultiPinMap";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,17 @@ const LaunchExperiences = () => {
   const { lang } = useLanguage();
   const isRTL = lang === "he";
   const queryClient = useQueryClient();
+
+  /* ── Mode toggle : stay (avec hôtel) ou live (expériences seules) ── */
+  const mode = (searchParams.get("mode") as "stay" | "live") || "stay";
+
+  const handleSetMode = (newMode: "stay" | "live") => {
+    setSelectedRegion(null);
+    setSelectedTags([]);
+    const params: Record<string, string> = { context: "launch", mode: newMode };
+    if (selectedCatId) params.filter = selectedCatId;
+    setSearchParams(params);
+  };
 
   /* ── Catégorie sélectionnée (id V3 ou null = toutes) ── */
   const filterParam = searchParams.get("filter");
@@ -148,6 +160,37 @@ const LaunchExperiences = () => {
     return map;
   }, [allAvailabilityRules]);
 
+  /* ── Expériences standalone (mode "live") ── */
+  const { data: standaloneExperiences, isLoading: isLoadingStandalone } = useQuery({
+    queryKey: ["launch-standalone-experiences"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("standalone_experiences")
+        .select(`
+          id, slug, title, title_he, title_fr,
+          hero_image, photos,
+          base_price, base_price_type, currency,
+          min_party, max_party, has_child_price, has_time_slots,
+          city, city_he, region, region_he, practical_info,
+          latitude, longitude,
+          category_id, category_ids,
+          display_order,
+          category:categories(id, slug),
+          standalone_experience_highlight_tags(
+            tag_id, position,
+            highlight_tags(id, slug, label_en, label_he, label_fr)
+          )
+        `)
+        .eq("status", "published")
+        .order("display_order", { ascending: true, nullsFirst: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: mode === "live",
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+  });
+
   /* ── Catégorie V3 active ── */
   const selectedV3Cat = V3_CATEGORIES.find(c => c.id === selectedCatId) ?? null;
 
@@ -246,6 +289,79 @@ const LaunchExperiences = () => {
     return pins;
   }, [filteredExperiences, isRTL]);
 
+  /* ── Filtrage standalone par catégorie V3 ── */
+  const categoryStandalone = useMemo(() => {
+    if (!selectedV3Cat || !allCategories) return standaloneExperiences;
+    const dbCat = (allCategories as any[]).find(cat =>
+      selectedV3Cat.slugHints.some(hint => cat.slug.includes(hint))
+    );
+    if (!dbCat) return standaloneExperiences;
+    return standaloneExperiences?.filter((exp: any) =>
+      exp.category?.slug === dbCat.slug ||
+      (Array.isArray(exp.category_ids) && exp.category_ids.includes(dbCat.id))
+    );
+  }, [standaloneExperiences, selectedV3Cat, allCategories]);
+
+  /* ── Régions disponibles (standalone) ── */
+  const standaloneRegions = useMemo(() => {
+    const set = new Set<string>();
+    categoryStandalone?.forEach((exp: any) => {
+      const region = isRTL ? exp.region_he : exp.region;
+      if (region) set.add(region);
+    });
+    return Array.from(set).sort();
+  }, [categoryStandalone, isRTL]);
+
+  /* ── Tags disponibles (standalone) ── */
+  const standaloneTags = useMemo(() => {
+    const map = new Map<string, { slug: string; label: string }>();
+    categoryStandalone?.forEach((exp: any) => {
+      exp.standalone_experience_highlight_tags?.forEach((t: any) => {
+        const tag = t.highlight_tags;
+        if (tag && !map.has(tag.slug)) {
+          map.set(tag.slug, {
+            slug: tag.slug,
+            label: isRTL ? tag.label_he : lang === 'fr' && tag.label_fr ? tag.label_fr : tag.label_en,
+          });
+        }
+      });
+    });
+    return Array.from(map.values());
+  }, [categoryStandalone, isRTL, lang]);
+
+  /* ── Filtres région + tags (standalone) ── */
+  const filteredStandalone = useMemo(() => {
+    return categoryStandalone?.filter((exp: any) => {
+      const region = isRTL ? exp.region_he : exp.region;
+      if (selectedRegion && region !== selectedRegion) return false;
+      if (selectedTags.length > 0) {
+        const expTags = exp.standalone_experience_highlight_tags?.map((t: any) => t.highlight_tags?.slug) ?? [];
+        if (!selectedTags.some(s => expTags.includes(s))) return false;
+      }
+      return true;
+    });
+  }, [categoryStandalone, selectedRegion, selectedTags, isRTL]);
+
+  /* ── Map pins (standalone) ── */
+  const standaloneMapPins = useMemo(() => {
+    const seen = new Set<string>();
+    const pins: any[] = [];
+    filteredStandalone?.forEach((exp: any) => {
+      if (exp.latitude && exp.longitude && !seen.has(exp.id)) {
+        seen.add(exp.id);
+        pins.push({
+          id: exp.id,
+          name: isRTL ? exp.city_he || exp.city : exp.city,
+          latitude: exp.latitude,
+          longitude: exp.longitude,
+          experienceSlug: exp.slug,
+          experienceTitle: isRTL ? exp.title_he || exp.title : exp.title,
+        });
+      }
+    });
+    return pins;
+  }, [filteredStandalone, isRTL]);
+
   /* ── Titre et description de la page ── */
   const pageTitle = selectedV3Cat
     ? (lang === "he" ? selectedV3Cat.he : lang === "fr" ? selectedV3Cat.fr : selectedV3Cat.en)
@@ -262,12 +378,13 @@ const LaunchExperiences = () => {
 
   /* ── Clic sur une chip ── */
   const handleCatClick = (catId: string) => {
+    const modeParam = searchParams.get("mode") || "stay";
     if (selectedCatId === catId) {
       setSelectedCatId(null);
-      setSearchParams({ context: "launch" });
+      setSearchParams({ context: "launch", mode: modeParam });
     } else {
       setSelectedCatId(catId);
-      setSearchParams({ filter: catId, context: "launch" });
+      setSearchParams({ filter: catId, context: "launch", mode: modeParam });
     }
   };
 
@@ -284,7 +401,7 @@ const LaunchExperiences = () => {
         description={heroDescription || (isRTL ? "גלה חוויות מלון ייחודיות בישראל" : "Discover unique hotel experiences in Israel")}
       />
 
-      <V3Header />
+      <V3Header showModeToggle mode={mode} setMode={handleSetMode} />
 
       <main className="flex-1 pt-[56px] pb-[80px] md:pb-0">
 
@@ -418,14 +535,16 @@ const LaunchExperiences = () => {
         <section className="container max-w-6xl mx-auto py-8 px-4">
 
           {/* Filtres région + tags */}
-          {!isLoading && (regions.length > 0 || allTags.length > 0) && (
+          {!(mode === "stay" ? isLoading : isLoadingStandalone) &&
+            ((mode === "stay" ? regions : standaloneRegions).length > 0 ||
+             (mode === "stay" ? allTags : standaloneTags).length > 0) && (
             <div className="flex flex-col gap-3 mb-6">
-              {regions.length > 0 && (
+              {(mode === "stay" ? regions : standaloneRegions).length > 0 && (
                 <div className="flex flex-wrap gap-2 items-center">
                   <span className="text-xs text-muted-foreground uppercase tracking-wide mr-1">
                     {isRTL ? "אזור" : "Region"}
                   </span>
-                  {regions.map((region) => (
+                  {(mode === "stay" ? regions : standaloneRegions).map((region) => (
                     <button
                       key={region}
                       onClick={() => setSelectedRegion(selectedRegion === region ? null : region)}
@@ -442,12 +561,12 @@ const LaunchExperiences = () => {
                 </div>
               )}
 
-              {allTags.length > 0 && (
+              {(mode === "stay" ? allTags : standaloneTags).length > 0 && (
                 <div className="flex flex-wrap gap-2 items-center">
                   <span className="text-xs text-muted-foreground uppercase tracking-wide mr-1">
                     {isRTL ? "סוג" : "Tags"}
                   </span>
-                  {allTags.map((tag) => (
+                  {(mode === "stay" ? allTags : standaloneTags).map((tag) => (
                     <button
                       key={tag.slug}
                       onClick={() => toggleTag(tag.slug)}
@@ -466,11 +585,54 @@ const LaunchExperiences = () => {
             </div>
           )}
 
-          {isLoading ? (
+          {(mode === "stay" ? isLoading : isLoadingStandalone) ? (
             <div className="grid grid-cols-2 gap-3">
               {Array.from({ length: 8 }).map((_, i) => <ExperienceCardSkeleton key={i} />)}
             </div>
+          ) : mode === "live" ? (
+            /* ── Mode "Expériences seules" ── */
+            <div className="flex flex-col md:grid md:grid-cols-[1fr_340px] gap-6 items-start">
+              <div>
+                {filteredStandalone && filteredStandalone.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {filteredStandalone.map((experience: any, idx: number) => (
+                      <StandaloneExperienceCard
+                        key={experience.id}
+                        experience={experience}
+                        index={idx}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-16">
+                    <p className="text-muted-foreground">
+                      {isRTL ? "אין חוויות בקטגוריה זו עדיין" : lang === "fr" ? "Aucune expérience dans cette catégorie." : "No experiences in this category yet."}
+                    </p>
+                    {selectedCatId && (
+                      <button
+                        onClick={() => { setSelectedCatId(null); setSearchParams({ context: "launch", mode: "live" }); }}
+                        className="mt-3 text-sm underline underline-offset-4 text-[#ad1414]"
+                      >
+                        {isRTL ? "הצג הכל" : lang === "fr" ? "Voir tout" : "Show all"}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Carte standalone */}
+              <div className="hidden md:block sticky top-20 h-[calc(100vh-120px)]">
+                {standaloneMapPins.length > 0 ? (
+                  <MultiPinMap pins={standaloneMapPins} lang={lang as "en" | "he" | "fr"} />
+                ) : (
+                  <div className="h-full min-h-[400px] rounded-2xl bg-muted/30 flex items-center justify-center text-muted-foreground text-sm">
+                    {isRTL ? "אין מיקומים זמינים" : "No locations available"}
+                  </div>
+                )}
+              </div>
+            </div>
           ) : (
+            /* ── Mode "Avec Hôtel" ── */
             <div className="flex flex-col md:grid md:grid-cols-[1fr_340px] gap-6 items-start">
 
               {/* Colonne gauche : grille + featured */}
