@@ -11,17 +11,23 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 
 const MobileAppShell = () => {
   const location = useLocation();
-  
+
   const isAdmin = location.pathname.startsWith("/admin") || location.pathname.startsWith("/hotel-admin");
   if (isAdmin) return null;
 
-  // On account sub-pages (with ?tab=), the sub-page renders its own header
+  // On account sub-pages (with ?tab=), the sub-page provides its own header
   const isAccountSubPage = location.pathname === "/account" && location.search.includes("tab=");
+
+  // Experience pages replace the bottom nav with their own booking bar
+  const isExperiencePage =
+    location.pathname.startsWith("/experience/") ||
+    location.pathname.startsWith("/experience2/") ||
+    location.pathname.startsWith("/standalone-experience/");
 
   return (
     <>
       {!isAccountSubPage && <MobileStickyHeader />}
-      <MobileBottomNav />
+      {!isExperiencePage && <MobileBottomNav />}
     </>
   );
 };

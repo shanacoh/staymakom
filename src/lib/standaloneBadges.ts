@@ -89,9 +89,9 @@ const LABELS: Record<string, Record<Language, string>> = {
 };
 
 const kidsLabel = (age: number, lang: Language): string => {
-  if (lang === "fr") return `Enfants dès ${age} ans`;
-  if (lang === "he") return `ילדים מגיל ${age}`;
-  return `Kids from ${age}`;
+  if (lang === "fr") return `Dès ${age} ans`;
+  if (lang === "he") return `מגיל ${age}`;
+  return `From ${age}`;
 };
 
 export interface AutoBadgeTag {

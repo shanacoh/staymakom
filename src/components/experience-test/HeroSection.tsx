@@ -229,7 +229,7 @@ const HeroSection = ({
 
   // Header info block (reusable for mobile & desktop)
   const renderHeaderBlock = (isMobile: boolean) => (
-    <div className={cn("space-y-3", isMobile ? "text-center" : "text-center")}>
+    <div className={cn(isMobile ? "space-y-4" : "space-y-3", "text-center")}>
       {/* 1. Category tag — gold, uppercase */}
       {categoryName && categorySlug && (() => {
         const catImg = getCategoryImage(categorySlug);
@@ -270,7 +270,7 @@ const HeroSection = ({
       {/* 2. Title — Inter bold */}
       <h1 className={cn(
         "font-sans font-bold text-foreground leading-tight",
-        isMobile ? "text-2xl" : "text-3xl xl:text-4xl"
+        isMobile ? "text-2xl pt-1" : "text-3xl xl:text-4xl"
       )}>
         {title}
       </h1>
@@ -279,7 +279,7 @@ const HeroSection = ({
       {subtitle && (
          <p className={cn(
            "text-muted-foreground leading-relaxed break-words",
-           isMobile ? "text-sm" : "text-sm"
+           isMobile ? "text-[15px]" : "text-sm"
          )}>
           {subtitle}
         </p>
@@ -315,7 +315,7 @@ const HeroSection = ({
 
       {/* 6. Hotel with "Hosted at" prefix */}
       {hotelName && (
-        <div className={cn("flex items-center gap-3 pt-1", isMobile ? "justify-center" : "justify-center")}>
+        <div className={cn("flex items-center gap-3.5 pt-1 mt-1", isMobile ? "justify-center" : "justify-center")}>
           <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-sm font-medium text-muted-foreground overflow-hidden flex-shrink-0">
             {hotelImage ? (
               <img src={hotelImage} alt={hotelName} className="w-full h-full object-cover" />
@@ -373,7 +373,7 @@ const HeroSection = ({
 
         {/* MOBILE: Full-width carousel */}
         <div className="block md:hidden">
-          <div className="px-4 pt-3">
+          <div className="px-4 pt-2">
             <div className="relative">
               <Carousel 
                 className="w-full"

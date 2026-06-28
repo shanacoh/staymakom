@@ -24,6 +24,7 @@ import LaunchFooter from "@/components/LaunchFooter";
 import MobileFooterMinimal from "@/components/MobileFooterMinimal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useLanguage } from "@/hooks/useLanguage";
 import { SEOHead } from "@/components/SEOHead";
 import { trackExperiencePageViewed, trackTimeOnExperiencePage } from "@/lib/analytics";
@@ -142,6 +143,10 @@ export default function StandaloneExperience() {
   const [children, setChildren] = useState<number>(0);
   const [selectedExtras, setSelectedExtras] = useState<SelectedExtra[]>([]);
 
+  // Mobile booking Sheet
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isBarHidden, setIsBarHidden] = useState(false);
+
   const handleToggleExtra = useCallback((extra: SelectedExtra) => {
     setSelectedExtras((prev) => {
       const exists = prev.some((e) => e.id === extra.id);
@@ -238,6 +243,19 @@ export default function StandaloneExperience() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [experience?.min_party]);
+
+  // Masquer la barre booking quand le footer est visible
+  useEffect(() => {
+    const handleScroll = () => {
+      if (footerRef.current) {
+        const rect = footerRef.current.getBoundingClientRect();
+        setIsBarHidden(rect.top < window.innerHeight);
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // -------------------------------------------------------------------------
   // Derived data
@@ -730,7 +748,7 @@ export default function StandaloneExperience() {
         </section>
 
         {/* Main content */}
-        <div className="max-w-6xl mx-auto pb-28 md:pb-16 px-4 sm:px-6 lg:px-12 xl:px-16 my-8">
+        <div className="max-w-6xl mx-auto pb-24 md:pb-16 px-4 sm:px-6 lg:px-12 xl:px-16 my-8">
           <div className="grid md:grid-cols-[65%_35%] gap-6 lg:gap-10">
             {/* Left Column */}
             <div className="space-y-10 md:space-y-12 min-w-0 overflow-x-hidden">
@@ -803,46 +821,51 @@ export default function StandaloneExperience() {
           </div>
         </div>
 
-        {/* Mobile Booking Panel — fixed bottom sheet trigger */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-sm border-t px-4 py-3">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="font-bold text-lg">
-                  {currencySymbol}{experience.base_price.toFixed(0)}
-                </span>
-                <span className="text-sm text-muted-foreground">
+        {/* Mobile booking bar — remplace la nav bar du bas */}
+        <div
+          className={cn(
+            "md:hidden fixed left-0 right-0 bottom-0 z-50 bg-background/95 backdrop-blur-sm border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)] transition-all duration-300",
+            isBarHidden ? "translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
+          )}
+          style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+        >
+          <div className="px-4">
+            <button
+              className="flex items-center justify-between py-3.5 w-full text-left min-h-[52px]"
+              onClick={() => setIsSheetOpen(true)}
+            >
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-base font-bold text-foreground whitespace-nowrap">
+                    {currencySymbol}{experience.base_price.toFixed(0)}
+                  </span>
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">
+                    {experience.base_price_type === "fixed"
+                      ? (lang === "fr" ? "forfait" : "fixed")
+                      : (lang === "he" ? "לאדם" : lang === "fr" ? "/ pers." : "/ person")}
+                  </span>
+                </div>
+                <span className="text-[11px] text-muted-foreground">
                   {experience.base_price_type === "fixed"
-                    ? (lang === "fr" ? "forfait" : "fixed")
-                    : (lang === "he" ? "לאדם" : lang === "fr" ? "/ pers." : "/ person")}
+                    ? (lang === "he" ? `עד ${experience.max_party} משתתפים` : lang === "fr" ? `jusqu'à ${experience.max_party} participants` : `up to ${experience.max_party} participants`)
+                    : (lang === "he" ? `מינימום ${experience.min_party} משתתפים` : lang === "fr" ? `à partir de ${experience.min_party} participants` : `from ${experience.min_party} guests`)}
                 </span>
               </div>
-              {experience.base_price_type === "fixed" && (
-                <p className="text-xs text-muted-foreground leading-tight">
-                  {lang === "he"
-                    ? `עד ${experience.max_party} משתתפים`
-                    : lang === "fr"
-                    ? `jusqu'à ${experience.max_party} participants`
-                    : `up to ${experience.max_party} participants`}
-                </p>
-              )}
-            </div>
-            <Button
-              className="rounded-full px-6"
-              onClick={() => {
-                const panel = document.getElementById("standalone-booking-panel-mobile");
-                panel?.scrollIntoView({ behavior: "smooth" });
-              }}
-            >
-              {lang === "he" ? "הזמן" : lang === "fr" ? "Réserver" : "Book"}
-            </Button>
+              <span className="rounded-full bg-foreground text-background text-xs font-semibold px-5 py-2.5 shrink-0 ml-3 whitespace-nowrap">
+                {lang === "he" ? "הזמן" : lang === "fr" ? "Réserver" : "Book"}
+              </span>
+            </button>
           </div>
         </div>
 
-        {/* Mobile full booking panel (scrolled to) */}
-        <div id="standalone-booking-panel-mobile" className="md:hidden px-4 pb-32 pt-4">
-          {renderBookingPanel()}
-        </div>
+        {/* Mobile booking Sheet */}
+        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+          <SheetContent side="bottom" className="h-[85vh] sm:h-[90vh] overflow-y-auto p-0">
+            <div className="p-6 space-y-4">
+              {renderBookingPanel()}
+            </div>
+          </SheetContent>
+        </Sheet>
       </main>
 
       <footer ref={footerRef as React.RefObject<HTMLElement>}>

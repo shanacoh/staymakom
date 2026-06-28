@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { MOBILE_BOTTOM_NAV_HEIGHT } from "@/constants/layout";
 import { useFromPrice } from "@/hooks/useExperience2Price";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import type { AvailabilityRule } from "@/lib/availabilityUtils";
@@ -57,11 +56,6 @@ const StickyPriceBar = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, [footerRef]);
 
-  const handleClick = () => {
-    // On mobile, open the sheet; on desktop this would scroll
-    onViewDates();
-  };
-
   if (!hasHyperguest || !displayPrice || displayPrice <= 0) {
     return null;
   }
@@ -69,34 +63,28 @@ const StickyPriceBar = ({
   return (
     <div
       className={cn(
-        "md:hidden fixed left-0 right-0 z-40 bg-background border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)] transition-all duration-300 overflow-x-hidden",
+        "md:hidden fixed left-0 right-0 bottom-0 z-50 bg-background/95 backdrop-blur-sm border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)] transition-all duration-300 overflow-x-hidden",
         isHidden ? "translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
       )}
-      style={{ bottom: `calc(${MOBILE_BOTTOM_NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px))` }}
+      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       <div className="px-4">
         <button
-          onClick={handleClick}
-          className="flex items-center justify-between py-3 w-full text-left min-h-[44px]"
+          onClick={onViewDates}
+          className="flex items-center justify-between py-3.5 w-full text-left min-h-[52px]"
         >
           <div className="flex flex-col min-w-0">
-            <div className="flex items-baseline gap-1 flex-wrap">
-              <span className="text-sm font-medium whitespace-nowrap" style={{ color: '#B85C4A' }}>
-                ● {lang === 'he' ? 'הכי משתלם' : lang === 'fr' ? 'Meilleur tarif' : 'Best rate'}
-              </span>
-              <span className="text-sm text-muted-foreground whitespace-nowrap">·</span>
-              <span className="text-sm font-semibold text-foreground whitespace-nowrap">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-base font-bold text-foreground whitespace-nowrap">
                 {lang === 'he' ? `מ-${symbol}${displayPrice}` : lang === 'fr' ? `à partir de ${symbol}${displayPrice}` : `from ${symbol}${displayPrice}`}
               </span>
             </div>
             <span className="text-[11px] text-muted-foreground">
-              {lang === 'he' ? 'ל-2 אנשים' : lang === 'fr' ? '· 2 personnes' : '· 2 guests'}
+              {lang === 'he' ? 'הכי משתלם · ל-2 אנשים' : lang === 'fr' ? 'Meilleur tarif · 2 personnes' : 'Best rate · 2 guests'}
             </span>
           </div>
-          <span className="text-xs font-medium uppercase tracking-wider text-foreground shrink-0 ml-2 whitespace-nowrap"
-            style={{ borderBottom: '1px solid currentColor' }}
-          >
-            {lang === 'he' ? 'לתאריכים' : lang === 'fr' ? 'VOIR LES DATES' : 'VIEW DATES'}
+          <span className="rounded-full bg-foreground text-background text-xs font-semibold px-5 py-2.5 shrink-0 ml-3 whitespace-nowrap">
+            {lang === 'he' ? 'הזמן' : lang === 'fr' ? 'Réserver' : 'Book'}
           </span>
         </button>
       </div>
