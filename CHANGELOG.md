@@ -6,6 +6,25 @@
 
 ---
 
+## [2026-06-28] — Panneau de réservation (expérience seule) : refonte UI selon nouvelle DA
+
+### Ce qui a changé côté code
+- `src/pages/StandaloneExperience.tsx` : mise à jour visuelle de la fonction `renderBookingPanel()` uniquement
+  - Icônes Participants / Date / Créneau passées en rouge bordeaux `#ad1414`
+  - Boutons +/− : hover rose pâle + bord rouge au survol (au lieu de gris neutre)
+  - Calendrier : jour sélectionné en rouge bordeaux (au lieu de bleu marine), suppression du carré doré sur la cellule, indicateur "aujourd'hui" en rose pâle
+  - Créneaux horaires : sélectionné en rouge bordeaux, hover en rose pâle
+  - Bouton "Continuer" : rouge bordeaux plein avec micro-élévation au hover
+  - Conteneur du panneau : ombre légère ajoutée (`shadow-medium`)
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- Aligner le panneau de réservation des expériences standalone avec la nouvelle direction artistique du site (rouge bordeaux `#ad1414` comme couleur signature, remplace l'ancien bleu marine primary)
+
+---
+
 ## [2026-06-28] — Header unifié : déploiement du V3Header sur tout le site
 
 ### Ce qui a changé côté code

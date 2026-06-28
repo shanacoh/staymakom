@@ -427,7 +427,7 @@ export default function StandaloneExperience() {
       (!experience.has_time_slots || !!selectedSlot);
 
     return (
-      <div className="rounded-2xl border p-5 space-y-5">
+      <div className="rounded-2xl border p-5 space-y-5 shadow-medium">
         {/* Affichage du prix */}
         <div className="flex items-baseline gap-2">
           <span className="text-3xl font-bold">
@@ -439,7 +439,7 @@ export default function StandaloneExperience() {
         {/* Bloc participants — en premier */}
         <div className="space-y-3">
           <p className="flex items-center gap-1.5 text-sm font-semibold">
-            <Users className="h-3.5 w-3.5" />
+            <Users className="h-3.5 w-3.5 text-[#ad1414]" />
             {lang === "he" ? "משתתפים" : lang === "fr" ? "Participants" : "Participants"}
           </p>
 
@@ -460,7 +460,7 @@ export default function StandaloneExperience() {
                     type="button"
                     onClick={() => setAdults((a) => Math.max(1, a - 1))}
                     disabled={adults <= 1}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-muted disabled:opacity-40 transition-colors"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
                   >
                     −
                   </button>
@@ -469,7 +469,7 @@ export default function StandaloneExperience() {
                     type="button"
                     onClick={() => setAdults((a) => Math.min(experience.max_party - children, a + 1))}
                     disabled={totalParty >= experience.max_party}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-muted disabled:opacity-40 transition-colors"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
                   >
                     +
                   </button>
@@ -491,7 +491,7 @@ export default function StandaloneExperience() {
                     type="button"
                     onClick={() => setChildren((c) => Math.max(0, c - 1))}
                     disabled={children <= 0}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-muted disabled:opacity-40 transition-colors"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
                   >
                     −
                   </button>
@@ -500,7 +500,7 @@ export default function StandaloneExperience() {
                     type="button"
                     onClick={() => setChildren((c) => Math.min(experience.max_party - adults, c + 1))}
                     disabled={totalParty >= experience.max_party}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-muted disabled:opacity-40 transition-colors"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
                   >
                     +
                   </button>
@@ -518,7 +518,7 @@ export default function StandaloneExperience() {
                   type="button"
                   onClick={() => setAdults((a) => Math.max(experience.min_party, a - 1))}
                   disabled={adults <= experience.min_party}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-muted disabled:opacity-40 transition-colors"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
                 >
                   −
                 </button>
@@ -527,7 +527,7 @@ export default function StandaloneExperience() {
                   type="button"
                   onClick={() => setAdults((a) => Math.min(experience.max_party, a + 1))}
                   disabled={adults >= experience.max_party}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-muted disabled:opacity-40 transition-colors"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
                 >
                   +
                 </button>
@@ -539,7 +539,7 @@ export default function StandaloneExperience() {
         {/* Bloc date — en second */}
         <div className="space-y-1.5">
           <p className="flex items-center gap-1.5 text-sm font-semibold">
-            <Calendar className="h-3.5 w-3.5" />
+            <Calendar className="h-3.5 w-3.5 text-[#ad1414]" />
             {lang === "he" ? "תאריך" : lang === "fr" ? "Date" : "Date"}
           </p>
           <div className="border rounded-lg overflow-hidden">
@@ -552,8 +552,10 @@ export default function StandaloneExperience() {
               defaultMonth={new Date(minDate + "T12:00:00")}
               toDate={maxDate}
               classNames={{
+                cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
                 day_selected:
-                  "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                  "bg-[#ad1414] text-white hover:bg-[#ad1414] hover:text-white focus:bg-[#ad1414] focus:text-white",
+                day_today: "bg-[#FDF0F0] text-[#ad1414] font-semibold rounded-lg",
                 day_disabled: "text-muted-foreground/30 cursor-not-allowed",
                 day_outside: "text-muted-foreground/30",
               }}
@@ -565,7 +567,7 @@ export default function StandaloneExperience() {
         {experience.has_time_slots && (experience.time_slots?.length ?? 0) > 0 && (
           <div className="space-y-2">
             <p className="flex items-center gap-1.5 text-sm font-semibold">
-              <Clock className="h-3.5 w-3.5" />
+              <Clock className="h-3.5 w-3.5 text-[#ad1414]" />
               {lang === "he" ? "שעה" : lang === "fr" ? "Créneau" : "Time slot"}
             </p>
             <div className="grid grid-cols-3 gap-2">
@@ -577,8 +579,8 @@ export default function StandaloneExperience() {
                   className={cn(
                     "rounded-lg border py-2 text-sm font-medium transition-colors",
                     selectedSlot === slot
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border hover:border-primary/50 hover:bg-muted"
+                      ? "border-[#ad1414] bg-[#ad1414] text-white"
+                      : "border-border hover:border-[#ad1414]/50 hover:bg-[#FDF2F2]"
                   )}
                 >
                   {slot}
@@ -602,7 +604,7 @@ export default function StandaloneExperience() {
 
         {/* Bouton Continuer — navigue vers la page de checkout dédiée */}
         <Button
-          className="w-full rounded-full text-base font-semibold h-12"
+          className="w-full rounded-full text-base font-semibold h-12 bg-[#ad1414] text-white hover:bg-[#9a1212] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_-4px_rgba(173,20,20,0.4)] transition-all duration-200 normal-case"
           onClick={() => {
             navigate("/standalone-checkout", {
               state: {
