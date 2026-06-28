@@ -6,6 +6,29 @@
 
 ---
 
+## [2026-06-28] — Refonte mobile des pages d'expériences : barre de réservation unifiée
+
+### Ce qui a changé côté code
+- `src/components/MobileAppShell.tsx` : la pastille de navigation du bas (Explore / Saved / Trips / Account) est désormais masquée sur les pages `/experience/`, `/experience2/` et `/standalone-experience/` — elle est remplacée par la barre de réservation propre à chaque page
+- `src/components/experience-test/StickyPriceBar.tsx` (version "With Hotel") : repositionnée à `bottom-0` pour prendre exactement la place de la nav ; bouton CTA transformé en pill noire (`bg-foreground text-background`) ; libellé raccourci en "Réserver" ; logique de masquage au footer conservée
+- `src/pages/StandaloneExperience.tsx` (version "Experience Only") : refonte complète de la barre mobile
+  - Même design que StickyPriceBar (prix à gauche, pill noire à droite)
+  - Clic sur le bouton → ouvre un Sheet (tiroir du bas) avec le formulaire de réservation complet
+  - Panneau de réservation dupliqué en bas de page supprimé (plus de scroll vers le bas)
+  - Masquage automatique quand le footer est visible (scroll listener sur `footerRef`)
+  - Padding bottom ajusté de `pb-28` à `pb-24`
+- `src/components/experience-test/HeroSection.tsx` : améliorations d'espacement mobile (espace entre blocs, taille du sous-titre, respiration du bloc "Hosted at")
+- `src/pages/Experience2.tsx` : padding bottom ajusté de `pb-28` à `pb-24`
+
+### Ce qui a changé côté base de données
+- Aucune modification de base de données
+
+### Pourquoi ce changement
+- Sur mobile, les pages d'expériences n'étaient pas adaptées : la nav bar chevauchait les éléments, le bouton de réservation était bleu (incohérent), et la version standalone obligeait l'utilisateur à défiler jusqu'en bas de la page pour accéder au formulaire
+- Les deux versions (with hotel / experience only) ont désormais le même comportement : une barre fixe en bas qui ouvre un tiroir de réservation d'un seul tap
+
+---
+
 ## [2026-06-28] — Refonte UI/UX des pages de réservation (étapes 2 et 3)
 
 ### Ce qui a changé côté code
