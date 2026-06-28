@@ -72,14 +72,36 @@ function getCurrencySymbol(currency: string): string {
 // Entry point — validates router state
 // ---------------------------------------------------------------------------
 
+const CART_TTL_MS = 2 * 60 * 60 * 1000; // 2 heures
+
 export default function StandaloneCheckout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as StandaloneCheckoutState | null;
+  const routerState = location.state as StandaloneCheckoutState | null;
+
+  // useState lazy init : s'exécute UNE SEULE FOIS au montage du composant.
+  // Priorité 1 : router state (navigation directe depuis StandaloneExperience).
+  // Priorité 2 : localStorage (rechargement de page ou problème de router state).
+  const [state] = useState<StandaloneCheckoutState | null>(() => {
+    if (routerState?.experienceId) return routerState;
+    try {
+      const saved = localStorage.getItem("staymakom_standalone_cart");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const savedAt = parsed.savedAt ? new Date(parsed.savedAt).getTime() : 0;
+        if (Date.now() - savedAt > CART_TTL_MS) {
+          localStorage.removeItem("staymakom_standalone_cart");
+          return null;
+        }
+        return parsed as StandaloneCheckoutState;
+      }
+    } catch {}
+    return null;
+  });
 
   React.useEffect(() => {
     if (!state?.experienceId) {
-      navigate("/", { replace: true });
+      navigate("/launch/experiences?mode=live", { replace: true });
     }
   }, [state, navigate]);
 

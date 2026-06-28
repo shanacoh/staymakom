@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-06-28] — Correction bug : bouton "Continuer" expérience standalone redirige vers la home
+
+### Ce qui a changé côté code
+- `src/pages/StandaloneExperience.tsx` : le bouton "Continuer →" sauvegarde maintenant les données de réservation dans le `localStorage` du navigateur avant de naviguer vers la page de paiement. Ajout de `type="button"` pour prévenir tout comportement inattendu.
+- `src/pages/StandaloneCheckout.tsx` : remplacement du mécanisme de lecture des données (`useMemo` → `useState` avec initialisation lazy). La page lit les données exactement une fois à son ouverture, en cherchant d'abord dans l'état de navigation React Router, puis dans le `localStorage` en fallback. La redirection d'urgence pointe désormais vers `/launch/experiences?mode=live` (liste des expériences) plutôt que vers la home `/`.
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- Cliquer sur "Continuer →" dans la page d'une expérience standalone redirigait l'utilisateur vers la home au lieu d'ouvrir la page de paiement. Les données de réservation (date, participants, prix) n'arrivaient pas correctement à la page suivante. La double stratégie localStorage + router state rend le transfert de données fiable quelle que soit la cause du problème initial.
+
+---
+
 ## [2026-06-28] — Panneau de réservation (expérience seule) : refonte UI selon nouvelle DA
 
 ### Ce qui a changé côté code

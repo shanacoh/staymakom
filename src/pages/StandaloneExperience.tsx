@@ -604,30 +604,38 @@ export default function StandaloneExperience() {
 
         {/* Bouton Continuer — navigue vers la page de checkout dédiée */}
         <Button
+          type="button"
           className="w-full rounded-full text-base font-semibold h-12 bg-[#ad1414] text-white hover:bg-[#9a1212] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_-4px_rgba(173,20,20,0.4)] transition-all duration-200 normal-case"
           onClick={() => {
-            navigate("/standalone-checkout", {
-              state: {
-                experienceId: experience.id,
-                experienceSlug: experience.slug,
-                experienceTitle: experience.title,
-                experienceTitleFr: experience.title_fr,
-                experienceTitleHe: experience.title_he,
-                heroImage: experience.hero_image,
-                selectedDate,
-                selectedSlot: selectedSlot || null,
-                adults,
-                children,
-                basePrice: experience.base_price,
-                basePriceChild: experience.base_price_child,
-                hasChildPrice: experience.has_child_price,
-                basePriceType: experience.base_price_type,
-                currency: experience.currency,
-                lang,
-                totalPrice,
-                selectedExtras,
-              },
-            });
+            const checkoutState = {
+              experienceId: experience.id,
+              experienceSlug: experience.slug,
+              experienceTitle: experience.title,
+              experienceTitleFr: experience.title_fr,
+              experienceTitleHe: experience.title_he,
+              heroImage: experience.hero_image,
+              selectedDate,
+              selectedSlot: selectedSlot || null,
+              adults,
+              children,
+              basePrice: experience.base_price,
+              basePriceChild: experience.base_price_child,
+              hasChildPrice: experience.has_child_price,
+              basePriceType: experience.base_price_type,
+              currency: experience.currency,
+              lang,
+              totalPrice,
+              selectedExtras,
+            };
+            try {
+              localStorage.setItem("staymakom_standalone_cart", JSON.stringify({
+                ...checkoutState,
+                savedAt: new Date().toISOString(),
+              }));
+            } catch {
+              // localStorage indisponible — on continue sans fallback
+            }
+            navigate("/standalone-checkout", { state: checkoutState });
           }}
           disabled={!canProceedStep1}
         >
