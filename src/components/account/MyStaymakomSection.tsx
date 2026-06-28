@@ -502,8 +502,8 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
                   <Calendar className="h-10 w-10 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-serif text-xl mb-2">{isHebrew ? "אין הזמנות" : isFrench ? "Aucune réservation" : "No bookings found"}</h3>
-                  <p className="text-muted-foreground max-w-sm mx-auto">
+                  <h3 className="text-xl mb-2">{isHebrew ? "אין הזמנות" : isFrench ? "Aucune réservation" : "No bookings found"}</h3>
+                  <p className="text-[hsl(var(--cta-foreground))] max-w-sm mx-auto">
                     {isHebrew
                       ? "גלו את החוויות המיוחדות שלנו והזמינו את ההרפתקה הבאה שלכם!"
                       : isFrench
@@ -511,9 +511,12 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
                       : "Start exploring our curated experiences and book your next adventure!"}
                   </p>
                 </div>
-                <Button onClick={() => navigate("/")} variant="cta">
+                <span
+                  onClick={() => navigate("/")}
+                  className="inline-block cursor-pointer px-5 py-2 text-sm uppercase tracking-wide bg-[hsl(var(--cta))] text-[hsl(var(--cta-foreground))] border border-[hsl(var(--cta-border)/0.35)] btn-organic"
+                >
                   {isHebrew ? "גלו חוויות" : isFrench ? "Découvrir les expériences" : "Explore Experiences"}
-                </Button>
+                </span>
               </div>
             </CardContent>
           </Card>
