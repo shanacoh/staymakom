@@ -470,6 +470,7 @@ export function useFromPrice(
   hyperguestPropertyId: string | null,
   availabilityRules: AvailabilityRule[] = [],
   preferredBoardType: string | null = null,
+  minParty: number = 2,
 ) {
   const { data: addons } = useExperienceAddons(experienceId);
   const { data: pricingConfig } = useExperiencePricingConfig(experienceId);
@@ -508,7 +509,7 @@ export function useFromPrice(
     propertyId: propId,
     dates: specificDates,
     nights: 1,
-    adults: 2,
+    adults: minParty,
     currency: "ILS",
     preferredBoardType,
     enabled: hasSpecificDates && !!propId,
@@ -517,7 +518,7 @@ export function useFromPrice(
   const { data: quickDates, isLoading: isLoadingQuick } = useQuickDateAvailability({
     propertyId: propId,
     nights: 1,
-    adults: 2,
+    adults: minParty,
     currency: "ILS",
     preferredBoardType,
     enabled: !hasSpecificDates && !!propId,

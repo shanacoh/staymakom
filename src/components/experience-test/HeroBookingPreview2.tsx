@@ -36,6 +36,7 @@ const HeroBookingPreview2 = ({
     hyperguestPropertyId ?? null,
     availabilityRules,
     preferredBoardType,
+    minParty,
   );
 
   const displayPrice = fromPriceILS ? Math.round(convert(fromPriceILS)) : null;
