@@ -43,10 +43,10 @@ const iconMap: Record<string, LucideIcon> = {
 /* ─── Catégories V3 — ordre et labels fixes ─────────────────────────────── */
 const V3_CATEGORIES = [
   { id: "romantic-escape", en: "Romantic Escape",  fr: "Escapade Romantique",  he: "בריחה רומנטית",    slugHints: ["romantic"],                   icon: "heart",   img: "/icons/icon-romantic.png"  },
-  { id: "family-fun",      en: "Family Fun",        fr: "Fun Famille",          he: "כיף משפחתי",       slugHints: ["family"],                     icon: "users",   img: "/icons/icon-family.png"    },
-  { id: "foody-discovery", en: "Foody Discovery",   fr: "Découverte Culinaire", he: "גילוי קולינרי",    slugHints: ["taste", "food", "culinar"],   icon: "wine",    img: "/icons/icon-foody.png"     },
-  { id: "land-of-stories", en: "Land of Stories",  fr: "Terre de Récits",      he: "ארץ הסיפורים",     slugHints: ["land", "stories"],            icon: "compass", img: "/icons/icon-stories.png"   },
-  { id: "nature-outdoor",  en: "Nature & Outdoor",  fr: "Nature & Plein Air",   he: "טבע ושטח",         slugHints: ["nature", "beyond", "outdoor"],icon: "leaf",    img: "/icons/icon-nature.png"    },
+  { id: "family-fun",      en: "Family Fun",        fr: "Aventures en Famille", he: "כיף משפחתי",       slugHints: ["family"],                     icon: "users",   img: "/icons/icon-family.png"    },
+  { id: "foody-discovery", en: "Foody Discovery",   fr: "Évasion Gourmande",    he: "גילוי קולינרי",    slugHints: ["taste", "food", "culinar"],   icon: "wine",    img: "/icons/icon-foody.png"     },
+  { id: "land-of-stories", en: "Land of Stories",  fr: "Terre d'Histoire",     he: "ארץ הסיפורים",     slugHints: ["land", "stories"],            icon: "compass", img: "/icons/icon-stories.png"   },
+  { id: "nature-outdoor",  en: "Nature & Outdoor",  fr: "Nature & Aventure",    he: "טבע ושטח",         slugHints: ["nature", "beyond", "outdoor"],icon: "leaf",    img: "/icons/icon-nature.png"    },
 ];
 
 /* ─── Animation CSS par icône de catégorie ──────────────────────────────── */
