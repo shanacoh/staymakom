@@ -279,10 +279,10 @@ const IndexV3 = () => {
             </h2>
             <p className="text-muted-foreground text-xs sm:text-sm">
               {isRTL
-                ? "ל-24 שעות, 48 שעות, או חוויות מותאמות אישית."
+                ? "לכמה שעות, לילה, או חוויה מותאמת אישית."
                 : lang === "fr"
-                  ? "Pour 24h, 48h, ou des expériences sur mesure."
-                  : "For 24 hours, 48 hours, or tailor-made experiences."}
+                  ? "Pour quelques heures, une nuit ou une expérience sur mesure."
+                  : "For a few hours, a night or a tailor-made experience."}
             </p>
           </div>
 

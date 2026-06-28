@@ -407,7 +407,7 @@ const LaunchIndex = () => {
               {lang === 'he' ? (<>מלונות שנבחרו בקפידה.<br />חוויות בלתי נשכחות.</>) : lang === 'fr' ? (<>Hôtels d'exception.<br />Expériences inoubliables.</>) : (<>Handpicked Hotels.<br />Unforgettable Experiences.</>)}
             </h2>
             <p className="text-muted-foreground text-xs sm:text-sm mb-5">
-              {lang === 'he' ? "ל-24 שעות, 48 שעות, או חוויות מותאמות אישית." : lang === 'fr' ? "Pour 24h, 48h, ou des expériences sur mesure." : "For 24 hours, 48 hours, or tailor-made experiences."}
+              {lang === 'he' ? "לכמה שעות, לילה, או חוויה מותאמת אישית." : lang === 'fr' ? "Pour quelques heures, une nuit ou une expérience sur mesure." : "For a few hours, a night or a tailor-made experience."}
             </p>
           </div>
 

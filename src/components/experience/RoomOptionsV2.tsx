@@ -73,6 +73,7 @@ interface RoomOptionsV2Props {
    * Une chambre n'apparaît que si elle a au moins un rate plan correspondant.
    */
   preferredBoardType?: string | null;
+  isBarRateLoading?: boolean;
 }
 
 function shouldHideRatePlan(ratePlan: RoomRatePlan): boolean {
@@ -101,6 +102,7 @@ export function RoomOptionsV2({
   barRateData,
   adults = 2,
   preferredBoardType = null,
+  isBarRateLoading = false,
 }: RoomOptionsV2Props) {
   const preferredBoardUpper =
     typeof preferredBoardType === "string" && preferredBoardType.trim() !== ""
@@ -270,7 +272,7 @@ export function RoomOptionsV2({
                     {room.roomName}
                   </span>
                   <span className="text-sm font-semibold shrink-0">
-                    {formatPrice(applyFromPrice(price), currency)}
+                    {isBarRateLoading ? "—" : formatPrice(applyFromPrice(price), currency)}
                   </span>
                 </div>
 

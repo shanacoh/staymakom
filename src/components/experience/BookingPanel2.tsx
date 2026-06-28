@@ -252,7 +252,7 @@ export function BookingPanel2({
   const { data: _pricingConfig } = useExperiencePricingConfig(experienceId);
 
   // Fetch BAR RATE fields for "from" price calculation on date cards
-  const { data: _barRateData } = useQuery({
+  const { data: _barRateData, isLoading: isBarRateLoading } = useQuery({
     queryKey: ["experience2-bar-rate-booking", experienceId],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
@@ -807,7 +807,11 @@ export function BookingPanel2({
                                 <p className="text-[10px] text-muted-foreground">
                                   {lang === "he" ? "מ-" : lang === "fr" ? "à partir de" : "from"}
                                 </p>
-                                <DualPrice amount={applyFromPrice(opt.cheapestPrice) ?? opt.cheapestPrice} currency={opt.currency} inline className="text-sm font-semibold text-primary" />
+                                {isBarRateLoading ? (
+                                  <span className="text-sm font-semibold text-muted-foreground">—</span>
+                                ) : (
+                                  <DualPrice amount={applyFromPrice(opt.cheapestPrice) ?? 0} currency={opt.currency} inline className="text-sm font-semibold text-primary" />
+                                )}
                               </>
                             )}
                           </div>
@@ -931,6 +935,7 @@ export function BookingPanel2({
             pricingConfig={_pricingConfig}
             nights={nights}
             barRateData={_barRateData}
+            isBarRateLoading={isBarRateLoading}
             adults={adults}
             preferredBoardType={preferredBoardType}
           />
