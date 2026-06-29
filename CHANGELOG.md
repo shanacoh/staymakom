@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-06-29] — Correction accès fichiers statiques (sitemap, robots, favicon)
+
+### Ce qui a changé côté code
+- `vercel.json` : la règle de redirection ne s'applique plus aux fichiers avec une extension (`.xml`, `.txt`, `.png`…). Avant, Google ne pouvait pas lire le sitemap car il était redirigé vers la page d'accueil.
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- Google Search Console affichait "Impossible de récupérer le sitemap" car la règle de routing interceptait toutes les URLs sans exception
+
+---
+
 ## [2026-06-29] — Vérification Google Search Console
 
 ### Ce qui a changé côté code
