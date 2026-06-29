@@ -6,6 +6,33 @@
 
 ---
 
+## [2026-06-29] — Correction bouton "Subscribe & get 10% off" dans le footer
+
+### Ce qui a changé côté code
+- `src/App.tsx` : import et montage global de `NewsletterPopup` — la popup est maintenant disponible sur toutes les pages de l'application
+- `src/pages/LaunchIndex.tsx` : suppression du montage local de `NewsletterPopup` (désormais inutile car chargé globalement)
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- Le bouton "Subscribe & get 10% off" dans le footer appelait une popup qui n'était montée que sur la page `/launch`. Sur toutes les autres pages (expériences, partenaires, compte, etc.), le clic ne déclenchait rien. La popup est maintenant chargée une seule fois au niveau de l'application entière.
+
+---
+
+## [2026-06-29] — Correction bouton Explore navbar mobile
+
+### Ce qui a changé côté code
+- `src/components/MobileBottomNav.tsx` : le bouton Explore (icône boussole) pointait vers `/launch` au lieu de `/` (page principale) — corrigé, la détection de l'onglet actif mise à jour en conséquence
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- Le bouton Explore de la barre de navigation mobile renvoyait vers une ancienne page de lancement au lieu de la page d'accueil principale du site
+
+---
+
 ## [2026-06-28] — Optimisation SEO complète : meta tags OG, sitemap, canonical, hreflang, données structurées
 
 ### Ce qui a changé côté code
