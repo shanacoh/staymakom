@@ -6,6 +6,23 @@
 
 ---
 
+## [2026-06-29] — Corrections bugs : calendrier FR, copyright 2026, traduction footer mobile
+
+### Ce qui a changé côté code
+- `src/lib/translations.ts` : copyright mis à jour de `© 2025` vers `© 2026 Staymakom.` dans les trois langues (EN, HE, FR)
+- `src/components/experience/BookingPanel2.tsx` : import `fr` et `he` de `date-fns/locale`, passage de la locale correcte au composant `<Calendar>` selon la langue active — le calendrier affiche maintenant les mois et jours en français quand la langue est FR
+- `src/components/MobileFooterMinimal.tsx` : ajout de la traduction française ("Tous droits réservés.") — auparavant le composant ne gérait que EN et HE
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- Le calendrier de réservation restait en anglais même en mode FR ("June 2026", "Su Mo Tu We Th Fr Sa")
+- Le copyright affichait 2025 dans le footer complet (`Footer.tsx`) et dans les traductions
+- La double occurrence de copyright (2025 visible + 2026 caché) était due à l'ancien grand footer affiché en desktop simultanément avec `MobileFooterMinimal` — ce doublon a été supprimé dans le commit du même jour
+
+---
+
 ## [2026-06-29] — Correction bouton "Subscribe & get 10% off" dans le footer
 
 ### Ce qui a changé côté code

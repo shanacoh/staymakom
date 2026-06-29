@@ -29,6 +29,7 @@ import { useExperience2Price, useExperienceAddons, useExperiencePricingConfig, c
 import type { PricingConfig } from "@/types/experience2_addons";
 import { formatGuests, calculateNights } from "@/services/hyperguest";
 import { format } from "date-fns";
+import { fr, he } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import type { CheckoutState } from "@/pages/Checkout";
 import { trackDurationTabClicked, trackDateSelected, trackViewDatesClicked, trackGuestsSelected, trackRoomTypeSelected, trackBookThisStayClicked, trackNoAvailabilityShown } from "@/lib/analytics";
@@ -855,6 +856,7 @@ export function BookingPanel2({
             >
               <Calendar
                 mode="range"
+                locale={lang === "fr" ? fr : lang === "he" ? he : undefined}
                 defaultMonth={calendarDefaultMonth}
                 selected={dateRange as DateRange}
                 onSelect={(range) => {

@@ -100,7 +100,7 @@ export const translations = {
     footerSubscribe: "Subscribe",
     footerSubscribed: "Thank you for subscribing!",
     footerMoreToCome: "More to come",
-    footerCopyright: "© 2025 STAYMAKOM. All rights reserved.",
+    footerCopyright: "© 2026 Staymakom. All rights reserved.",
     
     // Footer nav links
     footerAbout: "About",
@@ -479,7 +479,7 @@ export const translations = {
     footerSubscribe: "הרשמה",
     footerSubscribed: "תודה על ההרשמה!",
     footerMoreToCome: "עוד בקרוב",
-    footerCopyright: "© 2025 STAYMAKOM. כל הזכויות שמורות.",
+    footerCopyright: "© 2026 Staymakom. כל הזכויות שמורות.",
     
     // Footer nav links
     footerAbout: "אודות",
@@ -858,7 +858,7 @@ export const translations = {
     footerSubscribe: "S'inscrire",
     footerSubscribed: "Merci de votre inscription !",
     footerMoreToCome: "Et ce n'est qu'un début",
-    footerCopyright: "© 2025 STAYMAKOM. Tous droits réservés.",
+    footerCopyright: "© 2026 Staymakom. Tous droits réservés.",
 
     // Footer nav links
     footerAbout: "À propos",

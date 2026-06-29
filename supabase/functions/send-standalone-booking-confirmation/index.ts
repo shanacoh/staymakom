@@ -170,7 +170,7 @@ function buildEmailHtml(params: {
 
               <p style="margin:0;font-size:14px;color:#888;line-height:1.6;">
                 Questions? Reply to this email or contact us at
-                <a href="mailto:hello@staymakom.com" style="color:#1A7A74;text-decoration:none;">hello@staymakom.com</a>
+                <a href="mailto:shana@staymakom.com" style="color:#1A7A74;text-decoration:none;">shana@staymakom.com</a>
               </p>
             </td>
           </tr>
