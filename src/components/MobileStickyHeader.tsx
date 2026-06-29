@@ -47,7 +47,7 @@ const MobileStickyHeader = () => {
 
         {/* Center: Logo */}
         <Link
-          to="/launch"
+          to="/"
           className="absolute left-1/2 -translate-x-1/2 font-sans font-bold tracking-[-0.04em] uppercase text-[20px] leading-none text-foreground"
         >
           STAYMAKOM
