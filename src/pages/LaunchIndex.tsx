@@ -16,7 +16,6 @@ import HowItWorksBanner from "@/components/HowItWorksBanner";
 import CategoryCard from "@/components/CategoryCard";
 import Experience2CardWithPrice from "@/components/Experience2CardWithPrice";
 import ExperienceCardSkeleton from "@/components/ExperienceCardSkeleton";
-import NewsletterPopup from "@/components/NewsletterPopup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -683,9 +682,6 @@ const LaunchIndex = () => {
       <div className="hidden md:block">
         <LaunchFooter />
       </div>
-
-      {/* ─── NEWSLETTER POPUP — apparaît après ~10s, une fois par appareil, donne WELCOME10 ─── */}
-      <NewsletterPopup />
 
       {/* ─── WAITLIST POPUP ─── */}
       <Dialog

@@ -15,6 +15,7 @@ import { useCookieConsent } from "@/hooks/useCookieConsent";
 import { initAmplitude } from "@/lib/amplitude";
 import { trackPageViewed, trackUtmCaptured } from "@/lib/analytics";
 import { Loader2 } from "lucide-react";
+import { NewsletterPopup } from "@/components/NewsletterPopup";
 
 // ── Chemin critique : chargement immédiat ──────────────────────────────────
 import IndexV3 from "./pages/IndexV3";
@@ -307,6 +308,7 @@ const AppContent = () => {
       {showBanner && (
         <CookieConsent onAccept={acceptCookies} onDecline={declineCookies} />
       )}
+      <NewsletterPopup />
     </>
   );
 };
