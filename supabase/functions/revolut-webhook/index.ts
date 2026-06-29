@@ -26,7 +26,8 @@ Deno.serve(async (req) => {
   const rawBody = await req.text();
 
   if (WEBHOOK_SECRET) {
-    const signature = req.headers.get('revolut-signature') || req.headers.get('x-revolut-signature') || '';
+    const rawSig = req.headers.get('revolut-signature') || req.headers.get('x-revolut-signature') || '';
+    const signature = rawSig.replace(/^v1=/, '');
     if (signature) {
       const valid = await verifySignature(rawBody, signature, WEBHOOK_SECRET);
       if (!valid) {
