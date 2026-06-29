@@ -6,6 +6,34 @@
 
 ---
 
+## [2026-06-29] — Vérification Google Search Console
+
+### Ce qui a changé côté code
+- `index.html` : ajout de la balise de vérification Google Search Console dans le `<head>` du site
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- Pour connecter le site à Google Search Console et pouvoir suivre le positionnement dans les résultats Google (mots-clés, clics, position)
+
+---
+
+## [2026-06-29] — Correction webhook Revolut : paiements restés "en attente"
+
+### Ce qui a changé côté code
+- `supabase/functions/revolut-webhook/index.ts` : correction de la vérification de signature Revolut. Revolut envoie ses signatures au format `v1=<hash>`, mais le code comparait le hash seul. Le préfixe `v1=` est maintenant retiré avant comparaison — sinon la vérification échouait et les paiements n'étaient pas mis à jour.
+
+### Ce qui a changé côté base de données
+- 3 réservations mises à jour manuellement : `payment_status = 'paid'` et `status = 'confirmed'` pour les réservations de Noam COHEN (Flying Above the Old City) et Shaba Cidj (Dîner Chef Privée ×2), car l'argent était arrivé mais la base n'avait pas été mise à jour.
+- Migration `20260629010000_add_revolut_order_index.sql` : ajout d'un index sur `standalone_bookings.revolut_order_id` pour accélérer la recherche lors des appels webhook (la table `bookings_hg` avait déjà cet index, `standalone_bookings` en était dépourvue).
+
+### Pourquoi ce changement
+- Les paiements Revolut arrivaient bien sur le compte, mais le back office affichait "impayé". Cause : l'URL du webhook n'était pas configurée dans le dashboard Revolut → Revolut ne savait pas où envoyer la notification → la base de données n'était jamais mise à jour.
+- **Action manuelle requise par Shana** : configurer l'URL webhook dans Revolut For Business (voir instructions ci-dessous).
+
+---
+
 ## [2026-06-29] — Notifications admin pour les nouvelles réservations
 
 ### Ce qui a changé côté code
