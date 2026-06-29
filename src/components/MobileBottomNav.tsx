@@ -16,7 +16,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { icon: Compass, labelEn: "Explore", labelHe: "גלה", path: "/launch" },
+  { icon: Compass, labelEn: "Explore", labelHe: "גלה", path: "/" },
   { icon: Heart, labelEn: "Saved", labelHe: "שמור", path: "/account?tab=wishlist", requiresAuth: true, authContext: "wishlist" },
   { icon: Luggage, labelEn: "Trips", labelHe: "טיולים", path: "/cart", showCartDot: true },
   { icon: User, labelEn: "Account", labelHe: "חשבון", path: "/account", requiresAuth: true, authContext: "account" },
@@ -59,8 +59,8 @@ const MobileBottomNav = () => {
   const isActive = (path: string) => {
     const currentFull = location.pathname + location.search;
 
-    if (path === "/launch") {
-      return location.pathname === "/launch" || location.pathname === "/launch/experiences";
+    if (path === "/") {
+      return location.pathname === "/";
     }
     if (path === "/cart") {
       return location.pathname === "/cart";
