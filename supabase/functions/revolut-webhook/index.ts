@@ -124,6 +124,60 @@ Deno.serve(async (req) => {
           console.error('Failed to update standalone_bookings payment status:', standaloneError);
         } else if (standaloneRows && standaloneRows.length > 0) {
           console.log(`Updated standalone_bookings payment_status=${paymentStatus} (status=${standaloneUpdateData.status ?? 'unchanged'}) for order ${orderId}`);
+
+          // Notification admin quand une réservation standalone est payée
+          if (paymentStatus === 'paid') {
+            try {
+              const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+              if (RESEND_API_KEY) {
+                const bookingId = standaloneRows[0].id;
+                const confirmationToken = standaloneRows[0].confirmation_token;
+
+                const { data: booking } = await supabase
+                  .from('standalone_bookings')
+                  .select('customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, standalone_experiences(title)')
+                  .eq('id', bookingId)
+                  .single();
+
+                if (booking) {
+                  const exp = booking.standalone_experiences as { title: string } | null;
+                  const title = exp?.title || '—';
+                  const dateFormatted = new Date(booking.booking_date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                  const currencySymbol: Record<string, string> = { ILS: '₪', USD: '$', EUR: '€' };
+                  const priceDisplay = `${currencySymbol[booking.currency] || booking.currency}${booking.sell_price}`;
+                  const timeDisplay = booking.time_slot ? ` à ${booking.time_slot}` : '';
+                  const backofficeUrl = `https://staymakom.com/admin/standalone-bookings`;
+
+                  await fetch('https://api.resend.com/emails', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      from: 'StayMakom <reservations@staymakom.com>',
+                      to: ['shana@staymakom.com'],
+                      subject: `🎉 Nouvelle réservation — ${title}`,
+                      html: `
+                        <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:24px;background:#fff;border-radius:8px;border:1px solid #eee;">
+                          <h2 style="color:#1A1814;margin:0 0 16px;">🎉 Nouvelle réservation standalone</h2>
+                          <table style="width:100%;border-collapse:collapse;">
+                            <tr><td style="padding:8px 0;color:#888;font-size:13px;">Expérience</td><td style="padding:8px 0;font-weight:600;">${title}</td></tr>
+                            <tr><td style="padding:8px 0;color:#888;font-size:13px;">Client</td><td style="padding:8px 0;">${booking.customer_name}</td></tr>
+                            <tr><td style="padding:8px 0;color:#888;font-size:13px;">Email</td><td style="padding:8px 0;">${booking.customer_email}</td></tr>
+                            <tr><td style="padding:8px 0;color:#888;font-size:13px;">Date</td><td style="padding:8px 0;">${dateFormatted}${timeDisplay}</td></tr>
+                            <tr><td style="padding:8px 0;color:#888;font-size:13px;">Participants</td><td style="padding:8px 0;">${booking.party_size} personne${booking.party_size > 1 ? 's' : ''}</td></tr>
+                            <tr><td style="padding:8px 0;color:#888;font-size:13px;">Montant</td><td style="padding:8px 0;font-weight:700;color:#1A7A74;">${priceDisplay}</td></tr>
+                          </table>
+                          <a href="${backofficeUrl}" style="display:inline-block;margin-top:20px;background:#1A1814;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px;">Voir dans le back office</a>
+                        </div>
+                      `,
+                    }),
+                  });
+                  console.log(`Admin notification sent for standalone booking ${bookingId}`);
+                }
+              }
+            } catch (notifErr) {
+              console.error('Admin notification failed (non-blocking):', notifErr);
+            }
+          }
         } else {
           // ⚠️ ORPHAN PAYMENT : un paiement a réussi côté Revolut mais aucune réservation
           // (hôtel ou standalone) associée en base. Le frontend a probablement planté entre

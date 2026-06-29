@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-06-29] — Notifications admin pour les nouvelles réservations
+
+### Ce qui a changé côté code
+- `supabase/functions/revolut-webhook/index.ts` : ajout d'un email de notification à `shana@staymakom.com` dès qu'une réservation standalone est payée (déclenchement côté serveur, au moment où Revolut confirme le paiement)
+- `supabase/functions/process-booking/index.ts` : ajout d'un email de notification à `shana@staymakom.com` dès qu'une réservation hôtel est confirmée et enregistrée en base
+
+### Ce qui a changé côté base de données
+- Aucun changement en base
+
+### Pourquoi ce changement
+- Shana ne recevait aucun email quand une réservation tombait (ni hôtel, ni standalone). Le client recevait bien sa confirmation, mais aucune notification admin n'existait. Les deux emails résument la réservation (client, expérience, dates, montant) et incluent un lien direct vers le back office.
+
+---
+
 ## [2026-06-29] — Correction adresse email de contact visible par les clients
 
 ### Ce qui a changé côté code

@@ -371,7 +371,49 @@ Deno.serve(async (req: Request) => {
       console.error('⚠️ Email send failed (non-blocking):', emailErr);
     }
 
-    // 6. Succès
+    // 6. Notification admin (non-bloquant)
+    try {
+      const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+      if (RESEND_API_KEY) {
+        const dateFormatted = (d: string) => new Date(d).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        const currencySymbol: Record<string, string> = { ILS: '₪', USD: '$', EUR: '€', GBP: '£' };
+        const priceDisplay = `${currencySymbol[bookingCurrency] || bookingCurrency}${sellPrice}`;
+        const backofficeUrl = `https://staymakom.com/admin/reservations/${hgBookingId}`;
+
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: 'StayMakom <reservations@staymakom.com>',
+            to: ['shana@staymakom.com'],
+            subject: `🏨 Nouvelle réservation — ${body.hotelName || body.experienceTitle || hgBookingId}`,
+            html: `
+              <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:24px;background:#fff;border-radius:8px;border:1px solid #eee;">
+                <h2 style="color:#1A1814;margin:0 0 16px;">🏨 Nouvelle réservation hôtel</h2>
+                <table style="width:100%;border-collapse:collapse;">
+                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Réf. HyperGuest</td><td style="padding:8px 0;font-weight:600;">${hgBookingId}</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Expérience</td><td style="padding:8px 0;">${body.experienceTitle || '—'}</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Hôtel</td><td style="padding:8px 0;">${body.hotelName || '—'}</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Chambre</td><td style="padding:8px 0;">${body.roomName || '—'}</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Client</td><td style="padding:8px 0;">${body.guestName || '—'}</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Email</td><td style="padding:8px 0;">${body.email || '—'}</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Arrivée</td><td style="padding:8px 0;">${checkIn ? dateFormatted(checkIn) : '—'}</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Départ</td><td style="padding:8px 0;">${checkOut ? dateFormatted(checkOut) : '—'} (${body.nights} nuit${body.nights > 1 ? 's' : ''})</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Voyageurs</td><td style="padding:8px 0;">${body.partySize} personne${body.partySize > 1 ? 's' : ''}</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Montant</td><td style="padding:8px 0;font-weight:700;color:#1A7A74;">${priceDisplay}</td></tr>
+                </table>
+                <a href="${backofficeUrl}" style="display:inline-block;margin-top:20px;background:#1A1814;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px;">Voir dans le back office</a>
+              </div>
+            `,
+          }),
+        });
+        console.log(`Admin notification sent for hotel booking ${hgBookingId}`);
+      }
+    } catch (notifErr) {
+      console.error('Admin hotel notification failed (non-blocking):', notifErr);
+    }
+
+    // 7. Succès
     return new Response(JSON.stringify({
       hgBookingId,
       hgStatus,
