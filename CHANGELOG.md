@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-06-29] — Correction adresse email de contact visible par les clients
+
+### Ce qui a changé côté code
+- `supabase/functions/send-standalone-booking-confirmation/index.ts` : lien cliquable dans le corps de l'email de confirmation remplacé — `hello@staymakom.com` → `shana@staymakom.com`
+
+### Ce qui a changé côté base de données
+- `global_settings` (ligne `site_config`) : `contact_email` mis à jour de `hello@staymakom.com` vers `shana@staymakom.com` — c'est cette valeur qui s'affiche sur la page Contact du site
+- `global_settings` (ligne `site_config`) : `partners_email` mis à jour de `partners@staymakom.com` vers `shana@staymakom.com` — adresse inexistante corrigée
+
+### Pourquoi ce changement
+- Seule `shana@staymakom.com` existe réellement. Les adresses `hello@` et `partners@` n'existaient pas — un client qui tentait de répondre ou de cliquer le lien ne recevait pas de réponse.
+
+---
+
 ## [2026-06-29] — Corrections bugs : calendrier FR, copyright 2026, traduction footer mobile
 
 ### Ce qui a changé côté code
