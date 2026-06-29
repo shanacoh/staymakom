@@ -31,6 +31,7 @@ import { useScrollDepth } from "@/hooks/useScrollDepth";
 import type { SelectedExtra } from "@/components/experience-test/ExtrasSection2";
 import { Users, Calendar, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { fr, he } from "date-fns/locale";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -586,13 +587,17 @@ export default function StandaloneExperience() {
             <CalendarPicker
               mode="single"
               showOutsideDays
+              locale={lang === "fr" ? fr : lang === "he" ? he : undefined}
               selected={selectedDate ? new Date(selectedDate + "T12:00:00") : undefined}
               onSelect={(date) => setSelectedDate(date ? toLocalDateStr(date) : "")}
               disabled={isDateUnavailable}
               defaultMonth={new Date(minDate + "T12:00:00")}
               toDate={maxDate}
               classNames={{
-                cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
+                head_row: "flex w-full",
+                head_cell: "flex-1 text-center text-muted-foreground font-normal text-[0.8rem]",
+                row: "flex w-full mt-2",
+                cell: "flex-1 h-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
                 day_selected:
                   "bg-[#ad1414] text-white hover:bg-[#ad1414] hover:text-white focus:bg-[#ad1414] focus:text-white",
                 day_today: "bg-[#FDF0F0] text-[#ad1414] font-semibold rounded-lg",
