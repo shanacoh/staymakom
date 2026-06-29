@@ -51,7 +51,7 @@ export function RevolutLivePaymentTester() {
       const order = await createRevolutOrder({
         amount,
         currency,
-        description: `StayMakom — Live payment test (${isProd ? "PROD" : "SANDBOX"})`,
+        description: `Staymakom — Live payment test (${isProd ? "PROD" : "SANDBOX"})`,
         customerEmail: "test@staymakom.com",
         customerName: "Test Customer",
       });

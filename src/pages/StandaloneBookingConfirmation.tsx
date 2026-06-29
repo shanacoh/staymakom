@@ -161,8 +161,8 @@ export default function StandaloneBookingConfirmation() {
   return (
     <div className="min-h-screen flex flex-col bg-[#FAF8F4]" dir={isRTL ? "rtl" : "ltr"}>
       <SEOHead
-        titleEn="Booking Confirmed — StayMakom"
-        titleHe="ההזמנה אושרה — StayMakom"
+        titleEn="Booking Confirmed — Staymakom"
+        titleHe="ההזמנה אושרה — Staymakom"
         descriptionEn="Your experience has been booked."
         descriptionHe="החוויה שלך הוזמנה."
       />

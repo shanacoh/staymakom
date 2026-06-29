@@ -43,7 +43,7 @@ export function SEOHead({
   ogDescriptionHe,
   ogDescriptionFr,
   ogImage,
-  fallbackTitle = "StayMakom - Curated Boutique Experiences in Israel",
+  fallbackTitle = "Staymakom - Curated Boutique Experiences in Israel",
   fallbackDescription = "Discover unique boutique hotels and immersive experiences across Israel. From desert escapes to vineyard retreats, find your perfect getaway.",
 }: SEOHeadProps) {
   const { lang } = useLanguage();

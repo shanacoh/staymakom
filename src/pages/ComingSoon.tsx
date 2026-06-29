@@ -190,7 +190,7 @@ const ComingSoon = () => {
           </p>
           <div className="w-16 h-px bg-foreground/20 mx-auto mb-5" />
           <p className="text-xs text-muted-foreground/60">
-            © 2026 StayMakom. {lang === 'en' ? 'All rights reserved.' : 'כל הזכויות שמורות.'}
+            © 2026 Staymakom. {lang === 'en' ? 'All rights reserved.' : 'כל הזכויות שמורות.'}
           </p>
         </div>
       </footer>

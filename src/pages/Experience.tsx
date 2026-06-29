@@ -167,7 +167,7 @@ const Experience = () => {
         ogDescriptionEn={experience.og_description_en}
         ogDescriptionHe={experience.og_description_he}
         ogImage={experience.og_image || experience.hero_image}
-        fallbackTitle={`${title} - ${hotelName || ''} - StayMakom`}
+        fallbackTitle={`${title} - ${hotelName || ''} - Staymakom`}
         fallbackDescription={subtitle || experience.long_copy?.substring(0, 155) || ""}
       />
       <V3Header />

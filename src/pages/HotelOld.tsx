@@ -90,7 +90,7 @@ const Hotel = () => {
         ogDescriptionEn={hotel.og_description_en}
         ogDescriptionHe={hotel.og_description_he}
         ogImage={hotel.og_image || hotel.hero_image}
-        fallbackTitle={`${hotelName} - ${city || ''} - StayMakom`}
+        fallbackTitle={`${hotelName} - ${city || ''} - Staymakom`}
         fallbackDescription={story?.substring(0, 155) || ""}
       />
       <V3Header />

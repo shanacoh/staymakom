@@ -266,7 +266,7 @@ const Category = () => {
         ogDescriptionEn={category.og_description_en}
         ogDescriptionHe={category.og_description_he}
         ogImage={category.og_image || category.hero_image}
-        fallbackTitle={`${categoryName} - StayMakom`}
+        fallbackTitle={`${categoryName} - Staymakom`}
         fallbackDescription={introText}
       />
       <V3Header showModeToggle mode={mode} setMode={handleSetMode} />

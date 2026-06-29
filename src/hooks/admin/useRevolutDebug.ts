@@ -202,7 +202,7 @@ export function useRevolutDebug(environment: 'dev' | 'prod' = 'prod') {
           environment,
           amount: 1.00,
           currency: 'EUR',
-          description: 'StayMakom Debug Test (admin)',
+          description: 'Staymakom Debug Test (admin)',
           bookingRef: ref,
         },
       });

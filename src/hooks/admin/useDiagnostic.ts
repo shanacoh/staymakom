@@ -506,7 +506,7 @@ export const useDiagnostic = () => {
     const ref = `SM-${Math.random().toString(36).substring(2, 10).toUpperCase()}-${Date.now()}`;
     tests.push({
       id: 'C4',
-      name: 'Référence StayMakom SM-XXXXXXXX générée',
+      name: 'Référence Staymakom SM-XXXXXXXX générée',
       pass: /^SM-[A-Z0-9]+-\d+$/.test(ref),
       detail: `Format ${ref.substring(0, 25)}... validé`,
     });

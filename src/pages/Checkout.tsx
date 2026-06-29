@@ -852,7 +852,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       const order = await createRevolutOrder({
         amount: amountAfterGiftCard,
         currency: effectiveCurrency,
-        description: `StayMakom — ${state.experienceTitle}`,
+        description: `Staymakom — ${state.experienceTitle}`,
         customerEmail: leadGuest.email,
         customerName: `${leadGuest.firstName} ${leadGuest.lastName}`,
       });
@@ -941,7 +941,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
         const order = await createRevolutOrder({
           amount: amountAfterGiftCard,
           currency: effectiveCurrency,
-          description: `StayMakom — ${state.experienceTitle}`,
+          description: `Staymakom — ${state.experienceTitle}`,
           customerEmail: leadGuest.email,
           customerName: `${leadGuest.firstName} ${leadGuest.lastName}`,
         });

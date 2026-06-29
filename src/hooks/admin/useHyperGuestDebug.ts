@@ -187,7 +187,7 @@ export function useHyperGuestDebug(environment: 'dev' | 'prod' = 'prod') {
       }
       tests.push({ id: '4.2', name: 'Timeout booking = 300s', pass: true, detail: 'AbortController 300000ms confirmé' });
       const ref = `SM-${Math.random().toString(36).substring(2, 10).toUpperCase()}-${Date.now()}`;
-      tests.push({ id: '4.3', name: 'Génération référence StayMakom', pass: /^SM-[A-Z0-9]+-\d+$/.test(ref), detail: ref.substring(0, 25) + '...' });
+      tests.push({ id: '4.3', name: 'Génération référence Staymakom', pass: /^SM-[A-Z0-9]+-\d+$/.test(ref), detail: ref.substring(0, 25) + '...' });
 
       const dur = Date.now() - s4Start;
       updateStep(3, { pass: tests.every(t => t.pass), duration: dur, detail: `${tests.filter(t => t.pass).length}/${tests.length} OK`, tests });

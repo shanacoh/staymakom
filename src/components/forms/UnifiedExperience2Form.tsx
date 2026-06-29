@@ -349,7 +349,7 @@ export function UnifiedExperience2Form({
     enabled: barRateRefreshEnabled,
   });
 
-  // Net Rate (tarif WHOLESALE = ce que StayMakom paie réellement à HyperGuest).
+  // Net Rate (tarif WHOLESALE = ce que Staymakom paie réellement à HyperGuest).
   // Confirmé par Reshma (HG account manager) le 2026-05-04 : NET = la vraie facture HG.
   // Auparavant on affichait `cheapestPrice` (= sell price) qui est le prix de revente
   // suggéré par HG, pas le coût réel — corrigé pour pointer sur cheapestNetPrice.

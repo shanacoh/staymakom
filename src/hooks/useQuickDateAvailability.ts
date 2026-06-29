@@ -19,7 +19,7 @@ interface AvailableDate {
   /** Cheapest BAR (public hotel) price found across all rooms/rate plans */
   cheapestBarPrice: number | null;
   /**
-   * Cheapest NET (wholesale) price — le vrai coût pour StayMakom auprès de HyperGuest.
+   * Cheapest NET (wholesale) price — le vrai coût pour Staymakom auprès de HyperGuest.
    * Confirmé par Reshma (HG account manager) : NET = la valeur facturée par HG.
    * À ne JAMAIS exposer dans l'UI client (back-office uniquement).
    */
@@ -126,7 +126,7 @@ async function scanAvailability(
                       ? barNativePrice
                       : null;
 
-                // NET (wholesale) — le vrai coût HG pour StayMakom. Back-office uniquement.
+                // NET (wholesale) — le vrai coût HG pour Staymakom. Back-office uniquement.
                 // Confirmé par Reshma (HG account manager) le 2026-05-04.
                 const netSearchPrice = rp.prices?.net?.searchCurrency;
                 const netNativePrice = rp.prices?.net?.price;

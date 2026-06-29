@@ -222,7 +222,7 @@ body {
     border-radius: 40% 60% 55% 45% / 45% 55% 45% 55%;
   }
   
-  /* Skeleton shimmer — StayMakom (warm beige sweep, subtle) */
+  /* Skeleton shimmer — Staymakom (warm beige sweep, subtle) */
   [data-slot="skeleton"] {
     background: linear-gradient(
       90deg,
