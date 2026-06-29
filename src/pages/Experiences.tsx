@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import V3Header from "@/components/V3Header";
-import Footer from "@/components/Footer";
+import LaunchFooter from "@/components/LaunchFooter";
 import ExperienceCard from "@/components/ExperienceCard";
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
@@ -83,7 +83,7 @@ const Experiences = () => {
         </section>
       </main>
 
-      <Footer />
+      <LaunchFooter />
     </div>
   );
 };

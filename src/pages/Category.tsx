@@ -2,7 +2,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import V3Header from "@/components/V3Header";
-import Footer from "@/components/Footer";
+import LaunchFooter from "@/components/LaunchFooter";
 import { Button } from "@/components/ui/button";
 import { Loader2, Heart, Users, Wine, Compass, Leaf, Sparkles, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -245,7 +245,7 @@ const Category = () => {
             </Button>
           </div>
         </main>
-        <Footer />
+        <LaunchFooter />
       </div>
     );
   }
@@ -474,7 +474,7 @@ const Category = () => {
         </section>
       </main>
 
-      <Footer />
+      <LaunchFooter />
     </div>
   );
 };

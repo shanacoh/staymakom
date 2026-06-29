@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import V3Header from "@/components/V3Header";
-import Footer from "@/components/Footer";
+import LaunchFooter from "@/components/LaunchFooter";
 import { Loader2 } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { SEOHead } from "@/components/SEOHead";
@@ -123,7 +123,7 @@ const Experience = () => {
         <main className="flex-1 flex items-center justify-center">
           <p className="text-muted-foreground">{t(lang, 'experienceNotFound')}</p>
         </main>
-        <Footer />
+        <LaunchFooter />
       </div>
     );
   }
@@ -331,7 +331,7 @@ const Experience = () => {
       </main>
 
       <footer ref={footerRef as React.RefObject<HTMLElement>}>
-        <Footer />
+        <LaunchFooter />
       </footer>
     </div>
   );

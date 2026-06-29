@@ -19,7 +19,6 @@ import OtherStandaloneExperiences from "@/components/experience-test/OtherStanda
 import ShareWithFriendsSection from "@/components/experience/ShareWithFriendsSection";
 
 import V3Header from "@/components/V3Header";
-import Footer from "@/components/Footer";
 import LaunchFooter from "@/components/LaunchFooter";
 import MobileFooterMinimal from "@/components/MobileFooterMinimal";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -397,7 +396,7 @@ export default function StandaloneExperience() {
             <p className="text-muted-foreground">{notFoundMsg.desc}</p>
           </div>
         </div>
-        {isLaunch ? <LaunchFooter /> : <Footer />}
+        <LaunchFooter />
       </div>
     );
   }
@@ -870,7 +869,7 @@ export default function StandaloneExperience() {
 
       <footer ref={footerRef as React.RefObject<HTMLElement>}>
         <div className="hidden md:block">
-          {isLaunch ? <LaunchFooter /> : <Footer />}
+          <LaunchFooter />
         </div>
         <MobileFooterMinimal />
       </footer>

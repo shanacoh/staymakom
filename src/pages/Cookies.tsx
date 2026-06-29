@@ -1,5 +1,5 @@
 import V3Header from "@/components/V3Header";
-import Footer from "@/components/Footer";
+import LaunchFooter from "@/components/LaunchFooter";
 import { SEOHead } from "@/components/SEOHead";
 
 const Cookies = () => {
@@ -39,7 +39,7 @@ const Cookies = () => {
           </p>
         </article>
       </main>
-      <Footer />
+      <LaunchFooter />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import V3Header from "@/components/V3Header";
-import Footer from "@/components/Footer";
+import LaunchFooter from "@/components/LaunchFooter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Calendar, ArrowRight } from "lucide-react";
@@ -169,7 +169,7 @@ const Journal = () => {
         )}
       </main>
 
-      <Footer />
+      <LaunchFooter />
     </div>
   );
 };

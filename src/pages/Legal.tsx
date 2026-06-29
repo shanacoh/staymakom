@@ -1,5 +1,5 @@
 import V3Header from "@/components/V3Header";
-import Footer from "@/components/Footer";
+import LaunchFooter from "@/components/LaunchFooter";
 import { SEOHead } from "@/components/SEOHead";
 
 const Legal = () => {
@@ -37,7 +37,7 @@ const Legal = () => {
           <p className="text-sm">All texts, images, and content are the exclusive property of Staymakom Ltd unless otherwise stated.</p>
         </article>
       </main>
-      <Footer />
+      <LaunchFooter />
     </div>
   );
 };

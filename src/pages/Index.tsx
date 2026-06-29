@@ -42,7 +42,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import V3Header from "@/components/V3Header";
-import Footer from "@/components/Footer";
+import LaunchFooter from "@/components/LaunchFooter";
 import CategoryCard from "@/components/CategoryCard";
 import RotatingText from "@/components/RotatingText";
 import ContactDialog from "@/components/ContactDialog";
@@ -684,7 +684,7 @@ const Index = () => {
         </section>
       </main>
 
-      <Footer />
+      <LaunchFooter />
       <StickyAIButton />
       <ContactDialog open={contactDialogOpen} onOpenChange={setContactDialogOpen} />
     </div>

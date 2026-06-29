@@ -18,7 +18,7 @@ import { getBoardTypeLabel } from "@/services/hyperguest";
 import { analyzeCancellationPolicies } from "@/utils/cancellationPolicy";
 import { toast } from "sonner";
 import V3Header from "@/components/V3Header";
-import Footer from "@/components/Footer";
+import LaunchFooter from "@/components/LaunchFooter";
 import { SEOHead } from "@/components/SEOHead";
 
 const t = {
@@ -189,7 +189,7 @@ export default function BookingConfirmationPage() {
         <div className="min-h-screen flex items-center justify-center">
           <p className="text-muted-foreground">{labels.loading}</p>
         </div>
-        <Footer />
+        <LaunchFooter />
       </>
     );
   }
@@ -206,7 +206,7 @@ export default function BookingConfirmationPage() {
             <Link to="/">{labels.backHome}</Link>
           </Button>
         </div>
-        <Footer />
+        <LaunchFooter />
       </>
     );
   }
@@ -527,7 +527,7 @@ export default function BookingConfirmationPage() {
           )}
         </div>
       </main>
-      <Footer />
+      <LaunchFooter />
     </>
   );
 }

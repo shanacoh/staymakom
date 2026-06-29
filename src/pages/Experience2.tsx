@@ -23,9 +23,7 @@ import OtherExperiences2 from "@/components/experience-test/OtherExperiences2";
 import WhatsIncludedPhotos2 from "@/components/experience-test/WhatsIncludedPhotos2";
 
 import V3Header from "@/components/V3Header";
-import Footer from "@/components/Footer";
 import LaunchFooter from "@/components/LaunchFooter";
-import MobileFooterMinimal from "@/components/MobileFooterMinimal";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -306,7 +304,7 @@ export default function Experience2() {
             <p className="text-muted-foreground">{t.notFoundDesc}</p>
           </div>
         </div>
-        {isLaunch ? <LaunchFooter /> : <Footer />}
+        <LaunchFooter />
       </div>
     );
   }

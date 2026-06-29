@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { CheckCircle2, Copy, Mail } from "lucide-react";
 import { toast } from "sonner";
 import V3Header from "@/components/V3Header";
-import Footer from "@/components/Footer";
+import LaunchFooter from "@/components/LaunchFooter";
 
 export default function GiftCardConfirmation() {
   const [searchParams] = useSearchParams();
@@ -58,7 +58,7 @@ export default function GiftCardConfirmation() {
             <Link to="/gift-card">Create a Gift Card</Link>
           </Button>
         </div>
-        <Footer />
+        <LaunchFooter />
       </div>
     );
   }
@@ -146,7 +146,7 @@ export default function GiftCardConfirmation() {
         </div>
       </div>
 
-      <Footer />
+      <LaunchFooter />
     </div>
   );
 }

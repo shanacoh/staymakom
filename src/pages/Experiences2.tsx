@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { trackExperiencesListViewed } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import V3Header from "@/components/V3Header";
-import Footer from "@/components/Footer";
+import LaunchFooter from "@/components/LaunchFooter";
 import Experience2CardWithPrice from "@/components/Experience2CardWithPrice";
 import ExperienceCardSkeleton from "@/components/ExperienceCardSkeleton";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -134,7 +134,7 @@ const Experiences2 = () => {
         </section>
       </main>
 
-      <Footer />
+      <LaunchFooter />
     </div>
   );
 };
