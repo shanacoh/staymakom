@@ -55,7 +55,7 @@ async function scanAvailability(
   customerNationality: string,
 ): Promise<AvailableDate[]> {
   const today = new Date();
-  const startOffset = 3;
+  const startOffset = 1;
   const datesToScan = 90;
   const maxResults = 30;
   const batchSize = 10; // Send 10 requests at a time to avoid rate-limiting

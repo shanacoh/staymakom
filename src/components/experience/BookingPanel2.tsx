@@ -299,7 +299,7 @@ export function BookingPanel2({
       const markupAmount = isPct ? (rawPrice * markupValue) / 100 : markupValue;
       const sellFixed = (_barRateData.experience_sell_fixed as number | null) ?? 0;
       const sellPerPerson = (_barRateData.experience_sell_per_person as number | null) ?? 0;
-      return rawPrice + markupAmount + sellFixed + sellPerPerson * adults;
+      return rawPrice + markupAmount + sellFixed + sellPerPerson * (adults + childrenAges.filter(a => a >= 2).length);
     }
 
     const config: PricingConfig = _pricingConfig ?? {
@@ -456,7 +456,8 @@ export function BookingPanel2({
 
   const nights = searchParams?.nights || 0;
   const ratePlanPrices = selectedRatePlan?.prices || null;
-  const priceBreakdown = useExperience2Price(experienceId, null, currency, nights, adults, ratePlanPrices);
+  const totalGuests = adults + childrenAges.filter(a => a >= 2).length;
+  const priceBreakdown = useExperience2Price(experienceId, null, currency, nights, totalGuests, ratePlanPrices);
 
   useEffect(() => {
     if (searchResult && !selectedRoomId) {
