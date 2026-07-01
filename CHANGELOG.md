@@ -6,6 +6,22 @@
 
 ---
 
+## [2026-07-01] — Admin : bouton Preview dans la vue d'ensemble des expériences
+
+### Ce qui a changé côté code
+- `src/pages/admin/Experiences2.tsx` : ajout d'un bouton **Preview** directement visible dans chaque ligne de la liste, pour les deux modes :
+  - Mode « With Hotel » : ouvre `/experience/{slug}` dans un nouvel onglet
+  - Mode « Experience Only » (standalone) : ouvre `/standalone-experience/{slug}` dans un nouvel onglet
+  - Le bouton apparaît dès qu'un slug existe, même pour les brouillons (utile pour vérifier avant publication)
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- Permet de prévisualiser la page publique d'une expérience directement depuis la vue admin, sans quitter le back-office, et sans avoir à publier l'expérience au préalable
+
+---
+
 ## [2026-07-01] — Page itinéraire personnalisé (split-screen Nord / Désert)
 
 ### Ce qui a changé côté code

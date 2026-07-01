@@ -648,12 +648,12 @@ const AdminExperiences2 = () => {
                       </div>
 
                       <div className="flex items-center gap-1 shrink-0">
-                        <div className="flex items-center gap-1.5 mr-1">
+                        <div className="flex items-center gap-1.5 mr-1" title="Vitrine prospects — visible sur /vitrine uniquement, pas en page d'accueil">
                           <Switch
                             checked={(experience as any).show_on_v3_only ?? false}
                             onCheckedChange={() => toggleV3OnlyMutation.mutate({ id: experience.id, current: (experience as any).show_on_v3_only ?? false })}
                           />
-                          <span className="text-[10px] text-muted-foreground font-medium">V3</span>
+                          <span className="text-[10px] text-muted-foreground font-medium">Vitrine</span>
                         </div>
                         <button
                           onClick={() => setOpsPanel({ id: experience.id, title: experience.title })}
@@ -662,6 +662,17 @@ const AdminExperiences2 = () => {
                         >
                           Ops
                         </button>
+                        {experience.slug && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 text-xs gap-1.5"
+                            onClick={() => window.open(`/experience/${experience.slug}`, "_blank")}
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            Preview
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="outline"
@@ -825,13 +836,24 @@ const AdminExperiences2 = () => {
                       </div>
 
                       <div className="flex items-center gap-1 shrink-0">
-                        <div className="flex items-center gap-1.5 mr-1">
+                        <div className="flex items-center gap-1.5 mr-1" title="Vitrine prospects — visible sur /vitrine uniquement, pas en page d'accueil">
                           <Switch
                             checked={exp.show_on_v3_only ?? false}
                             onCheckedChange={() => toggleStandaloneV3OnlyMutation.mutate({ id: exp.id, current: exp.show_on_v3_only ?? false })}
                           />
-                          <span className="text-[10px] text-muted-foreground font-medium">V3</span>
+                          <span className="text-[10px] text-muted-foreground font-medium">Vitrine</span>
                         </div>
+                        {exp.slug && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 text-xs gap-1.5"
+                            onClick={() => window.open(`/standalone-experience/${exp.slug}`, "_blank")}
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            Preview
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="outline"
