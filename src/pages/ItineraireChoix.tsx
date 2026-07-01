@@ -20,7 +20,7 @@ import imgWellness from "@/assets/Wellness.jpg";
 import imgTimna from "@/assets/timna-park-eilat-nature.webp";
 
 // ─── Numéro WhatsApp ← à remplacer ───────────────────────────────────────────
-const WHATSAPP = "972501234567";
+const WHATSAPP = "972555009910";
 
 // ─── Backgrounds ─────────────────────────────────────────────────────────────
 const NORD_STYLE: CSSProperties = { backgroundColor: "rgba(173, 20, 20, 0.06)" };
@@ -65,37 +65,37 @@ const OPTION_NORD: OptionData = {
       image: imgCesarea,
     },
     {
-      title: "Wine tasting à Zichron Yaakov",
+      title: "Wine tasting\nà Zichron Yaakov",
       description: "Village de vignerons en pierre blonde, ambiance provençale. Dégustation face aux vignes, au coucher du soleil.",
       tags: ["🍷 Vin", "🌅 Coucher de soleil", "🏘 Village"],
       image: imgWine,
     },
     {
-      title: "Journée baignade, Kinneret",
+      title: "Journée baignade,\nKinneret",
       description: "Le seul vrai lac où se baigner en Israël. Balade à cheval au bord de l'eau, sortie en bateau, randonnée dans les environs.",
       tags: ["🐎 Balade à cheval", "⛵ Bateau", "🥾 Randonnée"],
       image: imgKineret,
     },
     {
-      title: "Ruelles bleues de Tsfat",
+      title: "Ruelles bleues\nde Tsfat",
       description: "La ville mystique de la Kabbale. Ateliers d'artistes, galeries à ciel ouvert, une atmosphère unique dans le pays.",
       tags: ["✨ Mystique", "🎨 Art", "🔵 Kabbale"],
       image: imgSafed,
     },
     {
-      title: "Balade nocturne dans les ruines, Beit She'an",
+      title: "Balade nocturne dans les ruines,\nBeit She'an",
       description: "Un des sites romains les mieux conservés du pays, illuminé le soir. Colonnades à perte de vue, théâtre antique intact.",
       tags: ["🏛 Romain", "🎭 Théâtre", "🌙 Nocturne"],
       image: imgBeitShean,
     },
     {
-      title: "Baignade dans les sources, Gan HaShlosha",
+      title: "Baignade dans les sources,\nGan HaShlosha",
       description: "Piscines naturelles à température parfaite, entourées de palmiers. Un pique-nique au bord de l'eau, à l'ombre.",
       tags: ["💧 Source", "🌴 Palmiers", "🧺 Pique-nique"],
       image: imgGanHashlosha,
     },
   ],
-  whatsappMsg: "Bonjour Shana ! J'ai vu la proposition et je pars vers le nord.",
+  whatsappMsg: "Bonjour Shana ! Je veux en savoir plus sur l'option A",
 };
 
 // ─── Option B — Le Désert ─────────────────────────────────────────────────────
@@ -103,48 +103,48 @@ const OPTION_NORD: OptionData = {
 const OPTION_DESERT: OptionData = {
   id: "B",
   label: "Option B",
-  title: "Se perdre à deux",
+  title: "Le désert à deux",
   chapeau:
     "Histoire, sel, sable et un ciel qu'on ne voit qu'ici. Vous grimpez à Massada avant le lever du soleil, vous flottez dans la Mer Morte, vous dormez sous tente chez les bédouins avec un ciel plein d'étoiles. Une balade à dos de chameau au petit matin, un cratère à perte de vue. Ici on se dépayse vraiment.",
   stops: [
     {
-      title: "Lever de soleil sur Massada",
+      title: "Lever de soleil\nsur Massada",
       description: "La forteresse du roi Hérode perchée au-dessus du désert. Vue à 360° sur la Mer Morte au petit matin.",
       tags: ["🌄 Lever de soleil", "🏰 Forteresse", "👑 Hérode"],
       image: imgMasada,
     },
     {
-      title: "Flotter dans la Mer Morte",
+      title: "Flotter dans\nla Mer Morte",
       description: "L'eau la plus salée du monde. Un moment suspendu, loin de tout, à se laisser porter.",
       tags: ["🧖 Spa naturel", "🏊 Baignade", "🔌 Déconnexion"],
       image: imgMerMorte,
     },
     {
-      title: "Nuit sous les étoiles chez les bédouins",
+      title: "Nuit sous les étoiles\nchez les bédouins",
       description: "Feu de camp, dîner traditionnel, loin de toute lumière. Le ciel étoilé coupe le souffle.",
       tags: ["✨ Étoiles", "🔥 Feu de camp", "🍽 Dîner traditionnel"],
       image: imgBedouin,
     },
     {
-      title: "Balade à dos de chameau au lever du jour",
+      title: "Balade à dos de chameau\nau lever du jour",
       description: "Sur les dunes, avec petit-déjeuner bédouin à l'arrivée. Le moment qui fait vraiment sentir qu'on est ailleurs.",
       tags: ["🐪 Chameau", "🌄 Lever du jour", "☕ Petit-déj"],
       image: imgChameau,
     },
     {
-      title: "Pause bien-être au cœur du désert",
+      title: "Pause bien-être\nau cœur du désert",
       description: "Spa, soins, grands espaces pour ne rien faire. Le contrepoint calme du voyage.",
       tags: ["🧘 Yoga", "🔌 Déconnexion", "🧖 Spa"],
       image: imgWellness,
     },
     {
-      title: "Timna Park",
+      title: "Timna\nPark",
       description: "Paysages presque martiens, formations rocheuses spectaculaires. Les piliers de Salomon au coucher du soleil.",
       tags: ["🪐 Martien", "🗿 Piliers", "🎨 Désert coloré"],
       image: imgTimna,
     },
   ],
-  whatsappMsg: "Bonjour Shana ! J'ai vu la proposition et je pars vers le désert.",
+  whatsappMsg: "Bonjour Shana ! Je veux en savoir plus sur l'option B",
 };
 
 // ─── Carte destination ─────────────────────────────────────────────────────────
@@ -161,7 +161,7 @@ function StopCard({ stop }: { stop: Stop }) {
         />
       </div>
       <div className="space-y-1">
-        <p className="text-[11px] sm:text-xs font-bold uppercase tracking-tight text-foreground leading-tight">
+        <p className="text-sm sm:text-base font-bold uppercase tracking-tight text-foreground leading-tight whitespace-pre-line">
           {stop.title}
         </p>
         <p className="text-[10px] sm:text-[11px] text-muted-foreground leading-snug">
@@ -227,7 +227,7 @@ function OptionCTA({ option, className, style }: { option: OptionData; className
           "hover:bg-foreground hover:text-background transition-colors duration-300"
         )}
       >
-        Je choisis {option.id === "A" ? "le nord" : "le désert"}
+        Je choisis l'option {option.id}
         <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
       </a>
     </div>
@@ -276,15 +276,18 @@ export default function ItineraireChoix() {
             className="order-3 md:order-none md:col-start-1" />
           <CardRow stops={OPTION_NORD.stops.slice(4, 6)} style={NORD_STYLE}
             className="order-4 md:order-none md:col-start-1" />
+          <OptionCTA option={OPTION_NORD} style={NORD_STYLE}
+            className="order-5 md:order-none md:col-start-1" />
+
           {/* ── Option B : UN bloc col 2, fond désert de haut en bas ── */}
           {/* gridRow/gridColumn en inline style pour forcer le placement (l'auto-placement CSS
-              déplace le curseur après les 4 cellules A et placerait B en ligne 5 sinon) */}
+              déplace le curseur après les 5 cellules A et placerait B en ligne 6 sinon) */}
           <div
-            className="order-5 md:order-none md:grid"
+            className="order-6 md:order-none md:grid"
             style={{
               ...DESERT_STYLE,
               gridColumn: "2",
-              gridRow: "1 / 5",
+              gridRow: "1 / 6",
               gridTemplateRows: "subgrid",
             }}
           >
@@ -292,6 +295,7 @@ export default function ItineraireChoix() {
             <CardRow stops={OPTION_DESERT.stops.slice(0, 2)} />
             <CardRow stops={OPTION_DESERT.stops.slice(2, 4)} />
             <CardRow stops={OPTION_DESERT.stops.slice(4, 6)} />
+            <OptionCTA option={OPTION_DESERT} />
           </div>
 
         </div>
