@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 // Card removed – parent form wraps this component
-import { Plus, Trash2, ChevronUp, ChevronDown, Edit2, Save, X, ImageIcon, Upload } from "lucide-react";
+import { Plus, Trash2, ChevronUp, ChevronDown, Edit2, X, ImageIcon, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -72,10 +72,10 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
     const file = e.target.files?.[0];
     if (file) {
       setEditImageFile(file);
-      setEditData((prev) => ({ ...prev, icon_url: "" }));
       const reader = new FileReader();
       reader.onloadend = () => setEditImagePreview(reader.result as string);
       reader.readAsDataURL(file);
+      if (editingId) commitEdit(editingId, { imageFile: file, silent: false });
     }
   };
 
@@ -89,6 +89,7 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
     setEditImageFile(null);
     setEditImagePreview(url);
     setEditData((prev) => ({ ...prev, icon_url: url }));
+    if (editingId) commitEdit(editingId, { icon_url: url, silent: false });
   };
 
   const uploadImage = async (file: File): Promise<string> => {
@@ -162,26 +163,60 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id }: { id: string }) => {
-      let finalIconUrl = editData.icon_url || null;
-      if (editImageFile) finalIconUrl = await uploadImage(editImageFile);
+    mutationFn: async (payload: {
+      id: string;
+      title: string;
+      title_he: string;
+      icon_url: string;
+      imageFile?: File | null;
+      closeAfter?: boolean;
+      silent?: boolean;
+    }) => {
+      let finalIconUrl = payload.icon_url || null;
+      if (payload.imageFile) finalIconUrl = await uploadImage(payload.imageFile);
       const { error } = await (supabase as any).from("experience2_includes").update({
-        title: editData.title,
-        title_he: editData.title_he || null,
+        title: payload.title,
+        title_he: payload.title_he || null,
         icon_url: finalIconUrl,
-      }).eq("id", id);
+      }).eq("id", payload.id);
       if (error) throw error;
+      return finalIconUrl;
     },
-    onSuccess: () => {
+    onSuccess: (finalIconUrl, payload) => {
       queryClient.invalidateQueries({ queryKey: ["experience2-includes", experienceId] });
-      setEditingId(null);
-      setEditData({ title: "", title_he: "", icon_url: "" });
-      setEditImageFile(null);
-      setEditImagePreview(null);
-      toast.success("Item updated successfully");
+      if (payload.imageFile) {
+        // L'image vient d'être uploadée : on synchronise l'aperçu sans fermer la ligne d'édition
+        setEditData((prev) => ({ ...prev, icon_url: finalIconUrl || "" }));
+        setEditImageFile(null);
+      }
+      if (payload.closeAfter) {
+        setEditingId(null);
+        setEditData({ title: "", title_he: "", icon_url: "" });
+        setEditImageFile(null);
+        setEditImagePreview(null);
+      }
+      if (!payload.silent) toast.success("Item updated successfully");
     },
     onError: (error: Error) => toast.error(error.message),
   });
+
+  const commitEdit = (id: string, opts?: { imageFile?: File | null; icon_url?: string; closeAfter?: boolean; silent?: boolean }) => {
+    if (!editData.title.trim()) return;
+    updateMutation.mutate({
+      id,
+      title: editData.title,
+      title_he: editData.title_he,
+      icon_url: opts?.icon_url ?? editData.icon_url,
+      imageFile: opts?.imageFile ?? null,
+      closeAfter: opts?.closeAfter ?? false,
+      silent: opts?.silent ?? true,
+    });
+  };
+
+  const handleCloseEditing = (id: string) => {
+    if (!editData.title.trim()) { cancelEditing(); return; }
+    commitEdit(id, { closeAfter: true, silent: true });
+  };
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -249,11 +284,6 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
     setEditData({ title: "", title_he: "", icon_url: "" });
     setEditImageFile(null);
     setEditImagePreview(null);
-  };
-
-  const saveEdit = (include: any) => {
-    if (!editData.title.trim()) { toast.error("Title is required"); return; }
-    updateMutation.mutate({ id: include.id });
   };
 
   if (!isLocalMode && isLoading) return <div>Loading...</div>;
@@ -362,11 +392,10 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
                     <input id={`edit-image2-${include.id}`} type="file" accept="image/*" onChange={handleEditImageSelect} className="hidden" />
                     {editImagePreview && <img src={editImagePreview} alt="Preview" className="w-full h-16 object-cover rounded-lg border" referrerPolicy="no-referrer" />}
                   </div>
-                  <Input value={editData.title} onChange={(e) => setEditData({ ...editData, title: e.target.value })} placeholder="Title EN" className="flex-1 min-w-[100px]" />
-                  <Input value={editData.title_he} onChange={(e) => setEditData({ ...editData, title_he: e.target.value })} placeholder="כותרת HE" dir="rtl" className="bg-hebrew-input flex-1 min-w-[100px]" />
+                  <Input value={editData.title} onChange={(e) => setEditData({ ...editData, title: e.target.value })} onBlur={() => commitEdit(include.id)} placeholder="Title EN" className="flex-1 min-w-[100px]" />
+                  <Input value={editData.title_he} onChange={(e) => setEditData({ ...editData, title_he: e.target.value })} onBlur={() => commitEdit(include.id)} placeholder="כותרת HE" dir="rtl" className="bg-hebrew-input flex-1 min-w-[100px]" />
                   <div className="flex gap-2 flex-shrink-0">
-                    <Button type="button" size="sm" onClick={() => saveEdit(include)} disabled={updateMutation.isPending}><Save className="w-4 h-4" /></Button>
-                    <Button type="button" size="sm" variant="ghost" onClick={cancelEditing} disabled={updateMutation.isPending}><X className="w-4 h-4" /></Button>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => handleCloseEditing(include.id)} disabled={updateMutation.isPending}><X className="w-4 h-4" /></Button>
                   </div>
                 </div>
               ) : (

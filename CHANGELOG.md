@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-07-01] — Back office : sauvegarde automatique dans la section « Ce qui est inclus »
+
+### Ce qui a changé côté code
+- `src/components/admin/IncludesManager2.tsx` : suppression du bouton « Enregistrer » (disquette) en mode édition d'un élément. Les photos se sauvegardent maintenant dès la sélection, les textes dès que l'utilisateur clique ailleurs.
+- `src/components/admin/IncludesManagerStandalone.tsx` : même changement, pour le mode « expérience seule ».
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- Dans les deux modes de création d'expérience (avec ou sans hôtel), modifier un élément de la liste « Ce qui est inclus » exigeait de cliquer sur une icône disquette après chaque modification, créant une étape supplémentaire jugée peu naturelle.
+
+---
+
 ## [2026-07-01] — Admin : bouton Preview dans la vue d'ensemble des expériences
 
 ### Ce qui a changé côté code

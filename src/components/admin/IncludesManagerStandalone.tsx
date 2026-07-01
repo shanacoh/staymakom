@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2, ChevronUp, ChevronDown, Edit2, Save, X, Upload } from "lucide-react";
+import { Plus, Trash2, ChevronUp, ChevronDown, Edit2, X, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 export interface LocalIncludeEntry {
@@ -142,27 +142,63 @@ const IncludesManagerStandalone = ({ experienceId, localIncludes, onLocalInclude
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id }: { id: string }) => {
-      let finalIconUrl = editData.icon_url || null;
-      if (editImageFile) finalIconUrl = await uploadImage(editImageFile);
+    mutationFn: async (payload: {
+      id: string;
+      title: string;
+      title_fr: string;
+      title_he: string;
+      icon_url: string;
+      imageFile?: File | null;
+      closeAfter?: boolean;
+      silent?: boolean;
+    }) => {
+      let finalIconUrl = payload.icon_url || null;
+      if (payload.imageFile) finalIconUrl = await uploadImage(payload.imageFile);
       const { error } = await (supabase as any).from("standalone_experience_includes").update({
-        title: editData.title,
-        title_fr: editData.title_fr || null,
-        title_he: editData.title_he || null,
+        title: payload.title,
+        title_fr: payload.title_fr || null,
+        title_he: payload.title_he || null,
         icon_url: finalIconUrl,
-      }).eq("id", id);
+      }).eq("id", payload.id);
       if (error) throw error;
+      return finalIconUrl;
     },
-    onSuccess: () => {
+    onSuccess: (finalIconUrl, payload) => {
       queryClient.invalidateQueries({ queryKey: ["standalone-includes", experienceId] });
-      setEditingId(null);
-      setEditData({ title: "", title_fr: "", title_he: "", icon_url: "" });
-      setEditImageFile(null);
-      setEditImagePreview(null);
-      toast.success("Élément mis à jour");
+      if (payload.imageFile) {
+        // L'image vient d'être uploadée : on synchronise l'aperçu sans fermer la ligne d'édition
+        setEditData((prev) => ({ ...prev, icon_url: finalIconUrl || "" }));
+        setEditImageFile(null);
+      }
+      if (payload.closeAfter) {
+        setEditingId(null);
+        setEditData({ title: "", title_fr: "", title_he: "", icon_url: "" });
+        setEditImageFile(null);
+        setEditImagePreview(null);
+      }
+      if (!payload.silent) toast.success("Élément mis à jour");
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const commitEdit = (id: string, opts?: { imageFile?: File | null; closeAfter?: boolean; silent?: boolean }) => {
+    if (!editData.title.trim()) return;
+    updateMutation.mutate({
+      id,
+      title: editData.title,
+      title_fr: editData.title_fr,
+      title_he: editData.title_he,
+      icon_url: editData.icon_url,
+      imageFile: opts?.imageFile ?? null,
+      closeAfter: opts?.closeAfter ?? false,
+      silent: opts?.silent ?? true,
+    });
+  };
+
+  const handleCloseEditing = (id: string) => {
+    if (!editData.title.trim()) { cancelEditing(); return; }
+    commitEdit(id, { closeAfter: true, silent: true });
+  };
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -312,16 +348,21 @@ const IncludesManagerStandalone = ({ experienceId, localIncludes, onLocalInclude
                     </Button>
                     <input id={`edit-standalone-img-${item.id}`} type="file" accept="image/*" className="hidden" onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file) { setEditImageFile(file); setEditData((p) => ({ ...p, icon_url: "" })); const reader = new FileReader(); reader.onloadend = () => setEditImagePreview(reader.result as string); reader.readAsDataURL(file); }
+                      if (file) {
+                        setEditImageFile(file);
+                        const reader = new FileReader();
+                        reader.onloadend = () => setEditImagePreview(reader.result as string);
+                        reader.readAsDataURL(file);
+                        commitEdit(item.id, { imageFile: file, silent: false });
+                      }
                     }} />
                     {editImagePreview && <img src={editImagePreview} alt="Preview" className="w-full h-16 object-cover rounded-lg border" referrerPolicy="no-referrer" />}
                   </div>
-                  <Input value={editData.title} onChange={(e) => setEditData({ ...editData, title: e.target.value })} placeholder="Titre EN" className="flex-1 min-w-[100px]" />
-                  <Input value={editData.title_fr} onChange={(e) => setEditData({ ...editData, title_fr: e.target.value })} placeholder="Titre FR" className="flex-1 min-w-[100px]" />
-                  <Input value={editData.title_he} onChange={(e) => setEditData({ ...editData, title_he: e.target.value })} placeholder="כותרת HE" dir="rtl" className="bg-hebrew-input flex-1 min-w-[100px]" />
+                  <Input value={editData.title} onChange={(e) => setEditData({ ...editData, title: e.target.value })} onBlur={() => commitEdit(item.id)} placeholder="Titre EN" className="flex-1 min-w-[100px]" />
+                  <Input value={editData.title_fr} onChange={(e) => setEditData({ ...editData, title_fr: e.target.value })} onBlur={() => commitEdit(item.id)} placeholder="Titre FR" className="flex-1 min-w-[100px]" />
+                  <Input value={editData.title_he} onChange={(e) => setEditData({ ...editData, title_he: e.target.value })} onBlur={() => commitEdit(item.id)} placeholder="כותרת HE" dir="rtl" className="bg-hebrew-input flex-1 min-w-[100px]" />
                   <div className="flex gap-2 flex-shrink-0">
-                    <Button type="button" size="sm" onClick={() => { if (!editData.title.trim()) { toast.error("Titre requis"); return; } updateMutation.mutate({ id: item.id }); }} disabled={updateMutation.isPending}><Save className="w-4 h-4" /></Button>
-                    <Button type="button" size="sm" variant="ghost" onClick={cancelEditing}><X className="w-4 h-4" /></Button>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => handleCloseEditing(item.id)}><X className="w-4 h-4" /></Button>
                   </div>
                 </div>
               ) : (
