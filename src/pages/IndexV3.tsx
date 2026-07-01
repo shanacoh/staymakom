@@ -139,7 +139,8 @@ const IndexV3 = () => {
             highlight_tags(id, slug, label_en, label_he, label_fr, display_order, is_common, icon)
           )
         `)
-        .or("status.eq.published,show_on_v3_only.eq.true")
+        .eq("status", "published")
+        .eq("show_on_v3_only", false)
         .order("display_order", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return data;
@@ -156,7 +157,8 @@ const IndexV3 = () => {
       const { data, error } = await supabase
         .from("standalone_experiences")
         .select("id, slug, title, title_he, title_fr, hero_image, photos, base_price, base_price_type, currency, min_party, max_party, has_child_price, has_time_slots, display_order, category_ids, city, city_he, region, region_he, practical_info, show_on_v3_only, category:categories(slug), standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he, label_fr))")
-        .or("status.eq.published,show_on_v3_only.eq.true")
+        .eq("status", "published")
+        .eq("show_on_v3_only", false)
         .order("display_order", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return data as any[];

@@ -6,6 +6,22 @@
 
 ---
 
+## [2026-07-01] — Page Vitrine prospects : afficher des expériences sur une URL privée sans passer par la home
+
+### Ce qui a changé côté code
+- `src/pages/Vitrine.tsx` (nouveau fichier) : nouvelle page accessible à l'URL `/vitrine`. Affiche toutes les expériences (avec hôtel ou standalone) marquées "Vitrine" dans l'admin, même si elles sont encore en brouillon. Comprend le header et le toggle "Avec hôtel / Expériences seules".
+- `src/App.tsx` : ajout de la route `/vitrine` pointant vers ce nouveau composant.
+- `src/pages/IndexV3.tsx` : la page d'accueil n'affiche plus les expériences avec le flag Vitrine activé. Elle ne montre que les expériences publiées et non-vitrine.
+- `src/pages/admin/Experiences2.tsx` : le toggle "V3" dans la liste des expériences (avec hôtel et standalone) a été renommé "Vitrine", avec une infobulle explicative au survol.
+
+### Ce qui a changé côté base de données
+- Migration `20260701100000_add_vitrine_rls_policy.sql` : ajout de deux politiques de sécurité (RLS) autorisant les visiteurs non connectés à lire les expériences avec `show_on_v3_only = true`, même si leur statut est "draft". Sans cette règle, Supabase bloquait l'accès aux brouillons pour les visiteurs.
+
+### Pourquoi ce changement
+- Shana souhaitait pouvoir préparer des expériences en brouillon et les partager avec des prospects via un lien dédié (`/vitrine`), sans que ces expériences apparaissent sur la page d'accueil publique. L'ancien toggle "V3" était devenu sans effet depuis que la page V3 est devenue la page d'accueil principale.
+
+---
+
 ## [2026-07-01] — Back office : sauvegarde automatique dans la section « Ce qui est inclus »
 
 ### Ce qui a changé côté code
