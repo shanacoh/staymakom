@@ -6,6 +6,21 @@
 
 ---
 
+## [2026-07-01] — Page itinéraire personnalisé (split-screen Nord / Désert)
+
+### Ce qui a changé côté code
+- `src/pages/ItineraireChoix.tsx` : nouvelle page statique accessible sur `/votre-itineraire` — présente deux options de voyage en écran partagé (Option A à gauche, Option B à droite), avec 6 destinations chacune organisées en grilles de 2 cartes alignées, fond rouge très clair à gauche et image désert transparente couvrant toute la colonne droite
+- `src/App.tsx` : ajout du lazy import et de la route `/votre-itineraire`
+- `src/assets/` : 12 nouvelles photos locales (cesarea.jpg, wine.png, kineret.png, safed.webp, Beit Shean.png, gan-hashlosha.jpg, masada-sunrise.jpg, mermorte.png, bedouin-tents-comfortably.jpg, chameau-dans-le-désert-du-néguev-51448703.webp, Wellness.jpg, timna-park-eilat-nature.webp)
+
+### Ce qui a changé côté base de données
+- Aucun changement (page 100 % statique)
+
+### Pourquoi ce changement
+- Shana souhaitait une page de proposition personnalisée à envoyer à un client, avec deux directions de voyage très différentes pour la semaine du 17 au 24 août, visuellement immersive et avec les couleurs de la DA existante
+
+---
+
 ## [2026-07-01] — Corrections disponibilités et prix par personne
 
 ### Ce qui a changé côté code

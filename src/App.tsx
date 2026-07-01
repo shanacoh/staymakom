@@ -84,6 +84,8 @@ const HyperGuestLogsPage     = lazy(() => import("./pages/admin/hyperguest/LogsP
 const HyperGuestConfigPage   = lazy(() => import("./pages/admin/hyperguest/ConfigPage"));
 const RevolutDebugPage       = lazy(() => import("./pages/admin/revolut/DebugPage"));
 const Celine30                   = lazy(() => import("./pages/Celine30"));
+const Vitrine                    = lazy(() => import("./pages/Vitrine"));
+const ItineraireChoix            = lazy(() => import("./pages/ItineraireChoix"));
 const StandaloneExperience       = lazy(() => import("./pages/StandaloneExperience"));
 const StandaloneCheckout         = lazy(() => import("./pages/StandaloneCheckout"));
 const StandaloneBookingConfirmation = lazy(() => import("./pages/StandaloneBookingConfirmation"));
@@ -164,6 +166,8 @@ const AppContent = () => {
           <Route path="/coming-soon" element={<ComingSoon />} />
           <Route path="/home" element={<Index />} />
           <Route path="/v3" element={<Navigate to="/" replace />} />
+          <Route path="/vitrine" element={<Vitrine />} />
+          <Route path="/votre-itineraire" element={<ItineraireChoix />} />
           <Route path="/launch" element={<LaunchIndex />} />
           <Route path="/launch/experiences" element={<LaunchExperiences />} />
           <Route path="/mobile-login" element={<MobileAuthPrompt />} />
