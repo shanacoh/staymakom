@@ -6,6 +6,62 @@
 
 ---
 
+## [2026-07-01] — Corrections disponibilités et prix par personne
+
+### Ce qui a changé côté code
+- `src/hooks/useQuickDateAvailability.ts` : délai minimum avant la première date affichée réduit de 3 jours à 1 jour — les disponibilités à très court terme (ex. demain) apparaissent désormais côté client
+- `src/components/experience/BookingPanel2.tsx` : les enfants de 2 ans et plus sont maintenant comptés comme participants dans le calcul du prix par personne de l'expérience (le total augmente correctement quand on ajoute des enfants)
+
+### Ce qui a changé côté base de données
+- Aucun changement
+
+### Pourquoi ce changement
+- La dispo du vendredi 3 juillet ne remontait pas sur le site alors qu'elle était visible dans HyperGuest : le filtre de 3 jours minimum l'excluait
+- Le prix affiché n'augmentait pas quand des enfants (2-12 ans) étaient ajoutés à une expérience tarifée par personne
+
+---
+
+## [2026-07-01] — Intégration des expériences Pereh Hotel (Golan) et Moa Living (Arava)
+
+### Ce qui a changé côté code
+- Nouveau fichier de migration : `supabase/migrations/20260701000000_insert_hotels_pereh_moa_and_experiences.sql`
+
+### Ce qui a changé côté base de données
+- Table `hotels2` : ajout de 2 hôtels si absents
+  - **Pereh Hotel** (slug : `pereh-hotel-golan`) — hôtel de ferme, Golan Heights
+  - **Moa Living** (slug : `moa-living-arava`) — retraite écologique, Arava/Zofar
+- Table `experiences2` : 4 nouvelles expériences en statut `draft`
+  - `farm-to-table-workshop-pereh` — atelier Farm to Table avec le chef Yossi Heiv, Pereh
+  - `wine-tasting-pereh` — dégustation de vins menée par le sommelier, Pereh
+  - `fire-ritual-sound-journey-moa` — rituel du feu et voyage sonore, Moa
+  - `couples-treatment-moa` — soin en couple dans la salle désert, Moa
+- Table `experience2_includes` : 5–6 inclusions par expérience (EN + HE)
+- Table `experience2_highlight_tags` : badges yoga, vin, cuisine, piscine, spa, méditation, couple, dîner, petit-déjeuner
+- Long copy hébreu laissé vide (texte source corrompu dans le JSON) — à compléter manuellement
+
+### Pourquoi ce changement
+- Intégration du JSON fourni par Shana pour deux hôtels partenaires (Pereh et Moa). Les 4 expériences sont en `draft` jusqu'à validation des prix et des descriptions hébraïques.
+
+---
+
+## [2026-07-01] — Création des fiches hôtel : Moa Living et Pereh Hotel
+
+### Ce qui a changé côté code
+- Aucun fichier modifié — les fiches ont été créées directement en base de données via le back office
+
+### Ce qui a changé côté base de données
+- Table `hotels2` : ajout de 2 nouveaux hôtels en statut `draft`
+  - **Moa Living** (slug : `moa-living`) — retraite bien-être dans le désert de l'Arava, Zofar. Piscine écologique, spa, fitness, parking gratuit. EN + HE remplis.
+  - **Pereh Hotel** (slug : `pereh-hotel`) — hôtel bien-être sur le plateau du Golan (route 91/888). Piscine chauffée, saunas, jacuzzi, gym, restaurant Rouge. EN + HE remplis.
+- Table `hotel2_extras` : 10 extras par défaut ajoutés pour chaque hôtel (massage, dîner, setup romantique, etc.)
+- Coordonnées GPS renseignées pour les deux hôtels
+- Infos pratiques (badges) : piscine / fitness / spa = Oui pour les deux ; casher/synagogue/parking = à compléter pour Pereh
+
+### Pourquoi ce changement
+- Intégration des deux hôtels partenaires dans le catalogue StayMakom, avec descriptions EN et HE tirées de leurs sites officiels. La version française sera complétée lors d'une prochaine session.
+
+---
+
 ## [2026-06-29] — Correction accès fichiers statiques (sitemap, robots, favicon)
 
 ### Ce qui a changé côté code
