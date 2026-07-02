@@ -16,6 +16,7 @@ import { initAmplitude } from "@/lib/amplitude";
 import { trackPageViewed, trackUtmCaptured } from "@/lib/analytics";
 import { Loader2 } from "lucide-react";
 import { NewsletterPopup } from "@/components/NewsletterPopup";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 // ── Chemin critique : chargement immédiat ──────────────────────────────────
 import IndexV3 from "./pages/IndexV3";
@@ -89,7 +90,6 @@ const ItineraireChoix            = lazy(() => import("./pages/ItineraireChoix"))
 const StandaloneExperience       = lazy(() => import("./pages/StandaloneExperience"));
 const StandaloneCheckout         = lazy(() => import("./pages/StandaloneCheckout"));
 const StandaloneBookingConfirmation = lazy(() => import("./pages/StandaloneBookingConfirmation"));
-const TailorMadeQuestionnaire    = lazy(() => import("./pages/TailorMadeQuestionnaire"));
 const AdminStandaloneBookings    = lazy(() => import("./pages/admin/StandaloneBookings"));
 const AdminStandaloneBookingDetails = lazy(() => import("./pages/admin/StandaloneBookingDetails"));
 
@@ -216,7 +216,6 @@ const AppContent = () => {
           <Route path="/standalone-experience/:slug" element={<StandaloneExperience />} />
           <Route path="/standalone-checkout" element={<StandaloneCheckout />} />
           <Route path="/standalone-booking/confirmation/:token" element={<StandaloneBookingConfirmation />} />
-          <Route path="/tailor-questionnaire/:token" element={<TailorMadeQuestionnaire />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/cart" element={<Cart />} />
           <Route
@@ -315,6 +314,7 @@ const AppContent = () => {
         <CookieConsent onAccept={acceptCookies} onDecline={declineCookies} />
       )}
       <NewsletterPopup />
+      <WhatsAppButton />
     </>
   );
 };
