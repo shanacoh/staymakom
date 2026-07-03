@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Save, Rocket, X, Upload, Loader2, ArrowLeft, Plus, ChevronUp, ChevronDown, Star, Image as ImageIcon, HelpCircle, Check, DollarSign, TrendingUp, Receipt, Percent, Building2 } from "lucide-react";
+import { Save, Rocket, X, Upload, Loader2, ArrowLeft, Plus, ChevronUp, ChevronDown, Star, Image as ImageIcon, HelpCircle, Check, DollarSign, TrendingUp, Receipt, Percent, Building2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import RichTextEditor from "@/components/ui/rich-text-editor";
 import { generateSlug } from "@/lib/utils";
@@ -2015,6 +2015,14 @@ export function UnifiedExperience2Form({
                   const margePercent = prixClientTotal > 0 ? (commission / prixClientTotal) * 100 : 0;
                   const hasData = roomNetRate > 0 || costFixed > 0 || costPerPerson > 0 || sellFixed > 0 || sellPerPerson > 0;
 
+                  // ── Prix plancher (parité tarifaire HyperGuest) ──
+                  // Règle contractuelle : le prix chambre facturé au client ne doit
+                  // jamais descendre sous le prix public de l'hôtel (BAR). Back-office
+                  // uniquement — jamais exposé côté client.
+                  const barFloorRoom = minBarRatePublic !== null ? minBarRatePublic * simulatorNights : null;
+                  const clientRoomPrice = (roomNetRate + markupAmount) * simulatorNights;
+                  const belowParity = barFloorRoom !== null && clientRoomPrice < barFloorRoom - 0.5;
+
                   return (
                     <div className="rounded-lg border bg-card p-5 space-y-4">
                       <div className="flex items-center gap-2">
@@ -2083,6 +2091,40 @@ export function UnifiedExperience2Form({
                               {margePercent.toFixed(1)} %
                             </span>
                           </div>
+
+                          {/* ── Indicateur prix minimum (parité BAR) — back-office uniquement ── */}
+                          <Separator />
+                          {barFloorRoom !== null ? (
+                            <div className={cn(
+                              "rounded-md border p-3 space-y-1.5",
+                              belowParity ? "border-destructive/40 bg-destructive/5" : "border-green-600/30 bg-green-600/5",
+                            )}>
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs font-medium flex items-center gap-1.5">
+                                  {belowParity
+                                    ? <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
+                                    : <Check className="h-3.5 w-3.5 text-green-600" />}
+                                  Prix chambre minimum (parité hôtel)
+                                </span>
+                                <span className="text-sm font-bold">{barFloorRoom.toFixed(0)} ₪</span>
+                              </div>
+                              <div className="flex justify-between items-center text-xs text-muted-foreground">
+                                <span>Ton prix chambre actuel</span>
+                                <span className={cn("font-medium", belowParity ? "text-destructive" : "text-green-600")}>
+                                  {clientRoomPrice.toFixed(0)} ₪
+                                </span>
+                              </div>
+                              <p className={cn("text-[11px] leading-snug", belowParity ? "text-destructive" : "text-muted-foreground")}>
+                                {belowParity
+                                  ? "⚠ Tu vends la chambre sous le prix public de l'hôtel. La parité tarifaire HyperGuest est enfreinte : augmente ton markup."
+                                  : "Prix public de l'hôtel sur les 30 prochains jours. Tu dois toujours rester au-dessus de ce plancher."}
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-[11px] text-muted-foreground italic">
+                              Prix plancher indisponible — charge les tarifs HyperGuest pour connaître le prix public minimum.
+                            </p>
+                          )}
                         </div>
                       ) : (
                         <p className="text-xs text-muted-foreground italic text-center py-2">

@@ -29,6 +29,13 @@ interface AvailableDate {
   currency: string;
 }
 
+/** Prix d'une date fixe : sell (public), net (coût HG), bar (prix public hôtel). */
+export interface SpecificDatePrice {
+  sell: number;
+  net: number | null;
+  bar: number | null;
+}
+
 interface UseQuickDateAvailabilityOptions {
   propertyId: number | null;
   nights: number;
@@ -231,10 +238,10 @@ export function useSpecificDatePrices({
   const customerNationality = useCustomerNationality();
   return useQuery({
     queryKey: ['specific-date-prices', propertyId, dates, nights, adults, currency, board, customerNationality],
-    queryFn: async (): Promise<Record<string, number | null>> => {
+    queryFn: async (): Promise<Record<string, SpecificDatePrice | null>> => {
       if (!propertyId || dates.length === 0) return {};
       const guests = formatGuests([{ adults, children: [] }]);
-      const results: Record<string, number | null> = {};
+      const results: Record<string, SpecificDatePrice | null> = {};
 
       await Promise.all(dates.map(async (dateStr) => {
         try {
@@ -248,6 +255,8 @@ export function useSpecificDatePrices({
           });
           const rooms = res?.results?.[0]?.rooms || [];
           let cheapest: number | null = null;
+          let cheapestNet: number | null = null;
+          let cheapestBar: number | null = null;
 
           for (const room of rooms) {
             for (const rp of room.ratePlans || []) {
@@ -267,13 +276,22 @@ export function useSpecificDatePrices({
                 typeof barSearchPrice === 'number' ? barSearchPrice
                   : typeof barNativePrice === 'number' ? barNativePrice
                     : null;
+              // NET (wholesale) — vrai coût HG, back-office / calcul de marge uniquement.
+              const netSearchPrice = rp.prices?.net?.searchCurrency;
+              const netNativePrice = rp.prices?.net?.price;
+              const netPrice =
+                typeof netSearchPrice === 'number' ? netSearchPrice
+                  : typeof netNativePrice === 'number' ? netNativePrice
+                    : null;
 
               if (typeof sellPrice !== 'number') continue;
               if (barPrice != null && sellPrice < barPrice) continue;
               if (cheapest === null || sellPrice < cheapest) cheapest = sellPrice;
+              if (barPrice != null && (cheapestBar === null || barPrice < cheapestBar)) cheapestBar = barPrice;
+              if (netPrice != null && (cheapestNet === null || netPrice < cheapestNet)) cheapestNet = netPrice;
             }
           }
-          results[dateStr] = cheapest;
+          results[dateStr] = cheapest != null ? { sell: cheapest, net: cheapestNet, bar: cheapestBar } : null;
         } catch {
           results[dateStr] = null;
         }

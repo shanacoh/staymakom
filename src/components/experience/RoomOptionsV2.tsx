@@ -11,7 +11,7 @@ import { BedDouble, Clock } from "lucide-react";
 import { getBoardTypeLabel } from "@/services/hyperguest";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/contexts/CurrencyContext";
-import { calculateFromPrice } from "@/hooks/useExperience2Price";
+import { calculateFromPrice, computeBarRateRoomPrice, extractNetBar } from "@/hooks/useExperience2Price";
 import type { PricingConfig } from "@/types/experience2_addons";
 
 interface RoomRatePlan {
@@ -189,20 +189,24 @@ export function RoomOptionsV2({
     return `${symbol}${Math.round(converted).toLocaleString("en-US")}`;
   };
 
-  const applyFromPrice = (rawPrice: number): number => {
+  // Modèle BAR RATE : la marge se construit sur le NET (vrai coût), plancher BAR.
+  // `sellPrice` sert de repli si le net n'est pas exposé par ce rate plan.
+  const applyFromPrice = (ratePlan: RoomRatePlan, sellPrice: number): number => {
     if (barRateData?.pricing_model === "bar_rate") {
+      const { net } = extractNetBar(ratePlan.prices);
+      const baseNet = net ?? sellPrice;
       const markupValue = barRateData.bar_rate_markup_value ?? 0;
       const isPct = barRateData.bar_rate_markup_is_pct ?? true;
-      const markupAmount = isPct ? (rawPrice * markupValue) / 100 : markupValue;
+      const roomClient = computeBarRateRoomPrice(baseNet, markupValue, isPct);
       const sellFixed = barRateData.experience_sell_fixed ?? 0;
       const sellPerPerson = barRateData.experience_sell_per_person ?? 0;
-      return rawPrice + markupAmount + sellFixed + sellPerPerson * adults;
+      return roomClient + sellFixed + sellPerPerson * adults;
     }
     const config: PricingConfig = pricingConfig ?? {
       commission_room_pct: 0, commission_addons_pct: 0, tax_pct: 0,
       promo_type: null, promo_value: null, promo_is_percentage: true,
     };
-    return calculateFromPrice(rawPrice, addons ?? [], config) ?? rawPrice;
+    return calculateFromPrice(sellPrice, addons ?? [], config) ?? sellPrice;
   };
 
   if (isLoading) {
@@ -272,7 +276,7 @@ export function RoomOptionsV2({
                     {room.roomName}
                   </span>
                   <span className="text-sm font-semibold shrink-0">
-                    {isBarRateLoading ? "—" : formatPrice(applyFromPrice(price), currency)}
+                    {isBarRateLoading ? "—" : formatPrice(applyFromPrice(ratePlan, price), currency)}
                   </span>
                 </div>
 

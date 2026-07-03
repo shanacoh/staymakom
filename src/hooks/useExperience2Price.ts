@@ -143,6 +143,42 @@ export function extractPriceFromRatePlanPrices(ratePlanPrices: unknown): { amoun
 }
 
 // ---------------------------------------------------------------------------
+// Prix chambre client (modèle BAR RATE) — SOURCE DE VÉRITÉ UNIQUE
+// La marge se construit sur le NET (vrai coût Staymakom), jamais sur le sell.
+// Le client voit exactement net + marge : AUCUN plancher n'est appliqué ici.
+// (La règle de parité BAR reste un simple voyant d'alerte dans le back-office,
+//  pour que Shana décide en conscience — elle ne modifie pas le prix client.)
+// Renvoie le prix chambre SEUL (hors prix vendu expérience, ajouté par l'appelant).
+// ---------------------------------------------------------------------------
+
+export function computeBarRateRoomPrice(
+  netPrice: number,
+  markupValue: number,
+  markupIsPct: boolean,
+): number {
+  const markupAmount = markupIsPct ? (netPrice * markupValue) / 100 : markupValue;
+  return netPrice + markupAmount;
+}
+
+/** Extrait net / bar / sell d'un bloc `prices` HyperGuest (ratePlan.prices). */
+export function extractNetBar(
+  ratePlanPrices: unknown,
+): { net: number | null; bar: number | null; sell: number | null; currency: string } {
+  const p = (ratePlanPrices ?? {}) as Record<string, any>;
+  const pick = (o: any): number | null => {
+    if (!o || typeof o !== "object") return null;
+    const v = o.price ?? o.searchCurrency ?? o.amount;
+    return typeof v === "number" ? v : null;
+  };
+  return {
+    net: pick(p.net),
+    bar: pick(p.bar),
+    sell: pick(p.sell),
+    currency: (p.sell?.currency ?? p.net?.currency ?? p.bar?.currency ?? "ILS") as string,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Core calculation: V3 addons-only pricing model
 // ---------------------------------------------------------------------------
 
@@ -340,19 +376,21 @@ export function useExperience2Price(
   });
 
   return useMemo(() => {
-    const extracted = extractPriceFromRatePlanPrices(ratePlanPrices);
-    const roomPrice = extracted?.amount ?? basePrice ?? 0;
-    const cur = extracted?.currency ?? currency;
+    const { net, sell, currency: pricesCur } = extractNetBar(ratePlanPrices);
+    // La marge se construit sur le NET (fallback sell puis basePrice si net absent).
+    const baseNet = net ?? sell ?? basePrice ?? 0;
+    const cur = pricesCur ?? currency;
 
-    if (roomPrice <= 0) return null;
+    if (baseNet <= 0) return null;
 
-    // Formule unifiée : prix_HG + markup + prix_vendu_expérience
+    // Formule unifiée : (net + markup) + prix_vendu_expérience — pas de plancher client.
     const markupValue = pricingData?.bar_rate_markup_value ?? 0;
     const isPct = pricingData?.bar_rate_markup_is_pct ?? true;
-    const markupAmount = isPct ? (roomPrice * markupValue) / 100 : markupValue;
+    const roomPrice = computeBarRateRoomPrice(baseNet, markupValue, isPct);
+    const markupAmount = roomPrice - baseNet;
     const sellFixed = pricingData?.experience_sell_fixed ?? 0;
     const sellPerPerson = pricingData?.experience_sell_per_person ?? 0;
-    const subtotal = roomPrice + markupAmount + sellFixed + sellPerPerson * numberOfGuests;
+    const subtotal = roomPrice + sellFixed + sellPerPerson * numberOfGuests;
 
     // Promo
     let discountAmount = 0;
@@ -529,24 +567,24 @@ export function useFromPrice(
   const cheapestDate = useMemo(() => {
     if (hasSpecificDates) {
       if (!specificDatePrices) return null;
-      let cheapestPrice: number | null = null;
+      let cheapestEntry: { sell: number; net: number | null; bar: number | null } | null = null;
       let cheapestStr: string | null = null;
-      for (const [dateStr, price] of Object.entries(specificDatePrices)) {
-        if (price != null && (cheapestPrice === null || price < cheapestPrice)) {
-          cheapestPrice = price;
+      for (const [dateStr, entry] of Object.entries(specificDatePrices)) {
+        if (entry != null && (cheapestEntry === null || entry.sell < cheapestEntry.sell)) {
+          cheapestEntry = entry;
           cheapestStr = dateStr;
         }
       }
-      if (cheapestPrice === null || cheapestStr === null) return null;
+      if (cheapestEntry === null || cheapestStr === null) return null;
       const checkin = new Date(cheapestStr);
       return {
         id: `from-price-${cheapestStr}`,
         checkin,
         checkout: checkin,
         nights: 1,
-        cheapestPrice,
-        cheapestBarPrice: null,
-        cheapestNetPrice: null,
+        cheapestPrice: cheapestEntry.sell,
+        cheapestBarPrice: cheapestEntry.bar,
+        cheapestNetPrice: cheapestEntry.net,
         cheapestCancellationPolicies: null,
         currency: "ILS",
       };
@@ -571,18 +609,18 @@ export function useFromPrice(
   const fromPrice = useMemo(() => {
     // Modèle BAR RATE : prix client = (net rate live HG + markup) + prix vendu expérience × min_party
     if (barRateData?.pricing_model === "bar_rate") {
-      // Préférer le prix live HyperGuest (best available rate) sur le net rate stocké
-      const liveNetRate = cheapestDate?.cheapestPrice ?? null;
+      // Base = NET live HyperGuest (vrai coût), fallback sur le net rate stocké.
+      const liveNetRate = cheapestDate?.cheapestNetPrice ?? null;
       const storedNetRate = (barRateData.room_net_rate as number | null) ?? 0;
       const netRate = liveNetRate ?? storedNetRate;
       if (netRate <= 0) return null;
       const markupValue = (barRateData.bar_rate_markup_value as number | null) ?? 0;
       const isPct = (barRateData.bar_rate_markup_is_pct as boolean | null) ?? true;
-      const markupAmount = isPct ? (netRate * markupValue) / 100 : markupValue;
+      const roomClient = computeBarRateRoomPrice(netRate, markupValue, isPct);
       const sellFixed = (barRateData.experience_sell_fixed as number | null) ?? 0;
       const sellPerPerson = (barRateData.experience_sell_per_person as number | null) ?? 0;
       const minParty = (barRateData.min_party as number | null) ?? 1;
-      const total = (netRate + markupAmount) + sellFixed + sellPerPerson * minParty;
+      const total = roomClient + sellFixed + sellPerPerson * minParty;
       return total > 0 ? total : null;
     }
 

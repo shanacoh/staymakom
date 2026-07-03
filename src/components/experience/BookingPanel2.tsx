@@ -25,7 +25,7 @@ import { useQuickDateAvailability, useSpecificDatePrices } from "@/hooks/useQuic
 import { isCheckinDisabled } from "@/lib/availabilityUtils";
 import { analyzeCancellationPolicies } from "@/utils/cancellationPolicy";
 import type { AvailabilityRule } from "@/lib/availabilityUtils";
-import { useExperience2Price, useExperienceAddons, useExperiencePricingConfig, calculateFromPrice } from "@/hooks/useExperience2Price";
+import { useExperience2Price, useExperienceAddons, useExperiencePricingConfig, calculateFromPrice, computeBarRateRoomPrice } from "@/hooks/useExperience2Price";
 import type { PricingConfig } from "@/types/experience2_addons";
 import { formatGuests, calculateNights } from "@/services/hyperguest";
 import { format } from "date-fns";
@@ -234,9 +234,9 @@ export function BookingPanel2({
         checkin,
         checkout,
         nights: nightsCount,
-        cheapestPrice: specificDatePrices?.[dateStr] ?? null,
-        cheapestBarPrice: null as number | null,
-        cheapestNetPrice: null as number | null,
+        cheapestPrice: specificDatePrices?.[dateStr]?.sell ?? null,
+        cheapestBarPrice: specificDatePrices?.[dateStr]?.bar ?? null,
+        cheapestNetPrice: specificDatePrices?.[dateStr]?.net ?? null,
         cheapestCancellationPolicies: null as any[] | null,
         currency,
       };
@@ -289,24 +289,33 @@ export function BookingPanel2({
     },
   });
 
-  /** Apply markup + experience sell price (BAR RATE) or addons+commissions (standard) to a raw HyperGuest sell price */
-  const applyFromPrice = (rawPrice: number | null): number | null => {
-    if (rawPrice == null || rawPrice <= 0) return rawPrice;
+  /**
+   * Prix "à partir de" d'une date. En modèle BAR RATE, la marge se construit
+   * sur le NET (vrai coût), avec plancher de parité BAR — jamais sur le sell.
+   */
+  const applyFromPrice = (opt: {
+    cheapestPrice: number | null;
+    cheapestNetPrice?: number | null;
+    cheapestBarPrice?: number | null;
+  }): number | null => {
+    const sell = opt.cheapestPrice;
+    if (sell == null || sell <= 0) return sell;
 
     if (_barRateData?.pricing_model === "bar_rate") {
+      const baseNet = opt.cheapestNetPrice ?? sell; // fallback sell si net absent
       const markupValue = (_barRateData.bar_rate_markup_value as number | null) ?? 0;
       const isPct = (_barRateData.bar_rate_markup_is_pct as boolean | null) ?? true;
-      const markupAmount = isPct ? (rawPrice * markupValue) / 100 : markupValue;
+      const roomClient = computeBarRateRoomPrice(baseNet, markupValue, isPct);
       const sellFixed = (_barRateData.experience_sell_fixed as number | null) ?? 0;
       const sellPerPerson = (_barRateData.experience_sell_per_person as number | null) ?? 0;
-      return rawPrice + markupAmount + sellFixed + sellPerPerson * (adults + childrenAges.filter(a => a >= 2).length);
+      return roomClient + sellFixed + sellPerPerson * (adults + childrenAges.filter(a => a >= 2).length);
     }
 
     const config: PricingConfig = _pricingConfig ?? {
       commission_room_pct: 0, commission_addons_pct: 0, tax_pct: 0,
       promo_type: null, promo_value: null, promo_is_percentage: true,
     };
-    return calculateFromPrice(rawPrice, _addons ?? [], config);
+    return calculateFromPrice(sell, _addons ?? [], config);
   };
 
   const filteredQuickDates = useMemo(() => {
@@ -344,7 +353,7 @@ export function BookingPanel2({
     if (displayQuickDates.length === 0) return null;
     let bestPrice = Infinity;
     for (const opt of displayQuickDates) {
-      const price = applyFromPrice(opt.cheapestPrice) ?? opt.cheapestPrice;
+      const price = applyFromPrice(opt) ?? opt.cheapestPrice;
       if (price != null && price < bestPrice) {
         bestPrice = price;
       }
@@ -354,7 +363,7 @@ export function BookingPanel2({
 
   const isBestRateSlot = useCallback((opt: any) => {
     if (bestRatePrice == null) return false;
-    const price = applyFromPrice(opt.cheapestPrice) ?? opt.cheapestPrice;
+    const price = applyFromPrice(opt) ?? opt.cheapestPrice;
     return price != null && Math.abs(price - bestRatePrice) < 0.01;
   }, [bestRatePrice, _addons, _pricingConfig, _barRateData, adults]);
 
@@ -812,7 +821,7 @@ export function BookingPanel2({
                                 {isBarRateLoading ? (
                                   <span className="text-sm font-semibold text-muted-foreground">—</span>
                                 ) : (
-                                  <DualPrice amount={applyFromPrice(opt.cheapestPrice) ?? 0} currency={opt.currency} inline className="text-sm font-semibold text-primary" />
+                                  <DualPrice amount={applyFromPrice(opt) ?? 0} currency={opt.currency} inline className="text-sm font-semibold text-primary" />
                                 )}
                               </>
                             )}
