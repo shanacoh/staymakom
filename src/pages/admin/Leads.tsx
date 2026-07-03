@@ -24,7 +24,7 @@ import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Search, Download, Mail, ArrowUp, ArrowDown, ArrowUpDown, X, CalendarIcon, Trash2 } from "lucide-react";
+import { Search, Download, Mail, ArrowUp, ArrowDown, ArrowUpDown, X, CalendarIcon, Trash2, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -127,6 +127,7 @@ const AdminLeads = () => {
   const [editPhone, setEditPhone] = useState("");
   const [editStatus, setEditStatus] = useState("");
   const [newNote, setNewNote] = useState("");
+  const [sendingQuestionnaire, setSendingQuestionnaire] = useState(false);
 
   const { data: leads, isLoading, refetch } = useQuery({
     queryKey: ["admin-leads", sourceFilter, statusFilter],
@@ -338,6 +339,23 @@ const AdminLeads = () => {
     await updateLeadMutation.mutateAsync({ id: selectedLead.id, updates: { status: "converted", notes: updated } });
     setEditStatus("converted");
     toast.success("Lead converted");
+  };
+
+  const sendQuestionnaire = async () => {
+    if (!selectedLead || sendingQuestionnaire) return;
+    setSendingQuestionnaire(true);
+    try {
+      const { error } = await supabase.functions.invoke("send-tailor-questionnaire", {
+        body: { leadId: selectedLead.id },
+      });
+      if (error) throw error;
+      await refetch();
+      toast.success("Questionnaire envoyé !");
+    } catch {
+      toast.error("Erreur lors de l'envoi du questionnaire");
+    } finally {
+      setSendingQuestionnaire(false);
+    }
   };
 
   // ─── Bulk selection ───
@@ -699,6 +717,36 @@ const AdminLeads = () => {
                         <dd className="text-sm text-muted-foreground bg-muted p-2 rounded flex-1">{selectedLead.metadata.description}</dd>
                       </div>
                     )}
+                    {selectedLead.metadata.questionnaire_filled_at ? (
+                      <>
+                        <div className="border-t pt-2.5 mt-1">
+                          <p className="text-xs text-emerald-600 font-medium mb-2">
+                            ✅ Questionnaire rempli le {format(new Date(selectedLead.metadata.questionnaire_filled_at), "dd/MM/yy")}
+                          </p>
+                          {selectedLead.metadata.questionnaire_data?.dates && (
+                            <div className="flex gap-3 items-start">
+                              <dt className="text-xs text-muted-foreground w-20 shrink-0 pt-0.5">Dates</dt>
+                              <dd className="text-sm font-medium">{selectedLead.metadata.questionnaire_data.dates}</dd>
+                            </div>
+                          )}
+                          {selectedLead.metadata.questionnaire_data?.region && (
+                            <div className="flex gap-3 items-start mt-2">
+                              <dt className="text-xs text-muted-foreground w-20 shrink-0 pt-0.5">Région</dt>
+                              <dd className="text-sm font-medium">
+                                {selectedLead.metadata.questionnaire_data.region}
+                                {selectedLead.metadata.questionnaire_data.otherRegion && ` — ${selectedLead.metadata.questionnaire_data.otherRegion}`}
+                              </dd>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    ) : selectedLead.metadata.questionnaire_sent_at ? (
+                      <div className="border-t pt-2.5 mt-1">
+                        <p className="text-xs text-muted-foreground italic">
+                          Questionnaire envoyé le {format(new Date(selectedLead.metadata.questionnaire_sent_at), "dd/MM/yy")} — en attente de réponse
+                        </p>
+                      </div>
+                    ) : null}
                   </dl>
                 </div>
               )}
@@ -771,6 +819,22 @@ const AdminLeads = () => {
                   <Button size="sm" variant="outline" onClick={markConverted} disabled={editStatus === "converted"}>
                     Mark as converted
                   </Button>
+                  {selectedLead.source === "tailored_request" && (
+                    selectedLead.metadata?.questionnaire_sent_at ? (
+                      <span className="inline-flex items-center text-xs text-muted-foreground px-2">
+                        {selectedLead.metadata?.questionnaire_filled_at
+                          ? `✅ Questionnaire rempli le ${format(new Date(selectedLead.metadata.questionnaire_filled_at), "dd/MM/yy")}`
+                          : `Questionnaire envoyé le ${format(new Date(selectedLead.metadata.questionnaire_sent_at), "dd/MM/yy")}`}
+                      </span>
+                    ) : (
+                      <Button size="sm" variant="outline" onClick={sendQuestionnaire} disabled={sendingQuestionnaire}>
+                        {sendingQuestionnaire
+                          ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                          : <Send className="w-4 h-4 mr-1.5" />}
+                        Send questionnaire
+                      </Button>
+                    )
+                  )}
                 </div>
                 <button className="text-sm text-destructive hover:underline mt-2" onClick={() => setDeleteConfirmOpen(true)}>
                   Delete lead

@@ -6,6 +6,42 @@
 
 ---
 
+## [2026-07-03] — Questionnaire de suivi "tailor made" : email + formulaire + back office
+
+### Ce qui a changé côté code
+- `supabase/functions/send-tailor-questionnaire/index.ts` (nouveau) : fonction déclenchée depuis le back office pour envoyer un email personnalisé au client avec un lien unique vers le formulaire de suivi.
+- `supabase/functions/submit-tailor-questionnaire/index.ts` (nouveau) : fonction appelée par la page questionnaire pour identifier le client (via token) et enregistrer ses réponses dans sa fiche lead.
+- `src/pages/TailorMadeQuestionnaire.tsx` (nouveau) : page publique `/tailor-questionnaire/:token` avec le formulaire 2 questions (dates souhaitées + région préférée), multilingue EN/FR/HE.
+- `src/pages/admin/Leads.tsx` : ajout du bouton "Send questionnaire" dans le panneau de détail des leads `tailored_request`, avec indicateurs d'état ("envoyé le X" / "✅ rempli le X") et affichage des réponses (dates + région) dans la section Dream Stay Details.
+- `src/App.tsx` : ajout de la route `/tailor-questionnaire/:token`.
+
+### Ce qui a changé côté base de données
+- Aucune migration. Les données du questionnaire (token, date d'envoi, date de réponse, dates souhaitées, région) sont stockées dans le champ `metadata JSONB` existant de la table `leads`, sous les clés `questionnaire_token`, `questionnaire_sent_at`, `questionnaire_filled_at`, `questionnaire_data`.
+
+### Pourquoi ce changement
+- Shana souhaitait pouvoir contacter par email les clients ayant rempli le formulaire "Design My Stay", leur demander deux informations supplémentaires (dates et région), et voir les réponses directement dans le back office sans ressaisie manuelle.
+
+---
+
+## [2026-07-03] — Nouveau partenaire : Kibbutz Givat Haim Ihud — 4 expériences
+
+### Ce qui a changé côté code
+- `supabase/migrations/20260703000000_insert_kibbutz_givat_haim_ihud_experiences.sql` (nouveau fichier) : migration qui crée le partenaire et insère les 4 expériences en base.
+
+### Ce qui a changé côté base de données
+- Nouveau partenaire dans `hotels2` : **Kibbutz Givat Haim Ihud** (slug `kibbutz-givat-haim-ihud`), région Sharon, statut `draft`, contact Ethel.
+- 4 nouvelles expériences dans `experiences2`, toutes en statut `draft` — prix, durées et process de réservation à confirmer avec Ethel lors du RDV sur place :
+  1. **Petting Zoo** (`petting-zoo-givat-haim-ihud`) — tags : Kids Activities, Guided Tour, Parking — 5 éléments "inclus"
+  2. **Tour en tracteur guidé** (`guided-tractor-tour-givat-haim-ihud`) — tag : Guided Tour — 3 éléments "inclus"
+  3. **Réfectoire** (`dining-hall-givat-haim-ihud`) — tag : Breakfast — 3 éléments "inclus"
+  4. **Atelier d'art** (`art-workshop-givat-haim-ihud`) — tag : Art — 3 éléments "inclus"
+- Chaque expérience est complète : titre, sous-titre, description longue, balises SEO et contenu « Ce qui est inclus » en 3 langues (EN / FR / HE).
+
+### Pourquoi ce changement
+- Intégration du contenu préparé pour le partenaire Ethel (Kibbutz Givat Haim Ihud), suite à la réception du fichier de contenu complet. Les expériences sont en brouillon en attendant validation des détails opérationnels sur place.
+
+---
+
 ## [2026-07-01] — Page Vitrine prospects : afficher des expériences sur une URL privée sans passer par la home
 
 ### Ce qui a changé côté code
