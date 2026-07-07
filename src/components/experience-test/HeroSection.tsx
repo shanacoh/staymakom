@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Star, Share, Heart, ChevronRight, Sparkles, Users, Leaf, Wine, Zap, Laptop, Brain, Mountain, Utensils, Plane, Camera, Music, Book, Coffee, Sun, Moon, Compass, Map, Globe, Briefcase, Award, Gift, Gem, Crown, Shield, Flame, Droplet, Wind, Cloud, TreePine, Flower2, type LucideIcon } from "lucide-react";
+import { Star, Share, Heart, Sparkles, Users, Leaf, Wine, Zap, Laptop, Brain, Mountain, Utensils, Plane, Camera, Music, Book, Coffee, Sun, Moon, Compass, Map, Globe, Briefcase, Award, Gift, Gem, Crown, Shield, Flame, Droplet, Wind, Cloud, TreePine, Flower2, type LucideIcon } from "lucide-react";
 import { Grid3X3 } from "lucide-react";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
   heart: Heart, users: Users, sparkles: Sparkles, leaf: Leaf, wine: Wine,
@@ -346,30 +354,41 @@ const HeroSection = ({
     <>
       <AuthPromptDialog open={authDialogOpen} onOpenChange={setAuthDialogOpen} lang={lang} defaultTab="login" />
       <div className="pt-16 md:pt-18">
-        {/* Breadcrumb Navigation — desktop only */}
-        <nav className="hidden md:block max-w-6xl mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 py-3">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Link to={isLaunch ? "/launch" : getLocalizedPath("/")} className="hover:text-foreground hover:underline underline-offset-2 transition-colors">
-              {lang === 'he' ? 'בית' : 'Home'}
-            </Link>
-            {categoryName && categorySlug && (
-              <>
-                <ChevronRight className={cn("h-3 w-3 flex-shrink-0", lang === 'he' && "rotate-180")} />
-                <Link
-                  to={isLaunch
-                    ? `/launch/experiences?filter=${categorySlug === 'romantic' ? 'romantic' : 'adventure'}`
-                    : getLocalizedPath(`/category/${categorySlug}`)
-                  }
-                  className="hover:text-foreground hover:underline underline-offset-2 transition-colors"
-                >
-                  {categoryName}
-                </Link>
-              </>
-            )}
-            <ChevronRight className={cn("h-3 w-3 flex-shrink-0", lang === 'he' && "rotate-180")} />
-            <span className="text-foreground font-medium truncate min-w-0 flex-1">{title}</span>
-          </div>
-        </nav>
+        {/* Fil d'Ariane — même composant partagé que les fiches hôtel et catégorie */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 py-3">
+          <Breadcrumb>
+            <BreadcrumbList className="flex-nowrap">
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link to={isLaunch ? "/launch" : getLocalizedPath("/")}>
+                    {lang === 'he' ? 'בית' : lang === 'fr' ? 'Accueil' : 'Home'}
+                  </Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              {categoryName && categorySlug && (
+                <>
+                  <BreadcrumbSeparator className={cn(lang === 'he' && "[&>svg]:rotate-180")} />
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link
+                        to={isLaunch
+                          ? `/launch/experiences?filter=${categorySlug === 'romantic' ? 'romantic' : 'adventure'}`
+                          : getLocalizedPath(`/category/${categorySlug}`)
+                        }
+                      >
+                        {categoryName}
+                      </Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                </>
+              )}
+              <BreadcrumbSeparator className={cn(lang === 'he' && "[&>svg]:rotate-180")} />
+              <BreadcrumbItem className="min-w-0 flex-1">
+                <BreadcrumbPage className="truncate block">{title}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
 
         {/* MOBILE: Full-width carousel */}
         <div className="block md:hidden">

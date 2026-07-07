@@ -4,12 +4,22 @@ import { supabase } from "@/integrations/supabase/client";
 import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Loader2, ExternalLink, Star, DoorOpen, Home, Clock, Users } from "lucide-react";
+import { MapPin, ExternalLink, Star, DoorOpen, Home, Clock, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SEOHead } from "@/components/SEOHead";
+import { buildBreadcrumbJsonLd } from "@/lib/breadcrumbJsonLd";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import LocationMap from "@/components/experience-test/LocationMap";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 const Hotel = () => {
   const { slug } = useParams<{slug: string;}>();
@@ -58,8 +68,27 @@ const Hotel = () => {
 
   if (hotelLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex flex-col">
+        <V3Header />
+        <div className="container pt-16 pb-6">
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <Skeleton className="h-[500px] w-full" />
+        <div className="container py-16">
+          <div className="grid lg:grid-cols-3 gap-12">
+            <div className="lg:col-span-2 space-y-6">
+              <Skeleton className="h-8 w-2/3" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-[92%]" />
+              <Skeleton className="h-4 w-[80%]" />
+            </div>
+            <div className="space-y-4">
+              <Skeleton className="h-11 w-full rounded-lg" />
+              <Skeleton className="h-11 w-full rounded-lg" />
+              <Skeleton className="h-12 w-full rounded-full" />
+            </div>
+          </div>
+        </div>
       </div>);
 
   }
@@ -155,10 +184,36 @@ const Hotel = () => {
           })
         }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            buildBreadcrumbJsonLd([
+              { name: "Home", url: "https://staymakom.com/" },
+              { name: hotelName, url: `https://staymakom.com/hotel/${hotel.slug}` },
+            ])
+          ),
+        }}
+      />
 
       <V3Header />
 
       <main className="flex-1">
+        <div className="container pt-16">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link to="/">{lang === 'he' ? 'בית' : lang === 'fr' ? 'Accueil' : 'Home'}</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{hotelName}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
         {/* Hero */}
         <div className="relative h-[500px]">
           <img

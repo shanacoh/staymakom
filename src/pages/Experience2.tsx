@@ -28,6 +28,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/hooks/useLanguage";
 import { SEOHead } from "@/components/SEOHead";
+import { buildBreadcrumbJsonLd } from "@/lib/breadcrumbJsonLd";
 import { trackExperiencePageViewed, trackTimeOnExperiencePage } from "@/lib/analytics";
 import { useScrollDepth } from "@/hooks/useScrollDepth";
 import { MapPin, Moon } from "lucide-react";
@@ -537,6 +538,20 @@ export default function Experience2() {
               }
             })
           })
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            buildBreadcrumbJsonLd([
+              { name: "Home", url: "https://staymakom.com/" },
+              ...(categoryName && category?.slug
+                ? [{ name: categoryName, url: `https://staymakom.com/category/${category.slug}` }]
+                : []),
+              { name: title, url: `https://staymakom.com/experience/${experience.slug}` },
+            ])
+          ),
         }}
       />
 

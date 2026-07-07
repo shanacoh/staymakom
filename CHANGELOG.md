@@ -6,6 +6,49 @@
 
 ---
 
+## [2026-07-07] — Correction du bug "Category not found" + fil d'Ariane avec le mode Hôtel/Expérience
+
+### Ce qui a changé côté code
+- `src/pages/Category.tsx` : le fil d'Ariane ajouté hier affiche maintenant une étape intermédiaire ("With Hotel" / "Experience Only") entre l'accueil et le nom de la catégorie, puisque le même slug de catégorie affiche un contenu différent selon ce mode.
+- `src/pages/Hotel.tsx` et `src/pages/Category.tsx` : correction d'un bug d'affichage introduit hier — le fil d'Ariane et l'écran de chargement se retrouvaient cachés derrière le bandeau du haut (qui reste fixé en haut de l'écran) faute d'un espace suffisant au-dessus. Espacement aligné sur la convention déjà utilisée sur la fiche expérience.
+- `src/components/experience-test/HeroSection.tsx` (fiche expérience) : le fil d'Ariane "fait main" qui existait déjà sur cette page (différent du composant utilisé sur hôtel/catégorie, et invisible sur mobile) a été remplacé par le même composant partagé — un seul système de navigation cohérent sur tout le site, visible aussi bien sur mobile que sur ordinateur.
+- `src/lib/breadcrumbJsonLd.ts` (nouveau) : petite fonction partagée qui construit la donnée structurée "BreadcrumbList" (le format que Google comprend nativement pour afficher le fil du site directement dans les résultats de recherche).
+- `src/pages/Hotel.tsx`, `src/pages/Category.tsx`, `src/pages/Experience2.tsx` : ajout de cette donnée structurée en plus de l'affichage visuel, pour que Google reçoive une information de navigation fiable et cohérente entre les 3 types de page (pas seulement du texte à l'écran).
+- `api/bot-meta.ts` : la même donnée structurée "BreadcrumbList" est désormais aussi injectée dans la version servie aux robots (celle qui ne dépend pas du JavaScript), pour les fiches hôtel, expérience et catégorie.
+
+### Pourquoi ce changement (suite)
+- Après la correction précédente, Shana a fait remarquer à juste titre qu'avoir deux systèmes de fil d'Ariane différents et non reliés (un sur hôtel/catégorie, un autre "fait main" sur expérience) rendait la navigation du site incohérente, y compris pour Google. Les trois pages utilisent maintenant le même composant, et la structure de navigation est aussi transmise explicitement à Google via les données structurées, à la fois pour les visiteurs normaux et pour les robots.
+
+### Ce qui a changé côté base de données
+- `supabase/migrations/20260707084711_add_missing_french_category_columns.sql` (nouveau) : ajoute les colonnes `presentation_title_fr` et `intro_rich_text_fr` à la table `categories`. Elles étaient lues par le code depuis le 2026-06-28 (commit "Catégories trilingues FR") mais n'avaient jamais été créées en base, ce qui faisait échouer le chargement de **toutes** les pages catégorie ("Category not found"). Migration appliquée directement sur le projet Supabase.
+
+### Pourquoi ce changement
+- En testant les corrections du 2026-07-06, Shana est tombée sur "Category not found" en cliquant sur une catégorie — un bug réel mais préexistant, sans lien avec les changements de la veille. Corrigé au passage, avec son accord. Elle a aussi signalé que le fil d'Ariane ne reflétait pas le choix "avec hôtel" / "expérience seule", qui change pourtant ce qui s'affiche pour une même catégorie.
+
+---
+
+## [2026-07-06] — Audit du site + corrections SEO, vitesse et navigation
+
+### Ce qui a changé côté code
+- `vercel.json` : ajout de redirections permanentes pour les 3 anciennes pages réellement mortes (`/hotel-old/:slug`, `/experience-old/:slug`, `/experiences-old`) vers leurs versions actuelles ; ajout d'une mise en cache longue durée (1 an) pour les fichiers JS/CSS du dossier `/assets` — les visiteurs qui reviennent n'ont plus à retélécharger ces fichiers à chaque visite.
+- `middleware.ts` (nouveau) : détecte les robots (Google, WhatsApp, Facebook, Twitter/X, LinkedIn...) sur les fiches hôtel, expérience, catégorie, journal et expérience standalone, et leur fait servir une version enrichie de la page via `api/bot-meta.ts`. **Ne s'applique jamais** aux pages checkout, standalone-checkout, réservation, compte, panier, connexion ou back office — ces routes ne passent pas par ce mécanisme.
+- `api/bot-meta.ts` (nouveau) : va chercher en base le vrai nom/description/image de la fiche demandée et les insère dans la page avant de la servir au robot, à la place du titre générique du site. Sert aussi les fiches JSON-LD (les données structurées que Google peut afficher enrichies) pour les hôtels, expériences et articles de journal.
+- `src/pages/Hotel.tsx` et `src/pages/Category.tsx` : ajout d'un fil d'Ariane ("Accueil > ...") et remplacement du simple rond qui tourne par un aperçu du contenu pendant le chargement (déjà en place sur les pages plus récentes du site).
+- `src/components/WhatsAppButton.tsx` : le bouton flottant est remonté sur mobile pour ne plus risquer de chevaucher la barre de navigation basse.
+- Deux petits paquets officiels Vercel ajoutés (`@vercel/functions`, `@vercel/node`) nécessaires au fonctionnement du point ci-dessus.
+
+### Ce qui n'a volontairement pas été touché
+- Les routes `/experience2/:slug`, `/hotels/:slug` et `/experiences2` ressemblaient à des doublons mais sont en réalité utilisées activement (retour après achat dans le tunnel de paiement, historique de réservation du compte client, prévisualisation hôtelier partenaire) — laissées telles quelles pour ne prendre aucun risque sur ces parcours.
+- Aucune ligne du tunnel de paiement (`Checkout.tsx`, `StandaloneCheckout.tsx`, `BookingConfirmationPage.tsx`) n'a été modifiée. Le build a été vérifié après coup pour confirmer que ces pages sont strictement identiques à avant.
+
+### Ce qui a changé côté base de données
+- Aucune migration. `api/bot-meta.ts` ne fait que lire (jamais écrire) dans les tables déjà existantes (`hotels2`, `experiences2`, `categories`, `journal_posts`, `standalone_experiences`).
+
+### Pourquoi ce changement
+- Suite à l'audit du site du 2026-07-06 : Google et les réseaux sociaux ne voyaient pas le vrai contenu de chaque fiche hôtel/expérience (juste le titre générique du site), et plusieurs anciennes pages restaient accessibles en double. Shana a validé l'ensemble des actions proposées, avec pour seule consigne explicite de ne rien casser sur le tunnel réservation/paiement.
+
+---
+
 ## [2026-07-03] — Questionnaire de suivi "tailor made" : email + formulaire + back office
 
 ### Ce qui a changé côté code

@@ -13,9 +13,19 @@ import ExperienceMap from "@/components/category/ExperienceMap";
 import { useState, useMemo, useEffect } from "react";
 import { trackCategoryPageViewed } from "@/lib/analytics";
 import { SEOHead } from "@/components/SEOHead";
+import { buildBreadcrumbJsonLd } from "@/lib/breadcrumbJsonLd";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 /* ─── Catégories V3 — ordre et labels fixes ─────────────────────────────── */
 const V3_CATEGORIES = [
@@ -227,8 +237,26 @@ const Category = () => {
 
   if (categoryLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#ad1414]" />
+      <div className="min-h-screen flex flex-col">
+        <V3Header />
+        <div className="container pt-16 pb-6">
+          <Skeleton className="h-4 w-56" />
+        </div>
+        <div className="text-center px-4 pb-5 space-y-3">
+          <Skeleton className="h-8 w-1/2 mx-auto" />
+          <Skeleton className="h-4 w-2/3 mx-auto" />
+        </div>
+        <div className="container pb-16">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="h-48 w-full rounded-xl" />
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -269,9 +297,46 @@ const Category = () => {
         fallbackTitle={`${categoryName} - Staymakom`}
         fallbackDescription={introText}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            buildBreadcrumbJsonLd([
+              { name: "Home", url: "https://staymakom.com/" },
+              { name: mode === 'stay' ? "With Hotel" : "Experience Only", url: `https://staymakom.com/category/${slug}?mode=${mode}` },
+              { name: categoryName, url: `https://staymakom.com/category/${slug}?mode=${mode}` },
+            ])
+          ),
+        }}
+      />
       <V3Header showModeToggle mode={mode} setMode={handleSetMode} />
 
       <main className="flex-1">
+        <div className="container pt-16">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link to="/">{lang === 'he' ? 'בית' : lang === 'fr' ? 'Accueil' : 'Home'}</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link to={`/category/${slug}?mode=${mode}`}>
+                    {mode === 'stay'
+                      ? (lang === 'he' ? 'עם מלון' : lang === 'fr' ? 'Avec Hôtel' : 'With Hotel')
+                      : (lang === 'he' ? 'חוויה בלבד' : lang === 'fr' ? 'Expérience Seule' : 'Experience Only')}
+                  </Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{categoryName}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
 
         {/* ──── Hero : icône + titre ──── */}
         <section className="bg-white pt-10 pb-5 text-center px-4">
