@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
+import { resizedImageUrl } from "@/lib/imageUrl";
 
 interface CategoryCardProps {
   category: {
@@ -31,7 +32,7 @@ const CategoryCard = ({ category }: CategoryCardProps) => {
     >
       <div className="aspect-square relative">
         <img
-          src={image}
+          src={resizedImageUrl(image, 500) || image}
           alt={title}
           loading="lazy"
           className="w-full h-full object-cover group-hover:scale-105 transition-smooth"

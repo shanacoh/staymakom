@@ -3,6 +3,7 @@ import { Heart } from "lucide-react";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { resizedImageUrl } from "@/lib/imageUrl";
 import { toast } from "sonner";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
 import { useCurrency } from "@/contexts/CurrencyContext";
@@ -259,8 +260,12 @@ export default function ExperienceCard({
         {/* Photo section with title overlay */}
         <div className="relative aspect-[4/3] overflow-hidden rounded-xl mb-2">
           <img
-            src={(experience as any).thumbnail_image || experience.hero_image || experience.photos?.[0] || experience.hotels?.hero_image || '/placeholder.svg'}
+            src={resizedImageUrl(
+              (experience as any).thumbnail_image || experience.hero_image || experience.photos?.[0] || experience.hotels?.hero_image,
+              500
+            ) || '/placeholder.svg'}
             alt={title}
+            loading="lazy"
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
           

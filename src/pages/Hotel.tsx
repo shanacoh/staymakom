@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, ExternalLink, Star, DoorOpen, Home, Clock, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SEOHead } from "@/components/SEOHead";
+import { resizedImageUrl } from "@/lib/imageUrl";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumbJsonLd";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
@@ -217,7 +218,7 @@ const Hotel = () => {
         {/* Hero */}
         <div className="relative h-[500px]">
           <img
-            src={hotel.hero_image || displayPhotos[0] || "/placeholder.svg"}
+            src={resizedImageUrl(hotel.hero_image || displayPhotos[0], 1400, 80) || "/placeholder.svg"}
             alt={hotelName}
             className="w-full h-full object-cover" />
           
@@ -451,8 +452,9 @@ const Hotel = () => {
                     {displayPhotos.map((photo, index) =>
                   <div key={index} className="aspect-square rounded-lg overflow-hidden">
                         <img
-                      src={photo}
+                      src={resizedImageUrl(photo, 500) || photo}
                       alt={`${hotelName} - ${index + 1}`}
+                      loading="lazy"
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
                     
                       </div>

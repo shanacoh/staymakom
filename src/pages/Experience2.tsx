@@ -3,7 +3,7 @@
  * Supporte le parcours multi-hôtels via experience2_hotels
  * Utilise experiences2 + hotels2 + intégration HyperGuest
  */
-import { useRef, useState, useMemo, useCallback, useEffect } from "react";
+import { useRef, useState, useMemo, useCallback, useEffect, lazy, Suspense } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useExperience2 } from "@/hooks/useExperience2";
 import { useQuery } from "@tanstack/react-query";
@@ -13,7 +13,9 @@ import HeroSection from "@/components/experience-test/HeroSection";
 import HeroBookingPreview2 from "@/components/experience-test/HeroBookingPreview2";
 
 import YourStaySection from "@/components/experience-test/YourStaySection";
-import LocationMap from "@/components/experience-test/LocationMap";
+// Chargée à la demande : embarque Leaflet (carte interactive), inutile tant
+// que cette section n'est pas affichée à l'écran.
+const LocationMap = lazy(() => import("@/components/experience-test/LocationMap"));
 import StickyPriceBar from "@/components/experience-test/StickyPriceBar";
 import PracticalInfo from "@/components/experience-test/PracticalInfo";
 import ReviewsGrid2 from "@/components/experience-test/ReviewsGrid2";
@@ -616,7 +618,9 @@ export default function Experience2() {
             {renderStaySections()}
 
             {/* Location map(s) */}
-            {renderMaps()}
+            <Suspense fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}>
+              {renderMaps()}
+            </Suspense>
 
             {/* Share with Friends — below map */}
             <ShareWithFriendsSection

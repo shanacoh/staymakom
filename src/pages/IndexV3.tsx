@@ -474,6 +474,7 @@ const IndexV3 = () => {
               <img
                 src={giftCardHero}
                 alt="Gift Card"
+                loading="lazy"
                 className="w-full h-56 md:h-72 object-cover hover:scale-105 transition-transform duration-500"
               />
             </div>
@@ -508,7 +509,7 @@ const IndexV3 = () => {
         {/* ──── 8. THIS IS NOT TOURISM ──── */}
         <section className="relative py-8 sm:py-14 md:py-18 overflow-hidden">
           <div className="absolute inset-0">
-            <img src={handpickedHero} alt="" className="w-full h-full object-cover" />
+            <img src={handpickedHero} alt="" loading="lazy" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-black/40" />
           </div>
           <div className="container max-w-3xl relative z-10 px-4 text-center">

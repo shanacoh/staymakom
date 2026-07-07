@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Star, Share, Heart, Sparkles, Users, Leaf, Wine, Zap, Laptop, Brain, Mountain, Utensils, Plane, Camera, Music, Book, Coffee, Sun, Moon, Compass, Map, Globe, Briefcase, Award, Gift, Gem, Crown, Shield, Flame, Droplet, Wind, Cloud, TreePine, Flower2, type LucideIcon } from "lucide-react";
 import { Grid3X3 } from "lucide-react";
+import { resizedImageUrl } from "@/lib/imageUrl";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -329,7 +330,12 @@ const HeroSection = ({
         <div className={cn("flex items-center gap-3.5 pt-1 mt-1", isMobile ? "justify-center" : "justify-center")}>
           <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-sm font-medium text-muted-foreground overflow-hidden flex-shrink-0">
             {hotelImage ? (
-              <img src={hotelImage} alt={hotelName} className="w-full h-full object-cover" />
+              <img
+                src={resizedImageUrl(hotelImage, 100) || hotelImage}
+                alt={hotelName}
+                loading="lazy"
+                className="w-full h-full object-cover"
+              />
             ) : (
               hotelName.charAt(0)
             )}
@@ -433,8 +439,9 @@ const HeroSection = ({
                         onClick={() => { trackPhotoGalleryClicked(title); setIsGalleryOpen(true); }}
                       >
                         <img
-                          src={photo || "/placeholder.svg"}
+                          src={resizedImageUrl(photo, 900) || "/placeholder.svg"}
                           alt={`${title} - ${index + 1}`}
+                          loading={index === 0 ? undefined : "lazy"}
                           className="w-full h-full object-cover"
                         />
                       </div>
@@ -478,7 +485,7 @@ const HeroSection = ({
                 onClick={() => { trackPhotoGalleryClicked(title); setCurrentPhotoIndex(0); setIsGalleryOpen(true); }}
               >
                 <img
-                  src={photos[0] || "/placeholder.svg"}
+                  src={resizedImageUrl(photos[0], 1400, 80) || "/placeholder.svg"}
                   alt={title}
                   className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                 />

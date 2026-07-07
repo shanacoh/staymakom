@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useMemo } from "react";
+import { useRef, useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +9,8 @@ import { SEOHead } from "@/components/SEOHead";
 import Experience2CardWithPrice from "@/components/Experience2CardWithPrice";
 import StandaloneExperienceCard from "@/components/StandaloneExperienceCard";
 import ExperienceCardSkeleton from "@/components/ExperienceCardSkeleton";
-import MultiPinMap from "@/components/experience/MultiPinMap";
+// Chargée à la demande : embarque Leaflet (carte interactive).
+const MultiPinMap = lazy(() => import("@/components/experience/MultiPinMap"));
 import { cn } from "@/lib/utils";
 import { Compass, Heart, Leaf, Users, Wine, Sparkles, ArrowRight, type LucideIcon } from "lucide-react";
 
@@ -637,7 +638,9 @@ const LaunchExperiences = () => {
               {/* Carte standalone */}
               <div className="hidden md:block sticky top-20 h-[calc(100vh-120px)]">
                 {standaloneMapPins.length > 0 ? (
-                  <MultiPinMap pins={standaloneMapPins} lang={lang as "en" | "he" | "fr"} />
+                  <Suspense fallback={<div className="h-full min-h-[400px] rounded-2xl bg-muted/30 animate-pulse" />}>
+                    <MultiPinMap pins={standaloneMapPins} lang={lang as "en" | "he" | "fr"} />
+                  </Suspense>
                 ) : (
                   <div className="h-full min-h-[400px] rounded-2xl bg-muted/30 flex items-center justify-center text-muted-foreground text-sm">
                     {isRTL ? "אין מיקומים זמינים" : "No locations available"}
@@ -767,7 +770,9 @@ const LaunchExperiences = () => {
               {/* Colonne droite : map sticky */}
               <div className="hidden md:block sticky top-20 h-[calc(100vh-120px)]">
                 {mapPins.length > 0 ? (
-                  <MultiPinMap pins={mapPins} lang={lang as "en" | "he" | "fr"} />
+                  <Suspense fallback={<div className="h-full min-h-[400px] rounded-2xl bg-muted/30 animate-pulse" />}>
+                    <MultiPinMap pins={mapPins} lang={lang as "en" | "he" | "fr"} />
+                  </Suspense>
                 ) : (
                   <div className="h-full min-h-[400px] rounded-2xl bg-muted/30 flex items-center justify-center text-muted-foreground text-sm">
                     {isRTL ? "אין מיקומים זמינים" : "No locations available"}

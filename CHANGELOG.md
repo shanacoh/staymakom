@@ -6,6 +6,23 @@
 
 ---
 
+## [2026-07-07 ter] — Allègement du site : cartes chargées à la demande, photos redimensionnées
+
+### Ce qui a changé côté code
+- `src/lib/imageUrl.ts` (nouveau) : demande à Supabase de redimensionner une photo à la taille réellement affichée, au lieu d'envoyer la photo dans sa taille d'origine pour une simple vignette.
+- `src/pages/Experience2.tsx`, `src/pages/LaunchExperiences.tsx`, `src/pages/Category.tsx` : la carte interactive (Leaflet) de chacune de ces pages n'est plus téléchargée par défaut pour tout le monde — elle ne se charge que lorsqu'elle s'affiche réellement à l'écran. Avant, elle était fondue dans le fichier principal du site que **tout visiteur** télécharge en arrivant, même sur des pages sans carte.
+- `src/components/ExperienceCard.tsx`, `src/components/CategoryCard.tsx`, `src/pages/Hotel.tsx` (galerie), `src/components/experience-test/HeroSection.tsx` (galerie + avatar hôtel) : photos redimensionnées à leur taille d'affichage réelle, et "chargement paresseux" activé (le navigateur commence à télécharger une photo un peu avant qu'elle soit visible en défilant, pas toutes d'un coup à l'arrivée sur la page). La toute première photo vue à l'écran (photo principale) reste chargée immédiatement pour ne pas ralentir le premier affichage.
+- `src/pages/IndexV3.tsx` : mêmes réglages de chargement différé sur les deux visuels du bas de la page d'accueil.
+
+### Résultat mesuré
+- Le fichier principal du site (celui que tout visiteur télécharge) passe de 658 Ko à 605 Ko compressés (-8%). La carte, avant fondue dedans, est maintenant un fichier à part de 43 Ko, téléchargé uniquement quand elle sert vraiment.
+- Une photo d'hôtel type passe de 119 Ko à 71 Ko une fois redimensionnée à sa taille d'affichage.
+
+### Pourquoi ce changement
+- Dernier point resté en suspens de l'audit du site du 2026-07-06 (vitesse de chargement). Shana a validé les 3 pistes proposées (carte à la demande, photos redimensionnées, chargement différé des images), avec la consigne que le défilement reste fluide (une image doit être prête un peu avant d'arriver à l'écran, pas seulement au moment où elle devient visible) — c'est le comportement standard des navigateurs modernes, utilisé ici.
+
+---
+
 ## [2026-07-07 bis] — Le fil d'Ariane des fiches expérience indique aussi le mode Hôtel/Expérience
 
 ### Ce qui a changé côté code

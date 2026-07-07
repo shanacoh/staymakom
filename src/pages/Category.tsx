@@ -9,8 +9,10 @@ import { Link } from "react-router-dom";
 import ExperienceCard from "@/components/ExperienceCard";
 import StandaloneExperienceCard from "@/components/StandaloneExperienceCard";
 import CategoryFilters, { FilterState } from "@/components/category/CategoryFilters";
-import ExperienceMap from "@/components/category/ExperienceMap";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, lazy, Suspense } from "react";
+// Chargée à la demande : embarque Leaflet (carte interactive), affichée
+// seulement si le visiteur clique sur "voir la carte".
+const ExperienceMap = lazy(() => import("@/components/category/ExperienceMap"));
 import { trackCategoryPageViewed } from "@/lib/analytics";
 import { SEOHead } from "@/components/SEOHead";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumbJsonLd";
@@ -532,7 +534,9 @@ const Category = () => {
 
             {showMap && (
               <div className="hidden lg:block">
-                <ExperienceMap experiences={mode === "stay" ? filteredExperiences : filteredStandalone} />
+                <Suspense fallback={<div className="h-full min-h-[400px] rounded-xl bg-muted/30 animate-pulse" />}>
+                  <ExperienceMap experiences={mode === "stay" ? filteredExperiences : filteredStandalone} />
+                </Suspense>
               </div>
             )}
           </div>
