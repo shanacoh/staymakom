@@ -130,6 +130,12 @@ async function resolveResource(pathname: string): Promise<ResourceMeta | null> {
         },
         buildBreadcrumbJsonLd([
           { name: "Home", url: "https://staymakom.com/" },
+          {
+            name: "With Hotel",
+            url: category?.slug
+              ? `https://staymakom.com/category/${category.slug}?mode=stay`
+              : "https://staymakom.com/experiences",
+          },
           ...(category?.name && category?.slug
             ? [{ name: category.name, url: `https://staymakom.com/category/${category.slug}` }]
             : []),
@@ -197,12 +203,32 @@ async function resolveResource(pathname: string): Promise<ResourceMeta | null> {
 
   const standaloneMatch = pathname.match(/^\/standalone-experience\/([^/?#]+)/);
   if (standaloneMatch) {
-    const row = await fetchOne("standalone_experiences", "title,subtitle,hero_image,slug", standaloneMatch[1]);
+    const row = await fetchOne(
+      "standalone_experiences",
+      "title,subtitle,hero_image,slug,categories(name,slug)",
+      standaloneMatch[1]
+    );
     if (!row) return null;
+    const category = Array.isArray(row.categories) ? row.categories[0] : row.categories;
     return {
       title: `${row.title} - Staymakom`,
       description: row.subtitle || undefined,
       image: row.hero_image || undefined,
+      jsonLdBlocks: [
+        buildBreadcrumbJsonLd([
+          { name: "Home", url: "https://staymakom.com/" },
+          {
+            name: "Experience Only",
+            url: category?.slug
+              ? `https://staymakom.com/category/${category.slug}?mode=live`
+              : "https://staymakom.com/experiences?mode=live",
+          },
+          ...(category?.name && category?.slug
+            ? [{ name: category.name, url: `https://staymakom.com/category/${category.slug}` }]
+            : []),
+          { name: row.title, url: `https://staymakom.com/standalone-experience/${row.slug}` },
+        ]),
+      ],
     };
   }
 

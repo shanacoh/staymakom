@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useLanguage } from "@/hooks/useLanguage";
 import { SEOHead } from "@/components/SEOHead";
+import { buildBreadcrumbJsonLd } from "@/lib/breadcrumbJsonLd";
 import { trackExperiencePageViewed, trackTimeOnExperiencePage } from "@/lib/analytics";
 import { useScrollDepth } from "@/hooks/useScrollDepth";
 import type { SelectedExtra } from "@/components/experience-test/ExtrasSection2";
@@ -720,6 +721,26 @@ export default function StandaloneExperience() {
         description={subtitle}
         ogImage={experience.hero_image || undefined}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            buildBreadcrumbJsonLd([
+              { name: "Home", url: "https://staymakom.com/" },
+              {
+                name: "Experience Only",
+                url: categorySlug
+                  ? `https://staymakom.com/category/${categorySlug}?mode=live`
+                  : "https://staymakom.com/experiences?mode=live",
+              },
+              ...(categoryName && categorySlug
+                ? [{ name: categoryName, url: `https://staymakom.com/category/${categorySlug}` }]
+                : []),
+              { name: title, url: `https://staymakom.com/standalone-experience/${experience.slug}` },
+            ])
+          ),
+        }}
+      />
 
       <V3Header />
 
@@ -742,6 +763,7 @@ export default function StandaloneExperience() {
             categoryName={categoryName}
             categorySlug={categorySlug}
             categoryIcon={experience?.categories?.icon ?? undefined}
+            experienceMode="live"
             minParty={experience.min_party}
             maxParty={experience.max_party}
             averageRating={null}

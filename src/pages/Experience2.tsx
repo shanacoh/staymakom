@@ -546,6 +546,12 @@ export default function Experience2() {
           __html: JSON.stringify(
             buildBreadcrumbJsonLd([
               { name: "Home", url: "https://staymakom.com/" },
+              {
+                name: "With Hotel",
+                url: category?.slug
+                  ? `https://staymakom.com/category/${category.slug}?mode=stay`
+                  : "https://staymakom.com/experiences",
+              },
               ...(categoryName && category?.slug
                 ? [{ name: categoryName, url: `https://staymakom.com/category/${category.slug}` }]
                 : []),
@@ -576,6 +582,7 @@ export default function Experience2() {
         categoryName={categoryName || undefined}
         categorySlug={category?.slug || undefined}
         categoryIcon={(category as any)?.icon || undefined}
+        experienceMode="stay"
         minParty={experience.min_party || 2}
         maxParty={experience.max_party || 4}
         averageRating={averageRating}

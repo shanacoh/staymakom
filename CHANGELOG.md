@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-07-07 bis] — Le fil d'Ariane des fiches expérience indique aussi le mode Hôtel/Expérience
+
+### Ce qui a changé côté code
+- `src/components/experience-test/HeroSection.tsx` : nouveau réglage `experienceMode` ("stay" ou "live") qui ajoute l'étape "With Hotel" / "Experience Only" dans le fil d'Ariane, au même endroit que sur la page catégorie.
+- `src/pages/Experience2.tsx` (fiches liées à un hôtel) : passe désormais `experienceMode="stay"`, donnée structurée Google mise à jour en conséquence.
+- `src/pages/StandaloneExperience.tsx` (fiches expérience seule) : passe `experienceMode="live"` ; cette page n'avait encore aucune donnée structurée pour Google, elle en a maintenant une (fil d'Ariane complet, catégorie comprise).
+- `api/bot-meta.ts` : la version servie aux robots reflète le même fil d'Ariane à 3-4 niveaux (Accueil > mode > catégorie > titre) pour les fiches hôtel, expérience et expérience standalone.
+
+### Pourquoi ce changement
+- Shana a remarqué que le fil d'Ariane des fiches expérience ne montrait pas ce mode, alors que la page catégorie l'affiche désormais. Une fiche expérience appartient toujours à l'un des deux modes (elle est soit liée à un hôtel, soit "standalone") : ce niveau manquait pour que la navigation soit complète et cohérente partout, y compris pour Google.
+
+---
+
 ## [2026-07-07] — Correction du bug "Category not found" + fil d'Ariane avec le mode Hôtel/Expérience
 
 ### Ce qui a changé côté code

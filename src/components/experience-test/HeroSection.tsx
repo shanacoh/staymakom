@@ -88,6 +88,8 @@ interface HeroSectionProps {
   categorySlug?: string;
   categoryIcon?: string;
   slug?: string;
+  /** "stay" = expérience liée à un hôtel (/experience/:slug), "live" = expérience standalone (/standalone-experience/:slug) */
+  experienceMode?: 'stay' | 'live';
 }
 
 const HeroSection = ({ 
@@ -118,6 +120,7 @@ const HeroSection = ({
   categorySlug,
   categoryIcon,
   slug,
+  experienceMode = 'stay',
 }: HeroSectionProps) => {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
@@ -365,6 +368,25 @@ const HeroSection = ({
                   </Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
+              {!isLaunch && (
+                <>
+                  <BreadcrumbSeparator className={cn(lang === 'he' && "[&>svg]:rotate-180")} />
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link
+                        to={categorySlug
+                          ? getLocalizedPath(`/category/${categorySlug}?mode=${experienceMode}`)
+                          : getLocalizedPath(experienceMode === 'stay' ? '/experiences' : '/experiences?mode=live')
+                        }
+                      >
+                        {experienceMode === 'stay'
+                          ? (lang === 'he' ? 'עם מלון' : lang === 'fr' ? 'Avec Hôtel' : 'With Hotel')
+                          : (lang === 'he' ? 'חוויה בלבד' : lang === 'fr' ? 'Expérience Seule' : 'Experience Only')}
+                      </Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                </>
+              )}
               {categoryName && categorySlug && (
                 <>
                   <BreadcrumbSeparator className={cn(lang === 'he' && "[&>svg]:rotate-180")} />
