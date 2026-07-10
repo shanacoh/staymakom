@@ -16,5 +16,8 @@ export function resizedImageUrl(
 
   const base = url.slice(0, index);
   const path = url.slice(index + marker.length);
-  return `${base}/storage/v1/render/image/public/${path}?width=${width}&quality=${quality}`;
+  // "resize=contain" sans hauteur imposée : Supabase calcule la hauteur
+  // proportionnellement à la largeur au lieu de garder la hauteur d'origine
+  // (qui déformait la photo et forçait un zoom énorme au recadrage).
+  return `${base}/storage/v1/render/image/public/${path}?width=${width}&resize=contain&quality=${quality}`;
 }

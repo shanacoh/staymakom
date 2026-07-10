@@ -6,6 +6,17 @@
 
 ---
 
+## [2026-07-10] — Correction des photos déformées et zoomées sur les cartes
+
+### Ce qui a changé côté code
+- `src/lib/imageUrl.ts` : la fonction qui redimensionne les photos ne précisait que la largeur souhaitée, jamais la hauteur. Notre hébergeur d'images (Supabase) réduisait alors la largeur mais gardait la hauteur d'origine telle quelle, ce qui déformait la photo (image écrasée). Le site, pour la faire rentrer dans le cadre rectangulaire des cartes, était ensuite obligé de zoomer très fort dessus — d'où l'effet "photo ultra zoomée" repéré sur les cartes d'expériences. Ajout du réglage qui dit à l'hébergeur de garder les proportions d'origine de la photo.
+- `src/lib/imageUrl.test.ts` : tests mis à jour pour vérifier ce réglage.
+
+### Pourquoi ce changement
+- Suite à la mise en place de la commande "photos redimensionnées" du 2026-07-07, plusieurs photos sur les cartes d'expériences (et potentiellement les cartes de catégories, galeries d'hôtel, bannières) apparaissaient déformées et très zoomées. Corrige tous les endroits du site qui utilisent cette même fonction de redimensionnement.
+
+---
+
 ## [2026-07-07 ter] — Allègement du site : cartes chargées à la demande, photos redimensionnées
 
 ### Ce qui a changé côté code
