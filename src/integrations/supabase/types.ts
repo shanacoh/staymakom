@@ -2912,6 +2912,7 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           experience_id: string
+          experience_type: string
           id: string
           user_id: string
         }
@@ -2919,6 +2920,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           experience_id: string
+          experience_type?: string
           id?: string
           user_id: string
         }
@@ -2926,6 +2928,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           experience_id?: string
+          experience_type?: string
           id?: string
           user_id?: string
         }

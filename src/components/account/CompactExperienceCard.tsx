@@ -69,8 +69,9 @@ export default function CompactExperienceCard({
           .upsert({
             user_id: userId,
             experience_id: experience.id,
+            experience_type: "experiences2",
             deleted_at: null,
-          }, { onConflict: "user_id,experience_id" });
+          }, { onConflict: "user_id,experience_type,experience_id" });
         if (error) throw error;
       }
     },

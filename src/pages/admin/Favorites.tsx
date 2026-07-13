@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Heart, User, Sparkles, Building2, Mail, Phone, Copy, Download, CheckCircle2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Heart, User, Sparkles, Building2, Mail, Phone, Copy, Download, CheckCircle2, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -20,35 +22,113 @@ interface WishlistUser {
   created_at: string;
 }
 
+type ExperienceType = "experiences" | "experiences2" | "standalone";
+
+const TYPE_LABELS: Record<ExperienceType, string> = {
+  experiences: "Expérience (legacy)",
+  experiences2: "Hôtel-liée",
+  standalone: "Expérience seule",
+};
+
+const TYPE_LINK_PREFIX: Record<ExperienceType, string> = {
+  experiences: "/experience",
+  experiences2: "/experience",
+  standalone: "/standalone-experience",
+};
+
+interface ResolvedExperience {
+  key: string;
+  id: string;
+  type: ExperienceType;
+  title: string;
+  slug: string | null;
+  hotelId: string | null;
+  hotelName: string | null;
+}
+
 const AdminFavorites = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [hotelFilter, setHotelFilter] = useState<string>("all");
+  const [selectedUser, setSelectedUser] = useState<UserStat | null>(null);
 
-  // Fetch all wishlist items then enrich with experience data separately
+  // Fetch all wishlist items then enrich with experience data from the
+  // three possible source tables (hôtel-liée, standalone, legacy)
   const { data: wishlistItems, isLoading } = useQuery({
     queryKey: ["admin-wishlist"],
     queryFn: async () => {
       const { data: rawItems, error } = await supabase
         .from("wishlist")
-        .select("id, user_id, experience_id, created_at")
+        .select("id, user_id, experience_id, experience_type, created_at")
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       if (!rawItems || rawItems.length === 0) return [];
 
-      const expIds = [...new Set(rawItems.map((w) => w.experience_id).filter(Boolean))];
+      const idsByType = (type: ExperienceType) =>
+        [...new Set(
+          rawItems
+            .filter((w) => (w.experience_type as ExperienceType) === type)
+            .map((w) => w.experience_id)
+            .filter(Boolean)
+        )];
 
-      const { data: experiences } = await supabase
-        .from("experiences2")
-        .select("id, title, slug, hotel_id, hotels2(id, name)")
-        .in("id", expIds);
+      const experiences2Ids = idsByType("experiences2");
+      const experiencesIds = idsByType("experiences");
+      const standaloneIds = idsByType("standalone");
 
-      const expMap = new Map((experiences || []).map((e: any) => [e.id, e]));
+      const [experiences2Res, experiencesRes, standaloneRes] = await Promise.all([
+        experiences2Ids.length
+          ? supabase.from("experiences2").select("id, title, slug, hotel_id, hotels2(id, name)").in("id", experiences2Ids)
+          : Promise.resolve({ data: [] as any[] }),
+        experiencesIds.length
+          ? supabase.from("experiences").select("id, title, slug, hotel_id, hotels(id, name)").in("id", experiencesIds)
+          : Promise.resolve({ data: [] as any[] }),
+        standaloneIds.length
+          ? (supabase as any).from("standalone_experiences").select("id, title, slug").in("id", standaloneIds)
+          : Promise.resolve({ data: [] as any[] }),
+      ]);
+
+      const expMap = new Map<string, ResolvedExperience>();
+
+      (experiences2Res.data || []).forEach((e: any) => {
+        expMap.set(`experiences2:${e.id}`, {
+          key: `experiences2:${e.id}`,
+          id: e.id,
+          type: "experiences2",
+          title: e.title || "Titre inconnu",
+          slug: e.slug,
+          hotelId: e.hotel_id || null,
+          hotelName: e.hotels2?.name || null,
+        });
+      });
+      (experiencesRes.data || []).forEach((e: any) => {
+        expMap.set(`experiences:${e.id}`, {
+          key: `experiences:${e.id}`,
+          id: e.id,
+          type: "experiences",
+          title: e.title || "Titre inconnu",
+          slug: e.slug,
+          hotelId: e.hotel_id || null,
+          hotelName: e.hotels?.name || null,
+        });
+      });
+      (standaloneRes.data || []).forEach((e: any) => {
+        expMap.set(`standalone:${e.id}`, {
+          key: `standalone:${e.id}`,
+          id: e.id,
+          type: "standalone",
+          title: e.title || "Titre inconnu",
+          slug: e.slug,
+          hotelId: null,
+          hotelName: null,
+        });
+      });
 
       return rawItems.map((item) => ({
         ...item,
-        experiences2: expMap.get(item.experience_id) || null,
+        experienceType: item.experience_type as ExperienceType,
+        experience: expMap.get(`${item.experience_type}:${item.experience_id}`) || null,
       }));
     },
   });
@@ -78,9 +158,14 @@ const AdminFavorites = () => {
 
   // Define types for stats
   interface ExperienceStat {
-    experience: any;
+    experience: ResolvedExperience | null;
     count: number;
     lastAdded: string;
+  }
+
+  interface FavoriteItem {
+    experience: ResolvedExperience | null;
+    addedAt: string;
   }
 
   interface UserStat {
@@ -89,23 +174,23 @@ const AdminFavorites = () => {
     displayName: string | null;
     phone: string | null;
     marketingOptIn: boolean;
-    experiences: any[];
+    experiences: FavoriteItem[];
     lastAdded: string;
   }
 
   // Group by experience for the "By Experience" view
   const experienceStats = wishlistItems?.reduce((acc, item) => {
-    const expId = item.experience_id;
-    if (!acc[expId]) {
-      acc[expId] = {
-        experience: item.experiences2,
+    const key = `${item.experienceType}:${item.experience_id}`;
+    if (!acc[key]) {
+      acc[key] = {
+        experience: item.experience,
         count: 0,
         lastAdded: item.created_at,
       };
     }
-    acc[expId].count++;
-    if (new Date(item.created_at) > new Date(acc[expId].lastAdded)) {
-      acc[expId].lastAdded = item.created_at;
+    acc[key].count++;
+    if (new Date(item.created_at) > new Date(acc[key].lastAdded)) {
+      acc[key].lastAdded = item.created_at;
     }
     return acc;
   }, {} as Record<string, ExperienceStat>);
@@ -114,11 +199,11 @@ const AdminFavorites = () => {
     (a, b) => b.count - a.count
   );
 
-  // Group by user for the "By User" view - now with enriched data
+  // Group by user for the "By User" view - now with enriched data across all 3 tables
   const userStats = wishlistItems?.reduce((acc, item) => {
     const userId = item.user_id;
     const userProfile = wishlistUsers?.find((u) => u.user_id === userId);
-    
+
     if (!acc[userId]) {
       acc[userId] = {
         userId,
@@ -130,7 +215,7 @@ const AdminFavorites = () => {
         lastAdded: item.created_at,
       };
     }
-    acc[userId].experiences.push(item.experiences2);
+    acc[userId].experiences.push({ experience: item.experience, addedAt: item.created_at });
     if (new Date(item.created_at) > new Date(acc[userId].lastAdded)) {
       acc[userId].lastAdded = item.created_at;
     }
@@ -147,7 +232,7 @@ const AdminFavorites = () => {
       ?.toLowerCase()
       .includes(searchQuery.toLowerCase());
     const matchesHotel =
-      hotelFilter === "all" || stat.experience?.hotel_id === hotelFilter;
+      hotelFilter === "all" || stat.experience?.hotelId === hotelFilter;
     return matchesSearch && matchesHotel;
   });
 
@@ -171,7 +256,7 @@ const AdminFavorites = () => {
       stat.phone || "",
       stat.marketingOptIn ? "Oui" : "Non",
       stat.experiences.length.toString(),
-      stat.experiences.map((e) => e?.title || "").join("; "),
+      stat.experiences.map((e) => e.experience?.title || "").join("; "),
     ]);
 
     const csvContent = [headers.join(","), ...rows.map((r) => r.map((c) => `"${c}"`).join(","))].join("\n");
@@ -186,7 +271,7 @@ const AdminFavorites = () => {
 
   const totalFavorites = wishlistItems?.length || 0;
   const uniqueUsers = new Set(wishlistItems?.map((w) => w.user_id)).size;
-  const uniqueExperiences = new Set(wishlistItems?.map((w) => w.experience_id)).size;
+  const uniqueExperiences = new Set(wishlistItems?.map((w) => `${w.experienceType}:${w.experience_id}`)).size;
   const marketingOptInCount = userStatsList.filter((u) => u.marketingOptIn).length;
 
   return (
@@ -296,7 +381,7 @@ const AdminFavorites = () => {
           ) : (
             <div className="space-y-3">
               {filteredExperienceStats.map((stat, index) => (
-                <Card key={stat.experience?.id || index}>
+                <Card key={stat.experience?.key || index}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
@@ -311,11 +396,16 @@ const AdminFavorites = () => {
                           <h3 className="font-semibold">
                             {stat.experience?.title || "Unknown Experience"}
                           </h3>
+                          {stat.experience?.type === "standalone" && (
+                            <Badge variant="outline" className="text-xs">Expérience seule</Badge>
+                          )}
                         </div>
                         <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Building2 className="h-3 w-3" />
-                            {stat.experience?.hotels2?.name || "Unknown Hotel"}
+                            {stat.experience?.type === "standalone"
+                              ? "Sans hôtel"
+                              : stat.experience?.hotelName || "Unknown Hotel"}
                           </span>
                           <span>
                             Last favorited:{" "}
@@ -350,7 +440,11 @@ const AdminFavorites = () => {
           ) : (
             <div className="space-y-3">
               {filteredUserStats.map((stat) => (
-                <Card key={stat.userId}>
+                <Card
+                  key={stat.userId}
+                  className="cursor-pointer hover:bg-muted/30 transition-colors"
+                  onClick={() => setSelectedUser(stat)}
+                >
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
@@ -379,6 +473,7 @@ const AdminFavorites = () => {
                           {stat.email && (
                             <a
                               href={`mailto:${stat.email}`}
+                              onClick={(e) => e.stopPropagation()}
                               className="flex items-center gap-1 text-primary hover:underline"
                             >
                               <Mail className="h-3 w-3" />
@@ -395,9 +490,9 @@ const AdminFavorites = () => {
 
                         {/* Favorited experiences */}
                         <div className="mt-3 flex flex-wrap gap-1">
-                          {stat.experiences.slice(0, 5).map((exp, i) => (
+                          {stat.experiences.slice(0, 5).map((item, i) => (
                             <Badge key={i} variant="outline" className="text-xs">
-                              {exp?.title || "Unknown"}
+                              {item.experience?.title || "Unknown"}
                             </Badge>
                           ))}
                           {stat.experiences.length > 5 && (
@@ -418,7 +513,10 @@ const AdminFavorites = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => copyEmail(stat.email)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            copyEmail(stat.email);
+                          }}
                           title="Copier l'email"
                         >
                           <Copy className="h-4 w-4" />
@@ -432,6 +530,52 @@ const AdminFavorites = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Detail dialog: full list of a user's favorited items */}
+      <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Heart className="h-5 w-5 text-red-500" />
+              Favoris de {selectedUser?.displayName || selectedUser?.email || "cet utilisateur"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {selectedUser?.experiences.map((item, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between gap-3 rounded-lg border p-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium truncate">
+                      {item.experience?.title || "Expérience introuvable"}
+                    </span>
+                    {item.experience && (
+                      <Badge variant="outline" className="text-xs shrink-0">
+                        {TYPE_LABELS[item.experience.type]}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {item.experience?.hotelName && <span>{item.experience.hotelName} · </span>}
+                    Ajouté le {format(new Date(item.addedAt), "d MMM yyyy")}
+                  </div>
+                </div>
+                {item.experience?.slug && (
+                  <Link
+                    to={`${TYPE_LINK_PREFIX[item.experience.type]}/${item.experience.slug}`}
+                    target="_blank"
+                    className="shrink-0 text-primary hover:underline"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

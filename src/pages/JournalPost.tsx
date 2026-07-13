@@ -102,7 +102,7 @@ function EmbeddedExperienceCard({ experienceId }: { experienceId: string }) {
           const { error } = await supabase.from("wishlist").update({ deleted_at: null }).eq("id", wishlistStatus.id);
           if (error) throw error;
         } else {
-          const { error } = await supabase.from("wishlist").insert({ user_id: user.id, experience_id: experienceId });
+          const { error } = await supabase.from("wishlist").insert({ user_id: user.id, experience_id: experienceId, experience_type: "experiences" });
           if (error) throw error;
         }
       } else {

@@ -759,6 +759,7 @@ export default function StandaloneExperience() {
             longitude={experience.longitude ?? undefined}
             lang={lang as "en" | "he" | "fr"}
             experienceId={experience.id}
+            experienceType="standalone"
             hotelId={undefined}
             categoryName={categoryName}
             categorySlug={categorySlug}

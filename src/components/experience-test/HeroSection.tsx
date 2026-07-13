@@ -91,6 +91,8 @@ interface HeroSectionProps {
   slug?: string;
   /** "stay" = expérience liée à un hôtel (/experience/:slug), "live" = expérience standalone (/standalone-experience/:slug) */
   experienceMode?: 'stay' | 'live';
+  /** Table d'origine de experienceId, pour que le favori soit enregistré avec le bon type */
+  experienceType?: 'experiences' | 'experiences2' | 'standalone';
 }
 
 const HeroSection = ({ 
@@ -122,6 +124,7 @@ const HeroSection = ({
   categoryIcon,
   slug,
   experienceMode = 'stay',
+  experienceType = 'experiences2',
 }: HeroSectionProps) => {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
@@ -180,7 +183,7 @@ const HeroSection = ({
           const { error } = await supabase.from("wishlist").update({ deleted_at: null }).eq("id", wishlistStatus.id);
           if (error) throw error;
         } else {
-          const { error } = await supabase.from("wishlist").insert({ user_id: user.id, experience_id: experienceId });
+          const { error } = await supabase.from("wishlist").insert({ user_id: user.id, experience_id: experienceId, experience_type: experienceType });
           if (error) throw error;
         }
       } else {

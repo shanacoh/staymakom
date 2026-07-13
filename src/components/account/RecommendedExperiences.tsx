@@ -36,20 +36,31 @@ export default function RecommendedExperiences({
       // Fetch wishlist experience IDs, then look up their categories
       const { data: wishlistData } = await supabase
         .from("wishlist")
-        .select("experience_id")
+        .select("experience_id, experience_type")
         .eq("user_id", userId)
         .is("deleted_at", null);
 
       let wishlistCategoryIds: string[] = [];
       if (wishlistData && wishlistData.length > 0) {
-        const expIds = wishlistData.map((w) => w.experience_id).filter(Boolean);
-        if (expIds.length > 0) {
-          const { data: exps } = await supabase
-            .from("experiences2")
-            .select("category_id")
-            .in("id", expIds);
-          wishlistCategoryIds = [...new Set((exps || []).map((e) => e.category_id).filter(Boolean) as string[])];
-        }
+        const experiences2Ids = wishlistData.filter((w) => w.experience_type === "experiences2").map((w) => w.experience_id).filter(Boolean);
+        const standaloneIds = wishlistData.filter((w) => w.experience_type === "standalone").map((w) => w.experience_id).filter(Boolean);
+
+        const [exps2Res, standaloneRes] = await Promise.all([
+          experiences2Ids.length
+            ? supabase.from("experiences2").select("category_id").in("id", experiences2Ids)
+            : Promise.resolve({ data: [] as any[] }),
+          standaloneIds.length
+            ? (supabase as any).from("standalone_experiences").select("category_id").in("id", standaloneIds)
+            : Promise.resolve({ data: [] as any[] }),
+        ]);
+
+        wishlistCategoryIds = [
+          ...new Set(
+            [...(exps2Res.data || []), ...(standaloneRes.data || [])]
+              .map((e: any) => e.category_id)
+              .filter(Boolean) as string[]
+          ),
+        ];
       }
 
       return {

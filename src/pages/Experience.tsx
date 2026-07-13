@@ -191,6 +191,7 @@ const Experience = () => {
             categoryName={categoryName}
             categorySlug={categorySlug}
             experienceId={experience.id}
+            experienceType="experiences"
             onScrollToReviews={scrollToReviews}
           />
         </section>

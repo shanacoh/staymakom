@@ -177,6 +177,7 @@ export default function ExperienceCard({
             .insert({
               user_id: user.id,
               experience_id: experience.id,
+              experience_type: isStandaloneExperience ? "standalone" : "experiences2",
             });
           if (error) throw error;
         }

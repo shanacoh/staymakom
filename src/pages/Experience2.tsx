@@ -580,6 +580,7 @@ export default function Experience2() {
         longitude={primaryHotel?.longitude ?? undefined}
         lang={lang as "en" | "he" | "fr"}
         experienceId={experience.id}
+        experienceType="experiences2"
         hotelId={primaryHotel?.id}
         categoryName={categoryName || undefined}
         categorySlug={category?.slug || undefined}

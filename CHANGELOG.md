@@ -6,6 +6,22 @@
 
 ---
 
+## [2026-07-13] — Correction des favoris : les expériences seules disparaissaient, et le back office ne montrait pas le détail par utilisateur
+
+### Ce qui a changé côté code
+- Toute la logique des favoris ("wishlist" dans le code) part d'une même table qui stocke un simple identifiant d'expérience, sans préciser de quelle liste d'expériences il vient. Or il existe trois listes différentes dans le site : les expériences liées à un hôtel, les expériences "seules" (Experience Only), et une ancienne liste plus utilisée que pour de vieux articles du journal. La table de favoris avait une règle stricte qui interdisait d'enregistrer un favori venant d'une expérience "seule" — d'où le bug : cliquer sur le cœur d'une expérience seule échouait silencieusement (rien n'était sauvegardé), alors que le bouton affichait quand même une confirmation trompeuse dans certains cas.
+- `src/components/ExperienceCard.tsx`, `src/components/experience/SaveForLaterButton.tsx`, `src/components/experience-test/HeroSection.tsx` (et les 3 fiches expérience qui l'utilisent), `src/components/account/CompactExperienceCard.tsx`, `src/pages/JournalPost.tsx` : chaque bouton "cœur" indique désormais explicitement de quelle liste vient l'expérience qu'il enregistre en favori.
+- `src/pages/admin/Favorites.tsx` (back office, page Favorites) : la requête qui va chercher les titres des expériences favorites ne regardait que la liste "hôtel". Elle regarde maintenant les trois listes, donc une expérience seule mise en favori affiche enfin son vrai titre au lieu de "Unknown Experience". Ajout aussi d'une fenêtre de détail : cliquer sur la fiche d'un utilisateur ouvre la liste complète de tout ce qu'il a mis en favori (titre, type, hôtel le cas échéant, date, lien vers la fiche) — avant, seuls les 5 premiers favoris étaient visibles en résumé, sans moyen de voir le reste.
+- `src/components/account/WishlistSection.tsx` (page "Mes favoris" du compte client) et `src/components/account/RecommendedExperiences.tsx` (module "Vous aimerez aussi") : même correction côté client, pour que les expériences seules mises en favori s'affichent bien dans le compte utilisateur et influencent les recommandations.
+
+### Ce qui a changé côté base de données
+- `supabase/migrations/20260713000000_wishlist_experience_type.sql` : ajoute une colonne `experience_type` à la table `wishlist`, qui indique explicitement de quelle liste d'expériences vient chaque favori ("experiences", "experiences2" ou "standalone"). Supprime la règle stricte qui bloquait les favoris sur les expériences seules (elle ne pointait que vers la liste "hôtel").
+
+### Pourquoi ce changement
+- Shana a signalé que mettre en favori une expérience "seule" n'apparaissait pas dans le back office, et qu'il était impossible de voir le détail des favoris d'un client (cas d'Eden Halimi, 4 favoris affichés sans pouvoir les consulter).
+
+---
+
 ## [2026-07-10] — Correction des photos déformées et zoomées sur les cartes
 
 ### Ce qui a changé côté code

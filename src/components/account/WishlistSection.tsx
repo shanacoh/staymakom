@@ -21,7 +21,7 @@ export default function WishlistSection({ userId }: WishlistSectionProps) {
       if (!userId) return [];
       const { data: wishlistData, error } = await supabase
         .from("wishlist")
-        .select("id, experience_id, created_at")
+        .select("id, experience_id, experience_type, created_at")
         .eq("user_id", userId)
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
@@ -29,32 +29,55 @@ export default function WishlistSection({ userId }: WishlistSectionProps) {
       if (error) throw error;
       if (!wishlistData || wishlistData.length === 0) return [];
 
-      const expIds = wishlistData.map((w) => w.experience_id).filter(Boolean);
-      if (expIds.length === 0) return [];
+      const idsByType = (type: string) =>
+        [...new Set(wishlistData.filter((w) => w.experience_type === type).map((w) => w.experience_id).filter(Boolean))];
 
-      const { data: experiences } = await supabase
-        .from("experiences2")
-        .select(`
-          id, slug, title, title_he, subtitle, hero_image, thumbnail_image, photos, base_price, currency,
-          experience2_hotels(
-            position,
-            hotel:hotels2(id, name, name_he, city, city_he, hero_image)
-          )
-        `)
-        .in("id", expIds)
-        .eq("status", "published");
+      const experiences2Ids = idsByType("experiences2");
+      const standaloneIds = idsByType("standalone");
 
-      const mapped = (experiences || []).map((exp: any) => {
+      const [experiences2Res, standaloneRes] = await Promise.all([
+        experiences2Ids.length
+          ? supabase
+              .from("experiences2")
+              .select(`
+                id, slug, title, title_he, subtitle, hero_image, thumbnail_image, photos, base_price, currency,
+                experience2_hotels(
+                  position,
+                  hotel:hotels2(id, name, name_he, city, city_he, hero_image)
+                )
+              `)
+              .in("id", experiences2Ids)
+              .eq("status", "published")
+          : Promise.resolve({ data: [] as any[] }),
+        standaloneIds.length
+          ? (supabase as any)
+              .from("standalone_experiences")
+              .select("id, slug, title, title_he, subtitle, hero_image, photos, base_price, base_price_type, currency, city, city_he, region, region_he")
+              .in("id", standaloneIds)
+              .eq("status", "published")
+          : Promise.resolve({ data: [] as any[] }),
+      ]);
+
+      const mappedExperiences2 = (experiences2Res.data || []).map((exp: any) => {
         const primaryHotel = exp.experience2_hotels
           ?.sort((a: any, b: any) => (a.position || 0) - (b.position || 0))
           ?.[0]?.hotel;
-        return { ...exp, hotels: primaryHotel || null };
+        return { ...exp, hotels: primaryHotel || null, isStandaloneExperience: false };
       });
 
-      const expMap = new Map(mapped.map((e) => [e.id, e]));
+      const mappedStandalone = (standaloneRes.data || []).map((exp: any) => ({
+        ...exp,
+        hotels: (exp.city || exp.region) ? { city: exp.city, city_he: exp.city_he, region: exp.region, region_he: exp.region_he } : null,
+        isStandaloneExperience: true,
+      }));
+
+      const expMap = new Map<string, any>([
+        ...mappedExperiences2.map((e) => [`experiences2:${e.id}`, e] as const),
+        ...mappedStandalone.map((e) => [`standalone:${e.id}`, e] as const),
+      ]);
 
       return wishlistData
-        .map((w) => ({ ...w, experience: expMap.get(w.experience_id) || null }))
+        .map((w) => ({ ...w, experience: expMap.get(`${w.experience_type}:${w.experience_id}`) || null }))
         .filter((w) => w.experience);
     },
     enabled: !!userId,
@@ -139,6 +162,8 @@ export default function WishlistSection({ userId }: WishlistSectionProps) {
             isInWishlist={true}
             onWishlistToggle={handleWishlistRemove}
             userId={userId}
+            isStandaloneExperience={exp.isStandaloneExperience}
+            linkPrefix={exp.isStandaloneExperience ? "/standalone-experience" : "/experience"}
           />
         );
       })}

@@ -66,7 +66,7 @@ export function SaveForLaterButton({
         } else {
           const { error } = await supabase
             .from("wishlist")
-            .insert({ user_id: user.id, experience_id: experienceId });
+            .insert({ user_id: user.id, experience_id: experienceId, experience_type: "standalone" });
           if (error) throw error;
         }
       } else {
