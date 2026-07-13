@@ -8,10 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Heart, User, Sparkles, Building2, Mail, Phone, Copy, Download, CheckCircle2, ExternalLink } from "lucide-react";
+import { WarningBadge } from "@/components/admin/StatusBadge";
+import {
+  Heart, User, Sparkles, Building2, Mail, Phone, Copy, Download, CheckCircle2, ExternalLink, AlertTriangle,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 interface WishlistUser {
   user_id: string;
@@ -44,12 +48,138 @@ interface ResolvedExperience {
   slug: string | null;
   hotelId: string | null;
   hotelName: string | null;
+  categoryId: string | null;
+  city: string | null;
+}
+
+interface ExperienceStat {
+  experience: ResolvedExperience | null;
+  count: number;
+  lastAdded: string;
+}
+
+interface FavoriteItem {
+  experience: ResolvedExperience | null;
+  addedAt: string;
+}
+
+interface UserStat {
+  userId: string;
+  email: string;
+  displayName: string | null;
+  phone: string | null;
+  marketingOptIn: boolean;
+  experiences: FavoriteItem[];
+  lastAdded: string;
+}
+
+function UserFavoriteCard({
+  stat,
+  neverBooked,
+  onSelect,
+  onCopyEmail,
+}: {
+  stat: UserStat;
+  neverBooked: boolean;
+  onSelect: (stat: UserStat) => void;
+  onCopyEmail: (email: string) => void;
+}) {
+  return (
+    <Card
+      className="cursor-pointer hover:bg-muted/30 transition-colors"
+      onClick={() => onSelect(stat)}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 flex-wrap">
+              <Badge
+                variant="secondary"
+                className="bg-red-100 text-red-700 flex items-center gap-1"
+              >
+                <Heart className="h-3 w-3" />
+                {stat.experiences.length}
+              </Badge>
+              <h3 className="font-semibold flex items-center gap-2">
+                <User className="h-4 w-4" />
+                {stat.displayName || "Unknown User"}
+              </h3>
+              {stat.marketingOptIn && (
+                <Badge className="bg-green-100 text-green-700 text-xs">
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Marketing OK
+                </Badge>
+              )}
+              {neverBooked && (
+                <WarningBadge label="Never booked" tooltip="A des favoris mais aucune réservation" />
+              )}
+            </div>
+
+            {/* Contact info */}
+            <div className="flex items-center gap-4 mt-2 text-sm">
+              {stat.email && (
+                <a
+                  href={`mailto:${stat.email}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex items-center gap-1 text-primary hover:underline"
+                >
+                  <Mail className="h-3 w-3" />
+                  {stat.email}
+                </a>
+              )}
+              {stat.phone && (
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Phone className="h-3 w-3" />
+                  {stat.phone}
+                </span>
+              )}
+            </div>
+
+            {/* Favorited experiences */}
+            <div className="mt-3 flex flex-wrap gap-1">
+              {stat.experiences.slice(0, 5).map((item, i) => (
+                <Badge key={i} variant="outline" className="text-xs">
+                  {item.experience?.title || "Unknown"}
+                </Badge>
+              ))}
+              {stat.experiences.length > 5 && (
+                <Badge variant="outline" className="text-xs">
+                  +{stat.experiences.length - 5} more
+                </Badge>
+              )}
+            </div>
+
+            <p className="text-xs text-muted-foreground mt-2">
+              Last activity:{" "}
+              {format(new Date(stat.lastAdded), "MMM d, yyyy")}
+            </p>
+          </div>
+
+          {/* Copy email button */}
+          {stat.email && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCopyEmail(stat.email);
+              }}
+              title="Copier l'email"
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 const AdminFavorites = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [hotelFilter, setHotelFilter] = useState<string>("all");
   const [selectedUser, setSelectedUser] = useState<UserStat | null>(null);
+  const [activeTab, setActiveTab] = useState("by-experience");
 
   // Fetch all wishlist items then enrich with experience data from the
   // three possible source tables (hôtel-liée, standalone, legacy)
@@ -79,13 +209,13 @@ const AdminFavorites = () => {
 
       const [experiences2Res, experiencesRes, standaloneRes] = await Promise.all([
         experiences2Ids.length
-          ? supabase.from("experiences2").select("id, title, slug, hotel_id, hotels2(id, name)").in("id", experiences2Ids)
+          ? supabase.from("experiences2").select("id, title, slug, hotel_id, category_id, hotels2(id, name, city, city_fr)").in("id", experiences2Ids)
           : Promise.resolve({ data: [] as any[] }),
         experiencesIds.length
-          ? supabase.from("experiences").select("id, title, slug, hotel_id, hotels(id, name)").in("id", experiencesIds)
+          ? supabase.from("experiences").select("id, title, slug, hotel_id, category_id, hotels(id, name, city, city_fr)").in("id", experiencesIds)
           : Promise.resolve({ data: [] as any[] }),
         standaloneIds.length
-          ? (supabase as any).from("standalone_experiences").select("id, title, slug").in("id", standaloneIds)
+          ? (supabase as any).from("standalone_experiences").select("id, title, slug, category_id").in("id", standaloneIds)
           : Promise.resolve({ data: [] as any[] }),
       ]);
 
@@ -100,6 +230,8 @@ const AdminFavorites = () => {
           slug: e.slug,
           hotelId: e.hotel_id || null,
           hotelName: e.hotels2?.name || null,
+          categoryId: e.category_id || null,
+          city: e.hotels2?.city || e.hotels2?.city_fr || null,
         });
       });
       (experiencesRes.data || []).forEach((e: any) => {
@@ -111,6 +243,8 @@ const AdminFavorites = () => {
           slug: e.slug,
           hotelId: e.hotel_id || null,
           hotelName: e.hotels?.name || null,
+          categoryId: e.category_id || null,
+          city: e.hotels?.city || e.hotels?.city_fr || null,
         });
       });
       (standaloneRes.data || []).forEach((e: any) => {
@@ -122,6 +256,8 @@ const AdminFavorites = () => {
           slug: e.slug,
           hotelId: null,
           hotelName: null,
+          categoryId: e.category_id || null,
+          city: null,
         });
       });
 
@@ -156,27 +292,59 @@ const AdminFavorites = () => {
     },
   });
 
-  // Define types for stats
-  interface ExperienceStat {
-    experience: ResolvedExperience | null;
-    count: number;
-    lastAdded: string;
-  }
+  // Fetch categories, to label the "tendances produit" breakdown
+  const { data: categories } = useQuery({
+    queryKey: ["admin-categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("categories").select("id, name").order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
 
-  interface FavoriteItem {
-    experience: ResolvedExperience | null;
-    addedAt: string;
-  }
+  const categoryMap = new Map((categories || []).map((c) => [c.id, c.name]));
 
-  interface UserStat {
-    userId: string;
-    email: string;
-    displayName: string | null;
-    phone: string | null;
-    marketingOptIn: boolean;
-    experiences: FavoriteItem[];
-    lastAdded: string;
-  }
+  // Which wishlist users have never made a valid (non-cancelled) booking,
+  // across the three booking sources that mirror the three experience tables.
+  const uniqueUserIds = [...new Set((wishlistItems || []).map((w) => w.user_id))];
+
+  const { data: conversionMap, isLoading: conversionsLoading } = useQuery({
+    queryKey: ["admin-wishlist-conversions", uniqueUserIds.slice().sort().join(",")],
+    enabled: uniqueUserIds.length > 0,
+    queryFn: async () => {
+      const [hgRes, standaloneRes, customersRes] = await Promise.all([
+        supabase.from("bookings_hg").select("user_id, is_cancelled").in("user_id", uniqueUserIds),
+        (supabase as any).from("standalone_bookings").select("user_id, status, is_cancelled").in("user_id", uniqueUserIds),
+        supabase.from("customers").select("id, user_id").in("user_id", uniqueUserIds),
+      ]);
+
+      const hasBooking = new Set<string>();
+
+      (hgRes.data || []).forEach((b: any) => {
+        if (b.user_id && !b.is_cancelled) hasBooking.add(b.user_id);
+      });
+      (standaloneRes.data || []).forEach((b: any) => {
+        if (b.user_id && !b.is_cancelled && b.status !== "cancelled") hasBooking.add(b.user_id);
+      });
+
+      const customerToUser = new Map((customersRes.data || []).map((c: any) => [c.id, c.user_id]));
+      const customerIds = [...customerToUser.keys()];
+      if (customerIds.length) {
+        const { data: legacyBookings } = await supabase
+          .from("bookings_safe")
+          .select("customer_id, status")
+          .in("customer_id", customerIds);
+        (legacyBookings || []).forEach((b: any) => {
+          if (b.customer_id && b.status && !["cancelled", "failed"].includes(b.status)) {
+            const uid = customerToUser.get(b.customer_id);
+            if (uid) hasBooking.add(uid);
+          }
+        });
+      }
+
+      return hasBooking;
+    },
+  });
 
   // Group by experience for the "By Experience" view
   const experienceStats = wishlistItems?.reduce((acc, item) => {
@@ -243,19 +411,48 @@ const AdminFavorites = () => {
     return matchesSearch;
   });
 
+  const relanceUserStats = [...filteredUserStats]
+    .filter((stat) => conversionMap && !conversionMap.has(stat.userId))
+    .sort((a, b) => {
+      if (b.experiences.length !== a.experiences.length) return b.experiences.length - a.experiences.length;
+      return new Date(b.lastAdded).getTime() - new Date(a.lastAdded).getTime();
+    });
+
+  // "Tendances produit" — favoris regroupés par catégorie et par ville
+  const categoryCounts = new Map<string, number>();
+  const cityCounts = new Map<string, number>();
+  (wishlistItems || []).forEach((item) => {
+    const catId = item.experience?.categoryId;
+    if (catId) categoryCounts.set(catId, (categoryCounts.get(catId) || 0) + 1);
+    if (item.experience?.type !== "standalone" && item.experience?.city) {
+      cityCounts.set(item.experience.city, (cityCounts.get(item.experience.city) || 0) + 1);
+    }
+  });
+
+  const favoritesByCategoryData = [...categoryCounts.entries()]
+    .map(([id, count]) => ({ name: categoryMap.get(id) || "Autre", count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
+
+  const favoritesByCityData = [...cityCounts.entries()]
+    .map(([city, count]) => ({ name: city, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
+
   const copyEmail = (email: string) => {
     navigator.clipboard.writeText(email);
     toast.success("Email copié !");
   };
 
-  const exportCSV = () => {
-    const headers = ["Email", "Nom", "Téléphone", "Marketing OK", "Nb Favoris", "Expériences Favorites"];
-    const rows = userStatsList.map((stat) => [
+  const exportCSV = (list: UserStat[] = userStatsList, filenamePrefix = "favorites_users") => {
+    const headers = ["Email", "Nom", "Téléphone", "Marketing OK", "Nb Favoris", "Jamais réservé", "Expériences Favorites"];
+    const rows = list.map((stat) => [
       stat.email,
       stat.displayName || "",
       stat.phone || "",
       stat.marketingOptIn ? "Oui" : "Non",
       stat.experiences.length.toString(),
+      conversionMap && !conversionMap.has(stat.userId) ? "Oui" : "Non",
       stat.experiences.map((e) => e.experience?.title || "").join("; "),
     ]);
 
@@ -264,7 +461,7 @@ const AdminFavorites = () => {
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `favorites_users_${format(new Date(), "yyyy-MM-dd")}.csv`;
+    link.download = `${filenamePrefix}_${format(new Date(), "yyyy-MM-dd")}.csv`;
     link.click();
     toast.success("Export CSV téléchargé !");
   };
@@ -273,6 +470,9 @@ const AdminFavorites = () => {
   const uniqueUsers = new Set(wishlistItems?.map((w) => w.user_id)).size;
   const uniqueExperiences = new Set(wishlistItems?.map((w) => `${w.experienceType}:${w.experience_id}`)).size;
   const marketingOptInCount = userStatsList.filter((u) => u.marketingOptIn).length;
+  const neverBookedCount = conversionMap
+    ? userStatsList.filter((u) => !conversionMap.has(u.userId)).length
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -287,7 +487,7 @@ const AdminFavorites = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Favorites</CardTitle>
@@ -332,6 +532,22 @@ const AdminFavorites = () => {
             </p>
           </CardContent>
         </Card>
+
+        <Card
+          className="bg-red-50/50 border-red-200 cursor-pointer hover:bg-red-50 transition-colors"
+          onClick={() => setActiveTab("relance")}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Clients à relancer</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-700">{neverBookedCount}</div>
+            <p className="text-xs text-muted-foreground">
+              {uniqueUsers > 0 ? Math.round((neverBookedCount / uniqueUsers) * 100) : 0}% des utilisateurs favoris
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
@@ -361,15 +577,71 @@ const AdminFavorites = () => {
       </Card>
 
       {/* Tabs for different views */}
-      <Tabs defaultValue="by-experience" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="by-experience">By Experience</TabsTrigger>
             <TabsTrigger value="by-user">By User</TabsTrigger>
+            <TabsTrigger value="relance" className="gap-1">
+              Clients à relancer
+              {neverBookedCount > 0 && (
+                <Badge variant="secondary" className="bg-red-100 text-red-700 ml-1">
+                  {neverBookedCount}
+                </Badge>
+              )}
+            </TabsTrigger>
           </TabsList>
         </div>
 
         <TabsContent value="by-experience">
+          {/* Tendances produit : favoris par catégorie et par ville */}
+          <div className="grid md:grid-cols-2 gap-4 mb-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Favoris par catégorie</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[220px]">
+                  {favoritesByCategoryData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={favoritesByCategoryData} layout="vertical">
+                        <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
+                        <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 10 }} />
+                        <Tooltip />
+                        <Bar dataKey="count" name="Favoris" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-8 text-sm">Aucune donnée</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Favoris par ville</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[220px]">
+                  {favoritesByCityData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={favoritesByCityData} layout="vertical">
+                        <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
+                        <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 10 }} />
+                        <Tooltip />
+                        <Bar dataKey="count" name="Favoris" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-8 text-sm">Aucune donnée</p>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">Hors expériences sans hôtel</p>
+              </CardContent>
+            </Card>
+          </div>
+
           {isLoading ? (
             <div className="text-center py-12">Loading favorites...</div>
           ) : !filteredExperienceStats?.length ? (
@@ -399,6 +671,11 @@ const AdminFavorites = () => {
                           {stat.experience?.type === "standalone" && (
                             <Badge variant="outline" className="text-xs">Expérience seule</Badge>
                           )}
+                          {stat.experience?.categoryId && categoryMap.get(stat.experience.categoryId) && (
+                            <Badge variant="outline" className="text-xs">
+                              {categoryMap.get(stat.experience.categoryId)}
+                            </Badge>
+                          )}
                         </div>
                         <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
@@ -423,7 +700,7 @@ const AdminFavorites = () => {
 
         <TabsContent value="by-user">
           <div className="flex justify-end mb-4">
-            <Button variant="outline" size="sm" onClick={exportCSV} className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => exportCSV()} className="gap-2">
               <Download className="h-4 w-4" />
               Export CSV
             </Button>
@@ -440,91 +717,54 @@ const AdminFavorites = () => {
           ) : (
             <div className="space-y-3">
               {filteredUserStats.map((stat) => (
-                <Card
+                <UserFavoriteCard
                   key={stat.userId}
-                  className="cursor-pointer hover:bg-muted/30 transition-colors"
-                  onClick={() => setSelectedUser(stat)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <Badge
-                            variant="secondary"
-                            className="bg-red-100 text-red-700 flex items-center gap-1"
-                          >
-                            <Heart className="h-3 w-3" />
-                            {stat.experiences.length}
-                          </Badge>
-                          <h3 className="font-semibold flex items-center gap-2">
-                            <User className="h-4 w-4" />
-                            {stat.displayName || "Unknown User"}
-                          </h3>
-                          {stat.marketingOptIn && (
-                            <Badge className="bg-green-100 text-green-700 text-xs">
-                              <CheckCircle2 className="h-3 w-3 mr-1" />
-                              Marketing OK
-                            </Badge>
-                          )}
-                        </div>
+                  stat={stat}
+                  neverBooked={!!conversionMap && !conversionMap.has(stat.userId)}
+                  onSelect={setSelectedUser}
+                  onCopyEmail={copyEmail}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
 
-                        {/* Contact info */}
-                        <div className="flex items-center gap-4 mt-2 text-sm">
-                          {stat.email && (
-                            <a
-                              href={`mailto:${stat.email}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="flex items-center gap-1 text-primary hover:underline"
-                            >
-                              <Mail className="h-3 w-3" />
-                              {stat.email}
-                            </a>
-                          )}
-                          {stat.phone && (
-                            <span className="flex items-center gap-1 text-muted-foreground">
-                              <Phone className="h-3 w-3" />
-                              {stat.phone}
-                            </span>
-                          )}
-                        </div>
+        <TabsContent value="relance">
+          <div className="mb-4">
+            <p className="text-sm text-muted-foreground mb-3">
+              Clients ayant mis des expériences en favori mais n'ayant jamais réservé — à recontacter en priorité.
+            </p>
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportCSV(relanceUserStats, "clients_a_relancer")}
+                className="gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Export CSV
+              </Button>
+            </div>
+          </div>
 
-                        {/* Favorited experiences */}
-                        <div className="mt-3 flex flex-wrap gap-1">
-                          {stat.experiences.slice(0, 5).map((item, i) => (
-                            <Badge key={i} variant="outline" className="text-xs">
-                              {item.experience?.title || "Unknown"}
-                            </Badge>
-                          ))}
-                          {stat.experiences.length > 5 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{stat.experiences.length - 5} more
-                            </Badge>
-                          )}
-                        </div>
-
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Last activity:{" "}
-                          {format(new Date(stat.lastAdded), "MMM d, yyyy")}
-                        </p>
-                      </div>
-
-                      {/* Copy email button */}
-                      {stat.email && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            copyEmail(stat.email);
-                          }}
-                          title="Copier l'email"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+          {isLoading || conversionsLoading ? (
+            <div className="text-center py-12">Loading favorites...</div>
+          ) : !relanceUserStats.length ? (
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                Aucun client à relancer pour le moment
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {relanceUserStats.map((stat) => (
+                <UserFavoriteCard
+                  key={stat.userId}
+                  stat={stat}
+                  neverBooked
+                  onSelect={setSelectedUser}
+                  onCopyEmail={copyEmail}
+                />
               ))}
             </div>
           )}
@@ -535,9 +775,12 @@ const AdminFavorites = () => {
       <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 flex-wrap">
               <Heart className="h-5 w-5 text-red-500" />
               Favoris de {selectedUser?.displayName || selectedUser?.email || "cet utilisateur"}
+              {selectedUser && conversionMap && !conversionMap.has(selectedUser.userId) && (
+                <WarningBadge label="Never booked" tooltip="A des favoris mais aucune réservation" />
+              )}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-2">

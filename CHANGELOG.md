@@ -6,6 +6,18 @@
 
 ---
 
+## [2026-07-13 bis] — Back office Favoris : liste des clients à relancer et tendances produit
+
+### Ce qui a changé côté code
+- `src/pages/admin/Favorites.tsx` : ajout d'un nouvel onglet "Clients à relancer" qui liste les clients ayant mis des expériences en favori mais n'ayant **jamais réservé** — une vraie liste d'opportunités commerciales, triée par nombre de favoris. Une 5ème carte en haut de page ("Clients à relancer") affiche leur nombre et ouvre directement cet onglet en un clic. Un badge rouge "Never booked" (composant déjà existant, réutilisé depuis `src/components/admin/StatusBadge.tsx`) signale ces clients partout où ils apparaissent (liste, détail). L'export CSV existant gagne une colonne "Jamais réservé", et un bouton d'export dédié permet de sortir uniquement la liste des clients à relancer.
+- Ajout de deux petits graphiques ("Favoris par catégorie" et "Favoris par ville") dans l'onglet "By Experience", pour voir en un coup d'œil quelles catégories d'expériences et quelles villes sont les plus désirées par les visiteurs — même style de graphique que la page Dashboard du back office. Chaque expérience de la liste affiche aussi désormais sa catégorie.
+- Extraction d'un composant réutilisable pour la fiche client (utilisé à la fois dans "By User" et "Clients à relancer") afin d'éviter de dupliquer le code d'affichage.
+
+### Pourquoi ce changement
+- Après la correction du bug de fond sur les favoris, Shana a demandé à rendre cette page plus utile pour son activité : identifier les clients à recontacter (favoris sans réservation) en priorité, et voir les tendances de désirabilité par catégorie/ville pour orienter la mise en avant sur le site.
+
+---
+
 ## [2026-07-13] — Correction des favoris : les expériences seules disparaissaient, et le back office ne montrait pas le détail par utilisateur
 
 ### Ce qui a changé côté code
