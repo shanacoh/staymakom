@@ -9,7 +9,9 @@ const SUPABASE_URL = process.env.VITE_SUPABASE_URL || "";
 const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
 interface ResourceMeta {
-  title: string;
+  // Absent = on garde le titre/description déjà présents dans index.html
+  // (cas de l'accueil et de la liste des expériences : rien à personnaliser).
+  title?: string;
   description?: string;
   image?: string;
   jsonLdBlocks?: Record<string, unknown>[];
@@ -50,7 +52,85 @@ async function fetchOne(
   return rows[0] || null;
 }
 
+async function fetchMany(
+  table: string,
+  columns: string,
+  extraQuery: string
+): Promise<Record<string, any>[]> {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return [];
+  const url = `${SUPABASE_URL}/rest/v1/${table}?select=${columns}&${extraQuery}`;
+  const res = await fetch(url, {
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+async function fetchAggregateRating(
+  experienceId: string
+): Promise<{ ratingValue: number; reviewCount: number } | null> {
+  const rows = await fetchMany(
+    "experience2_reviews",
+    "rating",
+    `experience_id=eq.${encodeURIComponent(experienceId)}&is_visible=eq.true`
+  );
+  if (!rows.length) return null;
+  const sum = rows.reduce((acc, r) => acc + Number(r.rating || 0), 0);
+  return { ratingValue: Math.round((sum / rows.length) * 10) / 10, reviewCount: rows.length };
+}
+
 async function resolveResource(pathname: string): Promise<ResourceMeta | null> {
+  // Accueil : le titre/la description générique d'index.html sont déjà bons,
+  // on ajoute seulement la fiche d'identité de la marque pour Google.
+  if (pathname === "/") {
+    return {
+      jsonLdBlocks: [
+        {
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "STAYMAKOM",
+          url: "https://staymakom.com/",
+          logo: "https://staymakom.com/favicon.png",
+        },
+      ],
+    };
+  }
+
+  // Liste des expériences : titre/description dédiés (au lieu du générique de
+  // l'accueil) + fil d'Ariane + liste des expériences publiées pour Google.
+  if (pathname === "/experiences") {
+    const rows = await fetchMany(
+      "experiences2",
+      "title,slug",
+      "status=eq.published&order=created_at.desc&limit=20"
+    );
+    return {
+      title: "All Experiences - Staymakom",
+      description:
+        "Browse curated local experiences across Israel — from desert adventures to culinary discoveries, bookable alone or paired with a stay.",
+      jsonLdBlocks: [
+        buildBreadcrumbJsonLd([
+          { name: "Home", url: "https://staymakom.com/" },
+          { name: "Experiences", url: "https://staymakom.com/experiences" },
+        ]),
+        ...(rows.length
+          ? [
+              {
+                "@context": "https://schema.org",
+                "@type": "ItemList",
+                itemListElement: rows.map((row, index) => ({
+                  "@type": "ListItem",
+                  position: index + 1,
+                  url: `https://staymakom.com/experience/${row.slug}`,
+                  name: row.title,
+                })),
+              },
+            ]
+          : []),
+      ],
+    };
+  }
+
   const hotelMatch = pathname.match(/^\/hotel\/([^/?#]+)/);
   if (hotelMatch) {
     const row = await fetchOne(
@@ -98,11 +178,12 @@ async function resolveResource(pathname: string): Promise<ResourceMeta | null> {
   if (experienceMatch) {
     const row = await fetchOne(
       "experiences2",
-      "title,subtitle,hero_image,base_price,currency,slug,categories(name,slug)",
+      "id,title,subtitle,hero_image,base_price,currency,slug,categories(name,slug)",
       experienceMatch[1]
     );
     if (!row) return null;
     const category = Array.isArray(row.categories) ? row.categories[0] : row.categories;
+    const aggregateRating = row.id ? await fetchAggregateRating(row.id) : null;
     return {
       title: `${row.title} - Staymakom`,
       description: row.subtitle || undefined,
@@ -124,6 +205,15 @@ async function resolveResource(pathname: string): Promise<ResourceMeta | null> {
                   priceCurrency: row.currency || "ILS",
                   availability: "https://schema.org/InStock",
                   url: `https://staymakom.com/experience/${row.slug}`,
+                },
+              }
+            : {}),
+          ...(aggregateRating
+            ? {
+                aggregateRating: {
+                  "@type": "AggregateRating",
+                  ratingValue: aggregateRating.ratingValue,
+                  reviewCount: aggregateRating.reviewCount,
                 },
               }
             : {}),
@@ -205,7 +295,7 @@ async function resolveResource(pathname: string): Promise<ResourceMeta | null> {
   if (standaloneMatch) {
     const row = await fetchOne(
       "standalone_experiences",
-      "title,subtitle,hero_image,slug,categories(name,slug)",
+      "title,subtitle,hero_image,base_price,currency,slug,categories(name,slug)",
       standaloneMatch[1]
     );
     if (!row) return null;
@@ -215,6 +305,26 @@ async function resolveResource(pathname: string): Promise<ResourceMeta | null> {
       description: row.subtitle || undefined,
       image: row.hero_image || undefined,
       jsonLdBlocks: [
+        {
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: row.title,
+          description: row.subtitle || undefined,
+          image: row.hero_image || undefined,
+          url: `https://staymakom.com/standalone-experience/${row.slug}`,
+          brand: { "@type": "Brand", name: "STAYMAKOM" },
+          ...(row.base_price != null
+            ? {
+                offers: {
+                  "@type": "Offer",
+                  price: row.base_price,
+                  priceCurrency: row.currency || "ILS",
+                  availability: "https://schema.org/InStock",
+                  url: `https://staymakom.com/standalone-experience/${row.slug}`,
+                },
+              }
+            : {}),
+        },
         buildBreadcrumbJsonLd([
           { name: "Home", url: "https://staymakom.com/" },
           {
@@ -245,19 +355,21 @@ function escapeHtml(value: string): string {
 
 function patchHtml(html: string, pathname: string, resource: ResourceMeta): string {
   const canonicalUrl = `https://staymakom.com${pathname}`;
-  const safeTitle = escapeHtml(resource.title);
+  const safeTitle = resource.title ? escapeHtml(resource.title) : undefined;
   const safeDescription = resource.description ? escapeHtml(resource.description) : undefined;
   const safeImage = resource.image ? escapeHtml(resource.image) : undefined;
 
-  html = html.replace(/<title>.*?<\/title>/s, `<title>${safeTitle}</title>`);
-  html = html.replace(
-    /<meta property="og:title" content="[^"]*"\s*\/?>/,
-    `<meta property="og:title" content="${safeTitle}" />`
-  );
-  html = html.replace(
-    /<meta name="twitter:title" content="[^"]*"\s*\/?>/,
-    `<meta name="twitter:title" content="${safeTitle}" />`
-  );
+  if (safeTitle) {
+    html = html.replace(/<title>.*?<\/title>/s, `<title>${safeTitle}</title>`);
+    html = html.replace(
+      /<meta property="og:title" content="[^"]*"\s*\/?>/,
+      `<meta property="og:title" content="${safeTitle}" />`
+    );
+    html = html.replace(
+      /<meta name="twitter:title" content="[^"]*"\s*\/?>/,
+      `<meta name="twitter:title" content="${safeTitle}" />`
+    );
+  }
   html = html.replace(
     /<meta property="og:url" content="[^"]*"\s*\/?>/,
     `<meta property="og:url" content="${canonicalUrl}" />`

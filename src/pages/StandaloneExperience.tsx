@@ -724,6 +724,29 @@ export default function StandaloneExperience() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            "name": experience.title,
+            "description": subtitle || undefined,
+            "image": experience.hero_image || undefined,
+            "url": `https://staymakom.com/standalone-experience/${experience.slug}`,
+            "brand": { "@type": "Brand", "name": "STAYMAKOM" },
+            ...(experience.base_price != null && {
+              "offers": {
+                "@type": "Offer",
+                "price": experience.base_price,
+                "priceCurrency": experience.currency || "ILS",
+                "availability": "https://schema.org/InStock",
+                "url": `https://staymakom.com/standalone-experience/${experience.slug}`
+              }
+            })
+          })
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
           __html: JSON.stringify(
             buildBreadcrumbJsonLd([
               { name: "Home", url: "https://staymakom.com/" },

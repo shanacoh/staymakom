@@ -538,6 +538,13 @@ export default function Experience2() {
                 "availability": "https://schema.org/InStock",
                 "url": `https://staymakom.com/experience/${experience.slug}`
               }
+            }),
+            ...(reviewsCount > 0 && averageRating != null && {
+              "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": Number(averageRating.toFixed(1)),
+                "reviewCount": reviewsCount
+              }
             })
           })
         }}

@@ -17,12 +17,14 @@ export default function middleware(request: Request) {
 }
 
 // Volontairement limité aux fiches de contenu public (hôtel, expérience, catégorie,
-// journal). Ne touche JAMAIS /checkout, /standalone-checkout, /booking, /account,
-// /cart, /auth, /admin, /hotel-admin, /gift-card — ces routes ne passent même pas
-// par ce middleware.
+// journal, accueil, liste des expériences). Ne touche JAMAIS /checkout,
+// /standalone-checkout, /booking, /account, /cart, /auth, /admin, /hotel-admin,
+// /gift-card — ces routes ne passent même pas par ce middleware.
 export const config = {
   runtime: "edge",
   matcher: [
+    "/",
+    "/experiences",
     "/hotel/:slug",
     "/experience/:slug",
     "/category/:slug",

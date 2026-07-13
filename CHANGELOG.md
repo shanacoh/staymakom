@@ -6,6 +6,35 @@
 
 ---
 
+## [2026-07-13 quater] — Référencement (SEO) : accueil et liste des expériences mieux vues par Google, prix et notes ajoutés aux expériences seules
+
+### Ce qui a changé côté code
+- `middleware.ts` : le dispositif qui sert une version pré-remplie (titre, description, fiche d'identité) aux robots (Google, WhatsApp, Facebook...) couvrait déjà les fiches hôtel, expérience, catégorie et journal — il couvre désormais aussi la page d'accueil et la page "Toutes les expériences", qui n'en bénéficiaient pas. Le périmètre reste strictement le même pour les pages sensibles : le paiement, la réservation, le compte client et le back office ne sont toujours jamais concernés par ce dispositif.
+- `api/bot-meta.ts` : ajout de la fiche d'identité de la marque (organisation STAYMAKOM) pour l'accueil, et d'un titre/description dédiés + la liste des expériences publiées pour la page "Toutes les expériences" (au lieu du titre générique du site utilisé jusqu'ici pour cette page). Ajout aussi de la fiche "Produit" avec le prix pour les expériences vendues seules (elle existait déjà pour les expériences avec hôtel), et de la note moyenne des clients (quand elle existe) sur la fiche de chaque expérience avec hôtel — ce qui permet à Google d'afficher des étoiles ⭐ dans les résultats de recherche.
+- `src/pages/Experience2.tsx` et `src/pages/StandaloneExperience.tsx` : mêmes ajouts (note moyenne, fiche prix) côté visiteur humain, pour que l'information envoyée à Google soit identique à ce que voit un visiteur.
+
+### Ce qui a changé côté base de données
+- Aucun changement de structure — les nouvelles fiches réutilisent des données déjà stockées (avis clients dans `experience2_reviews`, prix dans `standalone_experiences`).
+
+### Pourquoi ce changement
+- Suite à l'audit SEO demandé par Shana : la page d'accueil et la liste des expériences étaient les deux pages à fort trafic qui n'avaient pas encore ce traitement, et les expériences vendues seules n'affichaient pas leur prix à Google contrairement aux autres — corrections classées "priorité 1" car rapides et peu risquées, sans toucher au parcours de paiement/réservation.
+
+---
+
+## [2026-07-13 ter] — Ajout de 10 expériences "seules" (surf, bateau, dauphins, vélo, dégustations)
+
+### Ce qui a changé côté base de données
+- `supabase/migrations/20260713010000_seed_10_standalone_experiences_gyg_batch.sql` : insertion de 10 nouvelles fiches dans `standalone_experiences` (expériences vendues seules, sans hôtel associé) — cours de surf privé à Tel Aviv, bateau à fond de verre à Eilat, baptême de plongée et snorkeling avec les dauphins au Dolphin Reef (Eilat), vélo et dégustation de vin dans les collines de Judée, tour à vélo nocturne de Jérusalem, deux tours à vélo à Tel Aviv (Jet Lag et tour "cent ans"), atelier de dégustation de chocolat dans le noir et restaurant BlackOut (Jaffa, Na Lagaat Center). Chaque fiche a été appliquée directement sur la base (le fichier de migration local était en décalage avec l'historique distant — non lié à cette tâche — donc appliqué via la connexion directe plutôt que `db push`, à réconcilier plus tard).
+- Toutes les fiches sont créées en `draft` : prix fournisseur à confirmer avant publication, photos manquantes, et texte hébreu volontairement laissé vide (voir plus bas).
+- Le lien de réservation chez chaque prestataire externe (GetYourGuide, Viator, GoJerusalem, Dolphin Reef, Na Lagaat) a été mis dans le champ dédié "URL de réservation fournisseur" (onglet Tarif & Dispo du formulaire, jamais affiché publiquement).
+- Pour l'atelier chocolat dans le noir, les 3 dates réellement disponibles (13 juillet, 12 août, 14 septembre 2026) ont été enregistrées via le mode "dates précises" plutôt que la disponibilité hebdomadaire habituelle.
+
+### Pourquoi ce changement
+- Shana a fourni une liste de 10 nouvelles expériences prêtes en anglais/français/hébreu à intégrer au catalogue "Experience Only".
+- Le texte hébreu fourni était corrompu à la réception (problème d'encodage, caractères illisibles) : il n'a donc pas été enregistré pour éviter de publier du hébreu cassé sur le site. Les titres/sous-titres/descriptions en hébreu restent à renvoyer par Shana avant publication.
+
+---
+
 ## [2026-07-13 bis] — Back office Favoris : liste des clients à relancer et tendances produit
 
 ### Ce qui a changé côté code
