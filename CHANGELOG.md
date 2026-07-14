@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-07-14 quater] — Référencement (SEO) : le prix envoyé à Google était à 0 sur toutes les expériences vendues avec un hôtel
+
+### Ce qui a changé côté code
+- `api/bot-meta.ts` : la fiche envoyée à Google pour chaque expérience (`/experience/:slug`) affichait un prix de 0 pour toutes les expériences vendues avec une chambre d'hôtel (modèle de tarification "bar_rate"), car ce type d'expérience n'a pas de prix fixe stocké — son prix dépend de la disponibilité de la chambre au moment de la réservation, calculée en direct ailleurs sur le site (`src/hooks/useExperience2Price.ts`). La fiche envoyée à Google reprend maintenant la même estimation "à partir de" que le site utilise déjà en secours quand il n'a pas de tarif en direct (tarif de chambre stocké + majoration + prix de l'expérience), pour ne plus jamais afficher 0 ₪. Aucun changement pour les expériences vendues seules (sans hôtel), qui avaient déjà un prix correct.
+
+### Ce qui a changé côté base de données
+- Aucun changement de structure — réutilisation de colonnes déjà existantes (`room_net_rate`, `bar_rate_markup_value`, `bar_rate_markup_is_pct`, `experience_sell_fixed`, `experience_sell_per_person`, `min_party`).
+
+### Pourquoi ce changement
+- Repéré en vérifiant en conditions réelles (avec l'identité d'un robot Google) le dispositif SEO mis en place le 13/07 : les 17 expériences "avec hôtel" publiées envoyaient toutes un prix à 0 à Google, ce qui peut faire croire que l'expérience est gratuite ou empêcher Google d'afficher le prix dans les résultats de recherche. Shana a validé l'usage d'un prix "à partir de" estimé plutôt qu'un appel en direct à la disponibilité (plus rapide et plus fiable pour les robots).
+
+---
+
 ## [2026-07-14 ter] — Correction des prix affichés dans la mauvaise devise, et suppression d'un faux badge de réduction
 
 ### Ce qui a changé côté code

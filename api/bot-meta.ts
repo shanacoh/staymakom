@@ -66,6 +66,26 @@ async function fetchMany(
   return res.json();
 }
 
+// Pour les expériences vendues avec une chambre d'hôtel ("bar_rate"), il n'y a
+// pas de prix fixe stocké : le vrai prix dépend de la disponibilité de la
+// chambre au moment de la réservation (voir src/hooks/useExperience2Price.ts).
+// On calcule ici la même estimation "à partir de" que le site utilise déjà en
+// secours quand il n'a pas de tarif en direct, à partir des données stockées,
+// pour ne jamais envoyer un prix à 0 à Google.
+function estimateBarRateFromPrice(row: Record<string, any>): number | null {
+  if (row.pricing_model !== "bar_rate") return null;
+  const netRate = Number(row.room_net_rate) || 0;
+  if (netRate <= 0) return null;
+  const markupValue = Number(row.bar_rate_markup_value) || 0;
+  const isPct = row.bar_rate_markup_is_pct ?? true;
+  const roomClient = isPct ? netRate + (netRate * markupValue) / 100 : netRate + markupValue;
+  const sellFixed = Number(row.experience_sell_fixed) || 0;
+  const sellPerPerson = Number(row.experience_sell_per_person) || 0;
+  const minParty = Number(row.min_party) || 1;
+  const total = roomClient + sellFixed + sellPerPerson * minParty;
+  return total > 0 ? Math.round(total * 100) / 100 : null;
+}
+
 async function fetchAggregateRating(
   experienceId: string
 ): Promise<{ ratingValue: number; reviewCount: number } | null> {
@@ -178,12 +198,13 @@ async function resolveResource(pathname: string): Promise<ResourceMeta | null> {
   if (experienceMatch) {
     const row = await fetchOne(
       "experiences2",
-      "id,title,subtitle,hero_image,base_price,currency,slug,categories(name,slug)",
+      "id,title,subtitle,hero_image,base_price,currency,slug,pricing_model,room_net_rate,bar_rate_markup_value,bar_rate_markup_is_pct,experience_sell_fixed,experience_sell_per_person,min_party,categories(name,slug)",
       experienceMatch[1]
     );
     if (!row) return null;
     const category = Array.isArray(row.categories) ? row.categories[0] : row.categories;
     const aggregateRating = row.id ? await fetchAggregateRating(row.id) : null;
+    const price = row.base_price > 0 ? row.base_price : estimateBarRateFromPrice(row);
     return {
       title: `${row.title} - Staymakom`,
       description: row.subtitle || undefined,
@@ -197,11 +218,11 @@ async function resolveResource(pathname: string): Promise<ResourceMeta | null> {
           image: row.hero_image || undefined,
           url: `https://staymakom.com/experience/${row.slug}`,
           brand: { "@type": "Brand", name: "STAYMAKOM" },
-          ...(row.base_price != null
+          ...(price != null
             ? {
                 offers: {
                   "@type": "Offer",
-                  price: row.base_price,
+                  price,
                   priceCurrency: row.currency || "ILS",
                   availability: "https://schema.org/InStock",
                   url: `https://staymakom.com/experience/${row.slug}`,
