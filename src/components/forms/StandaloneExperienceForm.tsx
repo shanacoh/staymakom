@@ -132,6 +132,15 @@ const standaloneExperienceSchema = z.object({
 
 type StandaloneFormData = z.infer<typeof standaloneExperienceSchema>;
 
+// Schéma allégé utilisé pour l'enregistrement en brouillon : seul le titre (EN)
+// est exigé. La catégorie et la description longue restent obligatoires pour
+// publier, mais ne doivent jamais empêcher une sauvegarde en brouillon (sinon
+// rien n'est écrit en base, photo comprise).
+const standaloneExperienceDraftSchema = standaloneExperienceSchema.extend({
+  category_id: z.string().optional(),
+  long_copy: z.string().optional(),
+});
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -898,6 +907,19 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
     }
   };
 
+  // Point d'entrée du bouton "Brouillon" : ne valide que le titre (EN),
+  // pour que la photo et tout le reste soient bien enregistrés même si la
+  // catégorie ou la description longue ne sont pas encore remplies.
+  const handleSaveDraftClick = async () => {
+    const result = standaloneExperienceDraftSchema.safeParse(getValues());
+    if (!result.success) {
+      toast.error("Le titre (EN) est requis pour enregistrer un brouillon");
+      setActiveTab("contenu");
+      return;
+    }
+    await handleSaveDraft(result.data as StandaloneFormData);
+  };
+
   // -------------------------------------------------------------------------
   // Publish
   // -------------------------------------------------------------------------
@@ -1072,13 +1094,13 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
             <Button
               type="button"
               variant="outline"
-              onClick={handleSubmit(handleSaveDraft, onInvalidSubmit)}
-              disabled={isSaving}
+              onClick={handleSaveDraftClick}
+              disabled={isSaving || heroImageUploading}
             >
               <Save className="h-4 w-4 mr-2" />
               Brouillon
             </Button>
-            <Button type="submit" disabled={!canPublish || isSaving}>
+            <Button type="submit" disabled={!canPublish || isSaving || heroImageUploading}>
               <Rocket className="h-4 w-4 mr-2" />
               Publier
             </Button>
@@ -2566,8 +2588,8 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
             type="button"
             variant="outline"
             className="flex-1"
-            onClick={handleSubmit(handleSaveDraft, onInvalidSubmit)}
-            disabled={isSaving}
+            onClick={handleSaveDraftClick}
+            disabled={isSaving || heroImageUploading}
           >
             <Save className="h-4 w-4 mr-2" />
             Brouillon
@@ -2576,7 +2598,7 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
             type="button"
             className="flex-1"
             onClick={handleSubmit(handlePublish, onInvalidSubmit)}
-            disabled={!canPublish || isSaving}
+            disabled={!canPublish || isSaving || heroImageUploading}
           >
             <Rocket className="h-4 w-4 mr-2" />
             Publier

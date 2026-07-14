@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-07-14 quinquies] — Correction : la photo (et tout le reste) ne s'enregistrait pas toujours sur un brouillon d'expérience standalone
+
+### Ce qui a changé côté code
+- `src/components/forms/StandaloneExperienceForm.tsx` : le bouton "Brouillon" du formulaire d'expérience standalone (l'expérience "only", épinglée en vitrine) exigeait, avant d'enregistrer quoi que ce soit, que **tout** le formulaire soit rempli comme pour une publication — catégorie choisie et description longue d'au moins 100 caractères. Si ces champs n'étaient pas encore remplis (cas typique : on vient d'ajouter juste la photo et le titre), rien n'était enregistré en base, la photo comprise, sans message d'erreur clairement visible. Le bouton "Brouillon" n'exige désormais que le titre (EN) pour enregistrer — la catégorie et la description peuvent être complétées plus tard, avant la publication.
+- Correction complémentaire : les boutons "Brouillon" et "Publier" sont maintenant désactivés tant que la photo principale est en cours d'envoi, pour éviter d'enregistrer avant la fin de l'upload.
+
+### Ce qui a changé côté base de données
+- Aucun changement de structure.
+
+### Pourquoi ce changement
+- Shana a signalé que la photo principale d'une expérience standalone ne s'enregistrait pas en enregistrant simplement en brouillon (sans publier).
+
+---
+
 ## [2026-07-14 quater] — Référencement (SEO) : le prix envoyé à Google était à 0 sur toutes les expériences vendues avec un hôtel
 
 ### Ce qui a changé côté code
