@@ -6,6 +6,22 @@
 
 ---
 
+## [2026-07-14 ter] — Correction des prix affichés dans la mauvaise devise, et suppression d'un faux badge de réduction
+
+### Ce qui a changé côté code
+- `src/components/experience-test/OtherExperiences2.tsx`, `src/components/experience-test/OtherStandaloneExperiences.tsx` (carrousels "Autres expériences" sous une fiche expérience) : le prix affiché était le montant brut stocké en base (en shekels/NIS), affiché tel quel avec le symbole de la devise choisie par le visiteur (€ ou $). Un prix de 1354 NIS s'affichait donc "1354 €". Le prix est désormais converti dans la devise réellement affichée, comme c'est déjà fait ailleurs sur le site (fiche détail, réservation, paiement — non touchés).
+- `src/components/account/WishlistSection.tsx` (page Favoris), `src/components/account/RecommendedExperiences.tsx` et `src/components/account/CompactExperienceCard.tsx` (recommandations du compte client) : même correction.
+- `src/pages/Category.tsx` (liste des expériences par catégorie, mode "Avec Hôtel") : même correction du prix, **et** suppression d'un pourcentage de réduction généré au hasard à chaque affichage de page (entre 10 % et 39 %), qui faisait apparaître un faux prix barré et un badge "-X %" sans lien avec une vraie promotion configurée par Shana. Vérifié en conditions réelles : ce badge ne s'affichait jamais en pratique aujourd'hui (le prix de base des expériences liées à un hôtel est actuellement à 0 dans la base, leur vrai prix étant calculé en direct selon les chambres disponibles), mais il se serait déclenché dès qu'un prix de base aurait été renseigné pour une de ces expériences.
+- `src/pages/Index.tsx`, `src/pages/Experiences.tsx` (anciennes pages `/home` et `/experiences-old`, non reliées à la navigation actuelle mais toujours accessibles) : même correction de devise, par cohérence.
+
+### Ce qui a changé côté base de données
+- Aucun changement de structure.
+
+### Pourquoi ce changement
+- Shana a signalé un prix incohérent sur les cartes "Autres expériences" sous une fiche. Vérification faite : le même oubli de conversion de devise touchait plusieurs autres endroits du site (favoris, recommandations, liste par catégorie). En creusant le fonctionnement des cartes de la page catégorie, un second problème sans lien avec la devise a été trouvé et corrigé avec l'accord de Shana : un badge de réduction aléatoire, jamais visible aujourd'hui mais susceptible de s'afficher par erreur à l'avenir.
+
+---
+
 ## [2026-07-14 bis] — Référencement (SEO) : photos servies en .webp et renommées de façon lisible
 
 ### Ce qui a changé côté code

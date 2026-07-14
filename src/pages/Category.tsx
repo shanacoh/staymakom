@@ -511,13 +511,10 @@ const Category = () => {
                   {filteredExperiences.map(experience => {
                     // base_price est stocké en NIS en base : on le convertit dans la devise affichée à l'utilisateur.
                     const convertedPrice = Math.round(convert(Number(experience.base_price)));
-                    const discountPercent = Math.floor(Math.random() * 30) + 10;
                     return (
                       <ExperienceCard
                         key={experience.id}
                         experience={{ ...experience, base_price: convertedPrice }}
-                        originalPrice={convertedPrice}
-                        discountPercent={discountPercent}
                       />
                     );
                   })}
