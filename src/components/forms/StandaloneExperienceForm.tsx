@@ -106,8 +106,8 @@ const standaloneExperienceSchema = z.object({
   region: z.string().optional(),
   region_he: z.string().optional(),
   region_fr: z.string().optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
+  latitude: optNum(-90),
+  longitude: optNum(-180),
   // Durée
   duration: z.string().optional(),
   duration_fr: z.string().optional(),

@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-07-14 sexies] — Correction : latitude/longitude devenaient obligatoires pour publier une expérience "only"
+
+### Ce qui a changé côté code
+- `src/components/forms/StandaloneExperienceForm.tsx` : les champs Latitude et Longitude du formulaire d'expérience standalone (l'expérience "only") sont censés être facultatifs. Mais quand on laissait ces champs vides, le formulaire transformait ça en une valeur technique invalide ("NaN") plutôt qu'en "rien", et la règle de validation refusait alors de publier tant qu'ils n'étaient pas remplis — avec le message "Champs requis manquants : latitude, longitude". Ces deux champs utilisent maintenant le même mécanisme déjà en place pour un autre champ du formulaire (le délai de réservation), qui traite bien une case vide comme "rien" plutôt que comme une erreur. Latitude et Longitude peuvent de nouveau être laissées vides pour publier.
+
+### Ce qui a changé côté base de données
+- Aucun changement de structure.
+
+### Pourquoi ce changement
+- Shana a signalé qu'il était impossible de valider (publier) une expérience "only" sans renseigner les coordonnées GPS, alors que ce champ n'a jamais été pensé comme obligatoire.
+
+---
+
 ## [2026-07-14 quinquies] — Correction : la photo (et tout le reste) ne s'enregistrait pas toujours sur un brouillon d'expérience standalone
 
 ### Ce qui a changé côté code
