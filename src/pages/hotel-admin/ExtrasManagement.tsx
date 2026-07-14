@@ -307,6 +307,7 @@ export default function ExtrasManagement() {
                 value={newExtra.image_url}
                 onChange={(url) => setNewExtra({ ...newExtra, image_url: url })}
                 description="Image for this add-on"
+                namePrefix={newExtra.name}
               />
 
               <Button 

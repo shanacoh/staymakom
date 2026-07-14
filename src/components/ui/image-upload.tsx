@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ImagePlus, X, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, buildImageFileName } from "@/lib/utils";
 
 interface ImageUploadProps {
   label: string;
@@ -13,6 +13,8 @@ interface ImageUploadProps {
   className?: string;
   required?: boolean;
   description?: string;
+  /** Nom (hôtel, expérience...) utilisé pour donner un nom de fichier lisible à la photo */
+  namePrefix?: string;
 }
 
 export const ImageUpload = ({
@@ -23,6 +25,7 @@ export const ImageUpload = ({
   className,
   required = false,
   description,
+  namePrefix,
 }: ImageUploadProps) => {
   const [uploading, setUploading] = useState(false);
 
@@ -45,7 +48,7 @@ export const ImageUpload = ({
     setUploading(true);
     try {
       const fileExt = file.name.split(".").pop();
-      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const fileName = buildImageFileName(namePrefix, fileExt);
 
       const { error: uploadError } = await supabase.storage
         .from(bucket)

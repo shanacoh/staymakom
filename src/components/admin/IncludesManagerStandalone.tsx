@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2, ChevronUp, ChevronDown, Edit2, X, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { buildImageFileName } from "@/lib/utils";
 
 export interface LocalIncludeEntry {
   _localId: string;
@@ -61,9 +62,9 @@ const IncludesManagerStandalone = ({ experienceId, localIncludes, onLocalInclude
     ? (localIncludes || []).map((li) => ({ ...li, id: li._localId }))
     : (includes || []);
 
-  const uploadImage = async (file: File): Promise<string> => {
+  const uploadImage = async (file: File, itemTitle?: string): Promise<string> => {
     const fileExt = file.name.split(".").pop();
-    const fileName = `${crypto.randomUUID()}.${fileExt}`;
+    const fileName = buildImageFileName(itemTitle, fileExt);
     const { error: uploadError } = await supabase.storage.from("experience-images").upload(fileName, file);
     if (uploadError) throw uploadError;
     const { data } = supabase.storage.from("experience-images").getPublicUrl(fileName);
@@ -77,7 +78,7 @@ const IncludesManagerStandalone = ({ experienceId, localIncludes, onLocalInclude
     let imageUrl = newInclude.icon_url;
     if (imageFile) {
       setIsUploading(true);
-      try { imageUrl = await uploadImage(imageFile); } catch { toast.error("Upload échoué"); setIsUploading(false); return; }
+      try { imageUrl = await uploadImage(imageFile, newInclude.title); } catch { toast.error("Upload échoué"); setIsUploading(false); return; }
       setIsUploading(false);
     }
     const entry: LocalIncludeEntry = {
@@ -117,7 +118,7 @@ const IncludesManagerStandalone = ({ experienceId, localIncludes, onLocalInclude
       if (!newInclude.title.trim()) throw new Error("Le titre est requis");
       setIsUploading(true);
       let imageUrl = newInclude.icon_url;
-      if (imageFile) imageUrl = await uploadImage(imageFile);
+      if (imageFile) imageUrl = await uploadImage(imageFile, newInclude.title);
       const maxOrder = includes?.length ? Math.max(...includes.map((i: any) => i.order_index)) : -1;
       const { error } = await (supabase as any).from("standalone_experience_includes").insert([{
         experience_id: experienceId,
@@ -153,7 +154,7 @@ const IncludesManagerStandalone = ({ experienceId, localIncludes, onLocalInclude
       silent?: boolean;
     }) => {
       let finalIconUrl = payload.icon_url || null;
-      if (payload.imageFile) finalIconUrl = await uploadImage(payload.imageFile);
+      if (payload.imageFile) finalIconUrl = await uploadImage(payload.imageFile, payload.title);
       const { error } = await (supabase as any).from("standalone_experience_includes").update({
         title: payload.title,
         title_fr: payload.title_fr || null,

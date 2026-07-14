@@ -54,7 +54,7 @@ import IncludesManager from "@/components/admin/IncludesManager";
 import ExperienceExtrasSelector from "@/components/admin/ExperienceExtrasSelector";
 import ReviewsManager from "@/components/admin/ReviewsManager";
 import { HighlightTagsSelector } from "@/components/admin/HighlightTagsSelector";
-import { generateSlug } from "@/lib/utils";
+import { generateSlug, buildImageFileName } from "@/lib/utils";
 
 const experienceSchema = z.object({
   title: z.string().min(1, "English title is required"),
@@ -307,7 +307,7 @@ export function UnifiedExperienceForm({
 
   const uploadImage = async (file: File, path: string): Promise<string> => {
     const fileExt = file.name.split(".").pop();
-    const fileName = `${crypto.randomUUID()}.${fileExt}`;
+    const fileName = buildImageFileName(title, fileExt);
     const filePath = `${path}/${fileName}`;
 
     const { error: uploadError } = await supabase.storage

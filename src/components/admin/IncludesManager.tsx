@@ -9,6 +9,7 @@ import { Plus, Trash2, GripVertical, Edit2, Save, X, ImageIcon } from "lucide-re
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { buildImageFileName } from "@/lib/utils";
 interface IncludesManagerProps {
   experienceId: string;
 }
@@ -67,9 +68,9 @@ const IncludesManager = ({
       reader.readAsDataURL(file);
     }
   };
-  const uploadImage = async (file: File): Promise<string> => {
+  const uploadImage = async (file: File, itemTitle?: string): Promise<string> => {
     const fileExt = file.name.split('.').pop();
-    const fileName = `${crypto.randomUUID()}.${fileExt}`;
+    const fileName = buildImageFileName(itemTitle, fileExt);
     const filePath = `${fileName}`;
     const {
       error: uploadError
@@ -88,7 +89,7 @@ const IncludesManager = ({
       setIsUploading(true);
       let imageUrl = newInclude.icon_url;
       if (imageFile) {
-        imageUrl = await uploadImage(imageFile);
+        imageUrl = await uploadImage(imageFile, newInclude.title);
       }
       const maxOrder = includes?.length ? Math.max(...includes.map((i: any) => i.order_index)) : -1;
       const {
@@ -132,7 +133,7 @@ const IncludesManager = ({
     }) => {
       let finalIconUrl = icon_url;
       if (editImageFile) {
-        finalIconUrl = await uploadImage(editImageFile);
+        finalIconUrl = await uploadImage(editImageFile, editData.title);
       }
       const {
         error

@@ -464,6 +464,7 @@ const JournalEditor = () => {
               value={formData.cover_image}
               onChange={(url) => setFormData({ ...formData, cover_image: url })}
               description="Main image displayed at the top of your article"
+              namePrefix={formData.title_en}
             />
 
             {/* Title & Settings Row */}
@@ -847,6 +848,7 @@ const JournalEditor = () => {
                 bucket="journal-images"
                 value={formData.og_image}
                 onChange={(url) => setFormData({ ...formData, og_image: url })}
+                namePrefix={formData.title_en}
               />
             </div>
           </div>

@@ -6,6 +6,21 @@
 
 ---
 
+## [2026-07-14 bis] — Référencement (SEO) : photos servies en .webp et renommées de façon lisible
+
+### Ce qui a changé côté code
+- `src/lib/imageUrl.ts` : le service qui redimensionne à la volée les photos d'hôtels, d'expériences et de catégories (stockées sur Supabase) reçoit désormais l'instruction de toujours renvoyer la photo au format .webp (plus léger qu'un .jpg/.png classique, donc pages plus rapides à charger — un critère de classement Google). Effet immédiat sur toutes les photos déjà en ligne, sans rien re-uploader.
+- `src/lib/utils.ts` : nouvelle fonction `buildImageFileName` qui construit un nom de fichier lisible à partir du nom de l'hôtel/l'expérience/la catégorie (ex. `hotel-pereh-2cc2aac2.jpg`), accents convertis en lettres normales, avec un court suffixe aléatoire pour éviter qu'une photo en écrase une autre portant le même nom.
+- `src/components/ui/image-upload.tsx`, `src/pages/admin/HotelEditor.tsx`, `src/pages/admin/HotelEditor2.tsx`, `src/pages/admin/CategoryEditor.tsx`, `src/pages/admin/JournalEditor.tsx`, `src/pages/hotel-admin/ExtrasManagement.tsx`, `src/components/forms/StandaloneExperienceForm.tsx`, `src/components/forms/UnifiedExperienceForm.tsx`, `src/components/forms/UnifiedExperience2Form.tsx`, `src/components/admin/IncludesManager.tsx`, `src/components/admin/IncludesManager2.tsx`, `src/components/admin/IncludesManagerStandalone.tsx` : tous les endroits du back office où une photo est envoyée utilisaient jusqu'ici un nom de fichier totalement aléatoire (ex. `8f3ac1d2-4b7e.jpg`) ; ils utilisent désormais `buildImageFileName` avec le nom de l'élément concerné. Ne concerne que les nouvelles photos ajoutées à partir de maintenant — les photos déjà en ligne gardent leur nom actuel pour ne pas casser les liens existants.
+
+### Ce qui a changé côté base de données
+- Aucun changement de structure.
+
+### Pourquoi ce changement
+- Shana avait entendu dire que le format .webp et des noms de photo explicites aidaient au référencement Google. Vérification faite : c'était partiellement vrai (format non garanti, noms de fichiers aléatoires) — corrigé ici, avec un test en direct confirmant qu'une photo réelle du site continue de s'afficher correctement une fois passée en .webp.
+
+---
+
 ## [2026-07-14] — Correction : les expériences en brouillon mises en vitrine donnaient "page introuvable" au clic, et blocage de la réservation depuis la page vitrine
 
 ### Ce qui a changé côté code

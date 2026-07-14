@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ImageUpload } from "@/components/ui/image-upload";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2, MapPin, Sparkles, Image as ImageIcon, Save, Star, Car, Dumbbell, Waves, Users, Landmark, Droplets } from "lucide-react";
-import { generateSlug } from "@/lib/utils";
+import { generateSlug, buildImageFileName } from "@/lib/utils";
 import { Hotel2ExtrasManager } from "@/components/admin/Hotel2ExtrasManager";
 import { HighlightTagsSelectorHotel2 } from "@/components/admin/HighlightTagsSelectorHotel2";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -229,7 +229,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
         const url = imagesToProcess[i];
         try {
           const fileExt = url.split(".").pop()?.split("?")[0] || "jpg";
-          const fileName = `hyperguest-${Date.now()}-${i}.${fileExt}`;
+          const fileName = buildImageFileName(formData.name, fileExt);
           const { data, error } = await supabase.functions.invoke("download-image", {
             body: { imageUrl: url, bucket: "hotel-images", path: fileName },
           });
@@ -984,6 +984,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
                   bucket="hotel-images"
                   value={formData.hero_image}
                   onChange={(url) => setFormData({ ...formData, hero_image: url })}
+                  namePrefix={formData.name}
                 />
               </div>
 
@@ -1045,7 +1046,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
                             Promise.all(
                               files.map(async (file) => {
                                 const fileExt = file.name.split(".").pop();
-                                const fileName = `${crypto.randomUUID()}.${fileExt}`;
+                                const fileName = buildImageFileName(formData.name, fileExt);
                                 const { error: uploadError } = await supabase.storage
                                   .from("hotel-images")
                                   .upload(fileName, file);

@@ -32,10 +32,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import RichTextEditor from "@/components/ui/rich-text-editor";
-import { generateSlug } from "@/lib/utils";
+import { generateSlug, buildImageFileName, cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   type PracticalBadgesInfo,
@@ -611,7 +610,7 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
 
   const uploadImage = async (file: File, path: string): Promise<string> => {
     const fileExt = file.name.split(".").pop();
-    const fileName = `${crypto.randomUUID()}.${fileExt}`;
+    const fileName = buildImageFileName(title, fileExt);
     const filePath = `${path}/${fileName}`;
     const { error: uploadError } = await supabase.storage.from("experience-images").upload(filePath, file);
     if (uploadError) throw uploadError;

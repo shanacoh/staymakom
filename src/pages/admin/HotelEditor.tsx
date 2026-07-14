@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ImageUpload } from "@/components/ui/image-upload";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2, MapPin } from "lucide-react";
-import { generateSlug } from "@/lib/utils";
+import { generateSlug, buildImageFileName } from "@/lib/utils";
 import { HotelExtrasManager } from "@/components/admin/HotelExtrasManager";
 import { Link } from "react-router-dom";
 
@@ -252,6 +252,7 @@ export const HotelEditor = ({ hotelId, onClose }: HotelEditorProps) => {
                   bucket="hotel-images"
                   value={formData.hero_image}
                   onChange={(url) => setFormData({ ...formData, hero_image: url })}
+                  namePrefix={formData.name}
                 />
               </div>
 
@@ -306,7 +307,7 @@ export const HotelEditor = ({ hotelId, onClose }: HotelEditorProps) => {
                             Promise.all(
                               filesToUpload.map(async (file) => {
                                 const fileExt = file.name.split('.').pop();
-                                const fileName = `${crypto.randomUUID()}.${fileExt}`;
+                                const fileName = buildImageFileName(formData.name, fileExt);
                                 const { error: uploadError } = await supabase.storage
                                   .from('hotel-images')
                                   .upload(fileName, file);

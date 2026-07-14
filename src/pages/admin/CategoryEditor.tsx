@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { ArrowLeft, Upload, X, Eye, Heart, Users, Sparkles, Leaf, Wine, Zap, Laptop, Brain, Mountain, Utensils, Plane, Camera, Music, Book, Coffee, Sun, Moon, Star, Compass, Map, Globe, Briefcase, Award, Gift, Gem, Crown, Shield, Flame, Droplet, Wind, Cloud, TreePine, Flower2, type LucideIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { generateSlug } from "@/lib/utils";
+import { generateSlug, buildImageFileName } from "@/lib/utils";
 
 // Available icons for categories
 const availableIcons: { name: string; icon: LucideIcon }[] = [
@@ -162,7 +162,7 @@ const CategoryEditor = () => {
     setUploading(true);
     try {
       const fileExt = file.name.split(".").pop();
-      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const fileName = buildImageFileName(formData.name, fileExt);
       const filePath = fileName;
 
       const { error: uploadError } = await supabase.storage

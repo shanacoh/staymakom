@@ -24,7 +24,7 @@ import {
 import { Save, Rocket, X, Upload, Loader2, ArrowLeft, Plus, ChevronUp, ChevronDown, Star, Image as ImageIcon, HelpCircle, Check, DollarSign, TrendingUp, Receipt, Percent, Building2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import RichTextEditor from "@/components/ui/rich-text-editor";
-import { generateSlug } from "@/lib/utils";
+import { generateSlug, buildImageFileName } from "@/lib/utils";
 import { Experience2AddonsManager, type LocalAddonEntry } from "@/components/admin/Experience2AddonsManager";
 import { EXPERIENCE_PRICING_TYPES, COMMISSION_TYPES, TAX_TYPES } from "@/types/experience2_addons";
 import { useFromPrice } from "@/hooks/useExperience2Price";
@@ -613,7 +613,7 @@ export function UnifiedExperience2Form({
 
   const uploadImage = async (file: File, path: string): Promise<string> => {
     const fileExt = file.name.split(".").pop();
-    const fileName = `${crypto.randomUUID()}.${fileExt}`;
+    const fileName = buildImageFileName(title, fileExt);
     const filePath = `${path}/${fileName}`;
     const { error: uploadError } = await supabase.storage.from("experience-images").upload(filePath, file);
     if (uploadError) throw uploadError;
@@ -1203,7 +1203,7 @@ export function UnifiedExperience2Form({
                               for (let i = 0; i < Math.min(images.length, 8); i++) {
                                 const img = images[i];
                                 const url = img.large || img.uri;
-                                const fileName = `hyperguest-${crypto.randomUUID()}.jpg`;
+                                const fileName = buildImageFileName(hotel.name, "jpg");
                                 const { data: dlData } = await supabase.functions.invoke("download-image", {
                                   body: { imageUrl: url, bucket: "hotel-images", path: fileName },
                                 });
