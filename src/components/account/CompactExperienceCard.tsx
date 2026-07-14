@@ -43,7 +43,7 @@ export default function CompactExperienceCard({
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { lang } = useLanguage();
-  const { symbol } = useCurrency();
+  const { symbol, convert } = useCurrency();
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
 
   const image = (experience as any).thumbnail_image || experience.hero_image || experience.photos?.[0] || experience.hotels?.hero_image;
@@ -152,7 +152,7 @@ export default function CompactExperienceCard({
             </div>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs font-medium text-foreground">
-              {symbol}{experience.base_price}
+              {symbol}{Math.round(convert(experience.base_price))}
             </span>
           </div>
         </div>

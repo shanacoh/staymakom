@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Sparkles } from "lucide-react";
 import ExperienceCard from "@/components/ExperienceCard";
 import CompactExperienceCard from "@/components/account/CompactExperienceCard";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface RecommendedExperiencesProps {
   userId?: string;
@@ -21,6 +22,8 @@ export default function RecommendedExperiences({
   excludeIds = [],
   compact = false,
 }: RecommendedExperiencesProps) {
+  const { convert } = useCurrency();
+
   // Fetch user's interests and wishlist categories
   const { data: userPreferences } = useQuery({
     queryKey: ["user-preferences", userId],
@@ -172,7 +175,11 @@ export default function RecommendedExperiences({
           {recommendations.map((exp) => (
             <ExperienceCard
               key={exp.id}
-              experience={exp}
+              experience={{
+                ...exp,
+                // base_price est stocké en NIS en base : on le convertit dans la devise affichée à l'utilisateur.
+                base_price: exp.base_price ? Math.round(convert(exp.base_price)) : exp.base_price,
+              }}
               isInWishlist={wishlistIds?.includes(exp.id)}
               userId={userId}
             />

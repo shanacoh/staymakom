@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import ExperienceCard from "@/components/ExperienceCard";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface WishlistSectionProps {
   userId?: string;
@@ -14,6 +15,7 @@ export default function WishlistSection({ userId }: WishlistSectionProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const { convert } = useCurrency();
 
   const { data: wishlist, isLoading } = useQuery({
     queryKey: ["wishlist", userId],
@@ -158,7 +160,11 @@ export default function WishlistSection({ userId }: WishlistSectionProps) {
         return (
           <ExperienceCard
             key={item.id}
-            experience={exp}
+            experience={{
+              ...exp,
+              // base_price est stocké en NIS en base : on le convertit dans la devise affichée à l'utilisateur.
+              base_price: exp.base_price ? Math.round(convert(exp.base_price)) : exp.base_price,
+            }}
             isInWishlist={true}
             onWishlistToggle={handleWishlistRemove}
             userId={userId}

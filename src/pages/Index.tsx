@@ -47,6 +47,7 @@ import CategoryCard from "@/components/CategoryCard";
 import RotatingText from "@/components/RotatingText";
 import ContactDialog from "@/components/ContactDialog";
 import ExperienceCard from "@/components/ExperienceCard";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { getAutoBadgeTagsFromPracticalInfo, normalizeLegacyPracticalInfo } from "@/lib/standaloneBadges";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
@@ -89,6 +90,7 @@ const Index = () => {
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const { lang } = useLanguage();
+  const { convert } = useCurrency();
   const { getLocalizedPath } = useLocalizedNavigation();
   const carouselRef = useRef<HTMLDivElement>(null);
   const latestCarouselRef = useRef<HTMLDivElement>(null);
@@ -267,6 +269,12 @@ const Index = () => {
     ? allExperiences?.filter(exp => exp.category_id === selectedCategoryId)
         .slice(0, 4)
     : latestExperiences?.slice(0, 8);
+
+  // base_price est stocké en NIS en base : on le convertit dans la devise affichée à l'utilisateur.
+  const toDisplayExperience = (exp: any) => ({
+    ...exp,
+    base_price: exp.base_price ? Math.round(convert(exp.base_price)) : exp.base_price,
+  });
 
   const selectedCategory = categories?.find(cat => cat.id === selectedCategoryId);
 
@@ -471,7 +479,7 @@ const Index = () => {
                     {[...(filteredExperiences || []), ...(filteredExperiences || [])].map((experience, index) => (
                       <div key={`${experience.id}-${index}`} className="flex-shrink-0 w-[75vw] md:w-[30vw] snap-center">
                         <ExperienceCard
-                          experience={experience}
+                          experience={toDisplayExperience(experience)}
                         />
                       </div>
                     ))}
@@ -489,7 +497,7 @@ const Index = () => {
                 {filteredExperiences?.map(experience => (
                   <ExperienceCard
                     key={experience.id}
-                    experience={experience}
+                    experience={toDisplayExperience(experience)}
                     rating={8.5 + Math.random() * 0.5}
                     reviewCount={50 + Math.floor(Math.random() * 950)}
                   />
@@ -639,7 +647,7 @@ const Index = () => {
                 {[...(latestExperiences || []), ...(latestExperiences || [])].map((experience, index) => (
                   <div key={`${experience.id}-${index}`} className="flex-shrink-0 w-[75vw] sm:w-[45vw] md:w-[30vw] lg:w-[22vw]">
                     <ExperienceCard
-                      experience={experience}
+                      experience={toDisplayExperience(experience)}
                       badge="NEW"
                       rating={8.5 + Math.random() * 0.5}
                       reviewCount={50 + Math.floor(Math.random() * 950)}

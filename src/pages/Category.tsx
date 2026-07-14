@@ -8,6 +8,7 @@ import { Loader2, Heart, Users, Wine, Compass, Leaf, Sparkles, type LucideIcon }
 import { Link } from "react-router-dom";
 import ExperienceCard from "@/components/ExperienceCard";
 import StandaloneExperienceCard from "@/components/StandaloneExperienceCard";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import CategoryFilters, { FilterState } from "@/components/category/CategoryFilters";
 import { useState, useMemo, useEffect, lazy, Suspense } from "react";
 // Chargée à la demande : embarque Leaflet (carte interactive), affichée
@@ -58,6 +59,7 @@ const Category = () => {
   const mode = (searchParams.get("mode") as "stay" | "live") || "stay";
   const { lang } = useLanguage();
   const isRTL = lang === "he";
+  const { convert } = useCurrency();
   const [showMap, setShowMap] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     sortBy: "recommended",
@@ -507,13 +509,14 @@ const Category = () => {
               ) : mode === "stay" ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredExperiences.map(experience => {
-                    const originalPrice = Number(experience.base_price);
+                    // base_price est stocké en NIS en base : on le convertit dans la devise affichée à l'utilisateur.
+                    const convertedPrice = Math.round(convert(Number(experience.base_price)));
                     const discountPercent = Math.floor(Math.random() * 30) + 10;
                     return (
                       <ExperienceCard
                         key={experience.id}
-                        experience={experience}
-                        originalPrice={originalPrice}
+                        experience={{ ...experience, base_price: convertedPrice }}
+                        originalPrice={convertedPrice}
                         discountPercent={discountPercent}
                       />
                     );

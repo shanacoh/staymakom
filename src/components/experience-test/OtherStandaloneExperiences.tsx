@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import ExperienceCard from "@/components/ExperienceCard";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface OtherStandaloneExperiencesProps {
   currentExperienceId: string;
@@ -12,6 +13,7 @@ interface OtherStandaloneExperiencesProps {
 
 const OtherStandaloneExperiences = ({ currentExperienceId, categoryId, lang = "en" }: OtherStandaloneExperiencesProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { convert } = useCurrency();
 
   const { data: experiences } = useQuery({
     queryKey: ["other-standalone-experiences", currentExperienceId, categoryId],
@@ -110,7 +112,11 @@ const OtherStandaloneExperiences = ({ currentExperienceId, categoryId, lang = "e
             className="snap-start shrink-0 w-[calc(50%-8px)]"
           >
             <ExperienceCard
-              experience={exp}
+              experience={{
+                ...exp,
+                // base_price est stocké en NIS en base : on le convertit dans la devise affichée à l'utilisateur.
+                base_price: exp.base_price ? Math.round(convert(exp.base_price)) : exp.base_price,
+              }}
               linkPrefix="/standalone-experience"
               isStandaloneExperience
             />

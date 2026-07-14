@@ -5,12 +5,14 @@ import { Loader2 } from "lucide-react";
 import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import ExperienceCard from "@/components/ExperienceCard";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { SEOHead } from "@/components/SEOHead";
 
 const Experiences = () => {
   const { lang } = useLanguage();
+  const { convert } = useCurrency();
   const isRTL = lang === 'he';
 
   const { data: experiences, isLoading } = useQuery({
@@ -68,7 +70,11 @@ const Experiences = () => {
                 return (
                   <ExperienceCard
                     key={experience.id}
-                    experience={experience}
+                    experience={{
+                      ...experience,
+                      // base_price est stocké en NIS en base : on le convertit dans la devise affichée à l'utilisateur.
+                      base_price: experience.base_price ? Math.round(convert(experience.base_price)) : experience.base_price,
+                    }}
                   />
                 );
               })}
