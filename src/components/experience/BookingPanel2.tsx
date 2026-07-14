@@ -6,7 +6,8 @@
  */
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import VitrineBookingBlockedDialog from "@/components/VitrineBookingBlockedDialog";
 import { Users, AlertCircle, CalendarDays, Sparkles, Loader2, Clock, Baby, Minus, Plus, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { SaveForLaterButton } from "./SaveForLaterButton";
 import { useQuery } from "@tanstack/react-query";
@@ -101,6 +102,9 @@ export function BookingPanel2({
   adultsOnly = false,
 }: BookingPanel2Props) {
   const navigate = useNavigate();
+  const [urlSearchParams] = useSearchParams();
+  const isVitrineContext = urlSearchParams.get("context") === "vitrine";
+  const [showVitrineDialog, setShowVitrineDialog] = useState(false);
   const { symbol: currencySymbol, convert } = useCurrency();
   const customerNationality = useCustomerNationality();
 
@@ -535,6 +539,10 @@ export function BookingPanel2({
 
   const handleContinue = () => {
     if (!dateRange.from || !dateRange.to || !selectedRoomId || !selectedRatePlanId || !selectedRatePlan) return;
+    if (isVitrineContext) {
+      setShowVitrineDialog(true);
+      return;
+    }
     trackBookThisStayClicked(experienceSlug, displayTotal);
 
     const checkoutState: CheckoutState = {
@@ -589,6 +597,10 @@ export function BookingPanel2({
           <Button
             className="w-full bg-foreground text-background hover:bg-foreground/90 font-medium uppercase tracking-wide py-6 text-base"
             onClick={() => {
+              if (isVitrineContext) {
+                setShowVitrineDialog(true);
+                return;
+              }
               window.location.href = `/contact?subject=Stay Request: ${experienceTitle}&experience=${experienceSlug}`;
             }}
           >
@@ -597,6 +609,11 @@ export function BookingPanel2({
           <p className="text-xs text-center text-muted-foreground">
             {lang === 'he' ? 'נאשר זמינות תוך 24 שעות' : lang === 'fr' ? 'Nous confirmerons la disponibilité sous 24h' : "We'll confirm availability within 24h"}
           </p>
+          <VitrineBookingBlockedDialog
+            open={showVitrineDialog}
+            onClose={() => setShowVitrineDialog(false)}
+            lang={lang}
+          />
         </CardContent>
       </Card>
     );
@@ -1120,6 +1137,12 @@ export function BookingPanel2({
           roomName={selectedRoomName}
           lang={lang}
           variant="full"
+        />
+
+        <VitrineBookingBlockedDialog
+          open={showVitrineDialog}
+          onClose={() => setShowVitrineDialog(false)}
+          lang={lang}
         />
       </CardContent>
     </Card>

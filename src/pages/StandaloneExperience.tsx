@@ -17,6 +17,7 @@ import StandaloneExtrasSection from "@/components/experience-test/StandaloneExtr
 import ReviewsGrid2 from "@/components/experience-test/ReviewsGrid2";
 import OtherStandaloneExperiences from "@/components/experience-test/OtherStandaloneExperiences";
 import ShareWithFriendsSection from "@/components/experience/ShareWithFriendsSection";
+import VitrineBookingBlockedDialog from "@/components/VitrineBookingBlockedDialog";
 
 import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
@@ -133,6 +134,8 @@ export default function StandaloneExperience() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const isLaunch = searchParams.get("context") === "launch";
+  const isVitrineContext = searchParams.get("context") === "vitrine";
+  const [showVitrineDialog, setShowVitrineDialog] = useState(false);
   const { lang } = useLanguage();
   const footerRef = useRef<HTMLElement>(null);
   const reviewsRef = useRef<HTMLDivElement>(null);
@@ -203,11 +206,15 @@ export default function StandaloneExperience() {
         "availability_mode", "whitelisted_dates", "practical_info",
       ].join(", ");
 
+      // Une fiche est visible en détail si elle est publiée, ou si elle est en
+      // brouillon mais explicitement partagée en vitrine (show_on_v3_only) —
+      // même règle que la liste de la page /vitrine, pour éviter un "not found"
+      // sur une carte pourtant visible en vitrine.
       const { data, error } = await (supabase as any)
         .from("standalone_experiences")
         .select(`${PUBLIC_COLUMNS}, standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he)), categories(id, slug, name, name_fr, name_he, icon)`)
         .eq("slug", slug!)
-        .eq("status", "published")
+        .or("status.eq.published,and(status.eq.draft,show_on_v3_only.eq.true)")
         .single();
       if (error) throw error;
       return data as StandaloneExperienceData;
@@ -668,6 +675,10 @@ export default function StandaloneExperience() {
           type="button"
           className="w-full rounded-full text-base font-semibold h-12 bg-[#ad1414] text-white hover:bg-[#9a1212] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_-4px_rgba(173,20,20,0.4)] transition-all duration-200 normal-case"
           onClick={() => {
+            if (isVitrineContext) {
+              setShowVitrineDialog(true);
+              return;
+            }
             const checkoutState = {
               experienceId: experience.id,
               experienceSlug: experience.slug,
@@ -916,6 +927,12 @@ export default function StandaloneExperience() {
             </div>
           </SheetContent>
         </Sheet>
+
+        <VitrineBookingBlockedDialog
+          open={showVitrineDialog}
+          onClose={() => setShowVitrineDialog(false)}
+          lang={lang as "en" | "he" | "fr"}
+        />
       </main>
 
       <footer ref={footerRef as React.RefObject<HTMLElement>}>

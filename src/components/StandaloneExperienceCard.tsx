@@ -44,12 +44,14 @@ interface StandaloneExperienceCardProps {
   };
   index?: number;
   badge?: string | null;
+  linkSuffix?: string;
 }
 
 export default function StandaloneExperienceCard({
   experience,
   index = 0,
   badge,
+  linkSuffix,
 }: StandaloneExperienceCardProps) {
   const { convert } = useCurrency();
 
@@ -90,6 +92,7 @@ export default function StandaloneExperienceCard({
     <ExperienceCard
       experience={cardExperience}
       linkPrefix="/standalone-experience"
+      linkSuffix={linkSuffix}
       index={index}
       badge={badge}
       isStandaloneExperience

@@ -6,6 +6,22 @@
 
 ---
 
+## [2026-07-14] — Correction : les expériences en brouillon mises en vitrine donnaient "page introuvable" au clic, et blocage de la réservation depuis la page vitrine
+
+### Ce qui a changé côté code
+- `src/pages/StandaloneExperience.tsx` (fiche d'une expérience "seule") : la fiche détail exigeait que l'expérience soit au statut "publié" pour s'afficher, alors que la liste de la page vitrine affiche aussi les expériences en "brouillon" dès lors qu'elles sont cochées "vitrine". Résultat : une carte visible sur `/vitrine` menait à une page "Expérience non trouvée" au clic. La fiche détail applique désormais la même règle que la liste (publiée, ou brouillon + coché "vitrine").
+- `src/components/VitrineBookingBlockedDialog.tsx` (nouveau) : pop-up affiché quand un visiteur tente de réserver depuis la page vitrine, expliquant que la réservation n'est pas encore ouverte et proposant un bouton pour revenir sur le site principal.
+- `src/pages/StandaloneExperience.tsx` et `src/components/experience/BookingPanel2.tsx` (panneau de réservation des séjours en hôtel, utilisé à la fois sur ordinateur et mobile) : le bouton "Réserver" ouvre désormais ce pop-up au lieu de lancer le paiement, uniquement quand on arrive depuis la page vitrine.
+- `src/components/StandaloneExperienceCard.tsx` et `src/pages/Vitrine.tsx` : la carte d'une expérience "seule" affichée sur la page vitrine transmet désormais l'information "je viens de la vitrine" à la fiche détail (déjà fait pour les séjours en hôtel), pour que le pop-up sache quand s'afficher.
+
+### Ce qui a changé côté base de données
+- Aucun changement de structure — la correction repose uniquement sur les colonnes `status` et `show_on_v3_only` déjà existantes dans `standalone_experiences`.
+
+### Pourquoi ce changement
+- Shana a signalé que des expériences mises en brouillon et en vitrine s'affichaient bien dans la liste mais tombaient sur "page introuvable" au clic. Une fois corrigé, elle a demandé qu'un clic sur "Réserver" depuis la vitrine (démonstration avant lancement officiel) ouvre un message "en construction" plutôt que d'engager une vraie réservation, sur les deux types d'expériences présentées en vitrine.
+
+---
+
 ## [2026-07-13 quater] — Référencement (SEO) : accueil et liste des expériences mieux vues par Google, prix et notes ajoutés aux expériences seules
 
 ### Ce qui a changé côté code

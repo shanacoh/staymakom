@@ -152,7 +152,7 @@ const Vitrine = () => {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                   {(standaloneExperiences ?? []).map((exp: any, idx: number) => (
-                    <StandaloneExperienceCard key={exp.id} experience={exp} index={idx} />
+                    <StandaloneExperienceCard key={exp.id} experience={exp} index={idx} linkSuffix="context=vitrine" />
                   ))}
                 </div>
               )
