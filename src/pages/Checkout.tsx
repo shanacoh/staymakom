@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { DualPrice } from "@/components/ui/DualPrice";
 import { PriceBreakdownV2 } from "@/components/experience/PriceBreakdownV2";
-import { LeadGuestForm, EMPTY_LEAD_GUEST, sanitizeLeadGuest, saveProfileFields, type LeadGuestData } from "@/components/experience/LeadGuestForm";
+import { LeadGuestForm, EMPTY_LEAD_GUEST, sanitizeLeadGuest, saveProfileFields, isLeadGuestComplete, buildRevolutBillingAddress, type LeadGuestData } from "@/components/experience/LeadGuestForm";
 import { BookingConfirmationDialog, type BookingConfirmationData } from "@/components/experience/BookingConfirmationDialog";
 import AuthPromptDialog from "@/components/auth/AuthPromptDialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -361,10 +361,9 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
   // Total des réductions cumulées (pour l'affichage prix barré)
   const totalDiscountApplied = promoDiscount + giftCardApplied;
 
-  const isGuestValid = leadGuest.firstName.trim() !== "" &&
-    leadGuest.lastName.trim() !== "" &&
-    leadGuest.email.trim() !== "" &&
-    leadGuest.phone.trim() !== "";
+  // Validité du voyageur, adresse de facturation Revolut incluse (source unique dans
+  // LeadGuestForm). Bloque l'ouverture du paiement tant que l'adresse n'est pas complète.
+  const isGuestValid = isLeadGuestComplete(leadGuest);
 
   // Progressive booking timer
   useEffect(() => {
@@ -700,7 +699,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                 email: safe.email,
                 phone: safe.phone,
                 state: "N/A",
-                zip: "00000",
+                zip: safe.postcode || "00000",
               },
             },
             reference: { agency: staymakomRef },
@@ -1581,6 +1580,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
               lang={lang as "en" | "he" | "fr"}
               environment={revolutEnvironment ?? undefined}
               customerEmail={leadGuest.email || undefined}
+              billingAddress={buildRevolutBillingAddress(leadGuest)}
               onPaymentSuccess={() => {
                 setPaymentStatus("paid");
                 setPaymentErrorMessage(null);

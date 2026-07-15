@@ -7,6 +7,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,8 +21,34 @@ export interface LeadGuestData {
   birthDate: string;
   address: string;
   city: string;
+  postcode: string;
   country: string;
 }
+
+/** Liste de pays proposée pour l'adresse de facturation. Le code est au format ISO
+ *  (2 lettres) attendu par Revolut ; le libellé est affiché au client. */
+export const BILLING_COUNTRIES: { code: string; name: string }[] = [
+  { code: "IL", name: "Israël / Israel" },
+  { code: "FR", name: "France" },
+  { code: "US", name: "États-Unis / United States" },
+  { code: "GB", name: "Royaume-Uni / United Kingdom" },
+  { code: "BE", name: "Belgique / Belgium" },
+  { code: "CH", name: "Suisse / Switzerland" },
+  { code: "CA", name: "Canada" },
+  { code: "DE", name: "Allemagne / Germany" },
+  { code: "ES", name: "Espagne / Spain" },
+  { code: "IT", name: "Italie / Italy" },
+  { code: "NL", name: "Pays-Bas / Netherlands" },
+  { code: "PT", name: "Portugal" },
+  { code: "LU", name: "Luxembourg" },
+  { code: "AT", name: "Autriche / Austria" },
+  { code: "AU", name: "Australie / Australia" },
+  { code: "AE", name: "Émirats arabes unis / UAE" },
+  { code: "MA", name: "Maroc / Morocco" },
+  { code: "MX", name: "Mexique / Mexico" },
+  { code: "BR", name: "Brésil / Brazil" },
+  { code: "ZA", name: "Afrique du Sud / South Africa" },
+];
 
 interface LeadGuestFormProps {
   value: LeadGuestData;
@@ -44,6 +71,13 @@ const translations = {
     invalidEmail: "Invalid email",
     invalidPhone: "Use international format, e.g. +972 XX XXX XXXX",
     phonePlaceholder: "+972 XX XXX XXXX",
+    billingTitle: "Billing address",
+    billingHint: "Required by your bank to process the card payment.",
+    streetAddress: "Street address",
+    city: "City",
+    postcode: "Postcode / ZIP",
+    country: "Country",
+    selectCountry: "Select a country",
   },
   he: {
     title: "פרטי האורח",
@@ -56,6 +90,13 @@ const translations = {
     invalidEmail: "כתובת אימייל לא תקינה",
     invalidPhone: "השתמש בפורמט בינלאומי, לדוג׳ XXXX XXX XX 972+",
     phonePlaceholder: "+972 XX XXX XXXX",
+    billingTitle: "כתובת לחיוב",
+    billingHint: "נדרש על ידי הבנק שלך כדי לעבד את תשלום הכרטיס.",
+    streetAddress: "כתובת",
+    city: "עיר",
+    postcode: "מיקוד",
+    country: "מדינה",
+    selectCountry: "בחר מדינה",
   },
   fr: {
     title: "Informations voyageur",
@@ -68,6 +109,13 @@ const translations = {
     invalidEmail: "Email invalide",
     invalidPhone: "Format international, ex : +972 XX XXX XXXX",
     phonePlaceholder: "+972 XX XXX XXXX",
+    billingTitle: "Adresse de facturation",
+    billingHint: "Demandée par votre banque pour valider le paiement par carte.",
+    streetAddress: "Adresse (rue et numéro)",
+    city: "Ville",
+    postcode: "Code postal",
+    country: "Pays",
+    selectCountry: "Choisir un pays",
   },
 };
 
@@ -110,8 +158,12 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
       lastName: (show || touched.lastName) && !value.lastName.trim() ? t.required : null,
       email: (show || touched.email) && !value.email.trim() ? t.required 
            : (show || touched.email) && !isValidEmail(value.email) ? t.invalidEmail : null,
-      phone: (show || touched.phone) && !value.phone.trim() ? t.required 
+      phone: (show || touched.phone) && !value.phone.trim() ? t.required
            : (show || touched.phone) && !isValidPhone(value.phone) ? t.invalidPhone : null,
+      // Revolut exige au minimum le pays + le code postal pour valider la carte.
+      // Rue et ville ne sont pas collectées (choix produit : friction minimale au checkout).
+      postcode: (show || touched.postcode) && !value.postcode.trim() ? t.required : null,
+      country: (show || touched.country) && !value.country.trim() ? t.required : null,
     };
   }, [value, touched, showErrors, t]);
 
@@ -144,6 +196,7 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
         birthDate: "",
         address: "",
         city: customer?.city || "",
+        postcode: "",
         country: customer?.address_country || "FR",
       };
 
@@ -242,6 +295,50 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
             <FieldError msg={errors.phone} />
           </div>
         </div>
+
+        {/* Adresse de facturation — minimum requis par Revolut pour valider la carte :
+            pays + code postal. Le widget Revolut ne rend pas ces champs obligatoires de
+            son côté ; on les collecte et on les valide ici pour ne jamais envoyer un
+            paiement sans eux. Rue et ville volontairement non demandées (friction minimale). */}
+        <div className="pt-2 mt-1 border-t">
+          <p className="text-xs font-semibold text-foreground">{t.billingTitle}</p>
+          <p className="text-[11px] text-muted-foreground mb-2">{t.billingHint}</p>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className="text-xs">{t.country} *</Label>
+              <Select
+                value={value.country || undefined}
+                onValueChange={(v) => { update("country", v); markTouched("country"); }}
+              >
+                <SelectTrigger
+                  className={`h-9 ${errors.country ? "border-destructive" : ""}`}
+                  style={inputStyle}
+                >
+                  <SelectValue placeholder={t.selectCountry} />
+                </SelectTrigger>
+                <SelectContent>
+                  {BILLING_COUNTRIES.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FieldError msg={errors.country} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">{t.postcode} *</Label>
+              <Input
+                value={value.postcode}
+                onChange={(e) => update("postcode", e.target.value)}
+                onBlur={() => markTouched("postcode")}
+                className={`h-9 ${errors.postcode ? "border-destructive" : ""}`}
+                style={inputStyle}
+                required
+              />
+              <FieldError msg={errors.postcode} />
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
@@ -256,8 +353,41 @@ export const EMPTY_LEAD_GUEST: LeadGuestData = {
   birthDate: "",
   address: "",
   city: "",
+  postcode: "",
   country: "IL",
 };
+
+/** Source unique de vérité pour savoir si le voyageur a rempli tout ce qu'il faut,
+ *  y compris l'adresse de facturation requise par Revolut. Utilisée par les deux
+ *  parcours (hôtel et expérience "only") pour ne jamais ouvrir le paiement sans
+ *  adresse complète. */
+export function isLeadGuestComplete(g: LeadGuestData): boolean {
+  return (
+    g.firstName.trim() !== "" &&
+    g.lastName.trim() !== "" &&
+    g.email.trim() !== "" &&
+    g.phone.trim() !== "" &&
+    // Adresse de facturation : seuls pays + code postal sont requis par Revolut.
+    g.postcode.trim() !== "" &&
+    g.country.trim() !== ""
+  );
+}
+
+/** Construit l'adresse de facturation au format attendu par le widget Revolut
+ *  (@revolut/checkout). countryCode doit être un code ISO 2 lettres. */
+export function buildRevolutBillingAddress(g: LeadGuestData): {
+  countryCode: string;
+  postcode: string;
+  city?: string;
+  streetLine1?: string;
+} {
+  return {
+    countryCode: g.country.trim().toUpperCase(),
+    postcode: g.postcode.trim(),
+    city: g.city.trim() || undefined,
+    streetLine1: g.address.trim() || undefined,
+  };
+}
 
 /** Sanitize lead guest data before sending to HyperGuest — ensures all formats are correct */
 export function sanitizeLeadGuest(g: LeadGuestData): LeadGuestData & { title: "MR" | "MS" | "MRS" } {
@@ -275,6 +405,7 @@ export function sanitizeLeadGuest(g: LeadGuestData): LeadGuestData & { title: "M
     birthDate,
     address: g.address?.trim() || "N/A",
     city: g.city?.trim() || "N/A",
+    postcode: g.postcode?.trim() || "",
     country: g.country?.trim().toUpperCase() || "IL",
   };
 }

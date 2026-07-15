@@ -57,6 +57,17 @@ interface RevolutPaymentWidgetProps {
   /** Environnement Revolut, transmis par la réponse du serveur (create-order). */
   environment?: "production" | "dev";
   customerEmail?: string;
+  /** Adresse de facturation du client (pays + code postal + ville + rue).
+   *  REQUISE par la banque pour valider le paiement carte : sans elle, Revolut
+   *  rejette la transaction (erreur invalid-address / invalid-postcode). */
+  billingAddress?: {
+    countryCode: string;
+    postcode: string;
+    city?: string;
+    streetLine1?: string;
+    streetLine2?: string;
+    region?: string;
+  };
   onPaymentSuccess: (orderId?: string) => void;
   onPaymentError: (error: string) => void;
   onPaymentCancel?: () => void;
@@ -78,6 +89,7 @@ export default function RevolutPaymentWidget({
   lang = "en",
   environment,
   customerEmail,
+  billingAddress,
   onPaymentSuccess,
   onPaymentError,
   onPaymentCancel,
@@ -164,6 +176,19 @@ export default function RevolutPaymentWidget({
           target: containerRef.current,
           locale: lang === "he" ? "en" : lang,
           email: customerEmail || undefined,
+          // Adresse de facturation transmise à Revolut : sans elle, le paiement carte
+          // plante (la banque exige au minimum pays + code postal). On ne la passe que
+          // si le code pays est présent, pour rester conforme au type Address du SDK.
+          billingAddress: (billingAddress?.countryCode
+            ? {
+                countryCode: billingAddress.countryCode,
+                postcode: billingAddress.postcode,
+                city: billingAddress.city,
+                streetLine1: billingAddress.streetLine1,
+                streetLine2: billingAddress.streetLine2,
+                region: billingAddress.region,
+              }
+            : undefined) as Parameters<typeof RevolutCheckout.embeddedCheckout>[0]["billingAddress"],
           // createOrder est appelé par Revolut quand le client clique sur un moyen
           // de paiement. On retourne le publicId de l'ordre déjà créé en amont.
           createOrder: async () => {
@@ -208,7 +233,7 @@ export default function RevolutPaymentWidget({
       try { instanceRef.current?.destroy(); } catch {}
       instanceRef.current = null;
     };
-  }, [publicId, mode, merchantPublicKey, lang, customerEmail, onPaymentSuccess, onPaymentError, onPaymentCancel]);
+  }, [publicId, mode, merchantPublicKey, lang, customerEmail, billingAddress, onPaymentSuccess, onPaymentError, onPaymentCancel]);
 
   if (widgetError) {
     return (

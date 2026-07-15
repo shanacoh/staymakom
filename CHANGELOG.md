@@ -6,6 +6,25 @@
 
 ---
 
+## [2026-07-15] — Correction : le paiement plantait faute d'adresse de facturation
+
+### Ce qui a changé côté code
+- `src/components/experience/LeadGuestForm.tsx` : le formulaire voyageur collecte désormais l'**adresse de facturation minimale exigée par Revolut** — **pays** (liste déroulante, code ISO) + **code postal** — pour valider une carte. Choix produit : friction minimale au checkout, on ne demande donc pas la rue ni la ville. Ces deux champs sont **obligatoires** et validés (message "Requis" tant qu'ils sont vides), en anglais, français et hébreu. Ajout de deux fonctions partagées : `isLeadGuestComplete` (dit si tout est rempli, adresse comprise) et `buildRevolutBillingAddress` (met l'adresse au format attendu par Revolut). Le modèle de données `LeadGuestData` gagne un champ `postcode`.
+- `src/components/experience/RevolutPaymentWidget.tsx` : le widget accepte et **transmet l'adresse de facturation** à Revolut (`billingAddress`). Sans cette adresse, la banque refusait la transaction et le paiement "plantait" au lieu d'afficher une erreur claire.
+- `src/pages/Checkout.tsx` : utilise la validation partagée (adresse incluse) pour n'ouvrir le paiement que si l'adresse est complète, transmet l'adresse au widget, et envoie le vrai code postal à HyperGuest (au lieu du "00000" codé en dur).
+- `src/pages/StandaloneCheckout.tsx` : mêmes branchements pour le parcours "expérience only" (validation partagée + transmission de l'adresse au widget).
+
+### Ce qui a changé côté base de données
+- Aucun changement de structure.
+
+### Pourquoi ce changement
+- Les vrais clients ne pouvaient pas payer : le formulaire ne demandait aucune adresse, et le widget Revolut, qui exige au minimum le pays et le code postal pour valider une carte, ne rendait pas ces champs obligatoires — ce qui provoquait un "crash" du paiement au lieu d'une demande de saisie. Les tests admin passaient car ils forçaient l'environnement de production sans passer par le vrai formulaire. On collecte maintenant pays + code postal, on les rend obligatoires de notre côté, et on les transmet à Revolut. Le niveau d'adresse a été volontairement limité au minimum (pays + code postal) pour ne pas ajouter de friction au checkout.
+
+### À noter (dette pré-existante, non liée)
+- `RevolutPaymentWidget.tsx` importe un type Revolut (`EmbeddedCheckoutInstance`) qui n'est pas ré-exporté par le SDK : petite erreur de typage présente **avant** cette correction, sans effet sur le build. À nettoyer séparément si besoin.
+
+---
+
 ## [2026-07-15] — Ajout de 3 nouvelles expériences standalone (Imersion, Time Elevator, JClay)
 
 ### Ce qui a changé côté code

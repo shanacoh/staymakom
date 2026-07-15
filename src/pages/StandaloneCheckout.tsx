@@ -24,7 +24,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import RevolutPaymentWidget from "@/components/experience/RevolutPaymentWidget";
 import V3Header from "@/components/V3Header";
-import { LeadGuestForm, LeadGuestData, EMPTY_LEAD_GUEST, saveProfileFields } from "@/components/experience/LeadGuestForm";
+import { LeadGuestForm, LeadGuestData, EMPTY_LEAD_GUEST, saveProfileFields, isLeadGuestComplete, buildRevolutBillingAddress } from "@/components/experience/LeadGuestForm";
 import AuthPromptDialog from "@/components/auth/AuthPromptDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -263,7 +263,8 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
 
   // ── Derived ─────────────────────────────────────────────────────────────
   const currencySymbol = getCurrencySymbol(state.currency);
-  const isGuestValid = !!leadGuest.firstName.trim() && !!leadGuest.lastName.trim() && !!leadGuest.email.trim() && !!leadGuest.phone.trim();
+  // Inclut l'adresse de facturation requise par Revolut (source unique dans LeadGuestForm).
+  const isGuestValid = isLeadGuestComplete(leadGuest);
   const promoDiscount = appliedPromo ? Math.round((state.totalPrice * appliedPromo.discountPct) / 100) : 0;
   const afterPromo = Math.max(0, state.totalPrice - promoDiscount);
   const giftCardApplied = appliedGiftCard ? Math.min(appliedGiftCard.availableBalance, afterPromo) : 0;
@@ -995,6 +996,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
               lang={lang}
               environment={revolutEnvironment}
               customerEmail={leadGuest.email}
+              billingAddress={buildRevolutBillingAddress(leadGuest)}
               onPaymentSuccess={handlePaymentSuccess}
               onPaymentError={handlePaymentError}
               onPaymentCancel={handlePaymentCancel}

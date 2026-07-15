@@ -354,11 +354,19 @@ public/
    → Returns final price + payment options
 
 4. CHECKOUT (/checkout)
-   User fills guest info → creates booking
-   → Edge Function: hyperguest?action=create-booking (JWT required)
+   User fills guest info + BILLING ADDRESS (country + postcode — Revolut minimum)
+   → Country + postcode are REQUIRED before payment can open, and are passed to the
+     Revolut widget (billingAddress). Without them the bank rejects the card and the
+     payment crashes. Street/city are intentionally not collected (minimal friction).
+     Validation is shared via isLeadGuestComplete() in LeadGuestForm.
+   → Revolut embedded checkout collects the card and processes the payment
+   → Edge Function: process-booking (create HyperGuest booking + insert bookings_hg)
    → HyperGuest Booking API
    → Insert into bookings_hg table (Supabase)
    → Edge Function: send-booking-confirmation (Resend email)
+
+   NOTE: the same LeadGuestForm + billing address requirement applies to the
+   standalone ("only") experiences checkout (/standalone-checkout → process-standalone-payment).
 
 5. CONFIRMATION (/booking/confirmation/:token)
    Public page secured by UUID token
