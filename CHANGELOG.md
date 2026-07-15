@@ -6,6 +6,23 @@
 
 ---
 
+## [2026-07-15] — Ajout de 3 nouvelles expériences standalone (Imersion, Time Elevator, JClay)
+
+### Ce qui a changé côté code
+- Aucun changement de code.
+
+### Ce qui a changé côté base de données
+- Nouvelle migration `20260715000000_seed_3_standalone_experiences_food_family_batch.sql` : ajoute 3 fiches d'expérience "only" (sans hôtel associé), avec leurs textes en anglais, français et hébreu, et leurs points forts ("ce qui est inclus") :
+  - **Dîner Immersif chez Imersion, Tel Aviv** (Foody Discovery) — restaurant immersif casher avec projections à 360°.
+  - **L'Ascenseur du Temps, Jérusalem** (Family Fun) — attraction en sièges dynamiques à Mamilla Mall.
+  - **Peinture sur Céramique chez JClay, Jérusalem** (Family Fun) — atelier de poterie en famille.
+- Les 3 fiches sont créées en statut **brouillon** : les prix fournisseurs et certaines informations pratiques (durée exacte de l'Ascenseur du Temps, adresse exacte du dîner Imersion) doivent encore être confirmés avant publication.
+
+### Pourquoi ce changement
+- Shana a fourni ces 3 nouvelles fiches d'expériences "only" à intégrer dans le back office.
+
+---
+
 ## [2026-07-14 sexies] — Correction : latitude/longitude devenaient obligatoires pour publier une expérience "only"
 
 ### Ce qui a changé côté code
