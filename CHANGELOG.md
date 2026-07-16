@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-07-15 quater] — Renommage des titres de 14 expériences standalone (EN/FR/HE)
+
+### Ce qui a changé côté code
+- Aucun changement de code.
+
+### Ce qui a changé côté base de données
+- Nouvelle migration `20260715020000_rename_14_standalone_experiences_titles.sql` : met à jour le titre (anglais, français, hébreu) de 14 fiches d'expérience déjà existantes, pour adopter un style plus court et accrocheur, cohérent avec les autres fiches du catalogue (ex. « Private Surf Lesson on Tel Aviv Beach » devient « SURF LESSON ON THE TEL AVIV SHORE » / « COURS DE SURF À TEL AVIV » / « שיעור גלישה בחוף תל אביב »). Les 14 fiches concernées : surf à Tel Aviv, bateau à fond de verre à Eilat, plongée et snorkeling au Dolphin Reef, vélo anti jet lag, vélo facile à Tel Aviv, chocolat dans le noir, BlackOut Restaurant, vélo et vin dans les collines de Judée, vélo de nuit à Jérusalem, l'Ascenseur du Temps, cours de cuisine à Tel Aviv, dîner immersif chez Imersion, et poterie chez JClay.
+- Seul le titre affiché a changé ; les textes de référencement Google (SEO) et les titres de partage sur les réseaux sociaux n'ont pas été touchés, car Shana n'a demandé que le changement des noms.
+
+### Pourquoi ce changement
+- Shana a fourni une nouvelle liste de titres (ancien → nouveau) pour ces 14 fiches, à appliquer dans les 3 langues du site.
+
+---
+
 ## [2026-07-15] — Ajout de 3 nouvelles expériences standalone (Imersion, Time Elevator, JClay)
 
 ### Ce qui a changé côté code
