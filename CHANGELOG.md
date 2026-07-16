@@ -6,6 +6,21 @@
 
 ---
 
+## [2026-07-16] — Ajout des localisations (adresse, lien Google Maps, ville/région en 3 langues) sur 15 expériences standalone
+
+### Ce qui a changé côté code
+- Aucun changement de code.
+
+### Ce qui a changé côté base de données
+- Nouvelle migration `20260716000000_add_locations_15_standalone_experiences.sql` : renseigne pour 15 fiches "experience only" (créées lors des sessions précédentes) l'adresse ou le point de repère (en EN/FR/HE), le lien Google Maps, et la ville/région en hébreu (qui manquaient jusqu'ici) :
+  - Cours de Surf, Bateau à Fond de Verre, Baptême de Plongée et Snorkeling Dolphin Reef, Bike and Wine Judean Hills, Tour Vélo Nocturne Jérusalem, Jet Lag Bike Tour, Tour Vélo TLV Century, Chocolate Tasting Workshop, BlackOut Restaurant, Restaurant Immersif Imersion, Time Elevator, Peinture sur Céramique JClay, Cours de Cuisine Citrus & Salt, Stand Up David Azria.
+- Pour 2 fiches (Imersion, Citrus & Salt), seule la ville/région a été renseignée : aucune adresse précise n'est communiquée par ces fournisseurs.
+
+### Pourquoi ce changement
+- Shana a fourni les liens Google Maps et précisions de localisation pour compléter les fiches déjà créées, afin que les futures pages expérience affichent une carte et une localisation correcte dans les 3 langues.
+
+---
+
 ## [2026-07-15 quater] — Renommage des titres de 14 expériences standalone (EN/FR/HE)
 
 ### Ce qui a changé côté code
@@ -17,6 +32,38 @@
 
 ### Pourquoi ce changement
 - Shana a fourni une nouvelle liste de titres (ancien → nouveau) pour ces 14 fiches, à appliquer dans les 3 langues du site.
+
+---
+
+## [2026-07-15 ter] — Ajout de 4 expériences standalone (spectacle David Azria, dégustation vin à Jaffa, menu Picual, atelier sheshbesh)
+
+### Ce qui a changé côté code
+- Aucun changement de code.
+
+### Ce qui a changé côté base de données
+- Nouvelle migration `20260715020000_seed_4_standalone_experiences_show_wine_food_family_batch.sql` : ajoute 4 fiches "experience only", en anglais, français et hébreu :
+  - **Soirée Stand-Up avec David Azria** (Tel Aviv) — spectacle à date unique, le mardi 18 août 2026 à 20h au ZOA House. Modélisé avec une disponibilité limitée à cette seule date. Catégorie posée sur "Family Fun", faute d'indication dans la fiche source (validé avec Shana en session).
+  - **Balade et Dégustation à Jaffa** (Foody Discovery) — balade guidée avec 4 dégustations de vin et tapas locaux.
+  - **Menu Dégustation chez Picual** (Foody Discovery) — menu dégustation casher en dix services à Rishon LeZion.
+  - **Atelier Peinture Sheshbesh** (Family Fun) — atelier peinture sur plateau de backgammon à Zichron Yaakov.
+- Les 4 fiches sont créées en statut **brouillon** : les prix fournisseurs n'ont pas été communiqués, à confirmer avant publication. Aucun badge "Show"/"Spectacle" n'existe encore pour le stand-up de David Azria — à créer côté CMS si besoin.
+
+### Pourquoi ce changement
+- Shana a fourni ces 4 fiches à intégrer dans le back office.
+
+---
+
+## [2026-07-15 bis] — Ajout d'une expérience standalone : cours de cuisine Citrus & Salt (Tel Aviv)
+
+### Ce qui a changé côté code
+- Aucun changement de code.
+
+### Ce qui a changé côté base de données
+- Nouvelle migration `20260715010000_seed_cooking_class_citrus_salt_tel_aviv.sql` : ajoute la fiche "experience only" **Cooking Classes in Tel Aviv** (Foody Discovery), cours de cuisine dans un studio de Tel Aviv, une cuisine par séance (israélienne, thaïlandaise, italienne, indienne...). Textes en anglais, français et hébreu, plus le référencement Google dans les 3 langues.
+- Créée en statut **brouillon** : le prix fournisseur n'a pas été communiqué, à confirmer avant publication.
+
+### Pourquoi ce changement
+- Shana a fourni cette fiche à intégrer dans le back office.
 
 ---
 
