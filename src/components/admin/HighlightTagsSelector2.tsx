@@ -21,6 +21,7 @@ export interface LocalTagEntry {
 interface TagObject {
   id: string;
   label_en: string;
+  label_fr?: string | null;
   label_he?: string | null;
   is_common: boolean;
   slug: string;
@@ -39,6 +40,7 @@ export function HighlightTagsSelector2({ experienceId, localTags, onLocalTagsCha
   const queryClient = useQueryClient();
   const [showCustomDialog, setShowCustomDialog] = useState(false);
   const [customLabelEn, setCustomLabelEn] = useState("");
+  const [customLabelFr, setCustomLabelFr] = useState("");
   const [customLabelHe, setCustomLabelHe] = useState("");
   // Local custom tags created during this session (for both local and edit mode, before refetch)
   const [sessionCustomTags, setSessionCustomTags] = useState<TagObject[]>([]);
@@ -155,7 +157,7 @@ export function HighlightTagsSelector2({ experienceId, localTags, onLocalTagsCha
   });
 
   const createCustomTagMutation = useMutation({
-    mutationFn: async ({ labelEn, labelHe }: { labelEn: string; labelHe: string }) => {
+    mutationFn: async ({ labelEn, labelFr, labelHe }: { labelEn: string; labelFr: string; labelHe: string }) => {
       const slug = labelEn.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
       // 1. Create tag in highlight_tags
       const { data: newTag, error: tagError } = await supabase
@@ -163,6 +165,7 @@ export function HighlightTagsSelector2({ experienceId, localTags, onLocalTagsCha
         .insert({
           slug: `custom-${slug}-${Date.now()}`,
           label_en: labelEn,
+          label_fr: labelFr || null,
           label_he: labelHe || null,
           is_common: false,
           display_order: 100,
@@ -199,6 +202,7 @@ export function HighlightTagsSelector2({ experienceId, localTags, onLocalTagsCha
 
       setShowCustomDialog(false);
       setCustomLabelEn("");
+      setCustomLabelFr("");
       setCustomLabelHe("");
       toast.success("Tag personnalisé créé et sélectionné !");
     },
@@ -220,7 +224,7 @@ export function HighlightTagsSelector2({ experienceId, localTags, onLocalTagsCha
 
   const handleCreateCustomTag = () => {
     if (!customLabelEn.trim()) { toast.error("Le label en anglais est requis"); return; }
-    createCustomTagMutation.mutate({ labelEn: customLabelEn.trim(), labelHe: customLabelHe.trim() });
+    createCustomTagMutation.mutate({ labelEn: customLabelEn.trim(), labelFr: customLabelFr.trim(), labelHe: customLabelHe.trim() });
   };
 
   if (isLoadingTags || (!isLocalMode && (isLoadingExpTags || isLoadingCustomTags))) {
@@ -303,6 +307,7 @@ export function HighlightTagsSelector2({ experienceId, localTags, onLocalTagsCha
                 />
                 <div className="flex flex-col min-w-0">
                   <span className="text-sm font-medium truncate">{tag.label_en}</span>
+                  {tag.label_fr && <span className="text-xs text-muted-foreground truncate">{tag.label_fr}</span>}
                   {tag.label_he && <span className="text-xs text-muted-foreground truncate" dir="rtl">{tag.label_he}</span>}
                 </div>
               </label>
@@ -321,6 +326,7 @@ export function HighlightTagsSelector2({ experienceId, localTags, onLocalTagsCha
                 />
                 <div className="flex flex-col min-w-0">
                   <span className="text-sm font-medium truncate">{tag.label_en}</span>
+                  {tag.label_fr && <span className="text-xs text-muted-foreground truncate">{tag.label_fr}</span>}
                   {tag.label_he && <span className="text-xs text-muted-foreground truncate" dir="rtl">{tag.label_he}</span>}
                   <span className="text-[10px] text-accent font-medium">Custom</span>
                 </div>
@@ -341,7 +347,7 @@ export function HighlightTagsSelector2({ experienceId, localTags, onLocalTagsCha
             <DialogTitle>Créer un tag personnalisé</DialogTitle>
             <DialogDescription>Ce tag sera unique à cette expérience</DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-4">
+          <div className="grid grid-cols-3 gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="custom-label-en2">Label (Anglais) *</Label>
               <Input
@@ -349,6 +355,16 @@ export function HighlightTagsSelector2({ experienceId, localTags, onLocalTagsCha
                 value={customLabelEn}
                 onChange={(e) => setCustomLabelEn(e.target.value)}
                 placeholder="ex : Private Beach"
+                onKeyDown={(e) => e.key === "Enter" && handleCreateCustomTag()}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="custom-label-fr2">Label (Français)</Label>
+              <Input
+                id="custom-label-fr2"
+                value={customLabelFr}
+                onChange={(e) => setCustomLabelFr(e.target.value)}
+                placeholder="ex : Plage privée"
                 onKeyDown={(e) => e.key === "Enter" && handleCreateCustomTag()}
               />
             </div>

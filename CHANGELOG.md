@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-07-16 bis] — Ajout du champ français manquant à la création de badges (expériences avec ou sans hôtel)
+
+### Ce qui a changé côté code
+- `src/components/admin/HighlightTagsSelectorStandalone.tsx`, `HighlightTagsSelector.tsx`, `HighlightTagsSelector2.tsx`, `HighlightTagsSelectorHotel2.tsx` : la fenêtre "Créer un tag personnalisé" (badge) proposait uniquement l'anglais et l'hébreu. Elle propose maintenant aussi le français, comme partout ailleurs dans les fiches expérience. Le texte français s'affiche aussi désormais dans la liste des badges existants.
+- `src/integrations/supabase/types.ts` : ajout du champ `label_fr` sur la table `highlight_tags` dans les types générés, pour que le code puisse lire/écrire cette nouvelle colonne.
+
+### Ce qui a changé côté base de données
+- Nouvelle migration `20260715030000_add_label_fr_to_highlight_tags.sql` : ajoute la colonne `label_fr` (texte, facultatif) à la table `highlight_tags`, qui stocke les badges affichés sur les fiches expérience.
+
+### Pourquoi ce changement
+- Shana a remarqué que la création de badge ne demandait pas le texte en français. En creusant, on a aussi découvert que plusieurs pages du site (Vitrine, pages catégories, etc.) demandaient déjà ce texte français à la base de données sans jamais l'obtenir, car la colonne n'existait pas encore : cette correction répare donc aussi cet affichage au passage.
+
+---
+
 ## [2026-07-16] — Ajout des localisations (adresse, lien Google Maps, ville/région en 3 langues) sur 15 expériences standalone
 
 ### Ce qui a changé côté code

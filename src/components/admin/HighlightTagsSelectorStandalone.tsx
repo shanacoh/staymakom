@@ -25,6 +25,7 @@ export interface LocalTagEntry {
 interface TagObject {
   id: string;
   label_en: string;
+  label_fr?: string | null;
   label_he?: string | null;
   is_common: boolean;
   slug: string;
@@ -41,6 +42,7 @@ export function HighlightTagsSelectorStandalone({ experienceId, localTags, onLoc
   const queryClient = useQueryClient();
   const [showCustomDialog, setShowCustomDialog] = useState(false);
   const [customLabelEn, setCustomLabelEn] = useState("");
+  const [customLabelFr, setCustomLabelFr] = useState("");
   const [customLabelHe, setCustomLabelHe] = useState("");
   const [sessionCustomTags, setSessionCustomTags] = useState<TagObject[]>([]);
 
@@ -146,11 +148,11 @@ export function HighlightTagsSelectorStandalone({ experienceId, localTags, onLoc
   });
 
   const createCustomTagMutation = useMutation({
-    mutationFn: async ({ labelEn, labelHe }: { labelEn: string; labelHe: string }) => {
+    mutationFn: async ({ labelEn, labelFr, labelHe }: { labelEn: string; labelFr: string; labelHe: string }) => {
       const slug = `custom-${labelEn.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")}-${Date.now()}`;
       const { data: newTag, error: tagError } = await supabase
         .from("highlight_tags")
-        .insert({ slug, label_en: labelEn, label_he: labelHe || null, is_common: false, display_order: 100 })
+        .insert({ slug, label_en: labelEn, label_fr: labelFr || null, label_he: labelHe || null, is_common: false, display_order: 100 })
         .select()
         .single();
       if (tagError) throw tagError;
@@ -171,6 +173,7 @@ export function HighlightTagsSelectorStandalone({ experienceId, localTags, onLoc
       }
       setShowCustomDialog(false);
       setCustomLabelEn("");
+      setCustomLabelFr("");
       setCustomLabelHe("");
       toast.success("Tag personnalisé créé !");
     },
@@ -251,6 +254,7 @@ export function HighlightTagsSelectorStandalone({ experienceId, localTags, onLoc
                 />
                 <div className="flex flex-col min-w-0">
                   <span className="text-sm font-medium truncate">{tag.label_en}</span>
+                  {tag.label_fr && <span className="text-xs text-muted-foreground truncate">{tag.label_fr}</span>}
                   {tag.label_he && <span className="text-xs text-muted-foreground truncate" dir="rtl">{tag.label_he}</span>}
                 </div>
               </label>
@@ -264,6 +268,7 @@ export function HighlightTagsSelectorStandalone({ experienceId, localTags, onLoc
                 />
                 <div className="flex flex-col min-w-0">
                   <span className="text-sm font-medium truncate">{tag.label_en}</span>
+                  {tag.label_fr && <span className="text-xs text-muted-foreground truncate">{tag.label_fr}</span>}
                   {tag.label_he && <span className="text-xs text-muted-foreground truncate" dir="rtl">{tag.label_he}</span>}
                   <span className="text-[10px] text-accent font-medium">Custom</span>
                 </div>
@@ -284,10 +289,14 @@ export function HighlightTagsSelectorStandalone({ experienceId, localTags, onLoc
             <DialogTitle>Créer un tag personnalisé</DialogTitle>
             <DialogDescription>Ce tag sera unique à cette expérience</DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-4">
+          <div className="grid grid-cols-3 gap-4 py-4">
             <div className="space-y-2">
               <Label>Label (Anglais) *</Label>
-              <Input value={customLabelEn} onChange={(e) => setCustomLabelEn(e.target.value)} placeholder="ex : Private Beach" onKeyDown={(e) => e.key === "Enter" && createCustomTagMutation.mutate({ labelEn: customLabelEn.trim(), labelHe: customLabelHe.trim() })} />
+              <Input value={customLabelEn} onChange={(e) => setCustomLabelEn(e.target.value)} placeholder="ex : Private Beach" onKeyDown={(e) => e.key === "Enter" && createCustomTagMutation.mutate({ labelEn: customLabelEn.trim(), labelFr: customLabelFr.trim(), labelHe: customLabelHe.trim() })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Label (Français)</Label>
+              <Input value={customLabelFr} onChange={(e) => setCustomLabelFr(e.target.value)} placeholder="ex : Plage privée" onKeyDown={(e) => e.key === "Enter" && createCustomTagMutation.mutate({ labelEn: customLabelEn.trim(), labelFr: customLabelFr.trim(), labelHe: customLabelHe.trim() })} />
             </div>
             <div className="space-y-2">
               <Label>Label (Hébreu)</Label>
@@ -296,7 +305,7 @@ export function HighlightTagsSelectorStandalone({ experienceId, localTags, onLoc
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setShowCustomDialog(false)}>Annuler</Button>
-            <Button type="button" onClick={() => createCustomTagMutation.mutate({ labelEn: customLabelEn.trim(), labelHe: customLabelHe.trim() })} disabled={createCustomTagMutation.isPending || !customLabelEn.trim()}>
+            <Button type="button" onClick={() => createCustomTagMutation.mutate({ labelEn: customLabelEn.trim(), labelFr: customLabelFr.trim(), labelHe: customLabelHe.trim() })} disabled={createCustomTagMutation.isPending || !customLabelEn.trim()}>
               {createCustomTagMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Créer le tag
             </Button>

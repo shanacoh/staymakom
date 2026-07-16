@@ -26,6 +26,7 @@ export function HighlightTagsSelector({ experienceId }: HighlightTagsSelectorPro
   const queryClient = useQueryClient();
   const [showCustomDialog, setShowCustomDialog] = useState(false);
   const [customLabelEn, setCustomLabelEn] = useState("");
+  const [customLabelFr, setCustomLabelFr] = useState("");
   const [customLabelHe, setCustomLabelHe] = useState("");
 
   // Fetch all common tags
@@ -118,13 +119,14 @@ export function HighlightTagsSelector({ experienceId }: HighlightTagsSelectorPro
 
   // Create custom tag mutation
   const createCustomTagMutation = useMutation({
-    mutationFn: async ({ labelEn, labelHe }: { labelEn: string; labelHe: string }) => {
+    mutationFn: async ({ labelEn, labelFr, labelHe }: { labelEn: string; labelFr: string; labelHe: string }) => {
       const slug = labelEn.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
       const { data, error } = await supabase
         .from("highlight_tags")
         .insert({
           slug: `custom-${slug}-${Date.now()}`,
           label_en: labelEn,
+          label_fr: labelFr || null,
           label_he: labelHe || null,
           is_common: false,
           display_order: 100,
@@ -142,6 +144,7 @@ export function HighlightTagsSelector({ experienceId }: HighlightTagsSelectorPro
       }
       setShowCustomDialog(false);
       setCustomLabelEn("");
+      setCustomLabelFr("");
       setCustomLabelHe("");
       toast.success("Custom tag created");
     },
@@ -165,6 +168,7 @@ export function HighlightTagsSelector({ experienceId }: HighlightTagsSelectorPro
     }
     createCustomTagMutation.mutate({
       labelEn: customLabelEn.trim(),
+      labelFr: customLabelFr.trim(),
       labelHe: customLabelHe.trim(),
     });
   };
@@ -252,6 +256,11 @@ export function HighlightTagsSelector({ experienceId }: HighlightTagsSelectorPro
                 />
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">{tag.label_en}</span>
+                  {tag.label_fr && (
+                    <span className="text-xs text-muted-foreground">
+                      {tag.label_fr}
+                    </span>
+                  )}
                   {tag.label_he && (
                     <span className="text-xs text-muted-foreground" dir="rtl">
                       {tag.label_he}
@@ -284,7 +293,7 @@ export function HighlightTagsSelector({ experienceId }: HighlightTagsSelectorPro
               Add a unique tag for this experience (e.g., "Private Beach", "Horseback Riding")
             </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-4">
+          <div className="grid grid-cols-3 gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="custom-label-en">Label (English) *</Label>
               <Input
@@ -292,6 +301,15 @@ export function HighlightTagsSelector({ experienceId }: HighlightTagsSelectorPro
                 value={customLabelEn}
                 onChange={(e) => setCustomLabelEn(e.target.value)}
                 placeholder="e.g., Private Beach"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="custom-label-fr">Label (French)</Label>
+              <Input
+                id="custom-label-fr"
+                value={customLabelFr}
+                onChange={(e) => setCustomLabelFr(e.target.value)}
+                placeholder="e.g., Plage privée"
               />
             </div>
             <div className="space-y-2">

@@ -1973,6 +1973,7 @@ export type Database = {
           id: string
           is_common: boolean
           label_en: string
+          label_fr: string | null
           label_he: string | null
           slug: string
           updated_at: string
@@ -1984,6 +1985,7 @@ export type Database = {
           id?: string
           is_common?: boolean
           label_en: string
+          label_fr?: string | null
           label_he?: string | null
           slug: string
           updated_at?: string
@@ -1995,6 +1997,7 @@ export type Database = {
           id?: string
           is_common?: boolean
           label_en?: string
+          label_fr?: string | null
           label_he?: string | null
           slug?: string
           updated_at?: string
