@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-07-16 ter] — Complétion des textes hébreu manquants sur 10 expériences standalone
+
+### Ce qui a changé côté code
+- Aucun changement de code.
+
+### Ce qui a changé côté base de données
+- Nouvelle migration `20260716010000_fill_hebrew_content_10_standalone_experiences.sql` : renseigne le sous-titre, la description longue, les champs SEO (titre, meta-description, titre et description de partage) en hébreu, ainsi que le texte hébreu des "inclusions" (ce qui est compris dans l'expérience), pour 10 fiches créées le 2026-07-13 : Surf à Tel Aviv, Bateau à Fond de Verre Eilat, Plongée et Snorkeling Dolphin Reef, Vélo Anti Jet-Lag, Tel Aviv à Vélo, Chocolat dans le Noir, Dîner dans le Noir, Vélo et Vin Collines de Judée, Jérusalem de Nuit à Vélo.
+- Le titre hébreu de ces 10 fiches existait déjà (ajouté lors du renommage du 2026-07-15) et n'a pas été modifié.
+
+### Pourquoi ce changement
+- Shana a remarqué que la version hébreu de 14 expériences récemment ajoutées n'apparaissait pas correctement en ligne. Vérification faite : sur ces 14 fiches, 10 n'avaient que le titre traduit en hébreu — le sous-titre et la description longue étaient restés vides, donc la page affichait un titre hébreu suivi d'un texte anglais par défaut. Shana a fourni les traductions manquantes, intégrées ici. À noter séparément : 12 des 14 fiches restent en statut "brouillon" et ne sont pas listées sur le site principal (dans aucune langue) — décision de Shana de les laisser ainsi pour l'instant.
+
+---
+
 ## [2026-07-16 bis] — Ajout du champ français manquant à la création de badges (expériences avec ou sans hôtel)
 
 ### Ce qui a changé côté code
