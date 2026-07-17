@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-07-17] — Reformulation des items "ce qui est inclus" sur 14 expériences standalone
+
+### Ce qui a changé côté code
+- Aucun changement de code.
+
+### Ce qui a changé côté base de données
+- Migration `20260717000000_expand_includes_14_standalone_experiences.sql` : premier essai de reformulation des 54 items "ce qui est inclus" (surf, bateau à fond de verre, plongée/snorkeling Dolphin Reef, vélos, chocolat/dîner dans le noir, vélo et vin Judée, cours de cuisine, poterie, dîner Imersion, Time Elevator) en phrases longues — corrigé dans la migration suivante.
+- Migration `20260717010000_shorten_includes_14_standalone_experiences.sql` : reformule les mêmes 54 items en phrases courtes et précises (quelques mots), dans les 3 langues (anglais, français, hébreu), en gardant le ton déjà utilisé sur le reste des fiches.
+
+### Pourquoi ce changement
+- Shana a demandé d'améliorer la clarté de cette section. Premier essai trop long (phrases de plusieurs lignes) : corrigé au format court demandé, une phrase précise de quelques mots par item.
+
+---
+
 ## [2026-07-16 ter] — Complétion des textes hébreu manquants sur 10 expériences standalone
 
 ### Ce qui a changé côté code
