@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-07-19] — Correction de l'affichage tronqué des items "ce qui est inclus"
+
+### Ce qui a changé côté code
+- `src/components/experience-test/WhatsIncludedPhotos2.tsx` : le titre de chaque item "ce qui est inclus" avait une hauteur fixe (`h-8 sm:h-9`) en plus de la limite à 2 lignes (`line-clamp-2`). Ces deux règles n'étaient pas calées l'une sur l'autre, ce qui coupait parfois le texte avec des points de suspension avant même d'avoir rempli les 2 lignes disponibles. La hauteur fixe est remplacée par une hauteur minimale (`min-h-8 sm:min-h-9`), qui laisse la vraie règle des 2 lignes s'appliquer correctement. Ce composant est utilisé sur toutes les fiches expérience du site (standalone et Experience2), donc la correction profite à toutes les fiches, pas seulement aux 14 récentes.
+
+### Ce qui a changé côté base de données
+- Migration `20260717020000_shorten_overlong_includes.sql` puis `20260719000000_tighten_includes_14_standalone_experiences.sql` : resserrent une vingtaine d'items "ce qui est inclus" (sur les 54 des 14 expériences récentes) qui restaient trop longs pour tenir sur 2 lignes, même une fois le bug d'affichage corrigé — certains mots longs enchaînés (ex. "Storytelling and historical commentary") empêchaient un bon retour à la ligne. Vérifié visuellement sur plusieurs fiches (vélo et vin Judée, Tel Aviv à vélo, Jérusalem de nuit) : tous les items s'affichent maintenant en entier.
+
+### Pourquoi ce changement
+- Shana a signalé des textes coupés avec "..." sur les cartes "inclus", même après le raccourcissement du 17 juillet. L'investigation a révélé un vrai bug d'affichage (hauteur de carte mal calée) en plus de quelques textes encore trop longs pour l'espace disponible.
+
+---
+
 ## [2026-07-17] — Reformulation des items "ce qui est inclus" sur 14 expériences standalone
 
 ### Ce qui a changé côté code
