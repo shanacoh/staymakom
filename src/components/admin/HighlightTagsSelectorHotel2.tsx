@@ -23,6 +23,7 @@ import {
 interface TagObject {
   id: string;
   label_en: string;
+  label_fr?: string | null;
   label_he?: string | null;
   is_common: boolean;
   slug: string;
@@ -37,6 +38,7 @@ export function HighlightTagsSelectorHotel2({ hotelId }: Props) {
   const queryClient = useQueryClient();
   const [showCustomDialog, setShowCustomDialog] = useState(false);
   const [customLabelEn, setCustomLabelEn] = useState("");
+  const [customLabelFr, setCustomLabelFr] = useState("");
   const [customLabelHe, setCustomLabelHe] = useState("");
   const [sessionCustomTags, setSessionCustomTags] = useState<TagObject[]>([]);
 
@@ -138,11 +140,11 @@ export function HighlightTagsSelectorHotel2({ hotelId }: Props) {
   });
 
   const createCustomTagMutation = useMutation({
-    mutationFn: async ({ labelEn, labelHe }: { labelEn: string; labelHe: string }) => {
+    mutationFn: async ({ labelEn, labelFr, labelHe }: { labelEn: string; labelFr: string; labelHe: string }) => {
       const slug = `custom-${labelEn.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")}-${Date.now()}`;
       const { data: newTag, error: tagError } = await supabase
         .from("highlight_tags")
-        .insert({ slug, label_en: labelEn, label_he: labelHe || null, is_common: false, display_order: 100 })
+        .insert({ slug, label_en: labelEn, label_fr: labelFr || null, label_he: labelHe || null, is_common: false, display_order: 100 })
         .select()
         .single();
       if (tagError) throw tagError;
@@ -160,6 +162,7 @@ export function HighlightTagsSelectorHotel2({ hotelId }: Props) {
       queryClient.invalidateQueries({ queryKey: ["hotel2-highlight-tags", hotelId] });
       setShowCustomDialog(false);
       setCustomLabelEn("");
+      setCustomLabelFr("");
       setCustomLabelHe("");
       toast.success("Tag personnalisé créé !");
     },
@@ -250,6 +253,9 @@ export function HighlightTagsSelectorHotel2({ hotelId }: Props) {
                 />
                 <div className="flex flex-col min-w-0">
                   <span className="text-sm font-medium truncate">{tag.label_en}</span>
+                  {tag.label_fr && (
+                    <span className="text-xs text-muted-foreground truncate">{tag.label_fr}</span>
+                  )}
                   {tag.label_he && (
                     <span className="text-xs text-muted-foreground truncate" dir="rtl">{tag.label_he}</span>
                   )}
@@ -268,6 +274,9 @@ export function HighlightTagsSelectorHotel2({ hotelId }: Props) {
                 />
                 <div className="flex flex-col min-w-0">
                   <span className="text-sm font-medium truncate">{tag.label_en}</span>
+                  {tag.label_fr && (
+                    <span className="text-xs text-muted-foreground truncate">{tag.label_fr}</span>
+                  )}
                   {tag.label_he && (
                     <span className="text-xs text-muted-foreground truncate" dir="rtl">{tag.label_he}</span>
                   )}
@@ -290,7 +299,7 @@ export function HighlightTagsSelectorHotel2({ hotelId }: Props) {
             <DialogTitle>Créer un tag personnalisé</DialogTitle>
             <DialogDescription>Ce tag sera propre à cet hôtel</DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-4">
+          <div className="grid grid-cols-3 gap-4 py-4">
             <div className="space-y-2">
               <Label>Label (Anglais) *</Label>
               <Input
@@ -299,7 +308,19 @@ export function HighlightTagsSelectorHotel2({ hotelId }: Props) {
                 placeholder="ex : Private Pool"
                 onKeyDown={(e) =>
                   e.key === "Enter" &&
-                  createCustomTagMutation.mutate({ labelEn: customLabelEn.trim(), labelHe: customLabelHe.trim() })
+                  createCustomTagMutation.mutate({ labelEn: customLabelEn.trim(), labelFr: customLabelFr.trim(), labelHe: customLabelHe.trim() })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Label (Français)</Label>
+              <Input
+                value={customLabelFr}
+                onChange={(e) => setCustomLabelFr(e.target.value)}
+                placeholder="ex : Piscine privée"
+                onKeyDown={(e) =>
+                  e.key === "Enter" &&
+                  createCustomTagMutation.mutate({ labelEn: customLabelEn.trim(), labelFr: customLabelFr.trim(), labelHe: customLabelHe.trim() })
                 }
               />
             </div>
@@ -321,7 +342,7 @@ export function HighlightTagsSelectorHotel2({ hotelId }: Props) {
             <Button
               type="button"
               onClick={() =>
-                createCustomTagMutation.mutate({ labelEn: customLabelEn.trim(), labelHe: customLabelHe.trim() })
+                createCustomTagMutation.mutate({ labelEn: customLabelEn.trim(), labelFr: customLabelFr.trim(), labelHe: customLabelHe.trim() })
               }
               disabled={createCustomTagMutation.isPending || !customLabelEn.trim()}
             >

@@ -6,7 +6,7 @@
 
 ---
 
-## [2026-07-15] — Correction critique : les paiements ne validaient jamais les réservations « only »
+## [2026-07-21] — Correction critique : les paiements ne validaient jamais les réservations « only »
 
 ### Ce qui a changé côté code
 - `supabase/functions/revolut-webhook/index.ts` : **correction de la vérification de signature**. Revolut signe ses notifications sur la combinaison `v1` + horodatage de la requête + contenu du message (en-tête `Revolut-Request-Timestamp`). Notre code calculait la signature sur le **contenu seul** et ne lisait jamais l'horodatage : la vérification échouait donc systématiquement, le webhook répondait « 401 Invalid signature », et aucune réservation n'était validée. La signature est désormais calculée selon la règle officielle. Ajout aussi de la prise en charge de **plusieurs signatures** dans l'en-tête (cas d'une rotation du secret de signature) et de logs détaillés en cas d'échec.
@@ -28,7 +28,7 @@
 
 ---
 
-## [2026-07-15] — Correction : le paiement plantait faute d'adresse de facturation
+## [2026-07-21] — Correction : le paiement plantait faute d'adresse de facturation
 
 ### Ce qui a changé côté code
 - `src/components/experience/LeadGuestForm.tsx` : le formulaire voyageur collecte désormais l'**adresse de facturation minimale exigée par Revolut** — **pays** (liste déroulante, code ISO) + **code postal** — pour valider une carte. Choix produit : friction minimale au checkout, on ne demande donc pas la rue ni la ville. Ces deux champs sont **obligatoires** et validés (message "Requis" tant qu'ils sont vides), en anglais, français et hébreu. Ajout de deux fonctions partagées : `isLeadGuestComplete` (dit si tout est rempli, adresse comprise) et `buildRevolutBillingAddress` (met l'adresse au format attendu par Revolut). Le modèle de données `LeadGuestData` gagne un champ `postcode`.
@@ -44,6 +44,122 @@
 
 ### À noter (dette pré-existante, non liée)
 - `RevolutPaymentWidget.tsx` importe un type Revolut (`EmbeddedCheckoutInstance`) qui n'est pas ré-exporté par le SDK : petite erreur de typage présente **avant** cette correction, sans effet sur le build. À nettoyer séparément si besoin.
+
+---
+
+## [2026-07-19] — Correction de l'affichage tronqué des items "ce qui est inclus"
+
+### Ce qui a changé côté code
+- `src/components/experience-test/WhatsIncludedPhotos2.tsx` : le titre de chaque item "ce qui est inclus" avait une hauteur fixe (`h-8 sm:h-9`) en plus de la limite à 2 lignes (`line-clamp-2`). Ces deux règles n'étaient pas calées l'une sur l'autre, ce qui coupait parfois le texte avec des points de suspension avant même d'avoir rempli les 2 lignes disponibles. La hauteur fixe est remplacée par une hauteur minimale (`min-h-8 sm:min-h-9`), qui laisse la vraie règle des 2 lignes s'appliquer correctement. Ce composant est utilisé sur toutes les fiches expérience du site (standalone et Experience2), donc la correction profite à toutes les fiches, pas seulement aux 14 récentes.
+
+### Ce qui a changé côté base de données
+- Migration `20260717020000_shorten_overlong_includes.sql` puis `20260719000000_tighten_includes_14_standalone_experiences.sql` : resserrent une vingtaine d'items "ce qui est inclus" (sur les 54 des 14 expériences récentes) qui restaient trop longs pour tenir sur 2 lignes, même une fois le bug d'affichage corrigé — certains mots longs enchaînés (ex. "Storytelling and historical commentary") empêchaient un bon retour à la ligne. Vérifié visuellement sur plusieurs fiches (vélo et vin Judée, Tel Aviv à vélo, Jérusalem de nuit) : tous les items s'affichent maintenant en entier.
+
+### Pourquoi ce changement
+- Shana a signalé des textes coupés avec "..." sur les cartes "inclus", même après le raccourcissement du 17 juillet. L'investigation a révélé un vrai bug d'affichage (hauteur de carte mal calée) en plus de quelques textes encore trop longs pour l'espace disponible.
+
+---
+
+## [2026-07-17] — Reformulation des items "ce qui est inclus" sur 14 expériences standalone
+
+### Ce qui a changé côté code
+- Aucun changement de code.
+
+### Ce qui a changé côté base de données
+- Migration `20260717000000_expand_includes_14_standalone_experiences.sql` : premier essai de reformulation des 54 items "ce qui est inclus" (surf, bateau à fond de verre, plongée/snorkeling Dolphin Reef, vélos, chocolat/dîner dans le noir, vélo et vin Judée, cours de cuisine, poterie, dîner Imersion, Time Elevator) en phrases longues — corrigé dans la migration suivante.
+- Migration `20260717010000_shorten_includes_14_standalone_experiences.sql` : reformule les mêmes 54 items en phrases courtes et précises (quelques mots), dans les 3 langues (anglais, français, hébreu), en gardant le ton déjà utilisé sur le reste des fiches.
+
+### Pourquoi ce changement
+- Shana a demandé d'améliorer la clarté de cette section. Premier essai trop long (phrases de plusieurs lignes) : corrigé au format court demandé, une phrase précise de quelques mots par item.
+
+---
+
+## [2026-07-16 ter] — Complétion des textes hébreu manquants sur 10 expériences standalone
+
+### Ce qui a changé côté code
+- Aucun changement de code.
+
+### Ce qui a changé côté base de données
+- Nouvelle migration `20260716010000_fill_hebrew_content_10_standalone_experiences.sql` : renseigne le sous-titre, la description longue, les champs SEO (titre, meta-description, titre et description de partage) en hébreu, ainsi que le texte hébreu des "inclusions" (ce qui est compris dans l'expérience), pour 10 fiches créées le 2026-07-13 : Surf à Tel Aviv, Bateau à Fond de Verre Eilat, Plongée et Snorkeling Dolphin Reef, Vélo Anti Jet-Lag, Tel Aviv à Vélo, Chocolat dans le Noir, Dîner dans le Noir, Vélo et Vin Collines de Judée, Jérusalem de Nuit à Vélo.
+- Le titre hébreu de ces 10 fiches existait déjà (ajouté lors du renommage du 2026-07-15) et n'a pas été modifié.
+
+### Pourquoi ce changement
+- Shana a remarqué que la version hébreu de 14 expériences récemment ajoutées n'apparaissait pas correctement en ligne. Vérification faite : sur ces 14 fiches, 10 n'avaient que le titre traduit en hébreu — le sous-titre et la description longue étaient restés vides, donc la page affichait un titre hébreu suivi d'un texte anglais par défaut. Shana a fourni les traductions manquantes, intégrées ici. À noter séparément : 12 des 14 fiches restent en statut "brouillon" et ne sont pas listées sur le site principal (dans aucune langue) — décision de Shana de les laisser ainsi pour l'instant.
+
+---
+
+## [2026-07-16 bis] — Ajout du champ français manquant à la création de badges (expériences avec ou sans hôtel)
+
+### Ce qui a changé côté code
+- `src/components/admin/HighlightTagsSelectorStandalone.tsx`, `HighlightTagsSelector.tsx`, `HighlightTagsSelector2.tsx`, `HighlightTagsSelectorHotel2.tsx` : la fenêtre "Créer un tag personnalisé" (badge) proposait uniquement l'anglais et l'hébreu. Elle propose maintenant aussi le français, comme partout ailleurs dans les fiches expérience. Le texte français s'affiche aussi désormais dans la liste des badges existants.
+- `src/integrations/supabase/types.ts` : ajout du champ `label_fr` sur la table `highlight_tags` dans les types générés, pour que le code puisse lire/écrire cette nouvelle colonne.
+
+### Ce qui a changé côté base de données
+- Nouvelle migration `20260715030000_add_label_fr_to_highlight_tags.sql` : ajoute la colonne `label_fr` (texte, facultatif) à la table `highlight_tags`, qui stocke les badges affichés sur les fiches expérience.
+
+### Pourquoi ce changement
+- Shana a remarqué que la création de badge ne demandait pas le texte en français. En creusant, on a aussi découvert que plusieurs pages du site (Vitrine, pages catégories, etc.) demandaient déjà ce texte français à la base de données sans jamais l'obtenir, car la colonne n'existait pas encore : cette correction répare donc aussi cet affichage au passage.
+
+---
+
+## [2026-07-16] — Ajout des localisations (adresse, lien Google Maps, ville/région en 3 langues) sur 15 expériences standalone
+
+### Ce qui a changé côté code
+- Aucun changement de code.
+
+### Ce qui a changé côté base de données
+- Nouvelle migration `20260716000000_add_locations_15_standalone_experiences.sql` : renseigne pour 15 fiches "experience only" (créées lors des sessions précédentes) l'adresse ou le point de repère (en EN/FR/HE), le lien Google Maps, et la ville/région en hébreu (qui manquaient jusqu'ici) :
+  - Cours de Surf, Bateau à Fond de Verre, Baptême de Plongée et Snorkeling Dolphin Reef, Bike and Wine Judean Hills, Tour Vélo Nocturne Jérusalem, Jet Lag Bike Tour, Tour Vélo TLV Century, Chocolate Tasting Workshop, BlackOut Restaurant, Restaurant Immersif Imersion, Time Elevator, Peinture sur Céramique JClay, Cours de Cuisine Citrus & Salt, Stand Up David Azria.
+- Pour 2 fiches (Imersion, Citrus & Salt), seule la ville/région a été renseignée : aucune adresse précise n'est communiquée par ces fournisseurs.
+
+### Pourquoi ce changement
+- Shana a fourni les liens Google Maps et précisions de localisation pour compléter les fiches déjà créées, afin que les futures pages expérience affichent une carte et une localisation correcte dans les 3 langues.
+
+---
+
+## [2026-07-15 quater] — Renommage des titres de 14 expériences standalone (EN/FR/HE)
+
+### Ce qui a changé côté code
+- Aucun changement de code.
+
+### Ce qui a changé côté base de données
+- Nouvelle migration `20260715020000_rename_14_standalone_experiences_titles.sql` : met à jour le titre (anglais, français, hébreu) de 14 fiches d'expérience déjà existantes, pour adopter un style plus court et accrocheur, cohérent avec les autres fiches du catalogue (ex. « Private Surf Lesson on Tel Aviv Beach » devient « SURF LESSON ON THE TEL AVIV SHORE » / « COURS DE SURF À TEL AVIV » / « שיעור גלישה בחוף תל אביב »). Les 14 fiches concernées : surf à Tel Aviv, bateau à fond de verre à Eilat, plongée et snorkeling au Dolphin Reef, vélo anti jet lag, vélo facile à Tel Aviv, chocolat dans le noir, BlackOut Restaurant, vélo et vin dans les collines de Judée, vélo de nuit à Jérusalem, l'Ascenseur du Temps, cours de cuisine à Tel Aviv, dîner immersif chez Imersion, et poterie chez JClay.
+- Seul le titre affiché a changé ; les textes de référencement Google (SEO) et les titres de partage sur les réseaux sociaux n'ont pas été touchés, car Shana n'a demandé que le changement des noms.
+
+### Pourquoi ce changement
+- Shana a fourni une nouvelle liste de titres (ancien → nouveau) pour ces 14 fiches, à appliquer dans les 3 langues du site.
+
+---
+
+## [2026-07-15 ter] — Ajout de 4 expériences standalone (spectacle David Azria, dégustation vin à Jaffa, menu Picual, atelier sheshbesh)
+
+### Ce qui a changé côté code
+- Aucun changement de code.
+
+### Ce qui a changé côté base de données
+- Nouvelle migration `20260715020000_seed_4_standalone_experiences_show_wine_food_family_batch.sql` : ajoute 4 fiches "experience only", en anglais, français et hébreu :
+  - **Soirée Stand-Up avec David Azria** (Tel Aviv) — spectacle à date unique, le mardi 18 août 2026 à 20h au ZOA House. Modélisé avec une disponibilité limitée à cette seule date. Catégorie posée sur "Family Fun", faute d'indication dans la fiche source (validé avec Shana en session).
+  - **Balade et Dégustation à Jaffa** (Foody Discovery) — balade guidée avec 4 dégustations de vin et tapas locaux.
+  - **Menu Dégustation chez Picual** (Foody Discovery) — menu dégustation casher en dix services à Rishon LeZion.
+  - **Atelier Peinture Sheshbesh** (Family Fun) — atelier peinture sur plateau de backgammon à Zichron Yaakov.
+- Les 4 fiches sont créées en statut **brouillon** : les prix fournisseurs n'ont pas été communiqués, à confirmer avant publication. Aucun badge "Show"/"Spectacle" n'existe encore pour le stand-up de David Azria — à créer côté CMS si besoin.
+
+### Pourquoi ce changement
+- Shana a fourni ces 4 fiches à intégrer dans le back office.
+
+---
+
+## [2026-07-15 bis] — Ajout d'une expérience standalone : cours de cuisine Citrus & Salt (Tel Aviv)
+
+### Ce qui a changé côté code
+- Aucun changement de code.
+
+### Ce qui a changé côté base de données
+- Nouvelle migration `20260715010000_seed_cooking_class_citrus_salt_tel_aviv.sql` : ajoute la fiche "experience only" **Cooking Classes in Tel Aviv** (Foody Discovery), cours de cuisine dans un studio de Tel Aviv, une cuisine par séance (israélienne, thaïlandaise, italienne, indienne...). Textes en anglais, français et hébreu, plus le référencement Google dans les 3 langues.
+- Créée en statut **brouillon** : le prix fournisseur n'a pas été communiqué, à confirmer avant publication.
+
+### Pourquoi ce changement
+- Shana a fourni cette fiche à intégrer dans le back office.
 
 ---
 

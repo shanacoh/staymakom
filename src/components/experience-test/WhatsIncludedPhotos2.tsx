@@ -90,7 +90,7 @@ const WhatsIncludedPhotos2 = ({ experienceId, lang = "en", longCopy, source = "e
                 )}
               </div>
               <div className="flex flex-col flex-1">
-                <h3 className="font-semibold text-xs sm:text-sm leading-tight line-clamp-2 h-8 sm:h-9 text-foreground">
+                <h3 className="font-semibold text-xs sm:text-sm leading-tight line-clamp-2 min-h-8 sm:min-h-9 text-foreground">
                   {title}
                 </h3>
                 {description && (
