@@ -1,6 +1,20 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-async function verifySignature(body: string, signature: string, secret: string): Promise<boolean> {
+/**
+ * Calcule la signature attendue selon la règle officielle Revolut.
+ *
+ * Revolut ne signe PAS le contenu seul : il signe la concaténation
+ *   "v1" + "." + horodatage de la requête + "." + contenu brut
+ * puis renvoie le résultat dans l'en-tête Revolut-Signature au format "v1=<hmac hex>".
+ *
+ * L'horodatage vient de l'en-tête Revolut-Request-Timestamp.
+ * Doc : https://developer.revolut.com/docs/guides/merchant/monitor-and-observe/webhooks/verify-the-payload-signature
+ */
+async function computeExpectedSignature(
+  timestamp: string,
+  body: string,
+  secret: string,
+): Promise<string> {
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     'raw',
@@ -9,9 +23,32 @@ async function verifySignature(body: string, signature: string, secret: string):
     false,
     ['sign'],
   );
-  const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(body));
-  const expected = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
-  return expected === signature.toLowerCase();
+  const payloadToSign = `v1.${timestamp}.${body}`;
+  const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(payloadToSign));
+  const hex = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return `v1=${hex}`;
+}
+
+/**
+ * Vérifie la signature d'un webhook Revolut.
+ *
+ * L'en-tête peut contenir PLUSIEURS signatures séparées par des virgules — c'est le cas
+ * pendant une rotation du secret de signature, où Revolut signe avec l'ancien ET le
+ * nouveau secret. Il suffit qu'une seule corresponde pour que le message soit authentique.
+ */
+async function verifySignature(
+  body: string,
+  timestamp: string,
+  signatureHeader: string,
+  secret: string,
+): Promise<boolean> {
+  // Sans horodatage, la signature ne peut pas être recalculée : on refuse.
+  if (!timestamp) return false;
+  const expected = (await computeExpectedSignature(timestamp, body, secret)).toLowerCase();
+  return signatureHeader
+    .split(',')
+    .map(s => s.trim().toLowerCase())
+    .some(s => s === expected);
 }
 
 Deno.serve(async (req) => {
@@ -26,12 +63,20 @@ Deno.serve(async (req) => {
   const rawBody = await req.text();
 
   if (WEBHOOK_SECRET) {
-    const rawSig = req.headers.get('revolut-signature') || req.headers.get('x-revolut-signature') || '';
-    const signature = rawSig.replace(/^v1=/, '');
-    if (signature) {
-      const valid = await verifySignature(rawBody, signature, WEBHOOK_SECRET);
+    const signatureHeader = req.headers.get('revolut-signature') || req.headers.get('x-revolut-signature') || '';
+    const requestTimestamp = req.headers.get('revolut-request-timestamp') || '';
+    if (signatureHeader) {
+      const valid = await verifySignature(rawBody, requestTimestamp, signatureHeader, WEBHOOK_SECRET);
       if (!valid) {
-        console.error('Invalid webhook signature');
+        // Log détaillé : sans horodatage, la cause est un en-tête manquant ; sinon c'est
+        // un secret qui ne correspond pas à celui du webhook configuré chez Revolut.
+        console.error('Invalid webhook signature', JSON.stringify({
+          hasTimestampHeader: !!requestTimestamp,
+          signatureCount: signatureHeader.split(',').length,
+          hint: requestTimestamp
+            ? 'Horodatage présent : vérifier que REVOLUT_WEBHOOK_SIGNING_SECRET correspond au signing secret du webhook côté Revolut.'
+            : 'En-tête Revolut-Request-Timestamp absent : impossible de recalculer la signature.',
+        }));
         return new Response('Invalid signature', { status: 401 });
       }
     }

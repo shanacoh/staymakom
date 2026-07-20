@@ -1,5 +1,6 @@
 import { RevolutDebugTestRunner } from '@/components/admin/revolut/RevolutDebugTestRunner';
 import { RevolutLivePaymentTester } from '@/components/admin/revolut/RevolutLivePaymentTester';
+import { RevolutWebhookTester } from '@/components/admin/revolut/RevolutWebhookTester';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const RevolutDebugPage = () => {
@@ -18,6 +19,10 @@ const RevolutDebugPage = () => {
           <RevolutDebugTestRunner />
         </CardContent>
       </Card>
+
+      {/* Test de la signature du webhook — vérifie que les notifications de paiement
+          Revolut sont bien acceptées (c'est ce qui valide les réservations "only"). */}
+      <RevolutWebhookTester />
 
       {/* Test paiement live — déclenche un vrai ordre Revolut isolé du flow réservation */}
       <RevolutLivePaymentTester />

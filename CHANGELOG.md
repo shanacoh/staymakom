@@ -6,6 +6,28 @@
 
 ---
 
+## [2026-07-15] — Correction critique : les paiements ne validaient jamais les réservations « only »
+
+### Ce qui a changé côté code
+- `supabase/functions/revolut-webhook/index.ts` : **correction de la vérification de signature**. Revolut signe ses notifications sur la combinaison `v1` + horodatage de la requête + contenu du message (en-tête `Revolut-Request-Timestamp`). Notre code calculait la signature sur le **contenu seul** et ne lisait jamais l'horodatage : la vérification échouait donc systématiquement, le webhook répondait « 401 Invalid signature », et aucune réservation n'était validée. La signature est désormais calculée selon la règle officielle. Ajout aussi de la prise en charge de **plusieurs signatures** dans l'en-tête (cas d'une rotation du secret de signature) et de logs détaillés en cas d'échec.
+- `supabase/functions/revolut-payment/index.ts` : nouvelle action de debug **`test-webhook`** (réservée aux admins). Elle envoie deux faux webhooks à notre propre endpoint — l'un signé selon la règle officielle Revolut, l'autre selon l'ancienne méthode — et compare les réponses. Sans effet de bord : l'événement utilisé n'est traité par aucun cas du webhook, donc aucune réservation n'est lue ni modifiée.
+- `supabase/functions/revolut-payment/index.ts` : seconde action de debug **`check-webhook-config`** (admins uniquement). Elle interroge Revolut (`GET /webhooks`) pour connaître la configuration réellement déclarée : vers quelle URL le webhook pointe, quel est son signing secret, et quels événements il écoute. Le secret renvoyé par Revolut est comparé **côté serveur** à celui stocké dans Supabase et n'est jamais transmis au navigateur (seul un aperçu masqué est affiché). Cette vérification lève une limite du test de signature, qui signe et vérifie avec le même secret local et ne peut donc pas prouver que ce secret est le bon.
+- `src/components/admin/revolut/RevolutWebhookTester.tsx` (nouveau) : carte + bouton « Lancer le test du webhook » dans le back-office, avec verdict lisible (signature correcte / défaillante / ambiguë), plus un bouton « Vérifier la configuration côté Revolut » (URL, secret, événements).
+- `src/pages/admin/revolut/DebugPage.tsx` : affiche la nouvelle carte de test dans la console de debug Revolut.
+
+### Ce qui a changé côté base de données
+- Aucun changement de structure.
+
+### Pourquoi ce changement
+- Un client avait payé, l'argent était bien arrivé sur le compte Revolut, mais sa réservation restait bloquée en « en attente ». Cause : pour les expériences « only », **le webhook est le seul mécanisme qui valide la réservation** après paiement — et il rejetait toutes les notifications de Revolut à cause d'une signature mal calculée (logs Supabase : « Invalid webhook signature » à chaque appel, y compris sur les réessais de Revolut). Les réservations d'hôtel n'étaient pas visiblement touchées car elles sont marquées « payées » directement à la réservation.
+
+### ⚠️ À faire côté exploitation (hors code)
+- **Déployer** `revolut-webhook` et `revolut-payment` sur Supabase pour activer la correction et le test.
+- **Rejouer le test** depuis le back-office (Revolut Debug → « Lancer le test du webhook ») : la signature officielle doit désormais être acceptée.
+- **Régulariser les réservations bloquées** : les réservations « only » payées côté Revolut mais restées en « en attente » doivent être passées en payées/confirmées.
+
+---
+
 ## [2026-07-15] — Correction : le paiement plantait faute d'adresse de facturation
 
 ### Ce qui a changé côté code
