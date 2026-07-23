@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-07-23] — Tri de la liste des expériences dans le back office
+
+### Ce qui a changé côté code
+- `src/pages/admin/Experiences2.tsx` : ajout d'un menu déroulant "Trier par" sur la page des expériences (onglets "With Hotel" et "Experience Only"), avec 4 choix : Dernière modification (nouveau réglage par défaut), Ordre manuel (glisser-déposer, comme avant), Date de création, Statut (brouillons regroupés en premier). Le glisser-déposer se désactive automatiquement (poignée grisée + message explicatif) tant que le tri n'est pas sur "Ordre manuel", pour éviter toute confusion entre l'ordre affiché et l'ordre réellement enregistré.
+- Les requêtes de récupération des expériences (avec hôtel et standalone) récupèrent maintenant aussi les dates de création et de dernière modification, déjà présentes en base mais pas encore utilisées côté back office.
+
+### Ce qui a changé côté base de données
+- Aucune migration nécessaire : les colonnes `created_at`, `updated_at` et `status` existaient déjà sur les tables `experiences2` et `standalone_experiences`.
+
+### Pourquoi ce changement
+- Shana voulait pouvoir classer facilement les expériences dans le back office (par exemple voir les plus récemment modifiées en premier, ou regrouper les brouillons), plutôt que d'être limitée au seul ordre manuel fixé par glisser-déposer.
+
+---
+
 ## [2026-07-21] — Correction critique : les paiements ne validaient jamais les réservations « only »
 
 ### Ce qui a changé côté code

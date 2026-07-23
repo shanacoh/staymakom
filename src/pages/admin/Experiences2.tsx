@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -58,6 +58,7 @@ const AdminExperiences2 = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [hotelFilter, setHotelFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"updated_desc" | "manual" | "created_desc" | "status">("updated_desc");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [experienceToDelete, setExperienceToDelete] = useState<string | null>(null);
   const [opsPanel, setOpsPanel] = useState<{ id: string; title: string } | null>(null);
@@ -98,7 +99,7 @@ const AdminExperiences2 = () => {
         .select(
           `
           id, title, status, slug, hero_image, photos, thumbnail_image, hotel_id, display_order,
-          pricing_model, room_net_rate, bar_rate_markup_value, bar_rate,
+          pricing_model, room_net_rate, bar_rate_markup_value, bar_rate, created_at, updated_at,
           experience_net_cost, commission_room_pct, commission_addons_pct, show_on_v3_only,
           hotels2 (id, name, hyperguest_property_id),
           categories (id, name, slug),
@@ -117,33 +118,62 @@ const AdminExperiences2 = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_experiences")
-        .select("id, slug, title, status, hero_image, photos, base_price, currency, display_order, availability_end_date, available_days, blocked_dates, show_on_v3_only, categories(id, name, slug)")
+        .select("id, slug, title, status, hero_image, photos, base_price, currency, display_order, created_at, updated_at, availability_end_date, available_days, blocked_dates, show_on_v3_only, categories(id, name, slug)")
         .order("display_order", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return data as any[];
     },
   });
 
-  // Expériences avec hôtel filtrées
-  const displayedExperiences = experiences?.filter((exp) => {
-    const matchesCategory = !selectedCategory || (exp as any).categories?.slug === selectedCategory;
-    const matchesSearch = exp.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "all" || exp.status === statusFilter;
-    let matchesHotel = true;
-    if (hotelFilter !== "all") {
-      const ids = ((exp as any).experience2_hotels || []).map((eh: any) => eh.hotels2?.id);
-      matchesHotel = exp.hotel_id === hotelFilter || ids.includes(hotelFilter);
-    }
-    return matchesCategory && matchesSearch && matchesStatus && matchesHotel;
-  });
+  const STATUS_SORT_PRIORITY: Record<string, number> = { draft: 0, pending: 1, published: 2, archived: 3 };
 
-  // Expériences standalone filtrées
-  const displayedStandalone = (standaloneExps || []).filter((exp: any) => {
-    const matchesCategory = !selectedCategory || exp.categories?.slug === selectedCategory;
-    const matchesSearch = exp.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "all" || exp.status === statusFilter;
-    return matchesCategory && matchesSearch && matchesStatus;
-  });
+  const sortExperiences = useCallback(<T extends { created_at?: string; updated_at?: string; status?: string }>(
+    list: T[]
+  ): T[] => {
+    if (sortBy === "manual") return list;
+    const sorted = [...list];
+    if (sortBy === "updated_desc") {
+      sorted.sort(
+        (a, b) =>
+          new Date(b.updated_at || b.created_at || 0).getTime() -
+          new Date(a.updated_at || a.created_at || 0).getTime()
+      );
+    } else if (sortBy === "created_desc") {
+      sorted.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+    } else if (sortBy === "status") {
+      sorted.sort(
+        (a, b) => (STATUS_SORT_PRIORITY[a.status || "draft"] ?? 99) - (STATUS_SORT_PRIORITY[b.status || "draft"] ?? 99)
+      );
+    }
+    return sorted;
+  }, [sortBy]);
+
+  // Expériences avec hôtel filtrées puis triées
+  const displayedExperiences = useMemo(() => {
+    const filtered = (experiences || []).filter((exp) => {
+      const matchesCategory = !selectedCategory || (exp as any).categories?.slug === selectedCategory;
+      const matchesSearch = exp.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === "all" || exp.status === statusFilter;
+      let matchesHotel = true;
+      if (hotelFilter !== "all") {
+        const ids = ((exp as any).experience2_hotels || []).map((eh: any) => eh.hotels2?.id);
+        matchesHotel = exp.hotel_id === hotelFilter || ids.includes(hotelFilter);
+      }
+      return matchesCategory && matchesSearch && matchesStatus && matchesHotel;
+    });
+    return sortExperiences(filtered);
+  }, [experiences, selectedCategory, searchQuery, statusFilter, hotelFilter, sortExperiences]);
+
+  // Expériences standalone filtrées puis triées
+  const displayedStandalone = useMemo(() => {
+    const filtered = (standaloneExps || []).filter((exp: any) => {
+      const matchesCategory = !selectedCategory || exp.categories?.slug === selectedCategory;
+      const matchesSearch = exp.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === "all" || exp.status === statusFilter;
+      return matchesCategory && matchesSearch && matchesStatus;
+    });
+    return sortExperiences(filtered);
+  }, [standaloneExps, selectedCategory, searchQuery, statusFilter, sortExperiences]);
 
   const handleCreateNew = () => {
     if (mode === "hotel") {
@@ -353,6 +383,9 @@ const AdminExperiences2 = () => {
 
   const hasActiveFilters = searchQuery !== "" || statusFilter !== "all" || hotelFilter !== "all";
   const hasActiveFiltersStandalone = searchQuery !== "" || statusFilter !== "all";
+  const isManualSort = sortBy === "manual";
+  const dragDisabled = hasActiveFilters || !isManualSort;
+  const dragDisabledStandalone = hasActiveFiltersStandalone || !isManualSort;
 
   const handleDragStart = useCallback((idx: number) => {
     setDraggedIdx(idx);
@@ -493,7 +526,7 @@ const AdminExperiences2 = () => {
         {/* Filtres */}
         <Card>
           <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Input
                 placeholder="Search experiences..."
                 value={searchQuery}
@@ -508,6 +541,17 @@ const AdminExperiences2 = () => {
                   <SelectItem value="draft">Draft</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="published">Published</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Trier par" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="updated_desc">Dernière modification</SelectItem>
+                  <SelectItem value="manual">Ordre manuel</SelectItem>
+                  <SelectItem value="created_desc">Date de création</SelectItem>
+                  <SelectItem value="status">Statut</SelectItem>
                 </SelectContent>
               </Select>
               {mode === "hotel" && (
@@ -529,11 +573,15 @@ const AdminExperiences2 = () => {
           </CardContent>
         </Card>
 
-        {/* Bandeau filtres actifs (drag-and-drop) */}
-        {hasActiveFilters && mode === "hotel" && (
+        {/* Bandeau drag-and-drop désactivé (tri non manuel ou filtres actifs) */}
+        {dragDisabled && mode === "hotel" && (
           <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-sm">
             <span>⚠</span>
-            <span>Désactivez les filtres pour réordonner les expériences par glisser-déposer.</span>
+            <span>
+              {!isManualSort
+                ? "Passez au tri « Ordre manuel » pour réordonner les expériences par glisser-déposer."
+                : "Désactivez les filtres pour réordonner les expériences par glisser-déposer."}
+            </span>
           </div>
         )}
 
@@ -591,7 +639,7 @@ const AdminExperiences2 = () => {
                   return (
                     <div
                       key={experience.id}
-                      draggable={!hasActiveFilters}
+                      draggable={!dragDisabled}
                       onDragStart={() => handleDragStart(idx)}
                       onDragOver={(e) => handleDragOver(e, idx)}
                       onDrop={() => handleDrop(idx)}
@@ -602,7 +650,7 @@ const AdminExperiences2 = () => {
                           : "hover:bg-muted/30"
                       }`}
                     >
-                      <div className={`shrink-0 ${hasActiveFilters ? "opacity-0 pointer-events-none" : "cursor-grab active:cursor-grabbing"}`}>
+                      <div className={`shrink-0 ${dragDisabled ? "opacity-0 pointer-events-none" : "cursor-grab active:cursor-grabbing"}`}>
                         <GripVertical className="h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
                       </div>
 
@@ -733,11 +781,15 @@ const AdminExperiences2 = () => {
           )
         )}
 
-        {/* Bandeau filtres actifs (drag-and-drop standalone) */}
-        {hasActiveFiltersStandalone && mode === "standalone" && (
+        {/* Bandeau drag-and-drop désactivé (tri non manuel ou filtres actifs, standalone) */}
+        {dragDisabledStandalone && mode === "standalone" && (
           <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-sm">
             <span>⚠</span>
-            <span>Désactivez les filtres pour réordonner les expériences par glisser-déposer.</span>
+            <span>
+              {!isManualSort
+                ? "Passez au tri « Ordre manuel » pour réordonner les expériences par glisser-déposer."
+                : "Désactivez les filtres pour réordonner les expériences par glisser-déposer."}
+            </span>
           </div>
         )}
 
@@ -769,7 +821,7 @@ const AdminExperiences2 = () => {
                   return (
                     <div
                       key={exp.id}
-                      draggable={!hasActiveFiltersStandalone}
+                      draggable={!dragDisabledStandalone}
                       onDragStart={() => handleDragStart(idx)}
                       onDragOver={(e) => handleDragOver(e, idx)}
                       onDrop={() => handleDropStandalone(idx)}
@@ -780,7 +832,7 @@ const AdminExperiences2 = () => {
                           : "hover:bg-muted/30"
                       }`}
                     >
-                      <div className={`shrink-0 ${hasActiveFiltersStandalone ? "opacity-0 pointer-events-none" : "cursor-grab active:cursor-grabbing"}`}>
+                      <div className={`shrink-0 ${dragDisabledStandalone ? "opacity-0 pointer-events-none" : "cursor-grab active:cursor-grabbing"}`}>
                         <GripVertical className="h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
                       </div>
 
