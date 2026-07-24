@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-07-24] — Correction des réponses email impossibles sur la confirmation des expériences seules
+
+### Ce qui a changé côté code
+- `supabase/functions/send-standalone-booking-confirmation/index.ts` : ajout de l'adresse de réponse (`reply_to`) shana@staymakom.com sur le mail de confirmation envoyé pour les expériences réservées sans hôtel. Redéployé sur Supabase.
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Shana a signalé que les clients qui répondaient à ce mail de confirmation tombaient sur une adresse introuvable. Contrairement à tous les autres mails du site (réservation d'hôtel, panier, cadeaux, contact, partenaires), celui-ci n'avait jamais eu d'adresse de réponse configurée. Corrigé pour rediriger les réponses vers Shana, comme partout ailleurs.
+
+---
+
 ## [2026-07-23] — Tri de la liste des expériences dans le back office
 
 ### Ce qui a changé côté code
