@@ -262,6 +262,7 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         from: 'StayMakom <hello@staymakom.com>',
+        reply_to: 'shana@staymakom.com',
         to: [booking.customer_email],
         subject: `✓ Your experience is confirmed — ${experience?.title || ''}`,
         html,
