@@ -94,6 +94,14 @@ const TailorMadeQuestionnaire    = lazy(() => import("./pages/TailorMadeQuestion
 const AdminStandaloneBookings    = lazy(() => import("./pages/admin/StandaloneBookings"));
 const AdminStandaloneBookingDetails = lazy(() => import("./pages/admin/StandaloneBookingDetails"));
 
+// ── Module Swipe Itinéraire ────────────────────────────────────────────────
+const SwipePublic                = lazy(() => import("./pages/swipe/SwipePublic"));
+const AdminSwipeDossiers         = lazy(() => import("./pages/admin/swipe/Dossiers"));
+const AdminSwipeDossierDetail    = lazy(() => import("./pages/admin/swipe/DossierDetail"));
+const AdminSwipeDossierResultats = lazy(() => import("./pages/admin/swipe/DossierResultats"));
+const AdminSwipeBibliotheque     = lazy(() => import("./pages/admin/swipe/Bibliotheque"));
+const AdminSwipeCategories       = lazy(() => import("./pages/admin/swipe/Categories"));
+
 // ── Hotel admin (chargé uniquement si connecté hotel_admin) ───────────────
 const HotelAdminLayout       = lazy(() => import("@/components/hotel-admin/HotelAdminLayout").then(m => ({ default: m.HotelAdminLayout })));
 const HotelAdminDashboard    = lazy(() => import("./pages/hotel-admin/Dashboard"));
@@ -218,6 +226,7 @@ const AppContent = () => {
           <Route path="/standalone-checkout" element={<StandaloneCheckout />} />
           <Route path="/standalone-booking/confirmation/:token" element={<StandaloneBookingConfirmation />} />
           <Route path="/tailor-questionnaire/:token" element={<TailorMadeQuestionnaire />} />
+          <Route path="/swipe/:token" element={<SwipePublic />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/cart" element={<Cart />} />
           <Route
@@ -285,6 +294,11 @@ const AppContent = () => {
             <Route path="hyperguest/logs" element={<HyperGuestLogsPage />} />
             <Route path="hyperguest/config" element={<HyperGuestConfigPage />} />
             <Route path="revolut/debug" element={<RevolutDebugPage />} />
+            <Route path="swipe/dossiers" element={<AdminSwipeDossiers />} />
+            <Route path="swipe/dossiers/:dossierId" element={<AdminSwipeDossierDetail />} />
+            <Route path="swipe/dossiers/:dossierId/resultats" element={<AdminSwipeDossierResultats />} />
+            <Route path="swipe/bibliotheque" element={<AdminSwipeBibliotheque />} />
+            <Route path="swipe/categories" element={<AdminSwipeCategories />} />
           </Route>
           <Route
             path="/hotel-admin"

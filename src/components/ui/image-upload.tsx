@@ -7,7 +7,7 @@ import { cn, buildImageFileName } from "@/lib/utils";
 
 interface ImageUploadProps {
   label: string;
-  bucket: "experience-images" | "category-images" | "journal-images" | "hotel-images";
+  bucket: "experience-images" | "category-images" | "journal-images" | "hotel-images" | "swipe-images";
   value: string;
   onChange: (url: string) => void;
   className?: string;

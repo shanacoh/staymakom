@@ -13,7 +13,9 @@ const MobileAppShell = () => {
   const location = useLocation();
 
   const isAdmin = location.pathname.startsWith("/admin") || location.pathname.startsWith("/hotel-admin");
-  if (isAdmin) return null;
+  // Le deck de swipe est une expérience plein écran, sans chrome du site (façon appli à part entière).
+  const isSwipePublic = location.pathname.startsWith("/swipe/");
+  if (isAdmin || isSwipePublic) return null;
 
   // On account sub-pages (with ?tab=), the sub-page provides its own header
   const isAccountSubPage = location.pathname === "/account" && location.search.includes("tab=");

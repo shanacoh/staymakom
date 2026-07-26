@@ -13,7 +13,11 @@ const WhatsAppButton = () => {
   const { lang } = useLanguage();
   const location = useLocation();
 
-  if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/hotel-admin')) {
+  if (
+    location.pathname.startsWith('/admin') ||
+    location.pathname.startsWith('/hotel-admin') ||
+    location.pathname.startsWith('/swipe/')
+  ) {
     return null;
   }
 

@@ -6,6 +6,32 @@
 
 ---
 
+## [2026-07-26] — Nouveau module "Swipe Itinéraire" : proposer un voyage et le faire valider par le client façon Tinder
+
+### Ce qui a changé côté code
+- **Back-office**, nouvelle section "Swipe Itinéraire" dans le menu de gauche :
+  - `src/pages/admin/swipe/Dossiers.tsx` : liste des dossiers créés pour chaque client, avec bouton "Nouveau dossier" et bouton pour copier le lien à envoyer au client.
+  - `src/pages/admin/swipe/DossierDetail.tsx` + `src/components/admin/swipe/DossierPropositionsList.tsx` (glisser-déposer) + `src/components/admin/swipe/PropositionPicker.tsx` : ajouter des propositions à un dossier (en piochant dans la bibliothèque ou en créant une nouvelle fiche à la volée), les réordonner, et activer/désactiver l'affichage des prix pour ce dossier.
+  - `src/pages/admin/swipe/Bibliotheque.tsx` + `src/components/admin/swipe/PropositionForm.tsx` : bibliothèque réutilisable de propositions (hôtel/expérience déjà publiés sur le site, ou fiche indépendante type restaurant), avec recherche, filtres, édition de la commission directement dans le tableau, duplication, et un repère "fiches du site pas encore ajoutées à la bibliothèque".
+  - `src/pages/admin/swipe/Categories.tsx` : gestion libre des catégories utilisées pour classer les propositions.
+  - `src/pages/admin/swipe/DossierResultats.tsx` : pour chaque dossier, tableau croisé "qui a aimé quoi", export CSV, et une première ébauche de récapitulatif d'itinéraire (propositions aimées par tous les participants) — le bouton d'export final (fichier ou lien) sera branché plus tard, une fois son format choisi avec Shana.
+- **Page publique** `src/pages/swipe/SwipePublic.tsx` (route `/swipe/:token`), plein écran et sans le menu du site : le client saisit son prénom, swipe les propositions une par une (like/pass, geste ou boutons, annulation du dernier swipe possible), puis choisit en fin de parcours ses "indispensables" parmi ce qu'il a aimé.
+- `src/components/MobileAppShell.tsx` et `src/components/WhatsAppButton.tsx` : le menu du site et le bouton WhatsApp flottant sont masqués sur les pages `/swipe/...` pour une expérience plein écran, comme demandé.
+- `src/components/ui/image-upload.tsx` : ajout du nouveau bucket `swipe-images` à la liste des destinations de photo possibles.
+- Nouvelles dépendances : `framer-motion` (animation des cartes qu'on swipe) et `@dnd-kit` (glisser-déposer pour réordonner les propositions d'un dossier).
+
+### Ce qui a changé côté base de données
+- Migration `20260726120000_create_swipe_module.sql` : création des 6 nouvelles tables du module (`swipe_categories`, `propositions`, `dossiers`, `dossier_propositions`, `participants`, `swipes`), toutes protégées afin que seul le back-office (compte admin) puisse les lire/écrire librement. `propositions.hotel_id`/`experience_id` peuvent pointer vers un hôtel/une expérience déjà publiés sur le site (`hotels2`/`experiences2`), sans aucune table existante modifiée. Le statut de lecture d'un dossier (`envoyé` / `vu` / `terminé`) se met à jour tout seul quand un client ouvre le lien puis termine son deck. Un nouveau bucket de stockage `swipe-images` est créé pour les photos des propositions indépendantes (restaurant, activité hors site).
+- Migration `20260726120100_swipe_module_tighten_function_grants.sql` : durcissement des droits d'exécution des fonctions utilisées par la page publique, pour qu'elles ne soient utilisables que par le rôle nécessaire.
+- La page publique ne passe jamais par un accès direct aux tables : elle utilise des fonctions dédiées qui vérifient le lien du client et ne renvoient jamais le prix d'achat, la commission ni le mode de réservation interne — ces informations restent strictement internes à l'équipe.
+
+### Pourquoi ce changement
+- Shana voulait un moyen de proposer une sélection d'hôtels, restaurants et activités à ses clients et de recueillir leurs préférences de façon vivante et engageante (façon Tinder), plutôt que par un long questionnaire ou des allers-retours par email, avec un tableau de résultats pour construire l'itinéraire final à partir de ce que le client a aimé.
+
+---
+
+
+
 ## [2026-07-24] — Correction des réponses email impossibles sur la confirmation des expériences seules
 
 ### Ce qui a changé côté code

@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "14.4"
   }
   public: {
     Tables: {
@@ -359,8 +359,17 @@ export type Database = {
           is_cancelled: boolean
           net_price: number
           nights: number
+          paid_amount: number | null
+          paid_at: string | null
           party_size: number
+          payment_method: string | null
+          payment_status: string | null
           rate_plan: string | null
+          refund_amount: number
+          refunded_at: string | null
+          revolut_order_id: string | null
+          revolut_payment_id: string | null
+          revolut_refund_id: string | null
           room_code: string | null
           room_name: string | null
           sell_price: number
@@ -390,8 +399,17 @@ export type Database = {
           is_cancelled?: boolean
           net_price?: number
           nights?: number
+          paid_amount?: number | null
+          paid_at?: string | null
           party_size?: number
+          payment_method?: string | null
+          payment_status?: string | null
           rate_plan?: string | null
+          refund_amount?: number
+          refunded_at?: string | null
+          revolut_order_id?: string | null
+          revolut_payment_id?: string | null
+          revolut_refund_id?: string | null
           room_code?: string | null
           room_name?: string | null
           sell_price?: number
@@ -421,8 +439,17 @@ export type Database = {
           is_cancelled?: boolean
           net_price?: number
           nights?: number
+          paid_amount?: number | null
+          paid_at?: string | null
           party_size?: number
+          payment_method?: string | null
+          payment_status?: string | null
           rate_plan?: string | null
+          refund_amount?: number
+          refunded_at?: string | null
+          revolut_order_id?: string | null
+          revolut_payment_id?: string | null
+          revolut_refund_id?: string | null
           room_code?: string | null
           room_name?: string | null
           sell_price?: number
@@ -459,13 +486,16 @@ export type Database = {
           icon: string | null
           id: string
           intro_rich_text: string | null
+          intro_rich_text_fr: string | null
           intro_rich_text_he: string | null
           launch_description: string | null
+          launch_description_fr: string | null
           launch_description_he: string | null
           meta_description_en: string | null
           meta_description_fr: string | null
           meta_description_he: string | null
           name: string
+          name_fr: string | null
           name_he: string | null
           og_description_en: string | null
           og_description_fr: string | null
@@ -475,6 +505,7 @@ export type Database = {
           og_title_fr: string | null
           og_title_he: string | null
           presentation_title: string | null
+          presentation_title_fr: string | null
           presentation_title_he: string | null
           seo_title_en: string | null
           seo_title_fr: string | null
@@ -495,13 +526,16 @@ export type Database = {
           icon?: string | null
           id?: string
           intro_rich_text?: string | null
+          intro_rich_text_fr?: string | null
           intro_rich_text_he?: string | null
           launch_description?: string | null
+          launch_description_fr?: string | null
           launch_description_he?: string | null
           meta_description_en?: string | null
           meta_description_fr?: string | null
           meta_description_he?: string | null
           name: string
+          name_fr?: string | null
           name_he?: string | null
           og_description_en?: string | null
           og_description_fr?: string | null
@@ -511,6 +545,7 @@ export type Database = {
           og_title_fr?: string | null
           og_title_he?: string | null
           presentation_title?: string | null
+          presentation_title_fr?: string | null
           presentation_title_he?: string | null
           seo_title_en?: string | null
           seo_title_fr?: string | null
@@ -531,13 +566,16 @@ export type Database = {
           icon?: string | null
           id?: string
           intro_rich_text?: string | null
+          intro_rich_text_fr?: string | null
           intro_rich_text_he?: string | null
           launch_description?: string | null
+          launch_description_fr?: string | null
           launch_description_he?: string | null
           meta_description_en?: string | null
           meta_description_fr?: string | null
           meta_description_he?: string | null
           name?: string
+          name_fr?: string | null
           name_he?: string | null
           og_description_en?: string | null
           og_description_fr?: string | null
@@ -547,6 +585,7 @@ export type Database = {
           og_title_fr?: string | null
           og_title_he?: string | null
           presentation_title?: string | null
+          presentation_title_fr?: string | null
           presentation_title_he?: string | null
           seo_title_en?: string | null
           seo_title_fr?: string | null
@@ -637,6 +676,81 @@ export type Database = {
           total_tests?: number
           user_id?: string
           warning_tests?: number
+        }
+        Relationships: []
+      }
+      dossier_propositions: {
+        Row: {
+          created_at: string
+          dossier_id: string
+          id: string
+          ordre: number
+          proposition_id: string
+        }
+        Insert: {
+          created_at?: string
+          dossier_id: string
+          id?: string
+          ordre?: number
+          proposition_id: string
+        }
+        Update: {
+          created_at?: string
+          dossier_id?: string
+          id?: string
+          ordre?: number
+          proposition_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dossier_propositions_dossier_id_fkey"
+            columns: ["dossier_id"]
+            isOneToOne: false
+            referencedRelation: "dossiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dossier_propositions_proposition_id_fkey"
+            columns: ["proposition_id"]
+            isOneToOne: false
+            referencedRelation: "propositions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dossiers: {
+        Row: {
+          afficher_prix: boolean
+          created_at: string
+          id: string
+          nom_client: string
+          premiere_ouverture_at: string | null
+          statut: string
+          statut_lecture: string
+          token_public: string
+          updated_at: string
+        }
+        Insert: {
+          afficher_prix?: boolean
+          created_at?: string
+          id?: string
+          nom_client: string
+          premiere_ouverture_at?: string | null
+          statut?: string
+          statut_lecture?: string
+          token_public?: string
+          updated_at?: string
+        }
+        Update: {
+          afficher_prix?: boolean
+          created_at?: string
+          id?: string
+          nom_client?: string
+          premiere_ouverture_at?: string | null
+          statut?: string
+          statut_lecture?: string
+          token_public?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -862,6 +976,62 @@ export type Database = {
           },
         ]
       }
+      experience2_availability_rules: {
+        Row: {
+          created_at: string
+          date_from: string | null
+          date_to: string | null
+          days_of_week: number[] | null
+          experience_id: string
+          id: string
+          is_active: boolean
+          label: string | null
+          label_he: string | null
+          origin: string
+          rule_type: string
+          specific_dates: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_from?: string | null
+          date_to?: string | null
+          days_of_week?: number[] | null
+          experience_id: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          label_he?: string | null
+          origin?: string
+          rule_type: string
+          specific_dates?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_from?: string | null
+          date_to?: string | null
+          days_of_week?: number[] | null
+          experience_id?: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          label_he?: string | null
+          origin?: string
+          rule_type?: string
+          specific_dates?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experience2_availability_rules_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       experience2_date_options: {
         Row: {
           checkin: string
@@ -927,6 +1097,7 @@ export type Database = {
           experience_id: string
           extra_id: string
           id: string
+          position: number
           updated_at: string | null
         }
         Insert: {
@@ -934,6 +1105,7 @@ export type Database = {
           experience_id: string
           extra_id: string
           id?: string
+          position?: number
           updated_at?: string | null
         }
         Update: {
@@ -941,6 +1113,7 @@ export type Database = {
           experience_id?: string
           extra_id?: string
           id?: string
+          position?: number
           updated_at?: string | null
         }
         Relationships: [
@@ -965,18 +1138,21 @@ export type Database = {
           created_at: string
           experience_id: string
           id: string
+          position: number
           tag_id: string
         }
         Insert: {
           created_at?: string
           experience_id: string
           id?: string
+          position?: number
           tag_id: string
         }
         Update: {
           created_at?: string
           experience_id?: string
           id?: string
+          position?: number
           tag_id?: string
         }
         Relationships: [
@@ -1153,6 +1329,8 @@ export type Database = {
       experience2_reviews: {
         Row: {
           comment: string | null
+          comment_en: string | null
+          comment_he: string | null
           created_at: string | null
           experience_id: string
           id: string
@@ -1162,6 +1340,8 @@ export type Database = {
         }
         Insert: {
           comment?: string | null
+          comment_en?: string | null
+          comment_he?: string | null
           created_at?: string | null
           experience_id: string
           id?: string
@@ -1171,6 +1351,8 @@ export type Database = {
         }
         Update: {
           comment?: string | null
+          comment_en?: string | null
+          comment_he?: string | null
           created_at?: string | null
           experience_id?: string
           id?: string
@@ -1362,9 +1544,11 @@ export type Database = {
           hotel_id?: string
           id?: string
           includes?: string[] | null
+          includes_fr?: string[] | null
           includes_he?: string[] | null
           lead_time_days?: number | null
           long_copy?: string | null
+          long_copy_fr?: string | null
           long_copy_he?: string | null
           max_nights?: number | null
           max_party?: number | null
@@ -1427,6 +1611,9 @@ export type Database = {
           address_fr: string | null
           address_he: string | null
           adult_only: boolean | null
+          bar_rate: number | null
+          bar_rate_markup_is_pct: boolean | null
+          bar_rate_markup_value: number | null
           base_price: number
           base_price_type: Database["public"]["Enums"]["base_price_type"] | null
           cancellation_policy: string | null
@@ -1439,9 +1626,15 @@ export type Database = {
           commission_room_pct: number | null
           created_at: string | null
           currency: string | null
+          display_order: number | null
           duration: string | null
           duration_fr: string | null
           duration_he: string | null
+          experience_cost_fixed: number | null
+          experience_cost_per_person: number | null
+          experience_net_cost: number | null
+          experience_sell_fixed: number | null
+          experience_sell_per_person: number | null
           featured_on_home: boolean | null
           good_to_know: string[] | null
           good_to_know_fr: string[] | null
@@ -1477,16 +1670,19 @@ export type Database = {
           og_title_he: string | null
           photos: string[] | null
           preferred_board_type: string | null
+          pricing_model: string
           promo_is_percentage: boolean | null
           promo_type: string | null
           promo_value: number | null
           region_type: string | null
+          room_net_rate: number | null
           seo_title_en: string | null
           seo_title_fr: string | null
           seo_title_he: string | null
           services: string[] | null
           services_fr: string[] | null
           services_he: string[] | null
+          show_on_v3_only: boolean
           slug: string
           status: Database["public"]["Enums"]["hotel_status"] | null
           subtitle: string | null
@@ -1499,12 +1695,6 @@ export type Database = {
           title_fr: string | null
           title_he: string | null
           updated_at: string | null
-          pricing_model: string
-          bar_rate: number | null
-          bar_rate_markup_value: number | null
-          bar_rate_markup_is_pct: boolean | null
-          experience_net_cost: number | null
-          room_net_rate: number | null
         }
         Insert: {
           accessibility_info?: string | null
@@ -1514,6 +1704,9 @@ export type Database = {
           address_fr?: string | null
           address_he?: string | null
           adult_only?: boolean | null
+          bar_rate?: number | null
+          bar_rate_markup_is_pct?: boolean | null
+          bar_rate_markup_value?: number | null
           base_price: number
           base_price_type?:
             | Database["public"]["Enums"]["base_price_type"]
@@ -1528,9 +1721,15 @@ export type Database = {
           commission_room_pct?: number | null
           created_at?: string | null
           currency?: string | null
+          display_order?: number | null
           duration?: string | null
           duration_fr?: string | null
           duration_he?: string | null
+          experience_cost_fixed?: number | null
+          experience_cost_per_person?: number | null
+          experience_net_cost?: number | null
+          experience_sell_fixed?: number | null
+          experience_sell_per_person?: number | null
           featured_on_home?: boolean | null
           good_to_know?: string[] | null
           good_to_know_fr?: string[] | null
@@ -1566,16 +1765,19 @@ export type Database = {
           og_title_he?: string | null
           photos?: string[] | null
           preferred_board_type?: string | null
+          pricing_model?: string
           promo_is_percentage?: boolean | null
           promo_type?: string | null
           promo_value?: number | null
           region_type?: string | null
+          room_net_rate?: number | null
           seo_title_en?: string | null
           seo_title_fr?: string | null
           seo_title_he?: string | null
           services?: string[] | null
           services_fr?: string[] | null
           services_he?: string[] | null
+          show_on_v3_only?: boolean
           slug: string
           status?: Database["public"]["Enums"]["hotel_status"] | null
           subtitle?: string | null
@@ -1588,12 +1790,6 @@ export type Database = {
           title_fr?: string | null
           title_he?: string | null
           updated_at?: string | null
-          pricing_model?: string
-          bar_rate?: number | null
-          bar_rate_markup_value?: number | null
-          bar_rate_markup_is_pct?: boolean | null
-          experience_net_cost?: number | null
-          room_net_rate?: number | null
         }
         Update: {
           accessibility_info?: string | null
@@ -1603,6 +1799,9 @@ export type Database = {
           address_fr?: string | null
           address_he?: string | null
           adult_only?: boolean | null
+          bar_rate?: number | null
+          bar_rate_markup_is_pct?: boolean | null
+          bar_rate_markup_value?: number | null
           base_price?: number
           base_price_type?:
             | Database["public"]["Enums"]["base_price_type"]
@@ -1617,9 +1816,15 @@ export type Database = {
           commission_room_pct?: number | null
           created_at?: string | null
           currency?: string | null
+          display_order?: number | null
           duration?: string | null
           duration_fr?: string | null
           duration_he?: string | null
+          experience_cost_fixed?: number | null
+          experience_cost_per_person?: number | null
+          experience_net_cost?: number | null
+          experience_sell_fixed?: number | null
+          experience_sell_per_person?: number | null
           featured_on_home?: boolean | null
           good_to_know?: string[] | null
           good_to_know_fr?: string[] | null
@@ -1655,16 +1860,19 @@ export type Database = {
           og_title_he?: string | null
           photos?: string[] | null
           preferred_board_type?: string | null
+          pricing_model?: string
           promo_is_percentage?: boolean | null
           promo_type?: string | null
           promo_value?: number | null
           region_type?: string | null
+          room_net_rate?: number | null
           seo_title_en?: string | null
           seo_title_fr?: string | null
           seo_title_he?: string | null
           services?: string[] | null
           services_fr?: string[] | null
           services_he?: string[] | null
+          show_on_v3_only?: boolean
           slug?: string
           status?: Database["public"]["Enums"]["hotel_status"] | null
           subtitle?: string | null
@@ -1677,12 +1885,6 @@ export type Database = {
           title_fr?: string | null
           title_he?: string | null
           updated_at?: string | null
-          pricing_model?: string
-          bar_rate?: number | null
-          bar_rate_markup_value?: number | null
-          bar_rate_markup_is_pct?: boolean | null
-          experience_net_cost?: number | null
-          room_net_rate?: number | null
         }
         Relationships: [
           {
@@ -1763,6 +1965,7 @@ export type Database = {
       gift_cards: {
         Row: {
           amount: number | null
+          amount_used: number
           booking_id: string | null
           code: string
           created_at: string
@@ -1774,9 +1977,12 @@ export type Database = {
           id: string
           language: string | null
           message: string | null
+          paid_at: string | null
+          payment_status: string
           recipient_email: string
           recipient_name: string | null
           redeemed_at: string | null
+          revolut_order_id: string | null
           sender_email: string
           sender_name: string
           sent_at: string | null
@@ -1787,6 +1993,7 @@ export type Database = {
         }
         Insert: {
           amount?: number | null
+          amount_used?: number
           booking_id?: string | null
           code: string
           created_at?: string
@@ -1798,9 +2005,12 @@ export type Database = {
           id?: string
           language?: string | null
           message?: string | null
+          paid_at?: string | null
+          payment_status?: string
           recipient_email: string
           recipient_name?: string | null
           redeemed_at?: string | null
+          revolut_order_id?: string | null
           sender_email: string
           sender_name: string
           sent_at?: string | null
@@ -1811,6 +2021,7 @@ export type Database = {
         }
         Update: {
           amount?: number | null
+          amount_used?: number
           booking_id?: string | null
           code?: string
           created_at?: string
@@ -1822,9 +2033,12 @@ export type Database = {
           id?: string
           language?: string | null
           message?: string | null
+          paid_at?: string | null
+          payment_status?: string
           recipient_email?: string
           recipient_name?: string | null
           redeemed_at?: string | null
+          revolut_order_id?: string | null
           sender_email?: string
           sender_name?: string
           sent_at?: string | null
@@ -2092,6 +2306,39 @@ export type Database = {
           },
         ]
       }
+      hotel2_highlight_tags: {
+        Row: {
+          hotel_id: string
+          position: number
+          tag_id: string
+        }
+        Insert: {
+          hotel_id: string
+          position?: number
+          tag_id: string
+        }
+        Update: {
+          hotel_id?: string
+          position?: number
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hotel2_highlight_tags_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hotel2_highlight_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "highlight_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hotels: {
         Row: {
           address: string | null
@@ -2312,6 +2559,7 @@ export type Database = {
           og_title_fr: string | null
           og_title_he: string | null
           photos: string[] | null
+          practical_info: Json | null
           preferred_board_type: string | null
           property_type: string | null
           region: string | null
@@ -2393,6 +2641,7 @@ export type Database = {
           og_title_fr?: string | null
           og_title_he?: string | null
           photos?: string[] | null
+          practical_info?: Json | null
           preferred_board_type?: string | null
           property_type?: string | null
           region?: string | null
@@ -2474,6 +2723,7 @@ export type Database = {
           og_title_fr?: string | null
           og_title_he?: string | null
           photos?: string[] | null
+          practical_info?: Json | null
           preferred_board_type?: string | null
           property_type?: string | null
           region?: string | null
@@ -2494,6 +2744,30 @@ export type Database = {
           updated_at?: string | null
           utc_offset?: number | null
           visibility?: string | null
+        }
+        Relationships: []
+      }
+      itineraries: {
+        Row: {
+          client_name: string
+          created_at: string
+          id: string
+          itinerary_content: Json
+          password: string
+        }
+        Insert: {
+          client_name: string
+          created_at?: string
+          id?: string
+          itinerary_content?: Json
+          password: string
+        }
+        Update: {
+          client_name?: string
+          created_at?: string
+          id?: string
+          itinerary_content?: Json
+          password?: string
         }
         Relationships: []
       }
@@ -2773,6 +3047,197 @@ export type Database = {
           },
         ]
       }
+      participants: {
+        Row: {
+          created_at: string
+          dossier_id: string
+          id: string
+          prenom: string
+        }
+        Insert: {
+          created_at?: string
+          dossier_id: string
+          id?: string
+          prenom: string
+        }
+        Update: {
+          created_at?: string
+          dossier_id?: string
+          id?: string
+          prenom?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participants_dossier_id_fkey"
+            columns: ["dossier_id"]
+            isOneToOne: false
+            referencedRelation: "dossiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promo_code_redemptions: {
+        Row: {
+          amount_discounted: number
+          booking_id: string | null
+          email: string
+          id: string
+          promo_code_id: string
+          redeemed_at: string
+        }
+        Insert: {
+          amount_discounted?: number
+          booking_id?: string | null
+          email: string
+          id?: string
+          promo_code_id: string
+          redeemed_at?: string
+        }
+        Update: {
+          amount_discounted?: number
+          booking_id?: string | null
+          email?: string
+          id?: string
+          promo_code_id?: string
+          redeemed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_code_redemptions_promo_code_id_fkey"
+            columns: ["promo_code_id"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promo_codes: {
+        Row: {
+          code: string
+          created_at: string
+          discount_pct: number
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          updated_at: string
+          used_count: number
+          valid_from: string
+          valid_until: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          discount_pct: number
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          updated_at?: string
+          used_count?: number
+          valid_from?: string
+          valid_until: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          discount_pct?: number
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          updated_at?: string
+          used_count?: number
+          valid_from?: string
+          valid_until?: string
+        }
+        Relationships: []
+      }
+      propositions: {
+        Row: {
+          adresse: string | null
+          categorie_id: string | null
+          commission_pourcentage: number | null
+          created_at: string
+          description: string | null
+          experience_id: string | null
+          hotel_id: string | null
+          id: string
+          lien_reservation: string | null
+          mode_reservation: string
+          photo_url: string | null
+          prix_achat: number | null
+          prix_client: number | null
+          region: string | null
+          statut: string
+          tags: string[] | null
+          titre: string
+          updated_at: string
+          ville: string | null
+        }
+        Insert: {
+          adresse?: string | null
+          categorie_id?: string | null
+          commission_pourcentage?: number | null
+          created_at?: string
+          description?: string | null
+          experience_id?: string | null
+          hotel_id?: string | null
+          id?: string
+          lien_reservation?: string | null
+          mode_reservation?: string
+          photo_url?: string | null
+          prix_achat?: number | null
+          prix_client?: number | null
+          region?: string | null
+          statut?: string
+          tags?: string[] | null
+          titre: string
+          updated_at?: string
+          ville?: string | null
+        }
+        Update: {
+          adresse?: string | null
+          categorie_id?: string | null
+          commission_pourcentage?: number | null
+          created_at?: string
+          description?: string | null
+          experience_id?: string | null
+          hotel_id?: string | null
+          id?: string
+          lien_reservation?: string | null
+          mode_reservation?: string
+          photo_url?: string | null
+          prix_achat?: number | null
+          prix_client?: number | null
+          region?: string | null
+          statut?: string
+          tags?: string[] | null
+          titre?: string
+          updated_at?: string
+          ville?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "propositions_categorie_id_fkey"
+            columns: ["categorie_id"]
+            isOneToOne: false
+            referencedRelation: "swipe_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "propositions_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "propositions_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_carts: {
         Row: {
           checkin: string | null
@@ -2825,6 +3290,628 @@ export type Database = {
             columns: ["experience_id"]
             isOneToOne: false
             referencedRelation: "experiences2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      standalone_bookings: {
+        Row: {
+          adults_count: number | null
+          booking_date: string
+          cancelled_at: string | null
+          children_count: number | null
+          confirmation_token: string | null
+          created_at: string | null
+          currency: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string | null
+          extras: Json | null
+          id: string
+          internal_notes: string | null
+          is_cancelled: boolean | null
+          party_size: number
+          payment_status: string | null
+          rate_option: Json | null
+          refund_amount: number | null
+          refunded_at: string | null
+          revolut_order_id: string | null
+          revolut_public_id: string | null
+          revolut_refund_id: string | null
+          sell_price: number
+          source: string
+          standalone_experience_id: string
+          status: string
+          time_slot: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          adults_count?: number | null
+          booking_date: string
+          cancelled_at?: string | null
+          children_count?: number | null
+          confirmation_token?: string | null
+          created_at?: string | null
+          currency?: string
+          customer_email: string
+          customer_name: string
+          customer_phone?: string | null
+          extras?: Json | null
+          id?: string
+          internal_notes?: string | null
+          is_cancelled?: boolean | null
+          party_size?: number
+          payment_status?: string | null
+          rate_option?: Json | null
+          refund_amount?: number | null
+          refunded_at?: string | null
+          revolut_order_id?: string | null
+          revolut_public_id?: string | null
+          revolut_refund_id?: string | null
+          sell_price?: number
+          source?: string
+          standalone_experience_id: string
+          status?: string
+          time_slot?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          adults_count?: number | null
+          booking_date?: string
+          cancelled_at?: string | null
+          children_count?: number | null
+          confirmation_token?: string | null
+          created_at?: string | null
+          currency?: string
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string | null
+          extras?: Json | null
+          id?: string
+          internal_notes?: string | null
+          is_cancelled?: boolean | null
+          party_size?: number
+          payment_status?: string | null
+          rate_option?: Json | null
+          refund_amount?: number | null
+          refunded_at?: string | null
+          revolut_order_id?: string | null
+          revolut_public_id?: string | null
+          revolut_refund_id?: string | null
+          sell_price?: number
+          source?: string
+          standalone_experience_id?: string
+          status?: string
+          time_slot?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "standalone_bookings_standalone_experience_id_fkey"
+            columns: ["standalone_experience_id"]
+            isOneToOne: false
+            referencedRelation: "standalone_experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      standalone_experience_highlight_tags: {
+        Row: {
+          experience_id: string
+          position: number
+          tag_id: string
+        }
+        Insert: {
+          experience_id: string
+          position?: number
+          tag_id: string
+        }
+        Update: {
+          experience_id?: string
+          position?: number
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "standalone_experience_highlight_tags_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "standalone_experiences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "standalone_experience_highlight_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "highlight_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      standalone_experience_includes: {
+        Row: {
+          created_at: string | null
+          experience_id: string
+          icon_url: string | null
+          id: string
+          order_index: number
+          published: boolean
+          title: string
+          title_fr: string | null
+          title_he: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          experience_id: string
+          icon_url?: string | null
+          id?: string
+          order_index?: number
+          published?: boolean
+          title: string
+          title_fr?: string | null
+          title_he?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          experience_id?: string
+          icon_url?: string | null
+          id?: string
+          order_index?: number
+          published?: boolean
+          title?: string
+          title_fr?: string | null
+          title_he?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "standalone_experience_includes_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "standalone_experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      standalone_experiences: {
+        Row: {
+          accessibility_info: string | null
+          accessibility_info_he: string | null
+          address: string | null
+          address_fr: string | null
+          address_he: string | null
+          availability_end_date: string | null
+          availability_mode: string | null
+          available_days: Json | null
+          base_price: number | null
+          base_price_child: number | null
+          base_price_type: string | null
+          blocked_dates: Json | null
+          cancellation_policy: string | null
+          cancellation_policy_fr: string | null
+          cancellation_policy_he: string | null
+          category_id: string | null
+          category_ids: Json | null
+          city: string | null
+          city_fr: string | null
+          city_he: string | null
+          created_at: string | null
+          currency: string | null
+          display_order: number | null
+          duration: string | null
+          duration_fr: string | null
+          duration_he: string | null
+          featured_on_home: boolean | null
+          good_to_know: Json | null
+          good_to_know_he: Json | null
+          google_maps_link: string | null
+          has_child_price: boolean | null
+          has_rate_options: boolean
+          has_time_slots: boolean | null
+          hero_image: string | null
+          highlight_tags: Json | null
+          home_display_order: number | null
+          id: string
+          includes: Json | null
+          includes_he: Json | null
+          latitude: number | null
+          lead_time_days: number | null
+          long_copy: string | null
+          long_copy_fr: string | null
+          long_copy_he: string | null
+          longitude: number | null
+          markup_percent: number | null
+          max_party: number | null
+          meta_description_en: string | null
+          meta_description_fr: string | null
+          meta_description_he: string | null
+          min_party: number | null
+          not_includes: Json | null
+          not_includes_he: Json | null
+          og_description_en: string | null
+          og_description_fr: string | null
+          og_description_he: string | null
+          og_image: string | null
+          og_title_en: string | null
+          og_title_fr: string | null
+          og_title_he: string | null
+          photos: Json | null
+          practical_info: Json | null
+          region: string | null
+          region_fr: string | null
+          region_he: string | null
+          region_type: string | null
+          seo_title_en: string | null
+          seo_title_fr: string | null
+          seo_title_he: string | null
+          show_on_v3_only: boolean
+          slug: string
+          status: string
+          subtitle: string | null
+          subtitle_fr: string | null
+          subtitle_he: string | null
+          supplier_booking_url: string | null
+          supplier_price_adult: number | null
+          supplier_price_child: number | null
+          thumbnail_image: string | null
+          time_slots: Json | null
+          title: string | null
+          title_fr: string | null
+          title_he: string | null
+          updated_at: string | null
+          whitelisted_dates: Json | null
+        }
+        Insert: {
+          accessibility_info?: string | null
+          accessibility_info_he?: string | null
+          address?: string | null
+          address_fr?: string | null
+          address_he?: string | null
+          availability_end_date?: string | null
+          availability_mode?: string | null
+          available_days?: Json | null
+          base_price?: number | null
+          base_price_child?: number | null
+          base_price_type?: string | null
+          blocked_dates?: Json | null
+          cancellation_policy?: string | null
+          cancellation_policy_fr?: string | null
+          cancellation_policy_he?: string | null
+          category_id?: string | null
+          category_ids?: Json | null
+          city?: string | null
+          city_fr?: string | null
+          city_he?: string | null
+          created_at?: string | null
+          currency?: string | null
+          display_order?: number | null
+          duration?: string | null
+          duration_fr?: string | null
+          duration_he?: string | null
+          featured_on_home?: boolean | null
+          good_to_know?: Json | null
+          good_to_know_he?: Json | null
+          google_maps_link?: string | null
+          has_child_price?: boolean | null
+          has_rate_options?: boolean
+          has_time_slots?: boolean | null
+          hero_image?: string | null
+          highlight_tags?: Json | null
+          home_display_order?: number | null
+          id?: string
+          includes?: Json | null
+          includes_he?: Json | null
+          latitude?: number | null
+          lead_time_days?: number | null
+          long_copy?: string | null
+          long_copy_fr?: string | null
+          long_copy_he?: string | null
+          longitude?: number | null
+          markup_percent?: number | null
+          max_party?: number | null
+          meta_description_en?: string | null
+          meta_description_fr?: string | null
+          meta_description_he?: string | null
+          min_party?: number | null
+          not_includes?: Json | null
+          not_includes_he?: Json | null
+          og_description_en?: string | null
+          og_description_fr?: string | null
+          og_description_he?: string | null
+          og_image?: string | null
+          og_title_en?: string | null
+          og_title_fr?: string | null
+          og_title_he?: string | null
+          photos?: Json | null
+          practical_info?: Json | null
+          region?: string | null
+          region_fr?: string | null
+          region_he?: string | null
+          region_type?: string | null
+          seo_title_en?: string | null
+          seo_title_fr?: string | null
+          seo_title_he?: string | null
+          show_on_v3_only?: boolean
+          slug: string
+          status?: string
+          subtitle?: string | null
+          subtitle_fr?: string | null
+          subtitle_he?: string | null
+          supplier_booking_url?: string | null
+          supplier_price_adult?: number | null
+          supplier_price_child?: number | null
+          thumbnail_image?: string | null
+          time_slots?: Json | null
+          title?: string | null
+          title_fr?: string | null
+          title_he?: string | null
+          updated_at?: string | null
+          whitelisted_dates?: Json | null
+        }
+        Update: {
+          accessibility_info?: string | null
+          accessibility_info_he?: string | null
+          address?: string | null
+          address_fr?: string | null
+          address_he?: string | null
+          availability_end_date?: string | null
+          availability_mode?: string | null
+          available_days?: Json | null
+          base_price?: number | null
+          base_price_child?: number | null
+          base_price_type?: string | null
+          blocked_dates?: Json | null
+          cancellation_policy?: string | null
+          cancellation_policy_fr?: string | null
+          cancellation_policy_he?: string | null
+          category_id?: string | null
+          category_ids?: Json | null
+          city?: string | null
+          city_fr?: string | null
+          city_he?: string | null
+          created_at?: string | null
+          currency?: string | null
+          display_order?: number | null
+          duration?: string | null
+          duration_fr?: string | null
+          duration_he?: string | null
+          featured_on_home?: boolean | null
+          good_to_know?: Json | null
+          good_to_know_he?: Json | null
+          google_maps_link?: string | null
+          has_child_price?: boolean | null
+          has_rate_options?: boolean
+          has_time_slots?: boolean | null
+          hero_image?: string | null
+          highlight_tags?: Json | null
+          home_display_order?: number | null
+          id?: string
+          includes?: Json | null
+          includes_he?: Json | null
+          latitude?: number | null
+          lead_time_days?: number | null
+          long_copy?: string | null
+          long_copy_fr?: string | null
+          long_copy_he?: string | null
+          longitude?: number | null
+          markup_percent?: number | null
+          max_party?: number | null
+          meta_description_en?: string | null
+          meta_description_fr?: string | null
+          meta_description_he?: string | null
+          min_party?: number | null
+          not_includes?: Json | null
+          not_includes_he?: Json | null
+          og_description_en?: string | null
+          og_description_fr?: string | null
+          og_description_he?: string | null
+          og_image?: string | null
+          og_title_en?: string | null
+          og_title_fr?: string | null
+          og_title_he?: string | null
+          photos?: Json | null
+          practical_info?: Json | null
+          region?: string | null
+          region_fr?: string | null
+          region_he?: string | null
+          region_type?: string | null
+          seo_title_en?: string | null
+          seo_title_fr?: string | null
+          seo_title_he?: string | null
+          show_on_v3_only?: boolean
+          slug?: string
+          status?: string
+          subtitle?: string | null
+          subtitle_fr?: string | null
+          subtitle_he?: string | null
+          supplier_booking_url?: string | null
+          supplier_price_adult?: number | null
+          supplier_price_child?: number | null
+          thumbnail_image?: string | null
+          time_slots?: Json | null
+          title?: string | null
+          title_fr?: string | null
+          title_he?: string | null
+          updated_at?: string | null
+          whitelisted_dates?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "standalone_experiences_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      standalone_extras: {
+        Row: {
+          created_at: string | null
+          currency: string
+          description: string | null
+          experience_id: string
+          id: string
+          is_available: boolean
+          price: number
+          sort_order: number
+          title: string
+          title_fr: string | null
+          title_he: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          currency?: string
+          description?: string | null
+          experience_id: string
+          id?: string
+          is_available?: boolean
+          price?: number
+          sort_order?: number
+          title: string
+          title_fr?: string | null
+          title_he?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string
+          description?: string | null
+          experience_id?: string
+          id?: string
+          is_available?: boolean
+          price?: number
+          sort_order?: number
+          title?: string
+          title_fr?: string | null
+          title_he?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "standalone_extras_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "standalone_experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      standalone_rate_options: {
+        Row: {
+          created_at: string | null
+          experience_id: string
+          id: string
+          is_available: boolean
+          label: string
+          label_fr: string | null
+          label_he: string | null
+          price_adult: number
+          price_child: number | null
+          sort_order: number
+          supplier_price_adult: number | null
+          supplier_price_child: number | null
+          time_slot: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          experience_id: string
+          id?: string
+          is_available?: boolean
+          label: string
+          label_fr?: string | null
+          label_he?: string | null
+          price_adult: number
+          price_child?: number | null
+          sort_order?: number
+          supplier_price_adult?: number | null
+          supplier_price_child?: number | null
+          time_slot?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          experience_id?: string
+          id?: string
+          is_available?: boolean
+          label?: string
+          label_fr?: string | null
+          label_he?: string | null
+          price_adult?: number
+          price_child?: number | null
+          sort_order?: number
+          supplier_price_adult?: number | null
+          supplier_price_child?: number | null
+          time_slot?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "standalone_rate_options_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "standalone_experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      swipe_categories: {
+        Row: {
+          created_at: string
+          id: string
+          nom: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nom: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nom?: string
+        }
+        Relationships: []
+      }
+      swipes: {
+        Row: {
+          coup_de_coeur: boolean
+          created_at: string
+          dossier_proposition_id: string
+          id: string
+          participant_id: string
+          valeur: boolean
+        }
+        Insert: {
+          coup_de_coeur?: boolean
+          created_at?: string
+          dossier_proposition_id: string
+          id?: string
+          participant_id: string
+          valeur: boolean
+        }
+        Update: {
+          coup_de_coeur?: boolean
+          created_at?: string
+          dossier_proposition_id?: string
+          id?: string
+          participant_id?: string
+          valeur?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "swipes_dossier_proposition_id_fkey"
+            columns: ["dossier_proposition_id"]
+            isOneToOne: false
+            referencedRelation: "dossier_propositions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "swipes_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
             referencedColumns: ["id"]
           },
         ]
@@ -3079,18 +4166,83 @@ export type Database = {
         }
         Returns: undefined
       }
+      swipe_cancel_swipe: {
+        Args: {
+          p_dossier_proposition_id: string
+          p_participant_id: string
+          p_token: string
+        }
+        Returns: undefined
+      }
+      swipe_get_deck_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          categorie_nom: string
+          description: string
+          dossier_proposition_id: string
+          ordre: number
+          photo_url: string
+          prix_client: number
+          titre: string
+          ville: string
+        }[]
+      }
+      swipe_get_dossier_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          afficher_prix: boolean
+          dossier_id: string
+          nom_client: string
+          statut: string
+        }[]
+      }
+      swipe_get_or_create_participant: {
+        Args: { p_prenom: string; p_token: string }
+        Returns: string
+      }
+      swipe_get_participants_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          participant_id: string
+          prenom: string
+        }[]
+      }
+      swipe_set_coup_de_coeur: {
+        Args: {
+          p_dossier_proposition_id: string
+          p_participant_id: string
+          p_token: string
+          p_valeur: boolean
+        }
+        Returns: undefined
+      }
+      swipe_upsert_swipe: {
+        Args: {
+          p_dossier_proposition_id: string
+          p_participant_id: string
+          p_token: string
+          p_valeur: boolean
+        }
+        Returns: undefined
+      }
+      uuid_generate_v4: { Args: never; Returns: string }
+      validate_gift_card: { Args: { p_code: string }; Returns: Json }
+      validate_promo_code: {
+        Args: { p_code: string; p_email: string }
+        Returns: Json
+      }
     }
     Enums: {
       addon_type:
         | "commission"
         | "per_night"
         | "tax"
-        | "per_person"
         | "per_person_per_night"
         | "fixed"
         | "commission_room"
         | "commission_experience"
         | "commission_fixed"
+        | "per_person"
       app_role: "admin" | "hotel_admin" | "customer"
       base_price_type: "fixed" | "per_person" | "per_booking"
       booking_extra_status: "pending" | "done" | "unavailable"
@@ -3237,12 +4389,12 @@ export const Constants = {
         "commission",
         "per_night",
         "tax",
-        "per_person",
         "per_person_per_night",
         "fixed",
         "commission_room",
         "commission_experience",
         "commission_fixed",
+        "per_person",
       ],
       app_role: ["admin", "hotel_admin", "customer"],
       base_price_type: ["fixed", "per_person", "per_booking"],
