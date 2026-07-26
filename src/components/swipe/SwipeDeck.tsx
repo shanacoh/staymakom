@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "framer-motion";
 import { Heart, X, Undo2 } from "lucide-react";
 import { SwipeCard } from "./SwipeCard";
 import { SwipeProgressBar } from "./SwipeProgressBar";
@@ -13,66 +13,149 @@ interface SwipeDeckProps {
 }
 
 const SEUIL_SWIPE = 120;
+const DUREE_SORTIE = 0.35;
+const DELAI_AVANT_SUIVANTE = 400;
 
+export interface TopCardHandle {
+  confirmerDecision: (valeur: boolean) => void;
+}
+
+// Pas de forwardRef ici volontairement : AnimatePresence gère déjà ses propres refs internes sur
+// ses enfants directs pour piloter les animations de sortie. Faire cohabiter ce mécanisme avec un
+// useImperativeHandle personnalisé provoque un avertissement React ("ref is not a prop"). On
+// remonte donc les commandes (confirmerDecision) au parent via un simple callback + useEffect.
 const DraggableTopCard = ({
   card,
   onDecide,
+  onDecisionStart,
+  exposerCommandes,
 }: {
   card: SwipeDeckCard;
   onDecide: (valeur: boolean) => void;
+  onDecisionStart: () => void;
+  exposerCommandes: (commandes: TopCardHandle | null) => void;
 }) => {
-  const x = useMotionValue(0);
-  const rotate = useTransform(x, [-300, 300], [-18, 18]);
-  const likeOpacity = useTransform(x, [20, 120], [0, 1]);
-  const passOpacity = useTransform(x, [-120, -20], [1, 0]);
+    const x = useMotionValue(0);
+    const rotate = useTransform(x, [-300, 300], [-18, 18]);
+    const likeOpacity = useTransform(x, [20, 120], [0, 1]);
+    const passOpacity = useTransform(x, [-120, -20], [1, 0]);
+    const [decisionEnCours, setDecisionEnCours] = useState<{ valeur: boolean } | null>(null);
+    const decisionPriseRef = useRef(false);
 
-  return (
-    <motion.div
-      className="absolute inset-0"
-      style={{ x, rotate }}
-      drag="x"
-      dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.9}
-      onDragEnd={(_e, info) => {
-        if (info.offset.x > SEUIL_SWIPE) onDecide(true);
-        else if (info.offset.x < -SEUIL_SWIPE) onDecide(false);
-      }}
-      initial={{ scale: 1, opacity: 1 }}
-      exit={{ x: x.get() > 0 ? 400 : x.get() < 0 ? -400 : 0, opacity: 0, transition: { duration: 0.25 } }}
-    >
-      <SwipeCard card={card} />
+    const confirmerDecision = (valeur: boolean) => {
+      if (decisionPriseRef.current) return;
+      decisionPriseRef.current = true;
+      onDecisionStart();
+      setDecisionEnCours({ valeur });
+      animate(x, valeur ? 500 : -500, { duration: DUREE_SORTIE, ease: "easeIn" });
+      setTimeout(() => onDecide(valeur), DELAI_AVANT_SUIVANTE);
+    };
+
+    useEffect(() => {
+      exposerCommandes({ confirmerDecision });
+      return () => exposerCommandes(null);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    return (
       <motion.div
-        style={{ opacity: likeOpacity }}
-        className="absolute top-8 left-8 border-4 border-emerald-400 text-emerald-400 text-2xl font-black uppercase px-4 py-1 rounded-lg -rotate-12"
+        className="absolute inset-0"
+        style={{ x, rotate }}
+        drag={decisionEnCours ? false : "x"}
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.9}
+        onDragEnd={(_e, info) => {
+          if (info.offset.x > SEUIL_SWIPE) confirmerDecision(true);
+          else if (info.offset.x < -SEUIL_SWIPE) confirmerDecision(false);
+        }}
+        initial={{ scale: 1, opacity: 1 }}
+        exit={{ opacity: 0, transition: { duration: 0.15 } }}
       >
-        J'aime
+        <SwipeCard card={card} />
+
+        <motion.div
+          style={{ opacity: likeOpacity }}
+          className="absolute top-6 left-6 w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg -rotate-12"
+        >
+          <Heart className="w-8 h-8 text-white fill-white" />
+        </motion.div>
+        <motion.div
+          style={{ opacity: passOpacity }}
+          className="absolute top-6 right-6 w-16 h-16 rounded-full bg-[#AD1414] flex items-center justify-center shadow-lg rotate-12"
+        >
+          <X className="w-8 h-8 text-white" strokeWidth={3} />
+        </motion.div>
+
+        <AnimatePresence>
+          {decisionEnCours && (
+            <motion.div
+              key="confirmation"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className={`absolute inset-0 flex items-center justify-center rounded-2xl ${
+                decisionEnCours.valeur ? "bg-emerald-500/30" : "bg-[#AD1414]/30"
+              }`}
+            >
+              <motion.div
+                initial={{ scale: 0.3, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 350, damping: 18 }}
+                className={`w-28 h-28 rounded-full flex items-center justify-center shadow-2xl ${
+                  decisionEnCours.valeur ? "bg-emerald-500" : "bg-[#AD1414]"
+                }`}
+              >
+                {decisionEnCours.valeur ? (
+                  <Heart className="w-14 h-14 text-white fill-white" />
+                ) : (
+                  <X className="w-14 h-14 text-white" strokeWidth={3} />
+                )}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
-      <motion.div
-        style={{ opacity: passOpacity }}
-        className="absolute top-8 right-8 border-4 border-[#AD1414] text-[#AD1414] text-2xl font-black uppercase px-4 py-1 rounded-lg rotate-12"
-      >
-        Passer
-      </motion.div>
-    </motion.div>
-  );
+    );
 };
 
 export const SwipeDeck = ({ cards, onSwipeCard, onUndoCard, onComplete }: SwipeDeckProps) => {
   const [index, setIndex] = useState(0);
   const [historique, setHistorique] = useState<SwipeDeckCard[]>([]);
+  const [enAttente, setEnAttente] = useState(false);
+  const topCardRef = useRef<TopCardHandle | null>(null);
+  const topCardIdRef = useRef<string | null>(null);
+
+  // La carte du dessus reste montée le temps de son animation de sortie (AnimatePresence) et se
+  // démonte après que la carte suivante est déjà montée — sans cette protection par identifiant,
+  // son démontage tardif remettrait topCardRef à null et rendrait les boutons J'aime/Passer
+  // silencieusement inopérants après la première carte.
+  const rattacherCommandesCarte = (id: string) => (commandes: TopCardHandle | null) => {
+    if (commandes) {
+      topCardRef.current = commandes;
+      topCardIdRef.current = id;
+    } else if (topCardIdRef.current === id) {
+      topCardRef.current = null;
+      topCardIdRef.current = null;
+    }
+  };
 
   const decider = (card: SwipeDeckCard, valeur: boolean) => {
     onSwipeCard(card, valeur);
     setHistorique((h) => [...h, card]);
     const prochainIndex = index + 1;
     if (prochainIndex >= cards.length) {
-      // Laisse l'animation de sortie se jouer avant de passer au récap
       setTimeout(onComplete, 250);
     }
     setIndex(prochainIndex);
+    setEnAttente(false);
+  };
+
+  const declencherDecision = (valeur: boolean) => {
+    if (enAttente) return;
+    topCardRef.current?.confirmerDecision(valeur);
   };
 
   const annulerDernier = () => {
+    if (enAttente) return;
     const dernier = historique[historique.length - 1];
     if (!dernier) return;
     onUndoCard(dernier);
@@ -103,7 +186,13 @@ export const SwipeDeck = ({ cards, onSwipeCard, onUndoCard, onComplete }: SwipeD
             .reverse()
             .map(({ card, i }) =>
               i === 0 ? (
-                <DraggableTopCard key={card.dossier_proposition_id} card={card} onDecide={(v) => decider(card, v)} />
+                <DraggableTopCard
+                  key={card.dossier_proposition_id}
+                  exposerCommandes={rattacherCommandesCarte(card.dossier_proposition_id)}
+                  card={card}
+                  onDecide={(v) => decider(card, v)}
+                  onDecisionStart={() => setEnAttente(true)}
+                />
               ) : (
                 <motion.div
                   key={card.dossier_proposition_id}
@@ -125,8 +214,8 @@ export const SwipeDeck = ({ cards, onSwipeCard, onUndoCard, onComplete }: SwipeD
       <div className="flex items-center gap-6 shrink-0">
         <button
           type="button"
-          onClick={() => cartesVisibles[0] && decider(cartesVisibles[0], false)}
-          disabled={cartesVisibles.length === 0}
+          onClick={() => declencherDecision(false)}
+          disabled={cartesVisibles.length === 0 || enAttente}
           className="w-14 h-14 rounded-full border-2 border-[#AD1414] text-[#AD1414] flex items-center justify-center hover:bg-[#AD1414]/10 transition-colors disabled:opacity-30"
           aria-label="Passer"
         >
@@ -135,7 +224,7 @@ export const SwipeDeck = ({ cards, onSwipeCard, onUndoCard, onComplete }: SwipeD
         <button
           type="button"
           onClick={annulerDernier}
-          disabled={historique.length === 0}
+          disabled={historique.length === 0 || enAttente}
           className="w-10 h-10 rounded-full text-[#1a1a1a]/50 flex items-center justify-center hover:bg-[#1a1a1a]/5 transition-colors disabled:opacity-20"
           aria-label="Annuler le dernier swipe"
         >
@@ -143,8 +232,8 @@ export const SwipeDeck = ({ cards, onSwipeCard, onUndoCard, onComplete }: SwipeD
         </button>
         <button
           type="button"
-          onClick={() => cartesVisibles[0] && decider(cartesVisibles[0], true)}
-          disabled={cartesVisibles.length === 0}
+          onClick={() => declencherDecision(true)}
+          disabled={cartesVisibles.length === 0 || enAttente}
           className="w-14 h-14 rounded-full bg-[#AD1414] text-white flex items-center justify-center hover:bg-[#AD1414]/90 transition-colors disabled:opacity-30"
           aria-label="J'aime"
         >

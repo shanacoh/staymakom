@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,6 +97,7 @@ export function NewsletterPopup({
   discountPct = 10,
 }: NewsletterPopupProps) {
   const { lang } = useLanguage();
+  const location = useLocation();
   const t = translations[lang as keyof typeof translations] || translations.en;
   const isRTL = lang === "he";
   const [open, setOpen] = useState(false);
@@ -175,6 +177,16 @@ export function NewsletterPopup({
       toast.error(t.error);
     }
   };
+
+  // Jamais dans le back-office, ni sur la page de swipe (expérience plein écran immersive :
+  // une popup marketing par-dessus bloquerait littéralement le bouton "J'aime"/"Passer" du client).
+  if (
+    location.pathname.startsWith("/admin") ||
+    location.pathname.startsWith("/hotel-admin") ||
+    location.pathname.startsWith("/swipe/")
+  ) {
+    return null;
+  }
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>

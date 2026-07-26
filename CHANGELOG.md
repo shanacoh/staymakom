@@ -6,6 +6,21 @@
 
 ---
 
+## [2026-07-26 cinq] — Swipe : retour visuel fort à chaque like/pass + écran final transformé en "Top 3"
+
+### Ce qui a changé côté code
+- `src/components/swipe/SwipeDeck.tsx` : correction d'un vrai manque de retour visuel — jusqu'ici, taper sur les boutons ❤️/✕ (probablement le geste le plus utilisé sur mobile) ne déclenchait strictement aucune animation ni confirmation, alors que le glissement au doigt affichait un petit texte discret. Désormais, quel que soit le geste utilisé (glissement ou bouton), un gros badge rond (cœur vert ou croix rouge) apparaît nettement au centre de la carte avec un effet ressort, la carte se teinte brièvement de la bonne couleur, puis glisse hors de l'écran — impossible de ne pas se rendre compte qu'on vient d'aimer ou de passer une proposition.
+- `src/components/swipe/SwipeRecap.tsx` : l'écran "indispensables" devient **"Top 3"** — le client choisit jusqu'à 3 propositions préférées parmi celles qu'il a aimées (compteur "X/3 sélectionnées" affiché en direct). Au-delà de 3, une sélection supplémentaire est refusée avec un petit message ("Tu as déjà choisi tes 3 préférées — retire-en une pour changer") ; désélectionner une proposition déjà choisie reste toujours possible.
+- `src/components/NewsletterPopup.tsx` : correction d'un bug trouvé en testant ce qui précède — la popup marketing "-10% sur votre première nuit" pouvait s'ouvrir automatiquement par-dessus la page de swipe après quelques secondes et bloquait littéralement les boutons du client (impossible de continuer à swiper tant qu'elle n'était pas fermée). Elle ne s'affiche plus du tout sur les pages `/swipe/...` (ni sur le back-office, comme c'était déjà le cas pour d'autres éléments du site).
+
+### Ce qui a changé côté base de données
+- Aucun changement de base de données : le plafond de 3 est une règle d'affichage côté écran, pas une contrainte en base (`coup_de_coeur` reste une simple case à cocher par proposition).
+
+### Pourquoi ce changement
+- Shana a signalé que le client ne se rendait pas assez compte qu'il venait de swiper une proposition, et a demandé à remplacer la liste libre d'"indispensables" par un vrai "Top 3" plafonné, plus simple à exploiter ensuite pour construire l'itinéraire. Le bug de la popup newsletter a été découvert pendant les tests de ce correctif — un client réel aurait pu se retrouver bloqué en plein milieu de son swipe.
+
+---
+
 ## [2026-07-26 quater] — Swipe : blocage complet du défilement sur mobile (comme une appli)
 
 ### Ce qui a changé côté code
