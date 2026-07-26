@@ -30,7 +30,7 @@ export const SwipeNamePrompt = ({ nomClient, participantsExistants, onDemarrer, 
         {participantsExistants.length > 0 && (
           <div className="w-full max-w-xs mb-6">
             <p className="text-sm text-white/70 mb-2">Déjà commencé ?</p>
-            <div className="flex flex-wrap justify-center gap-2 max-h-[18dvh] overflow-y-auto">
+            <div className="flex flex-wrap justify-center gap-2 max-h-[18dvh] overflow-y-auto overscroll-contain">
               {participantsExistants.map((p) => (
                 <button
                   key={p.participant_id}

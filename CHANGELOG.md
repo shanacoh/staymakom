@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-07-26 quater] — Swipe : blocage complet du défilement sur mobile (comme une appli)
+
+### Ce qui a changé côté code
+- `src/pages/swipe/SwipePublic.tsx` : pendant que la page de swipe est ouverte, la page entière ne peut plus du tout défiler (même le petit "rebond" élastique que Safari sur iPhone autorise habituellement en haut/bas de l'écran est désormais bloqué). Dès que le client quitte la page, le comportement normal du site est restauré automatiquement.
+- `src/components/swipe/SwipeNamePrompt.tsx` et `SwipeRecap.tsx` : les deux seules zones qui peuvent légitimement défiler (la liste des prénoms déjà utilisés, la grille des indispensables) ne "débordent" plus sur le reste de la page une fois arrivées en bas de leur propre liste.
+
+### Ce qui a changé côté base de données
+- Aucun changement de base de données.
+
+### Pourquoi ce changement
+- Shana a signalé qu'en testant sur un iPhone, la page bougeait encore légèrement au toucher alors qu'elle devait tenir entièrement à l'écran — un comportement propre à Safari sur iPhone, indépendant de la taille du contenu. Objectif : que la page se comporte comme une vraie application plein écran, sans aucun mouvement parasite.
+
+---
+
 ## [2026-07-26 ter] — Swipe Itinéraire : la page publique ressemble enfin à StayMakom
 
 ### Ce qui a changé côté code

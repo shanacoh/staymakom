@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import {
@@ -34,6 +34,38 @@ const SwipePublic = () => {
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [decisions, setDecisions] = useState<Map<string, { valeur: boolean; card: SwipeDeckCard }>>(new Map());
   const [indispensables, setIndispensables] = useState<Set<string>>(new Set());
+
+  // Verrouille le défilement de la page entière (façon appli plein écran) : sans ça, iOS
+  // Safari autorise un léger rebond élastique en haut/bas même quand tout tient à l'écran.
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const precedent = {
+      htmlOverflow: html.style.overflow,
+      htmlOverscroll: html.style.overscrollBehavior,
+      bodyOverflow: body.style.overflow,
+      bodyOverscroll: body.style.overscrollBehavior,
+      bodyPosition: body.style.position,
+      bodyWidth: body.style.width,
+      bodyHeight: body.style.height,
+    };
+    html.style.overflow = "hidden";
+    html.style.overscrollBehavior = "none";
+    body.style.overflow = "hidden";
+    body.style.overscrollBehavior = "none";
+    body.style.position = "fixed";
+    body.style.width = "100%";
+    body.style.height = "100%";
+    return () => {
+      html.style.overflow = precedent.htmlOverflow;
+      html.style.overscrollBehavior = precedent.htmlOverscroll;
+      body.style.overflow = precedent.bodyOverflow;
+      body.style.overscrollBehavior = precedent.bodyOverscroll;
+      body.style.position = precedent.bodyPosition;
+      body.style.width = precedent.bodyWidth;
+      body.style.height = precedent.bodyHeight;
+    };
+  }, []);
 
   const demarrer = async (prenom: string) => {
     if (!token) return;

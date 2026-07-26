@@ -62,7 +62,7 @@ export const SwipeRecap = ({ likedCards, onToggleIndispensable, indispensables, 
         Marque celles que tu ne veux surtout pas manquer.
       </p>
 
-      <div className="w-full max-w-md flex-1 min-h-0 overflow-y-auto grid grid-cols-2 gap-3 content-start">
+      <div className="w-full max-w-md flex-1 min-h-0 overflow-y-auto overscroll-contain grid grid-cols-2 gap-3 content-start">
         {likedCards.map((card) => {
           const estIndispensable = indispensables.has(card.dossier_proposition_id);
           return (
