@@ -6,6 +6,21 @@
 
 ---
 
+## [2026-07-26 six] — Dupliquer un dossier + renommer le client après coup
+
+### Ce qui a changé côté code
+- `src/pages/admin/swipe/Dossiers.tsx` : nouveau bouton "Dupliquer" sur chaque ligne de la liste des dossiers. Il crée un nouveau dossier avec les mêmes propositions (dans le même ordre) et le même réglage "Afficher les prix", mais avec un nouveau lien, aucun participant et aucun swipe — comme si on recommençait ce dossier à zéro pour un autre client. Redirige automatiquement vers le nouveau dossier pour le renommer.
+- `src/pages/admin/swipe/DossierDetail.tsx` : le nom du client, jusqu'ici fixé une fois pour toutes à la création, peut désormais être modifié directement depuis l'écran du dossier (icône crayon à côté du titre) — nécessaire pour renommer un dossier tout juste dupliqué.
+- `src/lib/swipe/queries.ts` : nouvelle fonction `useDupliquerDossier`.
+
+### Ce qui a changé côté base de données
+- Aucune migration : la duplication crée simplement une nouvelle ligne `dossiers` et copie les lignes `dossier_propositions` correspondantes, via les tables déjà en place.
+
+### Pourquoi ce changement
+- Shana prépare souvent des dossiers similaires pour plusieurs clients (même sélection de base à ajuster) et voulait pouvoir repartir d'un dossier existant plutôt que de tout reconstruire à la main. Le renommage du client a été ajouté en même temps : sans lui, un dossier dupliqué gardait le même nom que l'original et il n'existait aucun moyen de le corriger ensuite.
+
+---
+
 ## [2026-07-26 cinq] — Swipe : retour visuel fort à chaque like/pass + écran final transformé en "Top 3"
 
 ### Ce qui a changé côté code

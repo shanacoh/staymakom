@@ -303,6 +303,42 @@ export function useUpdateDossier() {
   });
 }
 
+export function useDupliquerDossier() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (dossierId: string) => {
+      const [{ data: original, error: erreurDossier }, { data: propositionsOriginales, error: erreurPropositions }] =
+        await Promise.all([
+          supabase.from("dossiers").select("*").eq("id", dossierId).single(),
+          supabase.from("dossier_propositions").select("proposition_id, ordre").eq("dossier_id", dossierId),
+        ]);
+      if (erreurDossier) throw erreurDossier;
+      if (erreurPropositions) throw erreurPropositions;
+
+      const { data: nouveauDossier, error: erreurCreation } = await supabase
+        .from("dossiers")
+        .insert({ nom_client: original.nom_client, afficher_prix: original.afficher_prix, statut: "brouillon" })
+        .select()
+        .single();
+      if (erreurCreation) throw erreurCreation;
+
+      if (propositionsOriginales.length > 0) {
+        const { error: erreurCopie } = await supabase.from("dossier_propositions").insert(
+          propositionsOriginales.map((p) => ({
+            dossier_id: nouveauDossier.id,
+            proposition_id: p.proposition_id,
+            ordre: p.ordre,
+          }))
+        );
+        if (erreurCopie) throw erreurCopie;
+      }
+
+      return nouveauDossier;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["swipe", "dossiers"] }),
+  });
+}
+
 export function useDeleteDossier() {
   const queryClient = useQueryClient();
   return useMutation({

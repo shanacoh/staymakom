@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -12,11 +12,11 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Link as LinkIcon, BarChart3, Settings2 } from "lucide-react";
+import { Plus, Link as LinkIcon, BarChart3, Settings2, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { useDossiers, useCreateDossier } from "@/lib/swipe/queries";
+import { useDossiers, useCreateDossier, useDupliquerDossier } from "@/lib/swipe/queries";
 
 const STATUT_LECTURE_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
   envoye: { label: "Envoyé", variant: "outline" },
@@ -25,8 +25,10 @@ const STATUT_LECTURE_LABELS: Record<string, { label: string; variant: "default" 
 };
 
 const AdminSwipeDossiers = () => {
+  const navigate = useNavigate();
   const { data: dossiers, isLoading } = useDossiers();
   const createMutation = useCreateDossier();
+  const dupliquerMutation = useDupliquerDossier();
   const [createOpen, setCreateOpen] = useState(false);
   const [nomClient, setNomClient] = useState("");
 
@@ -46,6 +48,16 @@ const AdminSwipeDossiers = () => {
     const url = `${window.location.origin}/swipe/${token}`;
     navigator.clipboard.writeText(url);
     toast.success("Lien copié dans le presse-papiers");
+  };
+
+  const dupliquer = async (id: string) => {
+    try {
+      const nouveau = await dupliquerMutation.mutateAsync(id);
+      toast.success("Dossier dupliqué — pense à renommer le client");
+      navigate(`/admin/swipe/dossiers/${nouveau.id}`);
+    } catch (e: any) {
+      toast.error(e.message || "Erreur lors de la duplication du dossier");
+    }
   };
 
   return (
@@ -113,6 +125,15 @@ const AdminSwipeDossiers = () => {
                     <Link to={`/admin/swipe/dossiers/${d.id}`}>
                       <Settings2 className="w-4 h-4" />
                     </Link>
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => dupliquer(d.id)}
+                    disabled={dupliquerMutation.isPending}
+                    title="Dupliquer le dossier"
+                  >
+                    <Copy className="w-4 h-4" />
                   </Button>
                 </TableCell>
               </TableRow>

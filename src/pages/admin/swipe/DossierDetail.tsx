@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Link as LinkIcon, BarChart3 } from "lucide-react";
+import { ArrowLeft, Plus, Link as LinkIcon, BarChart3, Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   useDossier,
@@ -26,8 +27,25 @@ const AdminSwipeDossierDetail = () => {
   const retirerProposition = useRetirerPropositionDuDossier();
   const reordonner = useReordonnerPropositionsDossier();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [editionNom, setEditionNom] = useState(false);
+  const [nomEnCours, setNomEnCours] = useState("");
 
   if (!dossier || !dossierId) return <div className="p-6">Chargement...</div>;
+
+  const demarrerEditionNom = () => {
+    setNomEnCours(dossier.nom_client);
+    setEditionNom(true);
+  };
+
+  const enregistrerNom = async () => {
+    if (!nomEnCours.trim()) return;
+    try {
+      await updateDossier.mutateAsync({ id: dossierId, nom_client: nomEnCours.trim() });
+      setEditionNom(false);
+    } catch (e: any) {
+      toast.error(e.message || "Erreur lors du renommage");
+    }
+  };
 
   const toggleAfficherPrix = async (checked: boolean) => {
     try {
@@ -82,7 +100,30 @@ const AdminSwipeDossierDetail = () => {
 
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">{dossier.nom_client}</h1>
+          {editionNom ? (
+            <div className="flex items-center gap-2">
+              <Input
+                value={nomEnCours}
+                onChange={(e) => setNomEnCours(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && enregistrerNom()}
+                className="text-2xl font-bold h-auto py-1"
+                autoFocus
+              />
+              <Button size="icon" variant="ghost" onClick={enregistrerNom}>
+                <Check className="w-4 h-4" />
+              </Button>
+              <Button size="icon" variant="ghost" onClick={() => setEditionNom(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold">{dossier.nom_client}</h1>
+              <Button size="icon" variant="ghost" onClick={demarrerEditionNom} title="Renommer">
+                <Pencil className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
           <Badge variant="outline" className="mt-1">
             {dossier.statut_lecture === "termine" ? "Terminé" : dossier.statut_lecture === "vu" ? "Vu" : "Envoyé"}
           </Badge>
