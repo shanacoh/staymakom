@@ -83,8 +83,13 @@ export const SwipeRecap = ({ likedCards, onToggleIndispensable, indispensables, 
             <button
               key={card.dossier_proposition_id}
               onClick={() => basculerSelection(card, estIndispensable)}
-              className="relative rounded-xl overflow-hidden aspect-[3/4] text-left"
+              className="relative w-full rounded-xl overflow-hidden text-left"
             >
+              {/* Cale la hauteur via un padding (pourcentage de la largeur) plutôt qu'un
+                  aspect-ratio : sur Safari/WebKit, aspect-ratio combiné à une grille CSS calcule
+                  parfois une hauteur de rangée légèrement fausse, ce qui faisait chevaucher les
+                  cartes d'une rangée à l'autre. Le padding-top est lui toujours fiable. */}
+              <div className="pt-[133%]" />
               {card.photo_url ? (
                 <img src={card.photo_url} alt={card.titre} className="absolute inset-0 w-full h-full object-cover" />
               ) : (

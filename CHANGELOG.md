@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-07-26 sept] — Correctif Safari : les cartes du "Top 3" se chevauchaient
+
+### Ce qui a changé côté code
+- `src/components/swipe/SwipeRecap.tsx` : sur iPhone (Safari), les cartes de l'écran "Choisis ton top 3" se chevauchaient légèrement d'une rangée à l'autre — un bug de rendu propre à Safari quand on combine une grille et un format d'image fixe, invisible sur les autres navigateurs (donc pas détecté lors des premiers tests). Remplacé par une technique de mise en page plus ancienne mais fiable sur tous les navigateurs, qui donne exactement le même rendu visuel sans ce défaut.
+
+### Ce qui a changé côté base de données
+- Aucun changement de base de données.
+
+### Pourquoi ce changement
+- Shana a repéré le chevauchement en testant sur son iPhone. Reproduit et confirmé avec le vrai moteur de rendu Safari (WebKit) avant correction, pour être sûr que ça ne se reproduise pas sur d'autres iPhones.
+
+---
+
 ## [2026-07-26 six] — Dupliquer un dossier + renommer le client après coup
 
 ### Ce qui a changé côté code
