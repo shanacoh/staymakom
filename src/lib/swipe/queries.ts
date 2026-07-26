@@ -15,7 +15,7 @@ import type {
 } from "./types";
 
 const PROPOSITION_SELECT =
-  "*, swipe_categories(id, nom), hotels2(id, name, city, region), experiences2(id, title, hotel_id)";
+  "*, swipe_categories(id, nom), hotels2(id, name, city, region), experiences2(id, title, hotel_id), standalone_experiences(id, title, city, region)";
 
 // ============================================================================
 // Catégories
@@ -149,6 +149,7 @@ export function useDuplicateProposition() {
         swipe_categories: _cat,
         hotels2: _hotel,
         experiences2: _exp,
+        standalone_experiences: _standalone,
         ...rest
       } = proposition;
       const { error } = await supabase
@@ -161,68 +162,86 @@ export function useDuplicateProposition() {
 }
 
 // ============================================================================
-// Recherche de fiches existantes (hôtels2 / expériences2) pour liaison
+// Recherche de fiches existantes (hôtels2 / expériences2 / standalone_experiences) pour liaison
 // ============================================================================
+// Toutes les fiches sont renvoyées, publiées ou brouillon : le back-office doit pouvoir lier une
+// proposition à une fiche pas encore publiée sur le site (elle le sera peut-être en même temps que
+// le dossier client est envoyé).
 
-export function useHotelsPourLiaison(recherche: string) {
+export function useHotelsPourLiaison(actif: boolean) {
   return useQuery({
-    queryKey: ["swipe", "hotels-liaison", recherche],
+    queryKey: ["swipe", "hotels-liaison"],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from("hotels2")
-        .select("id, name, city, region, hero_image, address")
-        .eq("status", "published")
-        .order("name")
-        .limit(20);
-      if (recherche) query = query.ilike("name", `%${recherche}%`);
-      const { data, error } = await query;
+        .select("id, name, city, region, hero_image, address, status")
+        .order("name");
       if (error) throw error;
       return data;
     },
-    enabled: recherche.length >= 2,
+    enabled: actif,
   });
 }
 
-export function useExperiencesPourLiaison(recherche: string) {
+export function useExperiencesPourLiaison(actif: boolean) {
   return useQuery({
-    queryKey: ["swipe", "experiences-liaison", recherche],
+    queryKey: ["swipe", "experiences-liaison"],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from("experiences2")
-        .select("id, title, hero_image, address, hotel_id, hotels2(city, region)")
-        .eq("status", "published")
-        .order("title")
-        .limit(20);
-      if (recherche) query = query.ilike("title", `%${recherche}%`);
-      const { data, error } = await query;
+        .select("id, title, hero_image, address, hotel_id, status, hotels2(city, region)")
+        .order("title");
       if (error) throw error;
       return data;
     },
-    enabled: recherche.length >= 2,
+    enabled: actif,
   });
 }
 
-/** Hôtels/expériences publiés qui n'ont pas encore de proposition correspondante dans la bibliothèque */
+export function useStandaloneExperiencesPourLiaison(actif: boolean) {
+  return useQuery({
+    queryKey: ["swipe", "standalone-experiences-liaison"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("standalone_experiences")
+        .select("id, title, hero_image, address, city, region, status")
+        .order("title");
+      if (error) throw error;
+      return data;
+    },
+    enabled: actif,
+  });
+}
+
+/** Hôtels/expériences/expériences seules qui n'ont pas encore de proposition dans la bibliothèque (brouillons inclus) */
 export function useFichesNonReferencees() {
   return useQuery({
     queryKey: ["swipe", "fiches-non-referencees"],
     queryFn: async () => {
-      const [{ data: hotels, error: hotelsErr }, { data: experiences, error: expErr }, { data: propositions, error: propErr }] =
-        await Promise.all([
-          supabase.from("hotels2").select("id, name, city").eq("status", "published"),
-          supabase.from("experiences2").select("id, title").eq("status", "published"),
-          supabase.from("propositions").select("hotel_id, experience_id"),
-        ]);
+      const [
+        { data: hotels, error: hotelsErr },
+        { data: experiences, error: expErr },
+        { data: standalone, error: standaloneErr },
+        { data: propositions, error: propErr },
+      ] = await Promise.all([
+        supabase.from("hotels2").select("id, name, city"),
+        supabase.from("experiences2").select("id, title"),
+        supabase.from("standalone_experiences").select("id, title"),
+        supabase.from("propositions").select("hotel_id, experience_id, standalone_experience_id"),
+      ]);
       if (hotelsErr) throw hotelsErr;
       if (expErr) throw expErr;
+      if (standaloneErr) throw standaloneErr;
       if (propErr) throw propErr;
 
       const hotelIdsReferences = new Set(propositions.map((p) => p.hotel_id).filter(Boolean));
       const experienceIdsReferencees = new Set(propositions.map((p) => p.experience_id).filter(Boolean));
+      const standaloneIdsReferences = new Set(propositions.map((p) => p.standalone_experience_id).filter(Boolean));
 
       return {
         hotels: hotels.filter((h) => !hotelIdsReferences.has(h.id)),
         experiences: experiences.filter((e) => !experienceIdsReferencees.has(e.id)),
+        standalone: standalone.filter((s) => !standaloneIdsReferences.has(s.id)),
       };
     },
   });

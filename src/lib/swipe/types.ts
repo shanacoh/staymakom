@@ -20,6 +20,7 @@ export interface PropositionAvecRelations extends Proposition {
   swipe_categories: { id: string; nom: string } | null;
   hotels2: { id: string; name: string; city: string | null; region: string | null } | null;
   experiences2: { id: string; title: string; hotel_id: string | null } | null;
+  standalone_experiences: { id: string; title: string | null; city: string | null; region: string | null } | null;
 }
 
 /** Ligne de dossier_propositions enrichie de sa proposition, pour l'écran détail dossier */

@@ -102,7 +102,10 @@ const AdminSwipeBibliotheque = () => {
     }
   };
 
-  const nbFichesManquantes = (fichesManquantes?.hotels.length ?? 0) + (fichesManquantes?.experiences.length ?? 0);
+  const nbFichesManquantes =
+    (fichesManquantes?.hotels.length ?? 0) +
+    (fichesManquantes?.experiences.length ?? 0) +
+    (fichesManquantes?.standalone.length ?? 0);
 
   return (
     <div className="p-6">
@@ -168,10 +171,10 @@ const AdminSwipeBibliotheque = () => {
       {afficherFichesManquantes && (
         <div className="border rounded-md p-4 mb-6 bg-muted/30">
           <p className="text-sm text-muted-foreground mb-3">
-            Hôtels et expériences publiés sur le site qui n'ont pas encore de proposition dans la bibliothèque swipe.
-            Aucune action automatique — cette liste sert uniquement de repère.
+            Hôtels, expériences et expériences seules du site (brouillons inclus) qui n'ont pas encore de proposition
+            dans la bibliothèque swipe. Aucune action automatique — cette liste sert uniquement de repère.
           </p>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <h3 className="font-medium mb-2">Hôtels ({fichesManquantes?.hotels.length ?? 0})</h3>
               <ul className="text-sm space-y-1 max-h-40 overflow-y-auto">
@@ -187,6 +190,14 @@ const AdminSwipeBibliotheque = () => {
               <ul className="text-sm space-y-1 max-h-40 overflow-y-auto">
                 {fichesManquantes?.experiences.map((e) => (
                   <li key={e.id}>{e.title}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-medium mb-2">Expériences seules ({fichesManquantes?.standalone.length ?? 0})</h3>
+              <ul className="text-sm space-y-1 max-h-40 overflow-y-auto">
+                {fichesManquantes?.standalone.map((s) => (
+                  <li key={s.id}>{s.title}</li>
                 ))}
               </ul>
             </div>

@@ -6,6 +6,22 @@
 
 ---
 
+## [2026-07-26 huit] — Propositions : les expériences seules et les brouillons apparaissent enfin, choix en menu déroulant
+
+### Ce qui a changé côté code
+- `src/components/admin/swipe/PropositionForm.tsx` : nouvel onglet **"Lier une expérience seule"** — jusqu'ici, les expériences vendues sans hôtel (catégorie "Experience Only" du site) vivent dans une table à part, jamais interrogée par ce formulaire, donc invisibles quoi qu'on cherche. Le choix d'une fiche (hôtel, expérience, expérience seule) se fait maintenant via un **menu déroulant** listant toutes les fiches correspondantes, à la place de la recherche au clavier précédente.
+- Toutes les fiches sont désormais proposées, **brouillons compris** (repérés par la mention "(brouillon)" dans le menu) — avant, seules les fiches publiées apparaissaient, ce qui masquait la majorité des hôtels, expériences et expériences seules encore en préparation.
+- `src/pages/admin/swipe/Bibliotheque.tsx` : le repère "Fiches du site pas encore ajoutées" inclut maintenant une troisième colonne pour les expériences seules, brouillons compris.
+- `src/lib/swipe/queries.ts` : nouvelle fonction `useStandaloneExperiencesPourLiaison` ; les fonctions de recherche existantes ne filtrent plus sur "publié".
+
+### Ce qui a changé côté base de données
+- Migration `20260726130000_add_standalone_experience_to_propositions.sql` : ajoute la colonne `standalone_experience_id` sur `propositions` (référence vers `standalone_experiences`), et remplace la règle "au plus un hôtel OU une expérience" par "au plus une seule source parmi hôtel / expérience / expérience seule".
+
+### Pourquoi ce changement
+- En créant une proposition, Shana a remarqué qu'elle ne retrouvait pas des expériences pourtant déjà créées sur le site — en creusant, deux causes : les expériences "seules" (sans hôtel) sont stockées dans une table séparée jamais consultée par ce formulaire, et le filtre "publié uniquement" masquait tout le reste, or la majorité des fiches du site sont encore en brouillon (38 hôtels sur 66, 50 expériences sur 67, 44 expériences seules sur 67). Le menu déroulant remplace la recherche au clavier, comme demandé.
+
+---
+
 ## [2026-07-26 sept] — Correctif Safari : les cartes du "Top 3" se chevauchaient
 
 ### Ce qui a changé côté code

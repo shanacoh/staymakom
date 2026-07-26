@@ -3166,6 +3166,7 @@ export type Database = {
           prix_achat: number | null
           prix_client: number | null
           region: string | null
+          standalone_experience_id: string | null
           statut: string
           tags: string[] | null
           titre: string
@@ -3187,6 +3188,7 @@ export type Database = {
           prix_achat?: number | null
           prix_client?: number | null
           region?: string | null
+          standalone_experience_id?: string | null
           statut?: string
           tags?: string[] | null
           titre: string
@@ -3208,6 +3210,7 @@ export type Database = {
           prix_achat?: number | null
           prix_client?: number | null
           region?: string | null
+          standalone_experience_id?: string | null
           statut?: string
           tags?: string[] | null
           titre?: string
@@ -3234,6 +3237,13 @@ export type Database = {
             columns: ["hotel_id"]
             isOneToOne: false
             referencedRelation: "hotels2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "propositions_standalone_experience_id_fkey"
+            columns: ["standalone_experience_id"]
+            isOneToOne: false
+            referencedRelation: "standalone_experiences"
             referencedColumns: ["id"]
           },
         ]
@@ -3303,6 +3313,7 @@ export type Database = {
           confirmation_token: string | null
           created_at: string | null
           currency: string
+          custom_experience_title: string | null
           customer_email: string
           customer_name: string
           customer_phone: string | null
@@ -3320,8 +3331,9 @@ export type Database = {
           revolut_refund_id: string | null
           sell_price: number
           source: string
-          standalone_experience_id: string
+          standalone_experience_id: string | null
           status: string
+          supplier_cost: number | null
           time_slot: string | null
           updated_at: string | null
           user_id: string | null
@@ -3334,6 +3346,7 @@ export type Database = {
           confirmation_token?: string | null
           created_at?: string | null
           currency?: string
+          custom_experience_title?: string | null
           customer_email: string
           customer_name: string
           customer_phone?: string | null
@@ -3351,8 +3364,9 @@ export type Database = {
           revolut_refund_id?: string | null
           sell_price?: number
           source?: string
-          standalone_experience_id: string
+          standalone_experience_id?: string | null
           status?: string
+          supplier_cost?: number | null
           time_slot?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -3365,6 +3379,7 @@ export type Database = {
           confirmation_token?: string | null
           created_at?: string | null
           currency?: string
+          custom_experience_title?: string | null
           customer_email?: string
           customer_name?: string
           customer_phone?: string | null
@@ -3382,8 +3397,9 @@ export type Database = {
           revolut_refund_id?: string | null
           sell_price?: number
           source?: string
-          standalone_experience_id?: string
+          standalone_experience_id?: string | null
           status?: string
+          supplier_cost?: number | null
           time_slot?: string | null
           updated_at?: string | null
           user_id?: string | null

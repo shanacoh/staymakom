@@ -23,11 +23,12 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { toast } from "sonner";
-import { Search, X } from "lucide-react";
+import { X } from "lucide-react";
 import {
   useSwipeCategories,
   useHotelsPourLiaison,
   useExperiencesPourLiaison,
+  useStandaloneExperiencesPourLiaison,
   useCreateProposition,
   useUpdateProposition,
 } from "@/lib/swipe/queries";
@@ -51,6 +52,7 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
+type Source = "hotel" | "experience" | "standalone" | "libre";
 
 interface PropositionFormProps {
   open: boolean;
@@ -59,19 +61,26 @@ interface PropositionFormProps {
   onSaved?: (propositionId: string) => void;
 }
 
+const libelleSource: Record<Exclude<Source, "libre">, string> = {
+  hotel: "Choisir un hôtel...",
+  experience: "Choisir une expérience...",
+  standalone: "Choisir une expérience seule...",
+};
+
 export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: PropositionFormProps) => {
   const isEdit = !!proposition;
   const { data: categories } = useSwipeCategories();
   const createMutation = useCreateProposition();
   const updateMutation = useUpdateProposition();
 
-  const [source, setSource] = useState<"hotel" | "experience" | "libre">("libre");
+  const [source, setSource] = useState<Source>("libre");
   const [hotelId, setHotelId] = useState<string | null>(null);
   const [experienceId, setExperienceId] = useState<string | null>(null);
-  const [rechercheFiche, setRechercheFiche] = useState("");
+  const [standaloneExperienceId, setStandaloneExperienceId] = useState<string | null>(null);
 
-  const { data: hotelsResultats } = useHotelsPourLiaison(source === "hotel" ? rechercheFiche : "");
-  const { data: experiencesResultats } = useExperiencesPourLiaison(source === "experience" ? rechercheFiche : "");
+  const { data: hotelsResultats } = useHotelsPourLiaison(source === "hotel");
+  const { data: experiencesResultats } = useExperiencesPourLiaison(source === "experience");
+  const { data: standaloneResultats } = useStandaloneExperiencesPourLiaison(source === "standalone");
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -95,9 +104,18 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
 
   useEffect(() => {
     if (open && proposition) {
-      setSource(proposition.hotel_id ? "hotel" : proposition.experience_id ? "experience" : "libre");
+      setSource(
+        proposition.hotel_id
+          ? "hotel"
+          : proposition.experience_id
+            ? "experience"
+            : proposition.standalone_experience_id
+              ? "standalone"
+              : "libre"
+      );
       setHotelId(proposition.hotel_id);
       setExperienceId(proposition.experience_id);
+      setStandaloneExperienceId(proposition.standalone_experience_id);
       form.reset({
         titre: proposition.titre,
         description: proposition.description ?? "",
@@ -118,7 +136,7 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
       setSource("libre");
       setHotelId(null);
       setExperienceId(null);
-      setRechercheFiche("");
+      setStandaloneExperienceId(null);
       form.reset({
         titre: "",
         description: "",
@@ -139,9 +157,12 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, proposition]);
 
-  const selectionnerHotel = (hotel: NonNullable<typeof hotelsResultats>[number]) => {
+  const selectionnerHotel = (id: string) => {
+    const hotel = hotelsResultats?.find((h) => h.id === id);
+    if (!hotel) return;
     setHotelId(hotel.id);
     setExperienceId(null);
+    setStandaloneExperienceId(null);
     form.setValue("titre", hotel.name);
     form.setValue("photo_url", hotel.hero_image ?? "");
     form.setValue("ville", hotel.city ?? "");
@@ -149,9 +170,12 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
     form.setValue("adresse", hotel.address ?? "");
   };
 
-  const selectionnerExperience = (experience: NonNullable<typeof experiencesResultats>[number]) => {
+  const selectionnerExperience = (id: string) => {
+    const experience = experiencesResultats?.find((e) => e.id === id);
+    if (!experience) return;
     setExperienceId(experience.id);
     setHotelId(null);
+    setStandaloneExperienceId(null);
     form.setValue("titre", experience.title);
     form.setValue("photo_url", experience.hero_image ?? "");
     form.setValue("adresse", experience.address ?? "");
@@ -159,11 +183,43 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
     form.setValue("region", experience.hotels2?.region ?? "");
   };
 
+  const selectionnerStandalone = (id: string) => {
+    const experience = standaloneResultats?.find((e) => e.id === id);
+    if (!experience) return;
+    setStandaloneExperienceId(experience.id);
+    setHotelId(null);
+    setExperienceId(null);
+    form.setValue("titre", experience.title ?? "");
+    form.setValue("photo_url", experience.hero_image ?? "");
+    form.setValue("adresse", experience.address ?? "");
+    form.setValue("ville", experience.city ?? "");
+    form.setValue("region", experience.region ?? "");
+  };
+
   const retirerLiaison = () => {
     setHotelId(null);
     setExperienceId(null);
+    setStandaloneExperienceId(null);
     setSource("libre");
   };
+
+  const idSelectionne =
+    source === "hotel" ? hotelId : source === "experience" ? experienceId : source === "standalone" ? standaloneExperienceId : null;
+
+  const onValueChangeSource = (id: string) => {
+    if (source === "hotel") selectionnerHotel(id);
+    else if (source === "experience") selectionnerExperience(id);
+    else if (source === "standalone") selectionnerStandalone(id);
+  };
+
+  const resultatsCourants =
+    source === "hotel"
+      ? hotelsResultats?.map((h) => ({ id: h.id, label: h.name, statut: h.status, sousLabel: h.city }))
+      : source === "experience"
+        ? experiencesResultats?.map((e) => ({ id: e.id, label: e.title, statut: e.status, sousLabel: e.hotels2?.city }))
+        : source === "standalone"
+          ? standaloneResultats?.map((s) => ({ id: s.id, label: s.title ?? "(sans titre)", statut: s.status, sousLabel: s.city }))
+          : [];
 
   const onSubmit = async (values: FormValues) => {
     const tags = values.tags
@@ -177,6 +233,7 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
       categorie_id: values.categorie_id || null,
       hotel_id: source === "hotel" ? hotelId : null,
       experience_id: source === "experience" ? experienceId : null,
+      standalone_experience_id: source === "standalone" ? standaloneExperienceId : null,
       region: values.region || null,
       ville: values.ville || null,
       adresse: values.adresse || null,
@@ -215,57 +272,36 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
           {!isEdit && (
             <div className="space-y-3">
-              <Tabs value={source} onValueChange={(v) => setSource(v as typeof source)}>
+              <Tabs value={source} onValueChange={(v) => setSource(v as Source)}>
                 <TabsList>
                   <TabsTrigger value="libre">Fiche indépendante</TabsTrigger>
                   <TabsTrigger value="hotel">Lier un hôtel</TabsTrigger>
                   <TabsTrigger value="experience">Lier une expérience</TabsTrigger>
+                  <TabsTrigger value="standalone">Lier une expérience seule</TabsTrigger>
                 </TabsList>
               </Tabs>
 
-              {(source === "hotel" || source === "experience") && !hotelId && !experienceId && (
-                <div className="space-y-2">
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      className="pl-8"
-                      placeholder={source === "hotel" ? "Rechercher un hôtel publié..." : "Rechercher une expérience publiée..."}
-                      value={rechercheFiche}
-                      onChange={(e) => setRechercheFiche(e.target.value)}
-                    />
-                  </div>
-                  {source === "hotel" && hotelsResultats && hotelsResultats.length > 0 && (
-                    <div className="border rounded-md divide-y max-h-48 overflow-y-auto">
-                      {hotelsResultats.map((h) => (
-                        <button
-                          type="button"
-                          key={h.id}
-                          onClick={() => selectionnerHotel(h)}
-                          className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
-                        >
-                          {h.name} {h.city ? `— ${h.city}` : ""}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {source === "experience" && experiencesResultats && experiencesResultats.length > 0 && (
-                    <div className="border rounded-md divide-y max-h-48 overflow-y-auto">
-                      {experiencesResultats.map((exp) => (
-                        <button
-                          type="button"
-                          key={exp.id}
-                          onClick={() => selectionnerExperience(exp)}
-                          className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
-                        >
-                          {exp.title}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+              {source !== "libre" && !idSelectionne && (
+                <Select value="" onValueChange={onValueChangeSource}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={libelleSource[source]} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {resultatsCourants?.length === 0 && (
+                      <div className="px-3 py-2 text-sm text-muted-foreground">Aucune fiche trouvée</div>
+                    )}
+                    {resultatsCourants?.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.label}
+                        {r.sousLabel ? ` — ${r.sousLabel}` : ""}
+                        {r.statut === "draft" ? " (brouillon)" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
 
-              {(hotelId || experienceId) && (
+              {idSelectionne && (
                 <div className="flex items-center justify-between bg-muted/50 rounded-md px-3 py-2 text-sm">
                   <span>
                     Lié à : <strong>{form.watch("titre")}</strong>
