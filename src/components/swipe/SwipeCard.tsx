@@ -36,7 +36,7 @@ export const SwipeCard = ({ card }: SwipeCardProps) => {
         <h2 className="text-white text-2xl font-bold leading-tight mb-1">{card.titre}</h2>
         {card.ville && <p className="text-white/80 text-sm">{card.ville}</p>}
         {card.description && (
-          <p className="text-white/70 text-sm mt-2 line-clamp-3">{card.description}</p>
+          <p className="text-white/70 text-sm mt-2 line-clamp-3 whitespace-pre-line">{card.description}</p>
         )}
       </div>
     </div>

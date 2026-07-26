@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import heroImage from "@/assets/hero-road-desert.jpg";
 
 interface SwipeNamePromptProps {
   nomClient: string;
@@ -13,44 +14,54 @@ export const SwipeNamePrompt = ({ nomClient, participantsExistants, onDemarrer, 
   const [prenom, setPrenom] = useState("");
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12 text-center">
-      <p className="text-[#AD1414] text-sm font-semibold uppercase tracking-widest mb-2">{nomClient}</p>
-      <h1 className="text-3xl font-bold text-[#1a1a1a] mb-8">Quel est ton prénom ?</h1>
+    <div className="relative h-full flex flex-col items-center justify-center px-6 py-6 text-center overflow-hidden">
+      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroImage})` }} />
+      <div className="absolute inset-0 bg-black/45" />
 
-      {participantsExistants.length > 0 && (
-        <div className="w-full max-w-xs mb-6">
-          <p className="text-sm text-[#1a1a1a]/60 mb-2">Déjà commencé ?</p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {participantsExistants.map((p) => (
-              <button
-                key={p.participant_id}
-                onClick={() => onDemarrer(p.prenom)}
-                disabled={chargement}
-                className="px-4 py-2 rounded-full border border-[#1a1a1a]/15 text-sm hover:border-[#AD1414] hover:text-[#AD1414] transition-colors"
-              >
-                {p.prenom}
-              </button>
-            ))}
+      <div className="relative z-10 w-full flex flex-col items-center">
+        <span className="font-sans font-bold tracking-[-0.04em] uppercase text-xs text-[#AD1414] mb-2">
+          STAYMAKOM
+        </span>
+        <p className="text-white/70 text-xs font-semibold uppercase tracking-widest mb-3">{nomClient}</p>
+        <h1 className="font-sans text-3xl font-bold uppercase tracking-[0.01em] leading-[1.1] text-white mb-8">
+          Quel est ton prénom ?
+        </h1>
+
+        {participantsExistants.length > 0 && (
+          <div className="w-full max-w-xs mb-6">
+            <p className="text-sm text-white/70 mb-2">Déjà commencé ?</p>
+            <div className="flex flex-wrap justify-center gap-2 max-h-[18dvh] overflow-y-auto">
+              {participantsExistants.map((p) => (
+                <button
+                  key={p.participant_id}
+                  onClick={() => onDemarrer(p.prenom)}
+                  disabled={chargement}
+                  className="px-4 py-2 rounded-full bg-white/90 border border-white text-sm text-[#1a1a1a] hover:bg-white transition-colors"
+                >
+                  {p.prenom}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="w-full max-w-xs space-y-3">
-        <Input
-          value={prenom}
-          onChange={(e) => setPrenom(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && prenom.trim() && onDemarrer(prenom.trim())}
-          placeholder="Ton prénom"
-          className="text-center text-lg h-12"
-          autoFocus
-        />
-        <Button
-          className="w-full h-12 bg-[#AD1414] hover:bg-[#AD1414]/90 text-base"
-          disabled={!prenom.trim() || chargement}
-          onClick={() => onDemarrer(prenom.trim())}
-        >
-          Commencer
-        </Button>
+        <div className="w-full max-w-xs space-y-3">
+          <Input
+            value={prenom}
+            onChange={(e) => setPrenom(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && prenom.trim() && onDemarrer(prenom.trim())}
+            placeholder="Ton prénom"
+            className="text-center text-lg h-12 bg-white"
+            autoFocus
+          />
+          <Button
+            className="w-full h-12 bg-[#AD1414] hover:bg-[#AD1414]/90 text-sm font-bold uppercase tracking-widest"
+            disabled={!prenom.trim() || chargement}
+            onClick={() => onDemarrer(prenom.trim())}
+          >
+            Commencer
+          </Button>
+        </div>
       </div>
     </div>
   );

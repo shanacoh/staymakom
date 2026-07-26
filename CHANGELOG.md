@@ -6,6 +6,22 @@
 
 ---
 
+## [2026-07-26 ter] — Swipe Itinéraire : la page publique ressemble enfin à StayMakom
+
+### Ce qui a changé côté code
+- `src/pages/swipe/SwipePublic.tsx` : ajout d'une étape "explication" dans le parcours client, juste après la saisie du prénom et avant le début du swipe (`prénom → explication → swipe → récap → merci`).
+- `src/components/swipe/SwipeIntro.tsx` (nouveau) : cet écran d'explication montre, avec une petite animation qui mime un début de geste de swipe (une carte qui glisse à droite puis à gauche, avec un cœur ou une croix qui s'allume), comment "glisser à droite pour aimer / à gauche pour passer" — avant que le client ne commence pour de vrai.
+- `src/components/swipe/SwipeNamePrompt.tsx`, `SwipeThankYou.tsx`, et le premier écran de `SwipeRecap.tsx` : passent sur la photo de la route désertique déjà utilisée sur la page d'accueil et la page 404 du site, avec le même habillage (bandeau sombre pour la lisibilité, petit mot "STAYMAKOM" en rouge, titres en majuscules) — pour que le client se sente chez StayMakom dès qu'il ouvre le lien, et jusqu'au dernier écran de remerciement.
+- `src/components/swipe/SwipeDeck.tsx` : ajout d'un petit repère "STAYMAKOM" discret au-dessus de la barre de progression, pour garder une trace de marque visible même pendant le swipe des propositions (qui reste, lui, centré sur les photos des propositions et non sur le décor StayMakom).
+
+### Ce qui a changé côté base de données
+- Aucun changement de base de données : uniquement de la présentation.
+
+### Pourquoi ce changement
+- Après un premier test du parcours, Shana a trouvé que la page ne "sentait" pas assez StayMakom à l'arrivée du client, et a demandé une explication du geste de swipe avant de commencer. La photo et la typographie reprises ici sont exactement celles déjà utilisées sur la page d'accueil et la page 404 du site, pour que ce nouveau module ne fasse pas "à part" du reste de StayMakom.
+
+---
+
 ## [2026-07-26] — Nouveau module "Swipe Itinéraire" : proposer un voyage et le faire valider par le client façon Tinder
 
 ### Ce qui a changé côté code

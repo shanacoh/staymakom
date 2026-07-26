@@ -83,12 +83,15 @@ export const SwipeDeck = ({ cards, onSwipeCard, onUndoCard, onComplete }: SwipeD
   const cartesVisibles = cards.slice(index, index + 3);
 
   return (
-    <div className="flex flex-col items-center gap-6 w-full">
-      <div className="w-full max-w-sm px-4">
+    <div className="h-full flex flex-col items-center gap-3 w-full py-3 overflow-hidden bg-[#FAF8F4]">
+      <div className="w-full max-w-sm px-4 shrink-0">
+        <span className="block text-center font-sans font-bold tracking-[-0.02em] uppercase text-[10px] text-[#AD1414] mb-2">
+          STAYMAKOM
+        </span>
         <SwipeProgressBar current={index} total={cards.length} />
       </div>
 
-      <div className="relative w-full max-w-sm h-[65vh] px-4">
+      <div className="relative w-full max-w-sm flex-1 min-h-0 px-4">
         {cartesVisibles.length === 0 && (
           <div className="absolute inset-4 rounded-2xl border-2 border-dashed border-[#1a1a1a]/20 flex items-center justify-center text-[#1a1a1a]/50">
             Deck terminé
@@ -119,7 +122,7 @@ export const SwipeDeck = ({ cards, onSwipeCard, onUndoCard, onComplete }: SwipeD
         </AnimatePresence>
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-6 shrink-0">
         <button
           type="button"
           onClick={() => cartesVisibles[0] && decider(cartesVisibles[0], false)}

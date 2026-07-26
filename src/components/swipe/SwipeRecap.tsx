@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
 import type { SwipeDeckCard } from "@/lib/swipe/types";
+import heroImage from "@/assets/hero-road-desert.jpg";
 
 interface SwipeRecapProps {
   likedCards: SwipeDeckCard[];
@@ -15,37 +16,53 @@ export const SwipeRecap = ({ likedCards, onToggleIndispensable, indispensables, 
 
   if (etape === "intro") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12 text-center">
-        <h1 className="text-3xl font-bold text-[#1a1a1a] mb-3">
-          Tu as aimé {likedCards.length} proposition{likedCards.length > 1 ? "s" : ""} !
-        </h1>
-        <p className="text-[#1a1a1a]/60 mb-8 max-w-sm">
-          Envie de choisir tes indispensables parmi ce que tu as aimé ?
-        </p>
-        <div className="flex flex-col gap-3 w-full max-w-xs">
-          <Button
-            className="h-12 bg-[#AD1414] hover:bg-[#AD1414]/90"
-            onClick={() => setEtape("choix")}
-            disabled={likedCards.length === 0}
-          >
-            Choisir mes indispensables
-          </Button>
-          <Button variant="outline" className="h-12" onClick={onTerminer}>
-            Terminer sans choisir
-          </Button>
+      <div className="relative h-full flex flex-col items-center justify-center px-6 py-6 text-center overflow-hidden">
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroImage})` }} />
+        <div className="absolute inset-0 bg-black/45" />
+
+        <div className="relative z-10 w-full flex flex-col items-center">
+          <span className="font-sans font-bold tracking-[-0.04em] uppercase text-xs text-[#AD1414] mb-3">
+            STAYMAKOM
+          </span>
+          <h1 className="font-sans text-2xl font-bold uppercase tracking-[0.01em] leading-[1.2] text-white mb-3">
+            Tu as aimé {likedCards.length} proposition{likedCards.length > 1 ? "s" : ""} !
+          </h1>
+          <p className="text-white/75 mb-8 max-w-sm text-sm">
+            Envie de choisir tes indispensables parmi ce que tu as aimé ?
+          </p>
+          <div className="flex flex-col gap-3 w-full max-w-xs">
+            <Button
+              className="h-12 bg-[#AD1414] hover:bg-[#AD1414]/90 text-sm font-bold uppercase tracking-widest"
+              onClick={() => setEtape("choix")}
+              disabled={likedCards.length === 0}
+            >
+              Choisir mes indispensables
+            </Button>
+            <Button
+              className="h-12 border border-white bg-transparent text-white text-sm font-bold uppercase tracking-widest hover:bg-white hover:text-[#1a1a1a]"
+              onClick={onTerminer}
+            >
+              Terminer sans choisir
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen px-6 py-12 flex flex-col items-center">
-      <h1 className="text-2xl font-bold text-[#1a1a1a] mb-2 text-center">Tes indispensables</h1>
-      <p className="text-[#1a1a1a]/60 mb-8 text-center max-w-sm">
+    <div className="h-full px-6 py-4 flex flex-col items-center overflow-hidden bg-[#FAF8F4]">
+      <span className="font-sans font-bold tracking-[-0.02em] uppercase text-xs text-[#AD1414] mb-2 shrink-0">
+        STAYMAKOM
+      </span>
+      <h1 className="font-sans text-xl font-bold uppercase tracking-[0.01em] text-[#1a1a1a] mb-1 text-center shrink-0">
+        Tes indispensables
+      </h1>
+      <p className="text-[#1a1a1a]/60 mb-4 text-center max-w-sm shrink-0 text-sm">
         Marque celles que tu ne veux surtout pas manquer.
       </p>
 
-      <div className="w-full max-w-md grid grid-cols-2 gap-3 mb-8">
+      <div className="w-full max-w-md flex-1 min-h-0 overflow-y-auto grid grid-cols-2 gap-3 content-start">
         {likedCards.map((card) => {
           const estIndispensable = indispensables.has(card.dossier_proposition_id);
           return (
@@ -75,7 +92,10 @@ export const SwipeRecap = ({ likedCards, onToggleIndispensable, indispensables, 
         })}
       </div>
 
-      <Button className="w-full max-w-xs h-12 bg-[#AD1414] hover:bg-[#AD1414]/90" onClick={onTerminer}>
+      <Button
+        className="w-full max-w-xs h-12 bg-[#AD1414] hover:bg-[#AD1414]/90 shrink-0 mt-4 text-sm font-bold uppercase tracking-widest"
+        onClick={onTerminer}
+      >
         Terminer
       </Button>
     </div>
