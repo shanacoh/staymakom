@@ -6,6 +6,22 @@
 
 ---
 
+## [2026-07-28 bis] — Pancarte de catégorie plus StayMakom + ordre des catégories réglable
+
+### Ce qui a changé côté code
+- `src/components/swipe/SwipeCategoryDivider.tsx` : la pancarte de transition entre catégories reprend maintenant la photo de la route désertique et l'habillage utilisés sur le reste du parcours (fond neutre remplacé, jugé "trop froid").
+- `src/pages/admin/swipe/Categories.tsx` : les catégories se réordonnent maintenant par glisser-déposer (comme les propositions d'un dossier) — c'est cet ordre qui détermine dans quel ordre les pancartes de catégorie apparaissent au client, pour tous les dossiers avec "Trier par catégorie" activé.
+- `src/components/swipe/SwipeDeckParCategorie.tsx` : les groupes de catégories suivent maintenant cet ordre choisi dans le back-office, plutôt que l'ordre dans lequel les propositions apparaissaient manuellement dans le dossier.
+- `src/lib/swipe/queries.ts` : nouvelle fonction `useReordonnerSwipeCategories` ; une nouvelle catégorie se place automatiquement en dernier dans l'ordre à sa création.
+
+### Ce qui a changé côté base de données
+- Migration `20260728010000_add_categorie_ordre.sql` : ajoute la colonne `ordre` sur `swipe_categories` (les catégories déjà créées gardent leur ordre de création actuel, à ajuster ensuite librement), et met à jour la fonction publique `swipe_get_deck_by_token` pour qu'elle renvoie cet ordre au deck de swipe.
+
+### Pourquoi ce changement
+- Après avoir testé l'option "Trier par catégorie", Shana a trouvé la pancarte trop froide visuellement, et a demandé à pouvoir choisir elle-même quelle catégorie passe en premier (ex. toujours les restaurants avant le reste) plutôt que de dépendre de l'ordre des propositions du dossier.
+
+---
+
 ## [2026-07-26 huit] — Propositions : les expériences seules et les brouillons apparaissent enfin, choix en menu déroulant
 
 ### Ce qui a changé côté code

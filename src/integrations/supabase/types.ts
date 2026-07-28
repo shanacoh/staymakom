@@ -728,6 +728,7 @@ export type Database = {
           statut: string
           statut_lecture: string
           token_public: string
+          trier_par_categorie: boolean
           updated_at: string
         }
         Insert: {
@@ -739,6 +740,7 @@ export type Database = {
           statut?: string
           statut_lecture?: string
           token_public?: string
+          trier_par_categorie?: boolean
           updated_at?: string
         }
         Update: {
@@ -750,6 +752,7 @@ export type Database = {
           statut?: string
           statut_lecture?: string
           token_public?: string
+          trier_par_categorie?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -3877,16 +3880,19 @@ export type Database = {
           created_at: string
           id: string
           nom: string
+          ordre: number
         }
         Insert: {
           created_at?: string
           id?: string
           nom: string
+          ordre?: number
         }
         Update: {
           created_at?: string
           id?: string
           nom?: string
+          ordre?: number
         }
         Relationships: []
       }
@@ -4194,6 +4200,7 @@ export type Database = {
         Args: { p_token: string }
         Returns: {
           categorie_nom: string
+          categorie_ordre: number
           description: string
           dossier_proposition_id: string
           ordre: number
@@ -4210,6 +4217,7 @@ export type Database = {
           dossier_id: string
           nom_client: string
           statut: string
+          trier_par_categorie: boolean
         }[]
       }
       swipe_get_or_create_participant: {

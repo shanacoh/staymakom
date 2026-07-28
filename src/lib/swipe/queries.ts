@@ -25,7 +25,7 @@ export function useSwipeCategories() {
   return useQuery({
     queryKey: ["swipe", "categories"],
     queryFn: async (): Promise<SwipeCategory[]> => {
-      const { data, error } = await supabase.from("swipe_categories").select("*").order("nom");
+      const { data, error } = await supabase.from("swipe_categories").select("*").order("ordre");
       if (error) throw error;
       return data;
     },
@@ -36,8 +36,27 @@ export function useCreateSwipeCategory() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (nom: string) => {
-      const { error } = await supabase.from("swipe_categories").insert({ nom });
+      const { data: existantes, error: erreurLecture } = await supabase
+        .from("swipe_categories")
+        .select("ordre")
+        .order("ordre", { ascending: false })
+        .limit(1);
+      if (erreurLecture) throw erreurLecture;
+      const prochainOrdre = (existantes?.[0]?.ordre ?? -1) + 1;
+      const { error } = await supabase.from("swipe_categories").insert({ nom, ordre: prochainOrdre });
       if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["swipe", "categories"] }),
+  });
+}
+
+export function useReordonnerSwipeCategories() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ordres: { id: string; ordre: number }[]) => {
+      await Promise.all(
+        ordres.map(({ id, ordre }) => supabase.from("swipe_categories").update({ ordre }).eq("id", id))
+      );
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["swipe", "categories"] }),
   });

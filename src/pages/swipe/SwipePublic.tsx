@@ -14,6 +14,7 @@ import type { SwipeDeckCard } from "@/lib/swipe/types";
 import { SwipeNamePrompt } from "@/components/swipe/SwipeNamePrompt";
 import { SwipeIntro } from "@/components/swipe/SwipeIntro";
 import { SwipeDeck } from "@/components/swipe/SwipeDeck";
+import { SwipeDeckParCategorie } from "@/components/swipe/SwipeDeckParCategorie";
 import { SwipeRecap } from "@/components/swipe/SwipeRecap";
 import { SwipeThankYou } from "@/components/swipe/SwipeThankYou";
 
@@ -150,6 +151,13 @@ const SwipePublic = () => {
             <p className="flex-1 flex items-center justify-center text-[#1a1a1a]/60 px-6 text-center">
               Aucune proposition n'a encore été ajoutée à ce dossier.
             </p>
+          ) : dossier.trier_par_categorie ? (
+            <SwipeDeckParCategorie
+              cards={deck}
+              onSwipeCard={onSwipeCard}
+              onUndoCard={onUndoCard}
+              onComplete={() => setEtape("recap")}
+            />
           ) : (
             <SwipeDeck
               cards={deck}

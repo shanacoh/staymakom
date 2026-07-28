@@ -37,6 +37,7 @@ export interface SwipeDeckCard {
   photo_url: string | null;
   ville: string | null;
   categorie_nom: string | null;
+  categorie_ordre: number | null;
   prix_client: number | null;
 }
 
@@ -46,6 +47,7 @@ export interface SwipeDossierPublicInfo {
   nom_client: string;
   afficher_prix: boolean;
   statut: string;
+  trier_par_categorie: boolean;
 }
 
 /** Ligne du tableau croisé de résultats (une proposition du dossier) */

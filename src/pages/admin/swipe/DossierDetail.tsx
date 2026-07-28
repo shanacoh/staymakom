@@ -55,6 +55,14 @@ const AdminSwipeDossierDetail = () => {
     }
   };
 
+  const toggleTrierParCategorie = async (checked: boolean) => {
+    try {
+      await updateDossier.mutateAsync({ id: dossierId, trier_par_categorie: checked });
+    } catch (e: any) {
+      toast.error(e.message || "Erreur lors de la mise à jour");
+    }
+  };
+
   const ajouter = async (propositionId: string) => {
     try {
       await ajouterProposition.mutateAsync({
@@ -140,9 +148,20 @@ const AdminSwipeDossierDetail = () => {
         </div>
       </div>
 
-      <div className="flex items-center gap-3 mb-6 border rounded-md p-3">
+      <div className="flex items-center gap-3 mb-3 border rounded-md p-3">
         <Switch checked={dossier.afficher_prix} onCheckedChange={toggleAfficherPrix} id="afficher-prix" />
         <Label htmlFor="afficher-prix">Afficher les prix au client dans le deck de swipe</Label>
+      </div>
+
+      <div className="flex items-center gap-3 mb-6 border rounded-md p-3">
+        <Switch
+          checked={dossier.trier_par_categorie}
+          onCheckedChange={toggleTrierParCategorie}
+          id="trier-par-categorie"
+        />
+        <Label htmlFor="trier-par-categorie">
+          Trier les propositions par catégorie (le client verra une pancarte de catégorie entre chaque groupe)
+        </Label>
       </div>
 
       <div className="flex items-center justify-between mb-3">
