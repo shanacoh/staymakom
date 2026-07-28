@@ -175,11 +175,10 @@ export const SwipeDeck = ({ cards, onSwipeCard, onUndoCard, onComplete }: SwipeD
       </div>
 
       <div className="relative w-full max-w-sm flex-1 min-h-0 px-4">
-        {cartesVisibles.length === 0 && (
-          <div className="absolute inset-4 rounded-2xl border-2 border-dashed border-[#1a1a1a]/20 flex items-center justify-center text-[#1a1a1a]/50">
-            Deck terminé
-          </div>
-        )}
+        {/* Quand cartesVisibles est vide, c'est uniquement pour le très bref instant (~250ms)
+            entre la décision sur la dernière carte et le passage à l'écran suivant (pancarte de
+            catégorie suivante, ou récap) — SwipeDeck ne monte jamais avec 0 carte au départ.
+            On ne montre donc rien de spécial ici pour éviter un flash d'écran "vide" étrange. */}
         <AnimatePresence>
           {cartesVisibles
             .map((card, i) => ({ card, i }))

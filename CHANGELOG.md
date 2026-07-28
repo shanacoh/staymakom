@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-07-28 ter] — Correctif : écran vide bizarre à la fin de chaque catégorie
+
+### Ce qui a changé côté code
+- `src/components/swipe/SwipeDeck.tsx` : entre la dernière proposition swipée d'une catégorie et l'apparition de la pancarte suivante, un encart "Deck terminé" avec un cadre en pointillés s'affichait brièvement (environ un quart de seconde) — un résidu d'affichage prévu à l'origine pour un deck vide, qui ne devait jamais vraiment être visible mais apparaissait à chaque changement de catégorie. Retiré : la transition est maintenant directe.
+
+### Ce qui a changé côté base de données
+- Aucun changement de base de données.
+
+### Pourquoi ce changement
+- Shana a remarqué un "écran vide bizarre" à chaque fin de catégorie en testant l'option "Trier par catégorie".
+
+---
+
 ## [2026-07-28 bis] — Pancarte de catégorie plus StayMakom + ordre des catégories réglable
 
 ### Ce qui a changé côté code
