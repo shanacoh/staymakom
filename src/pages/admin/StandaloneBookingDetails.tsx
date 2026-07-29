@@ -3,10 +3,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ArrowLeft, CheckCircle, Mail, AlertTriangle, CreditCard, Calendar, Users, Clock, MapPin, ExternalLink, Send, ScrollText } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle, Mail, AlertTriangle, CreditCard, Calendar, Users, Clock, MapPin, ExternalLink, Send, ScrollText, Copy, Trash2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
+import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
 
 export default function AdminStandaloneBookingDetails() {
   const { bookingId } = useParams();
@@ -24,6 +29,8 @@ export default function AdminStandaloneBookingDetails() {
   const [paymentDialog, setPaymentDialog] = useState<{ open: boolean; mode: "paid" | "deposit_paid"; amount: string }>({ open: false, mode: "paid", amount: "" });
   const [notesValue, setNotesValue] = useState("");
   const [editingNotes, setEditingNotes] = useState(false);
+  const [duplicateOpen, setDuplicateOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const { data: booking, isLoading } = useQuery({
     queryKey: ["admin-standalone-booking-details", bookingId],
@@ -101,6 +108,23 @@ export default function AdminStandaloneBookingDetails() {
     onError: (error: any) => toast.error("Erreur", { description: error.message }),
   });
 
+  const deleteBookingMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("standalone_bookings")
+        .delete()
+        .eq("id", bookingId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-standalone-bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-standalone-bookings-hub"] });
+      toast.success("Réservation supprimée");
+      navigate("/admin/standalone-bookings");
+    },
+    onError: (error: any) => toast.error("Erreur", { description: error.message }),
+  });
+
   const saveNotesMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
@@ -174,6 +198,19 @@ export default function AdminStandaloneBookingDetails() {
           <p className="font-mono text-sm text-muted-foreground mt-1">{booking.id}</p>
         </div>
         <div className="flex gap-2 items-center">
+          <Button variant="outline" size="sm" onClick={() => setDuplicateOpen(true)}>
+            <Copy className="h-4 w-4 mr-2" />
+            Dupliquer
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-destructive hover:text-destructive"
+            onClick={() => setDeleteConfirmOpen(true)}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Supprimer
+          </Button>
           {booking.source === "manual_admin" && <Badge variant="outline">Réservation manuelle</Badge>}
           {getStatusBadge(booking)}
           {getPaymentBadge(booking.payment_status)}
@@ -593,6 +630,37 @@ export default function AdminStandaloneBookingDetails() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CreateManualStandaloneBookingDialog
+        open={duplicateOpen}
+        onOpenChange={setDuplicateOpen}
+        duplicateFrom={booking}
+      />
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette réservation ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est définitive et ne peut pas être annulée. La réservation de{" "}
+              <strong>{booking.customer_name || "ce client"}</strong> sera supprimée pour toujours,
+              y compris son historique de paiement. Si le client a déjà payé, pensez à gérer le
+              remboursement séparément avant de supprimer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteBookingMutation.mutate()}
+              disabled={deleteBookingMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteBookingMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Supprimer définitivement
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

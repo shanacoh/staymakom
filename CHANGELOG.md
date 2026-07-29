@@ -6,6 +6,21 @@
 
 ---
 
+## [2026-07-29 bis] — Dupliquer et supprimer une réservation, horaire optionnel
+
+### Ce qui a changé côté code
+- `src/components/admin/CreateManualStandaloneBookingDialog.tsx` : ajout d'un champ "Horaire" optionnel pour les réservations manuelles liées à une expérience du catalogue qui n'a pas de créneaux horaires prédéfinis (le champ existait déjà pour les expériences hors-catalogue). Le formulaire peut aussi être pré-rempli à partir d'une réservation existante, pour la dupliquer.
+- `supabase/functions/create-standalone-manual-booking/index.ts` : la fonction acceptait un horaire uniquement pour les expériences ayant des créneaux prédéfinis — elle l'ignorait silencieusement dans tous les autres cas. Elle accepte désormais un horaire libre et optionnel, y compris pour les expériences sans créneaux fixes.
+- `src/pages/admin/StandaloneBookingDetails.tsx` : deux nouvelles actions sur la fiche d'une réservation — "Dupliquer" (ouvre le formulaire de création pré-rempli avec les informations de la réservation, pour créer une nouvelle réservation avec sa propre référence) et "Supprimer" (suppression définitive, avec confirmation, de la réservation et de son historique de paiement).
+
+### Ce qui a changé côté base de données
+- Aucune nouvelle migration : ces changements utilisent la colonne déjà existante `time_slot` et les droits d'accès déjà en place pour les administrateurs.
+
+### Pourquoi ce changement
+- Shana voulait pouvoir indiquer un horaire, même approximatif, sur une réservation créée pour une expérience qui n'a pas d'horaires fixes sur le site — pour que le client le voie dans son email de confirmation. Elle voulait aussi pouvoir recréer rapidement une réservation similaire à une existante (dupliquer), et supprimer une réservation créée par erreur.
+
+---
+
 ## [2026-07-28 quater] — Réservation manuelle : paiement et envoi de l'email séparés de la création, champs règlement/adresse libres
 
 ### Ce qui a changé côté code

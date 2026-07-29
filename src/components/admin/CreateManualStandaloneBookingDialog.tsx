@@ -6,7 +6,7 @@
  * ça se fait ensuite depuis la fiche détail, une fois le paiement reçu.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,12 +53,38 @@ const BOOKING_LIST_QUERY_KEYS = [
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // Réservation existante à dupliquer : pré-remplit le formulaire (client, expérience,
+  // date, prix...) pour créer une nouvelle réservation avec sa propre référence.
+  duplicateFrom?: any | null;
 }
 
-const CreateManualStandaloneBookingDialog = ({ open, onOpenChange }: Props) => {
+const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom }: Props) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [manualForm, setManualForm] = useState(EMPTY_MANUAL_FORM);
+
+  useEffect(() => {
+    if (!open || !duplicateFrom) return;
+    setManualForm({
+      isCustomExperience: !duplicateFrom.standalone_experience_id,
+      experience_id: duplicateFrom.standalone_experience_id || "",
+      custom_experience_title: duplicateFrom.custom_experience_title || "",
+      custom_currency: duplicateFrom.currency || "ILS",
+      booking_date: duplicateFrom.booking_date || "",
+      time_slot: duplicateFrom.time_slot || "",
+      selected_rate_option_id: duplicateFrom.rate_option?.id || "",
+      adults: duplicateFrom.adults_count ?? 1,
+      children: duplicateFrom.children_count ?? 0,
+      customer_name: duplicateFrom.customer_name || "",
+      customer_email: duplicateFrom.customer_email || "",
+      customer_phone: duplicateFrom.customer_phone || "",
+      sell_price: duplicateFrom.sell_price != null ? String(duplicateFrom.sell_price) : "",
+      supplier_cost: duplicateFrom.supplier_cost != null ? String(duplicateFrom.supplier_cost) : "",
+      internal_notes: duplicateFrom.internal_notes || "",
+      custom_regulations: duplicateFrom.custom_regulations || "",
+      custom_address: duplicateFrom.custom_address || "",
+    });
+  }, [open, duplicateFrom]);
 
   const { data: publishedExperiences } = useQuery({
     queryKey: ["admin-standalone-experiences-published"],
@@ -182,12 +208,13 @@ const CreateManualStandaloneBookingDialog = ({ open, onOpenChange }: Props) => {
     <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) resetManualForm(); }}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nouvelle réservation manuelle</DialogTitle>
+          <DialogTitle>{duplicateFrom ? "Dupliquer la réservation" : "Nouvelle réservation manuelle"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <p className="text-sm text-muted-foreground">
-            Pour un client contacté en direct (téléphone, WhatsApp, email). La réservation sera créée comme confirmée —
-            vous pourrez ensuite marquer le paiement et envoyer l'email de confirmation depuis la fiche de la réservation.
+            {duplicateFrom
+              ? "Le formulaire a été pré-rempli à partir de la réservation d'origine. Ajustez ce qui doit changer — une nouvelle réservation, avec sa propre référence, sera créée."
+              : "Pour un client contacté en direct (téléphone, WhatsApp, email). La réservation sera créée comme confirmée — vous pourrez ensuite marquer le paiement et envoyer l'email de confirmation depuis la fiche de la réservation."}
           </p>
 
           <div className="flex items-center justify-between rounded-lg border p-3">
@@ -290,6 +317,17 @@ const CreateManualStandaloneBookingDialog = ({ open, onOpenChange }: Props) => {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          )}
+
+          {!manualForm.isCustomExperience && selectedExperience && !selectedExperience.has_time_slots && (
+            <div className="space-y-1.5">
+              <Label>Horaire <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
+              <Input
+                placeholder="ex: 14h30 - 17h30"
+                value={manualForm.time_slot}
+                onChange={(e) => setManualForm((f) => ({ ...f, time_slot: e.target.value }))}
+              />
             </div>
           )}
 

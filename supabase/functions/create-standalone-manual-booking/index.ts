@@ -215,6 +215,10 @@ Deno.serve(async (req: Request) => {
         });
       }
       validatedTimeSlot = time_slot;
+    } else if (typeof time_slot === 'string' && time_slot.trim()) {
+      // Pas de créneaux fixes définis pour cette expérience : l'admin peut tout de même
+      // saisir un horaire libre et optionnel (ex: "14h30").
+      validatedTimeSlot = time_slot.trim();
     }
 
     let selectedRateOption: { id: string; label: string; label_fr: string | null; label_he: string | null; price_adult: number; price_child: number | null } | null = null;
