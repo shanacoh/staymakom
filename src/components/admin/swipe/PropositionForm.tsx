@@ -40,6 +40,7 @@ const schema = z.object({
   photo_url: z.string().optional(),
   categorie_id: z.string().optional(),
   region: z.string().optional(),
+  nom_hotel: z.string().optional(),
   ville: z.string().optional(),
   adresse: z.string().optional(),
   lien_reservation: z.string().optional(),
@@ -90,6 +91,7 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
       photo_url: "",
       categorie_id: "",
       region: "",
+      nom_hotel: "",
       ville: "",
       adresse: "",
       lien_reservation: "",
@@ -122,6 +124,7 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
         photo_url: proposition.photo_url ?? "",
         categorie_id: proposition.categorie_id ?? "",
         region: proposition.region ?? "",
+        nom_hotel: proposition.nom_hotel ?? "",
         ville: proposition.ville ?? "",
         adresse: proposition.adresse ?? "",
         lien_reservation: proposition.lien_reservation ?? "",
@@ -143,6 +146,7 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
         photo_url: "",
         categorie_id: "",
         region: "",
+        nom_hotel: "",
         ville: "",
         adresse: "",
         lien_reservation: "",
@@ -165,6 +169,7 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
     setStandaloneExperienceId(null);
     form.setValue("titre", hotel.name);
     form.setValue("photo_url", hotel.hero_image ?? "");
+    form.setValue("nom_hotel", hotel.name);
     form.setValue("ville", hotel.city ?? "");
     form.setValue("region", hotel.region ?? "");
     form.setValue("adresse", hotel.address ?? "");
@@ -179,6 +184,7 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
     form.setValue("titre", experience.title);
     form.setValue("photo_url", experience.hero_image ?? "");
     form.setValue("adresse", experience.address ?? "");
+    form.setValue("nom_hotel", experience.hotels2?.name ?? "");
     form.setValue("ville", experience.hotels2?.city ?? "");
     form.setValue("region", experience.hotels2?.region ?? "");
   };
@@ -192,6 +198,7 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
     form.setValue("titre", experience.title ?? "");
     form.setValue("photo_url", experience.hero_image ?? "");
     form.setValue("adresse", experience.address ?? "");
+    form.setValue("nom_hotel", "");
     form.setValue("ville", experience.city ?? "");
     form.setValue("region", experience.region ?? "");
   };
@@ -235,6 +242,7 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
       experience_id: source === "experience" ? experienceId : null,
       standalone_experience_id: source === "standalone" ? standaloneExperienceId : null,
       region: values.region || null,
+      nom_hotel: values.nom_hotel || null,
       ville: values.ville || null,
       adresse: values.adresse || null,
       lien_reservation: values.lien_reservation || null,
@@ -370,6 +378,10 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
             <div className="space-y-2">
               <Label>Région</Label>
               <Input {...form.register("region")} />
+            </div>
+            <div className="space-y-2">
+              <Label>Nom de l'hôtel</Label>
+              <Input {...form.register("nom_hotel")} placeholder="Affiché sur la carte, avant la ville" />
             </div>
             <div className="space-y-2">
               <Label>Ville</Label>

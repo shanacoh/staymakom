@@ -208,7 +208,7 @@ export function useExperiencesPourLiaison(actif: boolean) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("experiences2")
-        .select("id, title, hero_image, address, hotel_id, status, hotels2(city, region)")
+        .select("id, title, hero_image, address, hotel_id, status, hotels2(name, city, region)")
         .order("title");
       if (error) throw error;
       return data;

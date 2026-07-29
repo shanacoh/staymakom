@@ -3165,6 +3165,7 @@ export type Database = {
           id: string
           lien_reservation: string | null
           mode_reservation: string
+          nom_hotel: string | null
           photo_url: string | null
           prix_achat: number | null
           prix_client: number | null
@@ -3187,6 +3188,7 @@ export type Database = {
           id?: string
           lien_reservation?: string | null
           mode_reservation?: string
+          nom_hotel?: string | null
           photo_url?: string | null
           prix_achat?: number | null
           prix_client?: number | null
@@ -3209,6 +3211,7 @@ export type Database = {
           id?: string
           lien_reservation?: string | null
           mode_reservation?: string
+          nom_hotel?: string | null
           photo_url?: string | null
           prix_achat?: number | null
           prix_client?: number | null
@@ -4203,6 +4206,7 @@ export type Database = {
           categorie_ordre: number
           description: string
           dossier_proposition_id: string
+          nom_hotel: string
           ordre: number
           photo_url: string
           prix_client: number

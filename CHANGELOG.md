@@ -21,6 +21,21 @@
 
 ---
 
+## [2026-07-29] — Nom de l'hôtel affiché sur les cartes swipe
+
+### Ce qui a changé côté code
+- `src/components/admin/swipe/PropositionForm.tsx` : nouveau champ "Nom de l'hôtel" dans le formulaire d'une carte swipe, à côté de "Ville". Comme la ville, il se pré-remplit automatiquement quand on lie un hôtel ou une expérience liée à un hôtel, mais reste modifiable ou peut être laissé vide (fiche indépendante ou expérience seule, qui n'a pas d'hôtel).
+- `src/components/swipe/SwipeCard.tsx` : sur la carte vue par le client, le nom de l'hôtel s'affiche maintenant juste avant la ville, séparés par un point (ex. "Hôtel Pereh · Moa"), comme sur les fiches hôtel du site. S'il n'y a pas de nom d'hôtel renseigné, seule la ville s'affiche, comme avant.
+- `src/lib/swipe/queries.ts` : la recherche d'expérience à lier récupère maintenant aussi le nom de l'hôtel associé (pas seulement sa ville), pour pouvoir pré-remplir le nouveau champ.
+
+### Ce qui a changé côté base de données
+- Migration `20260729000000_add_nom_hotel_to_propositions.sql` : nouvelle colonne `nom_hotel` (texte libre) sur la table `propositions`, et mise à jour de la fonction `swipe_get_deck_by_token` pour la renvoyer à la page de swipe publique.
+
+### Pourquoi ce changement
+- Shana voulait que le nom de l'hôtel apparaisse sur la carte swipe, au même endroit et dans le même style que la ville, pour que le client sache tout de suite à quel établissement une proposition se rapporte.
+
+---
+
 ## [2026-07-28 quater] — Réservation manuelle : paiement et envoi de l'email séparés de la création, champs règlement/adresse libres
 
 ### Ce qui a changé côté code

@@ -35,6 +35,7 @@ export interface SwipeDeckCard {
   titre: string;
   description: string | null;
   photo_url: string | null;
+  nom_hotel: string | null;
   ville: string | null;
   categorie_nom: string | null;
   categorie_ordre: number | null;

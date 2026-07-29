@@ -34,7 +34,13 @@ export const SwipeCard = ({ card }: SwipeCardProps) => {
 
       <div className="absolute bottom-0 left-0 right-0 p-6">
         <h2 className="text-white text-2xl font-bold leading-tight mb-1">{card.titre}</h2>
-        {card.ville && <p className="text-white/80 text-sm">{card.ville}</p>}
+        {(card.nom_hotel || card.ville) && (
+          <p className="text-white/80 text-sm">
+            {card.nom_hotel}
+            {card.nom_hotel && card.ville && <span className="mx-1 text-white/50">·</span>}
+            {card.ville}
+          </p>
+        )}
         {card.description && (
           <p className="text-white/70 text-sm mt-2 line-clamp-3 whitespace-pre-line">{card.description}</p>
         )}
