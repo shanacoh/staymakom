@@ -31,6 +31,7 @@ const T = {
     guests: "Guests",
     totalPaid: "Total paid",
     meetingPoint: "Meeting point",
+    goodToKnow: "Good to know",
     ref: "Reference",
     backHome: "Back to Home",
     copyRef: "Copy reference",
@@ -51,6 +52,7 @@ const T = {
     guests: "משתתפים",
     totalPaid: "שולם",
     meetingPoint: "נקודת מפגש",
+    goodToKnow: "טוב לדעת",
     ref: "מספר הפניה",
     backHome: "חזרה לדף הבית",
     copyRef: "העתק מספר הפניה",
@@ -71,6 +73,7 @@ const T = {
     guests: "Participants",
     totalPaid: "Montant payé",
     meetingPoint: "Point de rendez-vous",
+    goodToKnow: "Bon à savoir",
     ref: "Référence",
     backHome: "Retour à l'accueil",
     copyRef: "Copier la référence",
@@ -103,13 +106,12 @@ export default function StandaloneBookingConfirmation() {
   const { data: booking, isLoading } = useQuery({
     queryKey: ["standalone-booking-confirmation", token],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("standalone_bookings")
-        .select("*, standalone_experiences(title, title_he, title_fr, address, has_time_slots)")
-        .eq("confirmation_token", token!)
-        .single();
+      const { data, error } = await supabase.functions.invoke("get-standalone-booking-by-token", {
+        body: { confirmation_token: token },
+      });
       if (error) throw error;
-      return data as any;
+      if (data?.error) throw new Error(data.error);
+      return data.booking as any;
     },
     enabled: !!token,
   });
@@ -146,14 +148,14 @@ export default function StandaloneBookingConfirmation() {
     );
   }
 
-  const expTitle = lang === "he"
+  const expTitle = (lang === "he"
     ? booking.standalone_experiences?.title_he || booking.standalone_experiences?.title
     : lang === "fr"
       ? booking.standalone_experiences?.title_fr || booking.standalone_experiences?.title
-      : booking.standalone_experiences?.title;
+      : booking.standalone_experiences?.title) || booking.custom_experience_title;
 
   const isCancelled = booking.is_cancelled || booking.status === "cancelled";
-  const address = booking.standalone_experiences?.address;
+  const address = booking.custom_address || booking.standalone_experiences?.address;
 
   const currencySymbols: Record<string, string> = { USD: "$", EUR: "€", ILS: "₪" };
   const priceDisplay = `${currencySymbols[booking.currency] || booking.currency}${booking.sell_price?.toLocaleString()}`;
@@ -242,6 +244,14 @@ export default function StandaloneBookingConfirmation() {
                     <MapPin className="h-3 w-3" /> {t.meetingPoint}
                   </p>
                   <p className="text-sm text-muted-foreground">{address}</p>
+                </div>
+              )}
+
+              {/* Good to know */}
+              {booking.custom_regulations && (
+                <div className="pt-3 border-t">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">{t.goodToKnow}</p>
+                  <p className="text-sm text-muted-foreground whitespace-pre-line">{booking.custom_regulations}</p>
                 </div>
               )}
 

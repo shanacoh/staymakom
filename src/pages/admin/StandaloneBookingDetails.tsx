@@ -3,13 +3,16 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ArrowLeft, CheckCircle, Mail, AlertTriangle, CreditCard, Calendar, Users, Clock, MapPin, ExternalLink } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle, Mail, AlertTriangle, CreditCard, Calendar, Users, Clock, MapPin, ExternalLink, Send, ScrollText } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 
@@ -18,6 +21,7 @@ export default function AdminStandaloneBookingDetails() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [refundDialog, setRefundDialog] = useState<{ open: boolean; revolut: string }>({ open: false, revolut: "" });
+  const [paymentDialog, setPaymentDialog] = useState<{ open: boolean; mode: "paid" | "deposit_paid"; amount: string }>({ open: false, mode: "paid", amount: "" });
   const [notesValue, setNotesValue] = useState("");
   const [editingNotes, setEditingNotes] = useState(false);
 
@@ -56,6 +60,47 @@ export default function AdminStandaloneBookingDetails() {
     onError: (error: any) => toast.error("Erreur", { description: error.message }),
   });
 
+  const confirmPaymentMutation = useMutation({
+    mutationFn: async () => {
+      const update: Record<string, unknown> = { payment_status: paymentDialog.mode };
+      if (paymentDialog.mode === "deposit_paid") {
+        const amount = parseFloat(paymentDialog.amount);
+        if (Number.isNaN(amount) || amount <= 0) throw new Error("Montant d'acompte invalide");
+        update.deposit_amount = amount;
+      } else {
+        update.deposit_amount = null;
+      }
+      const { error } = await supabase
+        .from("standalone_bookings")
+        .update(update as any)
+        .eq("id", bookingId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-standalone-booking-details", bookingId] });
+      queryClient.invalidateQueries({ queryKey: ["admin-standalone-bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-standalone-bookings-hub"] });
+      setPaymentDialog({ open: false, mode: "paid", amount: "" });
+      toast.success("Paiement enregistré");
+    },
+    onError: (error: any) => toast.error("Erreur", { description: error.message }),
+  });
+
+  const sendEmailMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("send-standalone-booking-confirmation", {
+        body: { confirmation_token: booking.confirmation_token },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-standalone-booking-details", bookingId] });
+      toast.success("Email de confirmation envoyé");
+    },
+    onError: (error: any) => toast.error("Erreur", { description: error.message }),
+  });
+
   const saveNotesMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
@@ -86,6 +131,7 @@ export default function AdminStandaloneBookingDetails() {
   const getPaymentBadge = (status: string) => {
     const map: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string }> = {
       paid:           { variant: "default",     label: "Payé" },
+      deposit_paid:   { variant: "secondary",   label: "Acompte versé" },
       refund_pending: { variant: "destructive", label: "Remb. dû" },
       refunded:       { variant: "secondary",   label: "Remboursé" },
       pending:        { variant: "outline",     label: "Impayé" },
@@ -122,16 +168,64 @@ export default function AdminStandaloneBookingDetails() {
         Retour aux réservations
       </Button>
 
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="font-sans text-3xl font-bold">Réservation Experience Only</h1>
           <p className="font-mono text-sm text-muted-foreground mt-1">{booking.id}</p>
         </div>
         <div className="flex gap-2 items-center">
+          {booking.source === "manual_admin" && <Badge variant="outline">Réservation manuelle</Badge>}
           {getStatusBadge(booking)}
           {getPaymentBadge(booking.payment_status)}
         </div>
       </div>
+
+      {booking.source === "manual_admin" && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border p-4">
+          {(booking.payment_status === "pending") ? (
+            <Button
+              size="sm"
+              onClick={() => setPaymentDialog({ open: true, mode: "paid", amount: "" })}
+            >
+              <CreditCard className="h-4 w-4 mr-2" />
+              Confirmer le paiement
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setPaymentDialog({
+                open: true,
+                mode: booking.payment_status === "deposit_paid" ? "deposit_paid" : "paid",
+                amount: booking.deposit_amount != null ? String(booking.deposit_amount) : "",
+              })}
+            >
+              <CreditCard className="h-4 w-4 mr-2" />
+              Modifier le paiement
+            </Button>
+          )}
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => sendEmailMutation.mutate()}
+            disabled={sendEmailMutation.isPending}
+          >
+            {sendEmailMutation.isPending ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4 mr-2" />
+            )}
+            {booking.confirmation_email_sent_at ? "Renvoyer l'email de confirmation" : "Envoyer l'email de confirmation"}
+          </Button>
+
+          <p className="text-xs text-muted-foreground">
+            {booking.confirmation_email_sent_at
+              ? `Email envoyé le ${format(parseISO(booking.confirmation_email_sent_at), "dd MMM yyyy à HH:mm")}`
+              : "Email jamais envoyé"}
+          </p>
+        </div>
+      )}
 
       {/* Alerte remboursement à effectuer */}
       {booking.payment_status === "refund_pending" && (
@@ -235,7 +329,10 @@ export default function AdminStandaloneBookingDetails() {
           <CardContent className="space-y-3">
             <div>
               <p className="text-xs text-muted-foreground">Expérience</p>
-              <p className="font-medium">{booking.standalone_experiences?.title || "—"}</p>
+              <p className="font-medium">{booking.standalone_experiences?.title || booking.custom_experience_title || "—"}</p>
+              {!booking.standalone_experiences && booking.custom_experience_title && (
+                <p className="text-xs text-muted-foreground italic mt-0.5">Pas encore une fiche du catalogue</p>
+              )}
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Date</p>
@@ -252,12 +349,21 @@ export default function AdminStandaloneBookingDetails() {
                 </p>
               </div>
             )}
-            {booking.standalone_experiences?.address && (
+            {(booking.custom_address || booking.standalone_experiences?.address) && (
               <div>
                 <p className="text-xs text-muted-foreground">Lieu</p>
                 <p className="text-sm flex items-start gap-1.5">
                   <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
-                  {booking.standalone_experiences.address}
+                  {booking.custom_address || booking.standalone_experiences?.address}
+                </p>
+              </div>
+            )}
+            {booking.custom_regulations && (
+              <div>
+                <p className="text-xs text-muted-foreground">Règlement / conditions</p>
+                <p className="text-sm flex items-start gap-1.5 whitespace-pre-line">
+                  <ScrollText className="h-4 w-4 mt-0.5 shrink-0" />
+                  {booking.custom_regulations}
                 </p>
               </div>
             )}
@@ -296,6 +402,30 @@ export default function AdminStandaloneBookingDetails() {
               <p className="text-xs text-muted-foreground">Statut paiement</p>
               {getPaymentBadge(booking.payment_status)}
             </div>
+            {booking.payment_status === "deposit_paid" && booking.deposit_amount != null && (
+              <div>
+                <p className="text-xs text-muted-foreground">Acompte versé</p>
+                <p className="text-sm font-medium">{booking.deposit_amount} {booking.currency}</p>
+              </div>
+            )}
+            {booking.payment_status === "deposit_paid" && booking.deposit_amount != null && (
+              <div>
+                <p className="text-xs text-muted-foreground">Solde restant</p>
+                <p className="text-sm font-semibold">{(booking.sell_price - booking.deposit_amount).toFixed(2)} {booking.currency}</p>
+              </div>
+            )}
+            {booking.supplier_cost != null && (
+              <div>
+                <p className="text-xs text-muted-foreground">Coût prestataire <span className="italic">(interne)</span></p>
+                <p className="text-sm font-medium">{booking.supplier_cost} {booking.currency}</p>
+              </div>
+            )}
+            {booking.supplier_cost != null && (
+              <div>
+                <p className="text-xs text-muted-foreground">Marge <span className="italic">(interne)</span></p>
+                <p className="text-sm font-semibold text-primary">{(booking.sell_price - booking.supplier_cost).toFixed(2)} {booking.currency}</p>
+              </div>
+            )}
             {booking.revolut_order_id && (
               <div className="col-span-2">
                 <p className="text-xs text-muted-foreground">Référence Revolut</p>
@@ -354,6 +484,66 @@ export default function AdminStandaloneBookingDetails() {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog confirmation paiement */}
+      <Dialog
+        open={paymentDialog.open}
+        onOpenChange={(open) => !open && setPaymentDialog({ open: false, mode: "paid", amount: "" })}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Confirmer le paiement
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>Statut</Label>
+              <Select
+                value={paymentDialog.mode}
+                onValueChange={(v) => setPaymentDialog((prev) => ({ ...prev, mode: v as "paid" | "deposit_paid" }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="paid">Payée intégralement</SelectItem>
+                  <SelectItem value="deposit_paid">Acompte versé</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {paymentDialog.mode === "deposit_paid" && (
+              <div className="space-y-1.5">
+                <Label>Montant de l'acompte ({booking.currency})</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={paymentDialog.amount}
+                  onChange={(e) => setPaymentDialog((prev) => ({ ...prev, amount: e.target.value }))}
+                  autoFocus
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPaymentDialog({ open: false, mode: "paid", amount: "" })}>
+              Annuler
+            </Button>
+            <Button
+              onClick={() => confirmPaymentMutation.mutate()}
+              disabled={
+                confirmPaymentMutation.isPending ||
+                (paymentDialog.mode === "deposit_paid" && (paymentDialog.amount === "" || Number.isNaN(parseFloat(paymentDialog.amount))))
+              }
+            >
+              {confirmPaymentMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog remboursement */}
       <Dialog

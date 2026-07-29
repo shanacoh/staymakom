@@ -6,6 +6,27 @@
 
 ---
 
+## [2026-07-28 quater] — Réservation manuelle : paiement et envoi de l'email séparés de la création, champs règlement/adresse libres
+
+### Ce qui a changé côté code
+- `supabase/functions/create-standalone-manual-booking/index.ts` : la création d'une réservation manuelle n'envoie plus l'email automatiquement et ne marque plus le paiement comme "payé" d'office — la réservation est créée avec un paiement "en attente". Shana décide ensuite, depuis la fiche de la réservation, de marquer le paiement et d'envoyer l'email, quand elle est prête.
+- `src/components/admin/CreateManualStandaloneBookingDialog.tsx` : ajout de deux champs optionnels dans le formulaire — "Adresse et directions" et "Règlement / conditions particulières". Ces deux champs n'apparaissent dans l'email et sur la page de confirmation client que s'ils sont remplis. Après création, l'admin est redirigé directement vers la fiche de la réservation.
+- `src/pages/admin/StandaloneBookingDetails.tsx` : nouvelles actions sur la fiche d'une réservation manuelle — "Confirmer le paiement" (payée intégralement, ou acompte versé avec un montant) et "Envoyer / Renvoyer l'email de confirmation", avec indication de la date du dernier envoi. Affiche aussi l'adresse et le règlement s'ils sont renseignés, ainsi que l'acompte et le solde restant.
+- `supabase/functions/send-standalone-booking-confirmation/index.ts` : l'email affiche désormais un encart "Good to Know" si un règlement a été renseigné, et utilise l'adresse spécifique de la réservation à la place de celle du catalogue si elle est renseignée. Marque automatiquement la date d'envoi sur la réservation après un envoi réussi.
+- `supabase/functions/get-standalone-booking-by-token/index.ts` et `src/pages/StandaloneBookingConfirmation.tsx` : même logique d'affichage (règlement + adresse) sur la page de confirmation que voit le client.
+- Badges de paiement mis à jour (`StandaloneBookings.tsx`, `Reservations.tsx`, `StandaloneBookingDetails.tsx`) pour afficher "Acompte versé".
+
+### Ce qui a changé côté base de données
+- Migration `20260728000000_standalone_bookings_deposit_regulations_address.sql` :
+  - Le statut de paiement accepte une nouvelle valeur `deposit_paid` (acompte versé), avec une colonne `deposit_amount` associée.
+  - Nouvelle colonne `confirmation_email_sent_at` : date du dernier envoi de l'email de confirmation.
+  - Nouvelles colonnes `custom_regulations` et `custom_address` : texte libre par réservation, visible du client uniquement s'il est rempli.
+
+### Pourquoi ce changement
+- Shana voulait pouvoir créer une réservation dès qu'elle a les infos du client, sans que ça envoie tout de suite un email de confirmation ni que ça suppose que le paiement est déjà bouclé — le paiement (complet ou acompte) et l'envoi de l'email se décident ensuite, au bon moment. Elle a aussi besoin de préciser, au cas par cas, des conditions particulières ou un point de rendez-vous spécifique à communiquer au client.
+
+---
+
 ## [2026-07-28 ter] — Correctif : écran vide bizarre à la fin de chaque catégorie
 
 ### Ce qui a changé côté code
@@ -32,6 +53,23 @@
 
 ### Pourquoi ce changement
 - Après avoir testé l'option "Trier par catégorie", Shana a trouvé la pancarte trop froide visuellement, et a demandé à pouvoir choisir elle-même quelle catégorie passe en premier (ex. toujours les restaurants avant le reste) plutôt que de dépendre de l'ordre des propositions du dossier.
+
+---
+
+## [2026-07-28] — Nouvelle option par dossier : trier le swipe par catégorie
+
+### Ce qui a changé côté code
+- `src/pages/admin/swipe/DossierDetail.tsx` : nouvel interrupteur "Trier les propositions par catégorie", juste sous "Afficher les prix".
+- `src/components/swipe/SwipeCategoryDivider.tsx` (nouveau) : écran de transition affiché entre chaque catégorie côté client ("pancarte" avec le nom de la catégorie et le nombre de propositions, bouton "Continuer").
+- `src/components/swipe/SwipeDeckParCategorie.tsx` (nouveau) : quand l'option est activée, regroupe les propositions par catégorie (celles sans catégorie sont regroupées sous "Autres"), dans l'ordre où chaque catégorie apparaît la première fois dans l'ordre manuel du dossier — les propositions à l'intérieur d'une même catégorie gardent cet ordre manuel entre elles. Une catégorie à la fois : pancarte, puis ses propositions, puis la pancarte suivante.
+- `src/pages/swipe/SwipePublic.tsx` : bascule vers cet écran groupé si l'option est activée pour le dossier, sinon garde exactement le comportement actuel (ordre manuel, sans pancarte) — c'est le réglage par défaut, rien ne change pour les dossiers existants.
+- Le mécanisme de swipe lui-même (glissement, confirmation, annulation du dernier swipe) n'a pas été touché : la vue par catégorie réutilise telle quelle la même mécanique, une catégorie à la fois.
+
+### Ce qui a changé côté base de données
+- Migration `20260728000000_add_trier_par_categorie.sql` : ajoute la colonne `trier_par_categorie` (désactivée par défaut) sur `dossiers`, et met à jour la fonction publique `swipe_get_dossier_by_token` pour qu'elle renvoie ce réglage à la page de swipe.
+
+### Pourquoi ce changement
+- Shana a commencé à utiliser les catégories de propositions et voulait, dossier par dossier, pouvoir présenter le swipe organisé par catégorie (ex. tous les restaurants d'un coup, puis toutes les expériences) plutôt que dans un ordre mélangé — avec une annonce claire au client à chaque changement de catégorie.
 
 ---
 
@@ -124,6 +162,27 @@
 
 ---
 
+## [2026-07-26 bis] — Réservation manuelle : expériences hors catalogue, coût prestataire, et correction d'une fuite de données
+
+### Ce qui a changé côté code
+- `supabase/functions/send-standalone-booking-confirmation/index.ts` : le bouton "View My Booking" (retiré temporairement pendant les tests visuels) est remis dans l'email, maintenant que la fonctionnalité passe en usage réel.
+- `src/components/admin/CreateManualStandaloneBookingDialog.tsx` : ajout d'un bascule "Expérience pas encore sur le site" — permet de créer une réservation manuelle pour une prestation qui n'a pas encore de fiche dans le catalogue (nom libre + créneau libre + devise), au lieu d'obliger à choisir une expérience déjà publiée. Ajout d'un champ "Coût réel prestataire", optionnel et interne.
+- `supabase/functions/create-standalone-manual-booking/index.ts` : accepte désormais soit une expérience du catalogue (comportement inchangé), soit un nom libre + devise (sans les validations de catalogue) ; enregistre le coût prestataire si renseigné.
+- `src/pages/admin/StandaloneBookings.tsx`, `Reservations.tsx`, `StandaloneBookingDetails.tsx` : affichent le nom libre de l'expérience quand la réservation n'est pas liée à une fiche catalogue. La fiche détail affiche aussi le coût prestataire et la marge calculée (uniquement là, jamais dans les listes ni dans l'email).
+- `supabase/functions/get-standalone-booking-by-token/index.ts` (nouvelle fonction) : la page de confirmation client passe désormais par cette fonction, qui ne renvoie que les champs nécessaires à l'affichage (jamais le téléphone, les notes internes, le coût prestataire, ou toute autre donnée interne).
+- `src/pages/StandaloneBookingConfirmation.tsx` : bascule de la lecture directe de la table vers la nouvelle fonction sécurisée.
+
+### Ce qui a changé côté base de données
+- Migration `20260726010000_standalone_bookings_custom_experience_cost_and_rls_fix.sql` :
+  - `standalone_experience_id` devient optionnel et une colonne `custom_experience_title` est ajoutée (l'un des deux est toujours obligatoire) — pour les réservations hors catalogue.
+  - Nouvelle colonne `supplier_cost` : coût réel payé au prestataire, strictement interne.
+  - **Correction de sécurité** : suppression d'une policy de sécurité (`standalone_bookings_public_read_by_token`) qui, malgré son nom, autorisait n'importe qui possédant la clé publique du site à lire l'intégralité de la table des réservations (noms, emails, téléphones, prix de tous les clients), sans connexion. Vérifié après correction : cet accès direct ne renvoie plus rien.
+
+### Pourquoi ce changement
+- Retours de Shana après validation du visuel de l'email : le cas le plus fréquent pour une réservation en direct est une prestation qui n'a pas encore de fiche sur le site, et elle a besoin de suivre sa marge réelle sur ces réservations négociées à la main. En creusant ce dernier point, une faille de sécurité préexistante (sans lien avec le travail du jour) a été repérée et corrigée dans la foulée, avec l'accord de Shana.
+
+---
+
 ## [2026-07-26] — Nouveau module "Swipe Itinéraire" : proposer un voyage et le faire valider par le client façon Tinder
 
 ### Ce qui a changé côté code
@@ -148,7 +207,46 @@
 
 ---
 
+## [2026-07-26] — Réservation manuelle pour les clients contactés en direct + email de confirmation plus fidèle à la marque
 
+### Ce qui a changé côté code
+- `supabase/functions/create-standalone-manual-booking` (nouvelle fonction) : permet à Shana de créer elle-même, depuis le back-office, une réservation "expérience seule" pour un client qui l'a contactée en direct (téléphone, WhatsApp, email) plutôt que de passer par le site. La réservation est créée directement comme confirmée et payée, puis le même email de confirmation que pour une réservation en ligne part automatiquement au client. Accès réservé aux comptes admin (vérifié dans la fonction).
+- `src/components/admin/CreateManualStandaloneBookingDialog.tsx` (nouveau composant) : le formulaire de création manuelle (expérience, date, créneau/option tarifaire si l'expérience en a, nombre de personnes, coordonnées client, prix avec suggestion automatique modifiable), factorisé pour être utilisable sur les deux pages du back-office qui listent des réservations d'expériences.
+- `src/pages/admin/Reservations.tsx` (page "Bookings", celle utilisée au quotidien) : ajout du bouton "Nouvelle réservation", visible en mode "Experience Only", à côté du bascule "With Hotel / Experience Only". Badge "Manuelle" affiché sur les réservations créées ainsi.
+- `src/pages/admin/StandaloneBookings.tsx` et `StandaloneBookingDetails.tsx` : même bouton et même badge, pour la page annexe "Réservations Experience Only".
+- `supabase/functions/send-standalone-booking-confirmation/index.ts` : nouvelle version de l'email de confirmation — bandeau photo (route désertique, dans l'esprit de la page 404 du site) en en-tête, police Inter, accent rouge de la marque (`#ad1414`, la couleur des titres du site) à la place du doré/turquoise des versions précédentes, fond clair façon back-office plutôt que bandeau anthracite. Structure du mail (carte de réservation, bouton, pied de page) inchangée.
+
+### Ce qui a changé côté base de données
+- Migration `20260726000000_add_source_to_standalone_bookings.sql` : ajout de la colonne `source` (`online` ou `manual_admin`) sur `standalone_bookings`, pour distinguer les réservations créées automatiquement par le site de celles saisies manuellement par Shana. Toutes les réservations existantes restent `online`.
+- Nouvelle image `email/confirmation-hero-desert-road.jpg` déposée dans le bucket de stockage `NL` (déjà utilisé pour les visuels d'emails), pour le bandeau photo de l'email de confirmation.
+
+### Pourquoi ce changement
+- Shana a des clients qui la contactent en direct pour réserver, sans passer par le site — il n'existait aucun moyen d'enregistrer ces réservations ni d'envoyer une confirmation. Elle a aussi signalé que l'email de confirmation des expériences seules ne ressemblait pas à la marque StayMakom : après un premier essai (palette dorée reprise de l'email hôtel) jugé toujours pas fidèle, elle a précisé vouloir la police Inter, l'accent rouge du site et une ambiance photo façon page 404 — c'est cette direction qui a été retenue. Le bouton de création manuelle a aussi dû être déplacé : il n'apparaissait d'abord que sur une page annexe du back-office, pas sur celle que Shana utilise réellement au quotidien.
+
+---
+
+## [2026-07-24] — Les réservations "expérience seule" n'apparaissent plus tant qu'elles ne sont pas payées
+
+### Ce qui a changé côté code
+- `src/pages/admin/Reservations.tsx` : nouvelle section **"En cours"** dans le back-office (mode "Experience Only"), qui regroupe séparément les débuts de réservation dont le paiement n'est pas encore confirmé. La liste principale des réservations ne mélange plus ces lignes "en attente" avec les vraies réservations confirmées.
+- `src/pages/StandaloneCheckout.tsx` : juste après que le client a payé, le site revérifie tout de suite le paiement auprès de Revolut et fait passer la réservation en confirmée en quelques secondes, sans attendre le message de confirmation envoyé séparément par Revolut (le "webhook").
+- `supabase/functions/confirm-standalone-payment` (nouvelle fonction) : effectue cette vérification immédiate, et envoie l'email "🎉 Nouvelle réservation" à shana@staymakom.com quand c'est elle qui confirme la réservation.
+- `supabase/functions/reconcile-standalone-bookings` (nouvelle fonction) : filet de sécurité qui repasse régulièrement sur les réservations restées "en attente" plus de 30 minutes, revérifie chacune directement auprès de Revolut, et corrige leur statut (confirmée si payée, annulée si le paiement n'a jamais abouti). Envoie aussi l'email "Nouvelle réservation" si c'est elle qui confirme, et un email d'alerte séparé si une réservation reste bloquée plus de 2h sans réponse claire de Revolut.
+- `supabase/functions/revolut-webhook/index.ts` : quand ce message de confirmation Revolut échoue à mettre à jour une réservation en base, le site envoie maintenant un **email d'alerte** (au lieu de se contenter d'un simple journal technique que personne ne consultait). Même chose pour le cas où un paiement Revolut réussi ne correspond à aucune réservation connue. Un garde-fou évite aussi d'envoyer l'email "Nouvelle réservation" en double si une réservation a déjà été confirmée entre-temps par un autre des trois mécanismes.
+- **Email de confirmation à shana@staymakom.com** : désormais envoyé de façon fiable quel que soit le mécanisme qui confirme la réservation (immédiat, webhook, ou filet de sécurité) — un seul email par réservation, jamais zéro, jamais deux. Pour les réservations "avec hôtel", cet email existait déjà (envoyé à la création, qui n'a lieu qu'après paiement confirmé) et n'a pas eu besoin d'être modifié.
+
+### Ce qui a changé côté base de données
+- Aucune migration nécessaire : réutilisation des colonnes déjà existantes (`status`, `payment_status`, `revolut_order_id`) sur `standalone_bookings`.
+
+### Pourquoi ce changement
+- Shana a signalé qu'une réservation "expérience seule" apparaissait dans le back-office dès que le client commençait à payer, avant même la confirmation du paiement — et que si le message de confirmation de Revolut échouait, la réservation restait bloquée sans que personne ne soit prévenu. Décision prise avec Shana : garder la trace technique dès le début (indispensable pour ne jamais perdre une réservation si le client ferme la page juste après avoir payé), mais la garder invisible des vraies réservations tant qu'elle n'est pas confirmée, et fiabiliser la confirmation à trois niveaux (immédiat, alerte email, filet de sécurité périodique). Périmètre volontairement limité aux réservations "expérience seule" — le parcours "hôtel + expérience" crée déjà la réservation après confirmation du paiement.
+
+### ⚠️ À faire côté exploitation (hors code)
+- **Déployer** `revolut-webhook`, `confirm-standalone-payment` et `reconcile-standalone-bookings` sur Supabase.
+- **Configurer un déclenchement périodique** (Cron) de `reconcile-standalone-bookings` depuis le tableau de bord Supabase, par exemple toutes les 15 à 30 minutes.
+- **Vérifier que `RESEND_API_KEY` est bien configuré** côté Supabase pour que les emails d'alerte partent réellement.
+
+---
 
 ## [2026-07-24] — Correction des réponses email impossibles sur la confirmation des expériences seules
 
@@ -215,6 +313,39 @@
 
 ### À noter (dette pré-existante, non liée)
 - `RevolutPaymentWidget.tsx` importe un type Revolut (`EmbeddedCheckoutInstance`) qui n'est pas ré-exporté par le SDK : petite erreur de typage présente **avant** cette correction, sans effet sur le build. À nettoyer séparément si besoin.
+
+---
+
+## [2026-07-20 bis] — Options tarifaires : gestion coût + marge (comme le prix principal)
+
+### Ce qui a changé côté code
+- `src/components/admin/StandaloneRateOptionsManager.tsx` : le prix de chaque formule n'est plus saisi directement — l'admin saisit désormais le **prix fournisseur (coût)**, et le prix client est calculé automatiquement avec la même marge % que le prix principal de la fiche (curseur "Markup STAYMAKOM"), affiché en direct pendant la saisie. La liste affiche le prix client en évidence avec le coût fournisseur en petit texte, pour visualiser la marge.
+- `src/components/forms/StandaloneExperienceForm.tsx` : transmet la marge % actuelle (`markupPercent`) au gestionnaire d'options.
+- Aucun changement côté fiche publique ni edge function de paiement : elles continuent de lire le prix client déjà calculé, exactement comme avant.
+
+### Ce qui a changé côté base de données
+- Migration `20260720020000_standalone_rate_options_add_supplier_price.sql` : ajoute les colonnes `supplier_price_adult` et `supplier_price_child` sur `standalone_rate_options`, pour garder une trace du coût fournisseur de chaque formule (comme c'est déjà le cas pour le prix principal de l'expérience).
+
+### Pourquoi ce changement
+- Shana a signalé que les formules n'étaient pas gérées comme un vrai prix : le montant tapé était directement le prix client, sans passer par le coût et la marge StayMakom comme partout ailleurs sur la fiche — la marge n'était donc pas suivie. Correction pour rester cohérent avec le reste de la plateforme, en réutilisant la marge déjà réglée pour le prix principal (pas de marge séparée par formule, pour rester simple).
+
+---
+
+## [2026-07-20] — Options tarifaires (plusieurs formules à prix différents, ex: menus au restaurant)
+
+### Ce qui a changé côté code
+- `src/components/forms/StandaloneExperienceForm.tsx` : ajout d'un interrupteur "Options tarifaires" directement dans la carte "Prix de l'expérience" — indépendant des créneaux horaires, activable pour n'importe quelle expérience standalone.
+- `src/components/admin/StandaloneRateOptionsManager.tsx` (nouveau) : gestion d'une liste libre de formules depuis le back-office — un libellé (EN/FR/HE, où l'admin écrit l'heure si besoin, ex: "12h — Menu Découverte") + un prix adulte/enfant, disponibilité, réorganisation. Calqué sur le gestionnaire d'extras existant.
+- `src/pages/StandaloneExperience.tsx` : sur la fiche publique, les formules actives s'affichent en bulles cliquables (libellé + prix) ; le total et le bouton "Continuer" en tiennent compte. Première version (deux étapes créneau → option) simplifiée le même jour suite au retour de Shana : plus simple à configurer et à utiliser en une seule sélection.
+- `src/pages/StandaloneCheckout.tsx` : la formule choisie est reprise dans le récapitulatif et transmise au moment du paiement.
+- `supabase/functions/process-standalone-payment/index.ts` : le prix final est toujours recalculé côté serveur à partir de la formule choisie (jamais depuis ce que le navigateur envoie). Redéployé (version 5).
+
+### Ce qui a changé côté base de données
+- Migration `20260720000000_create_standalone_rate_options.sql` : ajoute la colonne `has_rate_options` sur `standalone_experiences` et crée la table `standalone_rate_options` (une ligne = une formule avec son prix), avec une colonne `rate_option` sur `standalone_bookings` pour garder une trace de la formule choisie à la réservation.
+- Migration `20260720010000_standalone_rate_options_drop_time_slot_not_null.sql` : simplification — la colonne `time_slot` (héritée d'une première version liée aux créneaux horaires) n'est plus obligatoire ; chaque formule est autonome (libellé + prix).
+
+### Pourquoi ce changement
+- Shana a besoin que certaines expériences (ex: un restaurant) puissent proposer plusieurs formules à prix différents (ex: menu déjeuner à 150₪ vs menu dégustation à 280₪). Fonctionnalité activable au cas par cas, sans impact sur les expériences qui n'en ont pas besoin. Design volontairement simplifié en une liste plate "texte + prix" pour rester facile à configurer.
 
 ---
 

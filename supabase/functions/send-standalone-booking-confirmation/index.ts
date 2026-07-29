@@ -54,13 +54,17 @@ function buildEmailHtml(params: {
   currency: string;
   confirmationToken: string;
   address?: string;
+  regulations?: string;
+  bookingRef: string;
 }): string {
   const {
     guestName, experienceTitle, bookingDate, timeSlot,
-    partySize, totalPrice, currency, confirmationToken, address,
+    partySize, totalPrice, currency, confirmationToken, address, regulations, bookingRef,
   } = params;
 
   const confirmationUrl = `https://staymakom.com/standalone-booking/confirmation/${confirmationToken}`;
+  const heroImageUrl = 'https://uqeipzfdhyjkjzvqbkeu.supabase.co/storage/v1/object/public/NL/email/confirmation-hero-desert-road.jpg';
+  const brandRed = '#ad1414';
 
   return `
 <!DOCTYPE html>
@@ -69,33 +73,36 @@ function buildEmailHtml(params: {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Booking Confirmation — StayMakom</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+  </style>
 </head>
-<body style="margin:0;padding:0;background:#FAF8F4;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#FAF8F4;padding:40px 0;">
+<body style="margin:0;padding:0;background:#FAF9F6;font-family:'Inter',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#FAF9F6;padding:40px 0;">
     <tr>
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
 
-          <!-- Header -->
+          <!-- Header : photo bandeau -->
           <tr>
-            <td style="background:#1A1814;padding:32px 40px;text-align:center;">
-              <h1 style="margin:0;color:#FAF8F4;font-size:22px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">STAYMAKOM</h1>
-              <p style="margin:8px 0 0;color:#A8C5C3;font-size:13px;letter-spacing:0.05em;text-transform:uppercase;">Experience Only</p>
+            <td background="${heroImageUrl}" bgcolor="#1a1a1a" style="background-image:url('${heroImageUrl}');background-size:cover;background-position:center;padding:44px 40px;text-align:center;">
+              <p style="margin:0 0 10px;color:rgba(255,255,255,0.75);font-size:11px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;text-shadow:0 2px 12px rgba(0,0,0,0.5);">Experience Only</p>
+              <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;text-shadow:0 2px 20px rgba(0,0,0,0.5);">STAYMAKOM</h1>
             </td>
           </tr>
 
           <!-- Confirmation banner -->
           <tr>
-            <td style="background:#E8F5F4;padding:24px 40px;text-align:center;border-bottom:1px solid #D4EAE8;">
-              <p style="margin:0;font-size:16px;font-weight:600;color:#1A7A74;">✓ Booking Confirmed</p>
-              <p style="margin:6px 0 0;font-size:14px;color:#4A8A87;">We look forward to seeing you soon!</p>
+            <td style="background:#FAF9F6;padding:24px 40px;text-align:center;border-bottom:1px solid #eee;">
+              <p style="margin:0;font-size:16px;font-weight:700;color:${brandRed};">✓ Booking Confirmed</p>
+              <p style="margin:6px 0 0;font-size:14px;color:#666;">We look forward to seeing you soon!</p>
             </td>
           </tr>
 
           <!-- Body -->
           <tr>
             <td style="padding:40px;">
-              <p style="margin:0 0 24px;font-size:16px;color:#1A1814;">
+              <p style="margin:0 0 24px;font-size:16px;color:#1a1a1a;">
                 Dear <strong>${escapeHTML(guestName)}</strong>,
               </p>
               <p style="margin:0 0 32px;font-size:15px;color:#555;line-height:1.6;">
@@ -103,15 +110,16 @@ function buildEmailHtml(params: {
               </p>
 
               <!-- Booking card -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="background:#FAF8F4;border-radius:8px;border:1px solid #E8E0D4;margin-bottom:32px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#FAF9F6;border-radius:8px;border:1px solid #eee;margin-bottom:32px;">
                 <tr>
                   <td style="padding:24px;">
 
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td style="padding-bottom:16px;border-bottom:1px solid #E8E0D4;">
-                          <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#888;">Experience</p>
-                          <p style="margin:4px 0 0;font-size:16px;font-weight:700;color:#1A1814;">${escapeHTML(experienceTitle)}</p>
+                        <td style="padding-bottom:16px;border-bottom:1px solid #eee;">
+                          <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#999;">Experience</p>
+                          <p style="margin:4px 0 0;font-size:16px;font-weight:700;color:#1a1a1a;">${escapeHTML(experienceTitle)}</p>
+                          <p style="margin:8px 0 0;font-size:12px;color:#999;">Booking Ref: <span style="font-weight:600;color:#1a1a1a;">${escapeHTML(bookingRef)}</span></p>
                         </td>
                       </tr>
                       <tr>
@@ -119,31 +127,31 @@ function buildEmailHtml(params: {
                           <table width="100%" cellpadding="0" cellspacing="0">
                             <tr>
                               <td width="50%" style="padding-bottom:12px;">
-                                <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#888;">Date</p>
-                                <p style="margin:4px 0 0;font-size:14px;font-weight:600;color:#1A1814;">${formatDate(bookingDate)}</p>
+                                <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#999;">Date</p>
+                                <p style="margin:4px 0 0;font-size:14px;font-weight:600;color:#1a1a1a;">${formatDate(bookingDate)}</p>
                               </td>
                               ${timeSlot ? `
                               <td width="50%" style="padding-bottom:12px;">
-                                <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#888;">Time</p>
-                                <p style="margin:4px 0 0;font-size:14px;font-weight:600;color:#1A1814;">🕐 ${escapeHTML(timeSlot)}</p>
+                                <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#999;">Time</p>
+                                <p style="margin:4px 0 0;font-size:14px;font-weight:600;color:#1a1a1a;">🕐 ${escapeHTML(timeSlot)}</p>
                               </td>
                               ` : ''}
                             </tr>
                             <tr>
                               <td width="50%" style="padding-bottom:12px;">
-                                <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#888;">Guests</p>
-                                <p style="margin:4px 0 0;font-size:14px;font-weight:600;color:#1A1814;">${partySize} person${partySize > 1 ? 's' : ''}</p>
+                                <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#999;">Guests</p>
+                                <p style="margin:4px 0 0;font-size:14px;font-weight:600;color:#1a1a1a;">${partySize} person${partySize > 1 ? 's' : ''}</p>
                               </td>
                               <td width="50%" style="padding-bottom:12px;">
-                                <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#888;">Total</p>
-                                <p style="margin:4px 0 0;font-size:14px;font-weight:700;color:#1A7A74;">${formatCurrency(totalPrice, currency)}</p>
+                                <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#999;">Total</p>
+                                <p style="margin:4px 0 0;font-size:14px;font-weight:700;color:${brandRed};">${formatCurrency(totalPrice, currency)}</p>
                               </td>
                             </tr>
                             ${address ? `
                             <tr>
                               <td colspan="2" style="padding-bottom:12px;">
-                                <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#888;">Meeting Point</p>
-                                <p style="margin:4px 0 0;font-size:14px;color:#1A1814;">📍 ${escapeHTML(address)}</p>
+                                <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#999;">Meeting Point</p>
+                                <p style="margin:4px 0 0;font-size:14px;color:#1a1a1a;">📍 ${escapeHTML(address)}</p>
                               </td>
                             </tr>
                             ` : ''}
@@ -156,12 +164,24 @@ function buildEmailHtml(params: {
                 </tr>
               </table>
 
+              ${regulations ? `
+              <!-- Good to know -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#FAF9F6;border-radius:8px;border:1px solid #eee;margin-bottom:32px;">
+                <tr>
+                  <td style="padding:20px 24px;">
+                    <p style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#999;">Good to Know</p>
+                    <p style="margin:0;font-size:14px;color:#1a1a1a;line-height:1.6;white-space:pre-line;">${escapeHTML(regulations)}</p>
+                  </td>
+                </tr>
+              </table>
+              ` : ''}
+
               <!-- CTA -->
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
                 <tr>
                   <td align="center">
                     <a href="${confirmationUrl}"
-                       style="display:inline-block;background:#1A1814;color:#FAF8F4;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:14px;font-weight:600;letter-spacing:0.05em;">
+                       style="display:inline-block;background:${brandRed};color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:999px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;">
                       View My Booking
                     </a>
                   </td>
@@ -170,15 +190,16 @@ function buildEmailHtml(params: {
 
               <p style="margin:0;font-size:14px;color:#888;line-height:1.6;">
                 Questions? Reply to this email or contact us at
-                <a href="mailto:shana@staymakom.com" style="color:#1A7A74;text-decoration:none;">shana@staymakom.com</a>
+                <a href="mailto:shana@staymakom.com" style="color:${brandRed};text-decoration:none;">shana@staymakom.com</a>
               </p>
             </td>
           </tr>
 
           <!-- Footer -->
           <tr>
-            <td style="background:#1A1814;padding:24px 40px;text-align:center;">
-              <p style="margin:0;font-size:12px;color:#888;">© StayMakom · The Israel most people never find.</p>
+            <td style="background:#ffffff;padding:24px 40px;text-align:center;border-top:1px solid #eee;">
+              <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#1a1a1a;">StayMakom</p>
+              <p style="margin:6px 0 0;font-size:12px;color:#999;">The Israel most people never find.</p>
             </td>
           </tr>
 
@@ -229,7 +250,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: booking, error: bookingError } = await supabase
       .from('standalone_bookings')
-      .select('customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, confirmation_token, standalone_experiences(title, address, address_he)')
+      .select('id, customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, confirmation_token, custom_experience_title, custom_address, custom_regulations, standalone_experiences(title, address, address_he)')
       .eq('confirmation_token', confirmation_token)
       .single();
 
@@ -241,17 +262,20 @@ Deno.serve(async (req: Request) => {
     }
 
     const experience = booking.standalone_experiences as unknown as { title: string; address?: string; address_he?: string } | null;
+    const experienceTitle = experience?.title || booking.custom_experience_title || '';
 
     const html = buildEmailHtml({
       guestName: booking.customer_name,
-      experienceTitle: experience?.title || '',
+      experienceTitle,
       bookingDate: booking.booking_date,
       timeSlot: booking.time_slot || undefined,
       partySize: booking.party_size,
       totalPrice: booking.sell_price,
       currency: booking.currency || 'USD',
       confirmationToken: booking.confirmation_token,
-      address: experience?.address,
+      address: booking.custom_address || experience?.address,
+      regulations: booking.custom_regulations || undefined,
+      bookingRef: `SM-${booking.id.slice(0, 8).toUpperCase()}`,
     });
 
     const emailResponse = await fetch('https://api.resend.com/emails', {
@@ -264,7 +288,7 @@ Deno.serve(async (req: Request) => {
         from: 'StayMakom <hello@staymakom.com>',
         reply_to: 'shana@staymakom.com',
         to: [booking.customer_email],
-        subject: `✓ Your experience is confirmed — ${experience?.title || ''}`,
+        subject: `✓ Your experience is confirmed — ${experienceTitle}`,
         html,
       }),
     });
@@ -277,6 +301,11 @@ Deno.serve(async (req: Request) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    await supabase
+      .from('standalone_bookings')
+      .update({ confirmation_email_sent_at: new Date().toISOString() } as any)
+      .eq('id', booking.id);
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

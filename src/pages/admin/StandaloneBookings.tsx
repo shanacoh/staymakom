@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,13 +12,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { format, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { Search, X, Mail, Clock, ExternalLink } from "lucide-react";
+import { Search, X, Mail, Clock, ExternalLink, Plus } from "lucide-react";
+import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
 
 const AdminStandaloneBookings = () => {
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ["admin-standalone-bookings", statusFilter, paymentFilter],
@@ -26,7 +28,7 @@ const AdminStandaloneBookings = () => {
       let query = supabase
         .from("standalone_bookings")
         .select(
-          "id, customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, status, is_cancelled, payment_status, refund_amount, created_at, standalone_experiences(title, supplier_booking_url)"
+          "id, customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, status, is_cancelled, payment_status, refund_amount, created_at, source, custom_experience_title, standalone_experiences(title, supplier_booking_url)"
         )
         .order("created_at", { ascending: false });
 
@@ -53,7 +55,7 @@ const AdminStandaloneBookings = () => {
     return bookings.filter((b: any) =>
       (b.customer_name || "").toLowerCase().includes(q) ||
       (b.customer_email || "").toLowerCase().includes(q) ||
-      (b.standalone_experiences?.title || "").toLowerCase().includes(q)
+      (b.standalone_experiences?.title || b.custom_experience_title || "").toLowerCase().includes(q)
     );
   }, [bookings, searchQuery]);
 
@@ -71,6 +73,7 @@ const AdminStandaloneBookings = () => {
   const getPaymentBadge = (booking: any) => {
     const map: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string }> = {
       paid:           { variant: "default",     label: "Payé" },
+      deposit_paid:   { variant: "secondary",   label: "Acompte versé" },
       refund_pending: { variant: "destructive", label: "Remb. dû" },
       refunded:       { variant: "secondary",   label: "Remboursé" },
       pending:        { variant: "outline",     label: "Impayé" },
@@ -82,9 +85,15 @@ const AdminStandaloneBookings = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl sm:text-3xl font-bold">Réservations Experience Only</h2>
-        <p className="text-sm text-muted-foreground">Toutes les réservations standalone — sans hôtel</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-bold">Réservations Experience Only</h2>
+          <p className="text-sm text-muted-foreground">Toutes les réservations standalone — sans hôtel</p>
+        </div>
+        <Button onClick={() => setCreateOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Nouvelle réservation
+        </Button>
       </div>
 
       {/* Filters */}
@@ -157,14 +166,19 @@ const AdminStandaloneBookings = () => {
                 <TableRow key={booking.id} className={booking.is_cancelled ? "opacity-60" : ""}>
                   <TableCell className="font-mono text-xs">{booking.id.slice(0, 8)}</TableCell>
                   <TableCell>
-                    <div className="font-medium text-sm">{booking.customer_name || "—"}</div>
+                    <div className="font-medium text-sm flex items-center gap-1.5">
+                      {booking.customer_name || "—"}
+                      {booking.source === "manual_admin" && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">Manuelle</Badge>
+                      )}
+                    </div>
                     {booking.customer_email && (
                       <a href={`mailto:${booking.customer_email}`} className="text-xs text-muted-foreground hover:underline flex items-center gap-1">
                         <Mail className="h-3 w-3" />{booking.customer_email}
                       </a>
                     )}
                   </TableCell>
-                  <TableCell className="text-sm">{booking.standalone_experiences?.title || "—"}</TableCell>
+                  <TableCell className="text-sm">{booking.standalone_experiences?.title || booking.custom_experience_title || "—"}</TableCell>
                   <TableCell className="text-sm whitespace-nowrap">
                     {booking.booking_date ? format(parseISO(booking.booking_date), "dd MMM yyyy") : "—"}
                   </TableCell>
@@ -223,6 +237,8 @@ const AdminStandaloneBookings = () => {
           </p>
         </div>
       )}
+
+      <CreateManualStandaloneBookingDialog open={createOpen} onOpenChange={setCreateOpen} />
     </div>
   );
 };

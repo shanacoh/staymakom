@@ -28,14 +28,17 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, formatDistanceToNow } from "date-fns";
+import { fr } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
-import { Search, X, AlertTriangle, CheckCircle, Mail, Building2, Zap, Clock } from "lucide-react";
+import { Search, X, AlertTriangle, CheckCircle, Mail, Building2, Zap, Clock, Hourglass, Plus } from "lucide-react";
+import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
 
 const AdminBookings = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<"hotel" | "standalone">("hotel");
+  const [createOpen, setCreateOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [hotelFilter, setHotelFilter] = useState<string>("all");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
@@ -91,11 +94,16 @@ const AdminBookings = () => {
     queryFn: async () => {
       let query = supabase
         .from("standalone_bookings")
-        .select("id, customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, status, is_cancelled, payment_status, refund_amount, created_at, standalone_experiences(title)")
+        .select("id, customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, status, is_cancelled, payment_status, refund_amount, created_at, source, custom_experience_title, standalone_experiences(title)")
         .order("created_at", { ascending: false });
       if (statusFilter === "cancelled") {
         query = query.eq("is_cancelled", true);
-      } else if (statusFilter !== "all") {
+      } else if (statusFilter === "all") {
+        // Les réservations "pending" sont des débuts de réservation pas encore
+        // finalisés — elles ont leur propre section "En cours" et ne doivent
+        // pas se mélanger avec les vraies réservations dans la liste par défaut.
+        query = query.neq("status", "pending");
+      } else {
         query = query.eq("status", statusFilter).eq("is_cancelled", false);
       }
       if (paymentFilter !== "all") {
@@ -108,6 +116,22 @@ const AdminBookings = () => {
     enabled: mode === "standalone",
   });
 
+  const { data: inProgressStandalone } = useQuery({
+    queryKey: ["admin-standalone-bookings-inprogress"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("standalone_bookings")
+        .select("id, customer_name, customer_email, sell_price, currency, created_at, standalone_experiences(title)")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: mode === "standalone",
+    refetchInterval: 60_000,
+  });
+
   const filteredStandaloneBookings = useMemo(() => {
     if (!standaloneBookings) return [];
     if (!searchQuery.trim()) return standaloneBookings;
@@ -115,7 +139,7 @@ const AdminBookings = () => {
     return standaloneBookings.filter((b: any) =>
       (b.customer_name || "").toLowerCase().includes(q) ||
       (b.customer_email || "").toLowerCase().includes(q) ||
-      ((b.standalone_experiences as any)?.title || "").toLowerCase().includes(q)
+      ((b.standalone_experiences as any)?.title || b.custom_experience_title || "").toLowerCase().includes(q)
     );
   }, [standaloneBookings, searchQuery]);
 
@@ -188,6 +212,7 @@ const AdminBookings = () => {
   const getPaymentBadge = (booking: any) => {
     const map: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string }> = {
       paid:          { variant: "default",     label: "Paid" },
+      deposit_paid:  { variant: "secondary",   label: "Deposit Paid" },
       refund_pending:{ variant: "destructive", label: "Refund Due" },
       refunded:      { variant: "secondary",   label: "Refunded" },
       unpaid:        { variant: "outline",     label: "Unpaid" },
@@ -205,26 +230,68 @@ const AdminBookings = () => {
       </div>
 
       {/* Toggle With Hotel / Experience Only */}
-      <div className="inline-flex items-center border border-[#1B2A4A]/20 rounded-full p-1 gap-0.5">
-        <button
-          onClick={() => setMode("hotel")}
-          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-            mode === "hotel" ? "bg-[#1B2A4A] text-white" : "text-[#1B2A4A]/60 hover:bg-muted/50"
-          }`}
-        >
-          <Building2 className="h-3.5 w-3.5" />
-          With Hotel
-        </button>
-        <button
-          onClick={() => setMode("standalone")}
-          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-            mode === "standalone" ? "bg-[#1B2A4A] text-white" : "text-[#1B2A4A]/60 hover:bg-muted/50"
-          }`}
-        >
-          <Zap className="h-3.5 w-3.5" />
-          Experience Only
-        </button>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="inline-flex items-center border border-[#1B2A4A]/20 rounded-full p-1 gap-0.5">
+          <button
+            onClick={() => setMode("hotel")}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+              mode === "hotel" ? "bg-[#1B2A4A] text-white" : "text-[#1B2A4A]/60 hover:bg-muted/50"
+            }`}
+          >
+            <Building2 className="h-3.5 w-3.5" />
+            With Hotel
+          </button>
+          <button
+            onClick={() => setMode("standalone")}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+              mode === "standalone" ? "bg-[#1B2A4A] text-white" : "text-[#1B2A4A]/60 hover:bg-muted/50"
+            }`}
+          >
+            <Zap className="h-3.5 w-3.5" />
+            Experience Only
+          </button>
+        </div>
+        {mode === "standalone" && (
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nouvelle réservation
+          </Button>
+        )}
       </div>
+
+      {mode === "standalone" && (inProgressStandalone?.length || 0) > 0 && (
+        <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-4 space-y-3">
+          <div className="flex items-center gap-2 text-amber-700 font-semibold">
+            <Hourglass className="h-5 w-5" />
+            {inProgressStandalone!.length} réservation{inProgressStandalone!.length > 1 ? "s" : ""} en cours
+          </div>
+          <p className="text-xs text-muted-foreground -mt-2">
+            Le client a démarré une réservation mais le paiement n'est pas encore confirmé. Ces lignes ne sont pas de vraies réservations tant qu'elles restent ici.
+          </p>
+          <div className="space-y-2">
+            {inProgressStandalone!.map((b: any) => (
+              <div key={b.id} className="flex items-center justify-between rounded bg-background p-3 text-sm border">
+                <div className="space-y-0.5">
+                  <p className="font-medium">{b.customer_name || "—"}</p>
+                  {b.customer_email && (
+                    <a href={`mailto:${b.customer_email}`} className="text-xs text-muted-foreground hover:underline flex items-center gap-1">
+                      <Mail className="h-3 w-3" />{b.customer_email}
+                    </a>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {(b.standalone_experiences as any)?.title || "—"} · {b.sell_price} {b.currency}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground whitespace-nowrap">
+                    démarré {formatDistanceToNow(parseISO(b.created_at), { addSuffix: true, locale: fr })}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {refundsPending.length > 0 && (
         <div className="rounded-lg border border-destructive bg-destructive/10 p-4 space-y-3">
@@ -441,14 +508,19 @@ const AdminBookings = () => {
                 <TableRow key={booking.id} className={booking.is_cancelled ? "opacity-60" : ""}>
                   <TableCell className="font-mono text-xs">{booking.id.slice(0, 8)}</TableCell>
                   <TableCell>
-                    <div className="font-medium text-sm">{booking.customer_name || "—"}</div>
+                    <div className="font-medium text-sm flex items-center gap-1.5">
+                      {booking.customer_name || "—"}
+                      {booking.source === "manual_admin" && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">Manuelle</Badge>
+                      )}
+                    </div>
                     {booking.customer_email && (
                       <a href={`mailto:${booking.customer_email}`} className="text-xs text-muted-foreground hover:underline flex items-center gap-1">
                         <Mail className="h-3 w-3" />{booking.customer_email}
                       </a>
                     )}
                   </TableCell>
-                  <TableCell className="text-sm">{(booking.standalone_experiences as any)?.title || "—"}</TableCell>
+                  <TableCell className="text-sm">{(booking.standalone_experiences as any)?.title || booking.custom_experience_title || "—"}</TableCell>
                   <TableCell className="text-sm whitespace-nowrap">
                     {booking.booking_date ? format(parseISO(booking.booking_date), "dd MMM yyyy") : "—"}
                   </TableCell>
@@ -534,6 +606,8 @@ const AdminBookings = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CreateManualStandaloneBookingDialog open={createOpen} onOpenChange={setCreateOpen} />
     </div>
   );
 };

@@ -65,3 +65,15 @@ verify_jwt = false
 
 [functions.send-standalone-booking-confirmation]
 verify_jwt = false
+
+[functions.confirm-standalone-payment]
+verify_jwt = false
+
+[functions.reconcile-standalone-bookings]
+verify_jwt = false
+
+[functions.create-standalone-manual-booking]
+verify_jwt = false
+
+[functions.get-standalone-booking-by-token]
+verify_jwt = false
