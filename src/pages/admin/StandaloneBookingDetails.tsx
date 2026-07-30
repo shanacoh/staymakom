@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ArrowLeft, CheckCircle, Mail, AlertTriangle, CreditCard, Calendar, Users, Clock, MapPin, ExternalLink, Send, ScrollText, Copy, Trash2 } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle, Mail, AlertTriangle, CreditCard, Calendar, Users, Clock, MapPin, ExternalLink, Send, ScrollText, Copy, Trash2, Pencil } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
+import EditStandaloneBookingDialog from "@/components/admin/EditStandaloneBookingDialog";
 
 export default function AdminStandaloneBookingDetails() {
   const { bookingId } = useParams();
@@ -30,6 +31,7 @@ export default function AdminStandaloneBookingDetails() {
   const [notesValue, setNotesValue] = useState("");
   const [editingNotes, setEditingNotes] = useState(false);
   const [duplicateOpen, setDuplicateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const { data: booking, isLoading } = useQuery({
@@ -198,6 +200,10 @@ export default function AdminStandaloneBookingDetails() {
           <p className="font-mono text-sm text-muted-foreground mt-1">{booking.id}</p>
         </div>
         <div className="flex gap-2 items-center">
+          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+            <Pencil className="h-4 w-4 mr-2" />
+            Modifier
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setDuplicateOpen(true)}>
             <Copy className="h-4 w-4 mr-2" />
             Dupliquer
@@ -635,6 +641,12 @@ export default function AdminStandaloneBookingDetails() {
         open={duplicateOpen}
         onOpenChange={setDuplicateOpen}
         duplicateFrom={booking}
+      />
+
+      <EditStandaloneBookingDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        booking={booking}
       />
 
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
