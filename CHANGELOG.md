@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-07-31] — Bateaux : contenu des fiches (description, inclus, badges), bandeau "type de sortie" et marge à 26%
+
+### Ce qui a changé côté code
+- `src/components/boats/BoatDetailModal.tsx` : le petit texte affiché en haut du pop-up (ex. "SORTIE EN MER · HERZLIYA") vient désormais du champ "région" de la fiche plutôt que de la catégorie (qui doit rester "Bateaux" pour ne pas casser le filtrage du back office et de la page publique) ; ajout des flèches gauche/droite pour changer de photo à la souris (en plus du swipe au doigt, déjà présent sur mobile).
+
+### Ce qui a changé côté base de données
+- `20260731040000_update_bateaux_content_and_margin.sql` : pour les 8 fiches bateaux déjà créées, ajoute la description, la liste "inclus dans la sortie" (fusionnée avec les attractions nautiques type toboggan/paddle quand elles existent) et les badges de mise en avant (ex. "Skipper inclus", "Forfait 4h") reçus du prestataire, traduits en anglais. Ajoute aussi le bandeau "Sortie en mer"/"Sport nautique" + ville "Herzliya". Passe la marge de 20% à 26% sur les 8 bateaux, avec recalcul du prix client. Pour Chaser Speed Boat et Catamaran 38 (Herzliya), la description et les inclus restent vides : le prestataire ne les a pas fournis, mieux vaut laisser à compléter que d'inventer un texte.
+
+### Pourquoi ce changement
+- Shana a reçu le détail complet des 8 bateaux (description, inclus, tarifs) de la part du prestataire et voulait que ce contenu apparaisse correctement dans le pop-up client, avec une présentation fidèle à son inspiration visuelle. Elle a aussi validé le passage à une marge de 26% sur l'ensemble des bateaux.
+
+---
+
 ## [2026-07-30 vicies bis] — Bateaux : plus de limite sur le nombre de photos de la galerie
 
 ### Ce qui a changé côté code

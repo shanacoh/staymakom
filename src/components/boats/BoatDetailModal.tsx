@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import {
-  Carousel, CarouselContent, CarouselItem, type CarouselApi,
+  Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, type CarouselApi,
 } from "@/components/ui/carousel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { X, Check, Plus } from "lucide-react";
@@ -58,10 +58,10 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
           duration, duration_fr, duration_he,
           min_party, max_party, lead_time_days,
           city, city_fr, city_he,
+          region, region_fr, region_he,
           address, address_he, address_fr,
           accessibility_info, cancellation_policy, cancellation_policy_he,
           available_days, blocked_dates, availability_end_date, availability_mode, whitelisted_dates,
-          categories(name, name_fr, name_he),
           standalone_experience_highlight_tags(
             tag_id, position,
             highlight_tags(id, slug, label_en, label_he, label_fr)
@@ -109,7 +109,10 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
 
   const title = localized(boat?.title, boat?.title_fr, boat?.title_he);
   const subtitle = localized(boat?.subtitle, boat?.subtitle_fr, boat?.subtitle_he);
-  const categoryLabel = localized(boat?.categories?.name, boat?.categories?.name_fr, boat?.categories?.name_he);
+  // "Sortie en mer" / "Sport nautique" — pas une vraie catégorie DB (category_id
+  // doit rester "Bateaux" pour le filtrage /admin/boats et /boat), donc on
+  // réutilise le champ région, libre et inutilisé par ailleurs pour ce module.
+  const regionLabel = localized(boat?.region, boat?.region_fr, boat?.region_he);
   const cityLabel = localized(boat?.city, boat?.city_fr, boat?.city_he);
   const durationLabel = localized(boat?.duration, boat?.duration_fr, boat?.duration_he);
 
@@ -221,6 +224,13 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
                 </CarouselItem>
               ))}
             </CarouselContent>
+            {/* Flèches gauche/droite — souris uniquement, le doigt swipe déjà sur mobile */}
+            {!isMobile && photos.length > 1 && (
+              <>
+                <CarouselPrevious className="left-3 right-auto top-1/2 h-9 w-9 border-none bg-white/90 shadow-md hover:bg-white" />
+                <CarouselNext className="right-3 left-auto top-1/2 h-9 w-9 border-none bg-white/90 shadow-md hover:bg-white" />
+              </>
+            )}
           </Carousel>
           {photos.length > 1 && (
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
@@ -247,9 +257,9 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
 
         {/* Catégorie · ville + titre */}
         <div className="space-y-1.5">
-          {(categoryLabel || cityLabel) && (
+          {(regionLabel || cityLabel) && (
             <p className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
-              {[categoryLabel, cityLabel].filter(Boolean).join(" · ")}
+              {[regionLabel, cityLabel].filter(Boolean).join(" · ")}
             </p>
           )}
           <h2 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">{title}</h2>
