@@ -47,6 +47,7 @@ import {
 import { HighlightTagsSelectorStandalone, type LocalTagEntry } from "@/components/admin/HighlightTagsSelectorStandalone";
 import IncludesManagerStandalone, { type LocalIncludeEntry } from "@/components/admin/IncludesManagerStandalone";
 import StandaloneExtrasManager, { type LocalExtraEntry } from "@/components/admin/StandaloneExtrasManager";
+import StandaloneRateOptionsManager from "@/components/admin/StandaloneRateOptionsManager";
 
 // ---------------------------------------------------------------------------
 // Tabs
@@ -95,6 +96,8 @@ const standaloneExperienceSchema = z.object({
   currency: z.enum(["USD", "EUR", "ILS"]).default("ILS"),
   lead_time_days: optNum(0),
   has_time_slots: z.boolean().default(false),
+  has_rate_options: z.boolean().default(false),
+  is_bookable: z.boolean().default(true),
   // Localisation
   address: z.string().optional(),
   address_he: z.string().optional(),
@@ -411,6 +414,8 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
       currency: "ILS",
       lead_time_days: 0,
       has_time_slots: false,
+      has_rate_options: false,
+      is_bookable: true,
       address: "",
       address_he: "",
       address_fr: "",
@@ -445,6 +450,8 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
 
   const title = watch("title");
   const hasTimeSlots = watch("has_time_slots");
+  const hasRateOptions = watch("has_rate_options");
+  const isBookable = watch("is_bookable");
   const currency = watch("currency");
   const supplierPriceAdult = watch("supplier_price_adult") ?? 0;
   const supplierPriceChild = watch("supplier_price_child") ?? 0;
@@ -539,6 +546,8 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
     setValue("currency", exp.currency || "ILS");
     setValue("lead_time_days", exp.lead_time_days ?? 0);
     setValue("has_time_slots", exp.has_time_slots ?? false);
+    setValue("has_rate_options", exp.has_rate_options ?? false);
+    setValue("is_bookable", exp.is_bookable ?? true);
     setValue("address", exp.address || "");
     setValue("address_he", exp.address_he || "");
     setValue("address_fr", exp.address_fr || "");
@@ -817,6 +826,8 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
       lead_time_days: data.lead_time_days ?? 0,
       has_time_slots: data.has_time_slots,
       time_slots: data.has_time_slots ? timeSlots : [],
+      has_rate_options: data.has_rate_options,
+      is_bookable: data.is_bookable,
       address: data.address || null,
       address_he: data.address_he || null,
       address_fr: data.address_fr || null,
@@ -1834,6 +1845,31 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
             {/* Prix de l'expérience */}
             <Card>
               <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Mode de réservation</CardTitle>
+                    <CardDescription>
+                      {isBookable
+                        ? "Le visiteur choisit ses dates et paie directement en ligne."
+                        : "Le visiteur envoie une demande de dates (sans paiement) ; elle apparaît dans l'onglet \"Demandes à traiter\" des réservations standalone."}
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground">{isBookable ? "Réservable en ligne" : "Sur demande"}</span>
+                    <Controller
+                      name="is_bookable"
+                      control={control}
+                      render={({ field }) => (
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      )}
+                    />
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4" />
                   Prix de l'expérience
@@ -2100,6 +2136,39 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
                   </div>
                 </div>
               </CardContent>
+            </Card>
+
+            {/* Options tarifaires (plusieurs formules à prix différents, ex: menus au restaurant) */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Options tarifaires</CardTitle>
+                    <CardDescription>
+                      Proposez plusieurs formules à prix différents (ex: "12h — Menu Découverte" à 150₪, "19h — Menu Dégustation" à 280₪)
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground">{hasRateOptions ? "Activées" : "Désactivées"}</span>
+                    <Controller
+                      name="has_rate_options"
+                      control={control}
+                      render={({ field }) => (
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      )}
+                    />
+                  </div>
+                </div>
+              </CardHeader>
+              {hasRateOptions && (
+                <CardContent>
+                  <StandaloneRateOptionsManager
+                    experienceId={currentExperienceId}
+                    hasChildPrice={hasChildPrice}
+                    markupPercent={markupPercent}
+                  />
+                </CardContent>
+              )}
             </Card>
 
             {/* Créneaux horaires */}

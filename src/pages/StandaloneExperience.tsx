@@ -14,6 +14,7 @@ import LocationMap from "@/components/experience-test/LocationMap";
 import PracticalInfo from "@/components/experience-test/PracticalInfo";
 import WhatsIncludedPhotos2 from "@/components/experience-test/WhatsIncludedPhotos2";
 import StandaloneExtrasSection from "@/components/experience-test/StandaloneExtrasSection";
+import StandaloneRequestPanel from "@/components/experience-test/StandaloneRequestPanel";
 import ReviewsGrid2 from "@/components/experience-test/ReviewsGrid2";
 import OtherStandaloneExperiences from "@/components/experience-test/OtherStandaloneExperiences";
 import ShareWithFriendsSection from "@/components/experience/ShareWithFriendsSection";
@@ -63,6 +64,8 @@ interface StandaloneExperienceData {
   lead_time_days?: number | null;
   has_time_slots?: boolean | null;
   time_slots?: string[] | null;
+  has_rate_options?: boolean | null;
+  is_bookable?: boolean | null;
   cancellation_policy?: string | null;
   cancellation_policy_fr?: string | null;
   cancellation_policy_he?: string | null;
@@ -95,6 +98,15 @@ interface StandaloneExperienceData {
     position: number;
     highlight_tags: { id: string; slug: string; label_en: string; label_he?: string | null };
   }[] | null;
+}
+
+interface RateOption {
+  id: string;
+  label: string;
+  label_fr?: string | null;
+  label_he?: string | null;
+  price_adult: number;
+  price_child?: number | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -143,6 +155,7 @@ export default function StandaloneExperience() {
   // Booking form state (étape 1 uniquement — les étapes 2 et 3 sont dans StandaloneCheckout.tsx)
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedSlot, setSelectedSlot] = useState<string>("");
+  const [selectedRateOptionId, setSelectedRateOptionId] = useState<string>("");
   const [adults, setAdults] = useState<number>(1);
   const [children, setChildren] = useState<number>(0);
   const [selectedExtras, setSelectedExtras] = useState<SelectedExtra[]>([]);
@@ -194,7 +207,7 @@ export default function StandaloneExperience() {
         "long_copy", "long_copy_fr", "long_copy_he",
         "hero_image", "photos",
         "base_price", "base_price_child", "has_child_price", "base_price_type", "currency", "min_party", "max_party",
-        "lead_time_days", "has_time_slots", "time_slots",
+        "lead_time_days", "has_time_slots", "time_slots", "has_rate_options", "is_bookable",
         "cancellation_policy", "cancellation_policy_fr", "cancellation_policy_he",
         "duration", "duration_fr", "duration_he",
         "address", "address_he", "address_fr",
@@ -221,6 +234,23 @@ export default function StandaloneExperience() {
     },
     enabled: !!slug,
   });
+
+  const { data: rateOptions } = useQuery({
+    queryKey: ["standalone-rate-options-public", experience?.id],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("standalone_rate_options")
+        .select("id, label, label_fr, label_he, price_adult, price_child")
+        .eq("experience_id", experience!.id)
+        .eq("is_available", true)
+        .order("sort_order");
+      if (error) throw error;
+      return data as RateOption[];
+    },
+    enabled: !!experience?.id && !!experience?.has_rate_options,
+  });
+
+  const selectedRateOption = (rateOptions ?? []).find((o) => o.id === selectedRateOptionId) ?? null;
 
   // -------------------------------------------------------------------------
   // Analytics
@@ -292,14 +322,23 @@ export default function StandaloneExperience() {
     : undefined;
 
   const totalPrice = experience
-    ? computeTotal(
-        experience.base_price,
-        experience.base_price_child,
-        experience.has_child_price,
-        experience.base_price_type,
-        adults,
-        children,
-      )
+    ? selectedRateOption
+      ? computeTotal(
+          selectedRateOption.price_adult,
+          selectedRateOption.price_child,
+          experience.has_child_price,
+          "per_person",
+          adults,
+          children,
+        )
+      : computeTotal(
+          experience.base_price,
+          experience.base_price_child,
+          experience.has_child_price,
+          experience.base_price_type,
+          adults,
+          children,
+        )
     : 0;
 
   const extrasTotal = selectedExtras.reduce((sum, e) => sum + e.price, 0);
@@ -440,6 +479,22 @@ export default function StandaloneExperience() {
 
     const totalParty = adults + children;
 
+    // Expérience non réservable en ligne : formulaire de demande à la place
+    // du panneau de réservation/paiement.
+    if (experience.is_bookable === false) {
+      return (
+        <StandaloneRequestPanel
+          experienceId={experience.id}
+          lang={lang as "en" | "fr" | "he"}
+          minParty={experience.min_party}
+          maxParty={experience.max_party}
+          minDate={minDate}
+          maxDate={maxDate}
+          isDateUnavailable={isDateUnavailable}
+        />
+      );
+    }
+
     // ── Étape 1 : participants + date ────────────────────────────────────────
     const priceLabel =
       experience.base_price_type === "fixed"
@@ -453,7 +508,8 @@ export default function StandaloneExperience() {
       totalParty >= experience.min_party &&
       totalParty <= experience.max_party &&
       adults >= 1 &&
-      (!experience.has_time_slots || !!selectedSlot);
+      (!experience.has_time_slots || !!selectedSlot) &&
+      (!experience.has_rate_options || !!selectedRateOptionId);
 
     return (
       <div className="rounded-2xl border p-5 space-y-5 shadow-medium">
@@ -643,6 +699,39 @@ export default function StandaloneExperience() {
           </div>
         )}
 
+        {/* Options tarifaires (formules à prix différents, ex: menus au restaurant) */}
+        {experience.has_rate_options && (rateOptions?.length ?? 0) > 0 && (
+          <div className="space-y-2">
+            <p className="text-sm font-semibold">
+              {lang === "he" ? "בחר תפריט" : lang === "fr" ? "Choisissez une formule" : "Choose a formula"}
+            </p>
+            <div className="space-y-2">
+              {rateOptions!.map((option) => {
+                const optionLabel =
+                  lang === "he" ? option.label_he || option.label : lang === "fr" ? option.label_fr || option.label : option.label;
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setSelectedRateOptionId(option.id)}
+                    className={cn(
+                      "w-full flex items-center justify-between rounded-lg border px-3 py-2.5 text-left text-sm transition-colors",
+                      selectedRateOptionId === option.id
+                        ? "border-[#ad1414] bg-[#FDF2F2]"
+                        : "border-border hover:border-[#ad1414]/50"
+                    )}
+                  >
+                    <span className="font-medium">{optionLabel}</span>
+                    <span className="font-semibold whitespace-nowrap ml-2">
+                      {currencySymbol}{option.price_adult.toFixed(0)} {priceLabel}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Extras sélectionnés — ligne de détail par extra */}
         {selectedExtras.length > 0 && (
           <div className="space-y-1.5 border-t pt-3">
@@ -688,6 +777,10 @@ export default function StandaloneExperience() {
               heroImage: experience.hero_image,
               selectedDate,
               selectedSlot: selectedSlot || null,
+              selectedRateOptionId: selectedRateOptionId || null,
+              selectedRateOptionLabel: selectedRateOption
+                ? (lang === "he" ? selectedRateOption.label_he || selectedRateOption.label : lang === "fr" ? selectedRateOption.label_fr || selectedRateOption.label : selectedRateOption.label)
+                : null,
               adults,
               children,
               basePrice: experience.base_price,
@@ -896,24 +989,34 @@ export default function StandaloneExperience() {
               onClick={() => setIsSheetOpen(true)}
             >
               <div className="flex flex-col min-w-0">
-                <div className="flex items-baseline gap-1.5">
+                {experience.is_bookable === false ? (
                   <span className="text-base font-bold text-foreground whitespace-nowrap">
-                    {currencySymbol}{experience.base_price.toFixed(0)}
+                    {lang === "he" ? "לפי בקשה" : lang === "fr" ? "Sur demande" : "On request"}
                   </span>
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">
-                    {experience.base_price_type === "fixed"
-                      ? (lang === "fr" ? "forfait" : "fixed")
-                      : (lang === "he" ? "לאדם" : lang === "fr" ? "/ pers." : "/ person")}
-                  </span>
-                </div>
-                <span className="text-[11px] text-muted-foreground">
-                  {experience.base_price_type === "fixed"
-                    ? (lang === "he" ? `עד ${experience.max_party} משתתפים` : lang === "fr" ? `jusqu'à ${experience.max_party} participants` : `up to ${experience.max_party} participants`)
-                    : (lang === "he" ? `מינימום ${experience.min_party} משתתפים` : lang === "fr" ? `à partir de ${experience.min_party} participants` : `from ${experience.min_party} guests`)}
-                </span>
+                ) : (
+                  <>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-base font-bold text-foreground whitespace-nowrap">
+                        {currencySymbol}{experience.base_price.toFixed(0)}
+                      </span>
+                      <span className="text-sm text-muted-foreground whitespace-nowrap">
+                        {experience.base_price_type === "fixed"
+                          ? (lang === "fr" ? "forfait" : "fixed")
+                          : (lang === "he" ? "לאדם" : lang === "fr" ? "/ pers." : "/ person")}
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-muted-foreground">
+                      {experience.base_price_type === "fixed"
+                        ? (lang === "he" ? `עד ${experience.max_party} משתתפים` : lang === "fr" ? `jusqu'à ${experience.max_party} participants` : `up to ${experience.max_party} participants`)
+                        : (lang === "he" ? `מינימום ${experience.min_party} משתתפים` : lang === "fr" ? `à partir de ${experience.min_party} participants` : `from ${experience.min_party} guests`)}
+                    </span>
+                  </>
+                )}
               </div>
               <span className="rounded-full bg-foreground text-background text-xs font-semibold px-5 py-2.5 shrink-0 ml-3 whitespace-nowrap">
-                {lang === "he" ? "הזמן" : lang === "fr" ? "Réserver" : "Book"}
+                {experience.is_bookable === false
+                  ? (lang === "he" ? "בקשה" : lang === "fr" ? "Demander" : "Request")
+                  : (lang === "he" ? "הזמן" : lang === "fr" ? "Réserver" : "Book")}
               </span>
             </button>
           </div>

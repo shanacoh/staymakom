@@ -132,6 +132,20 @@ const AdminBookings = () => {
     refetchInterval: 60_000,
   });
 
+  const { data: newRequestsCount } = useQuery({
+    queryKey: ["admin-standalone-requests-new-count"],
+    queryFn: async () => {
+      const { count, error } = await (supabase as any)
+        .from("standalone_experience_requests")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "new");
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled: mode === "standalone",
+    refetchInterval: 60_000,
+  });
+
   const filteredStandaloneBookings = useMemo(() => {
     if (!standaloneBookings) return [];
     if (!searchQuery.trim()) return standaloneBookings;
@@ -252,10 +266,19 @@ const AdminBookings = () => {
           </button>
         </div>
         {mode === "standalone" && (
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nouvelle réservation
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => navigate("/admin/standalone-bookings?tab=requests")}>
+              <Mail className="w-4 h-4 mr-2" />
+              Demandes à traiter
+              {(newRequestsCount ?? 0) > 0 && (
+                <Badge variant="destructive" className="ml-2">{newRequestsCount}</Badge>
+              )}
+            </Button>
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nouvelle réservation
+            </Button>
+          </div>
         )}
       </div>
 

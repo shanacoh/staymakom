@@ -56,9 +56,12 @@ interface Props {
   // Réservation existante à dupliquer : pré-remplit le formulaire (client, expérience,
   // date, prix...) pour créer une nouvelle réservation avec sa propre référence.
   duplicateFrom?: any | null;
+  // Appelé après création réussie (en plus de la navigation par défaut) — utilisé
+  // par exemple pour marquer une demande de dates comme "convertie".
+  onBookingCreated?: () => void;
 }
 
-const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom }: Props) => {
+const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom, onBookingCreated }: Props) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [manualForm, setManualForm] = useState(EMPTY_MANUAL_FORM);
@@ -189,6 +192,7 @@ const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom
       onOpenChange(false);
       resetManualForm();
       toast.success("Réservation créée — marquez le paiement et envoyez l'email depuis la fiche");
+      onBookingCreated?.();
       navigate(`/admin/standalone-bookings/${data.booking_id}`);
     },
     onError: (e: Error) => toast.error("Erreur", { description: e.message }),

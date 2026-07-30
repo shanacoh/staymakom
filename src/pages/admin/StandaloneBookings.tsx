@@ -11,12 +11,16 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { format, parseISO } from "date-fns";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Search, X, Mail, Clock, ExternalLink, Plus } from "lucide-react";
 import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
+import StandaloneRequestsTable from "@/components/admin/StandaloneRequestsTable";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const AdminStandaloneBookings = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get("tab") === "requests" ? "requests" : "bookings";
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -96,6 +100,17 @@ const AdminStandaloneBookings = () => {
         </Button>
       </div>
 
+      <Tabs defaultValue={defaultTab}>
+        <TabsList>
+          <TabsTrigger value="bookings">Réservations</TabsTrigger>
+          <TabsTrigger value="requests">Demandes à traiter</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="requests" className="pt-4">
+          <StandaloneRequestsTable />
+        </TabsContent>
+
+        <TabsContent value="bookings" className="space-y-6 pt-4">
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
         <div className="relative flex-1 min-w-[220px] max-w-[360px]">
@@ -237,6 +252,8 @@ const AdminStandaloneBookings = () => {
           </p>
         </div>
       )}
+        </TabsContent>
+      </Tabs>
 
       <CreateManualStandaloneBookingDialog open={createOpen} onOpenChange={setCreateOpen} />
     </div>
