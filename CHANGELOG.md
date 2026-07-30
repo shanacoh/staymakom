@@ -6,6 +6,16 @@
 
 ---
 
+## [2026-07-30 terdecies] — La liste des leads n'était plus limitée à 200
+
+### Ce qui a changé côté code
+- `src/pages/admin/Leads.tsx` : la page "Leads" du back office ne ramenait que les 200 fiches les plus récentes, sans moyen d'en voir davantage. Ajout d'un bouton "Charger plus de leads" pour afficher la suite, correction du compteur en haut de page (il comptait uniquement les 200 fiches chargées au lieu du vrai total), et correction de l'export CSV pour qu'il récupère bien tous les leads correspondant aux filtres, pas seulement ceux affichés à l'écran.
+
+### Pourquoi ce changement
+- Shana a remarqué que la liste des leads restait bloquée à 200 et craignait une perte de données. Aucune donnée n'avait été supprimée : c'était une limite d'affichage posée dans le code. Correction demandée pour pouvoir consulter et exporter l'intégralité des leads.
+
+---
+
 ## [2026-07-30 undecies] — La duplication d'un dossier recopie aussi ses réglages
 
 ### Ce qui a changé côté code

@@ -104,6 +104,8 @@ const LastContactBadge = ({ date }: { date: string }) => {
 type SortKey = "date" | "email" | "name" | "source" | "status";
 type SortDir = "asc" | "desc" | null;
 
+const PAGE_SIZE = 200;
+
 const AdminLeads = () => {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -117,6 +119,9 @@ const AdminLeads = () => {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
+  const [limit, setLimit] = useState(PAGE_SIZE);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isExportingAll, setIsExportingAll] = useState(false);
 
   // For undo delete
   const undoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -130,13 +135,13 @@ const AdminLeads = () => {
   const [sendingQuestionnaire, setSendingQuestionnaire] = useState(false);
 
   const { data: leads, isLoading, refetch } = useQuery({
-    queryKey: ["admin-leads", sourceFilter, statusFilter],
+    queryKey: ["admin-leads", sourceFilter, statusFilter, limit],
     queryFn: async () => {
       let query = supabase
         .from("leads")
         .select("id, created_at, updated_at, source, email, name, first_name, last_name, phone, country, city, status, is_b2b, property_name, property_type, interests, message, marketing_opt_in, metadata, notes")
         .order("created_at", { ascending: false })
-        .limit(200);
+        .limit(limit);
       if (sourceFilter !== "all") query = query.eq("source", sourceFilter);
       if (statusFilter !== "all") query = query.eq("status", statusFilter);
       const { data, error } = await query;
@@ -146,6 +151,43 @@ const AdminLeads = () => {
     staleTime: 2 * 60_000,
     gcTime: 5 * 60_000,
   });
+
+  // Reset the loaded page size whenever the filters change, so we don't
+  // keep fetching a huge batch that no longer matches what's being viewed.
+  useEffect(() => {
+    setLimit(PAGE_SIZE);
+  }, [sourceFilter, statusFilter]);
+
+  // Lightweight query for accurate counts across ALL matching leads (not
+  // just the currently loaded page), used for the header stats and the
+  // "load more" affordance.
+  const { data: fullStats } = useQuery({
+    queryKey: ["admin-leads-stats", sourceFilter, statusFilter],
+    queryFn: async () => {
+      let query = supabase
+        .from("leads")
+        .select("status, created_at, source");
+      if (sourceFilter !== "all") query = query.eq("source", sourceFilter);
+      if (statusFilter !== "all") query = query.eq("status", statusFilter);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as { status: string | null; created_at: string; source: string }[];
+    },
+    staleTime: 2 * 60_000,
+    gcTime: 5 * 60_000,
+  });
+
+  const totalMatchingCount = fullStats?.length ?? 0;
+  const hasMoreToLoad = !isLoading && (leads?.length ?? 0) < totalMatchingCount;
+
+  const loadMore = () => {
+    setIsLoadingMore(true);
+    setLimit(l => l + PAGE_SIZE);
+  };
+
+  useEffect(() => {
+    if (!isLoading) setIsLoadingMore(false);
+  }, [isLoading]);
 
   // Filter by search + date range
   const filteredLeads = useMemo(() => {
@@ -205,20 +247,20 @@ const AdminLeads = () => {
     return sorted;
   }, [filteredLeads, sortKey, sortDir]);
 
-  // ─── Summary Stats ───
+  // ─── Summary Stats (computed across ALL matching leads, not just the loaded page) ───
   const summary = useMemo(() => {
-    if (!leads) return { total: 0, newCount: 0, converted: 0, toFollowUp: 0 };
+    if (!fullStats) return { total: 0, newCount: 0, converted: 0, toFollowUp: 0 };
     const sevenDaysAgo = subDays(new Date(), 7);
     let newCount = 0, converted = 0, toFollowUp = 0;
-    leads.forEach(l => {
+    fullStats.forEach(l => {
       if (l.status === "new" || !l.status) {
         newCount++;
         if (isBefore(new Date(l.created_at), sevenDaysAgo)) toFollowUp++;
       }
       if (l.status === "converted") converted++;
     });
-    return { total: leads.length, newCount, converted, toFollowUp };
-  }, [leads]);
+    return { total: fullStats.length, newCount, converted, toFollowUp };
+  }, [fullStats]);
 
   const getDisplayName = (lead: Lead) => {
     if (lead.name) return lead.name;
@@ -380,8 +422,7 @@ const AdminLeads = () => {
   };
 
   // ─── Export ───
-  const exportToCSV = (subset?: Lead[]) => {
-    const rows = subset || sortedLeads;
+  const downloadCsv = (rows: Lead[]) => {
     if (!rows.length) { toast.error("No leads to export"); return; }
     const headers = ["Date","Email","Name","Phone","Source","Status","Country","B2B","Property"];
     const csvRows = rows.map(l => [
@@ -406,7 +447,42 @@ const AdminLeads = () => {
     toast.success("Export complete");
   };
 
-  const uniqueSources = leads ? [...new Set(leads.map(l => l.source))] : [];
+  // Exports EVERY lead matching the current source/status filters, fetched
+  // fresh from the database (not just the page currently loaded on screen).
+  const exportAllToCSV = async () => {
+    setIsExportingAll(true);
+    try {
+      let query = supabase
+        .from("leads")
+        .select("id, created_at, updated_at, source, email, name, first_name, last_name, phone, country, city, status, is_b2b, property_name, property_type, interests, message, marketing_opt_in, metadata, notes")
+        .order("created_at", { ascending: false });
+      if (sourceFilter !== "all") query = query.eq("source", sourceFilter);
+      if (statusFilter !== "all") query = query.eq("status", statusFilter);
+      const { data, error } = await query;
+      if (error) throw error;
+      let rows = data as Lead[];
+
+      if (search) {
+        const s = search.toLowerCase();
+        rows = rows.filter(l =>
+          l.email?.toLowerCase().includes(s) ||
+          l.name?.toLowerCase().includes(s) ||
+          l.first_name?.toLowerCase().includes(s) ||
+          l.last_name?.toLowerCase().includes(s)
+        );
+      }
+      if (dateFrom) rows = rows.filter(l => isAfter(new Date(l.created_at), startOfDay(dateFrom)));
+      if (dateTo) rows = rows.filter(l => isBefore(new Date(l.created_at), startOfDay(subDays(dateTo, -1))));
+
+      downloadCsv(rows);
+    } catch {
+      toast.error("Erreur lors de l'export");
+    } finally {
+      setIsExportingAll(false);
+    }
+  };
+
+  const uniqueSources = fullStats ? [...new Set(fullStats.map(l => l.source))] : [];
 
   // Parse activity from notes
   const parseActivity = (notes: string | null, createdAt: string) => {
@@ -433,8 +509,9 @@ const AdminLeads = () => {
             {summary.total} total · {summary.newCount} new · {summary.converted} converted · {summary.toFollowUp} to follow up
           </p>
         </div>
-        <Button onClick={() => exportToCSV()} variant="outline" className="gap-2">
-          <Download className="h-4 w-4" />Export CSV
+        <Button onClick={exportAllToCSV} variant="outline" className="gap-2" disabled={isExportingAll}>
+          {isExportingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          Export CSV
         </Button>
       </div>
 
@@ -561,6 +638,19 @@ const AdminLeads = () => {
         </Table>
       </div>
 
+      {/* ─── Load More ─── */}
+      {hasMoreToLoad && (
+        <div className="flex flex-col items-center gap-1 py-2">
+          <Button variant="outline" onClick={loadMore} disabled={isLoadingMore}>
+            {isLoadingMore ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+            Charger plus de leads
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            {sortedLeads.length} sur {totalMatchingCount} affichés
+          </p>
+        </div>
+      )}
+
       {/* ─── Bulk Action Bar ─── */}
       {selectedIds.size > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-foreground text-background px-6 py-3 rounded-full shadow-xl flex items-center gap-4 z-50">
@@ -577,7 +667,7 @@ const AdminLeads = () => {
               <SelectItem value="lost">Lost</SelectItem>
             </SelectContent>
           </Select>
-          <Button size="sm" variant="secondary" onClick={() => exportToCSV(sortedLeads.filter(l => selectedIds.has(l.id)))}>
+          <Button size="sm" variant="secondary" onClick={() => downloadCsv(sortedLeads.filter(l => selectedIds.has(l.id)))}>
             Export selected
           </Button>
           <Button size="sm" variant="destructive" onClick={() => setBulkDeleteOpen(true)}>
