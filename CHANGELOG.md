@@ -6,13 +6,16 @@
 
 ---
 
-## [2026-07-30 terdecies] — La liste des leads n'était plus limitée à 200
+## [2026-07-30 quaterdecies] — Deux nouvelles expériences standalone : Camel Trek Cameland et dégustation de vin dans le Néguev
 
-### Ce qui a changé côté code
-- `src/pages/admin/Leads.tsx` : la page "Leads" du back office ne ramenait que les 200 fiches les plus récentes, sans moyen d'en voir davantage. Ajout d'un bouton "Charger plus de leads" pour afficher la suite, correction du compteur en haut de page (il comptait uniquement les 200 fiches chargées au lieu du vrai total), et correction de l'export CSV pour qu'il récupère bien tous les leads correspondant aux filtres, pas seulement ceux affichés à l'écran.
+### Ce qui a changé côté base de données
+- Migration `20260730120000_seed_2_standalone_experiences_camel_wine.sql` : ajout de deux fiches expérience "Experience Only" en français, anglais et hébreu, créées en brouillon (`status = 'draft'`).
+  - **Chameaux sur la route des épices** (Cameland, région de Dimona) : circuit de 2 heures à dos de chameau sur la route des épices nabatéenne, avec vue sur la cité antique de Mamshit. Catégories "Nature & Outdoor" et "Land of Stories". Un nouveau badge "Camel Trek" a été créé car aucun badge existant ne correspondait. Un repas bédouin en option a été ajouté (tarif adulte confirmé, tarif enfant et statut casher à vérifier).
+  - **Le vin né des dunes** (Yikev Ramat Negev, Kadesh Barnea) : dégustation romantique de trois vins dans le premier vignoble planté dans le désert du Néguev. Catégorie "Romantic Escape". Un plateau de fromages en option a été ajouté mais désactivé, le tarif n'ayant pas été communiqué par le domaine.
+- Aucune photo n'a été ajoutée pour l'instant (à envoyer séparément par Shana avant publication), et le parking n'est confirmé pour aucune des deux fiches.
 
 ### Pourquoi ce changement
-- Shana a remarqué que la liste des leads restait bloquée à 200 et craignait une perte de données. Aucune donnée n'avait été supprimée : c'était une limite d'affichage posée dans le code. Correction demandée pour pouvoir consulter et exporter l'intégralité des leads.
+- Shana a transmis les deux fiches complètes (textes, tarifs, localisation) à saisir dans le back office. Une incohérence a été repérée dans la fiche source de la dégustation de vin (la description hébraïque pour les réseaux sociaux reprenait par erreur le texte du Camel Trek) et corrigée avec une traduction cohérente avec les versions anglaise et française.
 
 ---
 
