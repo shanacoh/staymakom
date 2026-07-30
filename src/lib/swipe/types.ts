@@ -45,6 +45,7 @@ export interface SwipeDeckCardRaw {
   ville: string | null;
   ville_en: string | null;
   ville_he: string | null;
+  categorie_id: string | null;
   categorie_nom: string | null;
   categorie_nom_en: string | null;
   categorie_nom_he: string | null;
@@ -61,6 +62,7 @@ export interface SwipeDeckCard {
   photo_url: string | null;
   nom_hotel: string | null;
   ville: string | null;
+  categorie_id: string | null;
   categorie_nom: string | null;
   categorie_ordre: number | null;
   prix_client: number | null;
@@ -77,6 +79,7 @@ export interface SwipeDossierPublicInfo {
   message_intro_en: string | null;
   message_intro_he: string | null;
   noms_participants: string[] | null;
+  ordre_categories: string[] | null;
 }
 
 /** Ligne du tableau croisé de résultats (une proposition du dossier) */

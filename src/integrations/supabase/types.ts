@@ -728,6 +728,7 @@ export type Database = {
           message_intro_he: string | null
           nom_client: string
           noms_participants: string[] | null
+          ordre_categories: string[] | null
           premiere_ouverture_at: string | null
           statut: string
           statut_lecture: string
@@ -744,6 +745,7 @@ export type Database = {
           message_intro_he?: string | null
           nom_client: string
           noms_participants?: string[] | null
+          ordre_categories?: string[] | null
           premiere_ouverture_at?: string | null
           statut?: string
           statut_lecture?: string
@@ -760,6 +762,7 @@ export type Database = {
           message_intro_he?: string | null
           nom_client?: string
           noms_participants?: string[] | null
+          ordre_categories?: string[] | null
           premiere_ouverture_at?: string | null
           statut?: string
           statut_lecture?: string
@@ -3352,13 +3355,17 @@ export type Database = {
           booking_date: string
           cancelled_at: string | null
           children_count: number | null
+          confirmation_email_sent_at: string | null
           confirmation_token: string | null
           created_at: string | null
           currency: string
+          custom_address: string | null
           custom_experience_title: string | null
+          custom_regulations: string | null
           customer_email: string
           customer_name: string
           customer_phone: string | null
+          deposit_amount: number | null
           extras: Json | null
           id: string
           internal_notes: string | null
@@ -3385,13 +3392,17 @@ export type Database = {
           booking_date: string
           cancelled_at?: string | null
           children_count?: number | null
+          confirmation_email_sent_at?: string | null
           confirmation_token?: string | null
           created_at?: string | null
           currency?: string
+          custom_address?: string | null
           custom_experience_title?: string | null
+          custom_regulations?: string | null
           customer_email: string
           customer_name: string
           customer_phone?: string | null
+          deposit_amount?: number | null
           extras?: Json | null
           id?: string
           internal_notes?: string | null
@@ -3418,13 +3429,17 @@ export type Database = {
           booking_date?: string
           cancelled_at?: string | null
           children_count?: number | null
+          confirmation_email_sent_at?: string | null
           confirmation_token?: string | null
           created_at?: string | null
           currency?: string
+          custom_address?: string | null
           custom_experience_title?: string | null
+          custom_regulations?: string | null
           customer_email?: string
           customer_name?: string
           customer_phone?: string | null
+          deposit_amount?: number | null
           extras?: Json | null
           id?: string
           internal_notes?: string | null
@@ -3533,6 +3548,65 @@ export type Database = {
           },
         ]
       }
+      standalone_experience_requests: {
+        Row: {
+          adults: number
+          children: number
+          created_at: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string | null
+          experience_id: string
+          id: string
+          internal_notes: string | null
+          message: string | null
+          notified_at: string | null
+          requested_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          adults?: number
+          children?: number
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          customer_phone?: string | null
+          experience_id: string
+          id?: string
+          internal_notes?: string | null
+          message?: string | null
+          notified_at?: string | null
+          requested_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          adults?: number
+          children?: number
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string | null
+          experience_id?: string
+          id?: string
+          internal_notes?: string | null
+          message?: string | null
+          notified_at?: string | null
+          requested_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "standalone_experience_requests_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "standalone_experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       standalone_experiences: {
         Row: {
           accessibility_info: string | null
@@ -3574,6 +3648,7 @@ export type Database = {
           id: string
           includes: Json | null
           includes_he: Json | null
+          is_bookable: boolean
           latitude: number | null
           lead_time_days: number | null
           long_copy: string | null
@@ -3661,6 +3736,7 @@ export type Database = {
           id?: string
           includes?: Json | null
           includes_he?: Json | null
+          is_bookable?: boolean
           latitude?: number | null
           lead_time_days?: number | null
           long_copy?: string | null
@@ -3748,6 +3824,7 @@ export type Database = {
           id?: string
           includes?: Json | null
           includes_he?: Json | null
+          is_bookable?: boolean
           latitude?: number | null
           lead_time_days?: number | null
           long_copy?: string | null
@@ -4244,6 +4321,7 @@ export type Database = {
       swipe_get_deck_by_token: {
         Args: { p_token: string }
         Returns: {
+          categorie_id: string
           categorie_nom: string
           categorie_nom_en: string
           categorie_nom_he: string
@@ -4276,6 +4354,7 @@ export type Database = {
           message_intro_he: string
           nom_client: string
           noms_participants: string[]
+          ordre_categories: string[]
           statut: string
           trier_par_categorie: boolean
         }[]

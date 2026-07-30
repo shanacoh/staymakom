@@ -23,6 +23,7 @@ export const localizeSwipeDeckCard = (card: SwipeDeckCardRaw, lang: SwipeLang): 
   photo_url: card.photo_url,
   nom_hotel: localizeText(card.nom_hotel, card.nom_hotel_en, card.nom_hotel_he, lang),
   ville: localizeText(card.ville, card.ville_en, card.ville_he, lang),
+  categorie_id: card.categorie_id,
   categorie_nom: localizeText(card.categorie_nom, card.categorie_nom_en, card.categorie_nom_he, lang),
   categorie_ordre: card.categorie_ordre,
   prix_client: card.prix_client,

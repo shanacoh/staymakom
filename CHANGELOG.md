@@ -6,6 +6,39 @@
 
 ---
 
+## [2026-07-30 quater] — Ordre des catégories personnalisable par dossier
+
+### Ce qui a changé côté code
+- `src/pages/admin/swipe/DossierDetail.tsx` : quand "Trier par catégorie" est activé et que le dossier contient plusieurs catégories, un nouveau bloc "Ordre des catégories pour ce dossier" apparaît, avec glisser-déposer (même principe que la page Catégories globale). Facultatif : sans réglage, l'ordre global habituel s'applique.
+- `src/components/swipe/SwipeDeckParCategorie.tsx` : les groupes de catégories du deck client suivent maintenant en priorité cet ordre personnalisé du dossier, avec repli sur l'ordre global pour toute catégorie qui n'y figurerait pas (ex. ajoutée après coup), et "Autres" toujours en tout dernier.
+
+### Ce qui a changé côté base de données
+- Migration `20260730040000_add_ordre_categories_dossiers.sql` : nouvelle colonne `ordre_categories` (liste d'identifiants de catégorie) sur `dossiers`, renvoyée par `swipe_get_dossier_by_token` ; `swipe_get_deck_by_token` renvoie maintenant aussi l'identifiant de catégorie de chaque carte (nécessaire pour faire correspondre le bon ordre).
+
+### Pourquoi ce changement
+- Shana voulait pouvoir changer l'ordre des catégories pour un dossier précis, sans que ça touche l'ordre global utilisé par tous les autres dossiers.
+
+---
+
+## [2026-07-30 ter] — Expériences "sur demande" : formulaire de demande de dates + suivi back office
+
+### Ce qui a changé côté code
+- `src/components/forms/StandaloneExperienceForm.tsx` : nouvelle carte "Mode de réservation" avec un interrupteur "Réservable en ligne" / "Sur demande" sur la fiche d'une expérience.
+- `src/pages/StandaloneExperience.tsx` : si l'expérience est "sur demande", le panneau de réservation (desktop, mobile et barre du bas) affiche le nouveau formulaire de demande à la place du paiement direct.
+- `src/components/experience-test/StandaloneRequestPanel.tsx` (nouveau) : formulaire visiteur — participants, date souhaitée (facultative), nom, email, téléphone, message. Après envoi, un message de confirmation s'affiche directement dans le panneau (pas d'email client).
+- `src/pages/admin/StandaloneBookings.tsx` : nouvel onglet "Demandes à traiter", à côté de l'onglet "Réservations" existant.
+- `src/components/admin/StandaloneRequestsTable.tsx` (nouveau) : tableau des demandes reçues, avec statut modifiable (Nouveau / Contacté / Converti / Sans suite) et bouton "Convertir en réservation" qui pré-remplit le formulaire de réservation manuelle existant.
+- `src/components/admin/CreateManualStandaloneBookingDialog.tsx` : ajout d'un callback optionnel `onBookingCreated`, utilisé pour marquer automatiquement une demande comme "convertie" une fois la réservation créée.
+- `supabase/functions/notify-standalone-experience-request/` (nouvelle fonction) : envoie un email à Shana (shana@staymakom.com) à chaque nouvelle demande, avec les coordonnées du client en réponse directe.
+
+### Ce qui a changé côté base de données
+- Migration `20260730000000_create_standalone_experience_requests.sql` : nouvelle colonne `is_bookable` sur `standalone_experiences` (bascule réservable en ligne / sur demande), et nouvelle table `standalone_experience_requests` qui stocke chaque demande (client, dates souhaitées, participants, message, statut de suivi).
+
+### Pourquoi ce changement
+- Shana veut pouvoir lister des expériences qui dépendent d'un prestataire externe et ne sont pas réservables instantanément, sans pour autant perdre le visiteur intéressé : il laisse une demande, l'équipe la traite manuellement puis la transforme en réservation si elle aboutit.
+
+---
+
 ## [2026-07-30 bis] — Choisir son prénom dans une liste plutôt que le taper
 
 ### Ce qui a changé côté code

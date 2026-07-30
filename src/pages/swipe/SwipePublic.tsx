@@ -191,6 +191,7 @@ const SwipePublic = () => {
             <SwipeDeckParCategorie
               lang={lang}
               cards={deck}
+              ordreCategories={dossier.ordre_categories}
               onSwipeCard={onSwipeCard}
               onUndoCard={onUndoCard}
               onComplete={() => setEtape("recap")}

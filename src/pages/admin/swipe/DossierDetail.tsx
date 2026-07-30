@@ -1,12 +1,27 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Link as LinkIcon, BarChart3, Pencil, Check, X } from "lucide-react";
+import { ArrowLeft, Plus, Link as LinkIcon, BarChart3, Pencil, Check, X, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import {
   useDossier,
@@ -18,6 +33,29 @@ import {
 } from "@/lib/swipe/queries";
 import { DossierPropositionsList } from "@/components/admin/swipe/DossierPropositionsList";
 import { PropositionPicker } from "@/components/admin/swipe/PropositionPicker";
+
+const SortableCategorieRow = ({ id, nom }: { id: string; nom: string }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-2 border rounded-md p-2 bg-background">
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing text-muted-foreground touch-none"
+      >
+        <GripVertical className="w-4 h-4" />
+      </button>
+      <span className="text-sm">{nom}</span>
+    </div>
+  );
+};
 
 const AdminSwipeDossierDetail = () => {
   const { dossierId } = useParams<{ dossierId: string }>();
@@ -34,6 +72,25 @@ const AdminSwipeDossierDetail = () => {
   const [messageEnCours, setMessageEnCours] = useState({ fr: "", en: "", he: "" });
   const [editionNoms, setEditionNoms] = useState(false);
   const [nomsEnCours, setNomsEnCours] = useState("");
+  const categorySensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+
+  const categoriesDuDossier = useMemo(() => {
+    const parId = new Map<string, { id: string; nom: string }>();
+    for (const item of propositions ?? []) {
+      const cat = item.propositions.swipe_categories;
+      if (cat && !parId.has(cat.id)) parId.set(cat.id, cat);
+    }
+    const toutes = Array.from(parId.values());
+    const ordre = dossier?.ordre_categories ?? [];
+    return toutes.sort((a, b) => {
+      const posA = ordre.indexOf(a.id);
+      const posB = ordre.indexOf(b.id);
+      if (posA !== -1 && posB !== -1) return posA - posB;
+      if (posA !== -1) return -1;
+      if (posB !== -1) return 1;
+      return 0;
+    });
+  }, [propositions, dossier?.ordre_categories]);
 
   if (!dossier || !dossierId) return <div className="p-6">Chargement...</div>;
 
@@ -66,6 +123,15 @@ const AdminSwipeDossierDetail = () => {
     } catch (e: any) {
       toast.error(e.message || "Erreur lors de la mise à jour");
     }
+  };
+
+  const handleDragEndCategories = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = categoriesDuDossier.findIndex((c) => c.id === active.id);
+    const newIndex = categoriesDuDossier.findIndex((c) => c.id === over.id);
+    const reordered = arrayMove(categoriesDuDossier, oldIndex, newIndex);
+    updateDossier.mutate({ id: dossierId, ordre_categories: reordered.map((c) => c.id) });
   };
 
   const demarrerEditionMessage = () => {
@@ -209,6 +275,24 @@ const AdminSwipeDossierDetail = () => {
           Trier les propositions par catégorie (le client verra une pancarte de catégorie entre chaque groupe)
         </Label>
       </div>
+
+      {dossier.trier_par_categorie && categoriesDuDossier.length > 1 && (
+        <div className="mb-6 border rounded-md p-3 space-y-2">
+          <Label>
+            Ordre des catégories pour ce dossier (facultatif) — sinon, l'ordre global de la page
+            Catégories est utilisé
+          </Label>
+          <DndContext sensors={categorySensors} collisionDetection={closestCenter} onDragEnd={handleDragEndCategories}>
+            <SortableContext items={categoriesDuDossier.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+              <div className="space-y-1.5">
+                {categoriesDuDossier.map((cat) => (
+                  <SortableCategorieRow key={cat.id} id={cat.id} nom={cat.nom} />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        </div>
+      )}
 
       <div className="mb-6 border rounded-md p-3 space-y-3">
         <div className="flex items-center justify-between">
