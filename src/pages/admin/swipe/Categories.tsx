@@ -37,11 +37,17 @@ import {
 } from "@/lib/swipe/queries";
 import type { SwipeCategory } from "@/lib/swipe/types";
 
+interface NomTraduit {
+  nom: string;
+  nom_en: string;
+  nom_he: string;
+}
+
 const SortableRow = ({
   categorie,
   editingId,
-  editNom,
-  setEditNom,
+  editValues,
+  setEditValues,
   startEdit,
   saveEdit,
   cancelEdit,
@@ -49,9 +55,9 @@ const SortableRow = ({
 }: {
   categorie: SwipeCategory;
   editingId: string | null;
-  editNom: string;
-  setEditNom: (v: string) => void;
-  startEdit: (id: string, nom: string) => void;
+  editValues: NomTraduit;
+  setEditValues: (v: NomTraduit) => void;
+  startEdit: (categorie: SwipeCategory) => void;
   saveEdit: () => void;
   cancelEdit: () => void;
   onDelete: (id: string) => void;
@@ -64,30 +70,60 @@ const SortableRow = ({
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center gap-2 border rounded-md p-2 bg-background">
+    <div ref={setNodeRef} style={style} className="flex items-start gap-2 border rounded-md p-2 bg-background">
       <button
         type="button"
         {...attributes}
         {...listeners}
-        className="cursor-grab active:cursor-grabbing text-muted-foreground touch-none"
+        className="cursor-grab active:cursor-grabbing text-muted-foreground touch-none mt-2"
       >
         <GripVertical className="w-5 h-5" />
       </button>
 
       <div className="flex-1">
         {editingId === categorie.id ? (
-          <Input
-            value={editNom}
-            onChange={(e) => setEditNom(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && saveEdit()}
-            autoFocus
-          />
+          <div className="grid grid-cols-3 gap-2">
+            <div className="space-y-1">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">🇫🇷 FR</span>
+              <Input
+                value={editValues.nom}
+                onChange={(e) => setEditValues({ ...editValues, nom: e.target.value })}
+                onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-1">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">🇬🇧 EN</span>
+              <Input
+                value={editValues.nom_en}
+                onChange={(e) => setEditValues({ ...editValues, nom_en: e.target.value })}
+                onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+              />
+            </div>
+            <div className="space-y-1">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">🇮🇱 HE</span>
+              <Input
+                value={editValues.nom_he}
+                onChange={(e) => setEditValues({ ...editValues, nom_he: e.target.value })}
+                onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                dir="rtl"
+                className="bg-hebrew-input"
+              />
+            </div>
+          </div>
         ) : (
-          categorie.nom
+          <div className="py-2">
+            {categorie.nom}
+            {(categorie.nom_en || categorie.nom_he) && (
+              <span className="block text-xs text-muted-foreground mt-0.5">
+                {[categorie.nom_en, categorie.nom_he].filter(Boolean).join(" · ")}
+              </span>
+            )}
+          </div>
         )}
       </div>
 
-      <div className="space-x-1">
+      <div className="space-x-1 mt-1">
         {editingId === categorie.id ? (
           <>
             <Button size="icon" variant="ghost" onClick={saveEdit}>
@@ -99,7 +135,7 @@ const SortableRow = ({
           </>
         ) : (
           <>
-            <Button size="icon" variant="ghost" onClick={() => startEdit(categorie.id, categorie.nom)}>
+            <Button size="icon" variant="ghost" onClick={() => startEdit(categorie)}>
               <Pencil className="w-4 h-4" />
             </Button>
             <Button size="icon" variant="ghost" onClick={() => onDelete(categorie.id)}>
@@ -119,33 +155,43 @@ const AdminSwipeCategories = () => {
   const deleteMutation = useDeleteSwipeCategory();
   const reordonnerMutation = useReordonnerSwipeCategories();
 
-  const [nouveauNom, setNouveauNom] = useState("");
+  const VIDE: NomTraduit = { nom: "", nom_en: "", nom_he: "" };
+  const [nouveauValues, setNouveauValues] = useState<NomTraduit>(VIDE);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editNom, setEditNom] = useState("");
+  const [editValues, setEditValues] = useState<NomTraduit>(VIDE);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
   const handleCreate = async () => {
-    if (!nouveauNom.trim()) return;
+    if (!nouveauValues.nom.trim()) return;
     try {
-      await createMutation.mutateAsync(nouveauNom.trim());
-      setNouveauNom("");
+      await createMutation.mutateAsync({
+        nom: nouveauValues.nom.trim(),
+        nom_en: nouveauValues.nom_en.trim() || null,
+        nom_he: nouveauValues.nom_he.trim() || null,
+      });
+      setNouveauValues(VIDE);
       toast.success("Catégorie créée");
     } catch (e: any) {
       toast.error(e.message || "Erreur lors de la création");
     }
   };
 
-  const startEdit = (id: string, nom: string) => {
-    setEditingId(id);
-    setEditNom(nom);
+  const startEdit = (categorie: SwipeCategory) => {
+    setEditingId(categorie.id);
+    setEditValues({ nom: categorie.nom, nom_en: categorie.nom_en ?? "", nom_he: categorie.nom_he ?? "" });
   };
 
   const saveEdit = async () => {
-    if (!editingId || !editNom.trim()) return;
+    if (!editingId || !editValues.nom.trim()) return;
     try {
-      await updateMutation.mutateAsync({ id: editingId, nom: editNom.trim() });
+      await updateMutation.mutateAsync({
+        id: editingId,
+        nom: editValues.nom.trim(),
+        nom_en: editValues.nom_en.trim() || null,
+        nom_he: editValues.nom_he.trim() || null,
+      });
       setEditingId(null);
       toast.success("Catégorie mise à jour");
     } catch (e: any) {
@@ -183,15 +229,38 @@ const AdminSwipeCategories = () => {
         "Trier par catégorie" activée.
       </p>
 
-      <div className="flex gap-2 mb-6">
-        <Input
-          placeholder="Nom de la nouvelle catégorie"
-          value={nouveauNom}
-          onChange={(e) => setNouveauNom(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-        />
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        <div className="space-y-1">
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">🇫🇷 FR</span>
+          <Input
+            placeholder="Nom de la catégorie"
+            value={nouveauValues.nom}
+            onChange={(e) => setNouveauValues({ ...nouveauValues, nom: e.target.value })}
+            onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+          />
+        </div>
+        <div className="space-y-1">
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">🇬🇧 EN</span>
+          <Input
+            value={nouveauValues.nom_en}
+            onChange={(e) => setNouveauValues({ ...nouveauValues, nom_en: e.target.value })}
+            onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+          />
+        </div>
+        <div className="space-y-1">
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">🇮🇱 HE</span>
+          <Input
+            value={nouveauValues.nom_he}
+            onChange={(e) => setNouveauValues({ ...nouveauValues, nom_he: e.target.value })}
+            onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+            dir="rtl"
+            className="bg-hebrew-input"
+          />
+        </div>
+      </div>
+      <div className="mb-6">
         <Button onClick={handleCreate} disabled={createMutation.isPending}>
-          <Plus className="w-4 h-4 mr-1" /> Ajouter
+          <Plus className="w-4 h-4 mr-1" /> Ajouter la catégorie
         </Button>
       </div>
 
@@ -211,8 +280,8 @@ const AdminSwipeCategories = () => {
                   key={cat.id}
                   categorie={cat}
                   editingId={editingId}
-                  editNom={editNom}
-                  setEditNom={setEditNom}
+                  editValues={editValues}
+                  setEditValues={setEditValues}
                   startEdit={startEdit}
                   saveEdit={saveEdit}
                   cancelEdit={() => setEditingId(null)}

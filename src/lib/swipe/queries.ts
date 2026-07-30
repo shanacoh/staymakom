@@ -10,7 +10,7 @@ import type {
   PropositionUpdate,
   Swipe,
   SwipeCategory,
-  SwipeDeckCard,
+  SwipeDeckCardRaw,
   SwipeDossierPublicInfo,
 } from "./types";
 
@@ -35,7 +35,7 @@ export function useSwipeCategories() {
 export function useCreateSwipeCategory() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (nom: string) => {
+    mutationFn: async (categorie: { nom: string; nom_en?: string | null; nom_he?: string | null }) => {
       const { data: existantes, error: erreurLecture } = await supabase
         .from("swipe_categories")
         .select("ordre")
@@ -43,7 +43,7 @@ export function useCreateSwipeCategory() {
         .limit(1);
       if (erreurLecture) throw erreurLecture;
       const prochainOrdre = (existantes?.[0]?.ordre ?? -1) + 1;
-      const { error } = await supabase.from("swipe_categories").insert({ nom, ordre: prochainOrdre });
+      const { error } = await supabase.from("swipe_categories").insert({ ...categorie, ordre: prochainOrdre });
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["swipe", "categories"] }),
@@ -65,8 +65,16 @@ export function useReordonnerSwipeCategories() {
 export function useUpdateSwipeCategory() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, nom }: { id: string; nom: string }) => {
-      const { error } = await supabase.from("swipe_categories").update({ nom }).eq("id", id);
+    mutationFn: async ({
+      id,
+      ...categorie
+    }: {
+      id: string;
+      nom: string;
+      nom_en?: string | null;
+      nom_he?: string | null;
+    }) => {
+      const { error } = await supabase.from("swipe_categories").update(categorie).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["swipe", "categories"] }),
@@ -193,7 +201,7 @@ export function useHotelsPourLiaison(actif: boolean) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("hotels2")
-        .select("id, name, city, region, hero_image, address, status")
+        .select("id, name, name_fr, name_he, city, city_fr, city_he, region, hero_image, address, status")
         .order("name");
       if (error) throw error;
       return data;
@@ -208,7 +216,9 @@ export function useExperiencesPourLiaison(actif: boolean) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("experiences2")
-        .select("id, title, hero_image, address, hotel_id, status, hotels2(name, city, region)")
+        .select(
+          "id, title, title_fr, title_he, hero_image, address, hotel_id, status, hotels2(name, name_fr, name_he, city, city_fr, city_he, region)"
+        )
         .order("title");
       if (error) throw error;
       return data;
@@ -223,7 +233,7 @@ export function useStandaloneExperiencesPourLiaison(actif: boolean) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_experiences")
-        .select("id, title, hero_image, address, city, region, status")
+        .select("id, title, title_fr, title_he, hero_image, address, city, city_fr, city_he, region, status")
         .order("title");
       if (error) throw error;
       return data;
@@ -516,7 +526,7 @@ export function useSwipeParticipantsByToken(token: string | undefined) {
 export function useSwipeDeckByToken(token: string | undefined) {
   return useQuery({
     queryKey: ["swipe-public", "deck", token],
-    queryFn: async (): Promise<SwipeDeckCard[]> => {
+    queryFn: async (): Promise<SwipeDeckCardRaw[]> => {
       const { data, error } = await supabase.rpc("swipe_get_deck_by_token", { p_token: token as string });
       if (error) throw error;
       return data;

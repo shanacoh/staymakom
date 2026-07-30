@@ -1,7 +1,12 @@
 import { Heart } from "lucide-react";
+import { swipeText, type SwipeLang } from "@/lib/swipe/localization";
 import heroImage from "@/assets/hero-road-desert.jpg";
 
-export const SwipeThankYou = () => {
+interface SwipeThankYouProps {
+  lang: SwipeLang;
+}
+
+export const SwipeThankYou = ({ lang }: SwipeThankYouProps) => {
   return (
     <div className="relative h-full flex flex-col items-center justify-center px-6 py-6 text-center overflow-hidden">
       <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroImage})` }} />
@@ -14,8 +19,10 @@ export const SwipeThankYou = () => {
         <span className="font-sans font-bold tracking-[-0.04em] uppercase text-xs text-[#AD1414] mb-2">
           STAYMAKOM
         </span>
-        <h1 className="font-sans text-3xl font-bold uppercase tracking-[0.01em] text-white mb-3">Merci !</h1>
-        <p className="text-white/75 max-w-sm text-sm">On revient vite vers toi avec l'itinéraire parfait.</p>
+        <h1 className="font-sans text-3xl font-bold uppercase tracking-[0.01em] text-white mb-3">
+          {swipeText.thankYou.title[lang]}
+        </h1>
+        <p className="text-white/75 max-w-sm text-sm">{swipeText.thankYou.subtitle[lang]}</p>
       </div>
     </div>
   );

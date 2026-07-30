@@ -3,23 +3,26 @@ import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
 import { toast } from "sonner";
 import type { SwipeDeckCard } from "@/lib/swipe/types";
+import { swipeText, type SwipeLang } from "@/lib/swipe/localization";
 import heroImage from "@/assets/hero-road-desert.jpg";
 
 const LIMITE_TOP3 = 3;
 
 interface SwipeRecapProps {
+  lang: SwipeLang;
   likedCards: SwipeDeckCard[];
   onToggleIndispensable: (card: SwipeDeckCard, valeur: boolean) => void;
   indispensables: Set<string>;
   onTerminer: () => void;
 }
 
-export const SwipeRecap = ({ likedCards, onToggleIndispensable, indispensables, onTerminer }: SwipeRecapProps) => {
+export const SwipeRecap = ({ lang, likedCards, onToggleIndispensable, indispensables, onTerminer }: SwipeRecapProps) => {
   const [etape, setEtape] = useState<"intro" | "choix">("intro");
+  const t = swipeText.recap;
 
   const basculerSelection = (card: SwipeDeckCard, estSelectionnee: boolean) => {
     if (!estSelectionnee && indispensables.size >= LIMITE_TOP3) {
-      toast.error("Tu as déjà choisi tes 3 préférées — retire-en une pour changer.");
+      toast.error(t.limitReached[lang]);
       return;
     }
     onToggleIndispensable(card, !estSelectionnee);
@@ -36,24 +39,22 @@ export const SwipeRecap = ({ likedCards, onToggleIndispensable, indispensables, 
             STAYMAKOM
           </span>
           <h1 className="font-sans text-2xl font-bold uppercase tracking-[0.01em] leading-[1.2] text-white mb-3">
-            Tu as aimé {likedCards.length} proposition{likedCards.length > 1 ? "s" : ""} !
+            {t.likedTitle(likedCards.length, lang)}
           </h1>
-          <p className="text-white/75 mb-8 max-w-sm text-sm">
-            Envie de choisir ton top 3 parmi ce que tu as aimé ?
-          </p>
+          <p className="text-white/75 mb-8 max-w-sm text-sm">{t.likedSubtitle[lang]}</p>
           <div className="flex flex-col gap-3 w-full max-w-xs">
             <Button
               className="h-12 bg-[#AD1414] hover:bg-[#AD1414]/90 text-sm font-bold uppercase tracking-widest"
               onClick={() => setEtape("choix")}
               disabled={likedCards.length === 0}
             >
-              Choisir mon top 3
+              {t.chooseTop3[lang]}
             </Button>
             <Button
               className="h-12 border border-white bg-transparent text-white text-sm font-bold uppercase tracking-widest hover:bg-white hover:text-[#1a1a1a]"
               onClick={onTerminer}
             >
-              Terminer sans choisir
+              {t.finishWithoutChoosing[lang]}
             </Button>
           </div>
         </div>
@@ -67,14 +68,10 @@ export const SwipeRecap = ({ likedCards, onToggleIndispensable, indispensables, 
         STAYMAKOM
       </span>
       <h1 className="font-sans text-xl font-bold uppercase tracking-[0.01em] text-[#1a1a1a] mb-1 text-center shrink-0">
-        Choisis ton top 3
+        {t.chooseTop3Title[lang]}
       </h1>
-      <p className="text-[#1a1a1a]/60 mb-1 text-center max-w-sm shrink-0 text-sm">
-        Choisis jusqu'à 3 propositions parmi celles que tu as aimées.
-      </p>
-      <p className="text-[#AD1414] font-bold text-sm mb-4 shrink-0">
-        {indispensables.size}/{LIMITE_TOP3} sélectionnées
-      </p>
+      <p className="text-[#1a1a1a]/60 mb-1 text-center max-w-sm shrink-0 text-sm">{t.chooseTop3Subtitle[lang]}</p>
+      <p className="text-[#AD1414] font-bold text-sm mb-4 shrink-0">{t.selectedCount(indispensables.size, lang)}</p>
 
       <div className="w-full max-w-md flex-1 min-h-0 overflow-y-auto overscroll-contain grid grid-cols-2 gap-3 content-start">
         {likedCards.map((card) => {
@@ -115,7 +112,7 @@ export const SwipeRecap = ({ likedCards, onToggleIndispensable, indispensables, 
         className="w-full max-w-xs h-12 bg-[#AD1414] hover:bg-[#AD1414]/90 shrink-0 mt-4 text-sm font-bold uppercase tracking-widest"
         onClick={onTerminer}
       >
-        Terminer
+        {t.finish[lang]}
       </Button>
     </div>
   );

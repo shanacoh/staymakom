@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +30,10 @@ const AdminSwipeDossierDetail = () => {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [editionNom, setEditionNom] = useState(false);
   const [nomEnCours, setNomEnCours] = useState("");
+  const [editionMessage, setEditionMessage] = useState(false);
+  const [messageEnCours, setMessageEnCours] = useState({ fr: "", en: "", he: "" });
+  const [editionNoms, setEditionNoms] = useState(false);
+  const [nomsEnCours, setNomsEnCours] = useState("");
 
   if (!dossier || !dossierId) return <div className="p-6">Chargement...</div>;
 
@@ -58,6 +63,47 @@ const AdminSwipeDossierDetail = () => {
   const toggleTrierParCategorie = async (checked: boolean) => {
     try {
       await updateDossier.mutateAsync({ id: dossierId, trier_par_categorie: checked });
+    } catch (e: any) {
+      toast.error(e.message || "Erreur lors de la mise à jour");
+    }
+  };
+
+  const demarrerEditionMessage = () => {
+    setMessageEnCours({
+      fr: dossier.message_intro ?? "",
+      en: dossier.message_intro_en ?? "",
+      he: dossier.message_intro_he ?? "",
+    });
+    setEditionMessage(true);
+  };
+
+  const enregistrerMessage = async () => {
+    try {
+      await updateDossier.mutateAsync({
+        id: dossierId,
+        message_intro: messageEnCours.fr || null,
+        message_intro_en: messageEnCours.en || null,
+        message_intro_he: messageEnCours.he || null,
+      });
+      setEditionMessage(false);
+    } catch (e: any) {
+      toast.error(e.message || "Erreur lors de la mise à jour");
+    }
+  };
+
+  const demarrerEditionNoms = () => {
+    setNomsEnCours((dossier.noms_participants ?? []).join("\n"));
+    setEditionNoms(true);
+  };
+
+  const enregistrerNoms = async () => {
+    const noms = nomsEnCours
+      .split("\n")
+      .map((n) => n.trim())
+      .filter(Boolean);
+    try {
+      await updateDossier.mutateAsync({ id: dossierId, noms_participants: noms.length > 0 ? noms : null });
+      setEditionNoms(false);
     } catch (e: any) {
       toast.error(e.message || "Erreur lors de la mise à jour");
     }
@@ -162,6 +208,107 @@ const AdminSwipeDossierDetail = () => {
         <Label htmlFor="trier-par-categorie">
           Trier les propositions par catégorie (le client verra une pancarte de catégorie entre chaque groupe)
         </Label>
+      </div>
+
+      <div className="mb-6 border rounded-md p-3 space-y-3">
+        <div className="flex items-center justify-between">
+          <Label>Message d'accueil (facultatif, affiché juste avant le prénom du client)</Label>
+          {!editionMessage && (
+            <Button size="icon" variant="ghost" onClick={demarrerEditionMessage} title="Modifier">
+              <Pencil className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+
+        {editionMessage ? (
+          <>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">🇫🇷 FR</span>
+                <Textarea
+                  rows={4}
+                  value={messageEnCours.fr}
+                  onChange={(e) => setMessageEnCours({ ...messageEnCours, fr: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">🇬🇧 EN</span>
+                <Textarea
+                  rows={4}
+                  value={messageEnCours.en}
+                  onChange={(e) => setMessageEnCours({ ...messageEnCours, en: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">🇮🇱 HE</span>
+                <Textarea
+                  rows={4}
+                  value={messageEnCours.he}
+                  onChange={(e) => setMessageEnCours({ ...messageEnCours, he: e.target.value })}
+                  dir="rtl"
+                  className="bg-hebrew-input"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={enregistrerMessage}>
+                <Check className="w-4 h-4 mr-1" /> Enregistrer
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setEditionMessage(false)}>
+                <X className="w-4 h-4 mr-1" /> Annuler
+              </Button>
+            </div>
+          </>
+        ) : dossier.message_intro ? (
+          <p className="text-sm text-muted-foreground whitespace-pre-line">{dossier.message_intro}</p>
+        ) : (
+          <p className="text-sm text-muted-foreground/60 italic">Aucun message défini.</p>
+        )}
+      </div>
+
+      <div className="mb-6 border rounded-md p-3 space-y-3">
+        <div className="flex items-center justify-between">
+          <Label>
+            Prénoms proposés (facultatif) — si renseigné, le client choisit son prénom dans cette
+            liste au lieu de le taper
+          </Label>
+          {!editionNoms && (
+            <Button size="icon" variant="ghost" onClick={demarrerEditionNoms} title="Modifier">
+              <Pencil className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+
+        {editionNoms ? (
+          <>
+            <Textarea
+              rows={4}
+              value={nomsEnCours}
+              onChange={(e) => setNomsEnCours(e.target.value)}
+              placeholder={"Un prénom par ligne, ex.\nAija\nNusrein"}
+            />
+            <div className="flex gap-2">
+              <Button size="sm" onClick={enregistrerNoms}>
+                <Check className="w-4 h-4 mr-1" /> Enregistrer
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setEditionNoms(false)}>
+                <X className="w-4 h-4 mr-1" /> Annuler
+              </Button>
+            </div>
+          </>
+        ) : dossier.noms_participants && dossier.noms_participants.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {dossier.noms_participants.map((nom) => (
+              <Badge key={nom} variant="outline">
+                {nom}
+              </Badge>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground/60 italic">
+            Aucune liste définie : le client tape librement son prénom.
+          </p>
+        )}
       </div>
 
       <div className="flex items-center justify-between mb-3">

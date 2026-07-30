@@ -36,12 +36,20 @@ import type { PropositionAvecRelations } from "@/lib/swipe/types";
 
 const schema = z.object({
   titre: z.string().min(1, "Le titre est obligatoire"),
+  titre_en: z.string().optional(),
+  titre_he: z.string().optional(),
   description: z.string().optional(),
+  description_en: z.string().optional(),
+  description_he: z.string().optional(),
   photo_url: z.string().optional(),
   categorie_id: z.string().optional(),
   region: z.string().optional(),
   nom_hotel: z.string().optional(),
+  nom_hotel_en: z.string().optional(),
+  nom_hotel_he: z.string().optional(),
   ville: z.string().optional(),
+  ville_en: z.string().optional(),
+  ville_he: z.string().optional(),
   adresse: z.string().optional(),
   lien_reservation: z.string().optional(),
   prix_achat: z.union([z.coerce.number(), z.literal("")]).optional(),
@@ -87,12 +95,20 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
     resolver: zodResolver(schema),
     defaultValues: {
       titre: "",
+      titre_en: "",
+      titre_he: "",
       description: "",
+      description_en: "",
+      description_he: "",
       photo_url: "",
       categorie_id: "",
       region: "",
       nom_hotel: "",
+      nom_hotel_en: "",
+      nom_hotel_he: "",
       ville: "",
+      ville_en: "",
+      ville_he: "",
       adresse: "",
       lien_reservation: "",
       prix_achat: "",
@@ -120,12 +136,20 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
       setStandaloneExperienceId(proposition.standalone_experience_id);
       form.reset({
         titre: proposition.titre,
+        titre_en: proposition.titre_en ?? "",
+        titre_he: proposition.titre_he ?? "",
         description: proposition.description ?? "",
+        description_en: proposition.description_en ?? "",
+        description_he: proposition.description_he ?? "",
         photo_url: proposition.photo_url ?? "",
         categorie_id: proposition.categorie_id ?? "",
         region: proposition.region ?? "",
         nom_hotel: proposition.nom_hotel ?? "",
+        nom_hotel_en: proposition.nom_hotel_en ?? "",
+        nom_hotel_he: proposition.nom_hotel_he ?? "",
         ville: proposition.ville ?? "",
+        ville_en: proposition.ville_en ?? "",
+        ville_he: proposition.ville_he ?? "",
         adresse: proposition.adresse ?? "",
         lien_reservation: proposition.lien_reservation ?? "",
         prix_achat: proposition.prix_achat ?? "",
@@ -142,12 +166,20 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
       setStandaloneExperienceId(null);
       form.reset({
         titre: "",
+        titre_en: "",
+        titre_he: "",
         description: "",
+        description_en: "",
+        description_he: "",
         photo_url: "",
         categorie_id: "",
         region: "",
         nom_hotel: "",
+        nom_hotel_en: "",
+        nom_hotel_he: "",
         ville: "",
+        ville_en: "",
+        ville_he: "",
         adresse: "",
         lien_reservation: "",
         prix_achat: "",
@@ -167,10 +199,16 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
     setHotelId(hotel.id);
     setExperienceId(null);
     setStandaloneExperienceId(null);
-    form.setValue("titre", hotel.name);
+    form.setValue("titre", hotel.name_fr || hotel.name);
+    form.setValue("titre_en", hotel.name);
+    form.setValue("titre_he", hotel.name_he ?? "");
     form.setValue("photo_url", hotel.hero_image ?? "");
-    form.setValue("nom_hotel", hotel.name);
-    form.setValue("ville", hotel.city ?? "");
+    form.setValue("nom_hotel", hotel.name_fr || hotel.name);
+    form.setValue("nom_hotel_en", hotel.name);
+    form.setValue("nom_hotel_he", hotel.name_he ?? "");
+    form.setValue("ville", hotel.city_fr || hotel.city || "");
+    form.setValue("ville_en", hotel.city ?? "");
+    form.setValue("ville_he", hotel.city_he ?? "");
     form.setValue("region", hotel.region ?? "");
     form.setValue("adresse", hotel.address ?? "");
   };
@@ -181,11 +219,17 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
     setExperienceId(experience.id);
     setHotelId(null);
     setStandaloneExperienceId(null);
-    form.setValue("titre", experience.title);
+    form.setValue("titre", experience.title_fr || experience.title);
+    form.setValue("titre_en", experience.title);
+    form.setValue("titre_he", experience.title_he ?? "");
     form.setValue("photo_url", experience.hero_image ?? "");
     form.setValue("adresse", experience.address ?? "");
-    form.setValue("nom_hotel", experience.hotels2?.name ?? "");
-    form.setValue("ville", experience.hotels2?.city ?? "");
+    form.setValue("nom_hotel", experience.hotels2?.name_fr || experience.hotels2?.name || "");
+    form.setValue("nom_hotel_en", experience.hotels2?.name ?? "");
+    form.setValue("nom_hotel_he", experience.hotels2?.name_he ?? "");
+    form.setValue("ville", experience.hotels2?.city_fr || experience.hotels2?.city || "");
+    form.setValue("ville_en", experience.hotels2?.city ?? "");
+    form.setValue("ville_he", experience.hotels2?.city_he ?? "");
     form.setValue("region", experience.hotels2?.region ?? "");
   };
 
@@ -195,11 +239,17 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
     setStandaloneExperienceId(experience.id);
     setHotelId(null);
     setExperienceId(null);
-    form.setValue("titre", experience.title ?? "");
+    form.setValue("titre", experience.title_fr || experience.title || "");
+    form.setValue("titre_en", experience.title ?? "");
+    form.setValue("titre_he", experience.title_he ?? "");
     form.setValue("photo_url", experience.hero_image ?? "");
     form.setValue("adresse", experience.address ?? "");
     form.setValue("nom_hotel", "");
-    form.setValue("ville", experience.city ?? "");
+    form.setValue("nom_hotel_en", "");
+    form.setValue("nom_hotel_he", "");
+    form.setValue("ville", experience.city_fr || experience.city || "");
+    form.setValue("ville_en", experience.city ?? "");
+    form.setValue("ville_he", experience.city_he ?? "");
     form.setValue("region", experience.region ?? "");
   };
 
@@ -235,7 +285,11 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
 
     const payload = {
       titre: values.titre,
+      titre_en: values.titre_en || null,
+      titre_he: values.titre_he || null,
       description: values.description || null,
+      description_en: values.description_en || null,
+      description_he: values.description_he || null,
       photo_url: values.photo_url || null,
       categorie_id: values.categorie_id || null,
       hotel_id: source === "hotel" ? hotelId : null,
@@ -243,7 +297,11 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
       standalone_experience_id: source === "standalone" ? standaloneExperienceId : null,
       region: values.region || null,
       nom_hotel: values.nom_hotel || null,
+      nom_hotel_en: values.nom_hotel_en || null,
+      nom_hotel_he: values.nom_hotel_he || null,
       ville: values.ville || null,
+      ville_en: values.ville_en || null,
+      ville_he: values.ville_he || null,
       adresse: values.adresse || null,
       lien_reservation: values.lien_reservation || null,
       prix_achat: values.prix_achat === "" ? null : Number(values.prix_achat),
@@ -322,18 +380,50 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2 space-y-2">
-              <Label>Titre</Label>
+          <div className="col-span-2 grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <span>🇫🇷</span> Titre (FR)
+              </Label>
               <Input {...form.register("titre")} />
               {form.formState.errors.titre && (
                 <p className="text-sm text-destructive">{form.formState.errors.titre.message}</p>
               )}
             </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <span>🇬🇧</span> Titre (EN)
+              </Label>
+              <Input {...form.register("titre_en")} />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <span>🇮🇱</span> כותרת (HE)
+              </Label>
+              <Input {...form.register("titre_he")} dir="rtl" className="bg-hebrew-input" />
+            </div>
+          </div>
 
-            <div className="col-span-2 space-y-2">
-              <Label>Description</Label>
-              <Textarea rows={3} {...form.register("description")} />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2 grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <span>🇫🇷</span> Description (FR)
+                </Label>
+                <Textarea rows={3} {...form.register("description")} />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <span>🇬🇧</span> Description (EN)
+                </Label>
+                <Textarea rows={3} {...form.register("description_en")} />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <span>🇮🇱</span> תיאור (HE)
+                </Label>
+                <Textarea rows={3} {...form.register("description_he")} dir="rtl" className="bg-hebrew-input" />
+              </div>
             </div>
 
             <div className="col-span-2">
@@ -379,14 +469,49 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
               <Label>Région</Label>
               <Input {...form.register("region")} />
             </div>
-            <div className="space-y-2">
-              <Label>Nom de l'hôtel</Label>
-              <Input {...form.register("nom_hotel")} placeholder="Affiché sur la carte, avant la ville" />
+
+            <div className="col-span-2 grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <span>🇫🇷</span> Nom de l'hôtel (FR)
+                </Label>
+                <Input {...form.register("nom_hotel")} placeholder="Affiché sur la carte, avant la ville" />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <span>🇬🇧</span> Nom de l'hôtel (EN)
+                </Label>
+                <Input {...form.register("nom_hotel_en")} />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <span>🇮🇱</span> שם המלון (HE)
+                </Label>
+                <Input {...form.register("nom_hotel_he")} dir="rtl" className="bg-hebrew-input" />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Ville</Label>
-              <Input {...form.register("ville")} />
+
+            <div className="col-span-2 grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <span>🇫🇷</span> Ville (FR)
+                </Label>
+                <Input {...form.register("ville")} />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <span>🇬🇧</span> Ville (EN)
+                </Label>
+                <Input {...form.register("ville_en")} />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <span>🇮🇱</span> עיר (HE)
+                </Label>
+                <Input {...form.register("ville_he")} dir="rtl" className="bg-hebrew-input" />
+              </div>
             </div>
+
             <div className="col-span-2 space-y-2">
               <Label>Adresse</Label>
               <Input {...form.register("adresse")} />

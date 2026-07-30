@@ -2,13 +2,17 @@ import { useMemo, useState } from "react";
 import { SwipeDeck } from "./SwipeDeck";
 import { SwipeCategoryDivider } from "./SwipeCategoryDivider";
 import type { SwipeDeckCard } from "@/lib/swipe/types";
+import type { SwipeLang } from "@/lib/swipe/localization";
 
 interface SwipeDeckParCategorieProps {
+  lang: SwipeLang;
   cards: SwipeDeckCard[];
   onSwipeCard: (card: SwipeDeckCard, valeur: boolean) => void;
   onUndoCard: (card: SwipeDeckCard) => void;
   onComplete: () => void;
 }
+
+const AUTRES: Record<SwipeLang, string> = { fr: "Autres", en: "Other", he: "אחר" };
 
 interface Groupe {
   nom: string;
@@ -24,18 +28,18 @@ interface Groupe {
  * L'ordre des groupes suit l'ordre des catégories choisi dans le back-office (page Catégories) ;
  * les propositions sans catégorie sont regroupées sous "Autres", toujours en dernier.
  */
-export const SwipeDeckParCategorie = ({ cards, onSwipeCard, onUndoCard, onComplete }: SwipeDeckParCategorieProps) => {
+export const SwipeDeckParCategorie = ({ lang, cards, onSwipeCard, onUndoCard, onComplete }: SwipeDeckParCategorieProps) => {
   const groupes = useMemo<Groupe[]>(() => {
     const parNom = new Map<string, Groupe>();
     for (const carte of cards) {
-      const nom = carte.categorie_nom ?? "Autres";
+      const nom = carte.categorie_nom ?? AUTRES[lang];
       if (!parNom.has(nom)) {
         parNom.set(nom, { nom, ordre: carte.categorie_ordre ?? Number.MAX_SAFE_INTEGER, cartes: [] });
       }
       parNom.get(nom)!.cartes.push(carte);
     }
     return Array.from(parNom.values()).sort((a, b) => a.ordre - b.ordre);
-  }, [cards]);
+  }, [cards, lang]);
 
   const [groupeIndex, setGroupeIndex] = useState(0);
   const [phase, setPhase] = useState<"pancarte" | "deck">("pancarte");
@@ -46,6 +50,7 @@ export const SwipeDeckParCategorie = ({ cards, onSwipeCard, onUndoCard, onComple
   if (phase === "pancarte") {
     return (
       <SwipeCategoryDivider
+        lang={lang}
         nomCategorie={groupeActuel.nom}
         nbPropositions={groupeActuel.cartes.length}
         onContinuer={() => setPhase("deck")}
@@ -56,6 +61,7 @@ export const SwipeDeckParCategorie = ({ cards, onSwipeCard, onUndoCard, onComple
   return (
     <SwipeDeck
       key={groupeActuel.nom}
+      lang={lang}
       cards={groupeActuel.cartes}
       onSwipeCard={onSwipeCard}
       onUndoCard={onUndoCard}

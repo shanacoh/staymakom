@@ -28,7 +28,31 @@ export interface DossierPropositionAvecDetail extends DossierProposition {
   propositions: PropositionAvecRelations;
 }
 
-/** Carte du deck public, telle que renvoyée par la fonction RPC swipe_get_deck_by_token */
+/** Carte brute du deck public, telle que renvoyée par swipe_get_deck_by_token (3 langues à la fois) */
+export interface SwipeDeckCardRaw {
+  dossier_proposition_id: string;
+  ordre: number;
+  titre: string;
+  titre_en: string | null;
+  titre_he: string | null;
+  description: string | null;
+  description_en: string | null;
+  description_he: string | null;
+  photo_url: string | null;
+  nom_hotel: string | null;
+  nom_hotel_en: string | null;
+  nom_hotel_he: string | null;
+  ville: string | null;
+  ville_en: string | null;
+  ville_he: string | null;
+  categorie_nom: string | null;
+  categorie_nom_en: string | null;
+  categorie_nom_he: string | null;
+  categorie_ordre: number | null;
+  prix_client: number | null;
+}
+
+/** Carte du deck déjà résolue dans la langue choisie par le client (voir localizeSwipeDeckCard) */
 export interface SwipeDeckCard {
   dossier_proposition_id: string;
   ordre: number;
@@ -49,6 +73,10 @@ export interface SwipeDossierPublicInfo {
   afficher_prix: boolean;
   statut: string;
   trier_par_categorie: boolean;
+  message_intro: string | null;
+  message_intro_en: string | null;
+  message_intro_he: string | null;
+  noms_participants: string[] | null;
 }
 
 /** Ligne du tableau croisé de résultats (une proposition du dossier) */

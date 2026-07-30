@@ -11,6 +11,10 @@ import {
   useSetCoupDeCoeur,
 } from "@/lib/swipe/queries";
 import type { SwipeDeckCard } from "@/lib/swipe/types";
+import { localizeSwipeDeckCard, localizeText, swipeText } from "@/lib/swipe/localization";
+import { useLanguage } from "@/hooks/useLanguage";
+import { SwipeLanguageToggle } from "@/components/swipe/SwipeLanguageToggle";
+import { SwipeDossierIntro } from "@/components/swipe/SwipeDossierIntro";
 import { SwipeNamePrompt } from "@/components/swipe/SwipeNamePrompt";
 import { SwipeIntro } from "@/components/swipe/SwipeIntro";
 import { SwipeDeck } from "@/components/swipe/SwipeDeck";
@@ -18,23 +22,42 @@ import { SwipeDeckParCategorie } from "@/components/swipe/SwipeDeckParCategorie"
 import { SwipeRecap } from "@/components/swipe/SwipeRecap";
 import { SwipeThankYou } from "@/components/swipe/SwipeThankYou";
 
-type Etape = "prenom" | "intro" | "deck" | "recap" | "merci";
+type Etape = "message" | "prenom" | "intro" | "deck" | "recap" | "merci";
 
 const SwipePublic = () => {
   const { token } = useParams<{ token: string }>();
   const { data: dossier, isLoading: dossierEnChargement, isFetched: dossierCharge } = useSwipeDossierByToken(token);
   const { data: participantsExistants } = useSwipeParticipantsByToken(token);
-  const { data: deck, isLoading: deckEnChargement } = useSwipeDeckByToken(token);
+  const { data: deckBrut, isLoading: deckEnChargement } = useSwipeDeckByToken(token);
 
   const getOrCreateParticipant = useGetOrCreateParticipant();
   const upsertSwipe = useUpsertSwipe();
   const cancelSwipe = useCancelSwipe();
   const setCoupDeCoeur = useSetCoupDeCoeur();
 
-  const [etape, setEtape] = useState<Etape>("prenom");
+  // Même hook et même mécanisme (?lang= dans l'URL, préférence mémorisée) que le reste du site :
+  // un client qui a déjà choisi sa langue sur staymakom.com la retrouve directement ici.
+  const { lang, setLanguage } = useLanguage();
+
+  const [etape, setEtape] = useState<Etape>("message");
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [decisions, setDecisions] = useState<Map<string, { valeur: boolean; card: SwipeDeckCard }>>(new Map());
   const [indispensables, setIndispensables] = useState<Set<string>>(new Set());
+
+  const deck = useMemo(
+    () => deckBrut?.map((carte) => localizeSwipeDeckCard(carte, lang)),
+    [deckBrut, lang]
+  );
+
+  const messageIntro = dossier
+    ? localizeText(dossier.message_intro, dossier.message_intro_en, dossier.message_intro_he, lang)
+    : null;
+
+  // Le message d'accueil est facultatif : s'il n'a pas été rempli par l'admin pour ce dossier,
+  // on passe directement à l'écran du prénom dès que le dossier est chargé.
+  useEffect(() => {
+    if (dossier && !messageIntro && etape === "message") setEtape("prenom");
+  }, [dossier, messageIntro, etape]);
 
   // Verrouille le défilement de la page entière (façon appli plein écran) : sans ça, iOS
   // Safari autorise un léger rebond élastique en haut/bas même quand tout tient à l'écran.
@@ -113,7 +136,8 @@ const SwipePublic = () => {
 
   if (dossierEnChargement || !dossierCharge) {
     return (
-      <div className="h-dvh w-full overflow-hidden flex items-center justify-center bg-[#FAF8F4]">
+      <div className="relative h-dvh w-full overflow-hidden flex items-center justify-center bg-[#FAF8F4]">
+        <SwipeLanguageToggle lang={lang} onChange={setLanguage} />
         <Loader2 className="w-8 h-8 animate-spin text-[#AD1414]" />
       </div>
     );
@@ -121,25 +145,37 @@ const SwipePublic = () => {
 
   if (!dossier) {
     return (
-      <div className="h-dvh w-full overflow-hidden flex flex-col items-center justify-center bg-[#FAF8F4] px-6 text-center">
-        <h1 className="text-2xl font-bold text-[#1a1a1a] mb-2">Ce lien n'est plus valide</h1>
-        <p className="text-[#1a1a1a]/60">Contacte ton conseiller de voyage pour obtenir un nouveau lien.</p>
+      <div
+        dir={lang === "he" ? "rtl" : "ltr"}
+        className="relative h-dvh w-full overflow-hidden flex flex-col items-center justify-center bg-[#FAF8F4] px-6 text-center"
+      >
+        <SwipeLanguageToggle lang={lang} onChange={setLanguage} />
+        <h1 className="text-2xl font-bold text-[#1a1a1a] mb-2">{swipeText.swipePublic.invalidLinkTitle[lang]}</h1>
+        <p className="text-[#1a1a1a]/60">{swipeText.swipePublic.invalidLinkSubtitle[lang]}</p>
       </div>
     );
   }
 
   return (
-    <div className="h-dvh w-full overflow-hidden bg-[#FAF8F4] font-sans">
+    <div dir={lang === "he" ? "rtl" : "ltr"} className="relative h-dvh w-full overflow-hidden bg-[#FAF8F4] font-sans">
+      <SwipeLanguageToggle lang={lang} onChange={setLanguage} />
+
+      {etape === "message" && messageIntro && (
+        <SwipeDossierIntro lang={lang} message={messageIntro} onContinuer={() => setEtape("prenom")} />
+      )}
+
       {etape === "prenom" && (
         <SwipeNamePrompt
+          lang={lang}
           nomClient={dossier.nom_client}
           participantsExistants={participantsExistants ?? []}
+          nomsProposes={dossier.noms_participants}
           onDemarrer={demarrer}
           chargement={getOrCreateParticipant.isPending}
         />
       )}
 
-      {etape === "intro" && <SwipeIntro onCommencer={() => setEtape("deck")} />}
+      {etape === "intro" && <SwipeIntro lang={lang} onCommencer={() => setEtape("deck")} />}
 
       {etape === "deck" && (
         <div className="h-full flex flex-col">
@@ -149,10 +185,11 @@ const SwipePublic = () => {
             </div>
           ) : deck.length === 0 ? (
             <p className="flex-1 flex items-center justify-center text-[#1a1a1a]/60 px-6 text-center">
-              Aucune proposition n'a encore été ajoutée à ce dossier.
+              {swipeText.swipePublic.emptyDeck[lang]}
             </p>
           ) : dossier.trier_par_categorie ? (
             <SwipeDeckParCategorie
+              lang={lang}
               cards={deck}
               onSwipeCard={onSwipeCard}
               onUndoCard={onUndoCard}
@@ -160,6 +197,7 @@ const SwipePublic = () => {
             />
           ) : (
             <SwipeDeck
+              lang={lang}
               cards={deck}
               onSwipeCard={onSwipeCard}
               onUndoCard={onUndoCard}
@@ -171,6 +209,7 @@ const SwipePublic = () => {
 
       {etape === "recap" && (
         <SwipeRecap
+          lang={lang}
           likedCards={likedCards}
           indispensables={indispensables}
           onToggleIndispensable={onToggleIndispensable}
@@ -178,7 +217,7 @@ const SwipePublic = () => {
         />
       )}
 
-      {etape === "merci" && <SwipeThankYou />}
+      {etape === "merci" && <SwipeThankYou lang={lang} />}
     </div>
   );
 };

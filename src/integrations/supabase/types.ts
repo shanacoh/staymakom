@@ -723,7 +723,11 @@ export type Database = {
           afficher_prix: boolean
           created_at: string
           id: string
+          message_intro: string | null
+          message_intro_en: string | null
+          message_intro_he: string | null
           nom_client: string
+          noms_participants: string[] | null
           premiere_ouverture_at: string | null
           statut: string
           statut_lecture: string
@@ -735,7 +739,11 @@ export type Database = {
           afficher_prix?: boolean
           created_at?: string
           id?: string
+          message_intro?: string | null
+          message_intro_en?: string | null
+          message_intro_he?: string | null
           nom_client: string
+          noms_participants?: string[] | null
           premiere_ouverture_at?: string | null
           statut?: string
           statut_lecture?: string
@@ -747,7 +755,11 @@ export type Database = {
           afficher_prix?: boolean
           created_at?: string
           id?: string
+          message_intro?: string | null
+          message_intro_en?: string | null
+          message_intro_he?: string | null
           nom_client?: string
+          noms_participants?: string[] | null
           premiere_ouverture_at?: string | null
           statut?: string
           statut_lecture?: string
@@ -3160,12 +3172,16 @@ export type Database = {
           commission_pourcentage: number | null
           created_at: string
           description: string | null
+          description_en: string | null
+          description_he: string | null
           experience_id: string | null
           hotel_id: string | null
           id: string
           lien_reservation: string | null
           mode_reservation: string
           nom_hotel: string | null
+          nom_hotel_en: string | null
+          nom_hotel_he: string | null
           photo_url: string | null
           prix_achat: number | null
           prix_client: number | null
@@ -3174,8 +3190,12 @@ export type Database = {
           statut: string
           tags: string[] | null
           titre: string
+          titre_en: string | null
+          titre_he: string | null
           updated_at: string
           ville: string | null
+          ville_en: string | null
+          ville_he: string | null
         }
         Insert: {
           adresse?: string | null
@@ -3183,12 +3203,16 @@ export type Database = {
           commission_pourcentage?: number | null
           created_at?: string
           description?: string | null
+          description_en?: string | null
+          description_he?: string | null
           experience_id?: string | null
           hotel_id?: string | null
           id?: string
           lien_reservation?: string | null
           mode_reservation?: string
           nom_hotel?: string | null
+          nom_hotel_en?: string | null
+          nom_hotel_he?: string | null
           photo_url?: string | null
           prix_achat?: number | null
           prix_client?: number | null
@@ -3197,8 +3221,12 @@ export type Database = {
           statut?: string
           tags?: string[] | null
           titre: string
+          titre_en?: string | null
+          titre_he?: string | null
           updated_at?: string
           ville?: string | null
+          ville_en?: string | null
+          ville_he?: string | null
         }
         Update: {
           adresse?: string | null
@@ -3206,12 +3234,16 @@ export type Database = {
           commission_pourcentage?: number | null
           created_at?: string
           description?: string | null
+          description_en?: string | null
+          description_he?: string | null
           experience_id?: string | null
           hotel_id?: string | null
           id?: string
           lien_reservation?: string | null
           mode_reservation?: string
           nom_hotel?: string | null
+          nom_hotel_en?: string | null
+          nom_hotel_he?: string | null
           photo_url?: string | null
           prix_achat?: number | null
           prix_client?: number | null
@@ -3220,8 +3252,12 @@ export type Database = {
           statut?: string
           tags?: string[] | null
           titre?: string
+          titre_en?: string | null
+          titre_he?: string | null
           updated_at?: string
           ville?: string | null
+          ville_en?: string | null
+          ville_he?: string | null
         }
         Relationships: [
           {
@@ -3883,18 +3919,24 @@ export type Database = {
           created_at: string
           id: string
           nom: string
+          nom_en: string | null
+          nom_he: string | null
           ordre: number
         }
         Insert: {
           created_at?: string
           id?: string
           nom: string
+          nom_en?: string | null
+          nom_he?: string | null
           ordre?: number
         }
         Update: {
           created_at?: string
           id?: string
           nom?: string
+          nom_en?: string | null
+          nom_he?: string | null
           ordre?: number
         }
         Relationships: []
@@ -4203,15 +4245,25 @@ export type Database = {
         Args: { p_token: string }
         Returns: {
           categorie_nom: string
+          categorie_nom_en: string
+          categorie_nom_he: string
           categorie_ordre: number
           description: string
+          description_en: string
+          description_he: string
           dossier_proposition_id: string
           nom_hotel: string
+          nom_hotel_en: string
+          nom_hotel_he: string
           ordre: number
           photo_url: string
           prix_client: number
           titre: string
+          titre_en: string
+          titre_he: string
           ville: string
+          ville_en: string
+          ville_he: string
         }[]
       }
       swipe_get_dossier_by_token: {
@@ -4219,7 +4271,11 @@ export type Database = {
         Returns: {
           afficher_prix: boolean
           dossier_id: string
+          message_intro: string
+          message_intro_en: string
+          message_intro_he: string
           nom_client: string
+          noms_participants: string[]
           statut: string
           trier_par_categorie: boolean
         }[]

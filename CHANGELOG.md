@@ -6,6 +6,120 @@
 
 ---
 
+## [2026-07-30 bis] — Choisir son prénom dans une liste plutôt que le taper
+
+### Ce qui a changé côté code
+- `src/pages/admin/swipe/DossierDetail.tsx` : nouveau bloc "Prénoms proposés" sur la fiche d'un dossier — un prénom par ligne, facultatif.
+- `src/components/swipe/SwipeNamePrompt.tsx` : si des prénoms ont été prédéfinis pour le dossier, le client les voit comme des boutons à choisir ("Qui es-tu ?") au lieu du champ de saisie libre habituel. Sans liste définie, rien ne change (champ libre comme avant).
+- `src/pages/swipe/SwipePublic.tsx` : transmet cette liste au composant.
+
+### Ce qui a changé côté base de données
+- Migration `20260730020000_add_noms_participants_dossiers.sql` : nouvelle colonne `noms_participants` (liste de texte) sur `dossiers`, renvoyée par `swipe_get_dossier_by_token`.
+- Migration `20260730030000_noms_participants_nas_daily.sql` : liste "Aija" / "Nusrein" pour le dossier NAS DAILY.
+
+### Pourquoi ce changement
+- Shana connaît à l'avance les 2 personnes qui vont utiliser le lien NAS DAILY et voulait leur éviter de taper leur prénom.
+
+---
+
+## [2026-07-30] — Message d'accueil de dossier, avant le prénom du client
+
+### Ce qui a changé côté code
+- `src/pages/admin/swipe/DossierDetail.tsx` : nouveau bloc "Message d'accueil" sur la fiche d'un dossier, avec un champ par langue (FR/EN/HE), facultatif.
+- `src/components/swipe/SwipeDossierIntro.tsx` (nouveau) : écran affiché au client juste avant qu'il donne son prénom, uniquement si ce message a été rempli pour son dossier. Sinon, cet écran est simplement sauté.
+- `src/pages/swipe/SwipePublic.tsx` : nouvelle étape "message" ajoutée en tout premier dans le parcours client.
+
+### Ce qui a changé côté base de données
+- Migration `20260730000000_add_message_intro_dossiers.sql` : nouvelles colonnes `message_intro`, `message_intro_en`, `message_intro_he` sur `dossiers`, et mise à jour de `swipe_get_dossier_by_token` pour les renvoyer.
+- Migration `20260730010000_message_intro_nas_daily.sql` : message d'accueil rédigé (FR/EN/HE) pour le dossier NAS DAILY, expliquant les 3 catégories de propositions (escapade avec nuit d'hôtel, journée complète, ou une seule expérience).
+
+### Pourquoi ce changement
+- Shana voulait présenter clairement au client, avant qu'il commence à swiper, la logique des 3 catégories de propositions de ce dossier (temps disponible : escapade, journée, ou une expérience).
+
+---
+
+## [2026-07-29 nonies] — Titres du dossier NAS DAILY tout en majuscules
+
+### Ce qui a changé côté base de données
+- Migration `20260729080000_titres_nas_daily_majuscules.sql` : les 15 titres (français et anglais) du dossier NAS DAILY repassent tout en majuscules. L'hébreu n'est pas concerné (pas de majuscules/minuscules dans cet alphabet).
+
+### Pourquoi ce changement
+- Préférence de style de Shana pour l'affichage des titres de proposition.
+
+---
+
+## [2026-07-29 octies] — "Après la marée" : présente le choix coucher/lever de soleil
+
+### Ce qui a changé côté base de données
+- Migration `20260729060000_after_the_tide_choice_sunset_sunrise.sql` : la description (FR/EN/HE) présente maintenant clairement les deux formules possibles — coucher de soleil avec un verre de vin, ou lever du jour avec petit-déjeuner à bord — plutôt qu'une seule des deux.
+
+### Pourquoi ce changement
+- Shana a précisé que la sortie existe réellement en deux formules et voulait que la description mette ce choix en évidence pour le client.
+
+---
+
+## [2026-07-29 septies] — "Après la marée" : angle verre de vin au coucher du soleil
+
+### Ce qui a changé côté base de données
+- Migration `20260729050000_after_the_tide_wine_sunset.sql` : nouvelle description (FR/EN/HE) — un verre de vin au coucher du soleil, plutôt que le premier ajustement de la veille.
+
+### Pourquoi ce changement
+- Shana voulait un angle plus romantique encore ; comme cette sortie a lieu en fin de journée (traversée coucher de soleil), l'angle "petit-déjeuner au lever du soleil" ne correspondait pas à l'horaire réel — l'angle "vin au coucher du soleil" a été retenu à la place.
+
+---
+
+## [2026-07-29 sixies] — Ajustement de la description "Après la marée" (NAS DAILY)
+
+### Ce qui a changé côté base de données
+- Migration `20260729040000_after_the_tide_description.sql` : nouvelle description (FR/EN/HE) pour la proposition "Après la marée" / "After the Tide" — retire la mention de durée ("trois heures") et l'aspect dîner, pour ne garder que la traversée romantique au coucher du soleil.
+
+### Pourquoi ce changement
+- Shana a trouvé la description trop factuelle pour une proposition à visée romantique.
+
+---
+
+## [2026-07-29 cinquies] — Correctif : bouton de langue discret + bug anglais qui affichait du français
+
+### Ce qui a changé côté code
+- `src/pages/swipe/SwipePublic.tsx` : l'écran plein écran obligatoire pour choisir sa langue (ajouté la veille) est retiré. À la place, un petit bouton discret "EN | FR | עב" — identique à celui du site principal — reste affiché en haut à droite sur tous les écrans du parcours swipe, et la langue peut être changée à tout moment sans perdre sa place.
+- `src/components/swipe/SwipeLanguageToggle.tsx` (nouveau, remplace `SwipeLanguagePicker.tsx` supprimé) : ce petit bouton.
+- Le parcours swipe utilise maintenant le même réglage de langue que le reste du site (mémorisé par le navigateur) : un client qui a déjà choisi sa langue sur staymakom.com la retrouve directement en ouvrant son lien swipe.
+- **Correction de bug** dans `src/lib/swipe/localization.ts` : en anglais, les cartes retombaient systématiquement sur le texte français, même quand une traduction anglaise existait. La fonction de résolution de langue réutilisée par erreur supposait (comme partout ailleurs sur le site) que "le champ sans suffixe" est l'anglais — alors que dans le module swipe c'est le français. Une fonction dédiée corrige ça.
+
+### Pourquoi ce changement
+- Shana a trouvé l'écran de choix de langue trop lourd ("n'importe quoi") et a repéré qu'en choisissant l'anglais, le texte restait en français.
+
+---
+
+## [2026-07-29 quater] — Contenu du dossier "NAS DAILY" retravaillé (FR/EN/HE)
+
+### Ce qui a changé côté base de données
+- Migration `20260729020000_retravaille_propositions_nas_daily.sql` : réécriture en français des 15 propositions du dossier swipe "NAS DAILY" — titres rendus évocateurs, descriptions qui racontent l'expérience vécue (au lieu d'un simple descriptif), et nom de l'hôtel renseigné partout où un hôtel était lié en base sans que ça se voie sur la carte. Corrige aussi une incohérence trouvée dans les données sources (la carte "whisky & chocolats" concernait en réalité une dégustation whisky & fromages) et une ville erronée (une dégustation de vin indiquait Zichron Yaakov au lieu de Mitspe Ramon, où elle se déroule réellement).
+- Migration `20260729030000_traduire_propositions_nas_daily_en_he.sql` : ajoute les versions anglaise et hébraïque de ces 15 mêmes propositions (titre, description, ville, nom d'hôtel), et renseigne "Carmey Avdat" comme nom d'hôtel sur la proposition "La Toscane du Néguev" (hôtel confirmé par Shana, pas encore présent dans le catalogue `hotels2` — texte libre uniquement, sans fiche hôtel liée).
+
+### Pourquoi ce changement
+- Shana a jugé que les propositions de ce dossier n'étaient pas assez vendeuses (titres pas accrocheurs, noms d'hôtels absents des cartes) et a demandé une reprise complète du contenu, dans les 3 langues du module swipe ajoutées la veille.
+
+---
+
+## [2026-07-29 ter] — Le module Swipe Itinéraire passe en français / anglais / hébreu
+
+### Ce qui a changé côté code
+- `src/components/admin/swipe/PropositionForm.tsx` : le titre, la description, la ville et le nom de l'hôtel d'une carte swipe se saisissent maintenant en 3 langues (français, anglais, hébreu — champ hébreu avec écriture de droite à gauche). Le français reste obligatoire (comme avant) ; anglais et hébreu sont facultatifs. Quand on lie un hôtel ou une expérience déjà traduite, les 3 versions se pré-remplissent automatiquement.
+- `src/pages/admin/swipe/Categories.tsx` : même principe pour le nom d'une catégorie (ex. "Restaurants" / "Restaurants" / "מסעדות").
+- `src/lib/swipe/localization.ts` (nouveau) : rassemble tous les textes fixes de l'écran de swipe public (boutons, écrans d'accueil, récap, remerciement) dans les 3 langues, et la fonction qui choisit la bonne version d'une carte selon la langue du client.
+- `src/components/swipe/SwipeLanguagePicker.tsx` (nouveau) : premier écran du parcours client — il choisit Français / English / עברית avant de commencer à swiper. Son choix est mémorisé pour ce lien.
+- `src/components/swipe/SwipeIntro.tsx`, `SwipeNamePrompt.tsx`, `SwipeDeck.tsx`, `SwipeDeckParCategorie.tsx`, `SwipeCategoryDivider.tsx`, `SwipeRecap.tsx`, `SwipeThankYou.tsx`, `src/pages/swipe/SwipePublic.tsx` : tous les textes affichés au client (hors contenu des cartes) sont maintenant traduits dans la langue choisie. En hébreu, l'écran s'affiche de droite à gauche, sauf la rangée des boutons "Passer / Annuler / J'aime" qui reste dans le même sens physique (comme sur toutes les applis de swipe) pour ne pas inverser le geste.
+- Si Shana n'a pas encore traduit une carte, le client voit automatiquement la version française en attendant — rien ne s'affiche vide.
+
+### Ce qui a changé côté base de données
+- Migration `20260729010000_swipe_module_multilingue.sql` : ajoute les colonnes `titre_en`, `titre_he`, `description_en`, `description_he`, `ville_en`, `ville_he`, `nom_hotel_en`, `nom_hotel_he` sur `propositions`, et `nom_en`, `nom_he` sur `swipe_categories`. Met à jour la fonction `swipe_get_deck_by_token` pour renvoyer les 3 langues de chaque carte à la page de swipe publique.
+
+### Pourquoi ce changement
+- Shana a des clients francophones, anglophones et hébréophones, et voulait que tout le parcours "Swipe Itinéraire" (des propositions jusqu'aux écrans du parcours client) puisse être présenté dans la langue du destinataire du lien, pas seulement en français.
+
+---
+
 ## [2026-07-29 bis] — Dupliquer et supprimer une réservation, horaire optionnel
 
 ### Ce qui a changé côté code

@@ -1,15 +1,18 @@
 import { motion } from "framer-motion";
 import { Heart, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { swipeText, type SwipeLang } from "@/lib/swipe/localization";
 import heroImage from "@/assets/hero-road-desert.jpg";
 
 interface SwipeIntroProps {
+  lang: SwipeLang;
   onCommencer: () => void;
 }
 
 const TIMES = [0, 0.15, 0.35, 0.5, 0.55, 0.75, 0.95, 1];
 
-export const SwipeIntro = ({ onCommencer }: SwipeIntroProps) => {
+export const SwipeIntro = ({ lang, onCommencer }: SwipeIntroProps) => {
+  const t = swipeText.intro;
   return (
     <div className="relative h-full flex flex-col items-center justify-center px-6 py-6 text-center overflow-hidden">
       <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroImage})` }} />
@@ -20,7 +23,7 @@ export const SwipeIntro = ({ onCommencer }: SwipeIntroProps) => {
           STAYMAKOM
         </span>
         <h1 className="font-sans text-2xl font-bold uppercase tracking-[0.02em] leading-[1.1] text-white mb-6">
-          Comment ça marche ?
+          {t.title[lang]}
         </h1>
 
         <div className="relative w-36 h-48 mb-6">
@@ -45,12 +48,12 @@ export const SwipeIntro = ({ onCommencer }: SwipeIntroProps) => {
           </motion.div>
         </div>
 
-        <div className="flex items-center justify-center gap-6 mb-8 text-white text-sm font-semibold">
+        <div dir="ltr" className="flex items-center justify-center gap-6 mb-8 text-white text-sm font-semibold">
           <span className="flex items-center gap-1.5">
-            <X className="w-4 h-4" /> Je passe
+            <X className="w-4 h-4" /> {t.pass[lang]}
           </span>
           <span className="flex items-center gap-1.5">
-            <Heart className="w-4 h-4 fill-white" /> J'aime
+            <Heart className="w-4 h-4 fill-white" /> {t.like[lang]}
           </span>
         </div>
 
@@ -58,7 +61,7 @@ export const SwipeIntro = ({ onCommencer }: SwipeIntroProps) => {
           className="w-full h-12 bg-[#AD1414] hover:bg-[#AD1414]/90 text-sm font-bold uppercase tracking-widest"
           onClick={onCommencer}
         >
-          Je swipe !
+          {t.cta[lang]}
         </Button>
       </div>
     </div>

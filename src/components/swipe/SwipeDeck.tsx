@@ -4,8 +4,10 @@ import { Heart, X, Undo2 } from "lucide-react";
 import { SwipeCard } from "./SwipeCard";
 import { SwipeProgressBar } from "./SwipeProgressBar";
 import type { SwipeDeckCard } from "@/lib/swipe/types";
+import { swipeText, type SwipeLang } from "@/lib/swipe/localization";
 
 interface SwipeDeckProps {
+  lang: SwipeLang;
   cards: SwipeDeckCard[];
   onSwipeCard: (card: SwipeDeckCard, valeur: boolean) => void;
   onUndoCard: (card: SwipeDeckCard) => void;
@@ -117,7 +119,7 @@ const DraggableTopCard = ({
     );
 };
 
-export const SwipeDeck = ({ cards, onSwipeCard, onUndoCard, onComplete }: SwipeDeckProps) => {
+export const SwipeDeck = ({ lang, cards, onSwipeCard, onUndoCard, onComplete }: SwipeDeckProps) => {
   const [index, setIndex] = useState(0);
   const [historique, setHistorique] = useState<SwipeDeckCard[]>([]);
   const [enAttente, setEnAttente] = useState(false);
@@ -210,13 +212,16 @@ export const SwipeDeck = ({ cards, onSwipeCard, onUndoCard, onComplete }: SwipeD
         </AnimatePresence>
       </div>
 
-      <div className="flex items-center gap-6 shrink-0">
+      {/* dir="ltr" forcé : le geste de swipe (droite = j'aime, gauche = passer) et la position des
+          boutons restent physiquement les mêmes quelle que soit la langue, comme sur toutes les
+          applis de swipe — seul le texte des écrans change avec la langue, pas cette rangée. */}
+      <div dir="ltr" className="flex items-center gap-6 shrink-0">
         <button
           type="button"
           onClick={() => declencherDecision(false)}
           disabled={cartesVisibles.length === 0 || enAttente}
           className="w-14 h-14 rounded-full border-2 border-[#AD1414] text-[#AD1414] flex items-center justify-center hover:bg-[#AD1414]/10 transition-colors disabled:opacity-30"
-          aria-label="Passer"
+          aria-label={swipeText.deck.passAria[lang]}
         >
           <X className="w-6 h-6" />
         </button>
@@ -225,7 +230,7 @@ export const SwipeDeck = ({ cards, onSwipeCard, onUndoCard, onComplete }: SwipeD
           onClick={annulerDernier}
           disabled={historique.length === 0 || enAttente}
           className="w-10 h-10 rounded-full text-[#1a1a1a]/50 flex items-center justify-center hover:bg-[#1a1a1a]/5 transition-colors disabled:opacity-20"
-          aria-label="Annuler le dernier swipe"
+          aria-label={swipeText.deck.undoAria[lang]}
         >
           <Undo2 className="w-5 h-5" />
         </button>
@@ -234,7 +239,7 @@ export const SwipeDeck = ({ cards, onSwipeCard, onUndoCard, onComplete }: SwipeD
           onClick={() => declencherDecision(true)}
           disabled={cartesVisibles.length === 0 || enAttente}
           className="w-14 h-14 rounded-full bg-[#AD1414] text-white flex items-center justify-center hover:bg-[#AD1414]/90 transition-colors disabled:opacity-30"
-          aria-label="J'aime"
+          aria-label={swipeText.deck.likeAria[lang]}
         >
           <Heart className="w-6 h-6 fill-current" />
         </button>
