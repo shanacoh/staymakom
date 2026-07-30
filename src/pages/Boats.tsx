@@ -44,7 +44,7 @@ const Boats = () => {
           )
         `)
         .eq("category_id", BOATS_CATEGORY_ID)
-        .or("status.eq.published,and(status.eq.draft,show_on_v3_only.eq.true)")
+        .eq("status", "published")
         .order("display_order", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return data || [];
