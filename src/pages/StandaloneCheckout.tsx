@@ -44,6 +44,8 @@ export interface StandaloneCheckoutState {
   heroImage?: string | null;
   selectedDate: string;
   selectedSlot?: string | null;
+  selectedRateOptionId?: string | null;
+  selectedRateOptionLabel?: string | null;
   adults: number;
   children: number;
   basePrice: number;
@@ -137,6 +139,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
       guestDetails: "Guest details",
       date: "Date",
       timeSlot: "Time slot",
+      formula: "Formula",
       participants: "Participants",
       total: "Total",
       firstName: "First name *",
@@ -171,6 +174,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
       guestDetails: "פרטי לקוח",
       date: "תאריך",
       timeSlot: "שעה",
+      formula: "תפריט",
       participants: "משתתפים",
       total: "סה\"כ",
       firstName: "שם פרטי *",
@@ -205,6 +209,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
       guestDetails: "Informations client",
       date: "Date",
       timeSlot: "Créneau",
+      formula: "Formule",
       participants: "Participants",
       total: "Total",
       firstName: "Prénom *",
@@ -399,6 +404,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
           experience_id: state.experienceId,
           booking_date: state.selectedDate,
           time_slot: state.selectedSlot || null,
+          selected_rate_option_id: state.selectedRateOptionId || null,
           adults: state.adults,
           children: state.children,
           customer_name: `${leadGuest.firstName.trim()} ${leadGuest.lastName.trim()}`,
@@ -455,6 +461,16 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
     setPaymentStatus("paid");
     if (!bookingToken) return;
     try {
+      // Ne pas se fier au seul événement du widget : on revérifie le paiement auprès de
+      // Revolut et on fait passer la réservation de "en cours" à confirmée tout de suite,
+      // sans attendre le webhook (qui reste le filet de sécurité si cet appel échoue).
+      await supabase.functions.invoke("confirm-standalone-payment", {
+        body: { confirmation_token: bookingToken },
+      });
+    } catch {
+      // non-blocking — le webhook Revolut confirmera la réservation en filet de sécurité
+    }
+    try {
       await supabase.functions.invoke("send-standalone-booking-confirmation", {
         body: { confirmation_token: bookingToken },
       });
@@ -510,6 +526,12 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
             <div className="flex justify-between gap-2">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5 shrink-0">{t.timeSlot}</span>
               <span className="text-xs font-medium">{state.selectedSlot}</span>
+            </div>
+          )}
+          {state.selectedRateOptionLabel && (
+            <div className="flex justify-between gap-2">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5 shrink-0">{t.formula}</span>
+              <span className="text-xs font-medium text-right">{state.selectedRateOptionLabel}</span>
             </div>
           )}
           <div className="flex justify-between gap-2">

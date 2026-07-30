@@ -124,6 +124,7 @@ Deno.serve(async (req: Request) => {
       customer_email,
       customer_phone,
       selected_extras_ids,
+      selected_rate_option_id,
       promo_code: promoCodePayload,
       gift_card: giftCardPayload,
     } = body;
@@ -150,7 +151,7 @@ Deno.serve(async (req: Request) => {
     // ── Récupérer l'expérience ────────────────────────────────────────────────
     const { data: experience, error: expError } = await supabase
       .from('standalone_experiences')
-      .select('id, title, base_price, base_price_child, has_child_price, base_price_type, currency, min_party, max_party, has_time_slots, time_slots, status')
+      .select('id, title, base_price, base_price_child, has_child_price, base_price_type, currency, min_party, max_party, has_time_slots, time_slots, has_rate_options, status')
       .eq('id', experience_id)
       .single();
 
@@ -192,10 +193,40 @@ Deno.serve(async (req: Request) => {
       validatedTimeSlot = time_slot;
     }
 
+    // ── Re-valider l'option tarifaire choisie (jamais confiance au prix du client) ─
+    let selectedRateOption: { id: string; label: string; label_fr: string | null; label_he: string | null; price_adult: number; price_child: number | null } | null = null;
+    if (experience.has_rate_options) {
+      if (!selected_rate_option_id) {
+        return new Response(JSON.stringify({ success: false, error: 'Option tarifaire invalide ou non sélectionnée' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { data: rateOptionRow } = await supabase
+        .from('standalone_rate_options')
+        .select('id, label, label_fr, label_he, price_adult, price_child')
+        .eq('id', selected_rate_option_id)
+        .eq('experience_id', experience_id)
+        .eq('is_available', true)
+        .maybeSingle();
+      if (!rateOptionRow) {
+        return new Response(JSON.stringify({ success: false, error: 'Option tarifaire invalide ou non sélectionnée' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      selectedRateOption = rateOptionRow;
+    }
+
     // ── Calculer le prix total côté serveur (jamais confiance au client) ─────
     // Formule : adultes × prix_adulte + enfants × prix_enfant (si tarif enfant activé)
     let basePrice: number;
-    if (experience.base_price_type === 'fixed') {
+    if (selectedRateOption) {
+      const childUnitPrice = experience.has_child_price && selectedRateOption.price_child != null
+        ? selectedRateOption.price_child
+        : selectedRateOption.price_adult;
+      basePrice = selectedRateOption.price_adult * adults + childUnitPrice * children;
+    } else if (experience.base_price_type === 'fixed') {
       basePrice = experience.base_price;
     } else if (experience.has_child_price && experience.base_price_child && children > 0) {
       basePrice = experience.base_price * adults + experience.base_price_child * children;
@@ -271,6 +302,7 @@ Deno.serve(async (req: Request) => {
           currency: experience.currency,
           status: 'confirmed', payment_status: 'paid',
           extras: extrasSnapshot.length > 0 ? extrasSnapshot : null,
+          rate_option: selectedRateOption,
         }])
         .select('id, confirmation_token')
         .single();
@@ -348,6 +380,7 @@ Deno.serve(async (req: Request) => {
         revolut_order_id: revolut.orderId,
         revolut_public_id: revolut.publicId,
         extras: extrasSnapshot.length > 0 ? extrasSnapshot : null,
+        rate_option: selectedRateOption,
       }])
       .select('id, confirmation_token')
       .single();

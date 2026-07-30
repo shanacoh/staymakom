@@ -1,6 +1,30 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 /**
+ * Envoie une alerte email à l'admin. Remplace les `console.error` muets par
+ * une notification réellement vue par Shana — les logs Supabase ne sont
+ * consultés par personne en pratique.
+ */
+async function sendAdminAlertEmail(subject: string, html: string): Promise<void> {
+  const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+  if (!RESEND_API_KEY) return;
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: 'StayMakom <reservations@staymakom.com>',
+        to: ['shana@staymakom.com'],
+        subject,
+        html,
+      }),
+    });
+  } catch (err) {
+    console.error('Admin alert email failed to send:', err);
+  }
+}
+
+/**
  * Calcule la signature attendue selon la règle officielle Revolut.
  *
  * Revolut ne signe PAS le contenu seul : il signe la concaténation
@@ -142,15 +166,21 @@ Deno.serve(async (req) => {
       // (paid event reçu pour un revolut_order_id qui n'a pas de booking en base).
       const { data: hgRows, error: hgError } = await updateBookingTable('bookings_hg', hgUpdateData, 'id, hg_booking_id');
 
+      let matched = false;
+      let dbError: unknown = hgError || null;
+
       if (hgError) {
         console.error('Failed to update bookings_hg payment status:', hgError);
       } else if (hgRows && hgRows.length > 0) {
+        matched = true;
         console.log(`Updated bookings_hg payment_status=${paymentStatus} for order ${orderId}`);
-      } else {
-        // Pas trouvé côté hôtel : on tente standalone_bookings (table distincte, mêmes
-        // revolut_order_id ne peuvent matcher qu'une seule des deux tables).
-        // standalone_bookings n'a pas de colonnes paid_at/revolut_payment_id/payment_method,
-        // on ne met à jour que ce qui existe réellement sur cette table.
+      }
+
+      // Pas trouvé (ou erreur) côté hôtel : on tente standalone_bookings (table distincte,
+      // un même revolut_order_id ne peut matcher qu'une seule des deux tables).
+      // standalone_bookings n'a pas de colonnes paid_at/revolut_payment_id/payment_method,
+      // on ne met à jour que ce qui existe réellement sur cette table.
+      if (!matched) {
         const standaloneUpdateData: Record<string, unknown> = { payment_status: paymentStatus };
         if (paymentStatus === 'paid') {
           standaloneUpdateData.status = 'confirmed';
@@ -160,93 +190,132 @@ Deno.serve(async (req) => {
           standaloneUpdateData.cancelled_at = new Date().toISOString();
         }
 
-        const { data: standaloneRows, error: standaloneError } = await updateBookingTable(
-          'standalone_bookings',
-          standaloneUpdateData,
-          'id, confirmation_token',
-        );
+        // .neq('payment_status', paymentStatus) : on ne met à jour (et on n'envoie l'email
+        // ci-dessous) que si l'état change réellement. Sans ce garde-fou, un webhook qui
+        // arrive après que la confirmation immédiate côté client (confirm-standalone-payment)
+        // ou le filet de sécurité (reconcile-standalone-bookings) a déjà confirmé la même
+        // réservation renverrait un deuxième email "Nouvelle réservation" en double à Shana.
+        const { data: standaloneRows, error: standaloneError } = await supabase
+          .from('standalone_bookings')
+          .update(standaloneUpdateData)
+          .eq('revolut_order_id', orderId)
+          .neq('payment_status', paymentStatus)
+          .select('id, confirmation_token');
 
         if (standaloneError) {
           console.error('Failed to update standalone_bookings payment status:', standaloneError);
+          dbError = standaloneError;
         } else if (standaloneRows && standaloneRows.length > 0) {
+          matched = true;
           console.log(`Updated standalone_bookings payment_status=${paymentStatus} (status=${standaloneUpdateData.status ?? 'unchanged'}) for order ${orderId}`);
 
           // Notification admin quand une réservation standalone est payée
           if (paymentStatus === 'paid') {
             try {
-              const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-              if (RESEND_API_KEY) {
-                const bookingId = standaloneRows[0].id;
-                const confirmationToken = standaloneRows[0].confirmation_token;
+              const bookingId = standaloneRows[0].id;
 
-                const { data: booking } = await supabase
-                  .from('standalone_bookings')
-                  .select('customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, standalone_experiences(title)')
-                  .eq('id', bookingId)
-                  .single();
+              const { data: booking } = await supabase
+                .from('standalone_bookings')
+                .select('customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, standalone_experiences(title)')
+                .eq('id', bookingId)
+                .single();
 
-                if (booking) {
-                  const exp = booking.standalone_experiences as { title: string } | null;
-                  const title = exp?.title || '—';
-                  const dateFormatted = new Date(booking.booking_date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-                  const currencySymbol: Record<string, string> = { ILS: '₪', USD: '$', EUR: '€' };
-                  const priceDisplay = `${currencySymbol[booking.currency] || booking.currency}${booking.sell_price}`;
-                  const timeDisplay = booking.time_slot ? ` à ${booking.time_slot}` : '';
-                  const backofficeUrl = `https://staymakom.com/admin/standalone-bookings`;
+              if (booking) {
+                const exp = booking.standalone_experiences as { title: string } | null;
+                const title = exp?.title || '—';
+                const dateFormatted = new Date(booking.booking_date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                const currencySymbol: Record<string, string> = { ILS: '₪', USD: '$', EUR: '€' };
+                const priceDisplay = `${currencySymbol[booking.currency] || booking.currency}${booking.sell_price}`;
+                const timeDisplay = booking.time_slot ? ` à ${booking.time_slot}` : '';
+                const backofficeUrl = `https://staymakom.com/admin/standalone-bookings`;
 
-                  await fetch('https://api.resend.com/emails', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      from: 'StayMakom <reservations@staymakom.com>',
-                      to: ['shana@staymakom.com'],
-                      subject: `🎉 Nouvelle réservation — ${title}`,
-                      html: `
-                        <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:24px;background:#fff;border-radius:8px;border:1px solid #eee;">
-                          <h2 style="color:#1A1814;margin:0 0 16px;">🎉 Nouvelle réservation standalone</h2>
-                          <table style="width:100%;border-collapse:collapse;">
-                            <tr><td style="padding:8px 0;color:#888;font-size:13px;">Expérience</td><td style="padding:8px 0;font-weight:600;">${title}</td></tr>
-                            <tr><td style="padding:8px 0;color:#888;font-size:13px;">Client</td><td style="padding:8px 0;">${booking.customer_name}</td></tr>
-                            <tr><td style="padding:8px 0;color:#888;font-size:13px;">Email</td><td style="padding:8px 0;">${booking.customer_email}</td></tr>
-                            <tr><td style="padding:8px 0;color:#888;font-size:13px;">Date</td><td style="padding:8px 0;">${dateFormatted}${timeDisplay}</td></tr>
-                            <tr><td style="padding:8px 0;color:#888;font-size:13px;">Participants</td><td style="padding:8px 0;">${booking.party_size} personne${booking.party_size > 1 ? 's' : ''}</td></tr>
-                            <tr><td style="padding:8px 0;color:#888;font-size:13px;">Montant</td><td style="padding:8px 0;font-weight:700;color:#1A7A74;">${priceDisplay}</td></tr>
-                          </table>
-                          <a href="${backofficeUrl}" style="display:inline-block;margin-top:20px;background:#1A1814;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px;">Voir dans le back office</a>
-                        </div>
-                      `,
-                    }),
-                  });
-                  console.log(`Admin notification sent for standalone booking ${bookingId}`);
-                }
+                await sendAdminAlertEmail(
+                  `🎉 Nouvelle réservation — ${title}`,
+                  `
+                    <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:24px;background:#fff;border-radius:8px;border:1px solid #eee;">
+                      <h2 style="color:#1A1814;margin:0 0 16px;">🎉 Nouvelle réservation standalone</h2>
+                      <table style="width:100%;border-collapse:collapse;">
+                        <tr><td style="padding:8px 0;color:#888;font-size:13px;">Expérience</td><td style="padding:8px 0;font-weight:600;">${title}</td></tr>
+                        <tr><td style="padding:8px 0;color:#888;font-size:13px;">Client</td><td style="padding:8px 0;">${booking.customer_name}</td></tr>
+                        <tr><td style="padding:8px 0;color:#888;font-size:13px;">Email</td><td style="padding:8px 0;">${booking.customer_email}</td></tr>
+                        <tr><td style="padding:8px 0;color:#888;font-size:13px;">Date</td><td style="padding:8px 0;">${dateFormatted}${timeDisplay}</td></tr>
+                        <tr><td style="padding:8px 0;color:#888;font-size:13px;">Participants</td><td style="padding:8px 0;">${booking.party_size} personne${booking.party_size > 1 ? 's' : ''}</td></tr>
+                        <tr><td style="padding:8px 0;color:#888;font-size:13px;">Montant</td><td style="padding:8px 0;font-weight:700;color:#1A7A74;">${priceDisplay}</td></tr>
+                      </table>
+                      <a href="${backofficeUrl}" style="display:inline-block;margin-top:20px;background:#1A1814;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px;">Voir dans le back office</a>
+                    </div>
+                  `,
+                );
+                console.log(`Admin notification sent for standalone booking ${bookingId}`);
               }
             } catch (notifErr) {
               console.error('Admin notification failed (non-blocking):', notifErr);
             }
           }
         } else {
-          // ⚠️ ORPHAN PAYMENT : un paiement a réussi côté Revolut mais aucune réservation
-          // (hôtel ou standalone) associée en base. Le frontend a probablement planté entre
-          // la création de l'ordre Revolut et l'insert de la réservation. Le client a été
-          // débité mais n'a pas sa résa.
-          // Ce log doit être très visible dans Supabase → Logs → Edge Functions pour
-          // qu'un admin puisse intervenir manuellement (rembourser si besoin, contacter le client).
-          console.error('🚨 ORPHAN_PAYMENT_DETECTED 🚨', JSON.stringify({
-            orderId,
-            eventType,
-            paymentStatus,
-            revolutPaymentId: event.data?.payments?.[0]?.id,
-            paymentMethod: event.data?.payments?.[0]?.payment_method?.type,
-            customerEmail: event.data?.customer?.email,
-            customerName: event.data?.customer?.full_name,
-            totalAmount: event.data?.total_amount,
-            currency: event.data?.currency,
-            merchantOrderRef: event.data?.merchant_order_ext_ref,
-            completedAt: event.data?.completed_at || event.completed_at,
-            fullEvent: event,
-            message: 'A Revolut payment succeeded but no matching bookings_hg or standalone_bookings row exists. Frontend likely crashed before creating the booking. Manual reconciliation required.',
-          }, null, 2));
+          // Rien mis à jour : soit cette commande ne correspond à aucune réservation
+          // (vrai paiement orphelin, voir plus bas), soit la réservation existe déjà
+          // exactement dans cet état (confirmée entre-temps par un autre mécanisme) —
+          // dans ce second cas, ce n'est pas une anomalie, juste un doublon silencieux.
+          const { data: existing } = await supabase
+            .from('standalone_bookings')
+            .select('id')
+            .eq('revolut_order_id', orderId)
+            .maybeSingle();
+          if (existing) {
+            matched = true;
+          }
         }
+      }
+
+      if (dbError) {
+        // Une vraie erreur SQL est survenue (pas juste "aucune ligne trouvée") : on prévient
+        // Shana par email plutôt qu'un simple log, et on répond en erreur pour que Revolut
+        // réessaie ce webhook automatiquement.
+        await sendAdminAlertEmail(
+          `⚠️ Erreur webhook Revolut — commande ${orderId}`,
+          `<div style="font-family:Arial,sans-serif;padding:16px;">
+            <p>La mise à jour d'une réservation après un événement Revolut (<b>${eventType}</b>, commande <b>${orderId}</b>) a échoué en base de données.</p>
+            <p>Erreur : <code>${String((dbError as { message?: string })?.message || dbError)}</code></p>
+            <p>Le paiement a peut-être réussi côté Revolut sans que le statut soit mis à jour sur le site — à vérifier manuellement.</p>
+          </div>`,
+        );
+        return new Response(JSON.stringify({ error: 'Database update failed' }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      if (!matched) {
+        // ⚠️ ORPHAN PAYMENT : un paiement a réussi côté Revolut mais aucune réservation
+        // (hôtel ou standalone) associée en base. Le frontend a probablement planté entre
+        // la création de l'ordre Revolut et l'insert de la réservation. Le client a été
+        // débité mais n'a pas sa résa.
+        console.error('🚨 ORPHAN_PAYMENT_DETECTED 🚨', JSON.stringify({
+          orderId,
+          eventType,
+          paymentStatus,
+          revolutPaymentId: event.data?.payments?.[0]?.id,
+          paymentMethod: event.data?.payments?.[0]?.payment_method?.type,
+          customerEmail: event.data?.customer?.email,
+          customerName: event.data?.customer?.full_name,
+          totalAmount: event.data?.total_amount,
+          currency: event.data?.currency,
+          merchantOrderRef: event.data?.merchant_order_ext_ref,
+          completedAt: event.data?.completed_at || event.completed_at,
+          fullEvent: event,
+          message: 'A Revolut payment succeeded but no matching bookings_hg or standalone_bookings row exists. Frontend likely crashed before creating the booking. Manual reconciliation required.',
+        }, null, 2));
+
+        await sendAdminAlertEmail(
+          `🚨 Paiement reçu sans réservation correspondante — commande ${orderId}`,
+          `<div style="font-family:Arial,sans-serif;padding:16px;">
+            <p>Revolut a confirmé un événement <b>${eventType}</b> pour la commande <b>${orderId}</b>, mais aucune réservation (hôtel ou expérience seule) ne correspond à cette commande.</p>
+            <p>Client : ${event.data?.customer?.full_name || '—'} (${event.data?.customer?.email || '—'})</p>
+            <p>Montant : ${event.data?.total_amount ?? '—'} ${event.data?.currency ?? ''}</p>
+            <p><b>Le client a peut-être été débité sans avoir de réservation visible.</b> Vérifier manuellement dans Revolut et contacter le client si besoin.</p>
+          </div>`,
+        );
       }
     }
 
