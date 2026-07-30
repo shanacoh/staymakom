@@ -6,6 +6,16 @@
 
 ---
 
+## [2026-07-30 vicies bis] — Bateaux : plus de limite sur le nombre de photos de la galerie
+
+### Ce qui a changé côté code
+- `src/components/forms/StandaloneExperienceForm.tsx` : la limite de 8 photos dans la galerie d'une fiche (ajout de photos, libellé "max. 8", bouton "Ajouter" qui disparaissait) ne s'applique plus quand la fiche appartient à la catégorie "Bateaux". Les autres expériences (excursions, activités...) gardent la limite de 8 photos, ce formulaire étant partagé entre tous les types d'expériences.
+
+### Pourquoi ce changement
+- Shana veut pouvoir mettre autant de photos que nécessaire sur une fiche bateau, sans être bridée par la limite pensée à l'origine pour les autres expériences.
+
+---
+
 ## [2026-07-30 vicies semel] — Refonte du module "Bateaux" : pop-up de présentation, formulaire de demande et back office dédié
 
 ### Ce qui a changé côté code

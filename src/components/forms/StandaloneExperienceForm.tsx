@@ -48,6 +48,11 @@ import { HighlightTagsSelectorStandalone, type LocalTagEntry } from "@/component
 import IncludesManagerStandalone, { type LocalIncludeEntry } from "@/components/admin/IncludesManagerStandalone";
 import StandaloneExtrasManager, { type LocalExtraEntry } from "@/components/admin/StandaloneExtrasManager";
 import StandaloneRateOptionsManager from "@/components/admin/StandaloneRateOptionsManager";
+import { BOATS_CATEGORY_ID } from "@/lib/boatsCategory";
+
+// Les bateaux n'ont pas de limite de nombre de photos dans la galerie,
+// contrairement aux autres expériences standalone (limitées à 8).
+const GALLERY_MAX_DEFAULT = 8;
 
 // ---------------------------------------------------------------------------
 // Tabs
@@ -278,6 +283,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(
     defaultCategoryId ? [defaultCategoryId] : []
   );
+  const isBoatsExperience = selectedCategoryIds.includes(BOATS_CATEGORY_ID);
+  const galleryMax = isBoatsExperience ? Infinity : GALLERY_MAX_DEFAULT;
 
   // Informations clés → badges (kosher, enfants, parking, fitness, spa)
   const [practicalInfo, setPracticalInfo] = useState<PracticalBadgesInfo>(defaultPracticalBadgesInfo);
@@ -668,7 +675,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
 
   const handleGalleryImagesChange = (files: FileList | null) => {
     if (!files || isSaving) return;
-    const newFiles = Array.from(files).slice(0, 8 - galleryImages.length);
+    const newFiles = Array.from(files).slice(0, galleryMax - galleryImages.length);
     setGalleryImages((prev) => [...prev, ...newFiles]);
     newFiles.forEach((file) => {
       const reader = new FileReader();
@@ -1232,7 +1239,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
 
                 {/* Gallery */}
                 <div>
-                  <Label>Galerie (max. 8)</Label>
+                  <Label>{isBoatsExperience ? "Galerie" : "Galerie (max. 8)"}</Label>
                   <p className="text-xs text-muted-foreground mb-2">
                     Glisser les images pour les ajouter. 1600×900px recommandé, max 5MB par image.
                   </p>
@@ -1269,7 +1276,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                         )}
                       </div>
                     ))}
-                    {galleryPreviews.length < 8 && (
+                    {galleryPreviews.length < galleryMax && (
                       <label className="border-2 border-dashed rounded-lg h-32 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors text-muted-foreground">
                         <input
                           type="file"
