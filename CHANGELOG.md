@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-07-31 quater] — Bateaux : écran de demande retravaillé (mise en page, tranches de participants, champs obligatoires, consentement)
+
+### Ce qui a changé côté code
+- `src/components/experience-test/StandaloneRequestPanel.tsx` : sur l'écran de demande bateau uniquement (pas sur le formulaire des autres expériences "sur demande", resté identique), le calendrier passe à droite et les champs à remplir à gauche (le calendrier seul sur toute la largeur laissait un grand vide) ; les tranches de participants passent de 7 petites bulles ("1-2", "3-4"...) à 3 tranches fixes ("Moins de 7", "8-14", "15-24") ; le téléphone devient obligatoire comme le prénom/nom/email, avec un astérisque rouge sur ces 4 champs ; une mention de consentement (contact possible par téléphone et email) apparaît en petit texte gris sous le bouton d'envoi.
+
+### Ce qui a changé côté base de données
+- Aucune migration.
+
+### Pourquoi ce changement
+- Retour de Shana après un premier essai du nouvel écran de demande : le calendrier seul avait l'air vide sur un grand écran, les tranches de participants trop nombreuses, et il manquait une trace de consentement + un moyen sûr de rappeler le client (téléphone obligatoire).
+
+---
+
 ## [2026-07-31 ter] — Bateaux : le prix total du bateau mis en avant sur la carte catalogue
 
 ### Ce qui a changé côté code

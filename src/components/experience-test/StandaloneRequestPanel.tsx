@@ -55,18 +55,13 @@ function toLocalDateStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-// Fourchettes de 2 personnes, de minParty à maxParty (dernière fourchette
-// tronquée si l'écart est impair).
-function buildPartyRanges(minParty: number, maxParty: number): PartyRange[] {
-  const ranges: PartyRange[] = [];
-  let start = minParty || 1;
-  while (start <= maxParty) {
-    const end = Math.min(start + 1, maxParty);
-    ranges.push({ min: start, max: end });
-    start = end + 1;
-  }
-  return ranges;
-}
+// Fourchettes fixes pour les bateaux (moins de 7 / 8-14 / 15-24), plus
+// lisibles que des paires calculées automatiquement à partir de min/maxParty.
+const BOAT_PARTY_RANGES: PartyRange[] = [
+  { min: 1, max: 6 },
+  { min: 8, max: 14 },
+  { min: 15, max: 24 },
+];
 
 export default function StandaloneRequestPanel({
   experienceId,
@@ -98,7 +93,7 @@ export default function StandaloneRequestPanel({
   const [submitted, setSubmitted] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const partyRanges = usePartyRanges ? buildPartyRanges(minParty, maxParty) : [];
+  const partyRanges = usePartyRanges ? BOAT_PARTY_RANGES : [];
 
   const t = {
     title: lang === "he" ? "בקשת תאריכים" : lang === "fr" ? "Demande de dates" : "Request dates",
@@ -114,12 +109,22 @@ export default function StandaloneRequestPanel({
     firstName: lang === "he" ? "שם פרטי" : lang === "fr" ? "Prénom" : "First name",
     lastName: lang === "he" ? "שם משפחה" : lang === "fr" ? "Nom" : "Last name",
     email: "Email",
-    phone: lang === "he" ? "טלפון (אופציונלי)" : lang === "fr" ? "Téléphone (facultatif)" : "Phone (optional)",
+    phone: usePartyRanges
+      ? (lang === "he" ? "טלפון" : lang === "fr" ? "Téléphone" : "Phone")
+      : (lang === "he" ? "טלפון (אופציונלי)" : lang === "fr" ? "Téléphone (facultatif)" : "Phone (optional)"),
     message: lang === "he" ? "הודעה (אופציונלי)" : lang === "fr" ? "Message (facultatif)" : "Message (optional)",
     submit: lang === "he" ? "שליחת הבקשה" : lang === "fr" ? "Envoyer ma demande" : "Send my request",
     sending: lang === "he" ? "שולח…" : lang === "fr" ? "Envoi…" : "Sending…",
-    missingFields:
-      lang === "he" ? "יש למלא שם ואימייל" : lang === "fr" ? "Merci de renseigner votre prénom, nom et email" : "Please fill in your first name, last name and email",
+    consent:
+      lang === "he"
+        ? "בלחיצה על 'שליחת הבקשה' אתם מאשרים ש-STAYMAKOM תיצור עמכם קשר בטלפון ובאימייל בנוגע לבקשה זו."
+        : lang === "fr"
+        ? "En cliquant sur « Envoyer ma demande », vous reconnaissez autoriser StayMakom à vous contacter par téléphone et email au sujet de cette demande."
+        : "By clicking \"Send my request\", you agree to let StayMakom contact you by phone and email about this request.",
+    under7: lang === "he" ? "פחות מ-7" : lang === "fr" ? "Moins de 7" : "Under 7",
+    missingFields: usePartyRanges
+      ? (lang === "he" ? "יש למלא שם, אימייל וטלפון" : lang === "fr" ? "Merci de renseigner votre prénom, nom, email et téléphone" : "Please fill in your first name, last name, email and phone")
+      : (lang === "he" ? "יש למלא שם ואימייל" : lang === "fr" ? "Merci de renseigner votre prénom, nom et email" : "Please fill in your first name, last name and email"),
     missingParty:
       lang === "he" ? "יש לבחור מספר משתתפים" : lang === "fr" ? "Merci de choisir le nombre de personnes" : "Please choose a party size",
     error:
@@ -134,7 +139,7 @@ export default function StandaloneRequestPanel({
   };
 
   const handleSubmit = async () => {
-    if (!firstName.trim() || !lastName.trim() || !email.trim()) {
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || (usePartyRanges && !phone.trim())) {
       setErrorMsg(t.missingFields);
       return;
     }
@@ -235,6 +240,130 @@ export default function StandaloneRequestPanel({
     );
   }
 
+  const dateSection = (
+    <div className="space-y-1.5">
+      <p className="flex items-center gap-1.5 text-sm font-semibold">
+        <Calendar className="h-3.5 w-3.5 text-[#ad1414]" />
+        {t.date}
+      </p>
+      <div className="border rounded-lg overflow-hidden">
+        <CalendarPicker
+          mode="single"
+          showOutsideDays
+          locale={lang === "fr" ? fr : lang === "he" ? he : undefined}
+          selected={selectedDate ? new Date(selectedDate + "T12:00:00") : undefined}
+          onSelect={(date) => setSelectedDate(date ? toLocalDateStr(date) : "")}
+          disabled={isDateUnavailable}
+          defaultMonth={new Date(minDate + "T12:00:00")}
+          toDate={maxDate}
+          classNames={{
+            head_row: "flex w-full",
+            head_cell: "flex-1 text-center text-muted-foreground font-normal text-[0.8rem]",
+            row: "flex w-full mt-2",
+            cell: "flex-1 h-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
+            day_selected: "bg-[#ad1414] text-white hover:bg-[#ad1414] hover:text-white focus:bg-[#ad1414] focus:text-white",
+            day_today: "bg-[#FDF0F0] text-[#ad1414] font-semibold rounded-lg",
+            day_disabled: "text-muted-foreground/30 cursor-not-allowed",
+            day_outside: "text-muted-foreground/30",
+          }}
+        />
+      </div>
+    </div>
+  );
+
+  const messageSection = (
+    <div className="space-y-1.5">
+      <label className="text-sm font-medium">{t.message}</label>
+      <Textarea value={message} onChange={(e) => setMessage(e.target.value)} disabled={submitting} rows={3} />
+    </div>
+  );
+
+  // Bateaux : coordonnées + participants + message à gauche, calendrier à
+  // droite — évite le grand vide à côté d'un calendrier seul sur toute la
+  // largeur de la pop-up. Téléphone obligatoire (marqué *) pour pouvoir
+  // rappeler le client, avec mention de consentement sous le bouton d'envoi.
+  if (usePartyRanges) {
+    return (
+      <div className="rounded-2xl border p-5 space-y-5 shadow-medium">
+        <div>
+          <p className="font-semibold text-lg">{t.title}</p>
+          <p className="text-sm text-muted-foreground mt-1">{t.intro}</p>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+          <div className="space-y-5">
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">{t.firstName} <span className="text-destructive">*</span></label>
+                  <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} disabled={submitting} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">{t.lastName} <span className="text-destructive">*</span></label>
+                  <Input value={lastName} onChange={(e) => setLastName(e.target.value)} disabled={submitting} />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">{t.email} <span className="text-destructive">*</span></label>
+                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={submitting} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">{t.phone} <span className="text-destructive">*</span></label>
+                <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} disabled={submitting} />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <p className="flex items-center gap-1.5 text-sm font-semibold">
+                <Users className="h-3.5 w-3.5 text-[#ad1414]" />
+                {t.participants}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {partyRanges.map((range) => {
+                  const isSelected = selectedRange?.min === range.min && selectedRange?.max === range.max;
+                  const label = range.min === 1 && range.max === 6 ? t.under7 : `${range.min}-${range.max}`;
+                  return (
+                    <button
+                      key={`${range.min}-${range.max}`}
+                      type="button"
+                      onClick={() => setSelectedRange(range)}
+                      className={cn(
+                        "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+                        isSelected
+                          ? "border-[#ad1414] bg-[#ad1414] text-white"
+                          : "border-border hover:border-[#ad1414]/50 hover:bg-[#FDF2F2]"
+                      )}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {messageSection}
+
+            {errorMsg && <p className="text-sm text-destructive">{errorMsg}</p>}
+
+            <div className="space-y-2">
+              <Button
+                type="button"
+                className="w-full rounded-full text-base font-semibold h-12 bg-[#ad1414] text-white hover:bg-[#9a1212] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_-4px_rgba(173,20,20,0.4)] transition-all duration-200 normal-case"
+                onClick={handleSubmit}
+                disabled={submitting}
+              >
+                {submitting ? t.sending : t.submit}
+              </Button>
+              <p className="text-[11px] text-muted-foreground text-center leading-snug">{t.consent}</p>
+            </div>
+          </div>
+
+          {dateSection}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-2xl border p-5 space-y-5 shadow-medium">
       <div>
@@ -270,88 +399,33 @@ export default function StandaloneRequestPanel({
           <Users className="h-3.5 w-3.5 text-[#ad1414]" />
           {t.participants}
         </p>
-        {usePartyRanges ? (
-          <div className="flex flex-wrap gap-2">
-            {partyRanges.map((range) => {
-              const isSelected = selectedRange?.min === range.min && selectedRange?.max === range.max;
-              return (
-                <button
-                  key={`${range.min}-${range.max}`}
-                  type="button"
-                  onClick={() => setSelectedRange(range)}
-                  className={cn(
-                    "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
-                    isSelected
-                      ? "border-[#ad1414] bg-[#ad1414] text-white"
-                      : "border-border hover:border-[#ad1414]/50 hover:bg-[#FDF2F2]"
-                  )}
-                >
-                  {range.min === range.max ? range.min : `${range.min}-${range.max}`}
-                </button>
-              );
-            })}
+        <div className="flex items-center justify-between">
+          <span className="text-sm">{t.participants}</span>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setAdults((a) => Math.max(minParty || 1, a - 1))}
+              disabled={adults <= (minParty || 1)}
+              className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
+            >
+              −
+            </button>
+            <span className="min-w-[2ch] text-center font-semibold">{adults}</span>
+            <button
+              type="button"
+              onClick={() => setAdults((a) => Math.min(maxParty, a + 1))}
+              disabled={adults >= maxParty}
+              className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
+            >
+              +
+            </button>
           </div>
-        ) : (
-          <div className="flex items-center justify-between">
-            <span className="text-sm">{t.participants}</span>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setAdults((a) => Math.max(minParty || 1, a - 1))}
-                disabled={adults <= (minParty || 1)}
-                className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
-              >
-                −
-              </button>
-              <span className="min-w-[2ch] text-center font-semibold">{adults}</span>
-              <button
-                type="button"
-                onClick={() => setAdults((a) => Math.min(maxParty, a + 1))}
-                disabled={adults >= maxParty}
-                className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
-              >
-                +
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Date souhaitée */}
-      <div className="space-y-1.5">
-        <p className="flex items-center gap-1.5 text-sm font-semibold">
-          <Calendar className="h-3.5 w-3.5 text-[#ad1414]" />
-          {t.date}
-        </p>
-        <div className="border rounded-lg overflow-hidden">
-          <CalendarPicker
-            mode="single"
-            showOutsideDays
-            locale={lang === "fr" ? fr : lang === "he" ? he : undefined}
-            selected={selectedDate ? new Date(selectedDate + "T12:00:00") : undefined}
-            onSelect={(date) => setSelectedDate(date ? toLocalDateStr(date) : "")}
-            disabled={isDateUnavailable}
-            defaultMonth={new Date(minDate + "T12:00:00")}
-            toDate={maxDate}
-            classNames={{
-              head_row: "flex w-full",
-              head_cell: "flex-1 text-center text-muted-foreground font-normal text-[0.8rem]",
-              row: "flex w-full mt-2",
-              cell: "flex-1 h-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
-              day_selected: "bg-[#ad1414] text-white hover:bg-[#ad1414] hover:text-white focus:bg-[#ad1414] focus:text-white",
-              day_today: "bg-[#FDF0F0] text-[#ad1414] font-semibold rounded-lg",
-              day_disabled: "text-muted-foreground/30 cursor-not-allowed",
-              day_outside: "text-muted-foreground/30",
-            }}
-          />
         </div>
       </div>
 
-      {/* Message */}
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium">{t.message}</label>
-        <Textarea value={message} onChange={(e) => setMessage(e.target.value)} disabled={submitting} rows={3} />
-      </div>
+      {dateSection}
+
+      {messageSection}
 
       {errorMsg && <p className="text-sm text-destructive">{errorMsg}</p>}
 
