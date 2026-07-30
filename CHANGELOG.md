@@ -6,6 +6,32 @@
 
 ---
 
+## [2026-07-31 ter] — Bateaux : le prix total du bateau mis en avant sur la carte catalogue
+
+### Ce qui a changé côté code
+- `src/pages/Boats.tsx`, `src/components/StandaloneExperienceCard.tsx`, `src/components/ExperienceCard.tsx` : sur les cartes de la page catalogue `/boat` uniquement, le prix affiché en avant est maintenant le prix total du bateau (ex. "1 500 total"), avec le prix par personne en plus petit juste en dessous (ex. "à partir de 83 / pers."). Avant, seul le prix par personne était visible, ce qui pouvait laisser croire à tort que ce montant suffisait pour louer le bateau entier. Les milliers sont désormais espacés à la française (1 500 plutôt que 1500).
+
+### Ce qui a changé côté base de données
+- Aucune migration.
+
+### Pourquoi ce changement
+- Un bateau se loue en entier, pas par personne : afficher uniquement le prix par personne en avant induisait les visiteurs en erreur sur ce qu'ils allaient réellement payer.
+
+---
+
+## [2026-07-31 bis] — Bateaux : nouveau bouton "Je réserve ma sortie" et écran de demande dédié
+
+### Ce qui a changé côté code
+- `src/components/boats/BoatDetailModal.tsx` : le bouton en bas du pop-up bateau ("Demander") devient "Je réserve ma sortie" (plus engageant). Surtout, cliquer dessus n'affiche plus le formulaire en dessous par un simple défilement : il bascule maintenant vers un second écran, dans le même cadre de pop-up (même taille), entièrement dédié à la demande — avec un petit rappel du bateau (photo + nom + extras choisis) en haut, puis le formulaire (coordonnées, participants, date, message). Un bouton retour (flèche) permet de revenir à la fiche du bateau sans fermer le pop-up ; le bouton fermer (croix) ferme toujours tout, depuis les deux écrans.
+
+### Ce qui a changé côté base de données
+- Aucune migration.
+
+### Pourquoi ce changement
+- Shana trouvait le pop-up bateau bien, mais voulait un bouton plus accrocheur et une vraie séparation entre "je regarde la fiche" et "je fais ma demande", plutôt qu'un simple défilement vers le bas de la même page.
+
+---
+
 ## [2026-07-31] — Bateaux : correction de l'affichage des brouillons sur la page publique
 
 ### Ce qui a changé côté code

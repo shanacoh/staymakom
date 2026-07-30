@@ -83,6 +83,7 @@ const Boats = () => {
                     experience={boat}
                     index={idx}
                     linkPrefix="/boat"
+                    showTotalPrice
                   />
                 </div>
               ))}

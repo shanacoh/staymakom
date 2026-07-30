@@ -15,6 +15,11 @@ import HeartBurst from "@/components/ui/HeartBurst";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { trackWishlistClicked, trackExperienceCardClicked } from "@/lib/analytics";
 
+// Espace les milliers à la française (ex. 1500 -> "1 500").
+function formatThousands(amount: number): string {
+  return Math.round(amount).toLocaleString('fr-FR');
+}
+
 // Force les titres courts sur 2 lignes équilibrées en coupant au mot le plus proche du milieu.
 // Les titres longs (≥ 55 chars) s'étalent naturellement et ne sont pas modifiés.
 function splitTitleBalanced(title: string): React.ReactNode {
@@ -95,6 +100,9 @@ interface ExperienceCardProps {
   linkSuffix?: string;
   isStandaloneExperience?: boolean;
   showFromPrefix?: boolean;
+  // Bateaux uniquement : affiche le prix total en avant, prix/pers. en complément.
+  showTotalPrice?: boolean;
+  totalPrice?: number;
 }
 
 export default function ExperienceCard({
@@ -113,6 +121,8 @@ export default function ExperienceCard({
   index = 0,
   isStandaloneExperience = false,
   showFromPrefix = false,
+  showTotalPrice = false,
+  totalPrice,
 }: ExperienceCardProps & { index?: number }) {
   const { lang } = useLanguage();
   const { symbol: currencySymbol } = useCurrency();
@@ -347,8 +357,27 @@ export default function ExperienceCard({
             </div>
           </div>
 
+          {/* LIGNE 2 standalone (bateaux) : Ville, puis prix total en avant + prix/pers. en complément */}
+          {isStandaloneExperience && showTotalPrice && totalPrice && totalPrice > 0 && (
+            <div className="pt-0.5">
+              {city && <p className="text-[11px] text-muted-foreground">{city}</p>}
+              <div className="flex items-baseline gap-1 flex-wrap">
+                <span className="font-bold text-sm text-foreground">{displaySymbol}{formatThousands(totalPrice)}</span>
+                <span className="text-[10px] text-muted-foreground">
+                  {lang === 'he' ? 'סה"כ' : lang === 'fr' ? 'total' : 'total'}
+                </span>
+              </div>
+              {displayPrice > 0 && (
+                <p className="text-[10px] text-muted-foreground">
+                  {lang === 'he' ? 'מ-' : lang === 'fr' ? 'à partir de' : 'from'} {displaySymbol}{formatThousands(displayPrice)}
+                  {lang === 'he' ? ' / לאדם' : lang === 'fr' ? ' / pers.' : ' / person'}
+                </p>
+              )}
+            </div>
+          )}
+
           {/* LIGNE 2 standalone : Ville · [à partir de] Prix */}
-          {isStandaloneExperience && displayPrice > 0 && (
+          {isStandaloneExperience && !showTotalPrice && displayPrice > 0 && (
             <div className="flex items-baseline gap-1 flex-wrap pt-0.5">
               {city && (
                 <>

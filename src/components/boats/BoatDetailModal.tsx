@@ -16,7 +16,7 @@ import {
   Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, type CarouselApi,
 } from "@/components/ui/carousel";
 import { Skeleton } from "@/components/ui/skeleton";
-import { X, Check, Plus } from "lucide-react";
+import { X, Check, Plus, ChevronLeft } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
 import StandaloneRequestPanel from "@/components/experience-test/StandaloneRequestPanel";
@@ -36,13 +36,18 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [requestStarted, setRequestStarted] = useState(false);
   const [selectedExtraIds, setSelectedExtraIds] = useState<string[]>([]);
-  const requestPanelRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setRequestStarted(false);
     setSelectedExtraIds([]);
     setCarouselIndex(0);
   }, [boatId]);
+
+  // Repart du haut à chaque bascule détail <-> demande, sur mobile comme desktop.
+  useEffect(() => {
+    scrollContainerRef.current?.scrollTo({ top: 0 });
+  }, [requestStarted]);
 
   const { data: boat, isLoading } = useQuery({
     queryKey: ["boat-detail", boatId],
@@ -131,7 +136,8 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
     add: lang === "he" ? "הוסף" : lang === "fr" ? "Ajouter" : "Add",
     added: lang === "he" ? "נוסף" : lang === "fr" ? "Ajouté" : "Added",
     fromLabel: lang === "he" ? "החל מ" : lang === "fr" ? "À partir de" : "From",
-    cta: lang === "he" ? "בקשת הזמנה" : lang === "fr" ? "Demander" : "Request",
+    cta: lang === "he" ? "אני מזמין את הטיול" : lang === "fr" ? "Je réserve ma sortie" : "Book my trip",
+    backToDetails: lang === "he" ? "חזרה" : lang === "fr" ? "Retour" : "Back",
     extrasNoteLabel: lang === "he" ? "תוספות מבוקשות" : lang === "fr" ? "Extras souhaités" : "Requested extras",
   };
 
@@ -175,10 +181,7 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
     return blockedDateStrings.includes(toLocalDateStr(date));
   };
 
-  const handleReserveClick = () => {
-    setRequestStarted(true);
-    requestPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  const handleReserveClick = () => setRequestStarted(true);
 
   const closeButton = (
     <button
@@ -191,6 +194,18 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
     </button>
   );
 
+  // Ramène à l'écran détail sans fermer la pop-up — seul le bouton X (ci-dessus) ferme tout.
+  const backButton = requestStarted && (
+    <button
+      type="button"
+      onClick={() => setRequestStarted(false)}
+      className="absolute left-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 shadow-md hover:bg-white transition-colors"
+    >
+      <ChevronLeft className="h-4 w-4" />
+      <span className="sr-only">{t.backToDetails}</span>
+    </button>
+  );
+
   const body = isLoading || !boat ? (
     <div className="p-6 space-y-4">
       <Skeleton className="h-64 w-full rounded-xl" />
@@ -198,8 +213,42 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
       <Skeleton className="h-4 w-full" />
       <Skeleton className="h-4 w-5/6" />
     </div>
+  ) : requestStarted ? (
+    <div key="request" className="pb-6 animate-in fade-in slide-in-from-right-4 duration-300">
+      {/* Rappel du bateau — le visiteur ne voit plus les photos/infos une fois sur cet écran */}
+      <div className="flex items-center gap-3 px-4 sm:px-6 pt-14 pb-4 border-b">
+        {photos[0] && (
+          <img
+            src={photos[0]}
+            alt={title}
+            className="h-14 w-14 rounded-xl object-cover shrink-0"
+          />
+        )}
+        <div className="min-w-0">
+          <h2 className="font-serif text-lg font-bold text-foreground truncate">{title}</h2>
+          {extraNotes && <p className="text-xs text-muted-foreground mt-0.5 truncate">{extraNotes}</p>}
+        </div>
+      </div>
+
+      <div className="px-4 sm:px-6 pt-5">
+        <StandaloneRequestPanel
+          experienceId={boat.id}
+          lang={lang as "en" | "fr" | "he"}
+          minParty={boat.min_party}
+          maxParty={boat.max_party}
+          minDate={minDate}
+          maxDate={maxDate}
+          isDateUnavailable={isDateUnavailable}
+          experienceTitle={title}
+          usePartyRanges
+          started
+          onStartedChange={setRequestStarted}
+          extraNotes={extraNotes}
+        />
+      </div>
+    </div>
   ) : (
-    <div className="pb-6">
+    <div key="detail" className="pb-6 animate-in fade-in slide-in-from-left-4 duration-300">
       {/* Photo — pleine largeur, défile au doigt/à la souris */}
       {photos.length > 0 && (
         <div className="relative">
@@ -331,32 +380,16 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
           </div>
         )}
 
-        <div ref={requestPanelRef}>
-          <StandaloneRequestPanel
-            experienceId={boat.id}
-            lang={lang as "en" | "fr" | "he"}
-            minParty={boat.min_party}
-            maxParty={boat.max_party}
-            minDate={minDate}
-            maxDate={maxDate}
-            isDateUnavailable={isDateUnavailable}
-            experienceTitle={title}
-            usePartyRanges
-            started={requestStarted}
-            onStartedChange={setRequestStarted}
-            extraNotes={extraNotes}
-          />
-        </div>
       </div>
     </div>
   );
 
-  const priceBar = !isLoading && boat && (
+  const priceBar = !isLoading && boat && !requestStarted && (
     <div className="shrink-0 border-t bg-background px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
       <div>
         <p className="text-xs text-muted-foreground">{t.fromLabel}</p>
         <p className="text-lg font-bold text-foreground">
-          {boat.base_price} {boat.currency}
+          {Math.round(boat.base_price).toLocaleString('fr-FR')} {boat.currency}
           {durationLabel && <span className="text-sm font-normal text-muted-foreground"> / {durationLabel}</span>}
         </p>
       </div>
@@ -375,7 +408,8 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
       <Sheet open={!!boatId} onOpenChange={(open) => !open && onClose()}>
         <SheetContent side="bottom" hideCloseButton className="h-[92vh] rounded-t-2xl p-0 flex flex-col overflow-hidden">
           <VisuallyHidden.Root><SheetTitle>{title || "Bateau"}</SheetTitle></VisuallyHidden.Root>
-          <div className="relative flex-1 min-h-0 overflow-y-auto">
+          <div ref={scrollContainerRef} className="relative flex-1 min-h-0 overflow-y-auto">
+            {backButton}
             {closeButton}
             {body}
           </div>
@@ -389,7 +423,8 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
     <Dialog open={!!boatId} onOpenChange={(open) => !open && onClose()}>
       <DialogContent hideCloseButton className="max-w-3xl max-h-[90vh] rounded-2xl p-0 flex flex-col overflow-hidden">
         <VisuallyHidden.Root><DialogTitle>{title || "Bateau"}</DialogTitle></VisuallyHidden.Root>
-        <div className="relative flex-1 min-h-0 overflow-y-auto">
+        <div ref={scrollContainerRef} className="relative flex-1 min-h-0 overflow-y-auto">
+          {backButton}
           {closeButton}
           {body}
         </div>

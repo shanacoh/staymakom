@@ -46,6 +46,10 @@ interface StandaloneExperienceCardProps {
   badge?: string | null;
   linkSuffix?: string;
   linkPrefix?: string;
+  // Bateaux uniquement : affiche le prix total du bateau en avant, avec le
+  // prix par personne en complément — évite de laisser croire que le prix
+  // par personne est le prix pour louer le bateau entier.
+  showTotalPrice?: boolean;
 }
 
 export default function StandaloneExperienceCard({
@@ -54,6 +58,7 @@ export default function StandaloneExperienceCard({
   badge,
   linkSuffix,
   linkPrefix = "/standalone-experience",
+  showTotalPrice = false,
 }: StandaloneExperienceCardProps) {
   const { convert } = useCurrency();
 
@@ -65,6 +70,7 @@ export default function StandaloneExperienceCard({
   const displayPrice = isFixed && maxParty > 0
     ? Math.ceil(rawConverted / maxParty)
     : Math.round(rawConverted);
+  const totalPrice = isFixed ? Math.round(rawConverted) : undefined;
 
   // "à partir de" s'affiche pour les forfaits et quand il y a un tarif enfant
   const showFromPrefix = isFixed || (experience.has_child_price ?? false);
@@ -99,6 +105,8 @@ export default function StandaloneExperienceCard({
       badge={badge}
       isStandaloneExperience
       showFromPrefix={showFromPrefix}
+      showTotalPrice={showTotalPrice && isFixed}
+      totalPrice={totalPrice}
     />
   );
 }
