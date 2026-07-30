@@ -841,6 +841,43 @@ const AdminLeads = () => {
                 </div>
               )}
 
+              {/* Experience Request Details — experience_only leads (dont demandes bateaux) */}
+              {selectedLead.source === "experience_only" && selectedLead.metadata && (
+                <div className="border rounded-lg p-4 space-y-3">
+                  <h4 className="font-semibold text-sm">🚤 Demande d'expérience</h4>
+                  <dl className="space-y-2.5">
+                    {selectedLead.metadata.experience_title && (
+                      <div className="flex gap-3 items-start">
+                        <dt className="text-xs text-muted-foreground w-24 shrink-0 pt-0.5">Expérience</dt>
+                        <dd className="text-sm font-medium">{selectedLead.metadata.experience_title}</dd>
+                      </div>
+                    )}
+                    {selectedLead.metadata.requested_date && (
+                      <div className="flex gap-3 items-start">
+                        <dt className="text-xs text-muted-foreground w-24 shrink-0 pt-0.5">Date souhaitée</dt>
+                        <dd className="text-sm">{format(new Date(selectedLead.metadata.requested_date), "dd/MM/yyyy")}</dd>
+                      </div>
+                    )}
+                    {selectedLead.metadata.adults != null && (
+                      <div className="flex gap-3 items-start">
+                        <dt className="text-xs text-muted-foreground w-24 shrink-0 pt-0.5">Participants</dt>
+                        <dd className="text-sm">
+                          {selectedLead.metadata.party_max
+                            ? `${selectedLead.metadata.adults}-${selectedLead.metadata.party_max}`
+                            : selectedLead.metadata.adults + (selectedLead.metadata.children || 0)}
+                        </dd>
+                      </div>
+                    )}
+                    {selectedLead.metadata.message && (
+                      <div className="flex gap-3 items-start">
+                        <dt className="text-xs text-muted-foreground w-24 shrink-0 pt-0.5">Message</dt>
+                        <dd className="text-sm text-muted-foreground bg-muted p-2 rounded flex-1">{selectedLead.metadata.message}</dd>
+                      </div>
+                    )}
+                  </dl>
+                </div>
+              )}
+
               {/* Partner Qualification — partners leads */}
               {selectedLead.source === "partners" && selectedLead.metadata && (
                 selectedLead.metadata.partner_goals?.length ||

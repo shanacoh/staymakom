@@ -236,6 +236,13 @@ serve(async (req) => {
         if (requestData.phone) leadRecord.phone = requestData.phone.trim();
       }
 
+      // For experience_only (ex: demandes bateaux), le nom arrive déjà complet
+      // (pas de split prénom/nom côté formulaire de demande).
+      if (requestData.source === 'experience_only') {
+        if (requestData.name) leadRecord.name = requestData.name.trim();
+        if (requestData.phone) leadRecord.phone = requestData.phone.trim();
+      }
+
       const { data, error } = await supabase
         .from('leads')
         .insert([leadRecord])

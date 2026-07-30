@@ -30,6 +30,7 @@ const Index              = lazy(() => import("./pages/Index"));
 const LaunchIndex        = lazy(() => import("./pages/LaunchIndex"));
 const ComingSoon         = lazy(() => import("./pages/ComingSoon"));
 const Category           = lazy(() => import("./pages/Category"));
+const Boats              = lazy(() => import("./pages/Boats"));
 const Experience         = lazy(() => import("./pages/Experience"));
 const HotelOld           = lazy(() => import("./pages/HotelOld"));
 const Hotel              = lazy(() => import("./pages/Hotel"));
@@ -93,6 +94,8 @@ const StandaloneBookingConfirmation = lazy(() => import("./pages/StandaloneBooki
 const TailorMadeQuestionnaire    = lazy(() => import("./pages/TailorMadeQuestionnaire"));
 const AdminStandaloneBookings    = lazy(() => import("./pages/admin/StandaloneBookings"));
 const AdminStandaloneBookingDetails = lazy(() => import("./pages/admin/StandaloneBookingDetails"));
+const AdminBoatExperiences       = lazy(() => import("./pages/admin/BoatExperiences"));
+const AdminBoatRequests          = lazy(() => import("./pages/admin/BoatRequests"));
 
 // ── Module Swipe Itinéraire ────────────────────────────────────────────────
 const SwipePublic                = lazy(() => import("./pages/swipe/SwipePublic"));
@@ -223,6 +226,8 @@ const AppContent = () => {
           <Route path="/hotel-old/:slug" element={<HotelOld />} />
           <Route path="/booking/confirmation/:token" element={<BookingConfirmationPage />} />
           <Route path="/standalone-experience/:slug" element={<StandaloneExperience />} />
+          <Route path="/boat" element={<Boats />} />
+          <Route path="/boat/:slug" element={<StandaloneExperience />} />
           <Route path="/standalone-checkout" element={<StandaloneCheckout />} />
           <Route path="/standalone-booking/confirmation/:token" element={<StandaloneBookingConfirmation />} />
           <Route path="/tailor-questionnaire/:token" element={<TailorMadeQuestionnaire />} />
@@ -278,6 +283,10 @@ const AppContent = () => {
             <Route path="reservations/:bookingId" element={<AdminReservationDetails />} />
             <Route path="standalone-bookings" element={<AdminStandaloneBookings />} />
             <Route path="standalone-bookings/:bookingId" element={<AdminStandaloneBookingDetails />} />
+            <Route path="boats" element={<AdminBoatExperiences />} />
+            <Route path="boats/new" element={<AdminBoatExperiences />} />
+            <Route path="boats/edit/:experienceId" element={<AdminBoatExperiences />} />
+            <Route path="boats/requests" element={<AdminBoatRequests />} />
             <Route path="gift-cards" element={<AdminGiftCards />} />
             <Route path="gift-cards/:id" element={<AdminGiftCardDetails />} />
             <Route path="users" element={<AdminUsers />} />

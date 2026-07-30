@@ -45,6 +45,7 @@ interface StandaloneExperienceCardProps {
   index?: number;
   badge?: string | null;
   linkSuffix?: string;
+  linkPrefix?: string;
 }
 
 export default function StandaloneExperienceCard({
@@ -52,6 +53,7 @@ export default function StandaloneExperienceCard({
   index = 0,
   badge,
   linkSuffix,
+  linkPrefix = "/standalone-experience",
 }: StandaloneExperienceCardProps) {
   const { convert } = useCurrency();
 
@@ -91,7 +93,7 @@ export default function StandaloneExperienceCard({
   return (
     <ExperienceCard
       experience={cardExperience}
-      linkPrefix="/standalone-experience"
+      linkPrefix={linkPrefix}
       linkSuffix={linkSuffix}
       index={index}
       badge={badge}

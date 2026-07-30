@@ -491,6 +491,7 @@ export default function StandaloneExperience() {
           minDate={minDate}
           maxDate={maxDate}
           isDateUnavailable={isDateUnavailable}
+          experienceTitle={title}
         />
       );
     }

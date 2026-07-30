@@ -86,6 +86,9 @@ const standaloneExperienceSchema = z.object({
   cancellation_policy: z.string().optional(),
   cancellation_policy_fr: z.string().optional(),
   cancellation_policy_he: z.string().optional(),
+  // Fournisseur — jamais affiché côté client
+  supplier_name: z.string().optional(),
+  supplier_boat_name: z.string().optional(),
   // Tarification
   supplier_price_adult: z.number().min(0).default(0),
   supplier_price_child: z.number().min(0).default(0),
@@ -219,13 +222,16 @@ function PracticalTriStateField({
 interface StandaloneExperienceFormProps {
   experienceId?: string;
   onClose?: () => void;
+  // Pré-sélectionne une catégorie à la création (ex: catégorie Bateaux depuis
+  // /admin/boats) — sans effet en mode édition, où la catégorie existante prime.
+  defaultCategoryId?: string;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneExperienceFormProps) {
+export function StandaloneExperienceForm({ experienceId, onClose, defaultCategoryId }: StandaloneExperienceFormProps) {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
@@ -269,7 +275,9 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
   const [newHighlightTag, setNewHighlightTag] = useState("");
 
   // Multi-categories
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(
+    defaultCategoryId ? [defaultCategoryId] : []
+  );
 
   // Informations clés → badges (kosher, enfants, parking, fitness, spa)
   const [practicalInfo, setPracticalInfo] = useState<PracticalBadgesInfo>(defaultPracticalBadgesInfo);
@@ -351,10 +359,14 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
   const { data: categories } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
+      // Le back office doit pouvoir assigner une catégorie même si elle est
+      // volontairement en "draft" (ex. "Bateaux", cachée du menu public tant
+      // que Shana ne l'a pas publiée) — seules les catégories archivées sont
+      // exclues de ce sélecteur admin.
       const { data, error } = await supabase
         .from("categories")
         .select("id, name")
-        .eq("status", "published")
+        .neq("status", "archived")
         .order("name");
       if (error) throw error;
       return data;
@@ -396,7 +408,7 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
       subtitle: "",
       subtitle_fr: "",
       subtitle_he: "",
-      category_id: "",
+      category_id: defaultCategoryId || "",
       long_copy: "",
       long_copy_fr: "",
       long_copy_he: "",
@@ -405,6 +417,8 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
       cancellation_policy: "",
       cancellation_policy_fr: "",
       cancellation_policy_he: "",
+      supplier_name: "",
+      supplier_boat_name: "",
       supplier_price_adult: 0,
       supplier_price_child: 0,
       has_child_price: false,
@@ -536,6 +550,8 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
     setValue("cancellation_policy", exp.cancellation_policy || "");
     setValue("cancellation_policy_fr", exp.cancellation_policy_fr || "");
     setValue("cancellation_policy_he", exp.cancellation_policy_he || "");
+    setValue("supplier_name", exp.supplier_name || "");
+    setValue("supplier_boat_name", exp.supplier_boat_name || "");
     // Pricing — fallback to base_price for existing records without supplier_price_adult
     setValue("supplier_price_adult", exp.supplier_price_adult ?? exp.base_price ?? 0);
     setValue("supplier_price_child", exp.supplier_price_child ?? 0);
@@ -814,6 +830,8 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
       cancellation_policy: data.cancellation_policy || null,
       cancellation_policy_fr: data.cancellation_policy_fr || null,
       cancellation_policy_he: data.cancellation_policy_he || null,
+      supplier_name: data.supplier_name || null,
+      supplier_boat_name: data.supplier_boat_name || null,
       supplier_price_adult: data.supplier_price_adult,
       supplier_price_child: data.has_child_price ? data.supplier_price_child : null,
       has_child_price: data.has_child_price,
@@ -1928,6 +1946,38 @@ export function StandaloneExperienceForm({ experienceId, onClose }: StandaloneEx
                       {(errors.min_party || errors.max_party) && (
                         <p className="text-destructive text-xs">Valeurs min/max invalides</p>
                       )}
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Identification fournisseur — jamais affiché côté client */}
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+                    Fournisseur (usage interne, jamais visible des clients)
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="supplier_name">Société / prestataire</Label>
+                      <Input
+                        id="supplier_name"
+                        {...register("supplier_name")}
+                        placeholder="ex. BALAGUNA, MARK"
+                        disabled={isSaving}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="supplier_boat_name">Nom d'origine chez le fournisseur</Label>
+                      <Input
+                        id="supplier_boat_name"
+                        {...register("supplier_boat_name")}
+                        placeholder="ex. Thirty Eight Catamaran"
+                        disabled={isSaving}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Le titre affiché au client (onglet Contenu) peut être différent.
+                      </p>
                     </div>
                   </div>
                 </div>

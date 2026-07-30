@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { format, parseISO } from "date-fns";
-import { Mail, Phone } from "lucide-react";
+import { Mail, Phone, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
 import EditStandaloneRequestDialog from "@/components/admin/EditStandaloneRequestDialog";
@@ -31,19 +31,42 @@ const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secon
   closed: { label: "Sans suite", variant: "destructive" },
 };
 
-const StandaloneRequestsTable = () => {
+// wa.me exige un numéro sans espaces ni "+" — construit un message pré-rempli
+// pour que l'admin n'ait qu'à cliquer "Envoyer" sur WhatsApp Web/mobile.
+function buildWhatsAppLink(phone: string, customerName: string, experienceTitle: string, requestedDate: string | null): string {
+  const digits = phone.replace(/[^\d]/g, "");
+  const dateTxt = requestedDate ? ` pour le ${format(parseISO(requestedDate), "dd/MM/yyyy")}` : "";
+  const text = `Bonjour ${customerName}, je vous recontacte au sujet de votre demande "${experienceTitle}"${dateTxt} sur StayMakom.`;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+}
+
+interface StandaloneRequestsTableProps {
+  // Ne montre que les demandes dont l'expérience liée appartient à cette catégorie.
+  categoryId?: string;
+  // Ajoute une colonne avec un lien WhatsApp pré-rempli pour recontacter le client.
+  showWhatsAppLink?: boolean;
+}
+
+const StandaloneRequestsTable = ({ categoryId, showWhatsAppLink }: StandaloneRequestsTableProps) => {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [convertRequest, setConvertRequest] = useState<any | null>(null);
   const [editRequest, setEditRequest] = useState<any | null>(null);
 
+  const queryKey = categoryId ? [...REQUESTS_QUERY_KEY, categoryId] : REQUESTS_QUERY_KEY;
+
   const { data: requests, isLoading } = useQuery({
-    queryKey: REQUESTS_QUERY_KEY,
+    queryKey,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const experienceJoin = categoryId ? "standalone_experiences!inner" : "standalone_experiences";
+      let query = (supabase as any)
         .from("standalone_experience_requests")
-        .select("id, experience_id, customer_name, customer_email, customer_phone, requested_date, adults, children, message, internal_notes, status, created_at, standalone_experiences(title, currency)")
+        .select(`id, experience_id, customer_name, customer_email, customer_phone, requested_date, adults, children, party_max, message, internal_notes, status, created_at, ${experienceJoin}(title, currency, category_id)`)
         .order("created_at", { ascending: false });
+      if (categoryId) {
+        query = query.eq("standalone_experiences.category_id", categoryId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data as any[];
     },
@@ -65,7 +88,7 @@ const StandaloneRequestsTable = () => {
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: REQUESTS_QUERY_KEY }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey }),
     onError: () => toast.error("Impossible de mettre à jour le statut"),
   });
 
@@ -104,6 +127,7 @@ const StandaloneRequestsTable = () => {
                 <TableHead>Message</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead>Reçu le</TableHead>
+                {showWhatsAppLink && <TableHead>WhatsApp</TableHead>}
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -125,7 +149,9 @@ const StandaloneRequestsTable = () => {
                   <TableCell className="text-sm whitespace-nowrap">
                     {request.requested_date ? format(parseISO(request.requested_date), "dd MMM yyyy") : "Non précisée"}
                   </TableCell>
-                  <TableCell>{request.adults + request.children}</TableCell>
+                  <TableCell>
+                    {request.party_max ? `${request.adults}-${request.party_max}` : request.adults + request.children}
+                  </TableCell>
                   <TableCell className="text-xs text-muted-foreground max-w-[220px] truncate" title={request.message || undefined}>
                     {request.message || "—"}
                   </TableCell>
@@ -151,6 +177,28 @@ const StandaloneRequestsTable = () => {
                   <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                     {format(parseISO(request.created_at), "dd MMM yyyy")}
                   </TableCell>
+                  {showWhatsAppLink && (
+                    <TableCell>
+                      {request.customer_phone ? (
+                        <a
+                          href={buildWhatsAppLink(
+                            request.customer_phone,
+                            request.customer_name,
+                            request.standalone_experiences?.title || "",
+                            request.requested_date
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-green-700 hover:underline"
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" />
+                          Contacter
+                        </a>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                  )}
                   <TableCell className="text-right space-x-1">
                     <Button
                       variant="ghost"
@@ -190,7 +238,10 @@ const StandaloneRequestsTable = () => {
           customer_name: convertRequest.customer_name,
           customer_email: convertRequest.customer_email,
           customer_phone: convertRequest.customer_phone,
-          internal_notes: convertRequest.message ? `Demande initiale : ${convertRequest.message}` : undefined,
+          internal_notes: [
+            convertRequest.party_max ? `Fourchette demandée : ${convertRequest.adults}-${convertRequest.party_max} personnes` : null,
+            convertRequest.message ? `Demande initiale : ${convertRequest.message}` : null,
+          ].filter(Boolean).join(" — ") || undefined,
         } : null}
         onBookingCreated={() => {
           if (convertRequest) handleBookingCreated(convertRequest.id);

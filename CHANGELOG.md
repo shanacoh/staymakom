@@ -6,6 +6,61 @@
 
 ---
 
+## [2026-07-30 vicies semel] — Refonte du module "Bateaux" : pop-up de présentation, formulaire de demande et back office dédié
+
+### Ce qui a changé côté code
+- `src/pages/Boats.tsx` : le clic sur un bateau n'ouvre plus une nouvelle page — une pop-up s'affiche par-dessus la page (photo qui défile, badges, description, inclus, extras), sans changer d'adresse.
+- `src/components/boats/BoatDetailModal.tsx` (nouveau) : la pop-up elle-même — galerie photo pleine largeur, badge de capacité, catégorie/ville, points forts, encadré "Inclus dans la sortie", liste d'extras que le client peut "ajouter" à sa demande, barre de prix fixe en bas avec bouton "Demander".
+- `src/components/experience-test/StandaloneRequestPanel.tsx` (formulaire de demande, déjà utilisé pour les autres expériences "sur demande") : ne s'affiche plus tant que le visiteur n'a pas cliqué sur "Demander" (évite de montrer le calendrier avant l'intention exprimée) ; les champs nom/prénom sont désormais séparés ; pour les bateaux, le nombre de personnes se choisit par fourchette proposée ("2-3", "4-5"...) plutôt qu'un compteur exact ; alimente désormais aussi automatiquement la page Leads à chaque demande envoyée (pas seulement l'email interne).
+- `src/components/admin/AdminSidebar.tsx` : nouvelle section "Bateau" dans le menu de gauche du back office, avec "Mes bateaux" et "Demandes".
+- `src/pages/admin/BoatExperiences.tsx` et `src/pages/admin/BoatRequests.tsx` (nouveaux) : back office dédié pour créer/modifier les fiches bateaux et consulter uniquement les demandes bateaux reçues, avec un lien WhatsApp pré-rempli pour recontacter chaque client directement.
+- `src/components/admin/StandaloneRequestsTable.tsx` : peut désormais filtrer les demandes par catégorie et afficher une colonne WhatsApp.
+- `src/pages/admin/Leads.tsx` : affiche le détail d'une demande d'expérience (bateau ou autre) directement dans la fiche du lead correspondant.
+- `supabase/functions/collect-lead/index.ts` : enregistre aussi le nom et le téléphone pour les leads issus d'une demande d'expérience (pas seulement l'email).
+- `src/lib/boatsCategory.ts`, `src/App.tsx`, `src/components/ui/sheet.tsx`, `src/components/forms/StandaloneExperienceForm.tsx`, `src/components/StandaloneExperienceCard.tsx`, `src/pages/StandaloneExperience.tsx` : ajustements techniques nécessaires (nouvelles routes, catégorie pré-sélectionnée à la création d'un bateau, bouton fermer personnalisable sur les pop-up mobiles).
+
+### Ce qui a changé côté base de données
+- `20260731000000_add_supplier_fields_standalone_experiences.sql` : ajoute deux champs internes (jamais visibles des clients) pour noter le prestataire et son nom d'origine.
+- `20260731010000_create_category_bateaux.sql` : crée la catégorie interne "Bateaux" qui regroupe les fiches du catalogue bateaux (invisible du menu public).
+- `20260731020000_seed_8_standalone_experiences_bateaux.sql` : saisit les 8 bateaux reçus.
+- `20260731030000_add_party_max_to_standalone_experience_requests.sql` : ajoute une case pour stocker le haut d'une fourchette de personnes demandée (ex: "2 à 3"), en plus du nombre déjà stocké.
+
+### Pourquoi ce changement
+- Shana voulait un vrai espace dédié aux bateaux dans le back office (catalogue + demandes + lien avec les leads), sans paiement direct (le client demande, l'équipe recontacte manuellement sur WhatsApp), et une présentation en pop-up plus agréable et plus proche d'une fiche produit qu'une simple page.
+
+---
+
+## [2026-07-30 vicies] — Permet de corriger une réservation "Expérience seule" déjà créée
+
+### Ce qui a changé côté code
+- `src/components/admin/EditStandaloneBookingDialog.tsx` (nouveau) : nouvelle fenêtre dans le back office pour corriger les informations d'une réservation "Expérience seule" déjà créée (client, date, créneau, participants, prix, adresse, règlement) sans devoir la dupliquer.
+- `src/pages/admin/StandaloneBookingDetails.tsx` : ajoute un bouton "Modifier" à côté de "Dupliquer" sur la fiche détail d'une réservation.
+
+### Pourquoi ce changement
+- Le bouton "Dupliquer" ne fait que créer une nouvelle réservation à côté de l'originale ; il manquait un moyen de corriger directement une information sur la réservation existante (faute de frappe, date à ajuster) sans repartir de zéro.
+
+---
+
+## [2026-07-30 undevicies] — Ajoute le module "Bateaux" (catalogue + back office)
+
+### Ce qui a changé côté code
+- `src/pages/Boats.tsx` (nouveau) : nouvelle page catalogue publique à l'adresse `/boat`, une grille de cartes bateaux dans le style exact des autres expériences du site. Accessible uniquement par lien direct — aucune entrée n'a été ajoutée dans le menu du site.
+- `src/App.tsx` : ajoute les routes `/boat` (catalogue) et `/boat/:slug` (fiche détaillée d'un bateau, réutilise la page de détail des expériences standalone déjà existante).
+- `src/components/StandaloneExperienceCard.tsx` : la carte accepte maintenant une adresse de lien personnalisée (`linkPrefix`), pour pouvoir pointer vers `/boat/...` au lieu de `/standalone-experience/...`.
+- `src/components/forms/StandaloneExperienceForm.tsx` : ajoute dans le back office deux champs internes, jamais visibles des clients — "Société / prestataire" (ex. BALAGUNA, MARK) et "Nom d'origine chez le fournisseur" — distincts du titre affiché au client, qui peut être différent. Corrige aussi le sélecteur de catégorie du formulaire, qui ne montrait que les catégories déjà publiées : la catégorie "Bateaux" (volontairement en brouillon pour rester invisible du menu public) apparaît maintenant dans la liste, pour que Shana puisse l'assigner à une nouvelle fiche.
+
+### Ce qui a changé côté base de données
+- `20260731000000_add_supplier_fields_standalone_experiences.sql` : ajoute les colonnes `supplier_name` et `supplier_boat_name` à la table `standalone_experiences` (jamais exposées côté public).
+- `20260731010000_create_category_bateaux.sql` : crée une catégorie interne "Bateaux" (status brouillon, volontairement invisible dans les menus et le plan du site) servant uniquement à regrouper les fiches bateaux.
+- `20260731020000_seed_8_standalone_experiences_bateaux.sql` : saisit les 8 bateaux reçus (fiches + extras/options avec leur prix), en brouillon en attendant les photos et la validation de Shana avant publication.
+
+### Pourquoi ce changement
+- Shana reçoit le plus de demandes sur l'offre bateau et veut pouvoir envoyer rapidement un lien dédié. Plutôt que de construire un système séparé, le module réutilise le moteur déjà existant des expériences standalone (marge éditable par fiche, prix client calculé automatiquement, extras avec prix) — moins de code, et un rendu identique au reste du site.
+- La formule de calcul du prix client (coût × (1 + marge%), marge par défaut 20%) et le choix d'une page de détail complète plutôt qu'une pop-up ont été validés avec Shana pour rester cohérents avec le reste de la plateforme.
+- La porte "renseigner ses infos avant de voir les prix" demandée par Shana est volontairement remise à une prochaine session.
+
+---
+
 ## [2026-07-30 duodevicies] — Ajoute des tests unitaires pour le fil d'Ariane (SEO)
 
 ### Ce qui a changé côté code
