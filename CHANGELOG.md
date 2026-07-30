@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-07-31] — Bateaux : correction de l'affichage des brouillons sur la page publique
+
+### Ce qui a changé côté code
+- `src/pages/Boats.tsx` : la requête qui récupère les bateaux pour la page publique ne garde plus que les fiches au statut "publié". Avant, une fiche en "brouillon" pouvait quand même s'afficher publiquement si l'indicateur technique `show_on_v3_only` était activé (ce qui était le cas pour les 8 fiches bateaux depuis leur création, à des fins de prévisualisation).
+
+### Ce qui a changé côté base de données
+- Aucune migration : la colonne `show_on_v3_only` existante n'est plus prise en compte par cette page, elle n'a pas été modifiée en base.
+
+### Pourquoi ce changement
+- Shana a remarqué qu'une fiche bateau marquée "brouillon" dans le back office restait visible sur la page publique des bateaux, ce qui rendait ce statut inutile pour cacher une fiche avant publication.
+
+---
+
 ## [2026-07-31] — Bateaux : contenu des fiches (description, inclus, badges), bandeau "type de sortie" et marge à 26%
 
 ### Ce qui a changé côté code
