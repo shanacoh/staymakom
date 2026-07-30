@@ -6,6 +6,63 @@
 
 ---
 
+## [2026-07-30 duodevicies] — Ajoute des tests unitaires pour le fil d'Ariane (SEO)
+
+### Ce qui a changé côté code
+- `src/lib/breadcrumbJsonLd.test.ts` (nouveau) : ajoute des tests automatiques qui vérifient que le fil d'Ariane affiché en bas des pages (et transmis à Google pour le référencement) reste correctement numéroté et formaté, même après de futures modifications du code.
+
+### Pourquoi ce changement
+- Renforce la fiabilité d'une fonctionnalité déjà en production (référencement/SEO), sans changer son comportement.
+
+---
+
+## [2026-07-30 septendecies] — Permet de corriger une demande "sur devis" déjà reçue
+
+### Ce qui a changé côté code
+- `src/components/admin/EditStandaloneRequestDialog.tsx` (nouveau) : nouvelle fenêtre dans le back office pour corriger les informations d'une demande de dates ("sur devis") déjà reçue — coordonnées client, date souhaitée, nombre de personnes, message, statut, notes internes — sans avoir à la convertir en réservation.
+- `src/components/admin/StandaloneRequestsTable.tsx` : ajoute un bouton "Modifier" sur chaque demande pour ouvrir cette fenêtre, et affiche désormais les notes internes.
+
+### Pourquoi ce changement
+- Le back office permettait déjà de voir et convertir les demandes reçues, mais pas de corriger une coordonnée mal saisie par le client (faute de frappe dans l'email, date à ajuster) sans repartir de zéro.
+
+---
+
+## [2026-07-30 sedecies] — Ajoute des formules tarifaires et fiabilise la confirmation de paiement des expériences standalone
+
+### Ce qui a changé côté code
+- `src/components/admin/StandaloneRateOptionsManager.tsx` (nouveau) : dans le back office, permet d'ajouter à une expérience une liste libre de formules tarifaires (ex : "12h — Menu Découverte" à 150₪, "18h — Dégustation" à 200₪), chacune avec son propre prix calculé comme le prix principal (coût fournisseur × marge).
+- `src/pages/StandaloneCheckout.tsx` : le client voit désormais la formule choisie récapitulée sur la page de paiement.
+- `supabase/functions/process-standalone-payment/index.ts` : le prix de la formule choisie est revérifié côté serveur avant paiement (jamais confiance au prix envoyé par le navigateur).
+- `supabase/functions/confirm-standalone-payment/` (nouvelle fonction) : juste après un paiement réussi, revérifie immédiatement l'état de la commande auprès de Revolut et confirme la réservation, sans attendre le webhook.
+- `supabase/functions/reconcile-standalone-bookings/` (nouvelle fonction, destinée à tourner automatiquement) : filet de sécurité qui repasse sur les réservations restées "en attente" trop longtemps, revérifie leur état auprès de Revolut, et alerte Shana par email si une réservation reste bloquée plus de 2h.
+- `supabase/functions/revolut-webhook/index.ts` : au lieu de simples traces techniques invisibles, envoie désormais un email à Shana en cas de paiement reçu sans réservation correspondante ou d'erreur d'enregistrement, et évite les emails "Nouvelle réservation" envoyés en double.
+
+### Ce qui a changé côté base de données
+- Migrations `20260720000000_create_standalone_rate_options.sql`, `20260720010000_standalone_rate_options_drop_time_slot_not_null.sql`, `20260720020000_standalone_rate_options_add_supplier_price.sql` : nouvelle table `standalone_rate_options` qui stocke ces formules tarifaires, chacune avec un libellé (FR/EN/HE) et un prix.
+
+### Pourquoi ce changement
+- Certaines expériences (restaurants, ateliers) proposent plusieurs formules à prix différents plutôt qu'un prix unique — la fonctionnalité manquait dans le back office. Par ailleurs, plusieurs réservations payées restaient affichées "en attente" trop longtemps si le webhook Revolut tardait ou échouait ; ces trois mécanismes combinés (confirmation immédiate, filet de sécurité automatique, alertes email) réduisent le risque qu'une réservation payée passe inaperçue.
+
+---
+
+## [2026-07-30 quindecies] — Ajoute 21 nouvelles expériences standalone et corrige l'affichage de 4 descriptions
+
+### Ce qui a changé côté base de données
+- Migration `20260701010000_fix_experiences_long_copy_html_paragraphs.sql` : corrige la mise en page (paragraphes) des descriptions longues des 4 expériences Pereh et Moa, qui s'affichaient comme un bloc de texte compact au lieu de paragraphes séparés.
+- Migration `20260713010000_seed_10_standalone_experiences_gyg_batch.sql` : 10 nouvelles expériences en brouillon — cours de surf privé (Tel Aviv), tour en bateau à fond de verre (Eilat), baptême de plongée et snorkeling avec les dauphins (Dolphin Reef, Eilat), tour à vélo et vin (Judée), tour à vélo de nuit (Jérusalem), 2 tours à vélo (Tel Aviv), atelier dégustation de chocolat dans le noir, restaurant BlackOut (Jaffa).
+- Migration `20260703000000_insert_kibbutz_givat_haim_ihud_experiences.sql` : nouvelles expériences au Kibboutz Givat Haim Ihud.
+- Migration `20260720010000_seed_4_standalone_experiences_family_nature_batch.sql` : 4 nouvelles expériences en brouillon — saut en parachute (plage de Habonim), Balloon Wonderland (Kav Rakia), Animal World (Haïfa), exposition Antarctique (Herzliya).
+- Migration `20260720020000_seed_4_standalone_experiences_summer_family_batch.sql` : 4 nouvelles expériences en brouillon — WIPARK (Rishon LeZion), parc aquatique du zoo Hai Kef (Rishon LeZion), Ice Box (Jérusalem), atelier d'émail à froid (Tibériade).
+- Migration `20260720030000_seed_3_standalone_experiences_workshops_batch.sql` : 3 nouveaux ateliers en brouillon — perles (Bat Yam), tempérage de chocolat pour deux (Barkan), création de bougies parfumées (Tel Aviv).
+- Migration `20260720030000_seed_ceramics_workshop_bat_shlomo.sql` : nouvel atelier de céramique privé en brouillon (studio de Natasha, Bat Shlomo).
+- Migration `20260701000000_insert_hotels_pereh_moa_and_experiences.sql` : nouveaux hôtels Pereh et Moa et leurs expériences associées.
+- Toutes ces fiches sont créées en `status = 'draft'` (non visibles sur le site public) : photos, tarifs fournisseur définitifs et/ou texte hébreu manquants selon les fiches, à compléter avant publication.
+
+### Pourquoi ce changement
+- Shana a transmis plusieurs lots de fiches d'expériences à saisir dans le back office au fil des dernières semaines ; cette entrée regroupe leur saisie ainsi qu'une correction d'affichage repérée sur les fiches Pereh/Moa.
+
+---
+
 ## [2026-07-30 quaterdecies] — Deux nouvelles expériences standalone : Camel Trek Cameland et dégustation de vin dans le Néguev
 
 ### Ce qui a changé côté base de données
@@ -16,6 +73,26 @@
 
 ### Pourquoi ce changement
 - Shana a transmis les deux fiches complètes (textes, tarifs, localisation) à saisir dans le back office. Une incohérence a été repérée dans la fiche source de la dégustation de vin (la description hébraïque pour les réseaux sociaux reprenait par erreur le texte du Camel Trek) et corrigée avec une traduction cohérente avec les versions anglaise et française.
+
+---
+
+## [2026-07-30 terdecies] — La liste des leads n'était plus limitée à 200
+
+### Ce qui a changé côté code
+- `src/pages/admin/Leads.tsx` : la page "Leads" du back office ne ramenait que les 200 fiches les plus récentes, sans moyen d'en voir davantage. Ajout d'un bouton "Charger plus de leads" pour afficher la suite, correction du compteur en haut de page (il comptait uniquement les 200 fiches chargées au lieu du vrai total), et correction de l'export CSV pour qu'il récupère bien tous les leads correspondant aux filtres, pas seulement ceux affichés à l'écran.
+
+### Pourquoi ce changement
+- Shana a remarqué que la liste des leads restait bloquée à 200 et craignait une perte de données. Aucune donnée n'avait été supprimée : c'était une limite d'affichage posée dans le code. Correction demandée pour pouvoir consulter et exporter l'intégralité des leads.
+
+---
+
+## [2026-07-30 duodecies] — Nouvelle proposition "Cabane à Aviel" dans "NAS DAILY"
+
+### Ce qui a changé côté base de données
+- Migration `20260730110000_add_proposition_cabane_arbres_aviel.sql` : nouvelle proposition (FR/EN/HE) "Cabane dans les arbres à Aviel" ajoutée au dossier "NAS DAILY", chapitre "SLEEP AWAY 😴" (cabane perchée dans les vignes, jacuzzi extérieur, sources et ruisseaux, Moshav Aviel).
+
+### Pourquoi ce changement
+- Shana a fourni une nouvelle fiche à ajouter au dossier swipe. Placée dans le même chapitre que les autres "nuits à l'hôtel" romantiques déjà présentes (Bat Shlomo, Ein Gedi, Kinneret...).
 
 ---
 
