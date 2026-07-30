@@ -20,6 +20,7 @@ import { format, parseISO } from "date-fns";
 import { Mail, Phone } from "lucide-react";
 import { toast } from "sonner";
 import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
+import EditStandaloneRequestDialog from "@/components/admin/EditStandaloneRequestDialog";
 
 const REQUESTS_QUERY_KEY = ["admin-standalone-experience-requests"];
 
@@ -34,13 +35,14 @@ const StandaloneRequestsTable = () => {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [convertRequest, setConvertRequest] = useState<any | null>(null);
+  const [editRequest, setEditRequest] = useState<any | null>(null);
 
   const { data: requests, isLoading } = useQuery({
     queryKey: REQUESTS_QUERY_KEY,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("standalone_experience_requests")
-        .select("id, experience_id, customer_name, customer_email, customer_phone, requested_date, adults, children, message, status, created_at, standalone_experiences(title, currency)")
+        .select("id, experience_id, customer_name, customer_email, customer_phone, requested_date, adults, children, message, internal_notes, status, created_at, standalone_experiences(title, currency)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as any[];
@@ -149,7 +151,14 @@ const StandaloneRequestsTable = () => {
                   <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                     {format(parseISO(request.created_at), "dd MMM yyyy")}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditRequest(request)}
+                    >
+                      Modifier
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -187,6 +196,12 @@ const StandaloneRequestsTable = () => {
           if (convertRequest) handleBookingCreated(convertRequest.id);
           setConvertRequest(null);
         }}
+      />
+
+      <EditStandaloneRequestDialog
+        open={!!editRequest}
+        onOpenChange={(open) => { if (!open) setEditRequest(null); }}
+        request={editRequest}
       />
     </div>
   );
