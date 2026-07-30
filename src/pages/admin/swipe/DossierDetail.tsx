@@ -131,7 +131,13 @@ const AdminSwipeDossierDetail = () => {
     const oldIndex = categoriesDuDossier.findIndex((c) => c.id === active.id);
     const newIndex = categoriesDuDossier.findIndex((c) => c.id === over.id);
     const reordered = arrayMove(categoriesDuDossier, oldIndex, newIndex);
-    updateDossier.mutate({ id: dossierId, ordre_categories: reordered.map((c) => c.id) });
+    updateDossier.mutate(
+      { id: dossierId, ordre_categories: reordered.map((c) => c.id) },
+      {
+        onSuccess: () => toast.success("Ordre des catégories mis à jour"),
+        onError: (e: any) => toast.error(e.message || "Erreur lors de la mise à jour de l'ordre"),
+      }
+    );
   };
 
   const demarrerEditionMessage = () => {

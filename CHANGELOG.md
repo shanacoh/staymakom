@@ -6,6 +6,68 @@
 
 ---
 
+## [2026-07-30 decies] — Correctif : erreur invisible sur le glisser-déposer de l'ordre des catégories
+
+### Ce qui a changé côté code
+- `src/pages/admin/swipe/DossierDetail.tsx` : le glisser-déposer de "Ordre des catégories pour ce dossier" affiche maintenant un message de confirmation ou d'erreur après chaque réorganisation — jusqu'ici, en cas d'échec, rien ne s'affichait, ce qui rendait le problème invisible.
+
+### Pourquoi ce changement
+- Shana a signalé que l'ordre choisi via le glisser-déposer ne se retrouvait pas côté client. Vérification faite : aucune donnée n'était enregistrée en base, sans aucune erreur visible pour comprendre pourquoi. Ce correctif ne résout pas encore la cause exacte (pas reproduite en local) mais permet de voir le message d'erreur réel au prochain essai.
+
+---
+
+## [2026-07-30 nonies] — Traduction de "Tyrolienne sur Jérusalem"
+
+### Ce qui a changé côté base de données
+- Migration `20260730100000_translate_tyrolienne_jerusalem.sql` : ajoute le titre et la description en anglais ("Zipline over Jerusalem") et en hébreu pour la proposition "TYROLIENNE SUR JERUSALEM", qui n'avait que le français. Cette fiche est partagée par plusieurs dossiers (Brauman's Family, NAS DAILY, Surprise père-fille...), tous en bénéficient.
+
+### Pourquoi ce changement
+- Shana a demandé la traduction anglaise de cette fiche.
+
+---
+
+## [2026-07-30 octies] — Refonte des propositions "nuit à l'hôtel" du dossier "NAS DAILY"
+
+### Ce qui a changé côté base de données
+- Migration `20260730080000_update_kinneret_negev_add_sleep_away_hotels.sql` : remplace le contenu de "WAKE UP ON THE KINNERET" (qui n'avait qu'un texte anglais brut, sans FR/EN/HE) → "AUBE SUR LE KINNERET" / "Dawn on the Sea of Galilee" (hôtel Setai Sea of Galilee, Tibériade). Ajoute aussi 4 nouvelles propositions "nuit à l'hôtel" (chapitre "SLEEP AWAY 😴") : "Vignes et chef privé à Bat Shlomo" (Farmhouse Bat Shlomo), "Le droit de ne rien faire" (Ma'ale HaHamisha), "Roots à Ein Gedi" (Ein Gedi Camp Lodge), "Vin sous les étoiles" (Carmey Avdat).
+- Migration `20260730090000_recreate_negev_desert_night_proposition.sql` : recrée "Une nuit dans le grand désert" (ex-"La Toscane du Néguev") — la ligne d'origine a été supprimée entre-temps (édition simultanée dans le back office pendant la session), donc la mise à jour de la migration précédente n'a rien modifié ; la fiche a été reconstruite avec le nouveau contenu.
+- Pour cette dernière fiche, l'hôtel est noté "Beresheet ou Kedma" en texte simple : le champ ne permet pas de proposer 2 hôtels sous forme de bulles sélectionnables (ce serait un développement d'interface, pas une simple migration) — à valider avec Shana.
+
+### Pourquoi ce changement
+- Shana a fourni du nouveau contenu pour 2 fiches existantes et 4 nouvelles fiches d'hôtels, dans le cadre de l'enrichissement du dossier swipe "NAS DAILY".
+
+---
+
+## [2026-07-30 septies] — 4e proposition "excursion à la journée" dans "NAS DAILY"
+
+### Ce qui a changé côté base de données
+- Migration `20260730070000_add_proposition_une_region_une_journee.sql` : nouvelle proposition (FR/EN/HE) "Une région, une journée" ajoutée au dossier "NAS DAILY", même chapitre "ESCAPE TEL AVIV 🚗" que les 3 précédentes — région laissée au choix du client (Galilée / Jérusalem / Tel Aviv / Néguev).
+
+### Pourquoi ce changement
+- Shana a fourni une 4e fiche d'excursion sur-mesure à ajouter au même dossier swipe.
+
+---
+
+## [2026-07-30 sexies] — 3 nouvelles propositions "excursion à la journée" dans "NAS DAILY"
+
+### Ce qui a changé côté base de données
+- Migration `20260730060000_add_3_propositions_daytrips_nas_daily.sql` : 3 nouvelles propositions (FR/EN/HE) ajoutées au dossier "NAS DAILY", dans le chapitre "ESCAPE TEL AVIV 🚗" (celui des autres excursions à la journée du dossier) — "Sur la route des vins" (région Galilée ou Judée), "Néguev, version intense" (région Néguev), "Grottes et eau turquoise à Rosh Hanikra" (région Nord / Rosh Hanikra). Tags renseignés pour chacune.
+
+### Pourquoi ce changement
+- Shana a fourni 3 nouvelles fiches d'excursion à ajouter au dossier swipe.
+
+---
+
+## [2026-07-30 quinquies] — Nouveau contenu pour deux propositions du dossier "NAS DAILY"
+
+### Ce qui a changé côté base de données
+- Migration `20260730050000_change_whisky_boat_propositions_content.sql` : remplace titre + description (FR, EN, HE) des propositions "DÉGUSTATION WHISKY & FROMAGES" → "WHISKY, ENTRE CONNAISSEURS" et "APRÈS LA MARÉE" → "PERDUS EN MER". Les tags (`whisky`, `dégustation`, `expert` / `bateau`, `coucher de soleil`, `mer`) sont aussi renseignés — ils étaient vides jusqu'ici.
+
+### Pourquoi ce changement
+- Shana a fourni un nouveau texte plus évocateur pour ces deux propositions swipées par les clients.
+
+---
+
 ## [2026-07-30 quater] — Ordre des catégories personnalisable par dossier
 
 ### Ce qui a changé côté code
