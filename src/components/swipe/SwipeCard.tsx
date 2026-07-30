@@ -42,7 +42,7 @@ export const SwipeCard = ({ card }: SwipeCardProps) => {
           </p>
         )}
         {card.description && (
-          <p className="text-white/70 text-sm mt-2 line-clamp-3 whitespace-pre-line">{card.description}</p>
+          <p className="text-white/70 text-sm mt-2 whitespace-pre-line">{card.description}</p>
         )}
       </div>
     </div>
