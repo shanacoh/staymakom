@@ -365,7 +365,17 @@ export function useDupliquerDossier() {
 
       const { data: nouveauDossier, error: erreurCreation } = await supabase
         .from("dossiers")
-        .insert({ nom_client: original.nom_client, afficher_prix: original.afficher_prix, statut: "brouillon" })
+        .insert({
+          nom_client: original.nom_client,
+          afficher_prix: original.afficher_prix,
+          statut: "brouillon",
+          trier_par_categorie: original.trier_par_categorie,
+          ordre_categories: original.ordre_categories,
+          message_intro: original.message_intro,
+          message_intro_en: original.message_intro_en,
+          message_intro_he: original.message_intro_he,
+          noms_participants: original.noms_participants,
+        })
         .select()
         .single();
       if (erreurCreation) throw erreurCreation;

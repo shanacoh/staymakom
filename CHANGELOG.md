@@ -6,6 +6,16 @@
 
 ---
 
+## [2026-07-30 undecies] — La duplication d'un dossier recopie aussi ses réglages
+
+### Ce qui a changé côté code
+- `src/lib/swipe/queries.ts` (`useDupliquerDossier`) : dupliquer un dossier recopie maintenant aussi "Trier par catégorie", l'ordre personnalisé des catégories, le message d'accueil (3 langues) et les prénoms proposés — jusqu'ici, seuls le nom du client et l'affichage des prix étaient recopiés, le reste repartait à vide.
+
+### Pourquoi ce changement
+- Shana a remarqué qu'en dupliquant un dossier pour un nouveau client, le message d'accueil et les prénoms proposés ne suivaient pas, alors qu'elle s'y attendait.
+
+---
+
 ## [2026-07-30 decies] — Correctif : erreur invisible sur le glisser-déposer de l'ordre des catégories
 
 ### Ce qui a changé côté code
