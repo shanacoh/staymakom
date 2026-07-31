@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-07-31 duodecies] — Bateaux : tri manuel de l'ordre d'affichage en back office
+
+### Ce qui a changé côté code
+- `src/pages/admin/BoatExperiences.tsx` : la liste des bateaux en back office peut maintenant être réordonnée par glisser-déposer (icône ⠿ sur chaque ligne). La liste est triée par cet ordre plutôt que par date de dernière modification. La page publique `/boat` utilisait déjà cet ordre pour l'affichage aux clients, il ne manquait que le contrôle côté admin.
+
+### Ce qui a changé côté base de données
+- Aucun changement : la colonne `display_order` existait déjà sur la table `standalone_experiences`, elle n'était simplement pas exposée dans le back office Bateaux.
+
+### Pourquoi ce changement
+- Shana a demandé la possibilité de choisir l'ordre d'affichage des bateaux sur le site client.
+
+---
+
 ## [2026-07-31 undecies] — Bateaux : correction de la lenteur au chargement d'une fiche
 
 ### Ce qui a changé côté code
