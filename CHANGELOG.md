@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-07-31 undecies] — Bateaux : correction de la lenteur au chargement d'une fiche
+
+### Ce qui a changé côté code
+- `src/components/boats/BoatDetailModal.tsx` : les photos affichées sur la fiche détail d'un bateau (vignette et carrousel) étaient envoyées dans leur résolution d'origine, telle que prise par l'appareil photo, au lieu d'être réduites à la taille réellement affichée à l'écran — d'où un chargement très lent à l'ouverture d'une fiche. Elles passent maintenant par le même système de redimensionnement automatique déjà utilisé sur le reste du site (catalogue d'expériences).
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Shana a signalé que les pages Bateaux étaient très lentes à charger.
+
+---
+
 ## [2026-07-31 decies] — Bateaux : correction de la lenteur au clic sur "Publier"
 
 ### Ce qui a changé côté code
