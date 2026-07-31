@@ -5,7 +5,16 @@
  */
 import ExperienceCard from "@/components/ExperienceCard";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useLanguage } from "@/hooks/useLanguage";
 import { getAutoBadgeTagsFromPracticalInfo, normalizeLegacyPracticalInfo } from "@/lib/standaloneBadges";
+
+// Bateaux : tag éditorial identifiant le skipper (slugs actuels : "skipper-included",
+// "skipper-crew"), promu en 3e bulle fixe plutôt que listé parmi les tags secondaires.
+const isSkipperTagSlug = (slug: string) => /skipper/i.test(slug);
+
+const SKIPPER_NOT_INCLUDED = { en: "Skipper not included", he: "סקיפר לא כלול", fr: "Skipper non inclus" };
+const UP_TO_GUESTS = { en: "Up to", he: "עד", fr: "Jusqu'à" };
+const GUESTS_SUFFIX = { en: "guests", he: "אורחים", fr: "pers." };
 
 interface StandaloneHighlightTagLink {
   tag_id: string;
@@ -35,6 +44,9 @@ interface StandaloneExperienceCardProps {
     max_party?: number | null;
     has_child_price?: boolean | null;
     has_time_slots?: boolean;
+    duration?: string | null;
+    duration_fr?: string | null;
+    duration_he?: string | null;
     standalone_experience_highlight_tags?: StandaloneHighlightTagLink[] | null;
     city?: string | null;
     city_he?: string | null;
@@ -50,6 +62,9 @@ interface StandaloneExperienceCardProps {
   // prix par personne en complément — évite de laisser croire que le prix
   // par personne est le prix pour louer le bateau entier.
   showTotalPrice?: boolean;
+  // Bateaux uniquement : affiche les 3 bulles fixes (durée, capacité, skipper)
+  // au lieu de la liste libre de tags éditoriaux.
+  isBoat?: boolean;
 }
 
 export default function StandaloneExperienceCard({
@@ -59,8 +74,10 @@ export default function StandaloneExperienceCard({
   linkSuffix,
   linkPrefix = "/standalone-experience",
   showTotalPrice = false,
+  isBoat = false,
 }: StandaloneExperienceCardProps) {
   const { convert } = useCurrency();
+  const { lang } = useLanguage();
 
   // Pour un forfait (fixed), on affiche le prix "à partir de" = prix total / max participants.
   // Pour un prix par personne, on affiche directement le prix converti.
@@ -85,6 +102,37 @@ export default function StandaloneExperienceCard({
     .filter((tag) => tag.slug === "auto-kosher" || tag.slug === "auto-kids")
     .map((tag) => ({ highlight_tags: tag }));
 
+  // Bateaux : uniquement 3 bulles fixes — durée, capacité, skipper — toujours dans
+  // cet ordre et avec la même présentation sur toutes les cartes. Aucun autre tag
+  // éditorial n'est affiché sur la carte (ex: Baignade possible, Yacht + speed
+  // boat) : ces infos restent visibles dans la fiche détail, pas sur la grille.
+  const skipperTagEntry = isBoat ? editorialTags.find((t) => isSkipperTagSlug(t.highlight_tags.slug)) : undefined;
+  const skipperLabel = skipperTagEntry
+    ? (lang === "he" && skipperTagEntry.highlight_tags.label_he
+        ? skipperTagEntry.highlight_tags.label_he
+        : lang === "fr" && skipperTagEntry.highlight_tags.label_fr
+        ? skipperTagEntry.highlight_tags.label_fr
+        : skipperTagEntry.highlight_tags.label_en)
+    : SKIPPER_NOT_INCLUDED[lang];
+
+  // Certaines fiches ont un champ durée qui embarque une précision annexe après
+  // une virgule (ex: "Forfait 4h, yacht + speed boat") — on ne garde que la
+  // partie durée pour un texte uniforme sur toutes les cartes.
+  const rawDuration = lang === "he"
+    ? experience.duration_he || experience.duration
+    : lang === "fr"
+    ? experience.duration_fr || experience.duration
+    : experience.duration;
+  const durationLabel = rawDuration?.split(",")[0].trim();
+
+  const capacityLabel = experience.max_party
+    ? `${UP_TO_GUESTS[lang]} ${experience.max_party} ${GUESTS_SUFFIX[lang]}`
+    : undefined;
+
+  const fixedBadges = isBoat
+    ? [durationLabel, capacityLabel, skipperLabel].filter((v): v is string => !!v)
+    : undefined;
+
   const cardExperience = {
     ...experience,
     // Pas d'hôtel pour une expérience standalone : on réutilise simplement la forme
@@ -93,7 +141,7 @@ export default function StandaloneExperienceCard({
       ? { city: experience.city ?? undefined, city_he: experience.city_he, region: experience.region, region_he: experience.region_he }
       : null,
     base_price: displayPrice,
-    experience_highlight_tags: [...editorialTags, ...autoBadgeTags],
+    experience_highlight_tags: isBoat ? [] : [...editorialTags, ...autoBadgeTags],
   };
 
   return (
@@ -107,6 +155,7 @@ export default function StandaloneExperienceCard({
       showFromPrefix={showFromPrefix}
       showTotalPrice={showTotalPrice && isFixed}
       totalPrice={totalPrice}
+      fixedBadges={fixedBadges}
     />
   );
 }

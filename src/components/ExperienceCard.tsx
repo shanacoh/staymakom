@@ -103,6 +103,9 @@ interface ExperienceCardProps {
   // Bateaux uniquement : affiche le prix total en avant, prix/pers. en complément.
   showTotalPrice?: boolean;
   totalPrice?: number;
+  // Bateaux uniquement : 3 bulles fixes (durée, capacité, skipper) affichées dans
+  // cet ordre, au-dessus des tags éditoriaux "secondaires" (ex: Baignade possible).
+  fixedBadges?: string[];
 }
 
 export default function ExperienceCard({
@@ -123,6 +126,7 @@ export default function ExperienceCard({
   showFromPrefix = false,
   showTotalPrice = false,
   totalPrice,
+  fixedBadges,
 }: ExperienceCardProps & { index?: number }) {
   const { lang } = useLanguage();
   const { symbol: currencySymbol } = useCurrency();
@@ -323,9 +327,22 @@ export default function ExperienceCard({
         {/* Metadata below image */}
         <div className="space-y-0.5 px-0.5 pt-1">
 
-          {/* LIGNE 1 : Badges (gauche) + NEW ou note (droite) */}
+          {/* LIGNE 1 : Badges (gauche) + NEW ou note (droite) — bateaux : les 3 bulles
+              fixes (durée, capacité, skipper) prennent la place des tags éditoriaux,
+              sur la même ligne, pour ne pas créer de ligne/espace supplémentaire. */}
           <div className="flex items-center justify-between gap-2 min-h-[18px]">
-            {highlightTags.length > 0 ? (
+            {fixedBadges && fixedBadges.length > 0 ? (
+              <div className="flex flex-nowrap gap-1 overflow-hidden min-w-0">
+                {fixedBadges.map((label, i) => (
+                  <span
+                    key={i}
+                    className="inline-block whitespace-nowrap shrink-0 px-1.5 py-px bg-muted/60 rounded-full text-[9px] font-normal tracking-wide text-muted-foreground border border-border/40"
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
+            ) : highlightTags.length > 0 ? (
               <div className="flex flex-nowrap gap-1 overflow-hidden min-w-0">
                 {highlightTags.slice(0, maxTags).map((tag) => (
                   <span

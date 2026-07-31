@@ -396,7 +396,7 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
       <button
         type="button"
         onClick={handleReserveClick}
-        className="rounded-full bg-[#1B2A4A] text-white px-6 py-3 text-sm font-semibold hover:bg-[#1B2A4A]/90 transition-colors"
+        className="rounded-full bg-black text-white px-6 py-3 text-sm font-semibold hover:bg-black/90 transition-colors"
       >
         {t.cta}
       </button>

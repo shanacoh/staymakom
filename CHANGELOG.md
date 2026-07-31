@@ -6,6 +6,35 @@
 
 ---
 
+## [2026-07-31 sexies] — Bateaux : 3 bulles fixes (durée, capacité, skipper) uniformisées sur les cartes catalogue
+
+### Ce qui a changé côté code
+- `src/pages/Boats.tsx` : la requête de la grille `/boat` récupère maintenant aussi la durée du bateau (elle n'était pas encore chargée à cet endroit).
+- `src/components/StandaloneExperienceCard.tsx` : sur les cartes bateaux uniquement, remplacement de la liste libre de tags (durée en doublon, "Baignade possible", "Yacht + speed boat"...) par exactement 3 bulles, toujours dans le même ordre : durée, capacité ("Jusqu'à X pers.", calculée depuis le nombre max de personnes déjà en base), skipper. Le skipper reprend le tag "Skipper inclus"/"Skipper + équipier" déjà saisi sur la fiche quand il existe, sinon affiche "Skipper non inclus" par défaut. Quand le champ durée contient une précision annexe après une virgule (ex. "Forfait 4h, yacht + speed boat"), seule la partie durée est gardée pour un texte uniforme sur toutes les cartes. Les autres tags (Baignade possible, etc.) ne sont plus affichés sur la carte, mais restent visibles dans la fiche détail au clic.
+- `src/components/ExperienceCard.tsx` : nouvelle prop `fixedBadges`, qui prend la place des tags éditoriaux sur la même ligne (à côté de l'étoile/note) — pas de ligne ni d'espace supplémentaire créé. Aucun changement pour les cartes hôtels ou les autres expériences "sur demande".
+
+### Ce qui a changé côté base de données
+- Aucune migration.
+
+### Pourquoi ce changement
+- Les bulles sous les photos des bateaux n'étaient pas les mêmes d'une carte à l'autre (parfois la durée en doublon, parfois "Baignade possible" au même niveau que des infos plus importantes comme le skipper). Shana a demandé un affichage identique et prévisible sur toutes les cartes : durée, capacité, skipper — toujours dans cet ordre, toujours présentés pareil.
+
+---
+
+## [2026-07-31 quinquies] — Bateaux : calendrier de la demande, couleur du bouton et orthographe "Staymakom"
+
+### Ce qui a changé côté code
+- `src/components/experience-test/StandaloneRequestPanel.tsx` : sur l'écran de demande bateau, le calendrier remonte désormais automatiquement au-dessus du formulaire dès que l'écran est plus étroit que la mise en page à deux colonnes (avant, il restait affiché après le bouton d'envoi — caché en bas sur mobile, et lié à un effet de saut désagréable en réduisant la fenêtre sur ordinateur) ; le calendrier occupe maintenant toute la largeur qui lui est réservée (il ne remplissait pas tout l'espace, laissant une bande vide à droite) ; la mention de consentement sous le bouton d'envoi s'écrit "Staymakom" (sans majuscule sur le M), pour rester cohérente avec le reste du site.
+- `src/components/boats/BoatDetailModal.tsx` : le bouton "Je réserve ma sortie" passe en noir (au lieu du bleu marine foncé).
+
+### Ce qui a changé côté base de données
+- Aucune migration.
+
+### Pourquoi ce changement
+- Retours de Shana après test de l'écran de demande bateau et de la page catalogue : problèmes d'affichage du calendrier à corriger, et préférences de style (bouton noir, orthographe de la marque toujours sans majuscule sur le M).
+
+---
+
 ## [2026-07-31 quater] — Bateaux : écran de demande retravaillé (mise en page, tranches de participants, champs obligatoires, consentement)
 
 ### Ce qui a changé côté code

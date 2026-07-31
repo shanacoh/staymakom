@@ -119,8 +119,8 @@ export default function StandaloneRequestPanel({
       lang === "he"
         ? "בלחיצה על 'שליחת הבקשה' אתם מאשרים ש-STAYMAKOM תיצור עמכם קשר בטלפון ובאימייל בנוגע לבקשה זו."
         : lang === "fr"
-        ? "En cliquant sur « Envoyer ma demande », vous reconnaissez autoriser StayMakom à vous contacter par téléphone et email au sujet de cette demande."
-        : "By clicking \"Send my request\", you agree to let StayMakom contact you by phone and email about this request.",
+        ? "En cliquant sur « Envoyer ma demande », vous reconnaissez autoriser Staymakom à vous contacter par téléphone et email au sujet de cette demande."
+        : "By clicking \"Send my request\", you agree to let Staymakom contact you by phone and email about this request.",
     under7: lang === "he" ? "פחות מ-7" : lang === "fr" ? "Moins de 7" : "Under 7",
     missingFields: usePartyRanges
       ? (lang === "he" ? "יש למלא שם, אימייל וטלפון" : lang === "fr" ? "Merci de renseigner votre prénom, nom, email et téléphone" : "Please fill in your first name, last name, email and phone")
@@ -241,7 +241,11 @@ export default function StandaloneRequestPanel({
   }
 
   const dateSection = (
-    <div className="space-y-1.5">
+    // order-first : sur mobile/tablette (grid en 1 colonne, sous lg), le calendrier
+    // remonte avant les coordonnées et le bouton d'envoi plutôt que de finir en
+    // dessous. lg:order-none restaure l'ordre normal (colonne de droite) sur desktop,
+    // où la mise en page 2 colonnes est déjà correcte.
+    <div className="space-y-1.5 order-first lg:order-none">
       <p className="flex items-center gap-1.5 text-sm font-semibold">
         <Calendar className="h-3.5 w-3.5 text-[#ad1414]" />
         {t.date}
@@ -250,6 +254,7 @@ export default function StandaloneRequestPanel({
         <CalendarPicker
           mode="single"
           showOutsideDays
+          className="w-full p-3"
           locale={lang === "fr" ? fr : lang === "he" ? he : undefined}
           selected={selectedDate ? new Date(selectedDate + "T12:00:00") : undefined}
           onSelect={(date) => setSelectedDate(date ? toLocalDateStr(date) : "")}
@@ -257,6 +262,9 @@ export default function StandaloneRequestPanel({
           defaultMonth={new Date(minDate + "T12:00:00")}
           toDate={maxDate}
           classNames={{
+            months: "w-full",
+            month: "w-full space-y-4",
+            table: "w-full border-collapse space-y-1",
             head_row: "flex w-full",
             head_cell: "flex-1 text-center text-muted-foreground font-normal text-[0.8rem]",
             row: "flex w-full mt-2",

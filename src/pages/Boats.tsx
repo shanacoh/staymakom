@@ -37,6 +37,7 @@ const Boats = () => {
           hero_image, photos,
           base_price, base_price_type, currency,
           min_party, max_party, has_child_price, has_time_slots,
+          duration, duration_fr, duration_he,
           city, city_he, region, region_he, practical_info,
           standalone_experience_highlight_tags(
             tag_id, position,
@@ -84,6 +85,7 @@ const Boats = () => {
                     index={idx}
                     linkPrefix="/boat"
                     showTotalPrice
+                    isBoat
                   />
                 </div>
               ))}
