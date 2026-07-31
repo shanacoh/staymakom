@@ -6,6 +6,37 @@
 
 ---
 
+## [2026-07-31 sexdecies] — Bateaux (admin) : colonne Marge dans la liste des bateaux
+
+### Ce qui a changé côté code
+- `src/pages/admin/BoatExperiences.tsx` : ajout d'une colonne "Marge" dans le tableau `/admin/boats`, entre "Prix" et "Mis à jour". Affiche la marge en % et en shekels pour chaque bateau, calculée à la volée à partir du prix client (`base_price`) et du prix fournisseur (`supplier_price_adult`) — pas depuis le pourcentage stocké en base, pour rester exact même si le prix a été ajusté manuellement depuis. Affiche "—" si le prix fournisseur n'est pas renseigné.
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Demande de Shana : voir directement dans la liste des bateaux la marge de chaque fiche, sans avoir à ouvrir chacune d'elles.
+
+---
+
+## [2026-07-31 quindecies] — Bateaux : passage à 2h de 4 fiches (Speedboat, Voilier Yam Sailing, 2 Yachts Simona)
+
+### Ce qui a changé côté code
+- Aucun changement de code, uniquement du contenu et des prix en base de données.
+
+### Ce qui a changé côté base de données
+- 4 fiches de la catégorie Bateaux passent d'une durée de base plus courte (1h, "à partir d'1h" ou "1h30 à 3h") à une durée de base unique de **2 heures**, avec titre, bulle de durée et prix recalculés en conséquence :
+  - **Speedboat (Chaser Speed Boat, Balaguna, 11 pers., Herzliya)** : prix fournisseur passé de 1200₪ à 2400₪ (coût réel des 2 heures), prix client de 1560₪ à 3120₪ (soit 284₪/pers.). L'option "heure supplémentaire" est supprimée (elle correspondait à cette 2e heure, désormais incluse).
+  - **Yacht privé Simona, 13 pers. (Herzliya)** : prix fournisseur de 1390₪ à 1490₪, prix client de 1807₪ à 1937₪ (149₪/pers.). L'option "prolonger à 2h" est supprimée (incluse). L'option "prolonger à 3h" (500₪) reste en l'état — son montant a été fixé à l'origine par rapport à une base de 1h30, à vérifier auprès du prestataire si besoin.
+  - **Yacht privé Simona, 6 pers. (Herzliya)** : prix fournisseur de 1290₪ à 1490₪, prix client de 1677₪ à 1937₪ (323₪/pers.). Même remarque pour l'option "prolonger à 3h" (700₪, non modifiée).
+  - **Voilier avec skipper (Yam Sailing, Tel Aviv, 10 pers.)** : ce bateau était facturé au tarif horaire (630₪/h fournisseur) ; prix fournisseur doublé à 1260₪, prix client de 819₪ à 1638₪ (164₪/pers.).
+- Méthode de calcul validée avec Shana : le coût réel du prestataire pour les 2 heures est calculé, puis la marge de 30% (déjà appliquée à toute la catégorie Bateaux) est appliquée sur ce total — plutôt que d'ajouter tel quel le prix affiché de l'ancienne option "heure supplémentaire", qui ne portait aucune marge.
+
+### Pourquoi ce changement
+- Shana a demandé que ces 4 fiches (envoyées en capture d'écran) affichent toutes une durée de 2 heures, avec le bon prix correspondant.
+
+---
+
 ## [2026-07-31 quaterdecies] — Bateaux : nouveau titre et sous-titre de la page catalogue
 
 ### Ce qui a changé côté code
