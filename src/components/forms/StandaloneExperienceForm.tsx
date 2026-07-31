@@ -883,13 +883,23 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     const galleryPreviewsSnapshot = [...galleryPreviews];
 
     const photoUrls = galleryPreviewsSnapshot.filter((url) => url.startsWith("http"));
-    for (const img of galleryImagesSnapshot) {
-      try {
-        const url = await uploadImage(img, "gallery");
-        photoUrls.push(url);
-      } catch {
-        toast.error("Une image n'a pas pu être uploadée");
+    const uploadResults = await Promise.allSettled(
+      galleryImagesSnapshot.map((img) => uploadImage(img, "gallery"))
+    );
+    let failedUploads = 0;
+    for (const result of uploadResults) {
+      if (result.status === "fulfilled") {
+        photoUrls.push(result.value);
+      } else {
+        failedUploads += 1;
       }
+    }
+    if (failedUploads > 0) {
+      toast.error(
+        failedUploads === 1
+          ? "Une image n'a pas pu être uploadée"
+          : `${failedUploads} images n'ont pas pu être uploadées`
+      );
     }
 
     // base_price = prix client calculé depuis fournisseur + markup

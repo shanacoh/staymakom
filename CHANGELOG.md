@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-07-31 decies] — Bateaux : correction de la lenteur au clic sur "Publier"
+
+### Ce qui a changé côté code
+- `src/components/forms/StandaloneExperienceForm.tsx` : à la publication d'une fiche, les nouvelles photos ajoutées à la galerie étaient envoyées une par une, l'une après l'autre, avant que l'enregistrement ne se termine — d'où l'attente longue quand plusieurs photos étaient ajoutées d'un coup (les fiches Bateaux n'ont pas de limite de nombre de photos, contrairement aux autres types de fiches). Elles sont maintenant envoyées toutes en même temps, ce qui réduit fortement le temps d'attente. Si une photo échoue quand même à s'envoyer, le message d'erreur indique désormais le nombre exact de photos concernées.
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Shana a signalé que la publication d'une fiche Bateau après modification était soit très lente, soit ne se comportait pas correctement.
+
+---
+
 ## [2026-07-31 nonies] — Bateaux : marge relevée à 30% sur les 11 fiches
 
 ### Ce qui a changé côté code
