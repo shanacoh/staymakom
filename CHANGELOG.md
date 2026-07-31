@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-07-31 nonies] — Bateaux : marge relevée à 30% sur les 11 fiches
+
+### Ce qui a changé côté code
+- Aucun changement de code, uniquement du contenu en base de données.
+
+### Ce qui a changé côté base de données
+- Migration `20260731080000_bateaux_markup_30_percent.sql` : la marge de toutes les fiches Bateaux (les 8 Balaguna/Mark + Yam Sailing + les 2 fiches Simona) passe de 26% à 30%. Le prix affiché au client est recalculé automatiquement à partir du prix fournisseur.
+
+### Pourquoi ce changement
+- Demande explicite de Shana, appliquée uniquement au module Bateaux (pas au reste du catalogue d'expériences, qui a des marges différentes selon les fiches).
+
+---
+
 ## [2026-07-31 octies] — Bateaux : contenu corrigé avec les vraies infos prestataires + Yam Sailing et Simona ajoutés
 
 ### Ce qui a changé côté code
