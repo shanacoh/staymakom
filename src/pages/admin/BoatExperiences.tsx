@@ -77,6 +77,23 @@ function SortableBoatRow({ boat, onEdit }: { boat: any; onEdit: () => void }) {
       <td className="p-3">
         {boat.base_price != null ? `${boat.base_price} ${boat.currency}` : "—"}
       </td>
+      <td className="p-3">
+        {boat.base_price != null && boat.supplier_price_adult != null
+          ? (() => {
+              const margeNis = boat.base_price - boat.supplier_price_adult;
+              const margePercent = boat.supplier_price_adult > 0
+                ? (margeNis / boat.supplier_price_adult) * 100
+                : null;
+              return (
+                <span>
+                  {margePercent != null ? `${margePercent.toFixed(0)}%` : "—"}
+                  {" · "}
+                  {margeNis.toFixed(0)} {boat.currency}
+                </span>
+              );
+            })()
+          : "—"}
+      </td>
       <td className="p-3 text-muted-foreground">
         {boat.updated_at ? format(new Date(boat.updated_at), "dd MMM yyyy") : "—"}
       </td>
@@ -103,7 +120,7 @@ export default function BoatExperiences() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_experiences")
-        .select("id, title, status, is_bookable, base_price, base_price_type, currency, updated_at, display_order")
+        .select("id, title, status, is_bookable, base_price, base_price_type, currency, supplier_price_adult, updated_at, display_order")
         .eq("category_id", BOATS_CATEGORY_ID)
         .order("display_order", { ascending: true, nullsFirst: false });
       if (error) throw error;
@@ -169,6 +186,7 @@ export default function BoatExperiences() {
                 <th className="p-3 font-medium">Statut</th>
                 <th className="p-3 font-medium">Réservation</th>
                 <th className="p-3 font-medium">Prix</th>
+                <th className="p-3 font-medium">Marge</th>
                 <th className="p-3 font-medium">Mis à jour</th>
                 <th className="p-3 font-medium text-right">Actions</th>
               </tr>
