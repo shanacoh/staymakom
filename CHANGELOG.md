@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-07-31 quaterdecies] — Bateaux : nouveau titre et sous-titre de la page catalogue
+
+### Ce qui a changé côté code
+- `src/pages/Boats.tsx` : remplacement du titre et du sous-titre affichés en haut de la page `/boat`, dans les 3 langues — français ("Prendre le large"), anglais ("On the water"), hébreu ("יוצאים לים"). Le sous-titre précise désormais explicitement que les prix affichés sont basés sur une sortie de 2 heures, sauf mention contraire. Ce même texte alimente aussi la balise de description SEO de la page.
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Demande de Shana : des textes plus évocateurs et plus clairs sur ce que couvre le prix affiché. La traduction hébraïque a été faite par Claude (pas de relecture native) — à faire valider par un locuteur hébreu si besoin.
+
+---
+
 ## [2026-07-31 terdecies] — Bateaux : ajout de la bulle "Couple" au choix du nombre de personnes
 
 ### Ce qui a changé côté code
