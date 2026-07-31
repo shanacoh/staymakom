@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-07-31 septies] — Bateaux : formulaire d'admin simplifié en 2 onglets (Champs bateaux / Autres)
+
+### Ce qui a changé côté code
+- `src/components/forms/StandaloneExperienceForm.tsx` : ce formulaire est partagé entre toutes les expériences standalone (bateaux, excursions, restaurants...) et affichait 5 onglets génériques (Médias, Contenu, Infos pratiques, Tarif & Dispo, SEO). Uniquement quand la fiche est dans la catégorie "Bateaux", le formulaire affiche désormais 2 onglets : "Champs bateaux" (une seule page qui défile avec tout ce que Shana remplit vraiment — photo, prestataire, contact, coût, mode de paiement, inclus, extras, conditions d'annulation, nom du bateau client, marge, nombre de personnes, skipper/équipage inclus, lieu de départ) et "Autres" (le reste : SEO, localisation générique, badges, disponibilités, etc., peu utilisé pour les bateaux). Pour toutes les autres expériences, les 5 onglets d'origine restent strictement identiques (vérifié sans régression).
+- Skipper inclus / Équipage inclus deviennent de vraies cases Oui/Non fiables, au lieu d'être devinés depuis un texte libre tapé dans "Ce qui est inclus".
+
+### Ce qui a changé côté base de données
+- Migration `20260731050000_add_boat_specific_fields.sql` : ajoute à la table `standalone_experiences` les colonnes `supplier_contact` (contact du prestataire), `supplier_payment_method` (mode de paiement : lien de paiement / virement / CB), `skipper_included` et `crew_included` (cases Oui/Non), `departure_location` (lieu de départ). Toutes facultatives, remplissables au fil de l'eau.
+
+### Pourquoi ce changement
+- Shana remplit beaucoup moins de champs pour un bateau que pour les autres expériences, mais ils étaient éparpillés dans les 5 onglets génériques. Elle voulait un écran simple et intuitif regroupant en un coup d'œil tout ce qu'elle remplit vraiment pour un bateau, sans toucher au formulaire des autres types d'expérience.
+
+---
+
 ## [2026-07-31 sexies] — Bateaux : 3 bulles fixes (durée, capacité, skipper) uniformisées sur les cartes catalogue
 
 ### Ce qui a changé côté code

@@ -58,7 +58,7 @@ const GALLERY_MAX_DEFAULT = 8;
 // Tabs
 // ---------------------------------------------------------------------------
 
-const TABS = [
+const TABS_DEFAULT = [
   { id: "medias", label: "Médias" },
   { id: "contenu", label: "Contenu" },
   { id: "pratique", label: "Infos pratiques" },
@@ -66,7 +66,15 @@ const TABS = [
   { id: "seo", label: "SEO" },
 ] as const;
 
-type TabId = (typeof TABS)[number]["id"];
+// Onglets spécifiques à la catégorie Bateaux (isBoatsExperience === true) :
+// une seule page qui défile pour les champs vraiment utilisés, + un onglet
+// "Autres" pour le reste (SEO, localisation générique, disponibilités...).
+const TABS_BOATS = [
+  { id: "bateau_champs", label: "Champs bateaux" },
+  { id: "autres", label: "Autres" },
+] as const;
+
+type TabId = (typeof TABS_DEFAULT)[number]["id"] | (typeof TABS_BOATS)[number]["id"];
 
 // ---------------------------------------------------------------------------
 // Zod schema
@@ -100,6 +108,14 @@ const standaloneExperienceSchema = z.object({
   has_child_price: z.boolean().default(false),
   markup_percent: z.number().min(0).max(100).default(0),
   supplier_booking_url: z.string().optional(),
+  // Bateaux — champs spécifiques, affichés uniquement quand isBoatsExperience
+  // est vrai. Tous optionnels : aucune validation bloquante, ni pour le
+  // brouillon ni pour la publication (remplissage progressif).
+  supplier_contact: z.string().optional(),
+  supplier_payment_method: z.enum(["payment_link", "bank_transfer", "card"]).optional(),
+  skipper_included: z.boolean().optional(),
+  crew_included: z.boolean().optional(),
+  departure_location: z.string().optional(),
   base_price_type: z.enum(["per_person", "fixed", "per_person_per_night"]).default("per_person"),
   currency: z.enum(["USD", "EUR", "ILS"]).default("ILS"),
   lead_time_days: optNum(0),
@@ -224,6 +240,44 @@ function PracticalTriStateField({
   );
 }
 
+function YesNoToggleField({
+  id,
+  icon: Icon,
+  label,
+  value,
+  onChange,
+}: {
+  id: string;
+  icon: LucideIcon;
+  label: string;
+  value: boolean | undefined;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="p-3 rounded-lg border space-y-2">
+      <div className="flex items-center gap-3">
+        <Icon className="h-4 w-4 text-muted-foreground" />
+        <span className="font-medium text-sm flex-1">{label}</span>
+        {value === undefined && <CompletionPill />}
+      </div>
+      <RadioGroup
+        value={value === undefined ? undefined : value ? "yes" : "no"}
+        onValueChange={(v) => onChange(v === "yes")}
+        className="flex gap-4 ml-7"
+      >
+        <div className="flex items-center gap-2">
+          <RadioGroupItem value="yes" id={`${id}-yes`} />
+          <Label htmlFor={`${id}-yes`} className="text-sm font-normal cursor-pointer">Oui</Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <RadioGroupItem value="no" id={`${id}-no`} />
+          <Label htmlFor={`${id}-no`} className="text-sm font-normal cursor-pointer">Non</Label>
+        </div>
+      </RadioGroup>
+    </div>
+  );
+}
+
 interface StandaloneExperienceFormProps {
   experienceId?: string;
   onClose?: () => void;
@@ -251,7 +305,9 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [createdExperienceId, setCreatedExperienceId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabId>("medias");
+  const [activeTab, setActiveTab] = useState<TabId>(
+    defaultCategoryId === BOATS_CATEGORY_ID ? "bateau_champs" : "medias"
+  );
   const [isGeocoding, setIsGeocoding] = useState(false);
 
   // Auto-save
@@ -285,6 +341,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   );
   const isBoatsExperience = selectedCategoryIds.includes(BOATS_CATEGORY_ID);
   const galleryMax = isBoatsExperience ? Infinity : GALLERY_MAX_DEFAULT;
+  const visibleTabs = isBoatsExperience ? TABS_BOATS : TABS_DEFAULT;
 
   // Informations clés → badges (kosher, enfants, parking, fitness, spa)
   const [practicalInfo, setPracticalInfo] = useState<PracticalBadgesInfo>(defaultPracticalBadgesInfo);
@@ -431,6 +488,11 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       has_child_price: false,
       markup_percent: 0,
       supplier_booking_url: "",
+      supplier_contact: "",
+      supplier_payment_method: undefined,
+      skipper_included: undefined,
+      crew_included: undefined,
+      departure_location: "",
       base_price_type: "per_person",
       currency: "ILS",
       lead_time_days: 0,
@@ -565,6 +627,11 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     setValue("has_child_price", exp.has_child_price ?? false);
     setValue("markup_percent", exp.markup_percent ?? 0);
     setValue("supplier_booking_url", exp.supplier_booking_url || "");
+    setValue("supplier_contact", exp.supplier_contact || "");
+    setValue("supplier_payment_method", exp.supplier_payment_method || undefined);
+    setValue("skipper_included", exp.skipper_included ?? undefined);
+    setValue("crew_included", exp.crew_included ?? undefined);
+    setValue("departure_location", exp.departure_location || "");
     setValue("base_price_type", exp.base_price_type || "per_person");
     setValue("currency", exp.currency || "ILS");
     setValue("lead_time_days", exp.lead_time_days ?? 0);
@@ -644,6 +711,18 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       setWhitelistedDates(exp.whitelisted_dates.map((s: string) => new Date(s + "T12:00:00")));
     }
   }, [existingExperience, setValue]);
+
+  // La catégorie (donc isBoatsExperience) n'est connue avec certitude qu'après
+  // le chargement async de existingExperience ci-dessus. Si l'onglet actif ne
+  // fait plus partie des onglets visibles (bascule bateau ↔ standard), on
+  // retombe sur le premier onglet valide plutôt que de rester bloqué.
+  useEffect(() => {
+    const validIds: readonly string[] = visibleTabs.map((t) => t.id);
+    if (!validIds.includes(activeTab)) {
+      setActiveTab(visibleTabs[0].id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isBoatsExperience]);
 
   // -------------------------------------------------------------------------
   // Image handlers
@@ -844,6 +923,11 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       has_child_price: data.has_child_price,
       markup_percent: data.markup_percent,
       supplier_booking_url: data.supplier_booking_url || null,
+      supplier_contact: data.supplier_contact || null,
+      supplier_payment_method: data.supplier_payment_method || null,
+      skipper_included: data.skipper_included ?? null,
+      crew_included: data.crew_included ?? null,
+      departure_location: data.departure_location || null,
       base_price: computedBasePrice,
       base_price_child: computedBasePriceChild,
       base_price_type: data.base_price_type,
@@ -950,7 +1034,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     const result = standaloneExperienceDraftSchema.safeParse(getValues());
     if (!result.success) {
       toast.error("Le titre (EN) est requis pour enregistrer un brouillon");
-      setActiveTab("contenu");
+      setActiveTab(isBoatsExperience ? "bateau_champs" : "contenu");
       return;
     }
     await handleSaveDraft(result.data as StandaloneFormData);
@@ -1046,7 +1130,15 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     if (errorFields.length > 0) toast.error(`Champs requis manquants : ${errorFields.join(", ")}`);
 
     const errorField = Object.keys(errs)[0];
-    if (["title", "title_he", "subtitle", "category_id", "long_copy"].includes(errorField)) {
+    if (isBoatsExperience) {
+      if (["title", "title_he"].includes(errorField)) {
+        setActiveTab("bateau_champs");
+      } else if (["subtitle", "category_id", "long_copy"].includes(errorField)) {
+        setActiveTab("autres");
+      } else if (["min_party", "max_party", "supplier_price_adult"].includes(errorField)) {
+        setActiveTab("bateau_champs");
+      }
+    } else if (["title", "title_he", "subtitle", "category_id", "long_copy"].includes(errorField)) {
       setActiveTab("contenu");
     } else if (["min_party", "max_party", "supplier_price_adult"].includes(errorField)) {
       setActiveTab("tarif_dispo");
@@ -1071,6 +1163,10 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
         return supplierPriceAdult > 0;
       case "seo":
         return true;
+      case "bateau_champs":
+        return !!(heroImagePreview || galleryPreviews.length > 0) && supplierPriceAdult > 0;
+      case "autres":
+        return !!(title && selectedCategoryIds.length > 0 && (getValues("long_copy")?.length ?? 0) >= 100);
     }
   };
 
@@ -1146,7 +1242,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
         {/* Sticky Tab Navigation */}
         <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b -mx-6 px-6 py-0">
           <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
-            {TABS.map((tab, index) => {
+            {visibleTabs.map((tab, index) => {
               const isComplete = getTabCompletion(tab.id);
               const isActive = activeTab === tab.id;
               return (
@@ -1177,7 +1273,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
         {/* ═══════════════════════════════════════════════════════════════════ */}
         {/* PAGE 1 : Médias */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {activeTab === "medias" && (
+        {(activeTab === "medias" || activeTab === "bateau_champs") && (
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -1297,29 +1393,206 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* PAGE 2 : Contenu */}
+        {/* PAGE BATEAUX : Champs bateaux (uniquement isBoatsExperience) */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {activeTab === "contenu" && (
+        {activeTab === "bateau_champs" && (
           <div className="space-y-6">
+            {/* Prestataire */}
             <Card>
               <CardHeader>
-                <CardTitle>Titres & Description</CardTitle>
-                <CardDescription>Contenu principal de la fiche expérience (EN + FR + HE)</CardDescription>
+                <CardTitle>Prestataire</CardTitle>
+                <CardDescription>Informations internes sur le prestataire du bateau (jamais visibles côté client)</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="supplier_name">Société / prestataire</Label>
+                  <Input
+                    id="supplier_name"
+                    {...register("supplier_name")}
+                    placeholder="ex. BALAGUNA, MARK"
+                    disabled={isSaving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="supplier_contact">Contact prestataire</Label>
+                  <Input
+                    id="supplier_contact"
+                    {...register("supplier_contact")}
+                    placeholder="Téléphone ou email"
+                    disabled={isSaving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="supplier_boat_name">Nom du bateau chez le prestataire</Label>
+                  <Input
+                    id="supplier_boat_name"
+                    {...register("supplier_boat_name")}
+                    placeholder="ex. Thirty Eight Catamaran"
+                    disabled={isSaving}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Coût prestataire */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Coût prestataire</CardTitle>
+                <CardDescription>Tarif net payé au prestataire</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="supplier_price_adult">
+                      Prix adulte <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="supplier_price_adult"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        {...register("supplier_price_adult", { valueAsNumber: true })}
+                        placeholder="0"
+                        disabled={isSaving}
+                        className="pr-8"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
+                    </div>
+                    {errors.supplier_price_adult && <p className="text-destructive text-xs">{errors.supplier_price_adult.message}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="supplier_price_child">Prix enfant</Label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">Tarif différent</span>
+                        <Controller
+                          name="has_child_price"
+                          control={control}
+                          render={({ field }) => (
+                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                          )}
+                        />
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="supplier_price_child"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        {...register("supplier_price_child", { valueAsNumber: true })}
+                        placeholder="100"
+                        disabled={isSaving || !hasChildPrice}
+                        className={cn("pr-8", !hasChildPrice && "opacity-40")}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Mode de paiement prestataire</Label>
+                  <Controller
+                    name="supplier_payment_method"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange} disabled={isSaving}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choisir un mode de paiement" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="payment_link">Lien de paiement</SelectItem>
+                          <SelectItem value="bank_transfer">Virement</SelectItem>
+                          <SelectItem value="card">CB</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Ce qui est inclus */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Ce qui est inclus</CardTitle>
+                <CardDescription>Listez tout ce qui est compris dans le prix (avec photo et traduction HE)</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <IncludesManagerStandalone
+                  experienceId={currentExperienceId}
+                  localIncludes={localStandaloneIncludes}
+                  onLocalIncludesChange={setLocalStandaloneIncludes}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Extras (options payantes) */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Extras (options payantes)</CardTitle>
+                <CardDescription>Options supplémentaires que le client peut ajouter à sa réservation</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <StandaloneExtrasManager
+                  experienceId={currentExperienceId}
+                  localExtras={localStandaloneExtras}
+                  onLocalExtrasChange={setLocalStandaloneExtras}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Conditions d'annulation */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Conditions d'annulation</CardTitle>
+                <CardDescription>Facultatif — peut être rempli plus tard</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-6">
+                  <div>
+                    <Label className="flex items-center gap-1.5 mb-1">
+                      <span>🇬🇧</span> Politique (EN)
+                    </Label>
+                    <Input {...register("cancellation_policy")} disabled={isSaving} />
+                  </div>
+                  <div>
+                    <Label className="flex items-center gap-1.5 mb-1">
+                      <span>🇫🇷</span> Politique (FR)
+                    </Label>
+                    <Input {...register("cancellation_policy_fr")} disabled={isSaving} />
+                  </div>
+                  <div>
+                    <Label className="flex items-center gap-1.5 mb-1">
+                      <span>🇮🇱</span> Politique (HE)
+                    </Label>
+                    <Input {...register("cancellation_policy_he")} dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Nom du bateau pour le client */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Nom du bateau pour le client</CardTitle>
+                <CardDescription>Titre affiché publiquement sur la fiche (EN + FR + HE)</CardDescription>
+              </CardHeader>
+              <CardContent>
                 <div className="grid grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="title" className="flex items-center gap-1.5">
                       <span>🇬🇧</span> Titre (EN) <span className="text-destructive">*</span>
                     </Label>
-                    <Input id="title" {...register("title")} placeholder="Ex: Wine tasting in the Galilee" disabled={isSaving} />
+                    <Input id="title" {...register("title")} placeholder="Ex: Sunset catamaran cruise" disabled={isSaving} />
                     {errors.title && <p className="text-destructive text-xs">{errors.title.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="title_fr" className="flex items-center gap-1.5">
                       <span>🇫🇷</span> Titre (FR)
                     </Label>
-                    <Input id="title_fr" {...register("title_fr")} placeholder="Ex: Dégustation de vins en Galilée" disabled={isSaving} />
+                    <Input id="title_fr" {...register("title_fr")} placeholder="Ex: Croisière catamaran au coucher du soleil" disabled={isSaving} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="title_he" className="flex items-center gap-1.5">
@@ -1328,6 +1601,174 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                     <Input id="title_he" {...register("title_he")} placeholder="כותרת בעברית" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Marge */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Marge</CardTitle>
+                <CardDescription>Markup STAYMAKOM appliqué au prix fournisseur</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="rounded-lg border bg-muted/30 p-4">
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm text-muted-foreground shrink-0 w-16">Marge %</span>
+                    <Controller
+                      name="markup_percent"
+                      control={control}
+                      render={({ field }) => (
+                        <Slider
+                          min={0}
+                          max={100}
+                          step={1}
+                          value={[field.value ?? 0]}
+                          onValueChange={([v]) => field.onChange(v)}
+                          className="flex-1"
+                        />
+                      )}
+                    />
+                    <span className="text-sm font-semibold w-12 text-right">{markupPercent}%</span>
+                  </div>
+                </div>
+
+                {supplierPriceAdult > 0 && (
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="rounded-lg border p-4 bg-background">
+                      <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
+                        <Users className="h-3.5 w-3.5" />
+                        Adulte
+                      </div>
+                      <p className="text-2xl font-bold">{computedAdultPrice} <span className="text-base font-normal">{currencySymbol}</span></p>
+                      <p className="text-xs text-muted-foreground mt-1">{supplierPriceAdult} + {markupPercent}% = {computedAdultPrice}</p>
+                    </div>
+                    <div className={cn("rounded-lg border p-4", hasChildPrice ? "bg-background" : "bg-muted/30")}>
+                      <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
+                        <Users className="h-3.5 w-3.5" /> Enfant
+                      </div>
+                      {hasChildPrice ? (
+                        <>
+                          <p className="text-2xl font-bold">{computedChildPrice} <span className="text-base font-normal">{currencySymbol}</span></p>
+                          <p className="text-xs text-muted-foreground mt-1">{supplierPriceChild} + {markupPercent}% = {computedChildPrice}</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-2xl font-bold text-muted-foreground">—</p>
+                          <p className="text-xs text-muted-foreground mt-1">Tarif enfant désactivé</p>
+                        </>
+                      )}
+                    </div>
+                    <div className="rounded-lg border p-4 bg-background">
+                      <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
+                        <span className="text-xs font-bold">%</span> Marge unitaire
+                      </div>
+                      <p className="text-2xl font-bold">{margeUnitaireAdult} <span className="text-base font-normal">{currencySymbol}</span></p>
+                      <p className="text-xs text-muted-foreground mt-1">par adulte</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Nombre de personnes */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Nombre de personnes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-2 max-w-sm">
+                  <div className="space-y-2">
+                    <Label>Min</Label>
+                    <Input type="number" min={1} max={100} {...register("min_party", { valueAsNumber: true })} placeholder="1" disabled={isSaving} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Max</Label>
+                    <Input type="number" min={1} max={100} {...register("max_party", { valueAsNumber: true })} placeholder="10" disabled={isSaving} />
+                  </div>
+                </div>
+                {(errors.min_party || errors.max_party) && (
+                  <p className="text-destructive text-xs mt-2">Valeurs min/max invalides</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Équipage */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Équipage</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Controller
+                  name="skipper_included"
+                  control={control}
+                  render={({ field }) => (
+                    <YesNoToggleField id="skipper" icon={Users} label="Skipper inclus" value={field.value} onChange={field.onChange} />
+                  )}
+                />
+                <Controller
+                  name="crew_included"
+                  control={control}
+                  render={({ field }) => (
+                    <YesNoToggleField id="crew" icon={Users} label="Équipage inclus" value={field.value} onChange={field.onChange} />
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Lieu de départ */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Lieu de départ</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Label htmlFor="departure_location">Lieu de départ</Label>
+                  <Input
+                    id="departure_location"
+                    {...register("departure_location")}
+                    placeholder="Ex: Marina Herzliya"
+                    disabled={isSaving}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {/* PAGE 2 : Contenu */}
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {(activeTab === "contenu" || activeTab === "autres") && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Titres & Description</CardTitle>
+                <CardDescription>Contenu principal de la fiche expérience (EN + FR + HE)</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {!isBoatsExperience && (
+                  <div className="grid grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="title" className="flex items-center gap-1.5">
+                        <span>🇬🇧</span> Titre (EN) <span className="text-destructive">*</span>
+                      </Label>
+                      <Input id="title" {...register("title")} placeholder="Ex: Wine tasting in the Galilee" disabled={isSaving} />
+                      {errors.title && <p className="text-destructive text-xs">{errors.title.message}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="title_fr" className="flex items-center gap-1.5">
+                        <span>🇫🇷</span> Titre (FR)
+                      </Label>
+                      <Input id="title_fr" {...register("title_fr")} placeholder="Ex: Dégustation de vins en Galilée" disabled={isSaving} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="title_he" className="flex items-center gap-1.5">
+                        <span>🇮🇱</span> כותרת (HE)
+                      </Label>
+                      <Input id="title_he" {...register("title_he")} placeholder="כותרת בעברית" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-3 gap-6">
                   <div className="space-y-2">
@@ -1482,7 +1923,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
         {/* ═══════════════════════════════════════════════════════════════════ */}
         {/* PAGE 3 : Infos pratiques */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {activeTab === "pratique" && (
+        {(activeTab === "pratique" || activeTab === "autres") && (
           <div className="space-y-6">
             {/* Badges : points forts éditoriaux + informations clés (badges automatiques) */}
             <Card>
@@ -1666,34 +2107,38 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
             </Card>
 
             {/* Ce qui est inclus */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Ce qui est inclus</CardTitle>
-                <CardDescription>Listez tout ce qui est compris dans le prix (avec photo et traduction HE)</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <IncludesManagerStandalone
-                  experienceId={currentExperienceId}
-                  localIncludes={localStandaloneIncludes}
-                  onLocalIncludesChange={setLocalStandaloneIncludes}
-                />
-              </CardContent>
-            </Card>
+            {!isBoatsExperience && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Ce qui est inclus</CardTitle>
+                  <CardDescription>Listez tout ce qui est compris dans le prix (avec photo et traduction HE)</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <IncludesManagerStandalone
+                    experienceId={currentExperienceId}
+                    localIncludes={localStandaloneIncludes}
+                    onLocalIncludesChange={setLocalStandaloneIncludes}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
             {/* Extras (options payantes) */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Extras (options payantes)</CardTitle>
-                <CardDescription>Options supplémentaires que le client peut ajouter à sa réservation</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <StandaloneExtrasManager
-                  experienceId={currentExperienceId}
-                  localExtras={localStandaloneExtras}
-                  onLocalExtrasChange={setLocalStandaloneExtras}
-                />
-              </CardContent>
-            </Card>
+            {!isBoatsExperience && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Extras (options payantes)</CardTitle>
+                  <CardDescription>Options supplémentaires que le client peut ajouter à sa réservation</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <StandaloneExtrasManager
+                    experienceId={currentExperienceId}
+                    localExtras={localStandaloneExtras}
+                    onLocalExtrasChange={setLocalStandaloneExtras}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
             {/* Localisation */}
             <Card>
@@ -1865,7 +2310,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
         {/* ═══════════════════════════════════════════════════════════════════ */}
         {/* PAGE 4 : Tarif & Dispo */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {activeTab === "tarif_dispo" && (
+        {(activeTab === "tarif_dispo" || activeTab === "autres") && (
           <div className="space-y-6">
             {/* Prix de l'expérience */}
             <Card>
@@ -1944,119 +2389,16 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                         )}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label>Participants min / max</Label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input type="number" min={1} max={100} {...register("min_party", { valueAsNumber: true })} placeholder="1" disabled={isSaving} />
-                        <Input type="number" min={1} max={100} {...register("max_party", { valueAsNumber: true })} placeholder="10" disabled={isSaving} />
-                      </div>
-                      {(errors.min_party || errors.max_party) && (
-                        <p className="text-destructive text-xs">Valeurs min/max invalides</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Identification fournisseur — jamais affiché côté client */}
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                    Fournisseur (usage interne, jamais visible des clients)
-                  </p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="supplier_name">Société / prestataire</Label>
-                      <Input
-                        id="supplier_name"
-                        {...register("supplier_name")}
-                        placeholder="ex. BALAGUNA, MARK"
-                        disabled={isSaving}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="supplier_boat_name">Nom d'origine chez le fournisseur</Label>
-                      <Input
-                        id="supplier_boat_name"
-                        {...register("supplier_boat_name")}
-                        placeholder="ex. Thirty Eight Catamaran"
-                        disabled={isSaving}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Le titre affiché au client (onglet Contenu) peut être différent.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Tarif fournisseur */}
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Tarif fournisseur (Prix net achat)</p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="supplier_price_adult">
-                        {isFixed ? "Prix total forfait" : "Prix adulte"} <span className="text-destructive">*</span>
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          id="supplier_price_adult"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          {...register("supplier_price_adult", { valueAsNumber: true })}
-                          placeholder="0"
-                          disabled={isSaving}
-                          className="pr-8"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {isFixed
-                          ? "Prix total que vous payez au prestataire, pour tout le groupe"
-                          : "Prix que vous payez au prestataire"}
-                      </p>
-                      {errors.supplier_price_adult && <p className="text-destructive text-xs">{errors.supplier_price_adult.message}</p>}
-                    </div>
-
-                    {isFixed ? (
-                      <div className="space-y-2 flex items-center">
-                        <p className="text-xs text-muted-foreground italic">
-                          Le tarif enfant n'est pas applicable pour un forfait — le prix est le même pour tout le groupe.
-                        </p>
-                      </div>
-                    ) : (
+                    {!isBoatsExperience && (
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="supplier_price_child">Prix enfant</Label>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">Tarif différent</span>
-                            <Controller
-                              name="has_child_price"
-                              control={control}
-                              render={({ field }) => (
-                                <Switch checked={field.value} onCheckedChange={field.onChange} />
-                              )}
-                            />
-                          </div>
+                        <Label>Participants min / max</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input type="number" min={1} max={100} {...register("min_party", { valueAsNumber: true })} placeholder="1" disabled={isSaving} />
+                          <Input type="number" min={1} max={100} {...register("max_party", { valueAsNumber: true })} placeholder="10" disabled={isSaving} />
                         </div>
-                        <div className="relative">
-                          <Input
-                            id="supplier_price_child"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            {...register("supplier_price_child", { valueAsNumber: true })}
-                            placeholder="100"
-                            disabled={isSaving || !hasChildPrice}
-                            className={cn("pr-8", !hasChildPrice && "opacity-40")}
-                          />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {hasChildPrice ? "Prix enfant au prestataire" : "Activer pour saisir un prix enfant"}
-                        </p>
+                        {(errors.min_party || errors.max_party) && (
+                          <p className="text-destructive text-xs">Valeurs min/max invalides</p>
+                        )}
                       </div>
                     )}
                   </div>
@@ -2064,32 +2406,141 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
 
                 <Separator />
 
-                {/* Markup STAYMAKOM */}
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Markup STAYMAKOM</p>
-                  <div className="rounded-lg border bg-muted/30 p-4">
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm text-muted-foreground shrink-0 w-16">Marge %</span>
-                      <Controller
-                        name="markup_percent"
-                        control={control}
-                        render={({ field }) => (
-                          <Slider
-                            min={0}
-                            max={100}
-                            step={1}
-                            value={[field.value ?? 0]}
-                            onValueChange={([v]) => field.onChange(v)}
-                            className="flex-1"
+                {!isBoatsExperience && (
+                  <>
+                    {/* Identification fournisseur — jamais affiché côté client */}
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+                        Fournisseur (usage interne, jamais visible des clients)
+                      </p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="supplier_name">Société / prestataire</Label>
+                          <Input
+                            id="supplier_name"
+                            {...register("supplier_name")}
+                            placeholder="ex. BALAGUNA, MARK"
+                            disabled={isSaving}
                           />
-                        )}
-                      />
-                      <span className="text-sm font-semibold w-12 text-right">{markupPercent}%</span>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="supplier_boat_name">Nom d'origine chez le fournisseur</Label>
+                          <Input
+                            id="supplier_boat_name"
+                            {...register("supplier_boat_name")}
+                            placeholder="ex. Thirty Eight Catamaran"
+                            disabled={isSaving}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Le titre affiché au client (onglet Contenu) peut être différent.
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
 
-                <Separator />
+                    <Separator />
+
+                    {/* Tarif fournisseur */}
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Tarif fournisseur (Prix net achat)</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="supplier_price_adult">
+                            {isFixed ? "Prix total forfait" : "Prix adulte"} <span className="text-destructive">*</span>
+                          </Label>
+                          <div className="relative">
+                            <Input
+                              id="supplier_price_adult"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              {...register("supplier_price_adult", { valueAsNumber: true })}
+                              placeholder="0"
+                              disabled={isSaving}
+                              className="pr-8"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {isFixed
+                              ? "Prix total que vous payez au prestataire, pour tout le groupe"
+                              : "Prix que vous payez au prestataire"}
+                          </p>
+                          {errors.supplier_price_adult && <p className="text-destructive text-xs">{errors.supplier_price_adult.message}</p>}
+                        </div>
+
+                        {isFixed ? (
+                          <div className="space-y-2 flex items-center">
+                            <p className="text-xs text-muted-foreground italic">
+                              Le tarif enfant n'est pas applicable pour un forfait — le prix est le même pour tout le groupe.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="supplier_price_child">Prix enfant</Label>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">Tarif différent</span>
+                                <Controller
+                                  name="has_child_price"
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                  )}
+                                />
+                              </div>
+                            </div>
+                            <div className="relative">
+                              <Input
+                                id="supplier_price_child"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                {...register("supplier_price_child", { valueAsNumber: true })}
+                                placeholder="100"
+                                disabled={isSaving || !hasChildPrice}
+                                className={cn("pr-8", !hasChildPrice && "opacity-40")}
+                              />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {hasChildPrice ? "Prix enfant au prestataire" : "Activer pour saisir un prix enfant"}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Markup STAYMAKOM */}
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Markup STAYMAKOM</p>
+                      <div className="rounded-lg border bg-muted/30 p-4">
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm text-muted-foreground shrink-0 w-16">Marge %</span>
+                          <Controller
+                            name="markup_percent"
+                            control={control}
+                            render={({ field }) => (
+                              <Slider
+                                min={0}
+                                max={100}
+                                step={1}
+                                value={[field.value ?? 0]}
+                                onValueChange={([v]) => field.onChange(v)}
+                                className="flex-1"
+                              />
+                            )}
+                          />
+                          <span className="text-sm font-semibold w-12 text-right">{markupPercent}%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator />
+                  </>
+                )}
 
                 {/* Lien de réservation fournisseur — usage interne uniquement */}
                 <div>
@@ -2113,7 +2564,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                 </div>
 
                 {/* Preview cards */}
-                {supplierPriceAdult > 0 && (
+                {!isBoatsExperience && supplierPriceAdult > 0 && (
                   <div className="grid grid-cols-3 gap-3">
                     <div className="rounded-lg border p-4 bg-background">
                       <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
@@ -2574,41 +3025,43 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
             </Card>
 
             {/* Conditions d'annulation */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Conditions d'annulation</CardTitle>
-                <CardDescription>Politique d'annulation de l'expérience (3 langues)</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-6">
-                  <div>
-                    <Label className="flex items-center gap-1.5 mb-1">
-                      <span>🇬🇧</span> Politique (EN)
-                    </Label>
-                    <Input {...register("cancellation_policy")} disabled={isSaving} />
+            {!isBoatsExperience && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Conditions d'annulation</CardTitle>
+                  <CardDescription>Politique d'annulation de l'expérience (3 langues)</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-6">
+                    <div>
+                      <Label className="flex items-center gap-1.5 mb-1">
+                        <span>🇬🇧</span> Politique (EN)
+                      </Label>
+                      <Input {...register("cancellation_policy")} disabled={isSaving} />
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-1.5 mb-1">
+                        <span>🇫🇷</span> Politique (FR)
+                      </Label>
+                      <Input {...register("cancellation_policy_fr")} disabled={isSaving} />
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-1.5 mb-1">
+                        <span>🇮🇱</span> Politique (HE)
+                      </Label>
+                      <Input {...register("cancellation_policy_he")} dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
+                    </div>
                   </div>
-                  <div>
-                    <Label className="flex items-center gap-1.5 mb-1">
-                      <span>🇫🇷</span> Politique (FR)
-                    </Label>
-                    <Input {...register("cancellation_policy_fr")} disabled={isSaving} />
-                  </div>
-                  <div>
-                    <Label className="flex items-center gap-1.5 mb-1">
-                      <span>🇮🇱</span> Politique (HE)
-                    </Label>
-                    <Input {...register("cancellation_policy_he")} dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════ */}
         {/* PAGE 5 : SEO */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {activeTab === "seo" && (
+        {(activeTab === "seo" || activeTab === "autres") && (
           <div className="space-y-6">
             <Card className="bg-muted/30">
               <CardHeader>
