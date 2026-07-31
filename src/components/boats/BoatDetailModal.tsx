@@ -20,6 +20,7 @@ import { X, Check, Plus, ChevronLeft } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
 import StandaloneRequestPanel from "@/components/experience-test/StandaloneRequestPanel";
+import { resizedImageUrl } from "@/lib/imageUrl";
 
 interface BoatDetailModalProps {
   boatId: string | null;
@@ -219,7 +220,7 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
       <div className="flex items-center gap-3 px-4 sm:px-6 pt-14 pb-4 border-b">
         {photos[0] && (
           <img
-            src={photos[0]}
+            src={resizedImageUrl(photos[0], 100) || photos[0]}
             alt={title}
             className="h-14 w-14 rounded-xl object-cover shrink-0"
           />
@@ -264,7 +265,7 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
                 <CarouselItem key={i}>
                   <div className="aspect-[4/3] sm:aspect-[16/9] w-full overflow-hidden">
                     <img
-                      src={photo}
+                      src={resizedImageUrl(photo, 1200) || photo}
                       alt={`${title} ${i + 1}`}
                       loading={i === 0 ? undefined : "lazy"}
                       className="w-full h-full object-cover"
