@@ -20,12 +20,12 @@ const Boats = () => {
   const isRTL = lang === "he";
   const [selectedBoatId, setSelectedBoatId] = useState<string | null>(null);
 
-  const pageTitle = isRTL ? "סירות" : lang === "fr" ? "Bateaux" : "Boats";
+  const pageTitle = isRTL ? "יוצאים לים" : lang === "fr" ? "Prendre le large" : "On the water";
   const pageDescription = isRTL
-    ? "קטלוג הסירות שלנו בישראל."
+    ? "גלו את מבחר הסירות הנבחר שלנו ברחבי ישראל. המחירים מוצגים עבור שייט של שעתיים, אלא אם צוין אחרת."
     : lang === "fr"
-      ? "Notre sélection de bateaux en Israël."
-      : "Our curated selection of boats in Israel.";
+      ? "Découvrez notre sélection de bateaux soigneusement choisis à travers Israël. Tous les prix sont indiqués pour une sortie de 2 heures, sauf mention contraire."
+      : "Explore Israel from the sea with our handpicked collection of boats. All prices are based on a 2-hour experience, unless otherwise stated.";
 
   const { data: boats, isLoading } = useQuery({
     queryKey: ["boats-catalog"],
