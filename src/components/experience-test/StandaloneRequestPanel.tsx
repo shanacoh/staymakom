@@ -55,9 +55,12 @@ function toLocalDateStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-// Fourchettes fixes pour les bateaux (moins de 7 / 8-14 / 15-24), plus
+// Fourchettes fixes pour les bateaux (couple / moins de 7 / 8-14 / 15-24), plus
 // lisibles que des paires calculées automatiquement à partir de min/maxParty.
+// La bulle "couple" (2) chevauche volontairement "moins de 7" (1-6) : un
+// raccourci en plus, pas un remplacement.
 const BOAT_PARTY_RANGES: PartyRange[] = [
+  { min: 2, max: 2 },
   { min: 1, max: 6 },
   { min: 8, max: 14 },
   { min: 15, max: 24 },
@@ -122,6 +125,7 @@ export default function StandaloneRequestPanel({
         ? "En cliquant sur « Envoyer ma demande », vous reconnaissez autoriser Staymakom à vous contacter par téléphone et email au sujet de cette demande."
         : "By clicking \"Send my request\", you agree to let Staymakom contact you by phone and email about this request.",
     under7: lang === "he" ? "פחות מ-7" : lang === "fr" ? "Moins de 7" : "Under 7",
+    couple: lang === "he" ? "זוג" : lang === "fr" ? "Couple" : "Couple",
     missingFields: usePartyRanges
       ? (lang === "he" ? "יש למלא שם, אימייל וטלפון" : lang === "fr" ? "Merci de renseigner votre prénom, nom, email et téléphone" : "Please fill in your first name, last name, email and phone")
       : (lang === "he" ? "יש למלא שם ואימייל" : lang === "fr" ? "Merci de renseigner votre prénom, nom et email" : "Please fill in your first name, last name and email"),
@@ -329,7 +333,12 @@ export default function StandaloneRequestPanel({
               <div className="flex flex-wrap gap-2">
                 {partyRanges.map((range) => {
                   const isSelected = selectedRange?.min === range.min && selectedRange?.max === range.max;
-                  const label = range.min === 1 && range.max === 6 ? t.under7 : `${range.min}-${range.max}`;
+                  const label =
+                    range.min === 2 && range.max === 2
+                      ? t.couple
+                      : range.min === 1 && range.max === 6
+                      ? t.under7
+                      : `${range.min}-${range.max}`;
                   return (
                     <button
                       key={`${range.min}-${range.max}`}
