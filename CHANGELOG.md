@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-07-31 terdecies] — Bateaux : ajout de la bulle "Couple" au choix du nombre de personnes
+
+### Ce qui a changé côté code
+- `src/components/experience-test/StandaloneRequestPanel.tsx` : ajout d'une bulle "Couple" (2 personnes) dans le choix du nombre de participants sur la fiche détail bateau, en plus de la bulle "Moins de 7" déjà existante. Les deux bulles se chevauchent volontairement (1 à 6 personnes) : "Couple" est un raccourci d'affichage supplémentaire, pas un remplacement.
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Demande explicite de Shana : proposer un choix rapide pour les couples plutôt que de les faire cliquer sur une fourchette plus large.
+
+---
+
 ## [2026-07-31 duodecies] — Bateaux : tri manuel de l'ordre d'affichage en back office
 
 ### Ce qui a changé côté code
