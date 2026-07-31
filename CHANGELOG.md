@@ -6,6 +6,22 @@
 
 ---
 
+## [2026-07-31 octies] — Bateaux : contenu corrigé avec les vraies infos prestataires + Yam Sailing et Simona ajoutés
+
+### Ce qui a changé côté code
+- Aucun changement de code, uniquement du contenu en base de données.
+
+### Ce qui a changé côté base de données
+- Migration `20260731070000_fix_bateaux_client_facing_titles.sql` : le titre affiché au client ("Nom du bateau pour le client" dans le formulaire admin) avait été rempli avec le nom du produit chez le prestataire (ex. "Thirty Eight Catamaran") au lieu du titre STAYMAKOM validé par Shana (ex. "Yacht privé 4h + Speedboat inclus (24 pers)"). Corrigé sur les 11 fiches (les 8 déjà en ligne + les 3 nouvelles) avec les titres exacts du fichier prestataires. Le nom prestataire reste bien enregistré à part (champ interne, jamais visible du client).
+- Migration `20260731060000_correct_extend_bateaux_yam_sailing_simona.sql` :
+  - **Corrections sur les 8 bateaux déjà en ligne (Balaguna, Mark)** : ajout du supplément "plateau de fruits" (350₪) qui manquait sur le Platinum Yacht Package ; ajout du supplément "heure supplémentaire" (1200₪) qui manquait sur le Chaser Speed Boat (sa capacité de 11 personnes et son option bouée tractée à 600₪ étaient déjà correctes, confirmé avec Shana) ; sur le Catamaran 38 (Mark), la capacité était encore inconnue lors de la première saisie (valeur par défaut 20) — corrigée à 14 personnes, avec l'ajout de la description et de la liste "ce qui est inclus" (skipper, boissons chaudes/froides, boissons personnelles autorisées, baignade selon conditions de mer).
+  - **2 nouvelles fiches créées, en brouillon en attendant validation de Shana** : Yam Sailing (voilier avec skipper au départ de Tel Aviv, à partir d'1h, tarif week-end et extras traiteur Dalal Delicatessen) ; Simona (yacht Seamona, Herzliya) en 2 tailles de groupe (jusqu'à 6 et jusqu'à 13 personnes), avec décoration festive (arche de ballons, panneau "mazal tov"), boissons et arrêt baignade inclus.
+
+### Pourquoi ce changement
+- Shana a transmis un fichier avec les vraies informations de ses prestataires bateaux pour fiabiliser le contenu déjà en ligne et compléter le catalogue avec 2 nouveaux partenaires. Au passage, vérification faite qu'il existe d'autres fiches "yacht/Seamona" plus anciennes ailleurs sur le site (catalogue général, pas la page Bateaux) : elles ont été très modifiées depuis via le back office et Shana a confirmé qu'il s'agit de fiches à part, volontairement laissées telles quelles.
+
+---
+
 ## [2026-07-31 septies] — Bateaux : formulaire d'admin simplifié en 2 onglets (Champs bateaux / Autres)
 
 ### Ce qui a changé côté code
