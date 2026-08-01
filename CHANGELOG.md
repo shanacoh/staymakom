@@ -6,6 +6,36 @@
 
 ---
 
+## [2026-08-01 bis] — Bateaux (admin) : correction — le calcul de marge suivait un ancien prix figé
+
+### Ce qui a changé côté code
+- `src/components/admin/StandaloneSuppliersManager.tsx` : ajout d'une étoile ⭐ "prestataire principal" sur chaque ligne de la liste des prestataires. Un seul prestataire peut être principal à la fois ; le premier ajouté le devient automatiquement, et si on supprime le principal, le suivant est promu automatiquement pour ne jamais perdre la référence.
+- `src/components/forms/StandaloneExperienceForm.tsx` : le calcul de marge (suggestion de prix de vente, marge unitaire, complétude de l'onglet Bateaux) se base maintenant sur le prix du prestataire marqué principal (⭐) dans la liste des prestataires — plus sur l'ancien champ figé "Coût prestataire" qui ne se mettait plus à jour une fois qu'on ajoutait/changeait des prestataires dans la liste. La carte "Coût prestataire principal" affiche désormais ce prix en lecture seule (nom du prestataire + prix), avec un renvoi vers l'étoile.
+
+### Ce qui a changé côté base de données
+- Nouvelle colonne `is_primary` sur `standalone_experience_suppliers`, avec un index garantissant qu'un seul prestataire peut être principal par bateau (migration `20260801010000_add_primary_supplier.sql`).
+- Cette même migration corrige les données existantes : pour les bateaux qui avaient déjà des prestataires saisis (ex. CATAMARAN avec MARK et BALAGUNA) sans principal désigné, le premier de la liste est marqué principal ; pour les bateaux sans aucun prestataire dans la nouvelle liste, l'ancien prestataire/prix figé est repris comme prestataire principal, pour ne perdre aucune donnée.
+
+### Pourquoi ce changement
+- Bug remonté par Shana : après avoir ajouté deux prestataires à prix différents sur la fiche Catamaran, le calcul de marge restait bloqué sur l'ancien prix (2250₪) au lieu de suivre le prestataire réellement pertinent. Le calcul en lui-même (prix fournisseur × 1,3 pour 30% de marge) était juste — c'est sa source de données qui était figée.
+
+---
+
+## [2026-08-01] — Bateaux (admin) : plusieurs prestataires par bateau + prix de vente fixé à la main
+
+### Ce qui a changé côté code
+- `src/components/admin/StandaloneSuppliersManager.tsx` (nouveau) : gestion d'une liste de prestataires pour une fiche bateau (société, WhatsApp, prix, actif/inactif), avec réorganisation par flèches. Chaque ligne affiche l'écart en % et en montant entre son prix et le prix de vente fixé sur la fiche (en rouge si le prix de vente est en dessous du prix du prestataire).
+- `src/components/forms/StandaloneExperienceForm.tsx` : ajout d'une carte "Comparer d'autres prestataires" dans l'onglet Bateaux, sous "Coût prestataire principal" (renommée pour clarifier son rôle : c'est elle qui alimente la suggestion de prix). La carte "Marge" devient "Prix de vente" : le prix adulte/enfant est maintenant un champ modifiable (au lieu d'un simple affichage calculé) — le curseur de marge continue de proposer une suggestion tant que Shana n'a pas tapé de valeur elle-même ; un lien "Reprendre la suggestion" permet de revenir en arrière.
+
+### Ce qui a changé côté base de données
+- Nouvelle table `standalone_experience_suppliers` (migration `20260801000000_create_standalone_experience_suppliers.sql`) : une ligne par prestataire comparé pour une expérience (bateau), avec `supplier_name`, `whatsapp`, `price`, `is_active`, `sort_order`. Table strictement interne (accessible uniquement aux admins), jamais affichée côté client.
+- Nouvelles colonnes `base_price` et `base_price_child` utilisées comme prix fixé à la main (les colonnes existaient déjà mais n'étaient jusqu'ici jamais éditables directement — toujours recalculées depuis prix fournisseur + marge).
+
+### Pourquoi ce changement
+- Un même bateau peut être proposé par plusieurs prestataires à des prix différents ; Shana veut pouvoir tous les lister avec leur contact WhatsApp, fixer elle-même le prix de vente final, et voir immédiatement l'écart (% et montant) par rapport à chacun.
+
+---
+
 ## [2026-07-31 sexdecies] — Bateaux (admin) : colonne Marge dans la liste des bateaux
 
 ### Ce qui a changé côté code

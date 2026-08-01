@@ -47,6 +47,7 @@ import {
 import { HighlightTagsSelectorStandalone, type LocalTagEntry } from "@/components/admin/HighlightTagsSelectorStandalone";
 import IncludesManagerStandalone, { type LocalIncludeEntry } from "@/components/admin/IncludesManagerStandalone";
 import StandaloneExtrasManager, { type LocalExtraEntry } from "@/components/admin/StandaloneExtrasManager";
+import StandaloneSuppliersManager from "@/components/admin/StandaloneSuppliersManager";
 import StandaloneRateOptionsManager from "@/components/admin/StandaloneRateOptionsManager";
 import { BOATS_CATEGORY_ID } from "@/lib/boatsCategory";
 
@@ -107,6 +108,10 @@ const standaloneExperienceSchema = z.object({
   supplier_price_child: z.number().min(0).default(0),
   has_child_price: z.boolean().default(false),
   markup_percent: z.number().min(0).max(100).default(0),
+  // Prix de vente fixé manuellement (bateaux) : pré-rempli avec la suggestion
+  // fournisseur + marge, mais modifiable librement une fois édité à la main.
+  base_price: optNum(0),
+  base_price_child: optNum(0),
   supplier_booking_url: z.string().optional(),
   // Bateaux — champs spécifiques, affichés uniquement quand isBoatsExperience
   // est vrai. Tous optionnels : aucune validation bloquante, ni pour le
@@ -323,6 +328,11 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   const [featuredOnHome, setFeaturedOnHome] = useState(false);
   const [homeDisplayOrder, setHomeDisplayOrder] = useState(0);
 
+  // Bateaux — prix de vente fixé à la main : tant que Shana n'y a pas touché,
+  // le champ suit la suggestion du curseur de marge (voir useEffect plus bas).
+  const [priceTouched, setPriceTouched] = useState(false);
+  const [childPriceTouched, setChildPriceTouched] = useState(false);
+
   // Includes lists
   const [includes, setIncludes] = useState<SimpleListItem[]>([]);
   const [notIncludes, setNotIncludes] = useState<SimpleListItem[]>([]);
@@ -451,6 +461,23 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     enabled: !!experienceId,
   });
 
+  // Prestataires du bateau (même clé de cache que StandaloneSuppliersManager,
+  // pour lire ici lequel est marqué principal sans dupliquer la requête).
+  const { data: boatSuppliers } = useQuery({
+    queryKey: ["standalone-experience-suppliers", currentExperienceId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("standalone_experience_suppliers")
+        .select("*")
+        .eq("experience_id", currentExperienceId)
+        .order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+    enabled: isBoatsExperience && !!currentExperienceId,
+  });
+  const primarySupplier = (boatSuppliers as any[] | undefined)?.find((s) => s.is_primary);
+
   // -------------------------------------------------------------------------
   // Form setup
   // -------------------------------------------------------------------------
@@ -487,6 +514,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       supplier_price_child: 0,
       has_child_price: false,
       markup_percent: 0,
+      base_price: undefined,
+      base_price_child: undefined,
       supplier_booking_url: "",
       supplier_contact: "",
       supplier_payment_method: undefined,
@@ -545,15 +574,38 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   const isFixed = basePriceType === "fixed";
 
   // Derived computed prices
-  const computedAdultPrice = Math.round(supplierPriceAdult * (1 + markupPercent / 100));
+  // Bateaux : la référence de prix est le prestataire marqué principal
+  // (étoile) dans la liste des prestataires, pas l'ancien champ figé
+  // supplier_price_adult (qui ne bougeait plus une fois la liste utilisée).
+  const referencePriceAdult = isBoatsExperience
+    ? (primarySupplier?.price ?? supplierPriceAdult)
+    : supplierPriceAdult;
+  const computedAdultPrice = Math.round(referencePriceAdult * (1 + markupPercent / 100));
   const computedChildPrice = Math.round(supplierPriceChild * (1 + markupPercent / 100));
-  const margeUnitaireAdult = Math.round(supplierPriceAdult * markupPercent / 100);
+  const margeUnitaireAdult = Math.round(referencePriceAdult * markupPercent / 100);
   // Pour un forfait : prix affiché par personne = prix total / max participants
   const prixParPersonneAffiche = isFixed && maxPartyWatch > 0
     ? Math.ceil(computedAdultPrice / maxPartyWatch)
     : computedAdultPrice;
 
   const currencySymbol = currency === "USD" ? "$" : currency === "EUR" ? "€" : "₪";
+
+  const sellPriceAdult = watch("base_price");
+  const sellPriceChild = watch("base_price_child");
+
+  // Bateaux : le curseur de marge propose un prix de vente (fournisseur +
+  // marge), mais tant que Shana n'a pas modifié le champ à la main, il reste
+  // synchronisé sur cette suggestion. Dès qu'elle tape une valeur, le champ
+  // devient "dirty" et n'est plus jamais écrasé automatiquement.
+  useEffect(() => {
+    if (!isBoatsExperience || priceTouched) return;
+    setValue("base_price", computedAdultPrice);
+  }, [isBoatsExperience, computedAdultPrice, priceTouched, setValue]);
+
+  useEffect(() => {
+    if (!isBoatsExperience || !hasChildPrice || childPriceTouched) return;
+    setValue("base_price_child", computedChildPrice);
+  }, [isBoatsExperience, hasChildPrice, computedChildPrice, childPriceTouched, setValue]);
 
   // -------------------------------------------------------------------------
   // Auto-save to localStorage
@@ -626,6 +678,12 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     setValue("supplier_price_child", exp.supplier_price_child ?? 0);
     setValue("has_child_price", exp.has_child_price ?? false);
     setValue("markup_percent", exp.markup_percent ?? 0);
+    // Un prix déjà enregistré est considéré comme fixé à la main : le
+    // curseur de marge ne doit plus l'écraser automatiquement.
+    setValue("base_price", exp.base_price ?? undefined);
+    setValue("base_price_child", exp.base_price_child ?? undefined);
+    setPriceTouched(exp.base_price != null);
+    setChildPriceTouched(exp.base_price_child != null);
     setValue("supplier_booking_url", exp.supplier_booking_url || "");
     setValue("supplier_contact", exp.supplier_contact || "");
     setValue("supplier_payment_method", exp.supplier_payment_method || undefined);
@@ -902,11 +960,13 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       );
     }
 
-    // base_price = prix client calculé depuis fournisseur + markup
+    // base_price = prix client calculé depuis fournisseur + markup, sauf si
+    // Shana a fixé un prix de vente à la main (bateaux) — celui-ci est alors
+    // prioritaire.
     const computedBasePrice =
-      Math.round(data.supplier_price_adult * (1 + data.markup_percent / 100) * 100) / 100;
+      data.base_price ?? Math.round(referencePriceAdult * (1 + data.markup_percent / 100) * 100) / 100;
     const computedBasePriceChild = data.has_child_price
-      ? Math.round(data.supplier_price_child * (1 + data.markup_percent / 100) * 100) / 100
+      ? data.base_price_child ?? Math.round(data.supplier_price_child * (1 + data.markup_percent / 100) * 100) / 100
       : 0;
 
     return {
@@ -928,7 +988,10 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       cancellation_policy_he: data.cancellation_policy_he || null,
       supplier_name: data.supplier_name || null,
       supplier_boat_name: data.supplier_boat_name || null,
-      supplier_price_adult: data.supplier_price_adult,
+      // Pour les bateaux, on garde cette colonne alignée sur le prestataire
+      // marqué principal (⭐) dans la liste, pour que la colonne "Marge" de
+      // /admin/boats reste juste sans avoir à ouvrir chaque fiche.
+      supplier_price_adult: isBoatsExperience ? referencePriceAdult : data.supplier_price_adult,
       supplier_price_child: data.has_child_price ? data.supplier_price_child : null,
       has_child_price: data.has_child_price,
       markup_percent: data.markup_percent,
@@ -1174,7 +1237,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       case "seo":
         return true;
       case "bateau_champs":
-        return !!(heroImagePreview || galleryPreviews.length > 0) && supplierPriceAdult > 0;
+        return !!(heroImagePreview || galleryPreviews.length > 0) && referencePriceAdult > 0;
       case "autres":
         return !!(title && selectedCategoryIds.length > 0 && (getValues("long_copy")?.length ?? 0) >= 100);
     }
@@ -1444,32 +1507,39 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
               </CardContent>
             </Card>
 
+            {/* Prestataires */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Prestataires</CardTitle>
+                <CardDescription>
+                  Tous les prestataires proposant ce bateau, avec leur WhatsApp et leur prix. L'étoile ⭐ désigne le prestataire
+                  principal : c'est son prix qui sert de référence pour la suggestion de prix de vente ci-dessous.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <StandaloneSuppliersManager
+                  experienceId={currentExperienceId}
+                  sellPrice={sellPriceAdult ?? computedAdultPrice}
+                  currencySymbol={currencySymbol}
+                />
+              </CardContent>
+            </Card>
+
             {/* Coût prestataire */}
             <Card>
               <CardHeader>
-                <CardTitle>Coût prestataire</CardTitle>
-                <CardDescription>Tarif net payé au prestataire</CardDescription>
+                <CardTitle>Coût prestataire principal</CardTitle>
+                <CardDescription>Référence utilisée pour la suggestion de prix de vente — définie par l'étoile ⭐ dans la liste des prestataires ci-dessus</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="supplier_price_adult">
-                      Prix adulte <span className="text-destructive">*</span>
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="supplier_price_adult"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        {...register("supplier_price_adult", { valueAsNumber: true })}
-                        placeholder="0"
-                        disabled={isSaving}
-                        className="pr-8"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
+                    <Label>Prix adulte (prestataire principal)</Label>
+                    <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm font-medium">
+                      {primarySupplier
+                        ? `${primarySupplier.supplier_name} — ${referencePriceAdult} ${currencySymbol}`
+                        : "Aucun prestataire principal — ajoutez-en un dans la liste ci-dessus"}
                     </div>
-                    {errors.supplier_price_adult && <p className="text-destructive text-xs">{errors.supplier_price_adult.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -1617,8 +1687,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
             {/* Marge */}
             <Card>
               <CardHeader>
-                <CardTitle>Marge</CardTitle>
-                <CardDescription>Markup STAYMAKOM appliqué au prix fournisseur</CardDescription>
+                <CardTitle>Prix de vente</CardTitle>
+                <CardDescription>Le curseur propose un prix (fournisseur + marge) ; modifiez-le librement pour le fixer vous-même</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="rounded-lg border bg-muted/30 p-4">
@@ -1642,24 +1712,83 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                   </div>
                 </div>
 
-                {supplierPriceAdult > 0 && (
+                {referencePriceAdult > 0 && (
                   <div className="grid grid-cols-3 gap-3">
                     <div className="rounded-lg border p-4 bg-background">
-                      <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
-                        <Users className="h-3.5 w-3.5" />
-                        Adulte
+                      <div className="flex items-center justify-between gap-1.5 text-muted-foreground text-xs mb-2">
+                        <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> Adulte</span>
+                        {priceTouched && (
+                          <button
+                            type="button"
+                            className="text-primary underline text-[11px]"
+                            onClick={() => { setPriceTouched(false); setValue("base_price", computedAdultPrice); }}
+                          >
+                            Reprendre la suggestion
+                          </button>
+                        )}
                       </div>
-                      <p className="text-2xl font-bold">{computedAdultPrice} <span className="text-base font-normal">{currencySymbol}</span></p>
-                      <p className="text-xs text-muted-foreground mt-1">{supplierPriceAdult} + {markupPercent}% = {computedAdultPrice}</p>
+                      <Controller
+                        name="base_price"
+                        control={control}
+                        render={({ field }) => (
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              value={field.value ?? ""}
+                              disabled={isSaving}
+                              className="text-lg font-bold h-auto py-1.5 pr-8"
+                              onChange={(e) => {
+                                setPriceTouched(true);
+                                field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value));
+                              }}
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
+                          </div>
+                        )}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Suggestion : {referencePriceAdult} ({primarySupplier?.supplier_name || "prestataire principal"}) + {markupPercent}% = {computedAdultPrice}
+                      </p>
                     </div>
                     <div className={cn("rounded-lg border p-4", hasChildPrice ? "bg-background" : "bg-muted/30")}>
-                      <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
-                        <Users className="h-3.5 w-3.5" /> Enfant
+                      <div className="flex items-center justify-between gap-1.5 text-muted-foreground text-xs mb-2">
+                        <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> Enfant</span>
+                        {hasChildPrice && childPriceTouched && (
+                          <button
+                            type="button"
+                            className="text-primary underline text-[11px]"
+                            onClick={() => { setChildPriceTouched(false); setValue("base_price_child", computedChildPrice); }}
+                          >
+                            Reprendre la suggestion
+                          </button>
+                        )}
                       </div>
                       {hasChildPrice ? (
                         <>
-                          <p className="text-2xl font-bold">{computedChildPrice} <span className="text-base font-normal">{currencySymbol}</span></p>
-                          <p className="text-xs text-muted-foreground mt-1">{supplierPriceChild} + {markupPercent}% = {computedChildPrice}</p>
+                          <Controller
+                            name="base_price_child"
+                            control={control}
+                            render={({ field }) => (
+                              <div className="relative">
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  step="0.01"
+                                  value={field.value ?? ""}
+                                  disabled={isSaving}
+                                  className="text-lg font-bold h-auto py-1.5 pr-8"
+                                  onChange={(e) => {
+                                    setChildPriceTouched(true);
+                                    field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value));
+                                  }}
+                                />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
+                              </div>
+                            )}
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">Suggestion : {supplierPriceChild} + {markupPercent}% = {computedChildPrice}</p>
                         </>
                       ) : (
                         <>
@@ -1673,7 +1802,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                         <span className="text-xs font-bold">%</span> Marge unitaire
                       </div>
                       <p className="text-2xl font-bold">{margeUnitaireAdult} <span className="text-base font-normal">{currencySymbol}</span></p>
-                      <p className="text-xs text-muted-foreground mt-1">par adulte</p>
+                      <p className="text-xs text-muted-foreground mt-1">par adulte, vs prestataire principal</p>
                     </div>
                   </div>
                 )}
