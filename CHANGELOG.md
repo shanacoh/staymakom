@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-08-01 ter] — Swipe (admin) : suppression d'un dossier + icône de modification corrigée
+
+### Ce qui a changé côté code
+- `src/pages/admin/swipe/Dossiers.tsx` : ajout d'un bouton de suppression (avec confirmation) sur chaque dossier de la liste — jusqu'ici il n'était pas possible de supprimer un dossier créé par erreur ou obsolète. Le mécanisme de suppression existait déjà côté requêtes (`useDeleteDossier`) mais n'était relié à aucun bouton.
+- Remplacement de l'icône du bouton "Gérer" (une roue crantée) par le stylo, utilisé partout ailleurs sur le site pour signaler une action de modification.
+
+### Ce qui a changé côté base de données
+- Aucun changement : la suppression utilisait déjà la table `dossiers` existante.
+
+### Pourquoi ce changement
+- Demande de Shana : pouvoir nettoyer la liste des dossiers swipe envoyés aux clients, et retrouver une icône de modification cohérente avec le reste du back office.
+
+---
+
 ## [2026-08-01 bis] — Bateaux (admin) : correction — le calcul de marge suivait un ancien prix figé
 
 ### Ce qui a changé côté code

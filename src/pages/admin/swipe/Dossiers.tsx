@@ -12,11 +12,21 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Link as LinkIcon, BarChart3, Settings2, Copy } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Link as LinkIcon, BarChart3, Pencil, Copy, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { useDossiers, useCreateDossier, useDupliquerDossier } from "@/lib/swipe/queries";
+import { useDossiers, useCreateDossier, useDupliquerDossier, useDeleteDossier } from "@/lib/swipe/queries";
 
 const STATUT_LECTURE_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
   envoye: { label: "Envoyé", variant: "outline" },
@@ -29,8 +39,10 @@ const AdminSwipeDossiers = () => {
   const { data: dossiers, isLoading } = useDossiers();
   const createMutation = useCreateDossier();
   const dupliquerMutation = useDupliquerDossier();
+  const deleteMutation = useDeleteDossier();
   const [createOpen, setCreateOpen] = useState(false);
   const [nomClient, setNomClient] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const creerDossier = async () => {
     if (!nomClient.trim()) return;
@@ -57,6 +69,18 @@ const AdminSwipeDossiers = () => {
       navigate(`/admin/swipe/dossiers/${nouveau.id}`);
     } catch (e: any) {
       toast.error(e.message || "Erreur lors de la duplication du dossier");
+    }
+  };
+
+  const confirmerSuppression = async () => {
+    if (!deleteId) return;
+    try {
+      await deleteMutation.mutateAsync(deleteId);
+      toast.success("Dossier supprimé");
+    } catch (e: any) {
+      toast.error(e.message || "Erreur lors de la suppression du dossier");
+    } finally {
+      setDeleteId(null);
     }
   };
 
@@ -121,9 +145,9 @@ const AdminSwipeDossiers = () => {
                       <BarChart3 className="w-4 h-4" />
                     </Link>
                   </Button>
-                  <Button size="icon" variant="ghost" asChild title="Gérer">
+                  <Button size="icon" variant="ghost" asChild title="Modifier">
                     <Link to={`/admin/swipe/dossiers/${d.id}`}>
-                      <Settings2 className="w-4 h-4" />
+                      <Pencil className="w-4 h-4" />
                     </Link>
                   </Button>
                   <Button
@@ -134,6 +158,14 @@ const AdminSwipeDossiers = () => {
                     title="Dupliquer le dossier"
                   >
                     <Copy className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setDeleteId(d.id)}
+                    title="Supprimer le dossier"
+                  >
+                    <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>
                 </TableCell>
               </TableRow>
@@ -167,6 +199,21 @@ const AdminSwipeDossiers = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce dossier ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Le lien envoyé au client ne fonctionnera plus. Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmerSuppression}>Supprimer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
