@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-08-03 bis] — Bateaux (client) : correction — la pastille "Skipper" ne suivait pas l'interrupteur du formulaire admin
+
+### Ce qui a changé côté code
+- `src/components/StandaloneExperienceCard.tsx` : la 3e pastille fixe des cartes bateaux ("Skipper inclus" / "Skipper + équipier" / "Skipper non inclus") lit désormais directement les colonnes `skipper_included` et `crew_included` de la fiche, au lieu des étiquettes éditoriales (`standalone_experience_highlight_tags`) qui pouvaient se désynchroniser de l'interrupteur "Équipage" du formulaire admin.
+- `src/pages/Boats.tsx` : la requête qui charge les bateaux récupère maintenant `skipper_included` et `crew_included`.
+
+### Ce qui a changé côté base de données
+- Aucun changement : les colonnes `skipper_included` et `crew_included` existaient déjà.
+
+### Pourquoi ce changement
+- Bug remonté par Shana : sur la fiche "Yacht Privé Cozy", l'interrupteur admin indiquait "Skipper inclus : Oui" mais la carte publique affichait "Skipper non inclus" — les deux sources d'info avaient divergé.
+
+---
+
 ## [2026-08-03] — Bateaux (client) : le bouton final devient une demande, plus une réservation ferme
 
 ### Ce qui a changé côté code

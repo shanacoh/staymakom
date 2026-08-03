@@ -8,10 +8,13 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { useLanguage } from "@/hooks/useLanguage";
 import { getAutoBadgeTagsFromPracticalInfo, normalizeLegacyPracticalInfo } from "@/lib/standaloneBadges";
 
-// Bateaux : tag éditorial identifiant le skipper (slugs actuels : "skipper-included",
-// "skipper-crew"), promu en 3e bulle fixe plutôt que listé parmi les tags secondaires.
-const isSkipperTagSlug = (slug: string) => /skipper/i.test(slug);
-
+// Bateaux : la 3e bulle fixe (skipper) reflète directement les colonnes
+// skipper_included / crew_included de la fiche — c'est le même interrupteur
+// que celui de la carte "Équipage" du formulaire admin. Ne plus la faire
+// dépendre des badges éditoriaux (standalone_experience_highlight_tags), qui
+// sont gérés séparément et peuvent se désynchroniser de l'interrupteur.
+const SKIPPER_INCLUDED = { en: "Skipper included", he: "סקיפר כלול", fr: "Skipper inclus" };
+const SKIPPER_CREW = { en: "Skipper + crew", he: "סקיפר + צוות", fr: "Skipper + équipier" };
 const SKIPPER_NOT_INCLUDED = { en: "Skipper not included", he: "סקיפר לא כלול", fr: "Skipper non inclus" };
 const UP_TO_GUESTS = { en: "Up to", he: "עד", fr: "Jusqu'à" };
 const GUESTS_SUFFIX = { en: "guests", he: "אורחים", fr: "pers." };
@@ -48,6 +51,8 @@ interface StandaloneExperienceCardProps {
     duration_fr?: string | null;
     duration_he?: string | null;
     standalone_experience_highlight_tags?: StandaloneHighlightTagLink[] | null;
+    skipper_included?: boolean | null;
+    crew_included?: boolean | null;
     city?: string | null;
     city_he?: string | null;
     region?: string | null;
@@ -106,13 +111,10 @@ export default function StandaloneExperienceCard({
   // cet ordre et avec la même présentation sur toutes les cartes. Aucun autre tag
   // éditorial n'est affiché sur la carte (ex: Baignade possible, Yacht + speed
   // boat) : ces infos restent visibles dans la fiche détail, pas sur la grille.
-  const skipperTagEntry = isBoat ? editorialTags.find((t) => isSkipperTagSlug(t.highlight_tags.slug)) : undefined;
-  const skipperLabel = skipperTagEntry
-    ? (lang === "he" && skipperTagEntry.highlight_tags.label_he
-        ? skipperTagEntry.highlight_tags.label_he
-        : lang === "fr" && skipperTagEntry.highlight_tags.label_fr
-        ? skipperTagEntry.highlight_tags.label_fr
-        : skipperTagEntry.highlight_tags.label_en)
+  const skipperLabel = experience.crew_included
+    ? SKIPPER_CREW[lang]
+    : experience.skipper_included
+    ? SKIPPER_INCLUDED[lang]
     : SKIPPER_NOT_INCLUDED[lang];
 
   // Certaines fiches ont un champ durée qui embarque une précision annexe après
