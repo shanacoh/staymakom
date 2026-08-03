@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-08-03 ter] — Mise en production bloquée par un nom de fichier mal encodé
+
+### Ce qui a changé côté code
+- `src/assets/chameau-dans-le-désert-du-néguev-51448703.webp` : le fichier existait sur le disque avec un encodage Unicode "décomposé" (accents stockés comme caractères séparés) alors que le code qui l'importe (`src/pages/ItineraireChoix.tsx`) et Git utilisent l'encodage "composé". Mac ne fait pas la différence entre les deux, donc c'était invisible en local, mais la mise en production Vercel (qui envoie les fichiers tels quels depuis le disque) échouait avec une erreur "fichier introuvable". Renommage du fichier pour uniformiser l'encodage — aucun changement de contenu ni de nom visible.
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- En voulant publier le correctif "Skipper" (voir entrée du dessus), la mise en production a échoué à cause de ce fichier. Ce projet Vercel n'est pas relié à GitHub : `git push` sauvegarde le code mais ne publie rien tout seul, la mise en ligne se fait à la main (`vercel --prod`). Une fois ce fichier corrigé, la mise en production a réussi et le correctif Skipper est bien en ligne sur www.staymakom.com.
+
+---
+
 ## [2026-08-03 bis] — Bateaux (client) : correction — la pastille "Skipper" ne suivait pas l'interrupteur du formulaire admin
 
 ### Ce qui a changé côté code
