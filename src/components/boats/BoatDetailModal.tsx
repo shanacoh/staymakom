@@ -137,7 +137,7 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
     add: lang === "he" ? "הוסף" : lang === "fr" ? "Ajouter" : "Add",
     added: lang === "he" ? "נוסף" : lang === "fr" ? "Ajouté" : "Added",
     fromLabel: lang === "he" ? "החל מ" : lang === "fr" ? "À partir de" : "From",
-    cta: lang === "he" ? "אני מזמין את הטיול" : lang === "fr" ? "Je réserve ma sortie" : "Book my trip",
+    cta: lang === "he" ? "שליחת הבקשה" : lang === "fr" ? "Envoyer ma demande" : "Send my request",
     backToDetails: lang === "he" ? "חזרה" : lang === "fr" ? "Retour" : "Back",
     extrasNoteLabel: lang === "he" ? "תוספות מבוקשות" : lang === "fr" ? "Extras souhaités" : "Requested extras",
   };

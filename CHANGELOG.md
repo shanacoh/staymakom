@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-08-03] — Bateaux (client) : le bouton final devient une demande, plus une réservation ferme
+
+### Ce qui a changé côté code
+- `src/components/boats/BoatDetailModal.tsx` : le bouton final de la fiche bateau (fr/en/he) affiche maintenant "Envoyer ma demande" au lieu de "Je réserve ma sortie" / "Book my trip", pour rester cohérent avec le vocabulaire déjà utilisé pour les demandes d'expériences standalone.
+
+### Ce qui a changé côté base de données
+- Aucun changement : uniquement un texte affiché au client.
+
+### Pourquoi ce changement
+- Demande de Shana : le mot "réservation" laissait penser à un engagement immédiat et ferme, alors que le parcours reste une demande traitée ensuite par l'équipe.
+
+---
+
 ## [2026-08-01 ter] — Swipe (admin) : suppression d'un dossier + icône de modification corrigée
 
 ### Ce qui a changé côté code
