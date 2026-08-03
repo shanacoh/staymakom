@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-08-03 quater] — Bateaux (client) : le nom du prestataire n'apparaît plus dans les descriptions
+
+### Ce qui a changé côté code
+- Aucun changement de code, uniquement du contenu en base de données.
+
+### Ce qui a changé côté base de données
+- Migration `20260803000000_remove_supplier_name_from_yacht_descriptions.sql` : sur les 2 fiches "Private Yacht" de la marina d'Herzliya, le sous-titre et la description longue (anglais et français) mentionnaient le nom du prestataire "Seamona". Ce nom a été retiré du texte visible par le client et remplacé par une formulation neutre ("un yacht" / "a yacht"). Le nom du prestataire reste stocké dans la colonne interne `supplier_boat_name`, jamais affichée côté client.
+
+### Pourquoi ce changement
+- Shana a signalé que le client ne doit jamais lire le nom d'un prestataire (Seamona, Balaguna, ou autre) dans les fiches Bateaux — seule la marque Staymakom doit apparaître côté client.
+
+---
+
 ## [2026-08-03 ter] — Mise en production bloquée par un nom de fichier mal encodé
 
 ### Ce qui a changé côté code
