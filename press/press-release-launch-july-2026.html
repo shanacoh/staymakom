@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Staymakom Press Release — Launch July 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Palette V3 StayMakom ───────────────────────────────────── */
+    :root {
+      --red:    #ad1414;
+      --red-bg: rgba(173, 20, 20, 0.09);
+      --ink:    #111111;
+      --ink-2:  #1a1a1a;
+      --muted:  #6b6b6b;
+      --border: rgba(0,0,0,0.10);
+      --white:  #ffffff;
+      --off:    #f7f5f3;
+    }
+
+    /* ── Reset ──────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.7;
+      color: var(--ink);
+      background: #ddd9d4;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* ── Page A4 ─────────────────────────────────────────────────── */
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      background: var(--white);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ──────────────────────────────────────────────────── */
+    .header {
+      position: relative;
+      height: 62mm;
+      overflow: hidden;
+    }
+
+    .header-photo {
+      position: absolute;
+      inset: 0;
+      background-image: url('../src/assets/hero-road-desert.jpg');
+      background-size: cover;
+      background-position: center 40%;
+      filter: sepia(18%) contrast(1.05) brightness(0.92);
+    }
+
+    .header-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(0,0,0,0.55) 0%,
+        rgba(0,0,0,0.45) 50%,
+        rgba(0,0,0,0.75) 100%
+      );
+    }
+
+    .header-content {
+      position: relative;
+      z-index: 2;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 18px 28px 20px;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-family: 'Inter', sans-serif;
+      font-size: 17pt;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      text-transform: uppercase;
+      color: var(--white);
+    }
+
+    .header-url {
+      font-size: 8pt;
+      color: rgba(255,255,255,0.65);
+      letter-spacing: 0.04em;
+    }
+
+    .header-bottom {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+
+    .release-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 7pt;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--white);
+    }
+
+    .release-tag::before {
+      content: '';
+      display: inline-block;
+      width: 18px;
+      height: 1.5px;
+      background: var(--red);
+    }
+
+    .release-date {
+      font-size: 7.5pt;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Red rule ────────────────────────────────────────────────── */
+    .red-rule {
+      height: 2.5px;
+      background: var(--red);
+    }
+
+    /* ── Headline ────────────────────────────────────────────────── */
+    .headline-section {
+      padding: 22px 28px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1 {
+      font-family: 'Inter', sans-serif;
+      font-size: 20pt;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      text-transform: uppercase;
+      color: var(--ink);
+      margin-bottom: 10px;
+    }
+
+    h1 .highlight {
+      position: relative;
+      display: inline;
+      white-space: nowrap;
+    }
+
+    h1 .highlight::after {
+      content: '';
+      position: absolute;
+      left: -2px;
+      right: -2px;
+      bottom: 1px;
+      height: 8px;
+      background: var(--red-bg);
+      border-radius: 60% 40% 70% 30% / 40% 60% 35% 65%;
+      z-index: -1;
+      transform: rotate(-1deg);
+    }
+
+    .subheadline {
+      font-size: 9.5pt;
+      font-weight: 400;
+      color: var(--muted);
+      line-height: 1.55;
+      max-width: 88%;
+      font-style: italic;
+    }
+
+    /* ── Body ────────────────────────────────────────────────────── */
+    .body-wrap {
+      padding: 16px 28px 0;
+      flex: 1;
+    }
+
+    .dateline {
+      font-size: 8.5pt;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--red);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    p {
+      font-size: 9.5pt;
+      line-height: 1.72;
+      color: #222;
+      margin-bottom: 11px;
+    }
+
+    strong {
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    /* ── Pull quote ──────────────────────────────────────────────── */
+    .pull-quote {
+      position: relative;
+      padding: 14px 18px 14px 22px;
+      margin: 14px 0 14px;
+      background: var(--off);
+    }
+
+    .pull-quote::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--red);
+    }
+
+    .pull-quote blockquote {
+      font-size: 10pt;
+      font-style: italic;
+      font-weight: 400;
+      line-height: 1.6;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+
+    .pull-quote cite {
+      font-size: 8pt;
+      font-style: normal;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--red);
+    }
+
+    /* ── Divider ─────────────────────────────────────────────────── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 14px 0 12px;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .divider-mark {
+      font-size: 7pt;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--red);
+    }
+
+    /* ── About + Contact inline ──────────────────────────────────── */
+    .bottom-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 0 28px 20px;
+    }
+
+    .info-box {
+      background: var(--off);
+      padding: 13px 16px;
+      border-top: 2px solid var(--red);
+    }
+
+    .info-box-label {
+      font-size: 7pt;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 7px;
+    }
+
+    .info-box p {
+      font-size: 8.5pt;
+      color: #444;
+      margin-bottom: 0;
+      line-height: 1.6;
+    }
+
+    .contact-name {
+      font-size: 9pt;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 3px;
+    }
+
+    .contact-email {
+      font-size: 8.5pt;
+      color: var(--red);
+      font-weight: 500;
+    }
+
+    /* ── Footer ──────────────────────────────────────────────────── */
+    .footer {
+      background: var(--ink-2);
+      padding: 13px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: auto;
+    }
+
+    .footer-logo {
+      font-size: 11pt;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      text-transform: uppercase;
+      color: var(--white);
+    }
+
+    .footer-tagline {
+      font-size: 7.5pt;
+      color: rgba(255,255,255,0.45);
+      font-style: italic;
+    }
+
+    .footer-url {
+      font-size: 7.5pt;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Print ───────────────────────────────────────────────────── */
+    @media print {
+      body { background: white; }
+      .page { box-shadow: none; margin: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- HEADER avec photo désert -->
+  <div class="header">
+    <div class="header-photo"></div>
+    <div class="header-overlay"></div>
+    <div class="header-content">
+      <div class="header-top">
+        <div class="logo">STAYMAKOM</div>
+        <div class="header-url">staymakom.com</div>
+      </div>
+      <div class="header-bottom">
+        <span class="release-tag">For Immediate Release</span>
+        <span class="release-date">July 2026</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Red rule -->
+  <div class="red-rule"></div>
+
+  <!-- HEADLINE -->
+  <div class="headline-section">
+    <h1>Staymakom Launches a New Way to Travel Israel — <span class="highlight">Beyond the Headlines,</span> Beyond the Classic Tel Aviv–Jerusalem–Beach Circuit</h1>
+    <p class="subheadline">The new platform pairs boutique hotels with immersive local experiences across the whole country, and gives a hospitality industry rebuilding after years of crisis a new source of visibility and revenue</p>
+  </div>
+
+  <!-- BODY -->
+  <div class="body-wrap">
+
+    <p class="dateline">Tel Aviv, Israel — July 2026</p>
+
+    <p>Staymakom, a curated booking platform combining boutique hotels with immersive local experiences across Israel, today announced its official launch. Live since June 2026 at <strong>staymakom.com</strong>, the platform already features around 30 hand-picked hotels and 30 curated experiences, with real-time booking available in English, Hebrew, and French.</p>
+
+    <p>Most people abroad know Israel through the headlines, or through the same short list of stops: Tel Aviv's beaches, a few restaurants, Jerusalem's Old City. Staymakom exists to show the rest of it — the boutique hotel tucked into the Galilee hills, the desert lodge under a sky built for stargazing, the wine estate in the Golan, the wellness retreat by the Dead Sea. Instead of choosing a destination and hoping something interesting happens, travelers on Staymakom start from the experience they want to live, and book the stay that delivers it.</p>
+
+    <p>That shift matters for travelers. But Staymakom was built just as much for the other side of the industry: the independent hotels and local experience providers, often outside Tel Aviv and Jerusalem, who have spent years absorbing the impact of instability on Israeli tourism and remain largely invisible on the mass booking platforms built for busier, calmer markets. As international travelers start coming back, Staymakom gives these properties a place to be found, booked, and paid — and a reason to keep investing in what they offer.</p>
+
+    <!-- Pull quote -->
+    <div class="pull-quote">
+      <blockquote>"A lot of people won't touch tourism in Israel right now because of the uncertainty. I understand why. I see it the other way. That uncertainty is exactly why this matters. Every hotel we bring onto the platform, every experience we help fill, is a bet on an industry that's been hit hard for years and deserves to come back stronger. I'm not waiting for things to feel completely safe before rebuilding — Staymakom is that rebuilding, happening now, one booking at a time. And for travelers, it's also the chance to meet a country most of them only know from the news, or from Tel Aviv and Jerusalem, in a completely different way."</blockquote>
+      <cite>— Shana Cohen, Founder &amp; CEO, Staymakom</cite>
+    </div>
+
+    <p>For travelers, Staymakom means an easy way to discover and book a more immersive, more local Israel. For hoteliers and experience providers, it means new visibility and an additional revenue stream, with real-time availability powered by a direct booking integration. Staymakom's network already spans the country, from the Golan and the Galilee in the north to the Negev and the Dead Sea in the south, and will keep expanding its roster of hotel and experience partners throughout 2026.</p>
+
+  </div>
+
+  <!-- Divider -->
+  <div style="padding: 0 28px;">
+    <div class="divider"><span class="divider-mark">###</span></div>
+  </div>
+
+  <!-- About + Contact -->
+  <div class="bottom-cols">
+
+    <div class="info-box">
+      <div class="info-box-label">About Staymakom</div>
+      <p>Staymakom is a curated booking platform combining boutique hotels and immersive local experiences in Israel. Founded by Shana Cohen, who brings a background in finance and hospitality, Staymakom was created to shift travel from destination-first to experience-first — helping travelers discover Israel beyond its headlines and its most familiar stops, while giving the country's independent hospitality industry a new source of visibility and revenue after years of crisis.</p>
+    </div>
+
+    <div class="info-box">
+      <div class="info-box-label">Media Contact</div>
+      <p class="contact-name">Ethel</p>
+      <p class="contact-email">ethel@staymakom.com</p>
+      <p style="margin-top:10px; font-size:8pt; color:#888;">staymakom.com</p>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <span class="footer-logo">STAYMAKOM</span>
+    <span class="footer-tagline">Where you stay is just the beginning.</span>
+    <span class="footer-url">staymakom.com</span>
+  </div>
+
+</div>
+
+</body>
+</html>
