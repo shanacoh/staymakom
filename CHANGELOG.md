@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-08-05 bis] — Paiement Revolut : carte bancaire en parcours principal
+
+### Ce qui a changé côté code
+- `src/components/experience/RevolutPaymentWidget.tsx` : suppression de l'affichage du widget complet Revolut qui montrait Revolut Pay, Google Pay et carte dans la même popup. Le parcours client affiche maintenant uniquement le bouton principal "Payer par carte", qui ouvre le formulaire carte officiel Revolut.
+
+### Ce qui a changé côté base de données
+- Aucun changement : aucune table, colonne ou migration ajoutée.
+
+### Pourquoi ce changement
+- Le widget complet pouvait rester bloqué côté Revolut/Kaptcha et donner l'impression que le bouton de paiement ne faisait rien. Pour éviter deux options concurrentes et retirer le parcours cassé, le paiement carte devient le seul chemin visible.
+
+---
+
 ## [2026-08-05] — Paiement Revolut : bouton de secours carte
 
 ### Ce qui a changé côté code
