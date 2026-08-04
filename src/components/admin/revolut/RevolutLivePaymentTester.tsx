@@ -228,6 +228,8 @@ export function RevolutLivePaymentTester() {
             <RevolutPaymentWidget
               publicId={orderResult.publicId}
               merchantPublicKey={orderResult.merchantPublicKey ?? undefined}
+              amount={amount}
+              currency={currency}
               environment={orderResult.environment}
               customerEmail="test@staymakom.com"
               onPaymentSuccess={(paymentId) => {

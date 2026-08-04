@@ -6,6 +6,49 @@
 
 ---
 
+## [2026-08-05 sexies] — Paiement Revolut : adresse de facturation dans la popup
+
+### Ce qui a changé côté code
+- `src/components/experience/RevolutPaymentWidget.tsx` : la popup de paiement demande maintenant obligatoirement le pays, l'adresse, la ville et le code postal de facturation avant de valider un paiement par carte. Ces informations sont envoyées au formulaire carte Revolut au moment du paiement.
+- `src/components/experience/RevolutPaymentWidget.tsx` : le code postal interne du champ carte Revolut est masqué pour ne pas demander deux fois le même code postal au client.
+
+### Ce qui a changé côté base de données
+- Aucun changement : aucune table, colonne ou migration ajoutée. Les informations de facturation servent uniquement au paiement.
+
+### Pourquoi ce changement
+- Shana veut garder le formulaire client principal léger, mais avoir les informations de facturation directement dans la popup de paiement pour sécuriser la validation bancaire.
+
+---
+
+## [2026-08-05 quinquies] — Paiement : formulaire voyageur simplifié, facturation dans Revolut
+
+### Ce qui a changé côté code
+- `src/components/experience/LeadGuestForm.tsx` : le formulaire voyageur ne demande plus la civilité, la date de naissance, la ville ni le code postal. Il demande maintenant uniquement la nationalité, le nom, le prénom, l'adresse, l'email et le téléphone facultatif.
+- `src/components/experience/RevolutPaymentWidget.tsx` : l'adresse de facturation n'est plus injectée depuis StayMakom. Le widget Revolut garde la responsabilité de collecter les informations de facturation nécessaires au paiement carte.
+- `src/pages/Checkout.tsx` et `src/pages/StandaloneCheckout.tsx` : les deux parcours n'envoient plus d'adresse de facturation ni de date de naissance au widget Revolut.
+
+### Ce qui a changé côté base de données
+- Aucun changement : aucune table, colonne ou migration ajoutée.
+
+### Pourquoi ce changement
+- Shana veut alléger le formulaire client et éviter de mélanger l'adresse voyageur avec l'adresse de facturation, qui doit rester dans le parcours Revolut.
+
+---
+
+## [2026-08-05 quater] — Paiement Revolut : retour de Revolut Pay et Google Pay autour de la carte
+
+### Ce qui a changé côté code
+- `src/components/experience/RevolutPaymentWidget.tsx` : ajout des boutons Revolut Pay et Google Pay dans la même popup que le formulaire carte. Le formulaire carte reste affiché comme parcours principal, mais le client peut aussi payer via Revolut Pay ou Google Pay quand son navigateur le permet.
+- `src/components/experience/RevolutPaymentWidget.tsx`, `src/pages/Checkout.tsx`, `src/pages/StandaloneCheckout.tsx` et `src/components/admin/revolut/RevolutLivePaymentTester.tsx` : Revolut Pay reçoit maintenant la clé publique marchand, le montant et la devise, puis utilise l'intégration officielle Revolut Pay. Sans ces données, le bouton peut ne pas apparaître dans la popup.
+
+### Ce qui a changé côté base de données
+- Aucun changement : aucune table, colonne ou migration ajoutée.
+
+### Pourquoi ce changement
+- Shana veut proposer à nouveau Revolut Pay et Google Pay, sans revenir à l'ancien widget complet qui pouvait bloquer le checkout.
+
+---
+
 ## [2026-08-05 ter] — Paiement Revolut : formulaire client complet obligatoire
 
 ### Ce qui a changé côté code

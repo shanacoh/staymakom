@@ -24,7 +24,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import RevolutPaymentWidget from "@/components/experience/RevolutPaymentWidget";
 import V3Header from "@/components/V3Header";
-import { LeadGuestForm, LeadGuestData, EMPTY_LEAD_GUEST, saveProfileFields, isLeadGuestComplete, buildRevolutBillingAddress } from "@/components/experience/LeadGuestForm";
+import { LeadGuestForm, LeadGuestData, EMPTY_LEAD_GUEST, saveProfileFields, isLeadGuestComplete } from "@/components/experience/LeadGuestForm";
 import AuthPromptDialog from "@/components/auth/AuthPromptDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -268,7 +268,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
 
   // ── Derived ─────────────────────────────────────────────────────────────
   const currencySymbol = getCurrencySymbol(state.currency);
-  // Inclut l'adresse de facturation requise par Revolut (source unique dans LeadGuestForm).
+  // L'adresse de facturation est collectée directement dans le widget Revolut.
   const isGuestValid = isLeadGuestComplete(leadGuest);
   const promoDiscount = appliedPromo ? Math.round((state.totalPrice * appliedPromo.discountPct) / 100) : 0;
   const afterPromo = Math.max(0, state.totalPrice - promoDiscount);
@@ -410,7 +410,6 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
           customer_name: `${leadGuest.firstName.trim()} ${leadGuest.lastName.trim()}`,
           customer_email: leadGuest.email.trim(),
           customer_phone: leadGuest.phone.trim() || null,
-          customer_birth_date: leadGuest.birthDate.trim() || null,
           selected_extras_ids: state.selectedExtras?.map((e) => e.id) ?? [],
           promo_code: appliedPromo ? {
             id: appliedPromo.id,
@@ -1015,14 +1014,13 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
             <RevolutPaymentWidget
               publicId={revolutPublicId}
               merchantPublicKey={revolutPublicKey}
+              amount={finalTotal}
               currency={state.currency}
               lang={lang}
               environment={revolutEnvironment}
               customerName={`${leadGuest.firstName.trim()} ${leadGuest.lastName.trim()}`.trim() || undefined}
               customerEmail={leadGuest.email.trim() || undefined}
               customerPhone={leadGuest.phone.trim() || undefined}
-              customerBirthDate={leadGuest.birthDate.trim() || undefined}
-              billingAddress={buildRevolutBillingAddress(leadGuest)}
               onPaymentSuccess={handlePaymentSuccess}
               onPaymentError={handlePaymentError}
               onPaymentCancel={handlePaymentCancel}

@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { DualPrice } from "@/components/ui/DualPrice";
 import { PriceBreakdownV2 } from "@/components/experience/PriceBreakdownV2";
-import { LeadGuestForm, EMPTY_LEAD_GUEST, sanitizeLeadGuest, saveProfileFields, isLeadGuestComplete, buildRevolutBillingAddress, type LeadGuestData } from "@/components/experience/LeadGuestForm";
+import { LeadGuestForm, EMPTY_LEAD_GUEST, sanitizeLeadGuest, saveProfileFields, isLeadGuestComplete, type LeadGuestData } from "@/components/experience/LeadGuestForm";
 import { BookingConfirmationDialog, type BookingConfirmationData } from "@/components/experience/BookingConfirmationDialog";
 import AuthPromptDialog from "@/components/auth/AuthPromptDialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -361,8 +361,8 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
   // Total des réductions cumulées (pour l'affichage prix barré)
   const totalDiscountApplied = promoDiscount + giftCardApplied;
 
-  // Validité du voyageur, adresse de facturation Revolut incluse (source unique dans
-  // LeadGuestForm). Bloque l'ouverture du paiement tant que l'adresse n'est pas complète.
+  // Validité des informations voyageur. L'adresse de facturation est collectée
+  // directement dans le widget Revolut.
   const isGuestValid = isLeadGuestComplete(leadGuest);
 
   // Progressive booking timer
@@ -855,7 +855,6 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
         customerEmail: leadGuest.email.trim(),
         customerName: `${leadGuest.firstName.trim()} ${leadGuest.lastName.trim()}`.trim(),
         customerPhone: leadGuest.phone.trim() || undefined,
-        customerBirthDate: leadGuest.birthDate.trim() || undefined,
       });
       setRevolutPublicId(order.publicId);
       setRevolutOrderId(order.orderId);
@@ -946,7 +945,6 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
           customerEmail: leadGuest.email.trim(),
           customerName: `${leadGuest.firstName.trim()} ${leadGuest.lastName.trim()}`.trim(),
           customerPhone: leadGuest.phone.trim() || undefined,
-          customerBirthDate: leadGuest.birthDate.trim() || undefined,
         });
         setRevolutPublicId(order.publicId);
         setRevolutOrderId(order.orderId);
@@ -1287,7 +1285,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                 <div className="space-y-0.5">
                   <p className="text-sm font-semibold">{leadGuest.firstName} {leadGuest.lastName}</p>
                   <p className="text-xs text-muted-foreground">{leadGuest.email}</p>
-                  <p className="text-xs text-muted-foreground">{leadGuest.phone}</p>
+                  {leadGuest.phone && <p className="text-xs text-muted-foreground">{leadGuest.phone}</p>}
                 </div>
                 {specialRequests && (
                   <>
@@ -1581,13 +1579,13 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
             <RevolutPaymentWidget
               publicId={revolutPublicId}
               merchantPublicKey={revolutMerchantPublicKey ?? undefined}
+              amount={amountAfterGiftCard}
+              currency={effectiveCurrency}
               lang={lang as "en" | "he" | "fr"}
               environment={revolutEnvironment ?? undefined}
               customerName={`${leadGuest.firstName.trim()} ${leadGuest.lastName.trim()}`.trim() || undefined}
               customerEmail={leadGuest.email.trim() || undefined}
               customerPhone={leadGuest.phone.trim() || undefined}
-              customerBirthDate={leadGuest.birthDate.trim() || undefined}
-              billingAddress={buildRevolutBillingAddress(leadGuest)}
               onPaymentSuccess={() => {
                 setPaymentStatus("paid");
                 setPaymentErrorMessage(null);

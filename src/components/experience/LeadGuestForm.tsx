@@ -25,9 +25,9 @@ export interface LeadGuestData {
   country: string;
 }
 
-/** Liste de pays proposée pour l'adresse de facturation. Le code est au format ISO
- *  (2 lettres) attendu par Revolut ; le libellé est affiché au client. */
-export const BILLING_COUNTRIES: { code: string; name: string }[] = [
+/** Liste de pays proposée pour la nationalité du voyageur. Le code est au format ISO
+ *  (2 lettres) attendu par HyperGuest. */
+export const COUNTRY_OPTIONS: { code: string; name: string }[] = [
   { code: "IL", name: "Israël / Israel" },
   { code: "FR", name: "France" },
   { code: "US", name: "États-Unis / United States" },
@@ -62,81 +62,51 @@ interface LeadGuestFormProps {
 const translations = {
   en: {
     title: "Guest Information",
-    titleField: "Title",
-    titleMr: "Mr",
-    titleMs: "Ms",
-    titleMrs: "Mrs",
+    nationality: "Nationality",
     firstName: "First name",
     lastName: "Last name",
     email: "Email",
     phone: "Phone",
-    birthDate: "Date of birth",
+    optional: "optional",
     autoFilled: "Auto-filled from your account",
     required: "Required",
     invalidEmail: "Invalid email",
     invalidPhone: "Use international format, e.g. +972 XX XXX XXXX",
-    invalidBirthDate: "Enter a valid date of birth",
     phonePlaceholder: "+972 XX XXX XXXX",
-    billingTitle: "Billing address",
-    billingHint: "Required by your bank to process the card payment. All fields are mandatory.",
-    streetAddress: "Street address",
-    city: "City",
-    postcode: "Postcode / ZIP",
-    country: "Country",
+    streetAddress: "Address",
     selectCountry: "Select a country",
-    selectTitle: "Select",
   },
   he: {
     title: "פרטי האורח",
-    titleField: "תואר",
-    titleMr: "מר",
-    titleMs: "גב׳",
-    titleMrs: "גברת",
+    nationality: "אזרחות",
     firstName: "שם פרטי",
     lastName: "שם משפחה",
     email: "אימייל",
     phone: "טלפון",
-    birthDate: "תאריך לידה",
+    optional: "לא חובה",
     autoFilled: "מילוי אוטומטי מהחשבון שלך",
     required: "שדה חובה",
     invalidEmail: "כתובת אימייל לא תקינה",
     invalidPhone: "השתמש בפורמט בינלאומי, לדוג׳ XXXX XXX XX 972+",
-    invalidBirthDate: "הזן תאריך לידה תקין",
     phonePlaceholder: "+972 XX XXX XXXX",
-    billingTitle: "כתובת לחיוב",
-    billingHint: "נדרש על ידי הבנק שלך כדי לעבד את תשלום הכרטיס. כל השדות חובה.",
     streetAddress: "כתובת",
-    city: "עיר",
-    postcode: "מיקוד",
-    country: "מדינה",
     selectCountry: "בחר מדינה",
-    selectTitle: "בחר",
   },
   fr: {
     title: "Informations voyageur",
-    titleField: "Civilité",
-    titleMr: "M.",
-    titleMs: "Mlle",
-    titleMrs: "Mme",
+    nationality: "Nationalité",
     firstName: "Prénom",
     lastName: "Nom",
     email: "Email",
     phone: "Téléphone",
-    birthDate: "Date de naissance",
+    optional: "facultatif",
     autoFilled: "Pré-rempli depuis votre compte",
     required: "Requis",
     invalidEmail: "Email invalide",
     invalidPhone: "Format international, ex : +972 XX XXX XXXX",
-    invalidBirthDate: "Date de naissance invalide",
     phonePlaceholder: "+972 XX XXX XXXX",
-    billingTitle: "Adresse de facturation",
-    billingHint: "Demandée par votre banque pour valider le paiement par carte. Tous les champs sont obligatoires.",
-    streetAddress: "Adresse (rue et numéro)",
-    city: "Ville",
-    postcode: "Code postal",
-    country: "Pays",
+    streetAddress: "Adresse",
     selectCountry: "Choisir un pays",
-    selectTitle: "Choisir",
   },
 };
 
@@ -146,20 +116,6 @@ function isValidEmail(e: string): boolean {
 
 function isValidPhone(p: string): boolean {
   return /^\+?\d[\d\s-]{7,}$/.test(p.trim());
-}
-
-function isValidBirthDate(d: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.trim())) return false;
-  const [year, month, day] = d.split("-").map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  const today = new Date();
-  return (
-    year >= 1900 &&
-    date.getUTCFullYear() === year &&
-    date.getUTCMonth() === month - 1 &&
-    date.getUTCDate() === day &&
-    date.getTime() <= today.getTime()
-  );
 }
 
 /** Normalize phone: strip spaces/dashes, ensure starts with + */
@@ -182,7 +138,6 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
   const { user } = useAuth();
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const maxBirthDate = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
   const markTouched = (field: string) => setTouched(prev => ({ ...prev, [field]: true }));
 
@@ -190,19 +145,13 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
   const errors = useMemo(() => {
     const show = showErrors;
     return {
-      title: (show || touched.title) && !value.title.trim() ? t.required : null,
+      country: (show || touched.country) && !value.country.trim() ? t.required : null,
       firstName: (show || touched.firstName) && !value.firstName.trim() ? t.required : null,
       lastName: (show || touched.lastName) && !value.lastName.trim() ? t.required : null,
+      address: (show || touched.address) && !value.address.trim() ? t.required : null,
       email: (show || touched.email) && !value.email.trim() ? t.required 
            : (show || touched.email) && !isValidEmail(value.email) ? t.invalidEmail : null,
-      phone: (show || touched.phone) && !value.phone.trim() ? t.required
-           : (show || touched.phone) && !isValidPhone(value.phone) ? t.invalidPhone : null,
-      birthDate: (show || touched.birthDate) && !value.birthDate.trim() ? t.required
-           : (show || touched.birthDate) && !isValidBirthDate(value.birthDate) ? t.invalidBirthDate : null,
-      address: (show || touched.address) && !value.address.trim() ? t.required : null,
-      city: (show || touched.city) && !value.city.trim() ? t.required : null,
-      postcode: (show || touched.postcode) && !value.postcode.trim() ? t.required : null,
-      country: (show || touched.country) && !value.country.trim() ? t.required : null,
+      phone: (show || touched.phone) && value.phone.trim() && !isValidPhone(value.phone) ? t.invalidPhone : null,
     };
   }, [value, touched, showErrors, t]);
 
@@ -219,7 +168,7 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
 
       const { data: customer } = await supabase
         .from("customers")
-        .select("first_name, last_name, phone, birthdate, city, address_country")
+        .select("first_name, last_name, phone, address_country")
         .eq("user_id", user.id)
         .single();
 
@@ -232,11 +181,11 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
         lastName: customer?.last_name || nameParts.slice(1).join(" ") || user.user_metadata?.last_name || "",
         email: user.email || "",
         phone: normalizePhone(customer?.phone || profile?.phone || user.user_metadata?.phone || ""),
-        birthDate: customer?.birthdate || "",
+        birthDate: "",
         address: "",
-        city: customer?.city || "",
+        city: "",
         postcode: "",
-        country: customer?.address_country || "FR",
+        country: customer?.address_country || "",
       };
 
       onChange(profileData);
@@ -272,27 +221,39 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
         )}
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Identity */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <div className="space-y-1">
-            <Label className="text-xs">{t.titleField} *</Label>
-            <Select
-              value={value.title || undefined}
-              onValueChange={(v) => { update("title", v); markTouched("title"); }}
+        <div className="space-y-1">
+          <Label className="text-xs">{t.nationality} *</Label>
+          <Select
+            value={value.country || undefined}
+            onValueChange={(v) => { update("country", v); markTouched("country"); }}
+          >
+            <SelectTrigger
+              className={`h-9 ${errors.country ? "border-destructive" : ""}`}
+              style={inputStyle}
             >
-              <SelectTrigger
-                className={`h-9 ${errors.title ? "border-destructive" : ""}`}
-                style={inputStyle}
-              >
-                <SelectValue placeholder={t.selectTitle} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="MR">{t.titleMr}</SelectItem>
-                <SelectItem value="MS">{t.titleMs}</SelectItem>
-                <SelectItem value="MRS">{t.titleMrs}</SelectItem>
-              </SelectContent>
-            </Select>
-            <FieldError msg={errors.title} />
+              <SelectValue placeholder={t.selectCountry} />
+            </SelectTrigger>
+            <SelectContent>
+              {COUNTRY_OPTIONS.map((c) => (
+                <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <FieldError msg={errors.country} />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <Label className="text-xs">{t.lastName} *</Label>
+            <Input
+              value={value.lastName}
+              onChange={(e) => update("lastName", e.target.value)}
+              onBlur={() => markTouched("lastName")}
+              className={`h-9 ${errors.lastName ? "border-destructive" : ""}`}
+              style={inputStyle}
+              required
+            />
+            <FieldError msg={errors.lastName} />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">{t.firstName} *</Label>
@@ -306,22 +267,22 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
             />
             <FieldError msg={errors.firstName} />
           </div>
-          <div className="space-y-1">
-            <Label className="text-xs">{t.lastName} *</Label>
-            <Input
-              value={value.lastName}
-              onChange={(e) => update("lastName", e.target.value)}
-              onBlur={() => markTouched("lastName")}
-              className={`h-9 ${errors.lastName ? "border-destructive" : ""}`}
-              style={inputStyle}
-              required
-            />
-            <FieldError msg={errors.lastName} />
-          </div>
         </div>
 
-        {/* Contact */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div className="space-y-1">
+          <Label className="text-xs">{t.streetAddress} *</Label>
+          <Input
+            value={value.address}
+            onChange={(e) => update("address", e.target.value)}
+            onBlur={() => markTouched("address")}
+            className={`h-9 ${errors.address ? "border-destructive" : ""}`}
+            style={inputStyle}
+            required
+          />
+          <FieldError msg={errors.address} />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div className="space-y-1">
             <Label className="text-xs">{t.email} *</Label>
             <Input
@@ -336,7 +297,7 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
             <FieldError msg={errors.email} />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">{t.phone} *</Label>
+            <Label className="text-xs">{t.phone} <span className="text-muted-foreground">({t.optional})</span></Label>
             <Input
               type="tel"
               value={value.phone}
@@ -349,89 +310,8 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
               className={`h-9 ${errors.phone ? "border-destructive" : ""}`}
               style={inputStyle}
               placeholder={t.phonePlaceholder}
-              required
             />
             <FieldError msg={errors.phone} />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">{t.birthDate} *</Label>
-            <Input
-              type="date"
-              value={value.birthDate}
-              onChange={(e) => update("birthDate", e.target.value)}
-              onBlur={() => markTouched("birthDate")}
-              className={`h-9 ${errors.birthDate ? "border-destructive" : ""}`}
-              style={inputStyle}
-              max={maxBirthDate}
-              required
-            />
-            <FieldError msg={errors.birthDate} />
-          </div>
-        </div>
-
-        {/* Adresse de facturation complète, validée avant d'ouvrir le paiement Revolut. */}
-        <div className="pt-2 mt-1 border-t">
-          <p className="text-xs font-semibold text-foreground">{t.billingTitle}</p>
-          <p className="text-[11px] text-muted-foreground mb-2">{t.billingHint}</p>
-
-          <div className="space-y-1 mb-2">
-            <Label className="text-xs">{t.streetAddress} *</Label>
-            <Input
-              value={value.address}
-              onChange={(e) => update("address", e.target.value)}
-              onBlur={() => markTouched("address")}
-              className={`h-9 ${errors.address ? "border-destructive" : ""}`}
-              style={inputStyle}
-              required
-            />
-            <FieldError msg={errors.address} />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <div className="space-y-1">
-              <Label className="text-xs">{t.country} *</Label>
-              <Select
-                value={value.country || undefined}
-                onValueChange={(v) => { update("country", v); markTouched("country"); }}
-              >
-                <SelectTrigger
-                  className={`h-9 ${errors.country ? "border-destructive" : ""}`}
-                  style={inputStyle}
-                >
-                  <SelectValue placeholder={t.selectCountry} />
-                </SelectTrigger>
-                <SelectContent>
-                  {BILLING_COUNTRIES.map((c) => (
-                    <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FieldError msg={errors.country} />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">{t.city} *</Label>
-              <Input
-                value={value.city}
-                onChange={(e) => update("city", e.target.value)}
-                onBlur={() => markTouched("city")}
-                className={`h-9 ${errors.city ? "border-destructive" : ""}`}
-                style={inputStyle}
-                required
-              />
-              <FieldError msg={errors.city} />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">{t.postcode} *</Label>
-              <Input
-                value={value.postcode}
-                onChange={(e) => update("postcode", e.target.value)}
-                onBlur={() => markTouched("postcode")}
-                className={`h-9 ${errors.postcode ? "border-destructive" : ""}`}
-                style={inputStyle}
-                required
-              />
-              <FieldError msg={errors.postcode} />
-            </div>
           </div>
         </div>
       </CardContent>
@@ -449,62 +329,37 @@ export const EMPTY_LEAD_GUEST: LeadGuestData = {
   address: "",
   city: "",
   postcode: "",
-  country: "IL",
+  country: "",
 };
 
-/** Source unique de vérité pour savoir si le voyageur a rempli tout ce qu'il faut,
- *  y compris l'adresse de facturation requise par Revolut. Utilisée par les deux
- *  parcours (hôtel et expérience "only") pour ne jamais ouvrir le paiement sans
- *  adresse complète. */
+/** Source unique de vérité pour savoir si le voyageur a rempli les infos client.
+ *  L'adresse de facturation reste collectée par le widget Revolut. */
 export function isLeadGuestComplete(g: LeadGuestData): boolean {
   return (
-    g.title.trim() !== "" &&
+    g.country.trim() !== "" &&
     g.firstName.trim() !== "" &&
     g.lastName.trim() !== "" &&
-    isValidEmail(g.email) &&
-    isValidPhone(g.phone) &&
-    isValidBirthDate(g.birthDate) &&
     g.address.trim() !== "" &&
-    g.city.trim() !== "" &&
-    g.postcode.trim() !== "" &&
-    g.country.trim() !== ""
+    isValidEmail(g.email) &&
+    (!g.phone.trim() || isValidPhone(g.phone))
   );
-}
-
-/** Construit l'adresse de facturation au format attendu par le widget Revolut
- *  (@revolut/checkout). countryCode doit être un code ISO 2 lettres. */
-export function buildRevolutBillingAddress(g: LeadGuestData): {
-  countryCode: string;
-  postcode: string;
-  city?: string;
-  streetLine1?: string;
-} {
-  return {
-    countryCode: g.country.trim().toUpperCase(),
-    postcode: g.postcode.trim(),
-    city: g.city.trim() || undefined,
-    streetLine1: g.address.trim() || undefined,
-  };
 }
 
 /** Sanitize lead guest data before sending to HyperGuest — ensures all formats are correct */
 export function sanitizeLeadGuest(g: LeadGuestData): LeadGuestData & { title: "MR" | "MS" | "MRS" } {
-  let birthDate = g.birthDate;
-  if (!birthDate || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
-    birthDate = "1990-01-01"; // Safe fallback
-  }
+  const phone = normalizePhone(g.phone);
   return {
     ...g,
     title: (g.title || "MR") as "MR" | "MS" | "MRS",
     firstName: g.firstName.trim(),
     lastName: g.lastName.trim(),
     email: g.email.trim().toLowerCase(),
-    phone: normalizePhone(g.phone),
-    birthDate,
+    phone: phone || "+0000000000",
+    birthDate: /^\d{4}-\d{2}-\d{2}$/.test(g.birthDate) ? g.birthDate : "1990-01-01",
     address: g.address?.trim() || "N/A",
     city: g.city?.trim() || "N/A",
-    postcode: g.postcode?.trim() || "",
-    country: g.country?.trim().toUpperCase() || "IL",
+    postcode: g.postcode?.trim() || "00000",
+    country: g.country?.trim().toUpperCase() || "FR",
   };
 }
 
@@ -535,8 +390,6 @@ export async function saveProfileFields(userId: string, guest: LeadGuestData) {
           first_name: guest.firstName.trim(),
           last_name: guest.lastName.trim(),
           phone: normalizedPhone || undefined,
-          birthdate: isValidBirthDate(guest.birthDate) ? guest.birthDate : undefined,
-          city: guest.city.trim() || undefined,
           address_country: guest.country.trim().toUpperCase() || undefined,
         })
         .eq("user_id", userId);
@@ -548,8 +401,6 @@ export async function saveProfileFields(userId: string, guest: LeadGuestData) {
           first_name: guest.firstName.trim(),
           last_name: guest.lastName.trim(),
           phone: normalizedPhone || undefined,
-          birthdate: isValidBirthDate(guest.birthDate) ? guest.birthDate : undefined,
-          city: guest.city.trim() || undefined,
           address_country: guest.country.trim().toUpperCase() || undefined,
         });
     }
