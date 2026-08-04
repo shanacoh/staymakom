@@ -6,6 +6,8 @@ interface CreateOrderParams {
   description?: string;
   customerEmail: string;
   customerName: string;
+  customerPhone?: string;
+  customerBirthDate?: string;
   bookingRef?: string;
 }
 

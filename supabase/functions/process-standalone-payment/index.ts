@@ -28,6 +28,10 @@ function getCorsHeaders(req: Request) {
   };
 }
 
+function getErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 function getEnvMode(): 'production' | 'dev' {
   const raw = (Deno.env.get('REVOLUT_ENVIRONMENT') || Deno.env.get('ENVIRONMENT') || '').trim().toLowerCase();
   return ['production', 'prod', 'live'].includes(raw) ? 'production' : 'dev';
@@ -55,6 +59,8 @@ async function createRevolutOrder(params: {
   description: string;
   customerEmail: string;
   customerName: string;
+  customerPhone?: string | null;
+  customerBirthDate?: string | null;
   bookingRef: string;
 }): Promise<{ orderId: string; publicId: string }> {
   const amountInCents = Math.round(params.amount * 100);
@@ -67,6 +73,8 @@ async function createRevolutOrder(params: {
     customer: {
       email: params.customerEmail,
       full_name: params.customerName,
+      phone: params.customerPhone || undefined,
+      date_of_birth: params.customerBirthDate || undefined,
     },
   };
 
@@ -123,6 +131,7 @@ Deno.serve(async (req: Request) => {
       customer_name,
       customer_email,
       customer_phone,
+      customer_birth_date,
       selected_extras_ids,
       selected_rate_option_id,
       promo_code: promoCodePayload,
@@ -349,11 +358,13 @@ Deno.serve(async (req: Request) => {
         description,
         customerEmail: customer_email,
         customerName: customer_name,
+        customerPhone: customer_phone,
+        customerBirthDate: customer_birth_date,
         bookingRef: bookingId,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Revolut order creation error (standalone):', err);
-      return new Response(JSON.stringify({ success: false, error: 'Impossible de créer le paiement', details: err.message }), {
+      return new Response(JSON.stringify({ success: false, error: 'Impossible de créer le paiement', details: getErrorMessage(err) }), {
         status: 502,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -458,9 +469,9 @@ Deno.serve(async (req: Request) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('process-standalone-payment unexpected error:', err);
-    return new Response(JSON.stringify({ success: false, error: 'Erreur interne', details: err.message }), {
+    return new Response(JSON.stringify({ success: false, error: 'Erreur interne', details: getErrorMessage(err) }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

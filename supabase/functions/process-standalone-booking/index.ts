@@ -27,6 +27,10 @@ function getCorsHeaders(req: Request) {
   };
 }
 
+function getErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 function getRevolutBaseUrl(): string {
   const env = (Deno.env.get('REVOLUT_ENVIRONMENT') || Deno.env.get('ENVIRONMENT') || '').toLowerCase();
   const isProd = ['production', 'prod', 'live'].includes(env);
@@ -53,6 +57,8 @@ async function createRevolutOrder(params: {
   description: string;
   customerEmail: string;
   customerName: string;
+  customerPhone?: string | null;
+  customerBirthDate?: string | null;
   bookingId: string;
 }): Promise<{ orderId: string; publicId: string; checkoutUrl?: string }> {
   const amountInCents = Math.round(params.amount * 100);
@@ -63,7 +69,12 @@ async function createRevolutOrder(params: {
     amount: amountInCents,
     currency: params.currency,
     description: params.description,
-    customer_email: params.customerEmail,
+    customer: {
+      email: params.customerEmail,
+      full_name: params.customerName,
+      phone: params.customerPhone || undefined,
+      date_of_birth: params.customerBirthDate || undefined,
+    },
     metadata: {
       booking_type: 'standalone_experience',
       booking_id: params.bookingId,
@@ -89,7 +100,7 @@ async function createRevolutOrder(params: {
   const data = await response.json();
   return {
     orderId: data.id,
-    publicId: data.public_id,
+    publicId: data.token || data.public_id,
     checkoutUrl: data.checkout_url,
   };
 }
@@ -122,6 +133,7 @@ Deno.serve(async (req: Request) => {
       customer_name,
       customer_email,
       customer_phone,
+      customer_birth_date,
     } = body;
 
     // ── Validation des champs requis ──────────────────────────────────────────
@@ -184,7 +196,7 @@ Deno.serve(async (req: Request) => {
     // 'fixed' → sellPrice = base_price tel quel
 
     // ── Créer la réservation en base (status=pending) ─────────────────────────
-    const bookingPayload: Record<string, any> = {
+    const bookingPayload: Record<string, unknown> = {
       standalone_experience_id: experience_id,
       customer_name,
       customer_email,
@@ -223,13 +235,15 @@ Deno.serve(async (req: Request) => {
         description,
         customerEmail: customer_email,
         customerName: customer_name,
+        customerPhone: customer_phone,
+        customerBirthDate: customer_birth_date,
         bookingId: booking.id,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Supprimer la réservation si Revolut échoue
       await supabase.from('standalone_bookings').delete().eq('id', booking.id);
       console.error('Revolut error:', err);
-      return new Response(JSON.stringify({ error: 'Impossible de créer le paiement', details: err.message }), {
+      return new Response(JSON.stringify({ error: 'Impossible de créer le paiement', details: getErrorMessage(err) }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -241,7 +255,7 @@ Deno.serve(async (req: Request) => {
       .update({
         revolut_order_id: revolut.orderId,
         revolut_public_id: revolut.publicId,
-      } as any)
+      })
       .eq('id', booking.id);
 
     // ── Réponse au frontend ───────────────────────────────────────────────────
@@ -259,9 +273,9 @@ Deno.serve(async (req: Request) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('process-standalone-booking unexpected error:', err);
-    return new Response(JSON.stringify({ error: 'Erreur interne', details: err.message }), {
+    return new Response(JSON.stringify({ error: 'Erreur interne', details: getErrorMessage(err) }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

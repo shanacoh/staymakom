@@ -410,6 +410,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
           customer_name: `${leadGuest.firstName.trim()} ${leadGuest.lastName.trim()}`,
           customer_email: leadGuest.email.trim(),
           customer_phone: leadGuest.phone.trim() || null,
+          customer_birth_date: leadGuest.birthDate.trim() || null,
           selected_extras_ids: state.selectedExtras?.map((e) => e.id) ?? [],
           promo_code: appliedPromo ? {
             id: appliedPromo.id,
@@ -1017,7 +1018,10 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
               currency={state.currency}
               lang={lang}
               environment={revolutEnvironment}
-              customerEmail={leadGuest.email}
+              customerName={`${leadGuest.firstName.trim()} ${leadGuest.lastName.trim()}`.trim() || undefined}
+              customerEmail={leadGuest.email.trim() || undefined}
+              customerPhone={leadGuest.phone.trim() || undefined}
+              customerBirthDate={leadGuest.birthDate.trim() || undefined}
               billingAddress={buildRevolutBillingAddress(leadGuest)}
               onPaymentSuccess={handlePaymentSuccess}
               onPaymentError={handlePaymentError}

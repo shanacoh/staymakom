@@ -12,7 +12,10 @@ interface RevolutPaymentWidgetProps {
   currency?: string;
   lang?: "en" | "he" | "fr";
   environment?: "production" | "dev";
+  customerName?: string;
   customerEmail?: string;
+  customerPhone?: string;
+  customerBirthDate?: string;
   /** Adresse de facturation du client, transmise au formulaire carte Revolut. */
   billingAddress?: {
     countryCode: string;
@@ -31,7 +34,10 @@ export default function RevolutPaymentWidget({
   publicId,
   lang = "en",
   environment,
+  customerName,
   customerEmail,
+  customerPhone,
+  customerBirthDate,
   billingAddress,
   onPaymentSuccess,
   onPaymentError,
@@ -60,6 +66,12 @@ export default function RevolutPaymentWidget({
       : undefined
   ), [billingAddress]);
 
+  const getDateOfBirthForRevolut = useCallback(() => {
+    if (!customerBirthDate || !/^\d{4}-\d{2}-\d{2}$/.test(customerBirthDate)) return undefined;
+    const [year, month, day] = customerBirthDate.split("-").map(Number);
+    return { day, month, year };
+  }, [customerBirthDate]);
+
   useEffect(() => {
     if (!publicId || !cardFieldTargetRef.current) return;
 
@@ -76,7 +88,10 @@ export default function RevolutPaymentWidget({
         const cardField = checkout.createCardField({
           target: cardFieldTargetRef.current,
           locale,
+          name: customerName || undefined,
           email: customerEmail || undefined,
+          phone: customerPhone || undefined,
+          dateOfBirth: getDateOfBirthForRevolut(),
           billingAddress: getBillingAddressForRevolut() as Parameters<typeof checkout.createCardField>[0]["billingAddress"],
           onSuccess: () => {
             onPaymentSuccess();
@@ -127,14 +142,17 @@ export default function RevolutPaymentWidget({
       }
       cardFieldRef.current = null;
     };
-  }, [publicId, mode, locale, customerEmail, getBillingAddressForRevolut, onPaymentSuccess, onPaymentError, onPaymentCancel]);
+  }, [publicId, mode, locale, customerName, customerEmail, customerPhone, getDateOfBirthForRevolut, getBillingAddressForRevolut, onPaymentSuccess, onPaymentError, onPaymentCancel]);
 
   const handleSubmit = () => {
     if (!cardFieldRef.current || isSubmitting) return;
     setPaymentError(null);
     setIsSubmitting(true);
     cardFieldRef.current.submit({
+      name: customerName || undefined,
       email: customerEmail || undefined,
+      phone: customerPhone || undefined,
+      dateOfBirth: getDateOfBirthForRevolut(),
       billingAddress: getBillingAddressForRevolut() as Parameters<RevolutCheckoutCardField["submit"]>[0]["billingAddress"],
     });
   };

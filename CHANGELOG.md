@@ -6,6 +6,22 @@
 
 ---
 
+## [2026-08-05 ter] — Paiement Revolut : formulaire client complet obligatoire
+
+### Ce qui a changé côté code
+- `src/components/experience/LeadGuestForm.tsx` : le formulaire avant paiement demande maintenant obligatoirement la civilité, le prénom, le nom, l'email, le téléphone, la date de naissance, la rue, la ville, le code postal et le pays. Les champs sont contrôlés avant d'ouvrir le paiement.
+- `src/components/experience/RevolutPaymentWidget.tsx` : le formulaire carte Revolut reçoit maintenant le nom complet, le téléphone, la date de naissance et l'adresse complète du client, au lieu de recevoir seulement l'email et une adresse partielle.
+- `src/pages/Checkout.tsx` et `src/pages/StandaloneCheckout.tsx` : les deux parcours de réservation transmettent les mêmes informations client complètes au paiement.
+- `src/services/revolut.ts`, `supabase/functions/revolut-payment/index.ts`, `supabase/functions/process-standalone-payment/index.ts` et `supabase/functions/process-standalone-booking/index.ts` : la création de l'ordre Revolut utilise maintenant aussi le téléphone et la date de naissance du client, en plus du nom et de l'email. L'adresse complète reste utilisée par le formulaire carte au moment de la validation bancaire.
+
+### Ce qui a changé côté base de données
+- Aucun changement : aucune table, colonne ou migration ajoutée. La ville, le pays et la date de naissance sont sauvegardés dans les champs client déjà existants.
+
+### Pourquoi ce changement
+- Shana veut que le client remplisse toutes les informations nécessaires avant de payer, pour éviter les paiements bloqués ou les réservations créées avec une fiche client incomplète.
+
+---
+
 ## [2026-08-05 bis] — Paiement Revolut : carte bancaire en parcours principal
 
 ### Ce qui a changé côté code

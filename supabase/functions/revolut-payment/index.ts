@@ -92,7 +92,7 @@ async function resolveAdminEnvOverride(
 }
 
 async function createOrder(body: Record<string, unknown>, envOverride?: string) {
-  const { amount, currency, description, customerEmail, customerName, bookingRef } = body;
+  const { amount, currency, description, customerEmail, customerName, customerPhone, customerBirthDate, bookingRef } = body;
   if (!amount || !currency) throw new Error('amount and currency are required');
 
   const amountInCents = Math.round(Number(amount) * 100);
@@ -105,6 +105,8 @@ async function createOrder(body: Record<string, unknown>, envOverride?: string) 
     customer: {
       email: customerEmail || undefined,
       full_name: customerName || undefined,
+      phone: customerPhone || undefined,
+      date_of_birth: customerBirthDate || undefined,
     },
   };
 

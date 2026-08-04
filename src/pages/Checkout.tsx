@@ -852,8 +852,10 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
         amount: amountAfterGiftCard,
         currency: effectiveCurrency,
         description: `Staymakom — ${state.experienceTitle}`,
-        customerEmail: leadGuest.email,
-        customerName: `${leadGuest.firstName} ${leadGuest.lastName}`,
+        customerEmail: leadGuest.email.trim(),
+        customerName: `${leadGuest.firstName.trim()} ${leadGuest.lastName.trim()}`.trim(),
+        customerPhone: leadGuest.phone.trim() || undefined,
+        customerBirthDate: leadGuest.birthDate.trim() || undefined,
       });
       setRevolutPublicId(order.publicId);
       setRevolutOrderId(order.orderId);
@@ -941,8 +943,10 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
           amount: amountAfterGiftCard,
           currency: effectiveCurrency,
           description: `Staymakom — ${state.experienceTitle}`,
-          customerEmail: leadGuest.email,
-          customerName: `${leadGuest.firstName} ${leadGuest.lastName}`,
+          customerEmail: leadGuest.email.trim(),
+          customerName: `${leadGuest.firstName.trim()} ${leadGuest.lastName.trim()}`.trim(),
+          customerPhone: leadGuest.phone.trim() || undefined,
+          customerBirthDate: leadGuest.birthDate.trim() || undefined,
         });
         setRevolutPublicId(order.publicId);
         setRevolutOrderId(order.orderId);
@@ -1579,7 +1583,10 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
               merchantPublicKey={revolutMerchantPublicKey ?? undefined}
               lang={lang as "en" | "he" | "fr"}
               environment={revolutEnvironment ?? undefined}
-              customerEmail={leadGuest.email || undefined}
+              customerName={`${leadGuest.firstName.trim()} ${leadGuest.lastName.trim()}`.trim() || undefined}
+              customerEmail={leadGuest.email.trim() || undefined}
+              customerPhone={leadGuest.phone.trim() || undefined}
+              customerBirthDate={leadGuest.birthDate.trim() || undefined}
               billingAddress={buildRevolutBillingAddress(leadGuest)}
               onPaymentSuccess={() => {
                 setPaymentStatus("paid");
