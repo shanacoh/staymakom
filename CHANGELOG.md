@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-08-05] — Paiement Revolut : bouton de secours carte
+
+### Ce qui a changé côté code
+- `src/components/experience/RevolutPaymentWidget.tsx` : ajout d'un bouton "Payer par carte" dans la popup Revolut. Il ouvre le paiement carte officiel Revolut avec le même ordre de paiement lorsque le widget complet reste bloqué sur Google Pay, Revolut Pay ou un contrôle anti-fraude externe.
+
+### Ce qui a changé côté base de données
+- Aucun changement : aucune table, colonne ou migration ajoutée.
+
+### Pourquoi ce changement
+- Pendant une réservation, le bouton de paiement dans la popup Revolut pouvait sembler ne rien faire. La console montrait un blocage lié à `ssl.kaptcha.com`, un service appelé par Revolut pour ses contrôles anti-fraude. Le client a maintenant une alternative simple pour continuer le paiement sans rester coincé.
+
+---
+
 ## [2026-08-03 quater] — Bateaux (client) : le nom du prestataire n'apparaît plus dans les descriptions
 
 ### Ce qui a changé côté code

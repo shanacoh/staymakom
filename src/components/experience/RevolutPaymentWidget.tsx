@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, AlertTriangle, ShieldCheck, Bug } from "lucide-react";
+import { Loader2, AlertTriangle, ShieldCheck, Bug, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { EmbeddedCheckoutInstance } from "@revolut/checkout";
 
@@ -79,9 +79,8 @@ interface RevolutPaymentWidgetProps {
  * (Revolut Pay, Carte, Google Pay…). Le client choisit son moyen et paie sans quitter
  * la page.
  *
- * À noter : la propriété `publicToken` du SDK accepte ici le `publicId` de l'ordre
- * Revolut (renvoyé par create-order). Aucune Merchant Public API Key séparée requise
- * dans cette intégration.
+ * À noter : la propriété `publicToken` de l'embedded checkout reçoit la Merchant
+ * Public API Key. Le `publicId` de l'ordre est renvoyé plus tard par createOrder.
  */
 export default function RevolutPaymentWidget({
   publicId,
@@ -98,11 +97,64 @@ export default function RevolutPaymentWidget({
   const instanceRef = useRef<EmbeddedCheckoutInstance | null>(null);
   const [loading, setLoading] = useState(true);
   const [widgetError, setWidgetError] = useState<string | null>(null);
+  const [fallbackError, setFallbackError] = useState<string | null>(null);
+  const [fallbackLoading, setFallbackLoading] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
   const [debugInfo, setDebugInfo] = useState<RevolutDebugInfo | null>(null);
 
   const resolvedEnv = environment ?? (import.meta.env.VITE_REVOLUT_ENV === "production" ? "production" : "dev");
   const mode: "prod" | "sandbox" = resolvedEnv === "production" ? "prod" : "sandbox";
+  const locale = lang === "he" ? "en" : lang;
+
+  const getBillingAddressForRevolut = useCallback(() => (
+    billingAddress?.countryCode
+      ? {
+          countryCode: billingAddress.countryCode,
+          postcode: billingAddress.postcode,
+          city: billingAddress.city,
+          streetLine1: billingAddress.streetLine1,
+          streetLine2: billingAddress.streetLine2,
+          region: billingAddress.region,
+        }
+      : undefined
+  ), [billingAddress]);
+
+  const handleFallbackCardPayment = async () => {
+    if (!publicId || fallbackLoading) return;
+    setFallbackError(null);
+    setFallbackLoading(true);
+    try {
+      const { default: RevolutCheckout } = await import("@revolut/checkout");
+      const checkout = await RevolutCheckout(publicId, mode);
+      checkout.payWithPopup({
+        locale,
+        email: customerEmail || undefined,
+        billingAddress: getBillingAddressForRevolut() as Parameters<typeof checkout.payWithPopup>[0]["billingAddress"],
+        onSuccess: () => {
+          onPaymentSuccess();
+        },
+        onError: (error) => {
+          const msg = error?.message || error?.type || "Payment failed";
+          onPaymentError(msg);
+        },
+        onCancel: () => {
+          onPaymentCancel?.();
+        },
+      });
+    } catch (err: unknown) {
+      console.error("Revolut card fallback init error:", err);
+      const msg = err instanceof Error ? err.message : "Failed to open card payment";
+      setFallbackError(msg);
+    } finally {
+      setFallbackLoading(false);
+    }
+  };
+
+  const cardFallbackLabel = lang === "he"
+    ? "תשלום בכרטיס"
+    : lang === "fr"
+      ? "Payer par carte"
+      : "Pay by card";
 
   // Collecte des infos debug à chaque render pour faciliter le diagnostic des
   // méthodes de paiement manquantes (Apple Pay, Revolut Pay).
@@ -174,21 +226,12 @@ export default function RevolutPaymentWidget({
           mode,
           publicToken: merchantPublicKey!,
           target: containerRef.current,
-          locale: lang === "he" ? "en" : lang,
+          locale,
           email: customerEmail || undefined,
           // Adresse de facturation transmise à Revolut : sans elle, le paiement carte
           // plante (la banque exige au minimum pays + code postal). On ne la passe que
           // si le code pays est présent, pour rester conforme au type Address du SDK.
-          billingAddress: (billingAddress?.countryCode
-            ? {
-                countryCode: billingAddress.countryCode,
-                postcode: billingAddress.postcode,
-                city: billingAddress.city,
-                streetLine1: billingAddress.streetLine1,
-                streetLine2: billingAddress.streetLine2,
-                region: billingAddress.region,
-              }
-            : undefined) as Parameters<typeof RevolutCheckout.embeddedCheckout>[0]["billingAddress"],
+          billingAddress: getBillingAddressForRevolut() as Parameters<typeof RevolutCheckout.embeddedCheckout>[0]["billingAddress"],
           // createOrder est appelé par Revolut quand le client clique sur un moyen
           // de paiement. On retourne le publicId de l'ordre déjà créé en amont.
           createOrder: async () => {
@@ -211,7 +254,11 @@ export default function RevolutPaymentWidget({
         });
 
         if (!mounted) {
-          try { instance.destroy(); } catch {}
+          try {
+            instance.destroy();
+          } catch (err) {
+            console.warn("Revolut embedded checkout destroy failed:", err);
+          }
           return;
         }
 
@@ -230,10 +277,14 @@ export default function RevolutPaymentWidget({
 
     return () => {
       mounted = false;
-      try { instanceRef.current?.destroy(); } catch {}
+      try {
+        instanceRef.current?.destroy();
+      } catch (err) {
+        console.warn("Revolut embedded checkout cleanup failed:", err);
+      }
       instanceRef.current = null;
     };
-  }, [publicId, mode, merchantPublicKey, lang, customerEmail, billingAddress, onPaymentSuccess, onPaymentError, onPaymentCancel]);
+  }, [publicId, mode, merchantPublicKey, locale, lang, customerEmail, getBillingAddressForRevolut, onPaymentSuccess, onPaymentError, onPaymentCancel]);
 
   if (widgetError) {
     return (
@@ -248,6 +299,16 @@ export default function RevolutPaymentWidget({
           >
             {lang === "he" ? "נסה שוב" : lang === "fr" ? "Réessayer" : "Retry"}
           </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleFallbackCardPayment}
+            disabled={fallbackLoading}
+          >
+            {fallbackLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+            {cardFallbackLabel}
+          </Button>
+          {fallbackError && <p className="text-xs">{fallbackError}</p>}
         </AlertDescription>
       </Alert>
     );
@@ -268,6 +329,24 @@ export default function RevolutPaymentWidget({
         className={loading ? "hidden" : "w-full"}
         style={loading ? undefined : { minHeight: "500px" }}
       />
+      {!loading && (
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={handleFallbackCardPayment}
+          disabled={fallbackLoading}
+        >
+          {fallbackLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+          {cardFallbackLabel}
+        </Button>
+      )}
+      {fallbackError && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{fallbackError}</AlertDescription>
+        </Alert>
+      )}
       <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground pt-2 border-t">
         <div className="flex items-center gap-2">
           <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
