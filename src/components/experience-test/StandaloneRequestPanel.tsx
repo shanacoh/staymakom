@@ -156,7 +156,12 @@ export default function StandaloneRequestPanel({
     try {
       const fullName = `${firstName.trim()} ${lastName.trim()}`;
       const fullMessage = [message.trim(), extraNotes].filter(Boolean).join("\n\n") || null;
+      // Id généré côté client : la policy RLS de la table n'autorise pas le
+      // visiteur anonyme à relire sa propre ligne, donc un insert avec
+      // `.select().single()` (RETURNING) échoue systématiquement pour lui.
+      const requestId = crypto.randomUUID();
       const insertPayload: Record<string, unknown> = {
+        id: requestId,
         experience_id: experienceId,
         customer_name: fullName,
         customer_email: email.trim(),
@@ -170,16 +175,14 @@ export default function StandaloneRequestPanel({
         insertPayload.party_max = selectedRange.max;
       }
 
-      const { data, error } = await (supabase as any)
+      const { error } = await (supabase as any)
         .from("standalone_experience_requests")
-        .insert(insertPayload)
-        .select("id")
-        .single();
+        .insert(insertPayload);
       if (error) throw error;
 
       // Notification interne (best-effort) : ne bloque jamais la confirmation visiteur.
       (supabase as any).functions
-        .invoke("notify-standalone-experience-request", { body: { request_id: data.id } })
+        .invoke("notify-standalone-experience-request", { body: { request_id: requestId } })
         .catch(() => {});
 
       // Alimente aussi la page Leads (best-effort) : chaque demande devient un
@@ -195,7 +198,7 @@ export default function StandaloneRequestPanel({
             metadata: {
               experience_id: experienceId,
               experience_title: experienceTitle,
-              standalone_request_id: data.id,
+              standalone_request_id: requestId,
               requested_date: selectedDate || null,
               adults: usePartyRanges ? selectedRange!.min : adults,
               party_max: usePartyRanges ? selectedRange!.max : null,

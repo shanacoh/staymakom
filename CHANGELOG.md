@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-08-06] — Correction critique : les demandes de réservation (bateaux et autres expériences "sur demande") n'arrivaient jamais
+
+### Ce qui a changé côté code
+- `src/components/experience-test/StandaloneRequestPanel.tsx` : le formulaire de demande (utilisé par la pop-up bateau et par toutes les autres fiches "sur demande") générait l'identifiant de la demande en relisant la ligne juste après l'avoir écrite en base. Or la règle de sécurité de la base interdit à un visiteur non connecté de relire une demande (seule l'équipe admin le peut), donc cette relecture était systématiquement refusée — et comme l'écriture et la relecture se faisaient en une seule opération indivisible, tout était annulé, y compris l'écriture elle-même. Le formulaire génère désormais l'identifiant lui-même avant l'envoi, sans avoir besoin de relire quoi que ce soit après.
+
+### Ce qui a changé côté base de données
+- Aucune migration : aucune règle de sécurité n'a été modifiée, le correctif est uniquement côté code. La protection des coordonnées clients (un visiteur ne peut jamais relire les demandes des autres) reste intacte.
+
+### Pourquoi ce changement
+- Un client a signalé une erreur au clic sur "valider" dans le formulaire bateau. Investigation : ce défaut existait depuis la création du formulaire le 30 juillet, donc **toutes** les demandes envoyées par de vrais clients (bateaux et autres expériences sur demande) échouaient silencieusement depuis cette date. Seuls les tests de Shana, faits en étant connectée en admin dans le même navigateur, avaient réussi — ce qui masquait le problème. Un second formulaire présentant exactement le même défaut a été repéré (« devenir partenaire hôtel ») ; correction en attente de confirmation de Shana.
+
+---
+
 ## [2026-08-05 sexies] — Paiement Revolut : adresse de facturation dans la popup
 
 ### Ce qui a changé côté code
