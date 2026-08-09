@@ -627,7 +627,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
         selectedCategoryIds,
         practicalInfo,
         availableDays,
-        blockedDates: blockedDates.map((d) => d.toISOString().split("T")[0]),
+        blockedDates: blockedDates.map((d) => toLocalIso(d)),
         featuredOnHome,
         homeDisplayOrder,
         savedAt: new Date().toISOString(),
@@ -1052,10 +1052,10 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       highlight_tags: highlightTags.map((t) => t.text),
       practical_info: practicalInfo,
       available_days: availableDays,
-      blocked_dates: blockedDates.map((d) => d.toISOString().split("T")[0]),
+      blocked_dates: blockedDates.map((d) => toLocalIso(d)),
       availability_end_date: effectiveEndDate,
       availability_mode: availabilityMode,
-      whitelisted_dates: whitelistedDates.map((d) => d.toISOString().split("T")[0]),
+      whitelisted_dates: whitelistedDates.map((d) => toLocalIso(d)),
     };
   };
 

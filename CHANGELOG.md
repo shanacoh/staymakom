@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-08-09] — Correction : le calendrier de disponibilité des expériences affichait un jour de décalage
+
+### Ce qui a changé côté code
+- `src/components/forms/StandaloneExperienceForm.tsx` : lorsqu'un jour était cliqué dans le calendrier du back office (pour le rendre disponible ou indisponible), la date était convertie vers l'heure universelle avant d'être envoyée en base. Comme la France (et Israël) sont en avance sur cette heure de référence, minuit chez nous correspondait encore à la veille au soir côté heure universelle : la date enregistrée reculait donc d'un jour par rapport à celle réellement cliquée. Les trois endroits concernés utilisent désormais la même méthode de conversion fiable (déjà utilisée ailleurs dans ce fichier), qui garde le jour exact cliqué par l'admin.
+
+### Ce qui a changé côté base de données
+- Aucune migration : le correctif porte uniquement sur la façon dont le code construit la date avant de l'enregistrer. Les dates déjà enregistrées avec le mauvais décalage devront être revérifiées/re-sauvegardées manuellement dans le back office si besoin.
+
+### Pourquoi ce changement
+- Shana a signalé que le calendrier public de l'expérience "A Morning in a Tel Aviv Kitchen" affichait les dates avec un jour de décalage par rapport à ce qui avait été saisi au back office. Le défaut touchait en réalité toutes les expériences autonomes (pas seulement celle-ci), et l'affichage côté client était fidèle à ce qui était en base — le bug se situait uniquement à l'enregistrement.
+- Un second problème apparenté a été repéré dans le module de réservation des expériences liées à un hôtel (dates envoyées à l'hôtelier). Il touche un système externe en temps réel, donc plus sensible ; Shana a choisi de le traiter dans une session ultérieure plutôt que maintenant.
+
+---
+
 ## [2026-08-06] — Correction critique : les demandes de réservation (bateaux et autres expériences "sur demande") n'arrivaient jamais
 
 ### Ce qui a changé côté code
