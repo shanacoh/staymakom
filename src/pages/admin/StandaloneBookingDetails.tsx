@@ -247,7 +247,11 @@ export default function AdminStandaloneBookingDetails() {
               Modifier le paiement
             </Button>
           )}
+        </div>
+      )}
 
+      {!booking.is_cancelled && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border p-4">
           <Button
             size="sm"
             variant="outline"

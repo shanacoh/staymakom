@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-08-09 bis] — Le bouton "renvoyer l'email de confirmation" n'apparaissait que pour les réservations créées à la main
+
+### Ce qui a changé côté code
+- `src/pages/admin/StandaloneBookingDetails.tsx` : sur la fiche d'une réservation "Experience Only", le bouton pour (ré)envoyer l'email de confirmation était regroupé avec le bouton "marquer le paiement", et ce bloc entier n'était affiché que si la réservation avait été créée manuellement dans le back office. Résultat : pour toute réservation payée directement en ligne par le client, ce bouton n'existait tout simplement pas sur la fiche. Il est maintenant détaché dans son propre bloc, affiché sur toutes les réservations non annulées, quelle que soit leur origine. Le bloc "paiement" reste réservé aux réservations créées à la main, comme avant.
+
+### Ce qui a changé côté base de données
+- Aucune migration : uniquement un changement d'affichage, aucune donnée ni règle de sécurité modifiée.
+
+### Pourquoi ce changement
+- Shana a signalé qu'elle pouvait renvoyer l'email de confirmation à la création d'une réservation, mais que le bouton n'était ensuite plus disponible sur d'autres fiches. Après vérification, il ne s'agissait pas d'une disparition après un clic, mais d'une restriction du bouton aux seules réservations créées manuellement — elle veut pouvoir renvoyer l'email à tout moment, pour n'importe quelle réservation.
+
+---
+
 ## [2026-08-09] — Correction : le calendrier de disponibilité des expériences affichait un jour de décalage
 
 ### Ce qui a changé côté code
