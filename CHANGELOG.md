@@ -6,6 +6,23 @@
 
 ---
 
+## [2026-08-11 bis] — Ajout de deux nouvelles expériences "dans le noir" au Na Lagaat Center (Jaffa)
+
+### Ce qui a changé côté code
+- Aucun changement de code.
+
+### Ce qui a changé côté base de données
+- Nouvelle migration `20260811000000_seed_2_standalone_experiences_dark_tastings_jaffa.sql` : ajoute deux fiches "Experience Only" en statut brouillon (`draft`, non visibles côté client tant que Shana ne les valide pas) :
+  - "The Beer You Cannot See" (dégustation de bière à l'aveugle) — prix affiché à titre provisoire (130 ₪/personne), **aucun tarif public trouvé pour cette expérience précise**, à confirmer avant publication.
+  - "Wine and Cheese by Feel Alone" (dégustation vin & fromage à l'aveugle) — prix confirmé (130 ₪/personne) et deux créneaux connus (9 septembre 2026, 19h et 21h), à saisir manuellement dans le calendrier du back office.
+  - Les deux fiches sont rattachées aux catégories "Foody Discovery" et "Mindful Reset", avec les badges Dégustation/Vin, Visite guidée et Casher.
+  - Adresse, photos et parking non fournis pour l'instant : fiches volontairement laissées en brouillon en attendant ces éléments.
+
+### Pourquoi ce changement
+- Shana a transmis les fiches complètes de deux nouvelles expériences culinaires proposées par le Na Lagaat Center à Jaffa, à intégrer au catalogue.
+
+---
+
 ## [2026-08-11] — Impossible de réserver l'expérience "Dinner in the Dark" (Blackout Restaurant Jaffa)
 
 ### Ce qui a changé côté code
