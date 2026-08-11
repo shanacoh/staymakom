@@ -37,6 +37,7 @@ const billingTranslations = {
     selectCountry: "Select a country",
     required: "Required",
     billingRequiredError: "Please fill in the required billing address fields.",
+    cardLoadTimeout: "Payment is taking too long to load. Please try again or contact us.",
   },
   he: {
     billingTitle: "כתובת לחיוב",
@@ -48,6 +49,7 @@ const billingTranslations = {
     selectCountry: "בחר מדינה",
     required: "שדה חובה",
     billingRequiredError: "יש למלא את שדות כתובת החיוב החובה.",
+    cardLoadTimeout: "טעינת התשלום נמשכת זמן רב מדי. נסו שוב או צרו איתנו קשר.",
   },
   fr: {
     billingTitle: "Adresse de facturation",
@@ -59,8 +61,15 @@ const billingTranslations = {
     selectCountry: "Choisir un pays",
     required: "Requis",
     billingRequiredError: "Merci de remplir les champs obligatoires de facturation.",
+    cardLoadTimeout: "Le paiement met trop de temps à se charger. Merci de réessayer ou de nous contacter.",
   },
 };
+
+/** Délai max avant d'abandonner l'initialisation du champ carte Revolut et d'afficher
+ *  une erreur visible, plutôt que de laisser un spinner tourner indéfiniment (cause
+ *  identifiée de réservations bloquées : le SDK ou un service tiers comme le contrôle
+ *  anti-fraude peut ne jamais répondre, sans jamais rejeter la promesse). */
+const CARD_FIELD_INIT_TIMEOUT_MS = 12000;
 
 function isBillingAddressComplete(address: BillingAddressForm): boolean {
   return ALL_BILLING_FIELDS.every((field) => address[field].trim() !== "");
@@ -117,6 +126,9 @@ export default function RevolutPaymentWidget({
   const paymentsModuleRef = useRef<RevolutPaymentsModuleInstance | null>(null);
   const paymentRequestRef = useRef<PaymentRequestInstance | null>(null);
   const billingAddressRef = useRef<BillingAddressForm>(EMPTY_BILLING_ADDRESS);
+  /** Passe à true dès que l'initialisation se termine (succès ou erreur), pour que le
+   *  timeout ci-dessous sache s'il doit encore intervenir. */
+  const cardFieldSettledRef = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRevolutPayAvailable, setIsRevolutPayAvailable] = useState(false);
@@ -199,10 +211,18 @@ export default function RevolutPaymentWidget({
     if (!publicId || !cardFieldTargetRef.current) return;
 
     let mounted = true;
+    cardFieldSettledRef.current = false;
     setIsLoading(true);
     setIsRevolutPayAvailable(false);
     setIsGooglePayAvailable(false);
     setPaymentError(null);
+
+    const initTimeoutId = window.setTimeout(() => {
+      if (!mounted || cardFieldSettledRef.current) return;
+      cardFieldSettledRef.current = true;
+      setIsLoading(false);
+      setPaymentError(t.cardLoadTimeout);
+    }, CARD_FIELD_INIT_TIMEOUT_MS);
 
     async function initCardField() {
       try {
@@ -242,7 +262,10 @@ export default function RevolutPaymentWidget({
         }
 
         cardFieldRef.current = cardField;
+        cardFieldSettledRef.current = true;
+        window.clearTimeout(initTimeoutId);
         setIsLoading(false);
+        setPaymentError(null);
 
         try {
           if (merchantPublicKey && amount && amount > 0 && currency && revolutPayTargetRef.current) {
@@ -339,7 +362,9 @@ export default function RevolutPaymentWidget({
           }
         }
       } catch (err: unknown) {
+        window.clearTimeout(initTimeoutId);
         if (!mounted) return;
+        cardFieldSettledRef.current = true;
         console.error("Revolut card field init error:", err);
         const msg = err instanceof Error ? err.message : "Failed to load card payment";
         setPaymentError(msg);
@@ -351,6 +376,7 @@ export default function RevolutPaymentWidget({
 
     return () => {
       mounted = false;
+      window.clearTimeout(initTimeoutId);
       try {
         paymentRequestRef.current?.destroy();
       } catch (err) {
@@ -376,7 +402,7 @@ export default function RevolutPaymentWidget({
       checkoutRef.current = null;
       paymentsModuleRef.current = null;
     };
-  }, [publicId, merchantPublicKey, amount, currency, mode, locale, customerName, customerEmail, customerPhone, getDateOfBirthForRevolut, validateBillingAddress, onPaymentSuccess, handleRevolutError, onPaymentCancel]);
+  }, [publicId, merchantPublicKey, amount, currency, mode, locale, customerName, customerEmail, customerPhone, getDateOfBirthForRevolut, validateBillingAddress, onPaymentSuccess, handleRevolutError, onPaymentCancel, t.cardLoadTimeout]);
 
   const handleSubmit = () => {
     if (!cardFieldRef.current || isSubmitting) return;

@@ -1120,6 +1120,29 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   const handlePublish = async (data: StandaloneFormData) => {
     setIsSaving(true);
     try {
+      // Garde-fou : une fiche avec "options tarifaires" activées mais sans aucune option
+      // créée bloque silencieusement le client (le sélecteur de formule ne s'affiche
+      // pas et le bouton "Continuer" reste grisé, sans message). Déjà arrivé une fois
+      // (Dinner in the Dark, corrigé en base uniquement) — on l'empêche ici à la source.
+      if (data.has_rate_options) {
+        if (!currentExperienceId) {
+          toast.error("Enregistrez d'abord l'expérience, puis ajoutez au moins une option tarifaire (onglet Tarifs) avant de publier.");
+          setIsSaving(false);
+          return;
+        }
+        const { count: rateOptionsCount, error: rateOptionsError } = await (supabase as any)
+          .from("standalone_rate_options")
+          .select("id", { count: "exact", head: true })
+          .eq("experience_id", currentExperienceId)
+          .eq("is_available", true);
+        if (rateOptionsError) throw rateOptionsError;
+        if (!rateOptionsCount) {
+          toast.error("Impossible de publier : les options tarifaires sont activées mais aucune n'a été créée. Ajoutez au moins une option (onglet Tarifs) ou désactivez les options tarifaires.");
+          setIsSaving(false);
+          return;
+        }
+      }
+
       const experienceData = await buildExperienceData(data, "published");
       if (currentExperienceId) {
         const { error } = await (supabase as any)

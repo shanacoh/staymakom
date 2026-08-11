@@ -6,6 +6,23 @@
 
 ---
 
+## [2026-08-12] — Correction du blocage de paiement sur les expériences standalone
+
+### Ce qui a changé côté code
+- `src/components/NewsletterPopup.tsx` : la pop-up marketing "10% de réduction" ne s'affiche plus sur les pages de paiement (`/checkout`, `/standalone-checkout`). **Cause principale identifiée** : cette pop-up s'ouvrait automatiquement après 20 secondes sur le site, y compris par-dessus la fenêtre de paiement Revolut déjà ouverte, et masquait complètement le bouton "Payer" — reproduit en direct le 12/08 en rejouant un parcours de réservation.
+- `src/components/experience/RevolutPaymentWidget.tsx` : ajout d'un délai maximum de 12 secondes au chargement du formulaire carte. Si le chargement reste bloqué (ex. service tiers de Revolut qui ne répond pas), un message d'erreur clair s'affiche désormais au client au lieu d'un bouton grisé sans explication.
+- `src/pages/StandaloneCheckout.tsx` : quand un client ferme la fenêtre de paiement sans payer, la réservation "en attente" correspondante est maintenant marquée annulée automatiquement (au lieu de rester indéfiniment en attente et de brouiller le suivi des vraies réservations bloquées).
+- `supabase/functions/cancel-standalone-pending-payment/index.ts` (nouveau) : fonction appelée par le point ci-dessus. **Pas encore déployée** — à déployer après validation.
+- `src/components/forms/StandaloneExperienceForm.tsx` : impossible désormais de publier une expérience avec "options tarifaires" activées si aucune option n'a été créée (empêche de reproduire le cas "Dinner in the Dark" du 11/08, où le bouton "Continuer" restait grisé sans explication pour le client).
+
+### Ce qui a changé côté base de données
+- Aucune migration. Deux réservations de test créées pendant la vérification (`claude-test@example.com`) ont été marquées annulées avec une note explicative.
+
+### Pourquoi ce changement
+- Shana a signalé que des clients n'arrivaient plus à réserver une expérience standalone depuis quelques jours. L'investigation (base de données + historique Git + test en direct du parcours de réservation) a montré plusieurs clientes avec des tentatives de paiement répétées toutes bloquées en "pending". En rejouant le parcours, la pop-up newsletter est apparue par-dessus la fenêtre de paiement Revolut et rendait le bouton "Payer" totalement inaccessible.
+
+---
+
 ## [2026-08-11 bis] — Ajout de deux nouvelles expériences "dans le noir" au Na Lagaat Center (Jaffa)
 
 ### Ce qui a changé côté code

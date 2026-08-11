@@ -179,11 +179,16 @@ export function NewsletterPopup({
   };
 
   // Jamais dans le back-office, ni sur la page de swipe (expérience plein écran immersive :
-  // une popup marketing par-dessus bloquerait littéralement le bouton "J'aime"/"Passer" du client).
+  // une popup marketing par-dessus bloquerait littéralement le bouton "J'aime"/"Passer" du client),
+  // ni sur les pages de paiement (checkout, standalone-checkout) : la popup s'affichait par-dessus
+  // la pop-up de paiement Revolut et masquait complètement le bouton "Payer" — cause probable de
+  // réservations bloquées, reproduite en local le 12/08.
   if (
     location.pathname.startsWith("/admin") ||
     location.pathname.startsWith("/hotel-admin") ||
-    location.pathname.startsWith("/swipe/")
+    location.pathname.startsWith("/swipe/") ||
+    location.pathname.startsWith("/checkout") ||
+    location.pathname.startsWith("/standalone-checkout")
   ) {
     return null;
   }

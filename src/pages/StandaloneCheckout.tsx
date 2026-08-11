@@ -492,14 +492,31 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
     toast.error(errorMessage);
   }, []);
 
+  // Marque la réservation "pending" comme abandonnée quand le client quitte la pop-up
+  // de paiement sans payer, pour éviter d'accumuler des doublons "pending" au back office
+  // à chaque nouvelle tentative (voir process-standalone-payment, qui recrée une réservation
+  // à chaque clic sur "Payer"). Non-bloquant : un échec ici ne doit jamais gêner le client.
+  const abandonPendingBooking = useCallback(() => {
+    if (!bookingToken) return;
+    supabase.functions.invoke("cancel-standalone-pending-payment", {
+      body: { confirmation_token: bookingToken },
+    }).catch(() => {/* non-bloquant */});
+  }, [bookingToken]);
+
+  const handlePaymentDialogOpenChange = useCallback((open: boolean) => {
+    setPaymentDialogOpen(open);
+    if (!open) abandonPendingBooking();
+  }, [abandonPendingBooking]);
+
   const handlePaymentCancel = useCallback(() => {
     setPaymentDialogOpen(false);
+    abandonPendingBooking();
     toast.info(
       lang === "he" ? "התשלום בוטל" :
       lang === "fr" ? "Paiement annulé" :
       "Payment cancelled",
     );
-  }, [lang]);
+  }, [lang, abandonPendingBooking]);
 
   // ── Sidebar summary (réutilisé dans step 2 et step 3) ─────────────────
   const BookingSummaryCard = () => (
@@ -1000,7 +1017,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
       </div>
 
       {/* Dialog paiement Revolut — identique à Checkout.tsx */}
-      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+      <Dialog open={paymentDialogOpen} onOpenChange={handlePaymentDialogOpenChange}>
         <DialogContent
           className="max-w-3xl w-[95vw] max-h-[95vh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6"
           onInteractOutside={(e) => e.preventDefault()}
