@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-08-11] — Impossible de réserver l'expérience "Dinner in the Dark" (Blackout Restaurant Jaffa)
+
+### Ce qui a changé côté code
+- Aucun changement de code : le bug venait uniquement d'une donnée de configuration sur cette fiche (voir ci-dessous).
+
+### Ce qui a changé côté base de données
+- Table `standalone_experiences`, fiche "Dinner in the Dark" (slug `blackout-restaurant-jaffa`) : la case "options tarifaires" était activée alors qu'aucune option n'avait été créée pour cette expérience. Le site attendait donc que le client choisisse une option qui n'existait pas à l'écran, ce qui bloquait le bouton "Continuer" en permanence. La case a été désactivée directement en base (pas de migration, correction ponctuelle sur cette seule fiche).
+
+### Pourquoi ce changement
+- Shana a signalé qu'elle ne pouvait pas réserver sur cette fiche malgré une date, une heure et un nombre de participants valides. Vérifié qu'aucune autre expérience publiée n'a le même problème. Shana a confirmé qu'un prix unique (sans formules multiples) était bien l'intention d'origine pour ce dîner.
+
+---
+
 ## [2026-08-09 bis] — Le bouton "renvoyer l'email de confirmation" n'apparaissait que pour les réservations créées à la main
 
 ### Ce qui a changé côté code
