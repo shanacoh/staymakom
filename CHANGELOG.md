@@ -6,6 +6,24 @@
 
 ---
 
+## [2026-08-12 bis] — Ajout de l'expérience "Concert Amir" (Heichal Hatarbut, Tel-Aviv)
+
+### Ce qui a changé côté code
+- Aucun changement de code.
+
+### Ce qui a changé côté base de données
+- Nouvelle migration `20260812000000_seed_standalone_concert_amir_tel_aviv.sql` : ajoute la fiche "Experience Only" du concert d'Amir au Heichal Hatarbut de Tel-Aviv (20 août 2026, au profit des secouristes du MDA), en statut brouillon (non visible côté client).
+  - Deux catégories de billets : VIP à 192€ et Diamant à 228€ (prix client, marge de 20% appliquée par défaut sur les tarifs fournisseur de 160€ et 190€ — Shana avait indiqué "à définir", à confirmer avant publication).
+  - Nouveau badge créé : "Live Music" (n'existait pas encore dans le catalogue des badges), en plus des badges existants Nuit et Art.
+  - Rattachée à la catégorie "Land of Stories".
+  - Créneau (jeudi 20 août, portes 19h30, concert 20h45) volontairement non configuré dans le calendrier de réservation, à saisir manuellement dans le back office.
+  - Champ "Enfants" et détail du tarif de parking laissés à vérifier. Aucune photo fournie pour l'instant.
+
+### Pourquoi ce changement
+- Shana a transmis la fiche complète du concert d'Amir à intégrer au catalogue des expériences standalone.
+
+---
+
 ## [2026-08-12] — Correction du blocage de paiement sur les expériences standalone
 
 ### Ce qui a changé côté code
