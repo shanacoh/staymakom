@@ -60,7 +60,7 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
           subtitle, subtitle_fr, subtitle_he,
           long_copy, long_copy_fr, long_copy_he,
           hero_image, photos,
-          base_price, base_price_type, currency,
+          base_price, base_price_type, currency, original_price,
           duration, duration_fr, duration_he,
           min_party, max_party, lead_time_days,
           city, city_fr, city_he,
@@ -389,8 +389,18 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
     <div className="shrink-0 border-t bg-background px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
       <div>
         <p className="text-xs text-muted-foreground">{t.fromLabel}</p>
-        <p className="text-lg font-bold text-foreground">
+        <p className="text-lg font-bold text-foreground flex items-baseline gap-1.5 flex-wrap">
           {Math.round(boat.base_price).toLocaleString('fr-FR')} {boat.currency}
+          {boat.original_price && boat.original_price > boat.base_price && (
+            <>
+              <span className="text-sm font-normal text-muted-foreground line-through">
+                {Math.round(boat.original_price).toLocaleString('fr-FR')} {boat.currency}
+              </span>
+              <span className="inline-block px-1.5 py-0.5 bg-accent text-accent-foreground text-[10px] font-medium rounded">
+                -{Math.round((1 - boat.base_price / boat.original_price) * 100)}%
+              </span>
+            </>
+          )}
           {durationLabel && <span className="text-sm font-normal text-muted-foreground"> / {durationLabel}</span>}
         </p>
       </div>

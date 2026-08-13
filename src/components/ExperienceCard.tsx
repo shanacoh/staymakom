@@ -106,6 +106,10 @@ interface ExperienceCardProps {
   // Bateaux uniquement : 3 bulles fixes (durée, capacité, skipper) affichées dans
   // cet ordre, au-dessus des tags éditoriaux "secondaires" (ex: Baignade possible).
   fixedBadges?: string[];
+  // Bateaux uniquement : prix total plein avant promo, pour l'affichage barré
+  // + badge "-X%" à côté du prix total (distinct de originalPrice/discountPercent
+  // ci-dessus, qui portent sur le prix par personne des autres cartes).
+  originalTotalPrice?: number | null;
 }
 
 export default function ExperienceCard({
@@ -127,6 +131,7 @@ export default function ExperienceCard({
   showTotalPrice = false,
   totalPrice,
   fixedBadges,
+  originalTotalPrice,
 }: ExperienceCardProps & { index?: number }) {
   const { lang } = useLanguage();
   const { symbol: currencySymbol } = useCurrency();
@@ -383,6 +388,14 @@ export default function ExperienceCard({
                 <span className="text-[10px] text-muted-foreground">
                   {lang === 'he' ? 'סה"כ' : lang === 'fr' ? 'total' : 'total'}
                 </span>
+                {originalTotalPrice && originalTotalPrice > totalPrice && (
+                  <>
+                    <span className="text-[11px] text-muted-foreground line-through">{displaySymbol}{formatThousands(originalTotalPrice)}</span>
+                    <span className="inline-block px-1.5 py-px bg-accent text-accent-foreground text-[9px] font-medium rounded">
+                      -{Math.round((1 - totalPrice / originalTotalPrice) * 100)}%
+                    </span>
+                  </>
+                )}
               </div>
               {displayPrice > 0 && (
                 <p className="text-[10px] text-muted-foreground">

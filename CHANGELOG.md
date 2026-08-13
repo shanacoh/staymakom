@@ -6,6 +6,36 @@
 
 ---
 
+## [2026-08-13 ter] — Promo -10% sur le bateau "CATAMARAN" (Herzliya)
+
+### Ce qui a changé côté code
+- `src/components/ExperienceCard.tsx`, `src/components/StandaloneExperienceCard.tsx` : la carte bateau (grille `/boat`) peut désormais afficher un prix barré + un badge de réduction quand une promo est active sur la fiche. Jusqu'ici, aucune fiche Bateaux n'avait de système de promo affiché au client.
+- `src/components/boats/BoatDetailModal.tsx` : même affichage (prix barré + badge) ajouté sur la fiche détail du bateau, dans la barre de prix en bas.
+
+### Ce qui a changé côté base de données
+- `20260813020000_add_promo_original_price_standalone_experiences.sql` : ajoute la colonne `original_price` sur `standalone_experiences` (garde le prix plein d'avant promo, uniquement pour l'affichage — le prix réellement facturé reste `base_price`), puis active une promo sur le "CATAMARAN" (Herzliya, prestataire MARK) : prix plein 3600₪ conservé, prix client réellement baissé.
+- `20260813030000_reduce_catamaran_herzliya_promo_to_10_percent.sql` : ajustement de la promo de -15% à -10% (demande de Shana le jour même) → nouveau prix client 3240₪ (au lieu de 3600₪).
+
+### Pourquoi ce changement
+- Shana a demandé d'afficher une promotion sur le catamaran d'Herzliya pour stimuler les réservations, avec une vraie baisse de prix (pas juste un affichage) — d'abord -15%, ajustée à -10% dans la foulée.
+
+---
+
+## [2026-08-13 bis] — Nouvelle fiche Bateau : "Catamaran Tel Aviv" (prestataire B.OZ)
+
+### Ce qui a changé côté code
+- Aucun changement de code.
+
+### Ce qui a changé côté base de données
+- `20260813000000_seed_standalone_catamaran_tel_aviv_boz.sql` : ajoute la fiche "Catamaran Tel Aviv" au module Bateaux (catégorie `bateaux`), en statut brouillon (non visible côté client tant que les photos ne sont pas ajoutées). Forfait de base 2h, avec un supplément pour prolonger à 3h. Jusqu'à 14 personnes. Prestataire interne : B.OZ (jamais affiché au client). Volontairement sans politique d'annulation renseignée, à la demande de Shana.
+- `20260813010000_update_catamaran_tel_aviv_prices.sql` : ajustement des prix client (2850₪ le forfait 2h, 1150₪ le supplément 3h), à la demande de Shana après la première saisie.
+- Photos (couverture + galerie) ajoutées ensuite directement par Shana depuis le back office.
+
+### Pourquoi ce changement
+- Shana a transmis la fiche d'un nouveau catamaran (captures du site du prestataire B.OZ, en hébreu) à intégrer au catalogue Bateaux.
+
+---
+
 ## [2026-08-13] — Filtre "Tel Aviv / Herzliya" sur la page Bateaux
 
 ### Ce qui a changé côté code

@@ -43,6 +43,8 @@ interface StandaloneExperienceCardProps {
     base_price: number;
     base_price_type?: string | null;
     currency?: string | null;
+    // Promo (Bateaux) : prix plein d'avant réduction, si une promo est active.
+    original_price?: number | null;
     min_party?: number | null;
     max_party?: number | null;
     has_child_price?: boolean | null;
@@ -93,6 +95,9 @@ export default function StandaloneExperienceCard({
     ? Math.ceil(rawConverted / maxParty)
     : Math.round(rawConverted);
   const totalPrice = isFixed ? Math.round(rawConverted) : undefined;
+  const originalTotalPrice = isFixed && experience.original_price
+    ? Math.round(convert(experience.original_price))
+    : undefined;
 
   // "à partir de" s'affiche pour les forfaits et quand il y a un tarif enfant
   const showFromPrefix = isFixed || (experience.has_child_price ?? false);
@@ -157,6 +162,7 @@ export default function StandaloneExperienceCard({
       showFromPrefix={showFromPrefix}
       showTotalPrice={showTotalPrice && isFixed}
       totalPrice={totalPrice}
+      originalTotalPrice={originalTotalPrice}
       fixedBadges={fixedBadges}
     />
   );
