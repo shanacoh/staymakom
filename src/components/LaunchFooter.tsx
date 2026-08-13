@@ -10,7 +10,7 @@ const LaunchFooter = () => {
   return (
     <footer className="bg-[#1a1a1a] text-white border-t border-white/10" dir={isRTL ? "rtl" : "ltr"}>
       <div className="container py-6 space-y-4">
-        {/* Bandeau newsletter — toujours accessible pour récupérer le code WELCOME10 */}
+        {/* Bandeau newsletter — toujours accessible pour s'inscrire */}
         <div className="flex items-center justify-center">
           <div className="relative inline-block">
             <span
@@ -24,10 +24,10 @@ const LaunchFooter = () => {
             >
               <Gift className="h-3.5 w-3.5" />
               {lang === "he"
-                ? "הירשם/י לניוזלטר ותקבל/י 10% הנחה"
+                ? "הירשם/י לניוזלטר"
                 : lang === "fr"
-                  ? "S'inscrire à la newsletter — 10 % offerts"
-                  : "Subscribe & get 10% off"}
+                  ? "S'inscrire à la newsletter"
+                  : "Subscribe to our newsletter"}
             </button>
           </div>
         </div>

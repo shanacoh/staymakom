@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-08-13 quater] — Simplification du pop-up newsletter (retrait du code promo)
+
+### Ce qui a changé côté code
+- `src/components/NewsletterPopup.tsx` : le pop-up newsletter n'annonce plus de réduction et ne génère plus de code promo (WELCOME10) à la validation. Le message devient simplement une invitation à s'inscrire pour être informé en avant-première des actualités et surprises, avec un message de remerciement une fois inscrit.
+- `src/components/LaunchFooter.tsx` : le bouton du footer de la page de lancement, qui annonçait aussi "10 % offerts", a été mis à jour pour rester cohérent avec le nouveau pop-up ("S'inscrire à la newsletter").
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Shana ne voulait plus que le pop-up promette une réduction ni génère de code promo à la validation, pour recentrer l'inscription sur la newsletter elle-même (actualités et surprises).
+
+---
+
 ## [2026-08-13 ter] — Promo -10% sur le bateau "CATAMARAN" (Herzliya)
 
 ### Ce qui a changé côté code
