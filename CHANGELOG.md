@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-08-13 quinquies] — Retrait de la promo sur le bateau "CATAMARAN" (Herzliya)
+
+### Ce qui a changé côté code
+- Aucun changement (le composant d'affichage prix barré + badge, ajouté pour cette fiche, reste en place et se réactivera automatiquement si une promo est remise plus tard).
+
+### Ce qui a changé côté base de données
+- `20260813040000_remove_catamaran_herzliya_promo.sql` : remet `base_price` au prix plein (3600₪) et repasse `original_price` à `NULL` sur la fiche "CATAMARAN" (Herzliya, prestataire MARK) → plus de prix barré ni de badge de réduction affichés au client.
+
+### Pourquoi ce changement
+- Shana a demandé de retirer la promotion mise en place plus tôt dans la journée sur le catamaran d'Herzliya.
+
+---
+
 ## [2026-08-13 quater] — Simplification du pop-up newsletter (retrait du code promo)
 
 ### Ce qui a changé côté code
