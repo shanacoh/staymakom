@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-08-13] — Filtre "Tel Aviv / Herzliya" sur la page Bateaux
+
+### Ce qui a changé côté code
+- `src/pages/Boats.tsx` : ajout de deux bulles de filtre en haut de la page ("Tel Aviv" et "Herzliya"), au-dessus de la grille de bateaux. Aucune n'est sélectionnée par défaut (tous les bateaux sont affichés). Cliquer sur une bulle n'affiche que les bateaux dont le lieu de départ correspond ; cliquer sur l'autre bulle bascule automatiquement (une seule ville active à la fois, comme un bouton radio). Recliquer sur la bulle active désélectionne et réaffiche tous les bateaux.
+
+### Ce qui a changé côté base de données
+- Aucune migration. Le filtre s'appuie sur la colonne "ville" déjà renseignée pour chaque bateau.
+
+### Pourquoi ce changement
+- Shana a demandé un moyen simple de trier les bateaux par lieu de départ directement depuis la page Bateaux.
+
+---
+
 ## [2026-08-12 bis] — Ajout de l'expérience "Concert Amir" (Heichal Hatarbut, Tel-Aviv)
 
 ### Ce qui a changé côté code

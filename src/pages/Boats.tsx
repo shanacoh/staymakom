@@ -6,6 +6,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import StandaloneExperienceCard from "@/components/StandaloneExperienceCard";
@@ -19,6 +20,7 @@ const Boats = () => {
   const { lang } = useLanguage();
   const isRTL = lang === "he";
   const [selectedBoatId, setSelectedBoatId] = useState<string | null>(null);
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
 
   const pageTitle = isRTL ? "יוצאים לים" : lang === "fr" ? "Prendre le large" : "On the water";
   const pageDescription = isRTL
@@ -35,7 +37,7 @@ const Boats = () => {
         .select(`
           id, slug, title, title_he, title_fr,
           hero_image, photos,
-          base_price, base_price_type, currency,
+          base_price, base_price_type, currency, original_price,
           min_party, max_party, has_child_price, has_time_slots,
           duration, duration_fr, duration_he,
           skipper_included, crew_included,
@@ -68,13 +70,33 @@ const Boats = () => {
         </section>
 
         <section className="container max-w-6xl mx-auto py-8 px-4">
+          <div className="flex flex-wrap gap-2 items-center justify-center mb-6">
+            {[
+              { value: "Tel Aviv", label: isRTL ? "תל אביב" : "Tel Aviv" },
+              { value: "Herzliya", label: isRTL ? "הרצליה" : "Herzliya" },
+            ].map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => setSelectedCity(selectedCity === value ? null : value)}
+                className={cn(
+                  "px-4 py-1.5 rounded-full text-sm border transition-all",
+                  selectedCity === value
+                    ? "bg-foreground text-background border-foreground"
+                    : "bg-background text-foreground border-border hover:border-foreground/40"
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
           {isLoading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {Array.from({ length: 6 }).map((_, i) => <ExperienceCardSkeleton key={i} />)}
             </div>
-          ) : boats && boats.length > 0 ? (
+          ) : boats && boats.filter((boat: any) => !selectedCity || boat.city === selectedCity).length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {boats.map((boat: any, idx: number) => (
+              {boats.filter((boat: any) => !selectedCity || boat.city === selectedCity).map((boat: any, idx: number) => (
                 <div
                   key={boat.id}
                   onClickCapture={(e) => { e.preventDefault(); setSelectedBoatId(boat.id); }}
