@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-08-14 bis] — Remise de la promo sur le bateau "CATAMARAN" (Herzliya)
+
+### Ce qui a changé côté code
+- Aucun changement (le composant d'affichage prix barré + badge existait déjà, réactivé simplement par les données).
+
+### Ce qui a changé côté base de données
+- `20260814000000_restore_catamaran_herzliya_promo.sql` : remet `original_price` à 3600₪ (prix plein) et recalcule `base_price` à -10% (3240₪) sur la fiche "CATAMARAN" (Herzliya, prestataire MARK).
+
+### Pourquoi ce changement
+- Shana avait retiré la promo la veille (2026-08-13) et a demandé de la remettre à -10% le 2026-08-14.
+
+---
+
 ## [2026-08-14] — Correction du bug de synchronisation des prix (expériences non-bateaux)
 
 ### Ce qui a changé côté code
