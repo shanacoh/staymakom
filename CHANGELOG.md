@@ -6,6 +6,21 @@
 
 ---
 
+## [2026-08-14] — Correction du bug de synchronisation des prix (expériences non-bateaux)
+
+### Ce qui a changé côté code
+- `src/components/forms/StandaloneExperienceForm.tsx` : pour les expériences standalone hors bateaux, le prix affiché aux clients (`base_price`) ne se mettait jamais à jour quand on changeait le prix fournisseur ou la marge dans le back office — seul un aperçu visuel était recalculé, jamais enregistré. Le prix client se synchronise désormais automatiquement (sauf si Shana le modifie elle-même à la main), et un vrai champ éditable "Prix de vente" est maintenant visible dans l'onglet "Tarif & Dispo" pour ces expériences (avant, seules les fiches Bateaux avaient ce champ). Le comportement des fiches Bateaux n'a pas été touché (pour ne pas risquer d'écraser un prix de promo déjà en place).
+
+### Ce qui a changé côté base de données
+- `20260814020000_fix_standalone_experiences_base_price_sync.sql` : recalcule `base_price` (fournisseur + marge) sur 6 fiches publiées dont le prix était resté figé sur une ancienne valeur : Survol de la Vieille Ville (zip-line), Sur les pas des pèlerins, Le tunnel des rois, Hallelujah (spectacle nocturne), Saut en parachute, Dégustation vin & fromage.
+- `20260814010000_fix_drink_paint_standalone_base_price.sql` : corrige le prix de vente de "Drink & Paint" (Tel Aviv) à 185₪ — Shana avait saisi ce prix dans le champ fournisseur par erreur (marge 0, Staymakom fournisseur direct).
+- `20260813050000_fix_drink_paint_standalone_title_disambiguation.sql` : renomme la fiche standalone "Drink & Paint" en ajoutant "— Tel Aviv" (EN/FR/HE) pour la distinguer d'une autre fiche du même nom liée à l'hôtel Lake House Kinneret (deux expériences réellement différentes, mais avec un titre identique qui prêtait à confusion).
+
+### Pourquoi ce changement
+- Shana a signalé que des changements de prix dans le back office ("Drink & Paint", puis "Survol de la Vieille Ville") ne se répercutaient pas sur le site public malgré une publication réussie. L'investigation a révélé un vrai bug de formulaire touchant toutes les expériences non-bateaux, avec 6 fiches déjà affectées en production.
+
+---
+
 ## [2026-08-13 quinquies] — Retrait de la promo sur le bateau "CATAMARAN" (Herzliya)
 
 ### Ce qui a changé côté code

@@ -108,8 +108,9 @@ const standaloneExperienceSchema = z.object({
   supplier_price_child: z.number().min(0).default(0),
   has_child_price: z.boolean().default(false),
   markup_percent: z.number().min(0).max(100).default(0),
-  // Prix de vente fixé manuellement (bateaux) : pré-rempli avec la suggestion
-  // fournisseur + marge, mais modifiable librement une fois édité à la main.
+  // Prix de vente réellement affiché aux clients : pré-rempli avec la
+  // suggestion fournisseur + marge, mais modifiable librement une fois édité
+  // à la main (bateaux et non-bateaux).
   base_price: optNum(0),
   base_price_child: optNum(0),
   supplier_booking_url: z.string().optional(),
@@ -593,19 +594,23 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   const sellPriceAdult = watch("base_price");
   const sellPriceChild = watch("base_price_child");
 
-  // Bateaux : le curseur de marge propose un prix de vente (fournisseur +
-  // marge), mais tant que Shana n'a pas modifié le champ à la main, il reste
-  // synchronisé sur cette suggestion. Dès qu'elle tape une valeur, le champ
-  // devient "dirty" et n'est plus jamais écrasé automatiquement.
+  // Le curseur de marge propose un prix de vente (fournisseur + marge), mais
+  // tant que Shana n'a pas modifié le champ à la main, il reste synchronisé
+  // sur cette suggestion. Dès qu'elle tape une valeur, le champ devient
+  // "dirty" et n'est plus jamais écrasé automatiquement. S'applique à toutes
+  // les expériences (bateaux et non-bateaux) : avant, seules les fiches
+  // bateaux se resynchronisaient, ce qui laissait le prix de vente des
+  // expériences non-bateaux figé sur son ancienne valeur malgré un
+  // changement de tarif fournisseur ou de marge.
   useEffect(() => {
-    if (!isBoatsExperience || priceTouched) return;
+    if (priceTouched) return;
     setValue("base_price", computedAdultPrice);
-  }, [isBoatsExperience, computedAdultPrice, priceTouched, setValue]);
+  }, [computedAdultPrice, priceTouched, setValue]);
 
   useEffect(() => {
-    if (!isBoatsExperience || !hasChildPrice || childPriceTouched) return;
+    if (!hasChildPrice || childPriceTouched) return;
     setValue("base_price_child", computedChildPrice);
-  }, [isBoatsExperience, hasChildPrice, computedChildPrice, childPriceTouched, setValue]);
+  }, [hasChildPrice, computedChildPrice, childPriceTouched, setValue]);
 
   // -------------------------------------------------------------------------
   // Auto-save to localStorage
@@ -678,12 +683,16 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     setValue("supplier_price_child", exp.supplier_price_child ?? 0);
     setValue("has_child_price", exp.has_child_price ?? false);
     setValue("markup_percent", exp.markup_percent ?? 0);
-    // Un prix déjà enregistré est considéré comme fixé à la main : le
-    // curseur de marge ne doit plus l'écraser automatiquement.
     setValue("base_price", exp.base_price ?? undefined);
     setValue("base_price_child", exp.base_price_child ?? undefined);
-    setPriceTouched(exp.base_price != null);
-    setChildPriceTouched(exp.base_price_child != null);
+    // Bateaux : un prix déjà enregistré est considéré comme fixé à la main
+    // (utilisé notamment pour les promos) — le curseur de marge ne doit pas
+    // l'écraser à l'ouverture de la fiche. Non-bateaux : le prix de vente
+    // n'a jamais été éditable à la main jusqu'ici, donc une valeur déjà
+    // enregistrée n'est pas un choix volontaire — on resynchronise dès
+    // l'ouverture sur fournisseur + marge.
+    setPriceTouched(isBoatsExperience ? exp.base_price != null : false);
+    setChildPriceTouched(isBoatsExperience ? exp.base_price_child != null : false);
     setValue("supplier_booking_url", exp.supplier_booking_url || "");
     setValue("supplier_contact", exp.supplier_contact || "");
     setValue("supplier_payment_method", exp.supplier_payment_method || undefined);
@@ -2725,19 +2734,53 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                   </div>
                 </div>
 
-                {/* Preview cards */}
+                {/* Prix de vente réellement enregistré (celui lu par le site public).
+                    Éditable : le curseur de marge ci-dessus ne fait que proposer une
+                    suggestion, tant que ce champ n'est pas modifié à la main il reste
+                    synchronisé dessus (cf. useEffect plus haut dans le composant). */}
                 {!isBoatsExperience && supplierPriceAdult > 0 && (
                   <div className="grid grid-cols-3 gap-3">
                     <div className="rounded-lg border p-4 bg-background">
-                      <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
-                        <Users className="h-3.5 w-3.5" />
-                        {isFixed ? "Prix total affiché" : "Adulte"}
+                      <div className="flex items-center justify-between gap-1.5 text-muted-foreground text-xs mb-2">
+                        <span className="flex items-center gap-1.5">
+                          <Users className="h-3.5 w-3.5" />
+                          {isFixed ? "Prix total affiché" : "Adulte"}
+                        </span>
+                        {priceTouched && (
+                          <button
+                            type="button"
+                            className="text-primary underline text-[11px]"
+                            onClick={() => { setPriceTouched(false); setValue("base_price", computedAdultPrice); }}
+                          >
+                            Reprendre la suggestion
+                          </button>
+                        )}
                       </div>
-                      <p className="text-2xl font-bold">{computedAdultPrice} <span className="text-base font-normal">{currencySymbol}</span></p>
+                      <Controller
+                        name="base_price"
+                        control={control}
+                        render={({ field }) => (
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              value={field.value ?? ""}
+                              disabled={isSaving}
+                              className="text-lg font-bold h-auto py-1.5 pr-8"
+                              onChange={(e) => {
+                                setPriceTouched(true);
+                                field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value));
+                              }}
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
+                          </div>
+                        )}
+                      />
                       {isFixed ? (
                         <p className="text-xs text-muted-foreground mt-1">Prix forfait tout groupe</p>
                       ) : (
-                        <p className="text-xs text-muted-foreground mt-1">{supplierPriceAdult} + {markupPercent}% = {computedAdultPrice}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Suggestion : {supplierPriceAdult} + {markupPercent}% = {computedAdultPrice}</p>
                       )}
                     </div>
                     {isFixed ? (
@@ -2759,13 +2802,42 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                       </div>
                     ) : (
                       <div className={cn("rounded-lg border p-4", hasChildPrice ? "bg-background" : "bg-muted/30")}>
-                        <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
-                          <Users className="h-3.5 w-3.5" /> Enfant
+                        <div className="flex items-center justify-between gap-1.5 text-muted-foreground text-xs mb-2">
+                          <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> Enfant</span>
+                          {hasChildPrice && childPriceTouched && (
+                            <button
+                              type="button"
+                              className="text-primary underline text-[11px]"
+                              onClick={() => { setChildPriceTouched(false); setValue("base_price_child", computedChildPrice); }}
+                            >
+                              Reprendre la suggestion
+                            </button>
+                          )}
                         </div>
                         {hasChildPrice ? (
                           <>
-                            <p className="text-2xl font-bold">{computedChildPrice} <span className="text-base font-normal">{currencySymbol}</span></p>
-                            <p className="text-xs text-muted-foreground mt-1">{supplierPriceChild} + {markupPercent}% = {computedChildPrice}</p>
+                            <Controller
+                              name="base_price_child"
+                              control={control}
+                              render={({ field }) => (
+                                <div className="relative">
+                                  <Input
+                                    type="number"
+                                    min={0}
+                                    step="0.01"
+                                    value={field.value ?? ""}
+                                    disabled={isSaving}
+                                    className="text-lg font-bold h-auto py-1.5 pr-8"
+                                    onChange={(e) => {
+                                      setChildPriceTouched(true);
+                                      field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value));
+                                    }}
+                                  />
+                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
+                                </div>
+                              )}
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">Suggestion : {supplierPriceChild} + {markupPercent}% = {computedChildPrice}</p>
                           </>
                         ) : (
                           <>
