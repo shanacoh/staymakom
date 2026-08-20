@@ -122,7 +122,7 @@ const ItineraireTsfat = () => {
           <div className="text-center mb-10 space-y-1">
             <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground font-sans">Tel Aviv → Tsfat</p>
             <h2 className="font-sans text-2xl sm:text-3xl font-bold uppercase tracking-[-0.02em] text-foreground">
-              La Route de la Journée
+              Escapade à Tsfat
             </h2>
           </div>
 
