@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-08-20] — Création de la page "Itinéraire Tsfat" (Dan & Susana, 21-22 août)
+
+### Ce qui a changé côté code
+- `src/pages/ItineraireTsfat.tsx` (nouveau fichier) : page privée présentant le programme de la journée à Tsfat pour Dan et Susana, dans le style immersif de la page 404 (grande photo en fond, gros titre). Le déroulé est présenté sous forme de frise numérotée : départ de Tel Aviv, tombeau de Rabbi Yonathan Ben Ouziel, ranch Bat Yaar, vieille ville de Tsfat et ses boutiques, les 3 synagogues, déjeuner à Lahuh Tzfat, dégustation à la Tzfat Distillery (mise en avant comme temps fort), nuit et Chabbat à Setai Bayit BaGalil.
+- `src/App.tsx` : ajout de la route `/itineraire-tsfat` pour rendre la page accessible.
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Shana a demandé une page cadeau/itinéraire personnalisée pour Dan et Susana, dans l'esprit visuel de la marque, à leur partager pour leur excursion des 21 et 22 août à Tsfat.
+
+---
+
 ## [2026-08-14 bis] — Remise de la promo sur le bateau "CATAMARAN" (Herzliya)
 
 ### Ce qui a changé côté code
