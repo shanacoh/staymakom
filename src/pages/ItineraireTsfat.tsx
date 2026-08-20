@@ -70,7 +70,7 @@ const STEPS: Step[] = [
     number: "07",
     title: "Dégustation à la Tzfat Distillery",
     mapsUrl: "https://www.google.com/maps/search/?api=1&query=Tzfat+Distillery+Safed",
-    description: "Le lieu est magnifique et l'hôte hyper sympa. Pour quelques shekels, la dégustation est ouverte à tous, et devient gratuite au moindre achat. Les alcools sont atypiques et vraiment excellents. Attention, ferme avant 16h30 le vendredi.",
+    description: "Le lieu est magnifique et l'hôte hyper sympa. Pour quelques shekels, la dégustation est ouverte à tous, et devient gratuite au moindre achat. Les alcools sont atypiques et vraiment excellents. Attention, ferme avant 15h00 le vendredi.",
     highlight: true,
   },
   {
