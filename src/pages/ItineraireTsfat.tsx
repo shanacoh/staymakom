@@ -15,6 +15,7 @@ type Step = {
   description?: string;
   items?: ItineraryItem[];
   highlight?: boolean;
+  optional?: boolean;
 };
 
 const STEPS: Step[] = [
@@ -28,6 +29,7 @@ const STEPS: Step[] = [
     title: "Tombeau de Rabbi Yonathan Ben Ouziel",
     mapsUrl: "https://www.google.com/maps/search/?api=1&query=Tomb+of+Rabbi+Yonatan+Ben+Uziel+Amuka",
     description: "Petit arrêt sur la route pour passer voir le tombeau de Rabbi Yonathan Ben Ouziel.",
+    optional: true,
   },
   {
     number: "03",
@@ -153,6 +155,11 @@ const ItineraireTsfat = () => {
                     }
                   >
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      {step.optional && (
+                        <span className="text-[10px] uppercase tracking-[0.14em] font-bold text-muted-foreground">
+                          Optionnel
+                        </span>
+                      )}
                       {step.mapsUrl ? (
                         <a
                           href={step.mapsUrl}
