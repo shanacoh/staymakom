@@ -34,7 +34,7 @@ const STEPS: Step[] = [
     title: "Bat Yaar",
     mapsUrl: "https://www.google.com/maps/search/?api=1&query=Bat+Yaar+Ranch+Biriya+Forest",
     duration: "11h30",
-    description: "Un ranch pur style Far West, avec balade à cheval dans la forêt de Birya. L'endroit est superbe, même juste pour boire un verre. On se croirait presque dans un ranch du Texas, pas en Israël. Balade à cheval à 11h30, 1h avec vue sur toute la vallée. Compter 200₪ par personne, à payer sur place.",
+    description: "Un ranch pur style Far West, avec balade à cheval dans la forêt de Birya pour une heure avec des vues incroyable sur toute la vallée. L'endroit est superbe, même juste pour boire un verre. On se croirait presque dans un ranch du Texas, pas en Israël. Compter 200₪ par personne, à payer sur place.",
     highlight: true,
   },
   {
