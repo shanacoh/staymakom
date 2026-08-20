@@ -1,5 +1,5 @@
 import V3Header from "@/components/V3Header";
-import { MapPin, Clock, Sparkles, Moon } from "lucide-react";
+import { MapPin, Clock, Moon } from "lucide-react";
 import heroImg from "@/assets/safed.webp";
 
 type ItineraryItem = {
@@ -34,7 +34,8 @@ const STEPS: Step[] = [
     title: "Bat Yaar",
     mapsUrl: "https://www.google.com/maps/search/?api=1&query=Bat+Yaar+Ranch+Biriya+Forest",
     duration: "10 min",
-    description: "Un ranch pur style Far West, avec balade à cheval dans la forêt de Birya. L'endroit est superbe, même juste pour boire un verre. On se croirait presque dans un ranch du Texas, pas en Israël.",
+    description: "Un ranch pur style Far West, avec balade à cheval dans la forêt de Birya. L'endroit est superbe, même juste pour boire un verre. On se croirait presque dans un ranch du Texas, pas en Israël. Compter 200₪ par personne, à payer sur place.",
+    highlight: true,
   },
   {
     number: "04",
@@ -67,7 +68,7 @@ const STEPS: Step[] = [
     number: "07",
     title: "Dégustation à la Tzfat Distillery",
     mapsUrl: "https://www.google.com/maps/search/?api=1&query=Tzfat+Distillery+Safed",
-    description: "Le lieu est magnifique et l'hôte hyper sympa. Pour quelques shekels, la dégustation est ouverte à tous, et devient gratuite au moindre achat. Les alcools sont atypiques et vraiment excellents.",
+    description: "Le lieu est magnifique et l'hôte hyper sympa. Pour quelques shekels, la dégustation est ouverte à tous, et devient gratuite au moindre achat. Les alcools sont atypiques et vraiment excellents. Attention, ferme avant 16h30 le vendredi.",
     highlight: true,
   },
   {
@@ -113,19 +114,8 @@ const ItineraireTsfat = () => {
         </div>
       </section>
 
-      {/* Intro callout */}
-      <section className="bg-white py-12 px-6">
-        <div className="max-w-2xl mx-auto">
-          <div className="border-l-4 border-[#ad1414] bg-white/60 backdrop-blur-sm rounded-r-xl px-5 py-4">
-            <p className="font-sans text-sm text-foreground leading-relaxed italic">
-              Route vers Tsfat. Voici le déroulé de la journée, étape par étape.
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* Timeline */}
-      <section className="pb-16 px-4 scroll-mt-16">
+      <section className="pt-12 pb-16 px-4 scroll-mt-16">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-10 space-y-1">
             <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground font-sans">Tel Aviv → Tsfat</p>
@@ -162,13 +152,6 @@ const ItineraireTsfat = () => {
                         : "bg-muted/40 border border-border")
                     }
                   >
-                    {step.highlight && (
-                      <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] font-bold text-[#ad1414] mb-1.5">
-                        <Sparkles className="h-3 w-3" />
-                        Highlight de la journée
-                      </span>
-                    )}
-
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                       {step.mapsUrl ? (
                         <a
