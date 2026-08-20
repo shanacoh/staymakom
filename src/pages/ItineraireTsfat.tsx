@@ -2,12 +2,18 @@ import V3Header from "@/components/V3Header";
 import { MapPin, Clock, Sparkles, Moon } from "lucide-react";
 import heroImg from "@/assets/safed.webp";
 
+type ItineraryItem = {
+  label: string;
+  mapsUrl?: string;
+};
+
 type Step = {
   number: string;
   title: string;
+  mapsUrl?: string;
   duration?: string;
   description?: string;
-  items?: string[];
+  items?: ItineraryItem[];
   highlight?: boolean;
 };
 
@@ -20,48 +26,54 @@ const STEPS: Step[] = [
   {
     number: "02",
     title: "Tombeau de Rabbi Yonathan Ben Ouziel",
+    mapsUrl: "https://www.google.com/maps/search/?api=1&query=Tomb+of+Rabbi+Yonatan+Ben+Uziel+Amuka",
     description: "Petit arrêt sur la route pour passer voir le tombeau de Rabbi Yonathan Ben Ouziel.",
   },
   {
     number: "03",
     title: "Bat Yaar",
+    mapsUrl: "https://www.google.com/maps/search/?api=1&query=Bat+Yaar+Ranch+Biriya+Forest",
     duration: "10 min",
     description: "Un ranch pur style Far West, avec balade à cheval dans la forêt de Birya. L'endroit est superbe, même juste pour boire un verre. On se croirait presque dans un ranch du Texas, pas en Israël.",
   },
   {
     number: "04",
     title: "Tsfat, ville de charme",
+    mapsUrl: "https://www.google.com/maps/search/?api=1&query=Tsfat+Old+City+Israel",
     duration: "15 min",
     description: "On se perd dans les ruelles et les petites boutiques de la vieille ville.",
     items: [
-      "Magasin de bougies artisanales",
-      "Atelier de tissage, confection de talit",
-      "Atelier de soufflage de verre (sous réserve de dispo)",
+      { label: "Magasin de bougies artisanales" },
+      { label: "Atelier de tissage, confection de talit" },
+      { label: "Atelier de soufflage de verre (sous réserve de dispo)" },
     ],
   },
   {
     number: "05",
     title: "Les 3 synagogues à voir",
     items: [
-      "Synagogue Abuhav",
-      "Synagogue Rabbi Yosef Caro",
-      "Synagogue Ari Zal",
+      { label: "Synagogue Abuhav", mapsUrl: "https://www.google.com/maps/search/?api=1&query=Abuhav+Synagogue+Safed" },
+      { label: "Synagogue Rabbi Yosef Caro", mapsUrl: "https://www.google.com/maps/search/?api=1&query=Rabbi+Yosef+Caro+Synagogue+Safed" },
+      { label: "Synagogue Ari Zal", mapsUrl: "https://www.google.com/maps/search/?api=1&query=Ari+Ashkenazi+Synagogue+Safed" },
     ],
   },
   {
     number: "06",
     title: "Déjeuner à Lahuh Tzfat",
+    mapsUrl: "https://www.google.com/maps/search/?api=1&query=Lahuh+Tzfat+Restaurant+Safed",
     description: "Pause déjeuner au restaurant yéménite Lahuh Tzfat (לחוח צפת), une adresse locale sympa pour goûter la cuisine yéménite au cœur de la ville.",
   },
   {
     number: "07",
     title: "Dégustation à la Tzfat Distillery",
+    mapsUrl: "https://www.google.com/maps/search/?api=1&query=Tzfat+Distillery+Safed",
     description: "Le lieu est magnifique et l'hôte hyper sympa. Pour quelques shekels, la dégustation est ouverte à tous, et devient gratuite au moindre achat. Les alcools sont atypiques et vraiment excellents.",
     highlight: true,
   },
   {
     number: "08",
     title: "Nuit & Chabbat à Setai Bayit BaGalil",
+    mapsUrl: "https://www.google.com/maps/search/?api=1&query=Setai+Bayit+BaGalil",
     description: "La soirée et le Chabbat se passent sur place, à Setai Bayit BaGalil.",
   },
 ];
@@ -158,9 +170,23 @@ const ItineraireTsfat = () => {
                     )}
 
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <h3 className="font-sans text-base sm:text-lg font-bold uppercase tracking-[-0.01em] text-foreground">
-                        {step.title}
-                      </h3>
+                      {step.mapsUrl ? (
+                        <a
+                          href={step.mapsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group inline-flex items-center gap-1.5 font-sans text-base sm:text-lg font-bold uppercase tracking-[-0.01em] text-foreground hover:text-[#ad1414] transition-colors"
+                        >
+                          <MapPin className="h-4 w-4 shrink-0 text-[#ad1414] group-hover:scale-110 transition-transform" />
+                          <span className="underline decoration-transparent group-hover:decoration-[#ad1414] underline-offset-4 decoration-2 transition-colors">
+                            {step.title}
+                          </span>
+                        </a>
+                      ) : (
+                        <h3 className="font-sans text-base sm:text-lg font-bold uppercase tracking-[-0.01em] text-foreground">
+                          {step.title}
+                        </h3>
+                      )}
                       {step.duration && (
                         <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-sans">
                           <Clock className="h-3 w-3" />
@@ -178,9 +204,23 @@ const ItineraireTsfat = () => {
                     {step.items && (
                       <ul className="mt-2 space-y-1">
                         {step.items.map((item) => (
-                          <li key={item} className="flex items-start gap-1.5 text-sm text-foreground/80 font-sans">
+                          <li key={item.label} className="flex items-start gap-1.5 text-sm text-foreground/80 font-sans">
                             <span className="text-[#ad1414] mt-1 leading-none">•</span>
-                            {item}
+                            {item.mapsUrl ? (
+                              <a
+                                href={item.mapsUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group inline-flex items-center gap-1 hover:text-[#ad1414] transition-colors"
+                              >
+                                <MapPin className="h-3 w-3 shrink-0 text-[#ad1414]/70 group-hover:text-[#ad1414]" />
+                                <span className="underline decoration-transparent group-hover:decoration-[#ad1414] underline-offset-2 transition-colors">
+                                  {item.label}
+                                </span>
+                              </a>
+                            ) : (
+                              item.label
+                            )}
                           </li>
                         ))}
                       </ul>
@@ -202,10 +242,17 @@ const ItineraireTsfat = () => {
             </div>
           </div>
 
-          <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted-foreground font-sans">
+          <a
+            href="https://www.google.com/maps/search/?api=1&query=Setai+Bayit+BaGalil"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted-foreground font-sans hover:text-[#ad1414] transition-colors"
+          >
             <MapPin className="h-3.5 w-3.5" />
-            Setai Bayit BaGalil
-          </div>
+            <span className="underline decoration-transparent hover:decoration-[#ad1414] underline-offset-2 transition-colors">
+              Setai Bayit BaGalil
+            </span>
+          </a>
         </div>
       </section>
 
