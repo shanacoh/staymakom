@@ -61,6 +61,7 @@ const BLOCKS: TimeBlock[] = [
       {
         title: "Whisky Tasting",
         venue: "Whiskey BM",
+        description: "A relaxed evening sampling fine whiskies in a cozy setting.",
         emoji: "🥃",
         mapsUrl: "https://www.google.com/maps/search/?api=1&query=Whiskey+Bar+BM+Tel+Aviv",
       },
@@ -73,6 +74,7 @@ const BLOCKS: TimeBlock[] = [
       {
         title: "Nice Dinner Spot",
         venue: "Shila Restaurant",
+        description: "A lovely table to celebrate together, among Tel Aviv's best.",
         emoji: "🍽️",
         mapsUrl: "https://www.google.com/maps/search/?api=1&query=Shila+Restaurant+Tel+Aviv",
       },
@@ -157,33 +159,29 @@ const HappyBirthdayMom = () => {
                           <h3 className="font-sans text-base sm:text-lg font-bold uppercase tracking-[-0.01em] text-foreground">
                             {activity.title}
                             {activity.emoji && <span className="ml-1.5">{activity.emoji}</span>}
+                            {activity.venue && (
+                              <span className="ml-1.5 normal-case font-normal tracking-normal text-sm text-muted-foreground">
+                                at {activity.venue}
+                              </span>
+                            )}
                           </h3>
                           {activity.description && (
                             <p className="mt-0.5 text-sm text-foreground/80 leading-relaxed font-sans">
                               {activity.description}
                             </p>
                           )}
-                          {(activity.venue || activity.mapsUrl) && (
-                            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-                              {activity.venue && (
-                                <span className="text-xs text-muted-foreground font-sans">
-                                  at {activity.venue}
-                                </span>
-                              )}
-                              {activity.mapsUrl && (
-                                <a
-                                  href={activity.mapsUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="group inline-flex items-center gap-1 text-xs font-sans font-semibold text-[#ad1414] hover:text-[#8a0f0f] transition-colors"
-                                >
-                                  <MapPin className="h-3.5 w-3.5 shrink-0 group-hover:scale-110 transition-transform" />
-                                  <span className="underline decoration-transparent group-hover:decoration-[#8a0f0f] underline-offset-2 transition-colors">
-                                    Get there
-                                  </span>
-                                </a>
-                              )}
-                            </div>
+                          {activity.mapsUrl && (
+                            <a
+                              href={activity.mapsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group mt-1.5 inline-flex items-center gap-1 text-xs font-sans font-semibold text-[#ad1414] hover:text-[#8a0f0f] transition-colors"
+                            >
+                              <MapPin className="h-3.5 w-3.5 shrink-0 group-hover:scale-110 transition-transform" />
+                              <span className="underline decoration-transparent group-hover:decoration-[#8a0f0f] underline-offset-2 transition-colors">
+                                Get there
+                              </span>
+                            </a>
                           )}
                         </div>
                       ))}
