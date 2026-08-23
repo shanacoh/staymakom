@@ -12,6 +12,7 @@ type Activity = {
 type TimeBlock = {
   number: string;
   time: string;
+  note?: string;
   activities: Activity[];
 };
 
@@ -19,6 +20,7 @@ const BLOCKS: TimeBlock[] = [
   {
     number: "01",
     time: "1:00 PM – 3:30 PM",
+    note: "Free time, no reservation needed",
     activities: [
       {
         title: "Jaffa Flea Market",
@@ -114,7 +116,7 @@ const HappyBirthdayMom = () => {
       <section className="pt-12 pb-16 px-4 scroll-mt-16">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-10 space-y-1">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground font-sans">Jaffa &amp; Tel Aviv</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground font-sans">Tel Aviv - Yaffo</p>
             <h2 className="font-sans text-2xl sm:text-3xl font-bold uppercase tracking-[-0.02em] text-foreground">
               The Day's Plan
             </h2>
@@ -134,10 +136,17 @@ const HappyBirthdayMom = () => {
 
                   {/* Content card */}
                   <div className="flex-1 rounded-2xl px-5 py-4 mb-1 bg-muted/40 border border-border">
-                    <span className="inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.14em] font-bold text-[#ad1414] mb-2">
-                      <Clock className="h-3 w-3" />
-                      {block.time}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
+                      <span className="inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.14em] font-bold text-[#ad1414]">
+                        <Clock className="h-3 w-3" />
+                        {block.time}
+                      </span>
+                      {block.note && (
+                        <span className="text-[11px] text-muted-foreground font-sans italic">
+                          · {block.note}
+                        </span>
+                      )}
+                    </div>
 
                     <div className="space-y-3">
                       {block.activities.map((activity) => (
