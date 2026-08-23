@@ -4,6 +4,7 @@ import heroImg from "@/assets/jaffa-port.jpg";
 
 type Activity = {
   title: string;
+  venue?: string;
   description?: string;
   emoji?: string;
   mapsUrl?: string;
@@ -28,8 +29,9 @@ const BLOCKS: TimeBlock[] = [
         mapsUrl: "https://www.google.com/maps/search/?api=1&query=Jaffa+Flea+Market+Tel+Aviv",
       },
       {
-        title: "Cafe Puaa",
-        description: "A cozy, bohemian café tucked into the flea market, perfect for a relaxed lunch or brunch.",
+        title: "Lunch",
+        venue: "Cafe Puaa",
+        description: "A cozy, bohemian café tucked into the flea market.",
         mapsUrl: "https://www.google.com/maps/search/?api=1&query=Cafe+Puaa+Jaffa",
       },
       {
@@ -44,8 +46,9 @@ const BLOCKS: TimeBlock[] = [
     time: "4:00 PM",
     activities: [
       {
-        title: "Alchemist Bar TLV",
-        description: "A fun and stylish mixology workshop in the heart of Tel Aviv.",
+        title: "Cocktail Workshop",
+        venue: "Alchemist Bar TLV",
+        description: "A fun and stylish mixology experience in the heart of Tel Aviv.",
         emoji: "🍸",
         mapsUrl: "https://www.google.com/maps/search/?api=1&query=Alchemist+Bar+Tel+Aviv",
       },
@@ -56,8 +59,8 @@ const BLOCKS: TimeBlock[] = [
     time: "6:30 PM",
     activities: [
       {
-        title: "Whiskey BM",
-        description: "Whisky tasting at whisky bar.",
+        title: "Whisky Tasting",
+        venue: "Whiskey BM",
         emoji: "🥃",
         mapsUrl: "https://www.google.com/maps/search/?api=1&query=Whiskey+Bar+BM+Tel+Aviv",
       },
@@ -68,8 +71,8 @@ const BLOCKS: TimeBlock[] = [
     time: "8:30 PM",
     activities: [
       {
-        title: "Shila Restaurant",
-        description: "Dinner at one of Tel Aviv's most celebrated tables.",
+        title: "Nice Dinner Spot",
+        venue: "Shila Restaurant",
         emoji: "🍽️",
         mapsUrl: "https://www.google.com/maps/search/?api=1&query=Shila+Restaurant+Tel+Aviv",
       },
@@ -160,18 +163,27 @@ const HappyBirthdayMom = () => {
                               {activity.description}
                             </p>
                           )}
-                          {activity.mapsUrl && (
-                            <a
-                              href={activity.mapsUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="group mt-1.5 inline-flex items-center gap-1 text-xs font-sans font-semibold text-[#ad1414] hover:text-[#8a0f0f] transition-colors"
-                            >
-                              <MapPin className="h-3.5 w-3.5 shrink-0 group-hover:scale-110 transition-transform" />
-                              <span className="underline decoration-transparent group-hover:decoration-[#8a0f0f] underline-offset-2 transition-colors">
-                                Get there
-                              </span>
-                            </a>
+                          {(activity.venue || activity.mapsUrl) && (
+                            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                              {activity.venue && (
+                                <span className="text-xs text-muted-foreground font-sans">
+                                  at {activity.venue}
+                                </span>
+                              )}
+                              {activity.mapsUrl && (
+                                <a
+                                  href={activity.mapsUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="group inline-flex items-center gap-1 text-xs font-sans font-semibold text-[#ad1414] hover:text-[#8a0f0f] transition-colors"
+                                >
+                                  <MapPin className="h-3.5 w-3.5 shrink-0 group-hover:scale-110 transition-transform" />
+                                  <span className="underline decoration-transparent group-hover:decoration-[#8a0f0f] underline-offset-2 transition-colors">
+                                    Get there
+                                  </span>
+                                </a>
+                              )}
+                            </div>
                           )}
                         </div>
                       ))}
