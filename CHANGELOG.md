@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-08-23] — Création de la page "Happy Birthday Mom" (Josh Sirota, 4 personnes)
+
+### Ce qui a changé côté code
+- `src/pages/HappyBirthdayMom.tsx` (nouveau fichier) : page privée reprenant le même style immersif que la page Itinéraire Tsfat (grande photo en fond, gros titre), avec le programme de la journée à Jaffa et Tel Aviv organisé par créneau horaire (marché aux puces de Jaffa, déjeuner, musée Ilana Goor, atelier cocktail, bar à whisky au Sarona Market, dîner au Shila). Contenu en anglais, langue des destinataires.
+- `src/App.tsx` : ajout de la route `/happy-birthday-mom` pour rendre la page accessible.
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Shana a demandé une deuxième page-cadeau du même style que l'itinéraire Tsfat, cette fois pour l'anniversaire de la maman de Josh Sirota et son groupe de 4 personnes à Tel Aviv/Jaffa.
+
+---
+
 ## [2026-08-20] — Création de la page "Itinéraire Tsfat" (Dan & Susana, 21-22 août)
 
 ### Ce qui a changé côté code

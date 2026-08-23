@@ -1,0 +1,167 @@
+import V3Header from "@/components/V3Header";
+import { Clock } from "lucide-react";
+import heroImg from "@/assets/romantic-category.jpg";
+
+type Activity = {
+  title: string;
+  description?: string;
+  emoji?: string;
+};
+
+type TimeBlock = {
+  number: string;
+  time: string;
+  activities: Activity[];
+};
+
+const BLOCKS: TimeBlock[] = [
+  {
+    number: "01",
+    time: "1:00 PM – 3:30 PM",
+    activities: [
+      {
+        title: "Jaffa Flea Market",
+        description: "Explore the colorful market, vintage shops and little hidden gems around Jaffa.",
+      },
+      {
+        title: "Lunch in Jaffa",
+        description: "A relaxed lunch or brunch in one of the charming spots around the market.",
+      },
+      {
+        title: "Ilana Goor Museum",
+        description: "A unique art museum in the heart of Old Jaffa, with beautiful views over the Mediterranean.",
+      },
+    ],
+  },
+  {
+    number: "02",
+    time: "4:00 PM",
+    activities: [
+      {
+        title: "Cocktail Workshop",
+        description: "A fun and stylish mixology experience in Tel Aviv.",
+        emoji: "🍸",
+      },
+    ],
+  },
+  {
+    number: "03",
+    time: "6:30 PM",
+    activities: [
+      {
+        title: "Whisky Bar + Whisky Tasting",
+        description: "In Sarona Market.",
+        emoji: "🥃",
+      },
+    ],
+  },
+  {
+    number: "04",
+    time: "8:30 PM",
+    activities: [
+      {
+        title: "Dinner at Shila",
+        emoji: "🍽️",
+      },
+    ],
+  },
+];
+
+const HappyBirthdayMom = () => {
+  return (
+    <div className="min-h-screen flex flex-col bg-white">
+      <V3Header />
+
+      {/* Hero */}
+      <section className="relative h-[49vh] md:h-[54vh] min-h-[300px] flex items-center justify-center">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${heroImg})` }}
+        />
+        <div className="absolute inset-0 bg-black/45" />
+
+        <div className="relative z-10 text-center text-white px-4 sm:px-6 max-w-3xl mx-auto">
+          <p
+            className="text-xs uppercase tracking-[0.18em] text-white/70 font-sans mb-3 opacity-0 animate-hero-fade-up"
+            style={{ animationDelay: "0ms" }}
+          >
+            STAYMAKOM · Private Itinerary
+          </p>
+          <h1
+            className="font-sans text-[28px] sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-[0.02em] leading-[1.1] opacity-0 animate-hero-fade-up text-white text-center drop-shadow-lg"
+            style={{ animationDelay: "150ms" }}
+          >
+            Happy Birthday Mom
+          </h1>
+          <p
+            className="mt-4 text-sm sm:text-base text-white/85 font-sans uppercase tracking-[0.14em] opacity-0 animate-hero-fade-up"
+            style={{ animationDelay: "300ms" }}
+          >
+            4 Guests · Hosted by Josh Sirota
+          </p>
+        </div>
+      </section>
+
+      {/* Timeline */}
+      <section className="pt-12 pb-16 px-4 scroll-mt-16">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-10 space-y-1">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground font-sans">Jaffa &amp; Tel Aviv</p>
+            <h2 className="font-sans text-2xl sm:text-3xl font-bold uppercase tracking-[-0.02em] text-foreground">
+              The Day's Plan
+            </h2>
+          </div>
+
+          <div className="relative">
+            {/* Vertical line */}
+            <div className="absolute left-5 top-2 bottom-2 w-px bg-border sm:left-6" />
+
+            <div className="space-y-6">
+              {BLOCKS.map((block) => (
+                <div key={block.number} className="relative flex gap-4 sm:gap-5">
+                  {/* Number badge */}
+                  <div className="relative z-10 flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full border bg-white border-border text-foreground font-sans text-xs sm:text-sm font-bold">
+                    {block.number}
+                  </div>
+
+                  {/* Content card */}
+                  <div className="flex-1 rounded-2xl px-5 py-4 mb-1 bg-muted/40 border border-border">
+                    <span className="inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.14em] font-bold text-[#ad1414] mb-2">
+                      <Clock className="h-3 w-3" />
+                      {block.time}
+                    </span>
+
+                    <div className="space-y-2.5">
+                      {block.activities.map((activity) => (
+                        <div key={activity.title}>
+                          <h3 className="font-sans text-base sm:text-lg font-bold uppercase tracking-[-0.01em] text-foreground">
+                            {activity.title}
+                            {activity.emoji && <span className="ml-1.5">{activity.emoji}</span>}
+                          </h3>
+                          {activity.description && (
+                            <p className="mt-0.5 text-sm text-foreground/80 leading-relaxed font-sans">
+                              {activity.description}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-border py-6 text-center">
+        <p className="font-sans text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
+          © STAYMAKOM · Tailor-Made Experiences in Israel
+        </p>
+      </footer>
+    </div>
+  );
+};
+
+export default HappyBirthdayMom;
