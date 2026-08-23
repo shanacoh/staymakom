@@ -1,11 +1,12 @@
 import V3Header from "@/components/V3Header";
-import { Clock } from "lucide-react";
-import heroImg from "@/assets/romantic-category.jpg";
+import { Clock, MapPin } from "lucide-react";
+import heroImg from "@/assets/jaffa-port.jpg";
 
 type Activity = {
   title: string;
   description?: string;
   emoji?: string;
+  mapsUrl?: string;
 };
 
 type TimeBlock = {
@@ -21,15 +22,18 @@ const BLOCKS: TimeBlock[] = [
     activities: [
       {
         title: "Jaffa Flea Market",
-        description: "Explore the colorful market, vintage shops and little hidden gems around Jaffa.",
+        description: "Wander through vintage shops, antique stalls and hidden gems in one of Tel Aviv's most charming neighborhoods.",
+        mapsUrl: "https://www.google.com/maps/search/?api=1&query=Jaffa+Flea+Market+Tel+Aviv",
       },
       {
-        title: "Lunch in Jaffa",
-        description: "A relaxed lunch or brunch in one of the charming spots around the market.",
+        title: "Cafe Puaa",
+        description: "A cozy, bohemian café tucked into the flea market, perfect for a relaxed lunch or brunch.",
+        mapsUrl: "https://www.google.com/maps/search/?api=1&query=Cafe+Puaa+Jaffa",
       },
       {
         title: "Ilana Goor Museum",
         description: "A unique art museum in the heart of Old Jaffa, with beautiful views over the Mediterranean.",
+        mapsUrl: "https://www.google.com/maps/search/?api=1&query=Ilana+Goor+Museum+Jaffa",
       },
     ],
   },
@@ -38,9 +42,10 @@ const BLOCKS: TimeBlock[] = [
     time: "4:00 PM",
     activities: [
       {
-        title: "Cocktail Workshop",
-        description: "A fun and stylish mixology experience in Tel Aviv.",
+        title: "Alchemist Bar TLV",
+        description: "A fun and stylish mixology workshop in the heart of Tel Aviv.",
         emoji: "🍸",
+        mapsUrl: "https://www.google.com/maps/search/?api=1&query=Alchemist+Bar+Tel+Aviv",
       },
     ],
   },
@@ -49,9 +54,10 @@ const BLOCKS: TimeBlock[] = [
     time: "6:30 PM",
     activities: [
       {
-        title: "Whisky Bar + Whisky Tasting",
-        description: "In Sarona Market.",
+        title: "Whiskey BM",
+        description: "Whisky tasting at whisky bar.",
         emoji: "🥃",
+        mapsUrl: "https://www.google.com/maps/search/?api=1&query=Whiskey+Bar+BM+Tel+Aviv",
       },
     ],
   },
@@ -60,8 +66,10 @@ const BLOCKS: TimeBlock[] = [
     time: "8:30 PM",
     activities: [
       {
-        title: "Dinner at Shila",
+        title: "Shila Restaurant",
+        description: "Dinner at one of Tel Aviv's most celebrated tables.",
         emoji: "🍽️",
+        mapsUrl: "https://www.google.com/maps/search/?api=1&query=Shila+Restaurant+Tel+Aviv",
       },
     ],
   },
@@ -131,7 +139,7 @@ const HappyBirthdayMom = () => {
                       {block.time}
                     </span>
 
-                    <div className="space-y-2.5">
+                    <div className="space-y-3">
                       {block.activities.map((activity) => (
                         <div key={activity.title}>
                           <h3 className="font-sans text-base sm:text-lg font-bold uppercase tracking-[-0.01em] text-foreground">
@@ -142,6 +150,19 @@ const HappyBirthdayMom = () => {
                             <p className="mt-0.5 text-sm text-foreground/80 leading-relaxed font-sans">
                               {activity.description}
                             </p>
+                          )}
+                          {activity.mapsUrl && (
+                            <a
+                              href={activity.mapsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group mt-1.5 inline-flex items-center gap-1 text-xs font-sans font-semibold text-[#ad1414] hover:text-[#8a0f0f] transition-colors"
+                            >
+                              <MapPin className="h-3.5 w-3.5 shrink-0 group-hover:scale-110 transition-transform" />
+                              <span className="underline decoration-transparent group-hover:decoration-[#8a0f0f] underline-offset-2 transition-colors">
+                                Get there
+                              </span>
+                            </a>
                           )}
                         </div>
                       ))}
