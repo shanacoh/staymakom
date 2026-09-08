@@ -88,6 +88,7 @@ const RevolutDebugPage       = lazy(() => import("./pages/admin/revolut/DebugPag
 const Celine30                   = lazy(() => import("./pages/Celine30"));
 const ItineraireTsfat             = lazy(() => import("./pages/ItineraireTsfat"));
 const HappyBirthdayMom             = lazy(() => import("./pages/HappyBirthdayMom"));
+const NP                         = lazy(() => import("./pages/NP"));
 const Vitrine                    = lazy(() => import("./pages/Vitrine"));
 const ItineraireChoix            = lazy(() => import("./pages/ItineraireChoix"));
 const StandaloneExperience       = lazy(() => import("./pages/StandaloneExperience"));
@@ -205,6 +206,7 @@ const AppContent = () => {
           <Route path="/Celine30" element={<Celine30 />} />
           <Route path="/itineraire-tsfat" element={<ItineraireTsfat />} />
           <Route path="/happy-birthday-mom" element={<HappyBirthdayMom />} />
+          <Route path="/NP" element={<NP />} />
           <Route path="/partner-exp" element={<PartnerExp />} />
           <Route path="/partner-form" element={<PartnerForm />} />
           <Route path="/itineraries-AJ" element={<Itineraries />} />
