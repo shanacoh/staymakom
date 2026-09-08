@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-09-08] — Création de la page "Escapades en Israël" (/NP)
+
+### Ce qui a changé côté code
+- `src/pages/NP.tsx` (nouveau fichier) : page publique présentant 6 escapades par région (Safed, Tibériade, Néguev, Eilat, Haïfa & Acre, Mer Morte), chacune avec un texte d'accroche, 3 points forts et une sélection d'hôtels illustrés d'une photo de couverture. Photos des hôtels récupérées depuis la base de données existante (`hotels2`) quand disponibles, sinon depuis le site officiel de l'hôtel. Hero reprenant l'image standard utilisée sur le reste du site, avec un texte expliquant que l'objectif est de construire un séjour complet (visites, expériences) autour de l'hôtel, pas juste une réservation de chambre.
+- `src/App.tsx` : ajout de la route `/NP` pour rendre la page accessible.
+
+### Ce qui a changé côté base de données
+- Aucun changement (lecture seule de la table `hotels2` existante pour récupérer les photos).
+
+### Pourquoi ce changement
+- Shana a demandé une nouvelle page dans le même esprit que les pages-itinéraire précédentes, mais présentant plusieurs destinations d'un coup avec les hôtels sélectionnés pour chacune, sous forme de petites cartes visuelles.
+
+---
+
 ## [2026-08-23] — Création de la page "Happy Birthday Mom" (Josh Sirota, 4 personnes)
 
 ### Ce qui a changé côté code
