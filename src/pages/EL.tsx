@@ -8,11 +8,21 @@ type Moment = {
   text: string;
 };
 
+type ChoiceOption = {
+  title: string;
+  text: string;
+};
+
 type Day = {
   number: string;
   title: string;
   tagline: string;
   moments: Moment[];
+  choice?: {
+    intro: string;
+    options: ChoiceOption[];
+  };
+  afterChoice?: Moment[];
   highlight?: boolean;
 };
 
@@ -31,7 +41,7 @@ const DAYS: Day[] = [
     title: "Arrivée & premières découvertes",
     tagline: "De l'aéroport aux ruelles de pierre blonde",
     moments: [
-      { icon: "map", label: "Transfert privé", text: "Accueil à l'aéroport, transfert direct jusqu'à votre hébergement au cœur des collines." },
+      { icon: "map", label: "Route depuis Tel Aviv", text: "Départ en voiture vers les collines de Jérusalem, jusqu'à votre hébergement." },
       { icon: "map", label: "Village de charme", text: "Ein Karem, l'un des villages les plus photogéniques de la région : ruelles en pierre, points de vue sur la vallée, terrasses ombragées." },
       { icon: "wine", label: "Première dégustation", text: "Un domaine viticole familial niché en pleine nature, à quelques minutes de votre hébergement." },
       { icon: "food", label: "Dîner", text: "Une adresse au style asiatique contemporain, nichée dans les collines." },
@@ -44,7 +54,7 @@ const DAYS: Day[] = [
     moments: [
       { icon: "map", label: "Abu Gosh", text: "Un village au charme unique, une église croisée classée, et une réputation bien méritée pour ses tables généreuses." },
       { icon: "food", label: "Déjeuner", text: "L'une des meilleures tables de la région, spécialiste incontesté d'un plat culte du pays." },
-      { icon: "nature", label: "Jeep hors des sentiers battus", text: "Une virée encadrée de 2h à travers forêts et collines, sur des pistes que peu de visiteurs découvrent." },
+      { icon: "nature", label: "Jeep hors des sentiers battus", text: "Une virée encadrée de 2h à travers forêts et collines, sur des pistes que peu de visiteurs découvrent. Comptez environ 1 500 NIS pour le groupe." },
       { icon: "food", label: "Dîner", text: "Une table réputée nichée dans un kibboutz voisin, cuisine de ferme et produits locaux." },
     ],
     highlight: true,
@@ -54,8 +64,18 @@ const DAYS: Day[] = [
     title: "Randonnée & une surprise à choisir",
     tagline: "Terrasses millénaires le matin, une expérience rien qu'à vous l'après-midi",
     moments: [
-      { icon: "nature", label: "Randonnée facile", text: "À travers des terrasses agricoles millénaires, des sources naturelles et des vergers, pour l'un des plus beaux panoramas sur les collines de Jérusalem." },
-      { icon: "sparkle", label: "Une expérience à choisir ensemble", text: "Balade à cheval dans un ranch familial, ferme fromagère avec dégustation, ou initiation au soufflage du verre auprès d'un artisan." },
+      { icon: "nature", label: "Randonnée", text: "À travers des terrasses agricoles millénaires, des sources naturelles et des vergers, pour l'un des plus beaux panoramas sur les collines de Jérusalem." },
+    ],
+    choice: {
+      intro: "En route vers votre second hébergement, une expérience à choisir ensemble selon vos envies :",
+      options: [
+        { title: "Rencontre équestre", text: "Une balade à cheval dans un ranch familial, au cœur des collines." },
+        { title: "Ferme caprine", text: "Visite d'une ferme familiale et dégustation de fromages artisanaux faits sur place." },
+        { title: "Atelier de verre", text: "Initiation au soufflage du verre auprès d'un artisan verrier." },
+        { title: "Balade à vélo", text: "Une sortie à vélo dans les Judean Hills, entre forêts et vignobles." },
+      ],
+    },
+    afterChoice: [
       { icon: "food", label: "Dîner", text: "Une table typique de cuisine arabe locale, réputée dans un village voisin." },
     ],
   },
@@ -164,6 +184,41 @@ const EL = () => {
                     );
                   })}
                 </div>
+
+                {day.choice && (
+                  <div className="mt-5">
+                    <p className="text-sm text-foreground/80 font-sans mb-3">{day.choice.intro}</p>
+                    <div className="rounded-xl bg-[#f6ece1] px-5 py-5 space-y-4">
+                      {day.choice.options.map((option) => (
+                        <div key={option.title}>
+                          <p className="font-sans text-sm font-bold text-foreground">{option.title}</p>
+                          <p className="text-sm text-foreground/75 leading-relaxed font-sans">{option.text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {day.afterChoice && (
+                  <div className="space-y-3 mt-5">
+                    {day.afterChoice.map((moment) => {
+                      const Icon = ICONS[moment.icon];
+                      return (
+                        <div key={moment.label} className="flex items-start gap-3">
+                          <div className="shrink-0 mt-0.5 flex h-7 w-7 items-center justify-center rounded-full bg-[#ad1414]/10">
+                            <Icon className="h-3.5 w-3.5 text-[#ad1414]" />
+                          </div>
+                          <div>
+                            <p className="font-sans text-sm font-bold uppercase tracking-[0.02em] text-foreground">
+                              {moment.label}
+                            </p>
+                            <p className="text-sm text-foreground/75 leading-relaxed font-sans">{moment.text}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           ))}
