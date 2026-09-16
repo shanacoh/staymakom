@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-09-16] — Création de la page "Collines de Jérusalem" (/EL)
+
+### Ce qui a changé côté code
+- `src/pages/EL.tsx` (nouveau fichier) : page publique one-off présentant un séjour de 4 jours / 3 nuits dans les collines de Jérusalem, jour par jour (arrivée, village d'Ein Karem, dégustation viticole, Abu Gosh, jeep, randonnée, expérience au choix, jardin biblique), avec l'hôtel Shoresh Green Hills en fin de page (≈ 1 250 €, photo à ajouter plus tard). Présentation volontairement suggestive (peu de détails opérationnels comme les prix d'activités annexes) pour donner envie sans tout dévoiler de l'offre. Hero reprenant l'image standard utilisée sur le reste du site.
+- `src/App.tsx` : ajout de la route `/EL` pour rendre la page accessible.
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Shana voulait une page-itinéraire à envoyer par lien direct pour un séjour "Collines de Jérusalem", dans le même esprit que les précédentes pages one-off, mais la plus visuelle possible.
+
+---
+
 ## [2026-09-08] — Création de la page "Escapades en Israël" (/NP)
 
 ### Ce qui a changé côté code
