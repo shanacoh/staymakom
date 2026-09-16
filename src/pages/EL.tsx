@@ -176,30 +176,17 @@ const EL = () => {
           <div className="text-center mb-8">
             <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground font-sans mb-2">Hébergement</p>
             <h2 className="font-sans text-2xl sm:text-3xl font-bold uppercase tracking-[-0.02em] text-foreground">
-              Deux formules possibles
+              Votre adresse pour le séjour
             </h2>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-5">
-            <div className="rounded-2xl border border-border bg-muted/40 px-6 py-7 flex flex-col">
-              <Trees className="h-6 w-6 text-[#ad1414] mb-3" />
-              <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground font-sans mb-1">Option A</p>
-              <p className="font-sans text-2xl font-bold text-foreground mb-3">≈ 1 350 €</p>
-              <p className="text-sm text-foreground/75 leading-relaxed font-sans">
-                Un appartement niché dans un domaine viticole pour les deux premières nuits, puis un chalet en bois
-                avec vue sur la forêt pour la dernière nuit.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-border bg-muted/40 px-6 py-7 flex flex-col">
-              <Trees className="h-6 w-6 text-[#ad1414] mb-3" />
-              <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground font-sans mb-1">Option B</p>
-              <p className="font-sans text-2xl font-bold text-foreground mb-3">≈ 1 200 €</p>
-              <p className="text-sm text-foreground/75 leading-relaxed font-sans">
-                Une maison de charme au milieu des collines vertes pour la première nuit, puis deux nuits en chalet
-                en bois avec vue sur la forêt.
-              </p>
-            </div>
+          <div className="max-w-sm mx-auto rounded-2xl border border-border bg-muted/40 px-6 py-8 flex flex-col items-center text-center">
+            <Trees className="h-6 w-6 text-[#ad1414] mb-3" />
+            <p className="font-sans text-lg font-bold uppercase tracking-[-0.01em] text-foreground mb-1">
+              Shoresh Green Hills
+            </p>
+            <p className="text-sm text-foreground/60 font-sans mb-3">3 nuits au cœur des collines de Jérusalem</p>
+            <p className="font-sans text-2xl font-bold text-foreground">≈ 1 250 €</p>
           </div>
 
           <div className="mt-10 rounded-2xl bg-foreground text-white px-6 py-6 flex items-start gap-3">
