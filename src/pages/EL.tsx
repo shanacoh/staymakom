@@ -67,7 +67,7 @@ const DAYS: Day[] = [
       { icon: "nature", label: "Randonnée", text: "À travers des terrasses agricoles millénaires, des sources naturelles et des vergers, pour l'un des plus beaux panoramas sur les collines de Jérusalem." },
     ],
     choice: {
-      intro: "En route vers votre second hébergement, une expérience à choisir ensemble selon vos envies :",
+      intro: "Une expérience à choisir ensemble selon vos envies :",
       options: [
         { title: "Rencontre équestre", text: "Une balade à cheval dans un ranch familial, au cœur des collines." },
         { title: "Ferme caprine", text: "Visite d'une ferme familiale et dégustation de fromages artisanaux faits sur place." },
