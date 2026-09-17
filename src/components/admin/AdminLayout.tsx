@@ -1,12 +1,24 @@
 import { Outlet, Link } from "react-router-dom";
+import { useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import { AlertBanner } from "./AlertBanner";
 
 export function AdminLayout() {
+  // Réduit l'échelle générale de l'affichage admin (le back-office paraissait plus "zoomé"
+  // que le reste du site) : équivalent d'un Ctrl+- appliqué seulement à /admin.
+  useEffect(() => {
+    const root = document.documentElement;
+    const previousFontSize = root.style.fontSize;
+    root.style.fontSize = "78%";
+    return () => {
+      root.style.fontSize = previousFontSize;
+    };
+  }, []);
+
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-[#FAF8F5]">
+      <div className="min-h-screen flex w-full bg-background">
         <AdminSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           {/* Alert Banner */}

@@ -6,6 +6,24 @@
 
 ---
 
+## [2026-09-17] — Réorganisation du menu du back-office (charpente de navigation)
+
+### Ce qui a changé côté code
+- `src/components/admin/AdminSidebar.tsx` : le menu de gauche passe d'une liste plate + blocs techniques (HyperGuest, Revolut, Bateau, Swipe, Backup V1) à 4 groupes repris de la maquette de Shana : **Aperçu** (Dashboard, Carte, Catalogue), **Opérations** (Expériences, Itinéraires, Réservations, Partenaires, Autre), **Croissance** (Leads, Codes promo, Gift Cards, Dossiers swipe) et **Headquarter** (Sales, Marketing, Operation). **Technique** (HyperGuest + Revolut) est sorti de Headquarter pour devenir son propre groupe, au même niveau que les autres. Toutes les pages déjà en ligne gardent exactement la même adresse, seul leur rangement dans le menu change.
+- `src/pages/admin/ComingSoon.tsx` (nouveau fichier) : petit écran réutilisable "Bientôt disponible", affiché pour les sections pas encore construites (Carte, Catalogue, Itinéraires, Partenaires · Expériences, Codes promo, Sales, Marketing, Operation).
+- `src/App.tsx` : ajoute les routes de ces écrans "Bientôt disponible" ; supprime les anciennes routes de secours `backup/dashboard`, `backup/hotels`, `backup/experiences` (V1), devenues obsolètes.
+- Suppression de `src/pages/admin/Hotels.tsx`, `src/pages/admin/Experiences.tsx` (anciennes pages V1, plus utilisées nulle part depuis la sortie des pages V2) et `src/pages/admin/Dashboard.backup.tsx` (fichier orphelin, plus branché à aucune route).
+- `src/components/admin/AdminLayout.tsx` : réduit l'échelle générale d'affichage de tout le back-office (fond blanc au lieu de beige, densité resserrée façon "zoom navigateur à 78 %").
+- Ajustements visuels du menu suite aux retours de Shana : suppression des icônes en vue normale, largeur réduite, poids de texte allégé, élément sélectionné en noir avec un survol légèrement éclairci et un texte rouge clair (pour rester lisible).
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Shana veut refondre la présentation de son back-office (sans rien casser de ce qui fonctionne déjà) suivant une maquette qu'elle a conçue, en avançant section par section plutôt que d'un coup. Cette session pose la charpente de navigation ; les écrans encore listés "Bientôt disponible" (Carte, Catalogue, Itinéraires, Partenaires · Expériences, Codes promo, Sales, Marketing, Operation) seront construits un par un lors de prochaines sessions.
+
+---
+
 ## [2026-09-16] — Création de la page "Collines de Jérusalem" (/EL)
 
 ### Ce qui a changé côté code
@@ -17,6 +35,23 @@
 
 ### Pourquoi ce changement
 - Shana voulait une page-itinéraire à envoyer par lien direct pour un séjour "Collines de Jérusalem", dans le même esprit que les précédentes pages one-off, mais la plus visuelle possible.
+
+---
+
+## [2026-09-14] — Grille éditable "façon Excel" pour les réservations standalone
+
+### Ce qui a changé côté code
+- `src/pages/admin/StandaloneBookingsGrid.tsx` (nouveau fichier) : nouvelle page admin "Réservations (vue tableur)", à côté de la page Bookings existante (qui n'est pas touchée). Affiche les réservations `standalone_bookings` sous forme de grille où chaque cellule s'édite au clic, se sauvegarde toute seule (Entrée ou clic ailleurs pour valider, Échap pour annuler), avec un petit point de couleur qui indique la sauvegarde en cours/réussie/en erreur. Filtres par plage de dates et par statut de paiement fournisseur. Une ligne vide en bas permet de créer une nouvelle réservation dès qu'on tape dedans.
+- `src/components/admin/BookingsGrid/` (nouveau dossier : `columns.ts`, `GridCell.tsx`, `GridSelectCell.tsx`, `BookingsGridTable.tsx`) : les briques réutilisables de la grille (liste des colonnes, cellule texte/nombre/date éditable, cellule liste déroulante, assemblage du tableau et navigation au clavier).
+- `src/App.tsx` : ajout de la route `/admin/standalone-bookings/grid`.
+- `src/components/admin/AdminSidebar.tsx` : ajout de l'entrée "Réservations (tableur)" dans le menu, à côté de "Bookings".
+- `src/integrations/supabase/types.ts` : régénéré pour inclure les deux nouvelles colonnes fournisseur.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20260914120000_add_supplier_fields_to_standalone_bookings.sql` : ajoute à `standalone_bookings` la colonne `supplier_name` (nom du fournisseur, texte libre pour l'instant) et `supplier_payment_status` (statut du paiement versé au fournisseur, séparé de `payment_status` qui suit le paiement du client) avec une valeur par défaut `pending`.
+
+### Pourquoi ce changement
+- Shana voulait retrouver le confort de saisie d'un tableau Excel pour enregistrer rapidement les réservations manuelles (client, fournisseur, montants, paiements), sans passer par un formulaire ligne par ligne. Note : les statuts affichés dans la grille incluent aussi "En attente" et "Échoué" en plus des 3 statuts demandés (Brouillon/Confirmé/Annulé), pour que les réservations déjà existantes créées par l'ancien flux restent lisibles et modifiables.
 
 ---
 

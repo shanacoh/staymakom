@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -13,19 +14,23 @@ import {
   Brain,
   Mail,
   Heart,
-  ShieldCheck,
-  Archive,
   FlaskConical,
   Bug,
   ScrollText,
   Cog,
-  Plug,
   CreditCard,
   Layers,
   FolderOpen,
   Tag,
   Sailboat,
   Inbox,
+  Table2,
+  Map,
+  Library,
+  Compass,
+  Handshake,
+  Percent,
+  ChevronDown,
 } from "lucide-react";
 import {
   Sidebar,
@@ -43,51 +48,175 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronDown } from "lucide-react";
 
-const mainMenuItems = [
+type NavItem = {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+  exact?: boolean;
+};
+
+const ACTIVE_CLASS = "bg-black text-white hover:bg-neutral-800 hover:text-red-300";
+const INACTIVE_CLASS = "hover:bg-muted";
+
+// Aperçu : le tableau de bord, puis les futures vues de consultation (écrans à construire)
+const apercuItems: NavItem[] = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, exact: true },
-  { title: "Categories", url: "/admin/categories", icon: FolderKanban },
-  { title: "Hotels", url: "/admin/hotels2", icon: Building2 },
+  { title: "Carte", url: "/admin/carte", icon: Map },
+  { title: "Catalogue", url: "/admin/catalogue", icon: Library },
+];
+
+// Opérations : la surface de travail au quotidien
+const operationsItems: NavItem[] = [
   { title: "Experiences", url: "/admin/experiences2", icon: Sparkles },
-  { title: "Bookings", url: "/admin/bookings", icon: Calendar },
-  { title: "Gift Cards", url: "/admin/gift-cards", icon: Gift },
-  { title: "Leads", url: "/admin/leads", icon: Mail },
+  { title: "Itinéraires", url: "/admin/itineraires", icon: Compass },
+  { title: "Réservations", url: "/admin/bookings", icon: Calendar },
+  { title: "à supp réservation tableau", url: "/admin/standalone-bookings/grid", icon: Table2 },
+  { title: "Partenaires · Hôtels", url: "/admin/hotels2", icon: Building2 },
+  { title: "Partenaires · Expériences", url: "/admin/partenaires/experiences", icon: Handshake },
+];
+
+// Autre : tout ce qui existe déjà et n'a pas encore de place dédiée dans la nouvelle organisation
+const autreItems: NavItem[] = [
+  { title: "Categories", url: "/admin/categories", icon: FolderKanban },
   { title: "Users", url: "/admin/users", icon: Users },
   { title: "Customers", url: "/admin/customers", icon: UserCircle },
   { title: "Favorites", url: "/admin/favorites", icon: Heart },
   { title: "Journal", url: "/admin/journal", icon: BookOpen },
   { title: "AI Insights", url: "/admin/ai-insights", icon: Brain },
   { title: "Settings", url: "/admin/settings", icon: Settings },
+  { title: "Mes bateaux", url: "/admin/boats", icon: Sailboat },
+  { title: "Demandes bateaux", url: "/admin/boats/requests", icon: Inbox },
+  { title: "Bibliothèque swipe", url: "/admin/swipe/bibliotheque", icon: Layers },
+  { title: "Catégories swipe", url: "/admin/swipe/categories", icon: Tag },
 ];
 
-const hyperguestMenuItems = [
+// Croissance
+const croissanceItems: NavItem[] = [
+  { title: "Leads", url: "/admin/leads", icon: Mail },
+  { title: "Codes promo", url: "/admin/promo", icon: Percent },
+  { title: "Gift Cards", url: "/admin/gift-cards", icon: Gift },
+  { title: "Dossiers swipe", url: "/admin/swipe/dossiers", icon: FolderOpen },
+];
+
+// Technique : au même niveau que Croissance/Headquarter, deux blocs (HyperGuest, Revolut)
+const hyperguestItems: NavItem[] = [
   { title: "Diagnostic", url: "/admin/diagnostic", icon: FlaskConical },
   { title: "Debug API", url: "/admin/hyperguest/debug", icon: Bug },
   { title: "Logs", url: "/admin/hyperguest/logs", icon: ScrollText },
   { title: "Configuration", url: "/admin/hyperguest/config", icon: Cog },
 ];
-
-const revolutMenuItems = [
-  { title: "Debug API", url: "/admin/revolut/debug", icon: Bug },
+const revolutItems: NavItem[] = [
+  { title: "Debug API", url: "/admin/revolut/debug", icon: CreditCard },
 ];
 
-const boatMenuItems = [
-  { title: "Mes bateaux", url: "/admin/boats", icon: Sailboat },
-  { title: "Demandes", url: "/admin/boats/requests", icon: Inbox },
+// Headquarter : sections encore à construire
+const headquarterItems: NavItem[] = [
+  { title: "Sales", url: "/admin/headquarter/sales", icon: LayoutDashboard },
+  { title: "Marketing", url: "/admin/headquarter/marketing", icon: LayoutDashboard },
+  { title: "Operation", url: "/admin/headquarter/operation", icon: LayoutDashboard },
 ];
 
-const swipeMenuItems = [
-  { title: "Dossiers", url: "/admin/swipe/dossiers", icon: FolderOpen },
-  { title: "Bibliothèque", url: "/admin/swipe/bibliotheque", icon: Layers },
-  { title: "Catégories", url: "/admin/swipe/categories", icon: Tag },
-];
+function NavGroup({
+  label,
+  items,
+  collapsed,
+  isActive,
+  onNavClick,
+}: {
+  label: string;
+  items: NavItem[];
+  collapsed: boolean;
+  isActive: (path: string, exact?: boolean) => boolean;
+  onNavClick: () => void;
+}) {
+  return (
+    <SidebarGroup>
+      {!collapsed && (
+        <SidebarGroupLabel className="px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </SidebarGroupLabel>
+      )}
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => (
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton
+                asChild
+                className={isActive(item.url, item.exact) ? ACTIVE_CLASS : INACTIVE_CLASS}
+              >
+                <Link to={item.url} onClick={onNavClick}>
+                  {collapsed ? (
+                    <item.icon className="h-5 w-5" />
+                  ) : (
+                    <span className="text-sm font-medium">{item.title}</span>
+                  )}
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+}
 
-const backupMenuItems = [
-  { title: "Dashboard V1", url: "/admin/backup/dashboard", icon: LayoutDashboard },
-  { title: "Hotels V1", url: "/admin/backup/hotels", icon: Building2 },
-  { title: "Experiences V1", url: "/admin/backup/experiences", icon: Sparkles },
-];
+function TechniqueSubGroup({
+  label,
+  items,
+  collapsed,
+  isActive,
+  onNavClick,
+}: {
+  label: string;
+  items: NavItem[];
+  collapsed: boolean;
+  isActive: (path: string) => boolean;
+  onNavClick: () => void;
+}) {
+  if (collapsed) {
+    // Mode icônes réduit : les liens restent accessibles, sans le regroupement replié.
+    return (
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => (
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton asChild className={isActive(item.url) ? ACTIVE_CLASS : INACTIVE_CLASS}>
+                <Link to={item.url} onClick={onNavClick}>
+                  <item.icon className="h-5 w-5" />
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    );
+  }
+
+  return (
+    <Collapsible defaultOpen>
+      <CollapsibleTrigger className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
+        <span>{label}</span>
+        <ChevronDown className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            {items.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild className={isActive(item.url) ? ACTIVE_CLASS : INACTIVE_CLASS}>
+                  <Link to={item.url} onClick={onNavClick}>
+                    <span className="text-sm font-medium">{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
 
 export function AdminSidebar() {
   const { state, isMobile, setOpenMobile } = useSidebar();
@@ -108,218 +237,79 @@ export function AdminSidebar() {
   };
 
   return (
-    <Sidebar className={collapsed ? "w-14" : "w-64"}>
-      <SidebarContent className="pt-2">
+    <Sidebar className={collapsed ? "w-14" : "w-56"}>
+      <SidebarContent className="bg-background pt-3">
+        <div className={collapsed ? "px-2 pb-3" : "px-3 pb-4"}>
+          {!collapsed && (
+            <>
+              <div className="text-base font-extrabold tracking-tight text-foreground">
+                STAYMAKOM<span className="text-destructive">.</span>
+              </div>
+              <div className="mt-0.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                Back-office
+              </div>
+            </>
+          )}
+        </div>
+
+        <NavGroup
+          label="Aperçu"
+          items={apercuItems}
+          collapsed={collapsed}
+          isActive={isActive}
+          onNavClick={handleNavClick}
+        />
+        <NavGroup
+          label="Opérations"
+          items={operationsItems}
+          collapsed={collapsed}
+          isActive={isActive}
+          onNavClick={handleNavClick}
+        />
+        <NavGroup
+          label="Autre"
+          items={autreItems}
+          collapsed={collapsed}
+          isActive={isActive}
+          onNavClick={handleNavClick}
+        />
+        <NavGroup
+          label="Croissance"
+          items={croissanceItems}
+          collapsed={collapsed}
+          isActive={isActive}
+          onNavClick={handleNavClick}
+        />
+
         <SidebarGroup>
-          <SidebarGroupLabel className={collapsed ? "px-2" : "px-3"}>
-            {!collapsed && (
-              <span className="text-sm font-bold tracking-wide text-primary">
-                STAYMAKOM
-              </span>
-            )}
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainMenuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    className={
-                      isActive(item.url, item.exact)
-                        ? "bg-[#1B2A4A] text-white hover:bg-[#1B2A4A]/90"
-                        : "hover:bg-muted"
-                    }
-                  >
-                    <Link to={item.url} onClick={handleNavClick}>
-                      <item.icon className={collapsed ? "h-5 w-5" : "h-5 w-5 mr-3"} />
-                      {!collapsed && <span className="text-sm">{item.title}</span>}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          {!collapsed && (
+            <SidebarGroupLabel className="px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Technique
+            </SidebarGroupLabel>
+          )}
+          <TechniqueSubGroup
+            label="HyperGuest"
+            items={hyperguestItems}
+            collapsed={collapsed}
+            isActive={isActive}
+            onNavClick={handleNavClick}
+          />
+          <TechniqueSubGroup
+            label="Revolut"
+            items={revolutItems}
+            collapsed={collapsed}
+            isActive={isActive}
+            onNavClick={handleNavClick}
+          />
         </SidebarGroup>
 
-        {/* HyperGuest section */}
-        {!collapsed && (
-          <SidebarGroup>
-            <Collapsible defaultOpen>
-              <CollapsibleTrigger className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
-                <Plug className="h-4 w-4" />
-                <span>HyperGuest</span>
-                <ChevronDown className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {hyperguestMenuItems.map((item) => (
-                      <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton
-                          asChild
-                          className={
-                            isActive(item.url)
-                              ? "bg-[#1B2A4A] text-white hover:bg-[#1B2A4A]/90"
-                              : "hover:bg-muted"
-                          }
-                        >
-                          <Link to={item.url} onClick={handleNavClick}>
-                            <item.icon className="h-4 w-4 mr-3" />
-                            <span className="text-sm">{item.title}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </SidebarGroup>
-        )}
-
-        {/* Revolut section */}
-        {!collapsed && (
-          <SidebarGroup>
-            <Collapsible defaultOpen>
-              <CollapsibleTrigger className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
-                <CreditCard className="h-4 w-4" />
-                <span>Revolut</span>
-                <ChevronDown className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {revolutMenuItems.map((item) => (
-                      <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton
-                          asChild
-                          className={
-                            isActive(item.url)
-                              ? "bg-[#1B2A4A] text-white hover:bg-[#1B2A4A]/90"
-                              : "hover:bg-muted"
-                          }
-                        >
-                          <Link to={item.url} onClick={handleNavClick}>
-                            <item.icon className="h-4 w-4 mr-3" />
-                            <span className="text-sm">{item.title}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </SidebarGroup>
-        )}
-
-        {/* Bateau section */}
-        {!collapsed && (
-          <SidebarGroup>
-            <Collapsible defaultOpen>
-              <CollapsibleTrigger className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
-                <Sailboat className="h-4 w-4" />
-                <span>Bateau</span>
-                <ChevronDown className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {boatMenuItems.map((item) => (
-                      <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton
-                          asChild
-                          className={
-                            isActive(item.url)
-                              ? "bg-[#1B2A4A] text-white hover:bg-[#1B2A4A]/90"
-                              : "hover:bg-muted"
-                          }
-                        >
-                          <Link to={item.url} onClick={handleNavClick}>
-                            <item.icon className="h-4 w-4 mr-3" />
-                            <span className="text-sm">{item.title}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </SidebarGroup>
-        )}
-
-        {/* Swipe Itinéraire section */}
-        {!collapsed && (
-          <SidebarGroup>
-            <Collapsible defaultOpen>
-              <CollapsibleTrigger className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
-                <Heart className="h-4 w-4" />
-                <span>Swipe Itinéraire</span>
-                <ChevronDown className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {swipeMenuItems.map((item) => (
-                      <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton
-                          asChild
-                          className={
-                            isActive(item.url)
-                              ? "bg-[#1B2A4A] text-white hover:bg-[#1B2A4A]/90"
-                              : "hover:bg-muted"
-                          }
-                        >
-                          <Link to={item.url} onClick={handleNavClick}>
-                            <item.icon className="h-4 w-4 mr-3" />
-                            <span className="text-sm">{item.title}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </SidebarGroup>
-        )}
-
-        {/* Backup V1 section */}
-        {!collapsed && (
-          <SidebarGroup>
-            <Collapsible>
-              <CollapsibleTrigger className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
-                <Archive className="h-4 w-4" />
-                <span>Backup (V1)</span>
-                <ChevronDown className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {backupMenuItems.map((item) => (
-                      <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton
-                          asChild
-                          className={
-                            isActive(item.url)
-                              ? "bg-muted text-foreground"
-                              : "text-muted-foreground hover:bg-muted/50"
-                          }
-                        >
-                          <Link to={item.url} onClick={handleNavClick}>
-                            <item.icon className="h-4 w-4 mr-3" />
-                            <span className="text-xs">{item.title}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </SidebarGroup>
-        )}
+        <NavGroup
+          label="Headquarter"
+          items={headquarterItems}
+          collapsed={collapsed}
+          isActive={isActive}
+          onNavClick={handleNavClick}
+        />
       </SidebarContent>
     </Sidebar>
   );

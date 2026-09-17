@@ -294,7 +294,14 @@ public/
 | `/admin/hyperguest/debug` | HyperGuestDebugPage |
 | `/admin/hyperguest/logs` | HyperGuestLogsPage |
 | `/admin/hyperguest/config` | HyperGuestConfigPage |
-| `/admin/backup/*` | Legacy V1 admin pages |
+| `/admin/revolut/debug` | RevolutDebugPage |
+| `/admin/standalone-bookings/grid` | AdminStandaloneBookingsGrid |
+| `/admin/boats`, `/admin/boats/requests` | AdminBoatExperiences, AdminBoatRequests |
+| `/admin/swipe/dossiers`, `/admin/swipe/bibliotheque`, `/admin/swipe/categories` | Module Swipe Itinéraire |
+| `/admin/partenaires/experiences` | ComingSoonAdmin ("bientôt disponible") |
+| `/admin/carte`, `/admin/catalogue`, `/admin/itineraires`, `/admin/promo`, `/admin/headquarter/sales`, `/admin/headquarter/marketing`, `/admin/headquarter/operation` | ComingSoonAdmin ("bientôt disponible") |
+
+> Note (2026-09-17) : les anciennes pages de secours `/admin/backup/*` (Hotels V1, Experiences V1) ont été supprimées — plus utilisées depuis le passage aux pages V2. Le menu de gauche (`AdminSidebar.tsx`) est organisé en 4 groupes (Aperçu, Opérations, Croissance, Headquarter) plus un groupe Technique (HyperGuest, Revolut), repris de la maquette IA de Shana ; plusieurs entrées pointent encore vers des écrans "bientôt disponible" en attendant leur construction section par section.
 
 ### Hotel Admin Routes (`/hotel-admin/*` — role: hotel_admin)
 

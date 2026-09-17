@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.4"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -3383,6 +3383,8 @@ export type Database = {
           standalone_experience_id: string | null
           status: string
           supplier_cost: number | null
+          supplier_name: string | null
+          supplier_payment_status: string
           time_slot: string | null
           updated_at: string | null
           user_id: string | null
@@ -3420,6 +3422,8 @@ export type Database = {
           standalone_experience_id?: string | null
           status?: string
           supplier_cost?: number | null
+          supplier_name?: string | null
+          supplier_payment_status?: string
           time_slot?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -3457,6 +3461,8 @@ export type Database = {
           standalone_experience_id?: string | null
           status?: string
           supplier_cost?: number | null
+          supplier_name?: string | null
+          supplier_payment_status?: string
           time_slot?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -3561,6 +3567,7 @@ export type Database = {
           internal_notes: string | null
           message: string | null
           notified_at: string | null
+          party_max: number | null
           requested_date: string | null
           status: string
           updated_at: string
@@ -3577,6 +3584,7 @@ export type Database = {
           internal_notes?: string | null
           message?: string | null
           notified_at?: string | null
+          party_max?: number | null
           requested_date?: string | null
           status?: string
           updated_at?: string
@@ -3593,6 +3601,7 @@ export type Database = {
           internal_notes?: string | null
           message?: string | null
           notified_at?: string | null
+          party_max?: number | null
           requested_date?: string | null
           status?: string
           updated_at?: string
@@ -3600,6 +3609,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "standalone_experience_requests_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "standalone_experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      standalone_experience_suppliers: {
+        Row: {
+          created_at: string | null
+          experience_id: string
+          id: string
+          is_active: boolean
+          is_primary: boolean
+          price: number
+          sort_order: number
+          supplier_name: string
+          updated_at: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          experience_id: string
+          id?: string
+          is_active?: boolean
+          is_primary?: boolean
+          price: number
+          sort_order?: number
+          supplier_name: string
+          updated_at?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          experience_id?: string
+          id?: string
+          is_active?: boolean
+          is_primary?: boolean
+          price?: number
+          sort_order?: number
+          supplier_name?: string
+          updated_at?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "standalone_experience_suppliers_experience_id_fkey"
             columns: ["experience_id"]
             isOneToOne: false
             referencedRelation: "standalone_experiences"
@@ -3630,7 +3686,9 @@ export type Database = {
           city_fr: string | null
           city_he: string | null
           created_at: string | null
+          crew_included: boolean | null
           currency: string | null
+          departure_location: string | null
           display_order: number | null
           duration: string | null
           duration_fr: string | null
@@ -3670,6 +3728,7 @@ export type Database = {
           og_title_en: string | null
           og_title_fr: string | null
           og_title_he: string | null
+          original_price: number | null
           photos: Json | null
           practical_info: Json | null
           region: string | null
@@ -3680,12 +3739,17 @@ export type Database = {
           seo_title_fr: string | null
           seo_title_he: string | null
           show_on_v3_only: boolean
+          skipper_included: boolean | null
           slug: string
           status: string
           subtitle: string | null
           subtitle_fr: string | null
           subtitle_he: string | null
+          supplier_boat_name: string | null
           supplier_booking_url: string | null
+          supplier_contact: string | null
+          supplier_name: string | null
+          supplier_payment_method: string | null
           supplier_price_adult: number | null
           supplier_price_child: number | null
           thumbnail_image: string | null
@@ -3718,7 +3782,9 @@ export type Database = {
           city_fr?: string | null
           city_he?: string | null
           created_at?: string | null
+          crew_included?: boolean | null
           currency?: string | null
+          departure_location?: string | null
           display_order?: number | null
           duration?: string | null
           duration_fr?: string | null
@@ -3758,6 +3824,7 @@ export type Database = {
           og_title_en?: string | null
           og_title_fr?: string | null
           og_title_he?: string | null
+          original_price?: number | null
           photos?: Json | null
           practical_info?: Json | null
           region?: string | null
@@ -3768,12 +3835,17 @@ export type Database = {
           seo_title_fr?: string | null
           seo_title_he?: string | null
           show_on_v3_only?: boolean
+          skipper_included?: boolean | null
           slug: string
           status?: string
           subtitle?: string | null
           subtitle_fr?: string | null
           subtitle_he?: string | null
+          supplier_boat_name?: string | null
           supplier_booking_url?: string | null
+          supplier_contact?: string | null
+          supplier_name?: string | null
+          supplier_payment_method?: string | null
           supplier_price_adult?: number | null
           supplier_price_child?: number | null
           thumbnail_image?: string | null
@@ -3806,7 +3878,9 @@ export type Database = {
           city_fr?: string | null
           city_he?: string | null
           created_at?: string | null
+          crew_included?: boolean | null
           currency?: string | null
+          departure_location?: string | null
           display_order?: number | null
           duration?: string | null
           duration_fr?: string | null
@@ -3846,6 +3920,7 @@ export type Database = {
           og_title_en?: string | null
           og_title_fr?: string | null
           og_title_he?: string | null
+          original_price?: number | null
           photos?: Json | null
           practical_info?: Json | null
           region?: string | null
@@ -3856,12 +3931,17 @@ export type Database = {
           seo_title_fr?: string | null
           seo_title_he?: string | null
           show_on_v3_only?: boolean
+          skipper_included?: boolean | null
           slug?: string
           status?: string
           subtitle?: string | null
           subtitle_fr?: string | null
           subtitle_he?: string | null
+          supplier_boat_name?: string | null
           supplier_booking_url?: string | null
+          supplier_contact?: string | null
+          supplier_name?: string | null
+          supplier_payment_method?: string | null
           supplier_price_adult?: number | null
           supplier_price_child?: number | null
           thumbnail_image?: string | null
@@ -4436,12 +4516,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -4465,11 +4545,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -4490,11 +4570,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -4515,11 +4595,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -4532,11 +4612,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

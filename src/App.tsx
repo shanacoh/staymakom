@@ -64,9 +64,7 @@ const AdminLayout            = lazy(() => import("@/components/admin/AdminLayout
 const AdminDashboard         = lazy(() => import("./pages/admin/Dashboard"));
 const AdminCategories        = lazy(() => import("./pages/admin/Categories"));
 const CategoryEditor         = lazy(() => import("./pages/admin/CategoryEditor"));
-const AdminHotels            = lazy(() => import("./pages/admin/Hotels"));
 const AdminHotels2           = lazy(() => import("./pages/admin/Hotels2"));
-const AdminExperiences       = lazy(() => import("./pages/admin/Experiences"));
 const AdminExperiences2      = lazy(() => import("./pages/admin/Experiences2"));
 const AdminBookings          = lazy(() => import("./pages/admin/Reservations"));
 const AdminReservationDetails = lazy(() => import("./pages/admin/ReservationDetails"));
@@ -85,6 +83,7 @@ const HyperGuestDebugPage    = lazy(() => import("./pages/admin/hyperguest/Debug
 const HyperGuestLogsPage     = lazy(() => import("./pages/admin/hyperguest/LogsPage"));
 const HyperGuestConfigPage   = lazy(() => import("./pages/admin/hyperguest/ConfigPage"));
 const RevolutDebugPage       = lazy(() => import("./pages/admin/revolut/DebugPage"));
+const ComingSoonAdmin        = lazy(() => import("./pages/admin/ComingSoon"));
 const Celine30                   = lazy(() => import("./pages/Celine30"));
 const ItineraireTsfat             = lazy(() => import("./pages/ItineraireTsfat"));
 const HappyBirthdayMom             = lazy(() => import("./pages/HappyBirthdayMom"));
@@ -98,6 +97,7 @@ const StandaloneBookingConfirmation = lazy(() => import("./pages/StandaloneBooki
 const TailorMadeQuestionnaire    = lazy(() => import("./pages/TailorMadeQuestionnaire"));
 const AdminStandaloneBookings    = lazy(() => import("./pages/admin/StandaloneBookings"));
 const AdminStandaloneBookingDetails = lazy(() => import("./pages/admin/StandaloneBookingDetails"));
+const AdminStandaloneBookingsGrid = lazy(() => import("./pages/admin/StandaloneBookingsGrid"));
 const AdminBoatExperiences       = lazy(() => import("./pages/admin/BoatExperiences"));
 const AdminBoatRequests          = lazy(() => import("./pages/admin/BoatRequests"));
 
@@ -271,14 +271,6 @@ const AppContent = () => {
             <Route path="experiences2/edit/:experienceId" element={<AdminExperiences2 key="edit" />} />
             <Route path="experiences2/standalone/new" element={<AdminExperiences2 key="standalone-new" />} />
             <Route path="experiences2/standalone/edit/:experienceId" element={<AdminExperiences2 key="standalone-edit" />} />
-            {/* Backup V1 */}
-            <Route path="backup/dashboard" element={<AdminDashboard />} />
-            <Route path="backup/hotels" element={<AdminHotels />} />
-            <Route path="backup/hotels/new" element={<AdminHotels key="new" />} />
-            <Route path="backup/hotels/edit/:hotelId" element={<AdminHotels key="edit" />} />
-            <Route path="backup/experiences" element={<AdminExperiences />} />
-            <Route path="backup/experiences/new" element={<AdminExperiences key="new" />} />
-            <Route path="backup/experiences/edit/:experienceId" element={<AdminExperiences key="edit" />} />
             {/* Legacy routes → redirigées vers V2 */}
             <Route path="hotels" element={<AdminHotels2 />} />
             <Route path="hotels/new" element={<AdminHotels2 key="new" />} />
@@ -290,6 +282,7 @@ const AppContent = () => {
             <Route path="reservations" element={<AdminBookings />} />
             <Route path="reservations/:bookingId" element={<AdminReservationDetails />} />
             <Route path="standalone-bookings" element={<AdminStandaloneBookings />} />
+            <Route path="standalone-bookings/grid" element={<AdminStandaloneBookingsGrid />} />
             <Route path="standalone-bookings/:bookingId" element={<AdminStandaloneBookingDetails />} />
             <Route path="boats" element={<AdminBoatExperiences />} />
             <Route path="boats/new" element={<AdminBoatExperiences />} />
@@ -316,6 +309,15 @@ const AppContent = () => {
             <Route path="swipe/dossiers/:dossierId/resultats" element={<AdminSwipeDossierResultats />} />
             <Route path="swipe/bibliotheque" element={<AdminSwipeBibliotheque />} />
             <Route path="swipe/categories" element={<AdminSwipeCategories />} />
+            {/* Charpente de navigation : écrans pas encore construits, en attendant leur tour */}
+            <Route path="carte" element={<ComingSoonAdmin title="Carte" description="Vue géographique de tout le catalogue, filtrable par région et qualificatifs." />} />
+            <Route path="catalogue" element={<ComingSoonAdmin title="Catalogue" description="Partenaires, réservable hors réseau et contenu & inspiration réunis dans une seule vue." />} />
+            <Route path="itineraires" element={<ComingSoonAdmin title="Itinéraires" description="Brief, propositions IA et recherche manuelle pour construire un itinéraire client." />} />
+            <Route path="partenaires/experiences" element={<ComingSoonAdmin title="Partenaires · Expériences" description="Gestion de la relation partenaire pour les expériences : contrat, commission, relance." />} />
+            <Route path="promo" element={<ComingSoonAdmin title="Codes promo" description="Création et suivi des codes promotionnels." />} />
+            <Route path="headquarter/sales" element={<ComingSoonAdmin title="Sales" />} />
+            <Route path="headquarter/marketing" element={<ComingSoonAdmin title="Marketing" />} />
+            <Route path="headquarter/operation" element={<ComingSoonAdmin title="Operation" />} />
           </Route>
           <Route
             path="/hotel-admin"
