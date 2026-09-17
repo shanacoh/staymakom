@@ -1,6 +1,9 @@
 import V3Header from "@/components/V3Header";
-import { MapPin, Utensils, Grape, Mountain, Sparkles, Moon, Trees } from "lucide-react";
+import { MapPin, Utensils, Grape, Mountain, Sparkles, Moon } from "lucide-react";
 import heroImg from "@/assets/hero-road-desert.jpg";
+import hebergement1 from "@/assets/el/hebergement-1.jpg";
+import hebergement2 from "@/assets/el/hebergement-2.jpg";
+import hebergement3 from "@/assets/el/hebergement-3.jpg";
 
 type Moment = {
   icon: "map" | "food" | "wine" | "nature" | "sparkle" | "moon";
@@ -235,13 +238,18 @@ const EL = () => {
             </h2>
           </div>
 
-          <div className="max-w-sm mx-auto rounded-2xl border border-border bg-muted/40 px-6 py-8 flex flex-col items-center text-center">
-            <Trees className="h-6 w-6 text-[#ad1414] mb-3" />
-            <p className="font-sans text-lg font-bold uppercase tracking-[-0.01em] text-foreground mb-1">
-              Shoresh Green Hills
-            </p>
-            <p className="text-sm text-foreground/60 font-sans mb-3">3 nuits au cœur des collines de Jérusalem</p>
-            <p className="font-sans text-2xl font-bold text-foreground">≈ 1 250 €</p>
+          <div className="max-w-lg mx-auto rounded-2xl border border-border bg-muted/40 px-5 py-6 sm:px-6 sm:py-7">
+            <div className="grid grid-cols-3 gap-2.5 mb-5">
+              {[hebergement1, hebergement2, hebergement3].map((src, i) => (
+                <div key={i} className="aspect-[4/3] rounded-xl overflow-hidden">
+                  <img src={src} alt="Hébergement du séjour" className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-foreground/60 font-sans mb-1">3 nuits au cœur des collines de Jérusalem</p>
+              <p className="font-sans text-2xl font-bold text-foreground">≈ 1 250 € selon les options</p>
+            </div>
           </div>
 
           <div className="mt-10 rounded-2xl bg-foreground text-white px-6 py-6 flex items-start gap-3">
