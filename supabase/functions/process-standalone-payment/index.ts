@@ -265,13 +265,15 @@ Deno.serve(async (req: Request) => {
     if (promoCodePayload?.id && promoCodePayload?.code && customer_email) {
       const { data: promoRow } = await supabase
         .from('promo_codes')
-        .select('id, code, discount_pct, valid_from, valid_until, max_uses, used_count, is_active')
+        .select('id, code, discount_type, discount_pct, discount_amount, valid_from, valid_until, max_uses, used_count, is_active')
         .eq('id', promoCodePayload.id)
         .single();
 
       if (promoRow && promoRow.is_active && new Date(promoRow.valid_from) <= new Date() && new Date(promoRow.valid_until) >= new Date()) {
         if (promoRow.max_uses === null || promoRow.used_count < promoRow.max_uses) {
-          promoDiscount = Math.round((basePrice * promoRow.discount_pct) / 100);
+          promoDiscount = promoRow.discount_type === 'fixed_amount'
+            ? Math.min(promoRow.discount_amount ?? 0, basePrice)
+            : Math.round((basePrice * (promoRow.discount_pct ?? 0)) / 100);
           validatedPromo = { id: promoRow.id, code: promoRow.code, discount_pct: promoRow.discount_pct };
         }
       }

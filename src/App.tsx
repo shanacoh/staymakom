@@ -84,6 +84,7 @@ const HyperGuestLogsPage     = lazy(() => import("./pages/admin/hyperguest/LogsP
 const HyperGuestConfigPage   = lazy(() => import("./pages/admin/hyperguest/ConfigPage"));
 const RevolutDebugPage       = lazy(() => import("./pages/admin/revolut/DebugPage"));
 const ComingSoonAdmin        = lazy(() => import("./pages/admin/ComingSoon"));
+const AdminPromoCodes        = lazy(() => import("./pages/admin/PromoCodes"));
 const Celine30                   = lazy(() => import("./pages/Celine30"));
 const ItineraireTsfat             = lazy(() => import("./pages/ItineraireTsfat"));
 const HappyBirthdayMom             = lazy(() => import("./pages/HappyBirthdayMom"));
@@ -314,7 +315,7 @@ const AppContent = () => {
             <Route path="catalogue" element={<ComingSoonAdmin title="Catalogue" description="Partenaires, réservable hors réseau et contenu & inspiration réunis dans une seule vue." />} />
             <Route path="itineraires" element={<ComingSoonAdmin title="Itinéraires" description="Brief, propositions IA et recherche manuelle pour construire un itinéraire client." />} />
             <Route path="partenaires/experiences" element={<ComingSoonAdmin title="Partenaires · Expériences" description="Gestion de la relation partenaire pour les expériences : contrat, commission, relance." />} />
-            <Route path="promo" element={<ComingSoonAdmin title="Codes promo" description="Création et suivi des codes promotionnels." />} />
+            <Route path="promo" element={<AdminPromoCodes />} />
             <Route path="headquarter/sales" element={<ComingSoonAdmin title="Sales" />} />
             <Route path="headquarter/marketing" element={<ComingSoonAdmin title="Marketing" />} />
             <Route path="headquarter/operation" element={<ComingSoonAdmin title="Operation" />} />

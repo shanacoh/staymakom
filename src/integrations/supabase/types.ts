@@ -3133,7 +3133,9 @@ export type Database = {
         Row: {
           code: string
           created_at: string
-          discount_pct: number
+          discount_amount: number | null
+          discount_pct: number | null
+          discount_type: string
           id: string
           is_active: boolean
           max_uses: number | null
@@ -3145,7 +3147,9 @@ export type Database = {
         Insert: {
           code: string
           created_at?: string
-          discount_pct: number
+          discount_amount?: number | null
+          discount_pct?: number | null
+          discount_type?: string
           id?: string
           is_active?: boolean
           max_uses?: number | null
@@ -3157,7 +3161,9 @@ export type Database = {
         Update: {
           code?: string
           created_at?: string
-          discount_pct?: number
+          discount_amount?: number | null
+          discount_pct?: number | null
+          discount_type?: string
           id?: string
           is_active?: boolean
           max_uses?: number | null

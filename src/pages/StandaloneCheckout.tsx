@@ -251,7 +251,13 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
   const [isValidatingGiftCard, setIsValidatingGiftCard] = useState(false);
   const [giftCardError, setGiftCardError] = useState<string | null>(null);
   const [promoCodeValue, setPromoCodeValue] = useState("");
-  const [appliedPromo, setAppliedPromo] = useState<{ id: string; code: string; discountPct: number } | null>(null);
+  const [appliedPromo, setAppliedPromo] = useState<{
+    id: string;
+    code: string;
+    discountType: "percentage" | "fixed_amount";
+    discountPct: number;
+    discountAmount: number;
+  } | null>(null);
   const [isValidatingPromo, setIsValidatingPromo] = useState(false);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [showGuestErrors, setShowGuestErrors] = useState(false);
@@ -270,7 +276,16 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
   const currencySymbol = getCurrencySymbol(state.currency);
   // L'adresse de facturation est collectée directement dans le widget Revolut.
   const isGuestValid = isLeadGuestComplete(leadGuest);
-  const promoDiscount = appliedPromo ? Math.round((state.totalPrice * appliedPromo.discountPct) / 100) : 0;
+  const promoDiscount = appliedPromo
+    ? appliedPromo.discountType === "fixed_amount"
+      ? Math.min(appliedPromo.discountAmount, state.totalPrice)
+      : Math.round((state.totalPrice * appliedPromo.discountPct) / 100)
+    : 0;
+  const promoDiscountLabel = appliedPromo
+    ? appliedPromo.discountType === "fixed_amount"
+      ? `${currencySymbol}${Math.round(appliedPromo.discountAmount).toLocaleString()}`
+      : `${appliedPromo.discountPct}%`
+    : "";
   const afterPromo = Math.max(0, state.totalPrice - promoDiscount);
   const giftCardApplied = appliedGiftCard ? Math.min(appliedGiftCard.availableBalance, afterPromo) : 0;
   const finalTotal = Math.max(0, afterPromo - giftCardApplied);
@@ -370,7 +385,15 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
         setPromoError(lang === "he" ? "לא ניתן לאמת את הקוד. נסה שוב." : lang === "fr" ? "Impossible de valider le code. Réessayez." : "Unable to validate the code. Please try again.");
         return;
       }
-      type PromoResult = { valid: boolean; error?: string; id?: string; code?: string; discount_pct?: number };
+      type PromoResult = {
+        valid: boolean;
+        error?: string;
+        id?: string;
+        code?: string;
+        discount_type?: "percentage" | "fixed_amount";
+        discount_pct?: number;
+        discount_amount?: number;
+      };
       const result = data as PromoResult;
       if (!result.valid) {
         const msgs: Record<string, Record<string, string>> = {
@@ -386,7 +409,13 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
         setPromoError(msgs[key]?.[lang] || msgs.not_found.en);
         return;
       }
-      setAppliedPromo({ id: result.id!, code: result.code!, discountPct: Number(result.discount_pct ?? 0) });
+      setAppliedPromo({
+        id: result.id!,
+        code: result.code!,
+        discountType: result.discount_type === "fixed_amount" ? "fixed_amount" : "percentage",
+        discountPct: Number(result.discount_pct ?? 0),
+        discountAmount: Number(result.discount_amount ?? 0),
+      });
       setPromoCodeValue("");
     } catch {
       setPromoError(lang === "he" ? "שגיאה באימות הקוד." : lang === "fr" ? "Erreur lors de la vérification." : "Error validating code.");
@@ -414,7 +443,9 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
           promo_code: appliedPromo ? {
             id: appliedPromo.id,
             code: appliedPromo.code,
+            discount_type: appliedPromo.discountType,
             discount_pct: appliedPromo.discountPct,
+            discount_amount: appliedPromo.discountAmount,
             amount_discounted: promoDiscount,
           } : null,
           gift_card: appliedGiftCard && giftCardApplied > 0 ? {
@@ -574,7 +605,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
           <div className="space-y-1 text-xs text-muted-foreground mb-2">
             {promoDiscount > 0 && (
               <div className="flex justify-between">
-                <span>{appliedPromo?.code} (-{appliedPromo?.discountPct}%)</span>
+                <span>{appliedPromo?.code} (-{promoDiscountLabel})</span>
                 <span>-{currencySymbol}{promoDiscount}</span>
               </div>
             )}
@@ -777,7 +808,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                   {appliedPromo ? (
                     <div className="flex items-center justify-between px-3 py-2 bg-emerald-50 border border-emerald-200">
                       <span className="text-sm text-emerald-800 font-medium">
-                        {appliedPromo.code} — -{appliedPromo.discountPct}%
+                        {appliedPromo.code} — -{promoDiscountLabel}
                         {" "}(-{currencySymbol}{promoDiscount})
                       </span>
                       <button
@@ -897,7 +928,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                   <div className="space-y-1 text-xs text-muted-foreground">
                     {promoDiscount > 0 && (
                       <div className="flex justify-between">
-                        <span>{appliedPromo?.code} (-{appliedPromo?.discountPct}%)</span>
+                        <span>{appliedPromo?.code} (-{promoDiscountLabel})</span>
                         <span>-{currencySymbol}{promoDiscount}</span>
                       </div>
                     )}

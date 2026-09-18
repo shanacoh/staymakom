@@ -292,7 +292,9 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
   const [appliedPromo, setAppliedPromo] = useState<{
     id: string;
     code: string;
+    discountType: "percentage" | "fixed_amount";
     discountPct: number;
+    discountAmount: number;
   } | null>(null);
   const [isValidatingPromo, setIsValidatingPromo] = useState(false);
   const [promoError, setPromoError] = useState<string | null>(null);
@@ -348,10 +350,12 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
 
   // Ordre de calcul (validé Shana 2026-05-07, cumulable promo + gift card) :
   //   1. displayTotal (prix de référence affiché)
-  //   2. - promo % → amountAfterPromo
+  //   2. - promo (% ou montant fixe, plafonné au total) → amountAfterPromo
   //   3. - gift card (plafonnée à amountAfterPromo) → amountAfterGiftCard = ce qui reste à payer
   const promoDiscount = appliedPromo
-    ? Math.round((displayTotal * appliedPromo.discountPct) / 100)
+    ? appliedPromo.discountType === "fixed_amount"
+      ? Math.min(appliedPromo.discountAmount, displayTotal)
+      : Math.round((displayTotal * appliedPromo.discountPct) / 100)
     : 0;
   const amountAfterPromo = Math.max(0, displayTotal - promoDiscount);
   const giftCardApplied = appliedGiftCard
@@ -543,7 +547,15 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
         );
         return;
       }
-      type PromoResult = { valid: boolean; error?: string; id?: string; code?: string; discount_pct?: number };
+      type PromoResult = {
+        valid: boolean;
+        error?: string;
+        id?: string;
+        code?: string;
+        discount_type?: "percentage" | "fixed_amount";
+        discount_pct?: number;
+        discount_amount?: number;
+      };
       const result = data as PromoResult;
       if (!result.valid) {
         const msgs: Record<string, Record<string, string>> = {
@@ -562,7 +574,9 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       setAppliedPromo({
         id: result.id!,
         code: result.code!,
+        discountType: result.discount_type === "fixed_amount" ? "fixed_amount" : "percentage",
         discountPct: Number(result.discount_pct ?? 0),
+        discountAmount: Number(result.discount_amount ?? 0),
       });
       setPromoCodeInput("");
     } catch {
@@ -678,7 +692,9 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       const promoCodePayload = appliedPromo && promoDiscount > 0 ? {
         id: appliedPromo.id,
         code: appliedPromo.code,
+        discountType: appliedPromo.discountType,
         discountPct: appliedPromo.discountPct,
+        discountAmount: appliedPromo.discountAmount,
         amountDiscounted: promoDiscount,
         email: leadGuest.email.trim(),
       } : undefined;
@@ -997,7 +1013,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
           giftCardDiscount={giftCardApplied}
           promoDiscount={promoDiscount}
           promoCode={appliedPromo?.code}
-          promoPct={appliedPromo?.discountPct}
+          promoPct={appliedPromo?.discountType === "percentage" ? appliedPromo.discountPct : undefined}
         />
       </div>
     </div>
@@ -1184,7 +1200,11 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                         <Sparkles className="h-4 w-4 shrink-0" />
                         <span className="font-medium">{t.promoApplied}</span>
                         <span className="font-mono text-xs">{appliedPromo.code}</span>
-                        <span className="font-semibold">−{appliedPromo.discountPct}%</span>
+                        <span className="font-semibold">
+                          {appliedPromo.discountType === "fixed_amount"
+                            ? `−${currencySymbol}${Math.round(convertCurrency(appliedPromo.discountAmount)).toLocaleString()}`
+                            : `−${appliedPromo.discountPct}%`}
+                        </span>
                       </div>
                       <button
                         type="button"
@@ -1309,7 +1329,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                   giftCardDiscount={giftCardApplied}
                   promoDiscount={promoDiscount}
                   promoCode={appliedPromo?.code}
-                  promoPct={appliedPromo?.discountPct}
+                  promoPct={appliedPromo?.discountType === "percentage" ? appliedPromo.discountPct : undefined}
                 />
               </div>
 

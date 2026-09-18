@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format, formatDistanceToNow, differenceInDays, subDays, isAfter, isBefore, startOfDay } from "date-fns";
+import { format, formatDistanceToNow, differenceInDays, subDays, isAfter, isBefore, startOfDay, startOfMonth, endOfMonth, subMonths, getDate, getDaysInMonth } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Search, Download, Mail, ArrowUp, ArrowDown, ArrowUpDown, X, CalendarIcon, Trash2, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface Lead {
   id: string;
@@ -249,17 +250,31 @@ const AdminLeads = () => {
 
   // ─── Summary Stats (computed across ALL matching leads, not just the loaded page) ───
   const summary = useMemo(() => {
-    if (!fullStats) return { total: 0, newCount: 0, converted: 0, toFollowUp: 0 };
-    const sevenDaysAgo = subDays(new Date(), 7);
-    let newCount = 0, converted = 0, toFollowUp = 0;
-    fullStats.forEach(l => {
-      if (l.status === "new" || !l.status) {
-        newCount++;
-        if (isBefore(new Date(l.created_at), sevenDaysAgo)) toFollowUp++;
-      }
-      if (l.status === "converted") converted++;
-    });
-    return { total: fullStats.length, newCount, converted, toFollowUp };
+    if (!fullStats) return { total: 0, last7Days: 0, avgPerDayThisMonth: 0, avgPerDayLastMonth: 0 };
+    const now = new Date();
+
+    const sevenDaysAgo = subDays(now, 7);
+    const last7Days = fullStats.filter(l => isAfter(new Date(l.created_at), sevenDaysAgo)).length;
+
+    // Rythme d'acquisition ce mois-ci : nombre de leads depuis le 1er du mois,
+    // divisé par le nombre de jours écoulés (le mois n'est pas terminé).
+    const startThisMonth = startOfMonth(now);
+    const daysElapsedThisMonth = getDate(now);
+    const countThisMonth = fullStats.filter(l => !isBefore(new Date(l.created_at), startThisMonth)).length;
+    const avgPerDayThisMonth = daysElapsedThisMonth > 0 ? countThisMonth / daysElapsedThisMonth : 0;
+
+    // Même rythme sur le mois précédent (complet), pour comparer.
+    const lastMonthRef = subMonths(now, 1);
+    const startLastMonth = startOfMonth(lastMonthRef);
+    const endLastMonth = endOfMonth(lastMonthRef);
+    const daysInLastMonth = getDaysInMonth(lastMonthRef);
+    const countLastMonth = fullStats.filter(l => {
+      const d = new Date(l.created_at);
+      return !isBefore(d, startLastMonth) && !isAfter(d, endLastMonth);
+    }).length;
+    const avgPerDayLastMonth = countLastMonth / daysInLastMonth;
+
+    return { total: fullStats.length, last7Days, avgPerDayThisMonth, avgPerDayLastMonth };
   }, [fullStats]);
 
   const getDisplayName = (lead: Lead) => {
@@ -274,7 +289,7 @@ const AdminLeads = () => {
   };
 
   const SortableHead = ({ col, children, className }: { col: SortKey; children: React.ReactNode; className?: string }) => (
-    <TableHead className={className}>
+    <TableHead className={cn("h-8 text-[10px] uppercase tracking-wider", className)}>
       <button onClick={() => handleSort(col)} className="flex items-center hover:text-foreground transition-colors">
         {children}<SortIcon col={col} />
       </button>
@@ -504,15 +519,66 @@ const AdminLeads = () => {
       {/* ─── Header ─── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Leads</h1>
-          <p className="text-sm text-muted-foreground">
-            {summary.total} total · {summary.newCount} new · {summary.converted} converted · {summary.toFollowUp} to follow up
+          <h1 className="text-lg font-bold text-foreground">Leads</h1>
+          <p className="text-muted-foreground text-xs mt-0.5">
+            Suivre et qualifier les prospects du site.
           </p>
         </div>
         <Button onClick={exportAllToCSV} variant="outline" className="gap-2" disabled={isExportingAll}>
           {isExportingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
           Export CSV
         </Button>
+      </div>
+
+      {/* ─── KPIs ─── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Card>
+          <CardHeader className="p-3 pb-1">
+            <CardTitle className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+              Total
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 pt-0">
+            <div className="font-mono text-xl font-bold">{summary.total}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="p-3 pb-1">
+            <CardTitle className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+              7 derniers jours
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 pt-0">
+            <div className="font-mono text-xl font-bold">{summary.last7Days}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="p-3 pb-1">
+            <CardTitle className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+              Acquisition moy./jour (M)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 pt-0 flex items-center gap-1.5">
+            <div className="font-mono text-xl font-bold">{summary.avgPerDayThisMonth.toFixed(1)}</div>
+            {summary.avgPerDayThisMonth !== summary.avgPerDayLastMonth && (
+              summary.avgPerDayThisMonth > summary.avgPerDayLastMonth ? (
+                <ArrowUp className="h-4 w-4 text-green-600" />
+              ) : (
+                <ArrowDown className="h-4 w-4 text-red-500" />
+              )
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="p-3 pb-1">
+            <CardTitle className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+              Acquisition moy./jour (M-1)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 pt-0">
+            <div className="font-mono text-xl font-bold">{summary.avgPerDayLastMonth.toFixed(1)}</div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* ─── Filters ─── */}
@@ -568,8 +634,8 @@ const AdminLeads = () => {
       <div className="border rounded-lg bg-white overflow-x-auto">
         <Table className="min-w-[700px]">
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-10">
+            <TableRow className="bg-muted/50">
+              <TableHead className="h-8 w-10">
                 <Checkbox checked={selectedIds.size === sortedLeads.length && sortedLeads.length > 0} onCheckedChange={toggleSelectAll} />
               </TableHead>
               <SortableHead col="date">Date</SortableHead>
@@ -577,8 +643,8 @@ const AdminLeads = () => {
               <SortableHead col="name">Name</SortableHead>
               <SortableHead col="source">Source</SortableHead>
               <SortableHead col="status">Status</SortableHead>
-              <TableHead>Last contact</TableHead>
-              <TableHead>Notes</TableHead>
+              <TableHead className="h-8 text-[10px] uppercase tracking-wider">Last contact</TableHead>
+              <TableHead className="h-8 text-[10px] uppercase tracking-wider">Notes</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

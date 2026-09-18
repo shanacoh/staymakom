@@ -170,7 +170,7 @@ const RichTextEditor = ({ content, onChange, placeholder, dir = 'ltr', defaultAl
       }}
       title={title}
       className={cn(
-        "h-8 w-8 p-0 hover:bg-accent/50",
+        "h-8 w-8 p-0 hover:bg-muted/50",
         isActive && "bg-primary text-primary-foreground hover:bg-primary/90"
       )}
     >
@@ -294,7 +294,7 @@ const RichTextEditor = ({ content, onChange, placeholder, dir = 'ltr', defaultAl
               variant="ghost"
               size="sm"
               title="Couleur du texte"
-              className="h-8 w-8 p-0 hover:bg-accent/50 relative"
+              className="h-8 w-8 p-0 hover:bg-muted/50 relative"
             >
               <Palette className="h-3.5 w-3.5" />
               <span

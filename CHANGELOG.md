@@ -6,6 +6,25 @@
 
 ---
 
+## [2026-09-18] — Module Codes promo, nettoyage visuel de l'admin et couleur d'action
+
+### Ce qui a changé côté code
+- `src/pages/admin/PromoCodes.tsx` (nouveau fichier) : premier vrai écran "Codes promo" (branché sur `/admin/promo`, qui n'était qu'un "Bientôt disponible" jusqu'ici). Créer un code (manuel ou aléatoire), pourcentage ou montant fixe, dates de validité, nombre d'utilisations maximum (vide = illimité, 1 = usage unique). Trois blocs récap en haut (codes actifs, utilisations totales, code le plus utilisé), calculés à partir des vraies données.
+- `src/pages/Checkout.tsx`, `src/pages/StandaloneCheckout.tsx` : savent maintenant afficher et calculer une réduction en montant fixe (ex. 50 ₪), pas seulement en pourcentage comme avant.
+- `supabase/functions/process-standalone-payment/index.ts` : le calcul de la réduction, refait côté serveur pour des raisons de sécurité (indépendamment de ce qu'envoie le navigateur du client), gère maintenant lui aussi le montant fixe.
+- `src/components/admin/AdminLayout.tsx` : suppression de la bannière du haut ("Admin" / "← Retour au site") sur tout le back-office.
+- `src/components/admin/AdminSidebar.tsx` : "STAYMAKOM." dans le menu devient cliquable et ramène vers le site public (remplace le lien retiré de la bannière) ; le bouton pour replier/ouvrir le menu est déplacé à côté du logo.
+- `src/components/ui/select.tsx`, `dropdown-menu.tsx`, `context-menu.tsx`, `menubar.tsx`, `command.tsx`, `calendar.tsx`, `toggle.tsx`, `button.tsx`, `dialog.tsx`, `navigation-menu.tsx`, `rich-text-editor.tsx` : la couleur dorée qui apparaissait au survol/à la sélection dans les menus déroulants, boutons secondaires, calendriers, etc. est remplacée par un gris neutre — sur tout le site (admin et site public), partout où cette couleur servait à une action. Les usages purement décoratifs (badges sur les fiches expériences, citation de la page Consulting) n'ont pas été touchés.
+- `src/pages/admin/Leads.tsx` : remaniement visuel (titre, 4 blocs récap façon Codes promo, en-têtes de tableau resserrés), sans toucher à la recherche/aux filtres/au tri/à la sélection multiple/au panneau de détail. Les blocs récap affichent maintenant Total, leads des 7 derniers jours, et le rythme d'acquisition moyen par jour (mois en cours vs mois précédent, avec une flèche verte/rouge indiquant la tendance).
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20260918000000_add_fixed_amount_to_promo_codes.sql` (déjà appliquée) : ajoute à `promo_codes` les colonnes `discount_type` (« percentage » ou « fixed_amount ») et `discount_amount` (montant fixe en ₪), et met à jour la fonction de validation des codes pour les reconnaître. Les codes existants (dont WELCOME10) basculent automatiquement en « percentage » et continuent de fonctionner à l'identique.
+
+### Pourquoi ce changement
+- Shana voulait un vrai module pour créer et suivre ses codes promo (au lieu d'un code ajouté à la main en base par un ancien développeur), avec la possibilité de faire un montant fixe en plus du pourcentage. Au passage, plusieurs retours sur l'apparence du back-office (bannière du haut, couleur dorée au survol qui ne correspondait à rien dans la charte du site) ont été traités, et la page Leads a été alignée visuellement sur le nouveau style.
+
+---
+
 ## [2026-09-17] — Réorganisation du menu du back-office (charpente de navigation)
 
 ### Ce qui a changé côté code

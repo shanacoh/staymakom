@@ -41,6 +41,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
@@ -239,17 +240,18 @@ export function AdminSidebar() {
   return (
     <Sidebar className={collapsed ? "w-14" : "w-56"}>
       <SidebarContent className="bg-background pt-3">
-        <div className={collapsed ? "px-2 pb-3" : "px-3 pb-4"}>
+        <div className={collapsed ? "px-2 pb-3 flex justify-center" : "px-3 pb-4 flex items-start justify-between gap-2"}>
           {!collapsed && (
-            <>
+            <Link to="/" className="hover:opacity-80 transition-opacity" title="Retour au site">
               <div className="text-base font-extrabold tracking-tight text-foreground">
                 STAYMAKOM<span className="text-destructive">.</span>
               </div>
               <div className="mt-0.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                 Back-office
               </div>
-            </>
+            </Link>
           )}
+          <SidebarTrigger className="h-7 w-7 shrink-0" />
         </div>
 
         <NavGroup
