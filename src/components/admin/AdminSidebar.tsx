@@ -1,4 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
@@ -23,7 +25,6 @@ import {
   Tag,
   Sailboat,
   Inbox,
-  Table2,
   Map,
   Library,
   Compass,
@@ -49,7 +50,25 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+
+// Compte les groupes d'erreurs pas encore traités, pour le badge rouge sur "Erreurs".
+function useNewErrorsCount() {
+  const { data } = useQuery({
+    queryKey: ["dashboard-new-errors-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("error_groups")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "new");
+      if (error) return 0;
+      return count || 0;
+    },
+    refetchInterval: 60000,
+  });
+  return data || 0;
+}
 
 type NavItem = {
   title: string;
@@ -77,7 +96,6 @@ const operationsItems: NavItem[] = [
   { title: "Experiences", url: "/admin/experiences2", icon: Sparkles },
   { title: "Itinéraires", url: "/admin/itineraires", icon: Compass },
   { title: "Réservations", url: "/admin/bookings", icon: Calendar },
-  { title: "à supp réservation tableau", url: "/admin/standalone-bookings/grid", icon: Table2 },
   { title: "Partenaires · Hôtels", url: "/admin/hotels2", icon: Building2 },
   { title: "Partenaires · Expériences", url: "/admin/partenaires/experiences", icon: Handshake },
 ];
@@ -89,7 +107,6 @@ const autreItems: NavItem[] = [
   { title: "Favorites", url: "/admin/favorites", icon: Heart },
   { title: "Journal", url: "/admin/journal", icon: BookOpen },
   { title: "AI Insights", url: "/admin/ai-insights", icon: Brain },
-  { title: "Settings", url: "/admin/settings", icon: Settings },
   { title: "Mes bateaux", url: "/admin/boats", icon: Sailboat },
   { title: "Demandes bateaux", url: "/admin/boats/requests", icon: Inbox },
   { title: "Bibliothèque swipe", url: "/admin/swipe/bibliotheque", icon: Layers },
@@ -104,7 +121,9 @@ const croissanceItems: NavItem[] = [
   { title: "Dossiers swipe", url: "/admin/swipe/dossiers", icon: FolderOpen },
 ];
 
-// Technique : au même niveau que Croissance/Headquarter, deux blocs (HyperGuest, Revolut)
+// Technique : replié par défaut, tout se déroule au clic (Erreurs, Settings, puis HyperGuest et Revolut)
+const errorsItem: NavItem = { title: "Erreurs", url: "/admin/errors", icon: AlertTriangle };
+const settingsItem: NavItem = { title: "Settings", url: "/admin/settings", icon: Settings };
 const hyperguestItems: NavItem[] = [
   { title: "Diagnostic", url: "/admin/diagnostic", icon: FlaskConical },
   { title: "Debug API", url: "/admin/hyperguest/debug", icon: Bug },
@@ -113,9 +132,6 @@ const hyperguestItems: NavItem[] = [
 ];
 const revolutItems: NavItem[] = [
   { title: "Debug API", url: "/admin/revolut/debug", icon: CreditCard },
-];
-const siteItems: NavItem[] = [
-  { title: "Erreurs", url: "/admin/errors", icon: AlertTriangle },
 ];
 
 // Headquarter : sections encore à construire
@@ -177,60 +193,136 @@ function NavGroup({
   );
 }
 
-function TechniqueSubGroup({
-  label,
-  items,
+function TechniqueNavItem({
+  item,
+  collapsed,
+  isActive,
+  onNavClick,
+  badgeCount,
+  accentClass,
+}: {
+  item: NavItem;
+  collapsed: boolean;
+  isActive: (path: string) => boolean;
+  onNavClick: () => void;
+  badgeCount?: number;
+  accentClass?: string;
+}) {
+  return (
+    <SidebarMenuItem className={accentClass ? cn("ml-3 border-l-2 pl-1", accentClass) : undefined}>
+      <SidebarMenuButton asChild className={isActive(item.url) ? ACTIVE_CLASS : INACTIVE_CLASS}>
+        <Link to={item.url} onClick={onNavClick} className="flex items-center gap-2">
+          {collapsed ? (
+            <item.icon className="h-5 w-5" />
+          ) : (
+            <span className="text-sm font-medium">{item.title}</span>
+          )}
+          {!!badgeCount && badgeCount > 0 && (
+            <Badge
+              variant="destructive"
+              className="ml-auto h-4 min-w-4 shrink-0 items-center justify-center rounded-full p-0 px-1 text-[10px] leading-none"
+            >
+              {badgeCount}
+            </Badge>
+          )}
+        </Link>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+}
+
+// Technique : replié par défaut. Au clic, tout se déroule d'un coup (pas de sous-accordéons imbriqués)
+// pour qu'on voie en un coup d'œil chaque titre de bloc et les pages qui vivent en dessous.
+function TechniqueGroup({
   collapsed,
   isActive,
   onNavClick,
 }: {
-  label: string;
-  items: NavItem[];
   collapsed: boolean;
   isActive: (path: string) => boolean;
   onNavClick: () => void;
 }) {
+  const newErrorsCount = useNewErrorsCount();
+
   if (collapsed) {
     // Mode icônes réduit : les liens restent accessibles, sans le regroupement replié.
     return (
-      <SidebarGroupContent>
-        <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild className={isActive(item.url) ? ACTIVE_CLASS : INACTIVE_CLASS}>
-                <Link to={item.url} onClick={onNavClick}>
-                  <item.icon className="h-5 w-5" />
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarGroupContent>
+      <SidebarGroup>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <TechniqueNavItem item={errorsItem} collapsed={collapsed} isActive={isActive} onNavClick={onNavClick} badgeCount={newErrorsCount} />
+            <TechniqueNavItem item={settingsItem} collapsed={collapsed} isActive={isActive} onNavClick={onNavClick} />
+            {hyperguestItems.map((item) => (
+              <TechniqueNavItem key={item.title} item={item} collapsed={collapsed} isActive={isActive} onNavClick={onNavClick} />
+            ))}
+            {revolutItems.map((item) => (
+              <TechniqueNavItem key={item.title} item={item} collapsed={collapsed} isActive={isActive} onNavClick={onNavClick} />
+            ))}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
     );
   }
 
   return (
-    <Collapsible defaultOpen>
-      <CollapsibleTrigger className="flex w-full items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
-        <span>{label}</span>
-        <ChevronDown className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <SidebarGroupContent>
-          <SidebarMenu>
-            {items.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild className={isActive(item.url) ? ACTIVE_CLASS : INACTIVE_CLASS}>
-                  <Link to={item.url} onClick={onNavClick}>
-                    <span className="text-sm font-medium">{item.title}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </CollapsibleContent>
-    </Collapsible>
+    <SidebarGroup>
+      <Collapsible>
+        <CollapsibleTrigger className="group flex w-full items-center gap-2 px-3 text-xs font-bold uppercase tracking-wider text-foreground hover:text-foreground transition-colors">
+          <span>Technique</span>
+          {newErrorsCount > 0 && (
+            <Badge
+              variant="destructive"
+              className="h-4 min-w-4 shrink-0 items-center justify-center rounded-full p-0 px-1 text-[10px] leading-none"
+            >
+              {newErrorsCount}
+            </Badge>
+          )}
+          <ChevronDown className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <SidebarGroupContent className="mt-1">
+            <SidebarMenu>
+              <TechniqueNavItem item={errorsItem} collapsed={collapsed} isActive={isActive} onNavClick={onNavClick} badgeCount={newErrorsCount} />
+              <TechniqueNavItem item={settingsItem} collapsed={collapsed} isActive={isActive} onNavClick={onNavClick} />
+            </SidebarMenu>
+
+            <div className="mt-3 flex items-center gap-1.5 border-t border-border/60 px-3 pt-3">
+              <span className="h-1.5 w-1.5 rounded-full bg-blue-800" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-blue-800">HyperGuest</span>
+            </div>
+            <SidebarMenu>
+              {hyperguestItems.map((item) => (
+                <TechniqueNavItem
+                  key={item.title}
+                  item={item}
+                  collapsed={collapsed}
+                  isActive={isActive}
+                  onNavClick={onNavClick}
+                  accentClass="border-blue-800/30"
+                />
+              ))}
+            </SidebarMenu>
+
+            <div className="mt-3 flex items-center gap-1.5 border-t border-border/60 px-3 pt-3">
+              <span className="h-1.5 w-1.5 rounded-full bg-blue-800" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-blue-800">Revolut</span>
+            </div>
+            <SidebarMenu>
+              {revolutItems.map((item) => (
+                <TechniqueNavItem
+                  key={item.title}
+                  item={item}
+                  collapsed={collapsed}
+                  isActive={isActive}
+                  onNavClick={onNavClick}
+                  accentClass="border-blue-800/30"
+                />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </SidebarGroup>
   );
 }
 
@@ -298,34 +390,7 @@ export function AdminSidebar() {
           onNavClick={handleNavClick}
         />
 
-        <SidebarGroup>
-          {!collapsed && (
-            <SidebarGroupLabel className="px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Technique
-            </SidebarGroupLabel>
-          )}
-          <TechniqueSubGroup
-            label="HyperGuest"
-            items={hyperguestItems}
-            collapsed={collapsed}
-            isActive={isActive}
-            onNavClick={handleNavClick}
-          />
-          <TechniqueSubGroup
-            label="Revolut"
-            items={revolutItems}
-            collapsed={collapsed}
-            isActive={isActive}
-            onNavClick={handleNavClick}
-          />
-          <TechniqueSubGroup
-            label="Site"
-            items={siteItems}
-            collapsed={collapsed}
-            isActive={isActive}
-            onNavClick={handleNavClick}
-          />
-        </SidebarGroup>
+        <TechniqueGroup collapsed={collapsed} isActive={isActive} onNavClick={handleNavClick} />
 
         <NavGroup
           label="Headquarter"
