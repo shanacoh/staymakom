@@ -13,6 +13,7 @@
   - Ajout d'une case à cocher **pré-cochée** juste avant le bouton "Créer mon compte", avec un texte court expliquant le bénéfice ("Je souhaite recevoir les offres exclusives, idées cadeaux et actualités Staymakom."), traduit en français/anglais/hébreu.
   - Le texte légal ("En continuant, j'accepte les Conditions d'utilisation et la Politique de confidentialité.") déplacé juste en dessous du bouton "Créer mon compte" (au lieu d'au-dessus), et sa formulation française simplifiée.
   - Ajout d'un titre technique invisible (`DialogTitle`) sur la popup, requis par les lecteurs d'écran pour les personnes malvoyantes — n'affecte pas l'apparence visuelle.
+  - Message d'erreur à la création du compte : au lieu du message générique "Vérifiez vos informations" (qui n'expliquait jamais quel champ posait problème), le message précise maintenant la cause exacte — prénom/nom manquant, email invalide, nationalité non choisie, ou mot de passe trop court (moins de 6 caractères) — dans les trois langues.
 - `src/components/auth/OnboardingFlow.tsx` (écran de bienvenue affiché juste après la création d'un compte) : même correction d'accessibilité (titre invisible ajouté sur chacune des 3 étapes).
 - Aucune régression trouvée sur le sélecteur de nationalité ni sur les bulles "centres d'intérêt" / "comment nous avez-vous connu" (deux signalements de Shana : le premier n'a pas pu être reproduit malgré des tests approfondis, probablement une ancienne version mise en cache par le navigateur ; le second venait d'une extension Chrome de Shana, pas du site).
 

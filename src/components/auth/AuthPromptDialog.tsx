@@ -48,6 +48,41 @@ const signupSchema = z.object({
   interests: z.array(z.string()).optional(),
 });
 
+/** Messages d'erreur précis par champ, pour remplacer le message générique
+ *  "Vérifiez vos informations" qui n'explique pas d'où vient le problème. */
+const FIELD_ERROR_MESSAGES: Record<string, Record<Lang, string>> = {
+  firstName: {
+    fr: "Merci d'indiquer votre prénom.",
+    en: "Please enter your first name.",
+    he: "נא למלא שם פרטי.",
+  },
+  lastName: {
+    fr: "Merci d'indiquer votre nom.",
+    en: "Please enter your last name.",
+    he: "נא למלא שם משפחה.",
+  },
+  email: {
+    fr: "Cette adresse email n'est pas valide.",
+    en: "This email address isn't valid.",
+    he: "כתובת האימייל אינה תקינה.",
+  },
+  country: {
+    fr: "Merci de sélectionner votre nationalité.",
+    en: "Please select your nationality.",
+    he: "נא לבחור את הלאום שלך.",
+  },
+  password: {
+    fr: "Le mot de passe doit contenir au moins 6 caractères.",
+    en: "Your password must be at least 6 characters.",
+    he: "הסיסמה חייבת להכיל לפחות 6 תווים.",
+  },
+};
+
+function getSignupErrorMessage(errors: z.ZodIssue[], lang: Lang, fallback: string): string {
+  const firstField = errors[0]?.path[0] as string | undefined;
+  return (firstField && FIELD_ERROR_MESSAGES[firstField]?.[lang]) || fallback;
+}
+
 const COUNTRIES = [
   { value: "IL", label: { en: "Israel", fr: "Israël", he: "ישראל" } },
   { value: "FR", label: { en: "France", fr: "France", he: "צרפת" } },
@@ -334,7 +369,7 @@ export default function AuthPromptDialog({
     e.preventDefault();
     const parsed = signupSchema.safeParse(signupData);
     if (!parsed.success) {
-      toast.error(c.toasts.invalid);
+      toast.error(getSignupErrorMessage(parsed.error.issues, lang, c.toasts.invalid));
       return;
     }
 
