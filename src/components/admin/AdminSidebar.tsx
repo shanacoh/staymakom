@@ -267,7 +267,7 @@ function TechniqueGroup({
   return (
     <SidebarGroup>
       <Collapsible>
-        <CollapsibleTrigger className="group flex w-full items-center gap-2 px-3 text-xs font-bold uppercase tracking-wider text-foreground hover:text-foreground transition-colors">
+        <CollapsibleTrigger className="group flex w-full items-center gap-2 px-3 text-xs font-bold uppercase tracking-wider text-green-600 hover:text-green-700 transition-colors">
           <span>Technique</span>
           {newErrorsCount > 0 && (
             <Badge

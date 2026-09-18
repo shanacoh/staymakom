@@ -24,7 +24,7 @@
 ## [2026-09-18] — Réorganise le menu Technique du back-office
 
 ### Ce qui a changé côté code
-- `src/components/admin/AdminSidebar.tsx` (revu) : le menu "Technique" du back-office est maintenant replié par défaut. Un clic dessus déroule tout d'un coup, dans l'ordre : "Erreurs" (avec un rond rouge affichant le nombre d'erreurs non traitées), "Settings" (déplacé depuis le menu "Autre"), puis les pages HyperGuest et Revolut, chacune sous son propre titre coloré (bleu roi) pour bien les distinguer visuellement. Avant, "Technique" restait toujours ouvert avec trois petits accordéons imbriqués, ce que Shana trouvait confus.
+- `src/components/admin/AdminSidebar.tsx` (revu) : le menu "Technique" du back-office est maintenant replié par défaut. Un clic dessus déroule tout d'un coup, dans l'ordre : "Erreurs" (avec un rond rouge affichant le nombre d'erreurs non traitées), "Settings" (déplacé depuis le menu "Autre"), puis les pages HyperGuest et Revolut, chacune sous son propre titre coloré (bleu roi) pour bien les distinguer visuellement. Avant, "Technique" restait toujours ouvert avec trois petits accordéons imbriqués, ce que Shana trouvait confus. Le titre "Technique" lui-même est passé en vert pour se démarquer des autres groupes du menu.
 
 ### Ce qui a changé côté base de données
 - Aucun. Le rond rouge réutilise la même donnée que le Tableau de bord (table `error_groups`, erreurs au statut "new").
