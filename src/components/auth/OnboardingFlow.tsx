@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -231,7 +231,9 @@ export default function OnboardingFlow({ open, onComplete, userId, lang = "en" }
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
                   <Sparkles className="h-8 w-8 text-primary" />
                 </div>
-                <h2 className="font-serif text-2xl text-foreground mb-2">{copy.step1Title}</h2>
+                <DialogTitle asChild>
+                  <h2 className="font-serif text-2xl text-foreground mb-2">{copy.step1Title}</h2>
+                </DialogTitle>
                 <p className="text-muted-foreground">{copy.step1Subtitle}</p>
               </div>
 
@@ -327,7 +329,9 @@ export default function OnboardingFlow({ open, onComplete, userId, lang = "en" }
           {step === 2 && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center">
-                <h2 className="font-serif text-2xl text-foreground mb-2">{copy.step2Title}</h2>
+                <DialogTitle asChild>
+                  <h2 className="font-serif text-2xl text-foreground mb-2">{copy.step2Title}</h2>
+                </DialogTitle>
                 <p className="text-muted-foreground">{copy.step2Subtitle}</p>
               </div>
 
@@ -372,7 +376,9 @@ export default function OnboardingFlow({ open, onComplete, userId, lang = "en" }
           {step === 3 && (
             <div className="space-y-6 animate-fade-in">
               <div className="text-center">
-                <h2 className="font-serif text-2xl text-foreground mb-2">{copy.step3Title}</h2>
+                <DialogTitle asChild>
+                  <h2 className="font-serif text-2xl text-foreground mb-2">{copy.step3Title}</h2>
+                </DialogTitle>
                 <p className="text-muted-foreground">{copy.step3Subtitle}</p>
               </div>
 

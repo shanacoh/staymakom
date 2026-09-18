@@ -3,10 +3,11 @@ import { z } from "zod";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Heart, Loader2, Check, User, UserPlus } from "lucide-react";
 import OAuthButtons from "./OAuthButtons";
@@ -120,9 +121,10 @@ function copyFor(lang: Lang) {
         legal: {
           prefix: "En continuant, j'accepte les",
           terms: "Conditions d'utilisation",
-          and: "et reconnais la",
+          and: "et la",
           privacy: "Politique de confidentialité",
         },
+        marketing: "Je souhaite recevoir les offres exclusives, idées cadeaux et actualités Staymakom.",
         toggle: {
           noAccount: "Pas encore de compte ?",
           hasAccount: "Déjà un compte ?",
@@ -176,6 +178,7 @@ function copyFor(lang: Lang) {
           and: "ומאשר/ת את",
           privacy: "מדיניות הפרטיות",
         },
+        marketing: "אני רוצה לקבל הצעות בלעדיות, רעיונות למתנות ועדכונים מ-Staymakom.",
         toggle: {
           noAccount: "אין לך חשבון?",
           hasAccount: "כבר יש לך חשבון?",
@@ -226,9 +229,10 @@ function copyFor(lang: Lang) {
         legal: {
           prefix: "By continuing, I accept the",
           terms: "Terms of Use",
-          and: "and acknowledge the",
+          and: "and the",
           privacy: "Privacy Policy",
         },
+        marketing: "I'd like to receive exclusive offers, gift ideas and news from Staymakom.",
         toggle: {
           noAccount: "No account yet?",
           hasAccount: "Already have an account?",
@@ -270,6 +274,7 @@ export default function AuthPromptDialog({
     password: "",
     interests: [] as string[],
     referralSource: "",
+    marketingOptIn: true,
   });
 
   const toggleInterest = (id: string) => {
@@ -354,6 +359,7 @@ export default function AuthPromptDialog({
           phone: parsed.data.phone || null,
           interests: parsed.data.interests,
           referral_source: signupData.referralSource || null,
+          marketing_opt_in: signupData.marketingOptIn,
         }).eq("user_id", userId);
 
         // Create customer record
@@ -396,7 +402,9 @@ export default function AuthPromptDialog({
               <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[#ad1414]/10 mb-2">
                 <HeaderIcon className="h-5 w-5 text-[#ad1414]" />
               </div>
-              <h2 className="font-sans text-lg font-bold uppercase tracking-[-0.02em] text-foreground">{header.title}</h2>
+              <DialogTitle asChild>
+                <h2 className="font-sans text-lg font-bold uppercase tracking-[-0.02em] text-foreground">{header.title}</h2>
+              </DialogTitle>
               <p className="text-xs text-muted-foreground mt-1">{header.subtitle}</p>
             </div>
           );
@@ -703,13 +711,24 @@ export default function AuthPromptDialog({
                 </div>
               </div>
 
-              {/* Legal acceptance text */}
-              <p className="text-xs text-muted-foreground text-center leading-relaxed pt-3">
-                {c.legal.prefix}{" "}
-                <Link to="/terms" className="text-[#ad1414] hover:underline">{c.legal.terms}</Link>
-                {" "}{c.legal.and}{" "}
-                <Link to="/privacy" className="text-[#ad1414] hover:underline">{c.legal.privacy}</Link>.
-              </p>
+              {/* Marketing consent - pre-checked */}
+              <div className="flex items-start gap-2 pt-2">
+                <Checkbox
+                  id="signup-marketing"
+                  checked={signupData.marketingOptIn}
+                  onCheckedChange={(checked) =>
+                    setSignupData((p) => ({ ...p, marketingOptIn: checked === true }))
+                  }
+                  disabled={loading}
+                  className="mt-0.5"
+                />
+                <Label
+                  htmlFor="signup-marketing"
+                  className="text-xs text-muted-foreground leading-relaxed font-normal cursor-pointer"
+                >
+                  {c.marketing}
+                </Label>
+              </div>
 
               <Button
                 type="submit"
@@ -719,7 +738,15 @@ export default function AuthPromptDialog({
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {c.actions.signup}
               </Button>
-              
+
+              {/* Legal acceptance text */}
+              <p className="text-xs text-muted-foreground text-center leading-relaxed pt-1">
+                {c.legal.prefix}{" "}
+                <Link to="/terms" className="text-[#ad1414] hover:underline">{c.legal.terms}</Link>
+                {" "}{c.legal.and}{" "}
+                <Link to="/privacy" className="text-[#ad1414] hover:underline">{c.legal.privacy}</Link>.
+              </p>
+
               {/* Toggle to login */}
               <p className="text-xs text-muted-foreground text-center pt-3">
                 {c.toggle.hasAccount}{" "}

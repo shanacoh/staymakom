@@ -6,6 +6,24 @@
 
 ---
 
+## [2026-09-18] — Popup d'inscription : consentement marketing, accessibilité et corrections mineures
+
+### Ce qui a changé côté code
+- `src/components/auth/AuthPromptDialog.tsx` (popup "Rejoindre Staymakom") :
+  - Ajout d'une case à cocher **pré-cochée** juste avant le bouton "Créer mon compte", avec un texte court expliquant le bénéfice ("Je souhaite recevoir les offres exclusives, idées cadeaux et actualités Staymakom."), traduit en français/anglais/hébreu.
+  - Le texte légal ("En continuant, j'accepte les Conditions d'utilisation et la Politique de confidentialité.") déplacé juste en dessous du bouton "Créer mon compte" (au lieu d'au-dessus), et sa formulation française simplifiée.
+  - Ajout d'un titre technique invisible (`DialogTitle`) sur la popup, requis par les lecteurs d'écran pour les personnes malvoyantes — n'affecte pas l'apparence visuelle.
+- `src/components/auth/OnboardingFlow.tsx` (écran de bienvenue affiché juste après la création d'un compte) : même correction d'accessibilité (titre invisible ajouté sur chacune des 3 étapes).
+- Aucune régression trouvée sur le sélecteur de nationalité ni sur les bulles "centres d'intérêt" / "comment nous avez-vous connu" (deux signalements de Shana : le premier n'a pas pu être reproduit malgré des tests approfondis, probablement une ancienne version mise en cache par le navigateur ; le second venait d'une extension Chrome de Shana, pas du site).
+
+### Ce qui a changé côté base de données
+- Aucune nouvelle table ni colonne : la case "recevoir des offres" utilise une colonne (`user_profiles.marketing_opt_in`) qui existait déjà mais n'était jamais renseignée à l'inscription — elle est maintenant remplie avec le choix réel de la personne (cochée par défaut, modifiable avant de valider).
+
+### Pourquoi ce changement
+- Rendre visible et activable dès l'inscription le consentement marketing (utile pour les futures campagnes), tout en respectant l'endroit où Shana voulait voir apparaître le texte légal, et corriger un manque d'accessibilité détecté au passage sur la popup d'inscription.
+
+---
+
 ## [2026-09-18] — Page Comptes (Clients / Partenaires / Équipe), Tableau de bord repensé, Gift Cards
 
 ### Ce qui a changé côté code
