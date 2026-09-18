@@ -30,6 +30,7 @@ import {
   Handshake,
   Percent,
   ChevronDown,
+  AlertTriangle,
 } from "lucide-react";
 import {
   Sidebar,
@@ -97,7 +98,7 @@ const autreItems: NavItem[] = [
 
 // Croissance
 const croissanceItems: NavItem[] = [
-  { title: "Leads", url: "/admin/leads", icon: Mail, inProgress: true },
+  { title: "CRM", url: "/admin/leads", icon: Mail, inProgress: true },
   { title: "Codes promo", url: "/admin/promo", icon: Percent, done: true },
   { title: "Gift Cards", url: "/admin/gift-cards", icon: Gift, done: true },
   { title: "Dossiers swipe", url: "/admin/swipe/dossiers", icon: FolderOpen },
@@ -112,6 +113,9 @@ const hyperguestItems: NavItem[] = [
 ];
 const revolutItems: NavItem[] = [
   { title: "Debug API", url: "/admin/revolut/debug", icon: CreditCard },
+];
+const siteItems: NavItem[] = [
+  { title: "Erreurs", url: "/admin/errors", icon: AlertTriangle },
 ];
 
 // Headquarter : sections encore à construire
@@ -310,6 +314,13 @@ export function AdminSidebar() {
           <TechniqueSubGroup
             label="Revolut"
             items={revolutItems}
+            collapsed={collapsed}
+            isActive={isActive}
+            onNavClick={handleNavClick}
+          />
+          <TechniqueSubGroup
+            label="Site"
+            items={siteItems}
             collapsed={collapsed}
             isActive={isActive}
             onNavClick={handleNavClick}

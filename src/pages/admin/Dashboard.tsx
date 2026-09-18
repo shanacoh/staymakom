@@ -76,6 +76,24 @@ function useUnpaidConfirmedBookings() {
   }, [hotelIssues, standaloneIssues]);
 }
 
+// Nombre d'erreurs remontées par le site et jamais traitées (statut "new") : tant qu'une
+// erreur n'est ni vue, ni corrigée, ni ignorée depuis /admin/errors, elle reste comptée ici.
+function useNewErrorsCount() {
+  const { data } = useQuery({
+    queryKey: ["dashboard-new-errors-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("error_groups")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "new");
+      if (error) return 0;
+      return count || 0;
+    },
+    refetchInterval: 60000,
+  });
+  return data || 0;
+}
+
 function TrendArrow({ current, previous }: { current: number; previous: number }) {
   if (current === previous) return null;
   return current > previous ? (
@@ -136,6 +154,7 @@ function LeadsTile({
 
 const AdminDashboard = () => {
   const issues = useUnpaidConfirmedBookings();
+  const newErrorsCount = useNewErrorsCount();
 
   const { data: leads } = useQuery({
     queryKey: ["dashboard-leads-pulse"],
@@ -201,6 +220,30 @@ const AdminDashboard = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 shrink-0"
             >
               <Link to={issues[0].link}>Vérifier la réservation</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {newErrorsCount > 0 && (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+              <div>
+                <div className="font-bold text-destructive text-sm">
+                  {newErrorsCount} erreur{newErrorsCount > 1 ? "s" : ""} non vue{newErrorsCount > 1 ? "s" : ""} sur le site
+                </div>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Signalées automatiquement par le navigateur des visiteurs. Reste en rouge tant qu'aucune n'est marquée vue, corrigée ou ignorée.
+                </p>
+              </div>
+            </div>
+            <Button
+              asChild
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 shrink-0"
+            >
+              <Link to="/admin/errors">Voir les erreurs</Link>
             </Button>
           </CardContent>
         </Card>

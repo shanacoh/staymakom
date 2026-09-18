@@ -357,6 +357,7 @@ export type Database = {
           id: string
           idempotency_key: string | null
           is_cancelled: boolean
+          lead_id: string | null
           net_price: number
           nights: number
           paid_amount: number | null
@@ -397,6 +398,7 @@ export type Database = {
           id?: string
           idempotency_key?: string | null
           is_cancelled?: boolean
+          lead_id?: string | null
           net_price?: number
           nights?: number
           paid_amount?: number | null
@@ -437,6 +439,7 @@ export type Database = {
           id?: string
           idempotency_key?: string | null
           is_cancelled?: boolean
+          lead_id?: string | null
           net_price?: number
           nights?: number
           paid_amount?: number | null
@@ -471,6 +474,13 @@ export type Database = {
             columns: ["hotel_id"]
             isOneToOne: false
             referencedRelation: "hotels2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_hg_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
             referencedColumns: ["id"]
           },
         ]
@@ -769,6 +779,81 @@ export type Database = {
           token_public?: string
           trier_par_categorie?: boolean
           updated_at?: string
+        }
+        Relationships: []
+      }
+      error_events: {
+        Row: {
+          created_at: string
+          fingerprint: string
+          id: string
+          message: string
+          page_url: string | null
+          stack: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          fingerprint: string
+          id?: string
+          message: string
+          page_url?: string | null
+          stack?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          fingerprint?: string
+          id?: string
+          message?: string
+          page_url?: string | null
+          stack?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      error_groups: {
+        Row: {
+          fingerprint: string
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          message: string
+          occurrences: number
+          page_url: string | null
+          stack: string | null
+          status: string
+          status_updated_at: string | null
+          status_updated_by: string | null
+        }
+        Insert: {
+          fingerprint: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          message: string
+          occurrences?: number
+          page_url?: string | null
+          stack?: string | null
+          status?: string
+          status_updated_at?: string | null
+          status_updated_by?: string | null
+        }
+        Update: {
+          fingerprint?: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          message?: string
+          occurrences?: number
+          page_url?: string | null
+          stack?: string | null
+          status?: string
+          status_updated_at?: string | null
+          status_updated_by?: string | null
         }
         Relationships: []
       }
@@ -2887,16 +2972,19 @@ export type Database = {
           assigned_to: string | null
           city: string | null
           company_name: string | null
+          converted_user_id: string | null
           country: string | null
           created_at: string
           cta_id: string | null
           email: string
+          email_normalized: string | null
           first_name: string | null
           group_size: string | null
           id: string
           interests: string[] | null
           is_b2b: boolean | null
           last_name: string | null
+          linked_at: string | null
           marketing_opt_in: boolean | null
           message: string | null
           metadata: Json | null
@@ -2916,16 +3004,19 @@ export type Database = {
           assigned_to?: string | null
           city?: string | null
           company_name?: string | null
+          converted_user_id?: string | null
           country?: string | null
           created_at?: string
           cta_id?: string | null
           email: string
+          email_normalized?: string | null
           first_name?: string | null
           group_size?: string | null
           id?: string
           interests?: string[] | null
           is_b2b?: boolean | null
           last_name?: string | null
+          linked_at?: string | null
           marketing_opt_in?: boolean | null
           message?: string | null
           metadata?: Json | null
@@ -2945,16 +3036,19 @@ export type Database = {
           assigned_to?: string | null
           city?: string | null
           company_name?: string | null
+          converted_user_id?: string | null
           country?: string | null
           created_at?: string
           cta_id?: string | null
           email?: string
+          email_normalized?: string | null
           first_name?: string | null
           group_size?: string | null
           id?: string
           interests?: string[] | null
           is_b2b?: boolean | null
           last_name?: string | null
+          linked_at?: string | null
           marketing_opt_in?: boolean | null
           message?: string | null
           metadata?: Json | null
@@ -3376,6 +3470,7 @@ export type Database = {
           id: string
           internal_notes: string | null
           is_cancelled: boolean | null
+          lead_id: string | null
           party_size: number
           payment_status: string | null
           rate_option: Json | null
@@ -3415,6 +3510,7 @@ export type Database = {
           id?: string
           internal_notes?: string | null
           is_cancelled?: boolean | null
+          lead_id?: string | null
           party_size?: number
           payment_status?: string | null
           rate_option?: Json | null
@@ -3454,6 +3550,7 @@ export type Database = {
           id?: string
           internal_notes?: string | null
           is_cancelled?: boolean | null
+          lead_id?: string | null
           party_size?: number
           payment_status?: string | null
           rate_option?: Json | null
@@ -3474,6 +3571,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "standalone_bookings_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "standalone_bookings_standalone_experience_id_fkey"
             columns: ["standalone_experience_id"]
@@ -4349,6 +4453,10 @@ export type Database = {
       }
     }
     Functions: {
+      find_or_create_lead_for_email: {
+        Args: { p_email: string; p_name: string; p_phone: string }
+        Returns: string
+      }
       get_customers_with_emails: {
         Args: never
         Returns: {

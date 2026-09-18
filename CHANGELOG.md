@@ -6,6 +6,27 @@
 
 ---
 
+## [2026-09-18] — Système d'alerte d'erreurs (back-office)
+
+### Ce qui a changé côté code
+- `src/lib/errorTracking.ts` (nouveau) : capture les erreurs qui surviennent dans le navigateur des visiteurs (erreurs JavaScript classiques, promesses rejetées non gérées, erreurs d'affichage React) et les envoie à la base de données. Ne fait jamais planter le site à cause d'elle-même (toute erreur interne est silencieusement ignorée).
+- `src/main.tsx` : capture désormais aussi les erreurs qui ne passent pas par un écran d'erreur React (`window.onerror`, `unhandledrejection`).
+- `src/components/ErrorBoundary.tsx` (l'écran "Something went wrong") : envoie maintenant l'erreur qu'il attrape vers le suivi, au lieu de la garder uniquement dans la console du visiteur (invisible pour nous).
+- `src/pages/admin/Errors.tsx` (nouvelle page, back-office → Technique → Site → Erreurs) : liste chaque erreur distincte avec son nombre d'occurrences, la page concernée, la dernière fois qu'elle est survenue, et 3 boutons — **Vu**, **Fixed**, **Ignorer**. Une erreur reste en rouge tant qu'aucun des trois n'est cliqué. Si une erreur marquée "Fixed" revient, elle repasse automatiquement en rouge (régression détectée).
+- `src/pages/admin/Dashboard.tsx` : nouvel encadré rouge (visible seulement s'il y a au moins une erreur non traitée) qui indique le nombre d'erreurs non vues, avec un lien direct vers la page Erreurs.
+- `src/components/admin/AdminSidebar.tsx` : nouvelle entrée "Erreurs" dans la section Technique.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20260918150000_create_error_tracking.sql` (déjà appliquée) : deux nouvelles tables.
+  - `error_events` : journal brut, une ligne par occurrence d'erreur. N'importe quel visiteur (connecté ou non) peut y écrire ; personne ne peut le relire directement depuis le site.
+  - `error_groups` : une ligne par erreur **distincte** (regroupée automatiquement par un déclencheur de base de données), avec un compteur d'occurrences et un statut (nouveau / vu / corrigé / ignoré). Seuls les admins peuvent la consulter et la modifier — c'est elle qui alimente la page Erreurs et l'encadré du tableau de bord.
+  - Le regroupement se fait uniquement sur le texte du message d'erreur (pas sur la pile d'appel technique, qui change de nom de fichier à chaque mise en ligne du site et aurait fait réapparaître à tort une même erreur non corrigée comme "nouvelle" après chaque déploiement).
+
+### Pourquoi ce changement
+- Suite au plantage sur le popup d'inscription que Shana avait signalé sans qu'on puisse le reproduire : impossible jusqu'ici de savoir si un bug signalé par un visiteur s'est vraiment produit, combien de fois, ni sur quelle page. Ce système répond directement à ce manque, avec une solution interne (pas d'outil tiers, pas de compte à créer).
+
+---
+
 ## [2026-09-18] — Popup d'inscription : consentement marketing, accessibilité et corrections mineures
 
 ### Ce qui a changé côté code
