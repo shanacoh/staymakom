@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-09-18] — Réglages du site : nouvelle apparence back-office
+
+### Ce qui a changé côté code
+- `src/pages/admin/Settings.tsx` (revu) : la page adopte la même direction artistique que les pages déjà refaites (titre compact, petits titres de section discrets en majuscules) et tous les libellés/boutons passent en français ("Réglages", "Nom du site", "Enregistrer", etc.). Aucune fonctionnalité n'a changé — mêmes champs, même sauvegarde en base.
+
+### Ce qui a changé côté base de données
+- Aucun.
+
+### Pourquoi ce changement
+- Shana trouve la page Settings peu utile en l'état, mais voulait qu'elle reprenne quand même la nouvelle apparence du back-office plutôt que de rester dans l'ancien style.
+
+---
+
 ## [2026-09-18] — Refonte de l'onglet Favoris (back-office)
 
 ### Ce qui a changé côté code

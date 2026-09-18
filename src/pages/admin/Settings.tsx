@@ -44,25 +44,25 @@ function EmailTestCard() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Mail className="h-5 w-5" />
-          Email Test
+      <CardHeader className="p-4 pb-2">
+        <CardTitle className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+          <Mail className="h-3.5 w-3.5" />
+          Test d'email
         </CardTitle>
-        <CardDescription>Send a test email to verify Resend integration</CardDescription>
+        <CardDescription className="text-xs">Envoyer un email de test pour vérifier l'intégration Resend</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 p-4 pt-2">
         <div className="space-y-2">
-          <Label>Recipient Email</Label>
+          <Label>Email destinataire</Label>
           <Input
             type="email"
-            placeholder="your@email.com"
+            placeholder="vous@email.com"
             value={testEmail}
             onChange={(e) => setTestEmail(e.target.value)}
           />
         </div>
         <div className="space-y-2">
-          <Label>Email Type</Label>
+          <Label>Type d'email</Label>
           <Select value={selectedFn} onValueChange={setSelectedFn}>
             <SelectTrigger>
               <SelectValue />
@@ -77,7 +77,7 @@ function EmailTestCard() {
         <div className="flex items-center gap-3">
           <Button onClick={handleTest} disabled={sending || !testEmail} variant="outline">
             {sending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Mail className="h-4 w-4 mr-2" />}
-            Send Test
+            Envoyer le test
           </Button>
           {lastResult && (
             <span className={`flex items-center gap-1.5 text-sm ${lastResult.ok ? "text-emerald-600" : "text-red-600"}`}>
@@ -176,19 +176,20 @@ const AdminSettings = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl sm:text-3xl font-bold">Settings</h2>
-        <p className="text-muted-foreground">Manage site configuration</p>
+        <h1 className="text-2xl font-bold text-foreground">Réglages</h1>
+        <p className="text-muted-foreground text-xs mt-0.5">Configuration générale du site</p>
       </div>
 
-
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         <Card>
-          <CardHeader>
-            <CardTitle>Site Information</CardTitle>
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+              Informations du site
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 p-4 pt-2">
             <div className="space-y-2">
-              <Label htmlFor="site-name">Site Name</Label>
+              <Label htmlFor="site-name">Nom du site</Label>
               <Input
                 id="site-name"
                 value={formData.site_name}
@@ -196,7 +197,7 @@ const AdminSettings = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="site-tagline">Tagline</Label>
+              <Label htmlFor="site-tagline">Accroche</Label>
               <Input
                 id="site-tagline"
                 value={formData.site_tagline}
@@ -207,12 +208,14 @@ const AdminSettings = () => {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Contact Information</CardTitle>
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+              Contact
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 p-4 pt-2">
             <div className="space-y-2">
-              <Label htmlFor="contact-email">General Email</Label>
+              <Label htmlFor="contact-email">Email général</Label>
               <Input
                 id="contact-email"
                 type="email"
@@ -221,7 +224,7 @@ const AdminSettings = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="partners-email">Partners Email</Label>
+              <Label htmlFor="partners-email">Email partenaires</Label>
               <Input
                 id="partners-email"
                 type="email"
@@ -230,7 +233,7 @@ const AdminSettings = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="instagram">Instagram Handle</Label>
+              <Label htmlFor="instagram">Compte Instagram</Label>
               <Input
                 id="instagram"
                 value={formData.instagram_handle}
@@ -241,12 +244,14 @@ const AdminSettings = () => {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Business Settings</CardTitle>
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+              Paramètres métier
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 p-4 pt-2">
             <div className="space-y-2">
-              <Label htmlFor="commission">Default Commission Rate (%)</Label>
+              <Label htmlFor="commission">Taux de commission par défaut (%)</Label>
               <Input
                 id="commission"
                 type="number"
@@ -258,7 +263,7 @@ const AdminSettings = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="service-fee">STAYMAKOM Service Fee (₪)</Label>
+              <Label htmlFor="service-fee">Frais de service Staymakom (₪)</Label>
               <Input
                 id="service-fee"
                 type="number"
@@ -269,11 +274,11 @@ const AdminSettings = () => {
                 step="1"
               />
               <p className="text-xs text-muted-foreground">
-                Fixed fee in ₪ applied to every booking as a separate line item on checkout.
+                Frais fixe en ₪ ajouté à chaque réservation comme ligne séparée au paiement.
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="currency">Default Currency</Label>
+              <Label htmlFor="currency">Devise par défaut</Label>
               <Input
                 id="currency"
                 value={formData.default_currency}
@@ -284,12 +289,14 @@ const AdminSettings = () => {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Payment Settings</CardTitle>
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+              Paiement
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 p-4 pt-2">
             <div className="space-y-2">
-              <Label htmlFor="stripe-key">Stripe Publishable Key</Label>
+              <Label htmlFor="stripe-key">Clé publique Stripe</Label>
               <Input
                 id="stripe-key"
                 placeholder="pk_..."
@@ -297,14 +304,14 @@ const AdminSettings = () => {
                 onChange={(e) => setFormData({ ...formData, stripe_publishable_key: e.target.value })}
               />
               <p className="text-xs text-muted-foreground">
-                Publishable keys (pk_...) are safe for client-side use.
+                Les clés publiques (pk_...) peuvent être utilisées sans risque côté client.
               </p>
             </div>
             <Alert className="mt-4">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                Stripe secret keys must be stored as backend secrets for security reasons.
-                Contact your administrator to configure the STRIPE_SECRET_KEY in the backend environment.
+                Les clés secrètes Stripe doivent être stockées comme secrets backend pour des raisons de sécurité.
+                Contacter l'administrateur pour configurer STRIPE_SECRET_KEY dans l'environnement backend.
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -316,7 +323,7 @@ const AdminSettings = () => {
       <div className="flex justify-end">
         <Button onClick={handleSave} size="lg" disabled={saveMutation.isPending}>
           {saveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Save Settings
+          Enregistrer
         </Button>
       </div>
     </div>
