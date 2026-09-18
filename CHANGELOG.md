@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-09-18] — Favoris en vert dans le menu + colonne Favoris sur la page Comptes
+
+### Ce qui a changé côté code
+- `src/components/admin/AdminSidebar.tsx` : l'entrée "Favorites" du menu de gauche passe en vert, comme les autres pages dont la refonte visuelle est validée (Comptes, CRM, Gift Cards).
+- `src/pages/admin/Customers.tsx` (revu) : la page Comptes affiche maintenant une colonne "Favoris" juste après "Résa", avec le nombre de favoris de chaque client. Le tableau reste trié par date d'inscription par défaut, mais cliquer sur l'en-tête "Résa" ou "Favoris" trie désormais par ce nombre (le plus grand en premier), avec une flèche indiquant le sens ; un second clic inverse l'ordre.
+
+### Ce qui a changé côté base de données
+- Aucun. La colonne Favoris réutilise la table `wishlist` déjà utilisée par l'onglet Favoris.
+
+### Pourquoi ce changement
+- Shana voulait retrouver d'un coup d'œil, sur la fiche de chaque client, autant son nombre de réservations que son nombre de favoris, et pouvoir trier la liste des clients par l'un ou l'autre.
+
+---
+
 ## [2026-09-18] — Réglages du site : nouvelle apparence back-office
 
 ### Ce qui a changé côté code

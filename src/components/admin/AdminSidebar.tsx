@@ -104,7 +104,7 @@ const operationsItems: NavItem[] = [
 const autreItems: NavItem[] = [
   { title: "Categories", url: "/admin/categories", icon: FolderKanban },
   { title: "Comptes", url: "/admin/customers", icon: UserCircle, done: true },
-  { title: "Favorites", url: "/admin/favorites", icon: Heart },
+  { title: "Favorites", url: "/admin/favorites", icon: Heart, done: true },
   { title: "Journal", url: "/admin/journal", icon: BookOpen },
   { title: "AI Insights", url: "/admin/ai-insights", icon: Brain },
   { title: "Mes bateaux", url: "/admin/boats", icon: Sailboat },

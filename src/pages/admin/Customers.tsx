@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { format, differenceInCalendarDays } from "date-fns";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -55,6 +55,7 @@ type ClientRow = {
   notes: string;
   marketingOptIn: boolean;
   reservationsCount: number;
+  favoritesCount: number;
   lastActivity: Date;
 };
 
@@ -552,6 +553,17 @@ function ClientDetailSheet({
 function ClientsTab() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(searchParams.get("user_id"));
+  const [sortField, setSortField] = useState<"createdAt" | "reservationsCount" | "favoritesCount">("createdAt");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  const toggleSort = (field: "createdAt" | "reservationsCount" | "favoritesCount") => {
+    if (sortField === field) {
+      setSortDir((d) => (d === "desc" ? "asc" : "desc"));
+    } else {
+      setSortField(field);
+      setSortDir("desc");
+    }
+  };
 
   useEffect(() => {
     const userId = searchParams.get("user_id");
@@ -572,18 +584,23 @@ function ClientsTab() {
 
       const userIds = base.map((c) => c.user_id);
 
-      const [{ data: customerExtra }, { data: profiles }, { data: roles }, { data: hgBookings }, { data: standaloneBookings }] =
+      const [{ data: customerExtra }, { data: profiles }, { data: roles }, { data: hgBookings }, { data: standaloneBookings }, { data: wishlistItems }] =
         await Promise.all([
           supabase.from("customers").select("user_id, phone, city, birthdate, default_party_size").in("user_id", userIds),
           supabase.from("user_profiles").select("user_id, marketing_opt_in").in("user_id", userIds),
           supabase.from("user_roles").select("user_id, role").in("user_id", userIds),
           supabase.from("bookings_hg" as any).select("user_id, created_at, is_cancelled").eq("is_cancelled", false) as any,
           supabase.from("standalone_bookings").select("user_id, customer_email, created_at, is_cancelled").eq("is_cancelled", false),
+          supabase.from("wishlist").select("user_id").in("user_id", userIds).is("deleted_at", null),
         ]);
 
       const extraMap = new Map((customerExtra || []).map((c) => [c.user_id, c]));
       const profilesMap = new Map((profiles || []).map((p) => [p.user_id, p]));
       const rolesMap = new Map((roles || []).map((r) => [r.user_id, r.role]));
+      const favoritesCountMap = new Map<string, number>();
+      (wishlistItems || []).forEach((w) => {
+        favoritesCountMap.set(w.user_id, (favoritesCountMap.get(w.user_id) || 0) + 1);
+      });
 
       const result: ClientRow[] = base
         .filter((c) => (rolesMap.get(c.user_id) || "customer") === "customer")
@@ -613,6 +630,7 @@ function ClientsTab() {
             notes: c.notes || "",
             marketingOptIn: profilesMap.get(c.user_id)?.marketing_opt_in ?? false,
             reservationsCount: hgMatches.length + standaloneMatches.length,
+            favoritesCount: favoritesCountMap.get(c.user_id) || 0,
             lastActivity,
           };
         });
@@ -624,6 +642,40 @@ function ClientsTab() {
   const list = clients ?? [];
   const selectedClient = list.find((c) => c.user_id === selectedClientId) || null;
 
+  const sortedList = [...list].sort((a, b) => {
+    let cmp = 0;
+    if (sortField === "createdAt") cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    else if (sortField === "reservationsCount") cmp = a.reservationsCount - b.reservationsCount;
+    else if (sortField === "favoritesCount") cmp = a.favoritesCount - b.favoritesCount;
+    return sortDir === "asc" ? cmp : -cmp;
+  });
+
+  const SortableHead = ({
+    field,
+    children,
+  }: {
+    field: "createdAt" | "reservationsCount" | "favoritesCount";
+    children: React.ReactNode;
+  }) => (
+    <TableHead
+      className="h-8 px-3 text-[10px] uppercase tracking-wider cursor-pointer select-none hover:text-foreground"
+      onClick={() => toggleSort(field)}
+    >
+      <span className="inline-flex items-center gap-1">
+        {children}
+        {sortField === field ? (
+          sortDir === "desc" ? (
+            <ArrowDown className="h-3 w-3" />
+          ) : (
+            <ArrowUp className="h-3 w-3" />
+          )
+        ) : (
+          <ArrowUpDown className="h-3 w-3 opacity-30" />
+        )}
+      </span>
+    </TableHead>
+  );
+
   return (
     <>
       <div className="border rounded-lg overflow-x-auto">
@@ -632,27 +684,28 @@ function ClientsTab() {
             <TableRow className="bg-muted/50">
               <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Nom</TableHead>
               <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Email</TableHead>
-              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Inscrit le</TableHead>
+              <SortableHead field="createdAt">Inscrit le</SortableHead>
               <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Opt-in marketing</TableHead>
-              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Résa</TableHead>
+              <SortableHead field="reservationsCount">Résa</SortableHead>
+              <SortableHead field="favoritesCount">Favoris</SortableHead>
               <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Dernière activité</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-6 text-sm">
+                <TableCell colSpan={7} className="text-center py-6 text-sm">
                   Chargement...
                 </TableCell>
               </TableRow>
-            ) : list.length === 0 ? (
+            ) : sortedList.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-6 text-sm text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-6 text-sm text-muted-foreground">
                   Aucun client
                 </TableCell>
               </TableRow>
             ) : (
-              list.map((c) => (
+              sortedList.map((c) => (
                 <TableRow
                   key={c.user_id}
                   className="cursor-pointer hover:bg-muted/50"
@@ -677,6 +730,7 @@ function ClientsTab() {
                     </Badge>
                   </TableCell>
                   <TableCell className="py-2 px-3 text-sm font-medium">{c.reservationsCount}</TableCell>
+                  <TableCell className="py-2 px-3 text-sm font-medium">{c.favoritesCount}</TableCell>
                   <TableCell className="py-2 px-3 text-xs text-muted-foreground">
                     {formatRelativeDay(c.lastActivity)}
                   </TableCell>
