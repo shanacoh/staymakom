@@ -85,7 +85,7 @@ const operationsItems: NavItem[] = [
 // Autre : tout ce qui existe déjà et n'a pas encore de place dédiée dans la nouvelle organisation
 const autreItems: NavItem[] = [
   { title: "Categories", url: "/admin/categories", icon: FolderKanban },
-  { title: "Comptes", url: "/admin/customers", icon: UserCircle, inProgress: true },
+  { title: "Comptes", url: "/admin/customers", icon: UserCircle, done: true },
   { title: "Favorites", url: "/admin/favorites", icon: Heart },
   { title: "Journal", url: "/admin/journal", icon: BookOpen },
   { title: "AI Insights", url: "/admin/ai-insights", icon: Brain },
@@ -98,7 +98,7 @@ const autreItems: NavItem[] = [
 
 // Croissance
 const croissanceItems: NavItem[] = [
-  { title: "CRM", url: "/admin/leads", icon: Mail, inProgress: true },
+  { title: "CRM", url: "/admin/leads", icon: Mail, done: true },
   { title: "Codes promo", url: "/admin/promo", icon: Percent, done: true },
   { title: "Gift Cards", url: "/admin/gift-cards", icon: Gift, done: true },
   { title: "Dossiers swipe", url: "/admin/swipe/dossiers", icon: FolderOpen },

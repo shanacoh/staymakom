@@ -137,22 +137,25 @@ serve(async (req) => {
       case 'delete': {
         const { userId } = params;
 
-        // Check if user has bookings
-        const { data: bookings } = await supabaseAdmin
-          .from('bookings')
-          .select('id')
-          .eq('customer_id', userId)
-          .limit(1);
+        // Check if user has bookings (across every reservation table in use,
+        // not just the legacy "bookings" table which is no longer written to)
+        const [{ data: legacyBookings }, { data: hgBookings }, { data: standaloneBookings }] = await Promise.all([
+          supabaseAdmin.from('bookings').select('id').eq('customer_id', userId).limit(1),
+          supabaseAdmin.from('bookings_hg').select('id').eq('user_id', userId).limit(1),
+          supabaseAdmin.from('standalone_bookings').select('id').eq('user_id', userId).limit(1),
+        ]);
 
-        if (bookings && bookings.length > 0) {
+        const hasBookings = [legacyBookings, hgBookings, standaloneBookings].some((b) => b && b.length > 0);
+
+        if (hasBookings) {
           return new Response(
-            JSON.stringify({ 
-              success: false, 
-              error: 'Cannot delete user with existing bookings. Please archive the user instead.' 
+            JSON.stringify({
+              success: false,
+              error: 'Cannot delete user with existing bookings. Please archive the user instead.'
             }),
-            { 
+            {
               status: 400,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             }
           );
         }

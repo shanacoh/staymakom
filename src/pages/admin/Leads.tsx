@@ -1,6 +1,8 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { format, formatDistanceToNow, differenceInDays, subDays, isAfter, isBefore, startOfDay, startOfMonth, endOfMonth, subMonths, getDate, getDaysInMonth } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -50,6 +53,7 @@ interface Lead {
   marketing_opt_in: boolean | null;
   metadata: any;
   notes: string | null;
+  converted_user_id: string | null;
 }
 
 // ─── Status Badge Colors (consistent) ───
@@ -107,9 +111,36 @@ type SortDir = "asc" | "desc" | null;
 
 const PAGE_SIZE = 200;
 
+// ─── Lead Link Badges (compte / réservation) ───
+const LeadLinkBadges = ({ hasAccount, hasReservation, onAccountClick }: { hasAccount: boolean; hasReservation: boolean; onAccountClick?: () => void }) => {
+  if (!hasAccount && !hasReservation) return null;
+  return (
+    <div className="flex items-center gap-1">
+      {hasAccount && (
+        <Badge
+          variant="outline"
+          className="text-[10px] px-1.5 cursor-pointer hover:bg-muted"
+          onClick={(e) => { e.stopPropagation(); onAccountClick?.(); }}
+        >
+          Compte
+        </Badge>
+      )}
+      {hasReservation && (
+        <Badge variant="outline" className="text-[10px] px-1.5">
+          Réservation
+        </Badge>
+      )}
+    </div>
+  );
+};
+
+type CrmType = "all" | "newsletter" | "no_newsletter" | "partenaire" | "equipe";
+
 const AdminLeads = () => {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<CrmType>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
@@ -140,7 +171,7 @@ const AdminLeads = () => {
     queryFn: async () => {
       let query = supabase
         .from("leads")
-        .select("id, created_at, updated_at, source, email, name, first_name, last_name, phone, country, city, status, is_b2b, property_name, property_type, interests, message, marketing_opt_in, metadata, notes")
+        .select("id, created_at, updated_at, source, email, name, first_name, last_name, phone, country, city, status, is_b2b, property_name, property_type, interests, message, marketing_opt_in, metadata, notes, converted_user_id")
         .order("created_at", { ascending: false })
         .limit(limit);
       if (sourceFilter !== "all") query = query.eq("source", sourceFilter);
@@ -177,6 +208,58 @@ const AdminLeads = () => {
     staleTime: 2 * 60_000,
     gcTime: 5 * 60_000,
   });
+
+  // Leads qui ont au moins une réservation (bookings_hg ou standalone_bookings)
+  // liée. Requête légère (un seul champ), agrégée côté client, sur le même
+  // principe que le rapprochement bookings <-> client dans Customers.tsx.
+  const { data: leadIdsWithReservation } = useQuery({
+    queryKey: ["admin-leads-reservation-links"],
+    queryFn: async () => {
+      const [{ data: hg }, { data: standalone }] = await Promise.all([
+        supabase.from("bookings_hg" as any).select("lead_id").not("lead_id", "is", null) as any,
+        supabase.from("standalone_bookings").select("lead_id").not("lead_id", "is", null),
+      ]);
+      const ids = new Set<string>();
+      (hg || []).forEach((b: any) => b.lead_id && ids.add(b.lead_id));
+      (standalone || []).forEach((b: any) => b.lead_id && ids.add(b.lead_id));
+      return ids;
+    },
+    staleTime: 2 * 60_000,
+    gcTime: 5 * 60_000,
+  });
+
+  // Infos live sur les comptes liés, pour classer chaque fiche en Newsletter /
+  // Client sans newsletter / Partenaire / Équipe : le rôle (admin, gestionnaire
+  // d'hôtel) et l'opt-in marketing réel viennent du compte, pas d'une valeur
+  // figée au moment de la création de la fiche.
+  const { data: accountMeta } = useQuery({
+    queryKey: ["admin-leads-account-meta"],
+    queryFn: async () => {
+      const [{ data: roles }, { data: profiles }] = await Promise.all([
+        supabase.from("user_roles").select("user_id, role").in("role", ["admin", "hotel_admin"]),
+        supabase.from("user_profiles").select("user_id, marketing_opt_in"),
+      ]);
+      return {
+        roleMap: new Map((roles || []).map((r) => [r.user_id, r.role])),
+        optInMap: new Map((profiles || []).map((p) => [p.user_id, p.marketing_opt_in])),
+      };
+    },
+    staleTime: 2 * 60_000,
+    gcTime: 5 * 60_000,
+  });
+
+  const getCrmType = (lead: Lead): Exclude<CrmType, "all"> => {
+    const role = lead.converted_user_id ? accountMeta?.roleMap.get(lead.converted_user_id) : undefined;
+    if (role === "admin" || role === "hotel_admin") return "equipe";
+    if (lead.is_b2b || lead.source === "partners" || lead.source === "corporate") return "partenaire";
+    const accountOptIn = lead.converted_user_id ? accountMeta?.optInMap.get(lead.converted_user_id) : undefined;
+    const isNewsletter =
+      accountOptIn === true ||
+      lead.marketing_opt_in === true ||
+      lead.source === "newsletter" ||
+      lead.source === "newsletter_popup";
+    return isNewsletter ? "newsletter" : "no_newsletter";
+  };
 
   const totalMatchingCount = fullStats?.length ?? 0;
   const hasMoreToLoad = !isLoading && (leads?.length ?? 0) < totalMatchingCount;
@@ -217,8 +300,12 @@ const AdminLeads = () => {
       result = result.filter(l => !pendingDelete.includes(l.id));
     }
 
+    if (typeFilter !== "all") {
+      result = result.filter(l => getCrmType(l) === typeFilter);
+    }
+
     return result;
-  }, [leads, search, dateFrom, dateTo, pendingDelete]);
+  }, [leads, search, dateFrom, dateTo, pendingDelete, typeFilter, accountMeta]);
 
   // ─── Sorting ───
   const handleSort = (key: SortKey) => {
@@ -305,19 +392,65 @@ const AdminLeads = () => {
     onSuccess: () => refetch(),
   });
 
+  // Supprime le compte associé à un lead (via l'outil déjà utilisé pour
+  // l'équipe dans "Comptes"). Refuse si la personne a de vraies réservations,
+  // pour ne jamais perdre l'historique d'un client actif.
+  const deleteLinkedAccount = async (userId: string): Promise<{ ok: true } | { ok: false; error: string }> => {
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-users", {
+        body: { action: "delete", userId },
+      });
+      if (error) {
+        if (error instanceof FunctionsHttpError) {
+          const d = await error.context.json();
+          return { ok: false, error: d.error || "Erreur lors de la suppression du compte." };
+        }
+        return { ok: false, error: error.message || "Erreur lors de la suppression du compte." };
+      }
+      if (!data?.success) return { ok: false, error: data?.error || "Erreur lors de la suppression du compte." };
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message || "Erreur lors de la suppression du compte." };
+    }
+  };
+
   const deleteLeadsMutation = useMutation({
-    mutationFn: async (ids: string[]) => {
-      const { error } = await supabase.from("leads").delete().in("id", ids);
-      if (error) throw error;
+    mutationFn: async (targets: Lead[]) => {
+      const blocked: string[] = [];
+      const idsToDelete: string[] = [];
+
+      for (const lead of targets) {
+        if (lead.converted_user_id) {
+          const result = await deleteLinkedAccount(lead.converted_user_id);
+          if (!result.ok) {
+            blocked.push(lead.email);
+            continue;
+          }
+        }
+        idsToDelete.push(lead.id);
+      }
+
+      if (idsToDelete.length > 0) {
+        const { error } = await supabase.from("leads").delete().in("id", idsToDelete);
+        if (error) throw error;
+      }
+
+      return { blocked };
     },
-    onSuccess: () => {
+    onSuccess: ({ blocked }) => {
       refetch();
       setSelectedIds(new Set());
+      if (blocked.length > 0) {
+        toast.error(
+          `Compte non supprimé (réservation(s) existante(s)), fiche conservée : ${blocked.join(", ")}`
+        );
+      }
     },
   });
 
   // ─── Undo delete logic ───
-  const softDelete = (ids: string[]) => {
+  const softDelete = (targets: Lead[]) => {
+    const ids = targets.map(t => t.id);
     setPendingDelete(ids);
     setSelectedLeadId(null);
     setDeleteConfirmOpen(false);
@@ -326,11 +459,12 @@ const AdminLeads = () => {
 
     if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
     undoTimeoutRef.current = setTimeout(() => {
-      deleteLeadsMutation.mutate(ids);
+      deleteLeadsMutation.mutate(targets);
       setPendingDelete(null);
     }, 5000);
 
-    toast("Lead deleted", {
+    const hasAccount = targets.some(t => t.converted_user_id);
+    toast(hasAccount ? "Fiche(s) et compte(s) associé(s) supprimés" : "Lead deleted", {
       action: {
         label: "Undo",
         onClick: () => {
@@ -469,7 +603,7 @@ const AdminLeads = () => {
     try {
       let query = supabase
         .from("leads")
-        .select("id, created_at, updated_at, source, email, name, first_name, last_name, phone, country, city, status, is_b2b, property_name, property_type, interests, message, marketing_opt_in, metadata, notes")
+        .select("id, created_at, updated_at, source, email, name, first_name, last_name, phone, country, city, status, is_b2b, property_name, property_type, interests, message, marketing_opt_in, metadata, notes, converted_user_id")
         .order("created_at", { ascending: false });
       if (sourceFilter !== "all") query = query.eq("source", sourceFilter);
       if (statusFilter !== "all") query = query.eq("status", statusFilter);
@@ -488,6 +622,7 @@ const AdminLeads = () => {
       }
       if (dateFrom) rows = rows.filter(l => isAfter(new Date(l.created_at), startOfDay(dateFrom)));
       if (dateTo) rows = rows.filter(l => isBefore(new Date(l.created_at), startOfDay(subDays(dateTo, -1))));
+      if (typeFilter !== "all") rows = rows.filter(l => getCrmType(l) === typeFilter);
 
       downloadCsv(rows);
     } catch {
@@ -519,9 +654,9 @@ const AdminLeads = () => {
       {/* ─── Header ─── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Leads</h1>
+          <h1 className="text-2xl font-bold text-foreground">CRM</h1>
           <p className="text-muted-foreground text-xs mt-0.5">
-            Suivre et qualifier les prospects du site.
+            Tous vos contacts : newsletter, clients, partenaires et équipe.
           </p>
         </div>
         <Button onClick={exportAllToCSV} variant="outline" className="gap-2" disabled={isExportingAll}>
@@ -529,6 +664,27 @@ const AdminLeads = () => {
           Export CSV
         </Button>
       </div>
+
+      {/* ─── Type de contact ─── */}
+      <Tabs value={typeFilter} onValueChange={(v) => setTypeFilter(v as CrmType)}>
+        <TabsList className="rounded-full bg-muted p-1 h-auto flex-wrap">
+          <TabsTrigger value="all" className="rounded-full px-4 py-1.5 data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive data-[state=active]:shadow-none">
+            Tous
+          </TabsTrigger>
+          <TabsTrigger value="newsletter" className="rounded-full px-4 py-1.5 data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive data-[state=active]:shadow-none">
+            Newsletter
+          </TabsTrigger>
+          <TabsTrigger value="no_newsletter" className="rounded-full px-4 py-1.5 data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive data-[state=active]:shadow-none">
+            Clients sans newsletter
+          </TabsTrigger>
+          <TabsTrigger value="partenaire" className="rounded-full px-4 py-1.5 data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive data-[state=active]:shadow-none">
+            Partenaires
+          </TabsTrigger>
+          <TabsTrigger value="equipe" className="rounded-full px-4 py-1.5 data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive data-[state=active]:shadow-none">
+            Équipe
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* ─── KPIs ─── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -693,7 +849,16 @@ const AdminLeads = () => {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell><LeadStatusBadge status={lead.status || "new"} /></TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <LeadStatusBadge status={lead.status || "new"} />
+                        <LeadLinkBadges
+                          hasAccount={!!lead.converted_user_id}
+                          hasReservation={leadIdsWithReservation?.has(lead.id) ?? false}
+                          onAccountClick={() => lead.converted_user_id && navigate(`/admin/customers?user_id=${lead.converted_user_id}`)}
+                        />
+                      </div>
+                    </TableCell>
                     <TableCell><LastContactBadge date={lead.updated_at || lead.created_at} /></TableCell>
                     <TableCell className="text-xs text-muted-foreground max-w-[120px] truncate">{notesPreview}</TableCell>
                   </TableRow>
@@ -763,6 +928,11 @@ const AdminLeads = () => {
                     </Badge>
                   )}
                   <span className="text-xs text-muted-foreground">Added {format(new Date(selectedLead.created_at), "MMM d, yyyy")}</span>
+                  <LeadLinkBadges
+                    hasAccount={!!selectedLead.converted_user_id}
+                    hasReservation={leadIdsWithReservation?.has(selectedLead.id) ?? false}
+                    onAccountClick={() => selectedLead.converted_user_id && navigate(`/admin/customers?user_id=${selectedLead.converted_user_id}`)}
+                  />
                 </div>
               </div>
 
@@ -1043,11 +1213,15 @@ const AdminLeads = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Lead</DialogTitle>
-            <DialogDescription>Are you sure you want to delete this lead? This cannot be undone.</DialogDescription>
+            <DialogDescription>
+              {selectedLead?.converted_user_id
+                ? "Cette fiche a un compte associé : le compte sera aussi supprimé, sauf s'il a déjà des réservations (dans ce cas, rien ne sera supprimé). Cette action est irréversible."
+                : "Are you sure you want to delete this lead? This cannot be undone."}
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={() => selectedLeadId && softDelete([selectedLeadId])}>Delete</Button>
+            <Button variant="destructive" onClick={() => selectedLead && softDelete([selectedLead])}>Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1057,11 +1231,15 @@ const AdminLeads = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete {selectedIds.size} Lead{selectedIds.size > 1 ? "s" : ""}</DialogTitle>
-            <DialogDescription>Are you sure you want to delete the selected leads? This cannot be undone.</DialogDescription>
+            <DialogDescription>
+              {sortedLeads.some(l => selectedIds.has(l.id) && l.converted_user_id)
+                ? "Certaines fiches ont un compte associé : ces comptes seront aussi supprimés, sauf s'ils ont déjà des réservations (dans ce cas, rien ne sera supprimé pour cette fiche). Cette action est irréversible."
+                : "Are you sure you want to delete the selected leads? This cannot be undone."}
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setBulkDeleteOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={() => softDelete([...selectedIds])}>Delete</Button>
+            <Button variant="destructive" onClick={() => softDelete(sortedLeads.filter(l => selectedIds.has(l.id)))}>Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { FunctionsHttpError } from "@supabase/supabase-js";
@@ -125,6 +126,7 @@ function ClientDetailSheet({
         { data: profile },
         { data: pointsHistory },
         { data: savedCarts },
+        { data: originLeads },
       ] = await Promise.all([
         supabase
           .from("bookings_hg" as any)
@@ -152,6 +154,12 @@ function ClientDetailSheet({
           .select("id, experience_id, checkin, checkout, party_size, notes, created_at, experiences2(title)")
           .eq("user_id", client.user_id)
           .order("created_at", { ascending: false }),
+        supabase
+          .from("leads")
+          .select("source, created_at")
+          .eq("converted_user_id", client.user_id)
+          .order("created_at", { ascending: false })
+          .limit(1),
       ]);
 
       const standaloneBookings = (standaloneBookingsAll || []).filter(
@@ -227,6 +235,9 @@ function ClientDetailSheet({
           gdprConsentAt: profile?.gdpr_consent_at || null,
           onboardingCompletedAt: profile?.onboarding_completed_at || null,
         },
+        originLead: originLeads && originLeads.length > 0
+          ? { source: originLeads[0].source, createdAt: originLeads[0].created_at }
+          : null,
       };
     },
     enabled: !!client,
@@ -280,6 +291,12 @@ function ClientDetailSheet({
                 Inscrit le {format(new Date(client.createdAt), "dd/MM/yyyy")} · {client.reservationsCount} réservation
                 {client.reservationsCount > 1 ? "s" : ""} · dernière activité {formatRelativeDay(client.lastActivity)}
               </div>
+              {fullDetail?.originLead && (
+                <div className="text-xs">
+                  Arrivé·e via {fullDetail.originLead.source.replace(/_/g, " ")} le{" "}
+                  {format(new Date(fullDetail.originLead.createdAt), "dd/MM/yyyy")}
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -533,7 +550,18 @@ function ClientDetailSheet({
 
 // ─── Onglet Clients ───
 function ClientsTab() {
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(searchParams.get("user_id"));
+
+  useEffect(() => {
+    const userId = searchParams.get("user_id");
+    if (userId) {
+      setSelectedClientId(userId);
+      searchParams.delete("user_id");
+      setSearchParams(searchParams, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { data: clients, isLoading } = useQuery({
     queryKey: ["admin-accounts-clients"],
