@@ -182,7 +182,7 @@ export default function PromoCodes() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-foreground">Codes promo</h1>
+          <h1 className="text-2xl font-bold text-foreground">Codes promo</h1>
           <p className="text-muted-foreground text-xs mt-0.5">
             Créer et suivre les codes promotionnels du site.
           </p>
@@ -236,15 +236,15 @@ export default function PromoCodes() {
       </div>
 
       <div className="border rounded-lg overflow-x-auto">
-        <Table className="min-w-[680px]">
+        <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="h-8 text-[10px] uppercase tracking-wider">Code</TableHead>
-              <TableHead className="h-8 text-[10px] uppercase tracking-wider">Réduction</TableHead>
-              <TableHead className="h-8 text-[10px] uppercase tracking-wider">Utilisations</TableHead>
-              <TableHead className="h-8 text-[10px] uppercase tracking-wider">Validité</TableHead>
-              <TableHead className="h-8 text-[10px] uppercase tracking-wider">Statut</TableHead>
-              <TableHead className="h-8 w-[110px] text-[10px] uppercase tracking-wider">Actions</TableHead>
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Code</TableHead>
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Réduction</TableHead>
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Utilisations</TableHead>
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Validité</TableHead>
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Statut</TableHead>
+              <TableHead className="h-8 w-[110px] px-3 text-[10px] uppercase tracking-wider">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -265,20 +265,20 @@ export default function PromoCodes() {
                 const status = getStatus(code);
                 return (
                   <TableRow key={code.id}>
-                    <TableCell className="py-2 font-mono text-xs font-bold tracking-wide">{code.code}</TableCell>
-                    <TableCell className="py-2 text-sm font-medium">{formatDiscount(code)}</TableCell>
-                    <TableCell className="py-2 font-mono text-xs text-muted-foreground">
+                    <TableCell className="py-2 px-3 font-mono text-xs font-bold tracking-wide">{code.code}</TableCell>
+                    <TableCell className="py-2 px-3 text-sm font-medium">{formatDiscount(code)}</TableCell>
+                    <TableCell className="py-2 px-3 font-mono text-xs text-muted-foreground">
                       {code.used_count} / {code.max_uses ?? "∞"}
                     </TableCell>
-                    <TableCell className="py-2 text-xs text-muted-foreground">
+                    <TableCell className="py-2 px-3 text-xs text-muted-foreground">
                       {format(new Date(code.valid_from), "d MMM")} → {format(new Date(code.valid_until), "d MMM yyyy")}
                     </TableCell>
-                    <TableCell className="py-2">
+                    <TableCell className="py-2 px-3">
                       <Badge variant="secondary" className={cn("text-[10px] font-semibold", statusColors[status])}>
                         {statusLabels[status]}
                       </Badge>
                     </TableCell>
-                    <TableCell className="py-2">
+                    <TableCell className="py-2 px-3">
                       <Button
                         variant="ghost"
                         size="sm"

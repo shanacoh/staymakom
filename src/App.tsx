@@ -68,7 +68,6 @@ const AdminHotels2           = lazy(() => import("./pages/admin/Hotels2"));
 const AdminExperiences2      = lazy(() => import("./pages/admin/Experiences2"));
 const AdminBookings          = lazy(() => import("./pages/admin/Reservations"));
 const AdminReservationDetails = lazy(() => import("./pages/admin/ReservationDetails"));
-const AdminUsers             = lazy(() => import("./pages/admin/Users"));
 const AdminCustomers         = lazy(() => import("./pages/admin/Customers"));
 const AdminJournal           = lazy(() => import("./pages/admin/Journal"));
 const JournalEditor          = lazy(() => import("./pages/admin/JournalEditor"));
@@ -291,7 +290,6 @@ const AppContent = () => {
             <Route path="boats/requests" element={<AdminBoatRequests />} />
             <Route path="gift-cards" element={<AdminGiftCards />} />
             <Route path="gift-cards/:id" element={<AdminGiftCardDetails />} />
-            <Route path="users" element={<AdminUsers />} />
             <Route path="customers" element={<AdminCustomers />} />
             <Route path="journal" element={<AdminJournal />} />
             <Route path="journal/new" element={<JournalEditor />} />

@@ -1,92 +1,801 @@
-import { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { FunctionsHttpError } from '@supabase/supabase-js';
-import { Input } from "@/components/ui/input";
+import { FunctionsHttpError } from "@supabase/supabase-js";
+import { format, differenceInCalendarDays } from "date-fns";
+import { Plus, Trash2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Search, Plus, Download, ArrowUp, ArrowDown, ArrowUpDown, Mail, X } from "lucide-react";
-import { format } from "date-fns";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import {
-  Sheet, SheetContent, SheetHeader, SheetTitle,
-} from "@/components/ui/sheet";
-import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
-} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { CountrySelect } from "@/components/admin/CountrySelect";
-import { Progress } from "@/components/ui/progress";
-import { StatusBadge } from "@/components/admin/StatusBadge";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import ComingSoon from "./ComingSoon";
 
-// ─── Avatar Initials ───
-const AvatarInitials = ({ name, size = "sm" }: { name: string; size?: "sm" | "lg" }) => {
-  const initials = name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
-  const cls = size === "lg" 
-    ? "w-14 h-14 text-lg" 
-    : "w-8 h-8 text-xs";
-  return (
-    <div className={`${cls} rounded-full bg-[#F5F0EB] text-[#1A1814] font-semibold flex items-center justify-center shrink-0`}>
-      {initials}
-    </div>
-  );
+type ClientRow = {
+  user_id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  createdAt: string;
+  phone: string;
+  addressCountry: string;
+  city: string;
+  birthdate: string;
+  defaultPartySize: number;
+  notes: string;
+  marketingOptIn: boolean;
+  reservationsCount: number;
+  lastActivity: Date;
 };
 
-// ─── Role Badge (read-only) ───
-const RoleBadge = ({ role }: { role: string }) => {
-  const styles: Record<string, string> = {
-    admin: "bg-blue-900 text-white border-blue-900",
-    hotel_admin: "bg-amber-100 text-amber-900 border-amber-300",
-    customer: "bg-[#DCFCE7] text-[#16A34A] border-[#DCFCE7]",
-  };
-  return (
-    <Badge variant="outline" className={`rounded-md font-medium capitalize text-xs ${styles[role] || styles.customer}`}>
-      {role === "hotel_admin" ? "Hotel Admin" : role}
-    </Badge>
-  );
+type TeamRow = {
+  roleId: string;
+  user_id: string;
+  role: "admin" | "hotel_admin";
+  name: string;
+  email: string;
+  hotelId: string;
+  hotelName: string | null;
+  createdAt: string | null;
 };
 
-// ─── Club tier config ───
-const TIERS: Record<string, { label: string; color: string; next: number }> = {
-  explorer: { label: "Explorer", color: "text-muted-foreground", next: 500 },
-  traveler: { label: "Traveler", color: "text-blue-600", next: 1500 },
-  insider: { label: "Insider", color: "text-purple-600", next: 3000 },
-  circle: { label: "Circle", color: "text-amber-600", next: 999999 },
-};
+function formatRelativeDay(date: Date): string {
+  const diffDays = differenceInCalendarDays(new Date(), date);
+  if (diffDays <= 0) return "aujourd'hui";
+  if (diffDays === 1) return "hier";
+  return `il y a ${diffDays} j`;
+}
 
-type SortKey = "name" | "email" | "phone" | "role" | "status" | "bookings" | "totalSpent";
-type SortDir = "asc" | "desc" | null;
-
-const AdminCustomers = () => {
+// ─── Fiche détail client (consultation + édition) ───
+function ClientDetailSheet({
+  client,
+  onClose,
+}: {
+  client: ClientRow | null;
+  onClose: () => void;
+}) {
   const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "hotel_admin" | "customer">("all");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
-  const [clubFilter, setClubFilter] = useState<"all" | "explorer" | "traveler" | "insider" | "circle">("all");
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
-  const [addUserOpen, setAddUserOpen] = useState(false);
-  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<{ userId: string; email: string } | null>(null);
-  const [slideoverNote, setSlideoverNote] = useState("");
-  const [slideoverRole, setSlideoverRole] = useState("");
-  const [slideoverHotelId, setSlideoverHotelId] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey | null>(null);
-  const [sortDir, setSortDir] = useState<SortDir>(null);
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    phone: "",
+    addressCountry: "",
+    city: "",
+    birthdate: "",
+    defaultPartySize: 2,
+    notes: "",
+    marketingOptIn: false,
+  });
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
 
-  const [newUser, setNewUser] = useState({
-    email: "", password: "", firstName: "", lastName: "",
-    role: "customer" as "admin" | "hotel_admin" | "customer",
-    country: "", hotelId: "",
+  if (client && loadedFor !== client.user_id) {
+    setLoadedFor(client.user_id);
+    setForm({
+      firstName: client.firstName,
+      lastName: client.lastName,
+      phone: client.phone,
+      addressCountry: client.addressCountry,
+      city: client.city,
+      birthdate: client.birthdate,
+      defaultPartySize: client.defaultPartySize,
+      notes: client.notes,
+      marketingOptIn: client.marketingOptIn,
+    });
+  }
+
+  const { data: fullDetail, isLoading: detailLoading } = useQuery({
+    queryKey: ["admin-client-full-detail", client?.user_id],
+    queryFn: async () => {
+      if (!client) return null;
+      const email = client.email.toLowerCase();
+
+      const [
+        { data: hgBookings },
+        { data: standaloneBookingsAll },
+        { data: wishlistItems },
+        { data: profile },
+        { data: pointsHistory },
+        { data: savedCarts },
+      ] = await Promise.all([
+        supabase
+          .from("bookings_hg" as any)
+          .select("id, created_at, checkin, sell_price, status, is_cancelled, hotels2(name)")
+          .eq("user_id", client.user_id)
+          .order("created_at", { ascending: false }) as any,
+        supabase
+          .from("standalone_bookings")
+          .select(
+            "id, created_at, booking_date, sell_price, status, is_cancelled, custom_experience_title, standalone_experience_id, customer_email, user_id, standalone_experiences(title)"
+          ),
+        supabase
+          .from("wishlist")
+          .select("id, experience_id, experience_type, created_at")
+          .eq("user_id", client.user_id)
+          .is("deleted_at", null),
+        supabase.from("user_profiles").select("*").eq("user_id", client.user_id).maybeSingle(),
+        supabase
+          .from("loyalty_points")
+          .select("id, action, points, description, created_at")
+          .eq("user_id", client.user_id)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("saved_carts")
+          .select("id, experience_id, checkin, checkout, party_size, notes, created_at, experiences2(title)")
+          .eq("user_id", client.user_id)
+          .order("created_at", { ascending: false }),
+      ]);
+
+      const standaloneBookings = (standaloneBookingsAll || []).filter(
+        (b: any) => b.user_id === client.user_id || (b.customer_email || "").toLowerCase() === email
+      );
+
+      const reservations = [
+        ...((hgBookings || []) as any[]).map((b) => ({
+          id: b.id,
+          date: b.checkin || b.created_at,
+          title: b.hotels2?.name || "Hôtel",
+          amount: b.sell_price,
+          status: b.is_cancelled ? "cancelled" : b.status,
+        })),
+        ...standaloneBookings.map((b: any) => ({
+          id: b.id,
+          date: b.booking_date || b.created_at,
+          title: b.standalone_experiences?.title || b.custom_experience_title || "Expérience",
+          amount: b.sell_price,
+          status: b.is_cancelled ? "cancelled" : b.status,
+        })),
+      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      const byType: Record<string, string[]> = { experiences2: [], experiences: [], standalone: [] };
+      (wishlistItems || []).forEach((w) => {
+        if (byType[w.experience_type]) byType[w.experience_type].push(w.experience_id);
+      });
+      const [exp2Res, expRes, standaloneExpRes] = await Promise.all([
+        byType.experiences2.length
+          ? supabase.from("experiences2").select("id, title").in("id", byType.experiences2)
+          : Promise.resolve({ data: [] as { id: string; title: string }[] }),
+        byType.experiences.length
+          ? (supabase as any).from("experiences").select("id, title").in("id", byType.experiences)
+          : Promise.resolve({ data: [] as { id: string; title: string }[] }),
+        byType.standalone.length
+          ? (supabase as any).from("standalone_experiences").select("id, title").in("id", byType.standalone)
+          : Promise.resolve({ data: [] as { id: string; title: string }[] }),
+      ]);
+      const titleMap = new Map<string, string>();
+      (exp2Res.data || []).forEach((e: any) => titleMap.set(`experiences2:${e.id}`, e.title));
+      (expRes.data || []).forEach((e: any) => titleMap.set(`experiences:${e.id}`, e.title));
+      (standaloneExpRes.data || []).forEach((e: any) => titleMap.set(`standalone:${e.id}`, e.title));
+
+      const favorites = (wishlistItems || []).map((w) => ({
+        id: w.id,
+        title: titleMap.get(`${w.experience_type}:${w.experience_id}`) || "Titre inconnu",
+        createdAt: w.created_at,
+      }));
+
+      return {
+        reservations,
+        favorites,
+        club: {
+          loyaltyTier: profile?.loyalty_tier || null,
+          points: profile?.total_points || 0,
+          progress: profile?.membership_progress || 0,
+        },
+        pointsHistory: pointsHistory || [],
+        savedCarts: (savedCarts || []).map((c: any) => ({
+          id: c.id,
+          title: c.experiences2?.title || "Expérience",
+          checkin: c.checkin,
+          checkout: c.checkout,
+          partySize: c.party_size,
+          notes: c.notes,
+          createdAt: c.created_at,
+        })),
+        profile: {
+          locale: profile?.locale || null,
+          interests: profile?.interests || [],
+          referralSource: profile?.referral_source || null,
+          tosAcceptedAt: profile?.tos_accepted_at || null,
+          gdprConsentAt: profile?.gdpr_consent_at || null,
+          onboardingCompletedAt: profile?.onboarding_completed_at || null,
+        },
+      };
+    },
+    enabled: !!client,
   });
 
-  // Fetch hotels
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!client) return;
+      const [{ error: customerError }, { error: profileError }] = await Promise.all([
+        supabase
+          .from("customers")
+          .update({
+            first_name: form.firstName,
+            last_name: form.lastName,
+            phone: form.phone || null,
+            address_country: form.addressCountry || null,
+            city: form.city || null,
+            birthdate: form.birthdate || null,
+            default_party_size: form.defaultPartySize,
+            notes: form.notes || null,
+          })
+          .eq("user_id", client.user_id),
+        supabase
+          .from("user_profiles")
+          .update({ marketing_opt_in: form.marketingOptIn })
+          .eq("user_id", client.user_id),
+      ]);
+      if (customerError) throw customerError;
+      if (profileError) throw profileError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-accounts-clients"] });
+      toast.success("Fiche client mise à jour");
+      onClose();
+    },
+    onError: () => toast.error("Erreur lors de l'enregistrement"),
+  });
+
+  return (
+    <Sheet open={!!client} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+        {client && (
+          <div className="space-y-5 mt-2">
+            <SheetHeader>
+              <SheetTitle>{client.firstName} {client.lastName}</SheetTitle>
+            </SheetHeader>
+
+            <div className="text-sm text-muted-foreground space-y-1">
+              <div>{client.email}</div>
+              <div className="text-xs">
+                Inscrit le {format(new Date(client.createdAt), "dd/MM/yyyy")} · {client.reservationsCount} réservation
+                {client.reservationsCount > 1 ? "s" : ""} · dernière activité {formatRelativeDay(client.lastActivity)}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="client-first-name">Prénom</Label>
+                <Input
+                  id="client-first-name"
+                  value={form.firstName}
+                  onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="client-last-name">Nom</Label>
+                <Input
+                  id="client-last-name"
+                  value={form.lastName}
+                  onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="client-phone">Téléphone</Label>
+              <Input
+                id="client-phone"
+                value={form.phone}
+                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                className="mt-1"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Pays</Label>
+                <CountrySelect
+                  value={form.addressCountry}
+                  onChange={(v) => setForm((f) => ({ ...f, addressCountry: v }))}
+                  placeholder="Sélectionner un pays"
+                />
+              </div>
+              <div>
+                <Label htmlFor="client-city">Ville</Label>
+                <Input
+                  id="client-city"
+                  value={form.city}
+                  onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="client-birthdate">Date de naissance</Label>
+                <Input
+                  id="client-birthdate"
+                  type="date"
+                  value={form.birthdate}
+                  onChange={(e) => setForm((f) => ({ ...f, birthdate: e.target.value }))}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="client-party-size">Taille de groupe par défaut</Label>
+                <Input
+                  id="client-party-size"
+                  type="number"
+                  min={1}
+                  value={form.defaultPartySize}
+                  onChange={(e) => setForm((f) => ({ ...f, defaultPartySize: Number(e.target.value) || 1 }))}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between border rounded-lg p-3">
+              <Label htmlFor="client-marketing" className="text-sm">
+                Opt-in marketing
+              </Label>
+              <Switch
+                id="client-marketing"
+                checked={form.marketingOptIn}
+                onCheckedChange={(v) => setForm((f) => ({ ...f, marketingOptIn: v }))}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="client-notes">Notes internes</Label>
+              <Textarea
+                id="client-notes"
+                value={form.notes}
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                rows={4}
+                className="mt-1"
+              />
+            </div>
+
+            <Button className="w-full" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? "Enregistrement..." : "Enregistrer"}
+            </Button>
+
+            <div className="border-t pt-4 space-y-4">
+              <div>
+                <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-2">
+                  Réservations
+                </div>
+                {detailLoading ? (
+                  <p className="text-sm text-muted-foreground">Chargement...</p>
+                ) : fullDetail && fullDetail.reservations.length > 0 ? (
+                  <div className="space-y-2">
+                    {fullDetail.reservations.map((r) => (
+                      <div key={r.id} className="border rounded-md p-2.5 text-sm">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-medium">{r.title}</span>
+                          <span className="text-xs text-muted-foreground">{format(new Date(r.date), "dd/MM/yy")}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2 mt-0.5">
+                          <span className="text-xs text-muted-foreground capitalize">{r.status || "—"}</span>
+                          <span className="text-xs font-medium">₪{Number(r.amount || 0).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Aucune réservation</p>
+                )}
+              </div>
+
+              <div>
+                <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-2">
+                  Favoris
+                </div>
+                {detailLoading ? (
+                  <p className="text-sm text-muted-foreground">Chargement...</p>
+                ) : fullDetail && fullDetail.favorites.length > 0 ? (
+                  <ul className="space-y-1">
+                    {fullDetail.favorites.map((f) => (
+                      <li key={f.id} className="text-sm border rounded-md p-2">
+                        {f.title}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Aucun favori</p>
+                )}
+              </div>
+
+              <div>
+                <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-2">
+                  Club fidélité
+                </div>
+                {detailLoading ? (
+                  <p className="text-sm text-muted-foreground">Chargement...</p>
+                ) : fullDetail?.club.loyaltyTier || fullDetail?.club.points || fullDetail?.club.progress ? (
+                  <div className="border rounded-md p-2.5 text-sm space-y-0.5">
+                    <div>Palier : <span className="font-medium capitalize">{fullDetail.club.loyaltyTier || "—"}</span></div>
+                    <div>Points : <span className="font-medium">{fullDetail.club.points}</span></div>
+                    <div>Progression : <span className="font-medium">{fullDetail.club.progress}</span></div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Programme fidélité pas encore activé pour ce client.</p>
+                )}
+                {fullDetail && fullDetail.pointsHistory.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {fullDetail.pointsHistory.map((p: any) => (
+                      <div key={p.id} className="flex items-center justify-between text-xs border rounded-md p-2">
+                        <span className="text-muted-foreground">
+                          {p.description || p.action} · {format(new Date(p.created_at), "dd/MM/yy")}
+                        </span>
+                        <span className={cn("font-medium", p.points >= 0 ? "text-green-600" : "text-red-500")}>
+                          {p.points >= 0 ? "+" : ""}{p.points}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-2">
+                  Paniers sauvegardés
+                </div>
+                {detailLoading ? (
+                  <p className="text-sm text-muted-foreground">Chargement...</p>
+                ) : fullDetail && fullDetail.savedCarts.length > 0 ? (
+                  <div className="space-y-2">
+                    {fullDetail.savedCarts.map((c) => (
+                      <div key={c.id} className="border rounded-md p-2.5 text-sm">
+                        <div className="font-medium">{c.title}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {c.checkin ? format(new Date(c.checkin), "dd/MM/yy") : "—"}
+                          {c.checkout ? ` → ${format(new Date(c.checkout), "dd/MM/yy")}` : ""}
+                          {c.partySize ? ` · ${c.partySize} pers.` : ""}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Aucun panier sauvegardé</p>
+                )}
+              </div>
+
+              <div>
+                <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-2">
+                  Informations complémentaires
+                </div>
+                {detailLoading ? (
+                  <p className="text-sm text-muted-foreground">Chargement...</p>
+                ) : (
+                  <div className="border rounded-md p-2.5 text-sm space-y-0.5">
+                    <div>Langue : <span className="font-medium uppercase">{fullDetail?.profile.locale || "—"}</span></div>
+                    <div>
+                      Centres d'intérêt :{" "}
+                      <span className="font-medium">
+                        {fullDetail?.profile.interests?.length ? fullDetail.profile.interests.join(", ") : "—"}
+                      </span>
+                    </div>
+                    <div>Source d'acquisition : <span className="font-medium">{fullDetail?.profile.referralSource || "—"}</span></div>
+                    <div>
+                      CGU acceptées le :{" "}
+                      <span className="font-medium">
+                        {fullDetail?.profile.tosAcceptedAt ? format(new Date(fullDetail.profile.tosAcceptedAt), "dd/MM/yyyy") : "—"}
+                      </span>
+                    </div>
+                    <div>
+                      Consentement RGPD :{" "}
+                      <span className="font-medium">
+                        {fullDetail?.profile.gdprConsentAt ? format(new Date(fullDetail.profile.gdprConsentAt), "dd/MM/yyyy") : "—"}
+                      </span>
+                    </div>
+                    <div>
+                      Onboarding terminé le :{" "}
+                      <span className="font-medium">
+                        {fullDetail?.profile.onboardingCompletedAt
+                          ? format(new Date(fullDetail.profile.onboardingCompletedAt), "dd/MM/yyyy")
+                          : "—"}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+// ─── Onglet Clients ───
+function ClientsTab() {
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+
+  const { data: clients, isLoading } = useQuery({
+    queryKey: ["admin-accounts-clients"],
+    queryFn: async () => {
+      const { data: base, error } = await supabase.rpc("get_customers_with_emails");
+      if (error) throw error;
+      if (!base) return [];
+
+      const userIds = base.map((c) => c.user_id);
+
+      const [{ data: customerExtra }, { data: profiles }, { data: roles }, { data: hgBookings }, { data: standaloneBookings }] =
+        await Promise.all([
+          supabase.from("customers").select("user_id, phone, city, birthdate, default_party_size").in("user_id", userIds),
+          supabase.from("user_profiles").select("user_id, marketing_opt_in").in("user_id", userIds),
+          supabase.from("user_roles").select("user_id, role").in("user_id", userIds),
+          supabase.from("bookings_hg" as any).select("user_id, created_at, is_cancelled").eq("is_cancelled", false) as any,
+          supabase.from("standalone_bookings").select("user_id, customer_email, created_at, is_cancelled").eq("is_cancelled", false),
+        ]);
+
+      const extraMap = new Map((customerExtra || []).map((c) => [c.user_id, c]));
+      const profilesMap = new Map((profiles || []).map((p) => [p.user_id, p]));
+      const rolesMap = new Map((roles || []).map((r) => [r.user_id, r.role]));
+
+      const result: ClientRow[] = base
+        .filter((c) => (rolesMap.get(c.user_id) || "customer") === "customer")
+        .map((c) => {
+          const email = (c.user_email || "").toLowerCase();
+          const hgMatches = ((hgBookings || []) as any[]).filter((b) => b.user_id === c.user_id);
+          const standaloneMatches = (standaloneBookings || []).filter(
+            (b) => b.user_id === c.user_id || (b.customer_email || "").toLowerCase() === email
+          );
+          const bookingDates = [...hgMatches, ...standaloneMatches].map((b) => new Date(b.created_at));
+          const lastActivity =
+            bookingDates.length > 0
+              ? new Date(Math.max(...bookingDates.map((d) => d.getTime())))
+              : new Date(c.created_at);
+
+          return {
+            user_id: c.user_id,
+            firstName: c.first_name || "",
+            lastName: c.last_name || "",
+            email: c.user_email,
+            createdAt: c.created_at,
+            phone: extraMap.get(c.user_id)?.phone || "",
+            addressCountry: c.address_country || "",
+            city: extraMap.get(c.user_id)?.city || "",
+            birthdate: extraMap.get(c.user_id)?.birthdate || "",
+            defaultPartySize: extraMap.get(c.user_id)?.default_party_size ?? 2,
+            notes: c.notes || "",
+            marketingOptIn: profilesMap.get(c.user_id)?.marketing_opt_in ?? false,
+            reservationsCount: hgMatches.length + standaloneMatches.length,
+            lastActivity,
+          };
+        });
+
+      return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    },
+  });
+
+  const list = clients ?? [];
+  const selectedClient = list.find((c) => c.user_id === selectedClientId) || null;
+
+  return (
+    <>
+      <div className="border rounded-lg overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Nom</TableHead>
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Email</TableHead>
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Inscrit le</TableHead>
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Opt-in marketing</TableHead>
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Résa</TableHead>
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Dernière activité</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-6 text-sm">
+                  Chargement...
+                </TableCell>
+              </TableRow>
+            ) : list.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-6 text-sm text-muted-foreground">
+                  Aucun client
+                </TableCell>
+              </TableRow>
+            ) : (
+              list.map((c) => (
+                <TableRow
+                  key={c.user_id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => setSelectedClientId(c.user_id)}
+                >
+                  <TableCell className="py-2 px-3 text-sm font-medium">
+                    {c.firstName} {c.lastName}
+                  </TableCell>
+                  <TableCell className="py-2 px-3 text-sm text-muted-foreground">{c.email}</TableCell>
+                  <TableCell className="py-2 px-3 text-xs text-muted-foreground">
+                    {format(new Date(c.createdAt), "dd/MM")}
+                  </TableCell>
+                  <TableCell className="py-2 px-3">
+                    <Badge
+                      variant="secondary"
+                      className={cn(
+                        "text-[10px] font-semibold",
+                        c.marketingOptIn ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                      )}
+                    >
+                      {c.marketingOptIn ? "Oui" : "Non"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="py-2 px-3 text-sm font-medium">{c.reservationsCount}</TableCell>
+                  <TableCell className="py-2 px-3 text-xs text-muted-foreground">
+                    {formatRelativeDay(c.lastActivity)}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <ClientDetailSheet client={selectedClient} onClose={() => setSelectedClientId(null)} />
+    </>
+  );
+}
+
+// ─── Fiche détail équipe (consultation + édition) ───
+function TeamDetailSheet({
+  member,
+  hotels,
+  onClose,
+  onSaveRole,
+  onDelete,
+}: {
+  member: TeamRow | null;
+  hotels: { id: string; name: string }[] | undefined;
+  onClose: () => void;
+  onSaveRole: (userId: string, roleId: string, role: "admin" | "hotel_admin", hotelId: string) => void;
+  onDelete: (userId: string, email: string) => void;
+}) {
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState({ name: "", role: "admin" as "admin" | "hotel_admin", hotelId: "" });
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
+
+  if (member && loadedFor !== member.user_id) {
+    setLoadedFor(member.user_id);
+    setForm({ name: member.name, role: member.role, hotelId: member.hotelId });
+  }
+
+  const saveNameMutation = useMutation({
+    mutationFn: async () => {
+      if (!member) return;
+      const { error } = await supabase
+        .from("user_profiles")
+        .update({ display_name: form.name })
+        .eq("user_id", member.user_id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-accounts-team"] });
+      toast.success("Fiche mise à jour");
+    },
+    onError: () => toast.error("Erreur lors de l'enregistrement"),
+  });
+
+  return (
+    <Sheet open={!!member} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+        {member && (
+          <div className="space-y-5 mt-2">
+            <SheetHeader>
+              <SheetTitle>{member.name || "—"}</SheetTitle>
+            </SheetHeader>
+
+            <div className="text-sm text-muted-foreground">{member.email}</div>
+
+            <div>
+              <Label htmlFor="team-detail-name">Nom complet</Label>
+              <Input
+                id="team-detail-name"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                className="mt-1"
+              />
+            </div>
+            <Button variant="outline" size="sm" onClick={() => saveNameMutation.mutate()} disabled={saveNameMutation.isPending}>
+              {saveNameMutation.isPending ? "Enregistrement..." : "Enregistrer le nom"}
+            </Button>
+
+            <div>
+              <Label>Rôle</Label>
+              <Select value={form.role} onValueChange={(v) => setForm((f) => ({ ...f, role: v as typeof f.role }))}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="hotel_admin">Hotel admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {form.role === "hotel_admin" && (
+              <div>
+                <Label>Hôtel</Label>
+                <Select value={form.hotelId} onValueChange={(v) => setForm((f) => ({ ...f, hotelId: v }))}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Sélectionner un hôtel" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {hotels?.map((h) => (
+                      <SelectItem key={h.id} value={h.id}>
+                        {h.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <Button
+              className="w-full"
+              onClick={() => onSaveRole(member.user_id, member.roleId, form.role, form.hotelId)}
+            >
+              Enregistrer le rôle
+            </Button>
+
+            <button
+              className="text-sm text-destructive hover:underline"
+              onClick={() => onDelete(member.user_id, member.email)}
+            >
+              Supprimer cet accès
+            </button>
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+// ─── Onglet Équipe (accès) ───
+const emptyTeamForm = {
+  email: "",
+  password: "",
+  firstName: "",
+  lastName: "",
+  role: "admin" as "admin" | "hotel_admin",
+  hotelId: "",
+};
+
+function TeamTab({ dialogOpen, setDialogOpen }: { dialogOpen: boolean; setDialogOpen: (open: boolean) => void }) {
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState(emptyTeamForm);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ userId: string; email: string } | null>(null);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState("");
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+
   const { data: hotels } = useQuery({
     queryKey: ["all-hotels"],
     queryFn: async () => {
@@ -96,652 +805,417 @@ const AdminCustomers = () => {
     },
   });
 
-  const { data: customers, isLoading, refetch } = useQuery({
-    queryKey: ["admin-customers", searchTerm, roleFilter, statusFilter, clubFilter],
+  const { data: team, isLoading } = useQuery({
+    queryKey: ["admin-accounts-team"],
     queryFn: async () => {
-      const { data: customersWithEmails, error: emailError } = await supabase.rpc("get_customers_with_emails");
-      if (emailError) throw emailError;
-      if (!customersWithEmails) return [];
+      const { data: roles, error } = await supabase
+        .from("user_roles")
+        .select("id, user_id, role")
+        .in("role", ["admin", "hotel_admin"]);
+      if (error) throw error;
+      if (!roles || roles.length === 0) return [];
 
-      const userIds = customersWithEmails.map((c) => c.user_id);
+      const userIds = roles.map((r) => r.user_id);
 
-      const [{ data: profiles }, { data: roles }, { data: hotelAdmins }] = await Promise.all([
-        supabase.from("user_profiles").select("user_id, phone, membership_progress, display_name").in("user_id", userIds),
-        supabase.from("user_roles").select("id, user_id, role").in("user_id", userIds),
+      const [{ data: memberRows }, { data: hotelAdmins }] = await Promise.all([
+        supabase.rpc("get_team_members_with_emails"),
         supabase.from("hotel_admins").select("user_id, hotel_id, hotels(name)").in("user_id", userIds),
       ]);
 
-      let filtered = customersWithEmails;
-      if (searchTerm) {
-        const s = searchTerm.toLowerCase();
-        filtered = filtered.filter(c => {
-          const profile = profiles?.find(p => p.user_id === c.user_id);
-          return (
-            c.first_name?.toLowerCase().includes(s) ||
-            c.last_name?.toLowerCase().includes(s) ||
-            c.user_email?.toLowerCase().includes(s) ||
-            profile?.phone?.toLowerCase().includes(s)
-          );
-        });
-      }
+      const memberMap = new Map((memberRows || []).map((m) => [m.user_id, m]));
+      const haMap = new Map((hotelAdmins || []).map((h) => [h.user_id, h]));
 
-      if (roleFilter !== "all") {
-        const filteredIds = roles?.filter(r => r.role === roleFilter).map(r => r.user_id) || [];
-        filtered = filtered.filter(c => filteredIds.includes(c.user_id));
-      }
-
-      const { data: bookingStats } = await supabase
-        .from("bookings_hg" as any)
-        .select("user_id, sell_price")
-        .in("user_id", userIds)
-        .eq("is_cancelled", false);
-
-      const statsMap = (bookingStats || []).reduce((acc: any, b: any) => {
-        const id = b.user_id;
-        if (!id) return acc;
-        if (!acc[id]) acc[id] = { count: 0, total: 0 };
-        acc[id].count += 1;
-        acc[id].total += Number(b.sell_price || 0);
-        return acc;
-      }, {} as Record<string, { count: number; total: number }>);
-
-      const profilesMap = (profiles || []).reduce((acc, p) => { acc[p.user_id] = p; return acc; }, {} as Record<string, any>);
-      const rolesMap = (roles || []).reduce((acc, r) => { acc[r.user_id] = r; return acc; }, {} as Record<string, any>);
-      const haMap = (hotelAdmins || []).reduce((acc, ha) => { acc[ha.user_id] = ha; return acc; }, {} as Record<string, any>);
-
-      const getClub = (mp: number) => mp >= 3000 ? "circle" : mp >= 1500 ? "insider" : mp >= 500 ? "traveler" : "explorer";
-
-      let mapped = filtered.map((c: any) => {
-        const profile = profilesMap[c.user_id];
-        const mp = profile?.membership_progress || 0;
+      const result: TeamRow[] = roles.map((r) => {
+        const m = memberMap.get(r.user_id);
+        const ha = haMap.get(r.user_id) as any;
         return {
-          ...c,
-          user_profiles: profile || null,
-          user_roles: rolesMap[c.user_id] || null,
-          hotel_admin: haMap[c.user_id] || null,
-          bookingsCount: statsMap[c.user_id]?.count || 0,
-          totalSpent: statsMap[c.user_id]?.total || 0,
-          isActive: true,
-          membershipProgress: mp,
-          clubStatus: getClub(mp),
+          roleId: r.id,
+          user_id: r.user_id,
+          role: r.role as "admin" | "hotel_admin",
+          name: m?.display_name || "—",
+          email: m?.user_email || "—",
+          hotelId: ha?.hotel_id || "",
+          hotelName: ha?.hotels?.name || null,
+          createdAt: m?.account_created_at || null,
         };
       });
 
-      if (clubFilter !== "all") mapped = mapped.filter(c => c.clubStatus === clubFilter);
-      return mapped;
+      result.sort((a, b) => {
+        if (!a.createdAt || !b.createdAt) return 0;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+
+      return result;
     },
   });
 
-  // ─── Sorting ───
-  const handleSort = (key: SortKey) => {
-    if (sortKey === key) {
-      if (sortDir === "asc") setSortDir("desc");
-      else if (sortDir === "desc") { setSortKey(null); setSortDir(null); }
-    } else {
-      setSortKey(key);
-      setSortDir("asc");
-    }
-  };
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      if (!form.email.trim()) throw new Error("L'email est obligatoire.");
+      if (!form.password.trim()) throw new Error("Le mot de passe est obligatoire.");
+      if (!form.firstName.trim() || !form.lastName.trim()) throw new Error("Le prénom et le nom sont obligatoires.");
+      if (form.role === "hotel_admin" && !form.hotelId) throw new Error("Sélectionne l'hôtel de cet accès.");
 
-  const sortedCustomers = useMemo(() => {
-    if (!customers || !sortKey || !sortDir) return customers || [];
-    const sorted = [...customers];
-    const dir = sortDir === "asc" ? 1 : -1;
-    sorted.sort((a: any, b: any) => {
-      switch (sortKey) {
-        case "name": return (`${a.first_name} ${a.last_name}`).localeCompare(`${b.first_name} ${b.last_name}`) * dir;
-        case "email": return (a.user_email || "").localeCompare(b.user_email || "") * dir;
-        case "phone": return (a.user_profiles?.phone || "").localeCompare(b.user_profiles?.phone || "") * dir;
-        case "role": return (a.user_roles?.role || "customer").localeCompare(b.user_roles?.role || "customer") * dir;
-        case "status": return (a.isActive ? "active" : "inactive").localeCompare(b.isActive ? "active" : "inactive") * dir;
-        case "bookings": return (a.bookingsCount - b.bookingsCount) * dir;
-        case "totalSpent": return (a.totalSpent - b.totalSpent) * dir;
-        default: return 0;
-      }
-    });
-    return sorted;
-  }, [customers, sortKey, sortDir]);
-
-  // ─── Summary stats ───
-  const summary = useMemo(() => {
-    if (!customers) return { customers: 0, admins: 0, hotelAdmins: 0, revenue: 0 };
-    let admins = 0, hotelAdmins = 0, custs = 0, revenue = 0;
-    customers.forEach((c: any) => {
-      const role = c.user_roles?.role || "customer";
-      if (role === "admin") admins++;
-      else if (role === "hotel_admin") hotelAdmins++;
-      else custs++;
-      revenue += c.totalSpent;
-    });
-    return { customers: custs, admins, hotelAdmins, revenue };
-  }, [customers]);
-
-  const SortIcon = ({ col }: { col: SortKey }) => {
-    if (sortKey !== col) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-30" />;
-    return sortDir === "asc" 
-      ? <ArrowUp className="w-3 h-3 ml-1 text-foreground" /> 
-      : <ArrowDown className="w-3 h-3 ml-1 text-foreground" />;
-  };
-
-  const SortableHead = ({ col, children, className }: { col: SortKey; children: React.ReactNode; className?: string }) => (
-    <TableHead className={className}>
-      <button onClick={() => handleSort(col)} className="flex items-center gap-0 hover:text-foreground transition-colors">
-        {children}
-        <SortIcon col={col} />
-      </button>
-    </TableHead>
-  );
-
-  // ─── Mutations ───
-  const updateRoleMutation = useMutation({
-    mutationFn: async ({ userId, newRole, oldRoleId }: { userId: string; newRole: string; oldRoleId?: string }) => {
-      if (oldRoleId) await supabase.from("user_roles").delete().eq("id", oldRoleId);
-      const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: newRole as any });
-      if (error) throw error;
-    },
-    onSuccess: () => { toast.success("Role updated"); refetch(); },
-    onError: () => { toast.error("Failed to update role"); },
-  });
-
-  const assignHotelMutation = useMutation({
-    mutationFn: async ({ userId, hotelId }: { userId: string; hotelId: string }) => {
-      const { data: existing } = await supabase.from("hotel_admins").select("*").eq("user_id", userId).single();
-      if (existing) {
-        const { error } = await supabase.from("hotel_admins").update({ hotel_id: hotelId }).eq("user_id", userId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("hotel_admins").insert({ user_id: userId, hotel_id: hotelId });
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => { toast.success("Hotel assigned"); refetch(); },
-    onError: () => { toast.error("Failed to assign hotel"); },
-  });
-
-  const deleteUserMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      const { data, error } = await supabase.functions.invoke('manage-users', { body: { action: 'delete', userId } });
-      if (error) {
-        if (error instanceof FunctionsHttpError) { const d = await error.context.json(); throw new Error(d.error || 'Failed'); }
-        throw new Error(error.message || 'Failed');
-      }
-      if (!data?.success) throw new Error(data?.error || 'Failed');
-    },
-    onSuccess: () => { toast.success("User deleted"); setDeleteTarget(null); setDeleteConfirmEmail(""); refetch(); },
-    onError: (e: Error) => { toast.error(e.message || "Failed to delete user"); },
-  });
-
-  const createUserMutation = useMutation({
-    mutationFn: async (userData: typeof newUser) => {
-      const { data, error } = await supabase.functions.invoke('manage-users', {
-        body: { action: 'create', email: userData.email, password: userData.password, firstName: userData.firstName, lastName: userData.lastName, role: userData.role, country: userData.country, hotelId: userData.hotelId || null },
+      const { data, error } = await supabase.functions.invoke("manage-users", {
+        body: {
+          action: "create",
+          email: form.email.trim(),
+          password: form.password,
+          firstName: form.firstName.trim(),
+          lastName: form.lastName.trim(),
+          role: form.role,
+          hotelId: form.role === "hotel_admin" ? form.hotelId : null,
+        },
       });
       if (error) {
-        if (error instanceof FunctionsHttpError) { const d = await error.context.json(); throw new Error(d.error || 'Failed'); }
-        throw new Error(error.message || 'Failed');
+        if (error instanceof FunctionsHttpError) {
+          const d = await error.context.json();
+          throw new Error(d.error || "Erreur lors de la création.");
+        }
+        throw new Error(error.message || "Erreur lors de la création.");
       }
-      if (data && !data.success) throw new Error(data.error || 'Failed');
-      return data;
+      if (data && !data.success) throw new Error(data.error || "Erreur lors de la création.");
     },
     onSuccess: () => {
-      toast.success("User created");
-      setAddUserOpen(false);
-      setNewUser({ email: "", password: "", firstName: "", lastName: "", role: "customer", country: "", hotelId: "" });
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ["admin-accounts-team"] });
+      toast.success("Accès créé");
+      setDialogOpen(false);
+      setForm(emptyTeamForm);
+      setFormError(null);
     },
-    onError: (e: any) => { toast.error(e?.message || "Failed to create user"); },
+    onError: (error: Error) => {
+      setFormError(error.message);
+    },
   });
 
-  // ─── Export CSV ───
-  const exportToCSV = (single?: any) => {
-    const rows = single ? [single] : customers;
-    if (!rows || rows.length === 0) { toast.error("No data to export"); return; }
-    const headers = ["Name","Email","Phone","Role","Bookings","Total Spent (₪)","Club Status","Joined"];
-    const csvRows = rows.map((c: any) => [
-      `${c.first_name} ${c.last_name}`, c.user_email || "", c.user_profiles?.phone || "",
-      c.user_roles?.role || "customer", c.bookingsCount, c.totalSpent.toFixed(2),
-      c.clubStatus || "explorer", format(new Date(c.created_at), "yyyy-MM-dd"),
-    ]);
-    const csv = [headers, ...csvRows].map(r => r.map(c => `"${c}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = single ? `customer-${single.first_name}-${format(new Date(), "yyyy-MM-dd")}.csv` : `customers-${format(new Date(), "yyyy-MM-dd")}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
-
-  // ─── Customer Detail (slide-over) ───
-  const { data: customerDetail, isLoading: isLoadingDetail } = useQuery({
-    queryKey: ["admin-customer-detail", selectedCustomerId],
-    queryFn: async () => {
-      if (!selectedCustomerId) return null;
-      const { data: customer, error } = await supabase.from("customers").select("*").eq("user_id", selectedCustomerId).single();
+  const roleMutation = useMutation({
+    mutationFn: async ({
+      userId,
+      roleId,
+      newRole,
+      hotelId,
+    }: {
+      userId: string;
+      roleId: string;
+      newRole: "admin" | "hotel_admin";
+      hotelId?: string;
+    }) => {
+      await supabase.from("user_roles").delete().eq("id", roleId);
+      const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: newRole });
       if (error) throw error;
-      const [{ data: profile }, { data: role }, { data: hotelAdmin }] = await Promise.all([
-        supabase.from("user_profiles").select("user_id, phone, membership_progress, display_name").eq("user_id", selectedCustomerId).single(),
-        supabase.from("user_roles").select("id, user_id, role").eq("user_id", selectedCustomerId).single(),
-        supabase.from("hotel_admins").select("*, hotels(name)").eq("user_id", selectedCustomerId).single(),
-      ]);
-      const { data: bookings } = await supabase
-        .from("bookings_hg" as any)
-        .select("*, hotels2(name), experiences2(title)")
-        .eq("user_id", selectedCustomerId)
-        .eq("is_cancelled", false)
-        .order("created_at", { ascending: false });
-      const totalSpent = (bookings as any[])?.reduce((s: number, b: any) => s + Number(b.sell_price || 0), 0) || 0;
-      // Get email from customer list cache
-      const cachedCustomer = customers?.find((c: any) => c.user_id === selectedCustomerId);
-      return {
-        ...customer,
-        user_email: cachedCustomer?.user_email || "",
-        user_profiles: profile,
-        user_roles: role,
-        hotel_admin: hotelAdmin,
-        bookings: bookings || [],
-        totalSpent,
-        clubStatus: cachedCustomer?.clubStatus || "explorer",
-        membershipProgress: cachedCustomer?.membershipProgress || 0,
-      };
+      if (newRole === "hotel_admin" && hotelId) {
+        const { data: existing } = await supabase.from("hotel_admins").select("user_id").eq("user_id", userId).maybeSingle();
+        if (existing) {
+          await supabase.from("hotel_admins").update({ hotel_id: hotelId }).eq("user_id", userId);
+        } else {
+          await supabase.from("hotel_admins").insert({ user_id: userId, hotel_id: hotelId });
+        }
+      }
     },
-    enabled: !!selectedCustomerId,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-accounts-team"] });
+      toast.success("Rôle mis à jour");
+      setSelectedMemberId(null);
+    },
+    onError: () => toast.error("Erreur lors de la mise à jour du rôle"),
   });
 
-  // When slide-over opens, sync role state
-  const openSlideover = (userId: string) => {
-    const c = customers?.find((c: any) => c.user_id === userId);
-    setSelectedCustomerId(userId);
-    setSlideoverRole(c?.user_roles?.role || "customer");
-    setSlideoverHotelId(c?.hotel_admin?.hotel_id || "");
-    setSlideoverNote(c?.notes || "");
-  };
-
-  const saveSlideoverRole = async () => {
-    if (!customerDetail) return;
-    const currentRole = customerDetail.user_roles?.role;
-    if (slideoverRole !== currentRole) {
-      await updateRoleMutation.mutateAsync({
-        userId: customerDetail.user_id,
-        newRole: slideoverRole,
-        oldRoleId: customerDetail.user_roles?.id,
+  const deleteMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke("manage-users", {
+        body: { action: "delete", userId },
       });
-    }
-    if (slideoverRole === "hotel_admin" && slideoverHotelId) {
-      await assignHotelMutation.mutateAsync({ userId: customerDetail.user_id, hotelId: slideoverHotelId });
-    }
-    toast.success("Role saved");
-  };
+      if (error) {
+        if (error instanceof FunctionsHttpError) {
+          const d = await error.context.json();
+          throw new Error(d.error || "Erreur lors de la suppression.");
+        }
+        throw new Error(error.message || "Erreur lors de la suppression.");
+      }
+      if (!data?.success) throw new Error(data?.error || "Erreur lors de la suppression.");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-accounts-team"] });
+      toast.success("Accès supprimé");
+      setDeleteTarget(null);
+      setDeleteConfirmEmail("");
+      setSelectedMemberId(null);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
 
-  const saveNote = async () => {
-    if (!customerDetail) return;
-    const { error } = await supabase.from("customers").update({ notes: slideoverNote }).eq("id", customerDetail.id);
-    if (error) toast.error("Failed to save note");
-    else toast.success("Note saved");
-  };
+  const list = team ?? [];
+  const selectedMember = list.find((m) => m.user_id === selectedMemberId) || null;
 
   return (
-    <div className="space-y-6">
-      {/* ─── Header ─── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-bold">User Management</h2>
-          <p className="text-sm text-muted-foreground">Manage all user accounts, roles, and permissions</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => exportToCSV()}>
-            <Download className="w-4 h-4 mr-1.5" />Export
-          </Button>
-          <Button size="sm" onClick={() => setAddUserOpen(true)}>
-            <Plus className="w-4 h-4 mr-1.5" />Add User
-          </Button>
-        </div>
-      </div>
-
-      {/* ─── Summary Bar ─── */}
-      {customers && customers.length > 0 && (
-        <div className="text-sm text-muted-foreground">
-          {summary.customers} customers · {summary.admins} admins · {summary.hotelAdmins} hotel admins · ₪{summary.revenue.toLocaleString("en-IL", { maximumFractionDigits: 0 })} total revenue
-        </div>
-      )}
-
-      {/* ─── Filters: Search + All Roles + All Status + All Club Status ─── */}
-      <div className="flex gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-[250px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name, email, or phone..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-          {searchTerm && (
-            <button onClick={() => setSearchTerm("")} className="absolute right-3 top-1/2 -translate-y-1/2">
-              <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-            </button>
-          )}
-        </div>
-        <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as any)}>
-          <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
-            <SelectItem value="customer">Customer</SelectItem>
-            <SelectItem value="hotel_admin">Hotel Admin</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
-          <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={clubFilter} onValueChange={(v) => setClubFilter(v as any)}>
-          <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Club Status</SelectItem>
-            <SelectItem value="explorer">Explorer</SelectItem>
-            <SelectItem value="traveler">Traveler</SelectItem>
-            <SelectItem value="insider">Insider</SelectItem>
-            <SelectItem value="circle">Circle</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* ─── Table ─── */}
-      {isLoading ? (
-        <div className="text-center py-12">Loading...</div>
-      ) : sortedCustomers && sortedCustomers.length > 0 ? (
-        <div className="border rounded-lg bg-white overflow-x-auto">
-          <Table className="min-w-[800px]">
-            <TableHeader>
+    <div className="space-y-3">
+      <div className="border rounded-lg overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Nom</TableHead>
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Email</TableHead>
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Rôle</TableHead>
+              <TableHead className="h-8 w-[60px] px-3 text-[10px] uppercase tracking-wider">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
               <TableRow>
-                <SortableHead col="name">Name</SortableHead>
-                <SortableHead col="email">Email</SortableHead>
-                <SortableHead col="phone">Phone</SortableHead>
-                <SortableHead col="role">Role</SortableHead>
-                <SortableHead col="status">Status</SortableHead>
-                <SortableHead col="bookings" className="text-right">Bookings</SortableHead>
-                <SortableHead col="totalSpent" className="text-right">Total Spent</SortableHead>
-                <TableHead>Club</TableHead>
+                <TableCell colSpan={4} className="text-center py-6 text-sm">
+                  Chargement...
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedCustomers.map((customer: any) => {
-                const currentRole = customer.user_roles?.role || "customer";
-                const fullName = `${customer.first_name} ${customer.last_name}`;
-                return (
-                  <TableRow
-                    key={customer.user_id}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => openSlideover(customer.user_id)}
-                  >
-                    <TableCell>
-                      <div className="flex items-center gap-2.5">
-                        <AvatarInitials name={fullName} />
-                        <span className="font-medium">{fullName}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm">{customer.user_email || "-"}</TableCell>
-                    <TableCell className="text-sm">{customer.user_profiles?.phone || "-"}</TableCell>
-                    <TableCell><RoleBadge role={currentRole} /></TableCell>
-                    <TableCell>
-                      <StatusBadge status={customer.isActive ? "published" : "archived"} className="text-xs" />
-                    </TableCell>
-                    <TableCell className="text-right">{customer.bookingsCount}</TableCell>
-                    <TableCell className="text-right font-medium">
-                      ₪{customer.totalSpent.toLocaleString("en-IL", { maximumFractionDigits: 0 })}
-                    </TableCell>
-                    <TableCell>
-                      <span className={`text-xs font-medium capitalize ${TIERS[customer.clubStatus]?.color || ""}`}>
-                        {TIERS[customer.clubStatus]?.label || customer.clubStatus}
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      ) : (
-        <div className="text-center py-12 border rounded-lg bg-white space-y-3">
-          <p className="text-muted-foreground">
-            {searchTerm ? `No customers found for "${searchTerm}"` : "No customers yet"}
-          </p>
-          {searchTerm && (
-            <Button variant="outline" size="sm" onClick={() => setSearchTerm("")}>
-              Clear search
-            </Button>
-          )}
-        </div>
-      )}
-
-      {/* ─── Customer Profile Slide-over ─── */}
-      <Sheet open={!!selectedCustomerId} onOpenChange={() => setSelectedCustomerId(null)}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-          {isLoadingDetail ? (
-            <div className="py-8 text-center">Loading...</div>
-          ) : customerDetail ? (() => {
-            const fullName = `${customerDetail.first_name} ${customerDetail.last_name}`;
-            const tier = TIERS[customerDetail.clubStatus] || TIERS.explorer;
-            const progress = tier.next < 999999
-              ? Math.min(100, (customerDetail.membershipProgress / tier.next) * 100)
-              : 100;
-
-            return (
-              <div className="space-y-6 mt-2">
-                {/* ─── Header ─── */}
-                <div className="flex items-center gap-4">
-                  <AvatarInitials name={fullName} size="lg" />
-                  <div>
-                    <h3 className="text-lg font-bold">{fullName}</h3>
-                    <p className="text-sm text-muted-foreground">{customerDetail.user_email}</p>
-                    <p className="text-xs text-muted-foreground">Member since {format(new Date(customerDetail.created_at), "MMM yyyy")}</p>
-                  </div>
-                </div>
-
-                {/* ─── Club Status Card ─── */}
-                <div className="border rounded-lg p-4 space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className={`font-semibold capitalize ${tier.color}`}>{tier.label}</span>
-                    <span className="text-xs text-muted-foreground">{customerDetail.membershipProgress} pts</span>
-                  </div>
-                  <Progress value={progress} className="h-2" />
-                  {tier.next < 999999 && (
-                    <p className="text-xs text-muted-foreground">{tier.next - customerDetail.membershipProgress} pts to next tier</p>
-                  )}
-                </div>
-
-                {/* ─── Role Management ─── */}
-                <div className="border rounded-lg p-4 space-y-3">
-                  <h4 className="font-semibold text-sm">Role & Access</h4>
-                  <div className="space-y-2">
-                    <Label className="text-xs">Role</Label>
-                    <Select value={slideoverRole} onValueChange={setSlideoverRole}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="customer">Customer</SelectItem>
-                        <SelectItem value="hotel_admin">Hotel Admin</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {slideoverRole === "hotel_admin" && (
-                    <div className="space-y-2">
-                      <Label className="text-xs">Assigned Hotel</Label>
-                      <Select value={slideoverHotelId} onValueChange={setSlideoverHotelId}>
-                        <SelectTrigger><SelectValue placeholder="Select hotel" /></SelectTrigger>
-                        <SelectContent>
-                          {hotels?.map(h => <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  <Button size="sm" onClick={saveSlideoverRole}>Save role</Button>
-                </div>
-
-                {/* ─── Booking History ─── */}
-                <div className="border rounded-lg p-4 space-y-3">
-                  <h4 className="font-semibold text-sm">Booking History</h4>
-                  {customerDetail.bookings.length > 0 ? (
-                    <div className="space-y-2 max-h-72 overflow-y-auto">
-                      {customerDetail.bookings.map((b: any) => (
-                        <div key={b.id} className="border rounded-md p-3 bg-muted/30 space-y-1">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="text-sm font-medium">{b.experiences2?.title || "Experience"}</p>
-                              <p className="text-xs text-muted-foreground">{b.hotels2?.name}</p>
-                            </div>
-                            <StatusBadge status={b.is_cancelled ? "archived" : (b.status || "pending")} />
-                          </div>
-                          <div className="flex gap-4 text-xs text-muted-foreground">
-                            <span>{format(new Date(b.checkin), "MMM d")} - {format(new Date(b.checkout), "MMM d, yyyy")}</span>
-                            <span className="font-medium text-foreground">₪{Number(b.sell_price).toLocaleString()}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground italic">No bookings yet</p>
-                  )}
-                </div>
-
-                {/* ─── Notes ─── */}
-                <div className="border rounded-lg p-4 space-y-3">
-                  <h4 className="font-semibold text-sm">Internal Notes</h4>
-                  <Textarea
-                    value={slideoverNote}
-                    onChange={(e) => setSlideoverNote(e.target.value)}
-                    placeholder="Add notes about this customer..."
-                    rows={3}
-                  />
-                  <Button size="sm" variant="outline" onClick={saveNote}>Save note</Button>
-                </div>
-
-                {/* ─── Actions ─── */}
-                <div className="border rounded-lg p-4 space-y-3">
-                  <h4 className="font-semibold text-sm">Actions</h4>
-                  <div className="flex flex-wrap gap-2">
-                    <Button size="sm" variant="outline" asChild>
-                      <a href={`mailto:${customerDetail.user_email}`}>
-                        <Mail className="w-4 h-4 mr-1.5" />Send email
-                      </a>
+            ) : list.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-6 text-sm text-muted-foreground">
+                  Aucun accès équipe
+                </TableCell>
+              </TableRow>
+            ) : (
+              list.map((member) => (
+                <TableRow
+                  key={member.roleId}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => setSelectedMemberId(member.user_id)}
+                >
+                  <TableCell className="py-2 px-3 text-sm font-medium">{member.name || "—"}</TableCell>
+                  <TableCell className="py-2 px-3 text-sm text-muted-foreground">{member.email}</TableCell>
+                  <TableCell className="py-2 px-3">
+                    <Badge
+                      variant="secondary"
+                      className={cn(
+                        "text-[10px] font-semibold",
+                        member.role === "admin" ? "bg-gray-100 text-gray-700" : "bg-blue-100 text-blue-700"
+                      )}
+                    >
+                      {member.role === "admin" ? "Admin" : "Hotel admin"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="py-2 px-3">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-destructive hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteTarget({ userId: member.user_id, email: member.email });
+                        setDeleteConfirmEmail("");
+                      }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => {
-                      const c = customers?.find((x: any) => x.user_id === selectedCustomerId);
-                      if (c) exportToCSV(c);
-                    }}>
-                      <Download className="w-4 h-4 mr-1.5" />Export data
-                    </Button>
-                  </div>
-                  <button
-                    className="text-sm text-destructive hover:underline mt-2"
-                    onClick={() => {
-                      setDeleteTarget({ userId: customerDetail.user_id, email: customerDetail.user_email });
-                      setDeleteConfirmEmail("");
-                    }}
-                  >
-                    Delete account
-                  </button>
-                </div>
-              </div>
-            );
-          })() : null}
-        </SheetContent>
-      </Sheet>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
-      {/* ─── Delete Confirmation (type email) ─── */}
-      <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+      <TeamDetailSheet
+        member={selectedMember}
+        hotels={hotels}
+        onClose={() => setSelectedMemberId(null)}
+        onSaveRole={(userId, roleId, role, hotelId) => roleMutation.mutate({ userId, roleId, newRole: role, hotelId })}
+        onDelete={(userId, email) => {
+          setDeleteTarget({ userId, email });
+          setDeleteConfirmEmail("");
+        }}
+      />
+
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (open) {
+            setForm(emptyTeamForm);
+            setFormError(null);
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete User Account</DialogTitle>
-            <DialogDescription>
-              This action cannot be undone. Type <strong>{deleteTarget?.email}</strong> to confirm.
-            </DialogDescription>
+            <DialogTitle>Ajouter un accès</DialogTitle>
           </DialogHeader>
-          <Input
-            value={deleteConfirmEmail}
-            onChange={(e) => setDeleteConfirmEmail(e.target.value)}
-            placeholder="Type email to confirm..."
-          />
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="team-first-name">Prénom</Label>
+                <Input
+                  id="team-first-name"
+                  value={form.firstName}
+                  onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="team-last-name">Nom</Label>
+                <Input
+                  id="team-last-name"
+                  value={form.lastName}
+                  onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="team-email">Email</Label>
+              <Input
+                id="team-email"
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="team-password">Mot de passe</Label>
+              <Input
+                id="team-password"
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label>Rôle</Label>
+              <Select value={form.role} onValueChange={(v) => setForm((f) => ({ ...f, role: v as typeof f.role }))}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="hotel_admin">Hotel admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {form.role === "hotel_admin" && (
+              <div>
+                <Label>Hôtel</Label>
+                <Select value={form.hotelId} onValueChange={(v) => setForm((f) => ({ ...f, hotelId: v }))}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Sélectionner un hôtel" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {hotels?.map((h) => (
+                      <SelectItem key={h.id} value={h.id}>
+                        {h.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {formError && <p className="text-sm text-destructive">{formError}</p>}
+          </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
-            <Button
-              variant="destructive"
-              disabled={deleteConfirmEmail !== deleteTarget?.email}
-              onClick={() => deleteTarget && deleteUserMutation.mutate(deleteTarget.userId)}
-            >
-              Delete permanently
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>
+              {createMutation.isPending ? "Création..." : "Créer l'accès"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ─── Add User Dialog ─── */}
-      <Dialog open={addUserOpen} onOpenChange={setAddUserOpen}>
-        <DialogContent className="sm:max-w-lg">
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add New User</DialogTitle>
-            <DialogDescription>Create a new user account with role and permissions</DialogDescription>
+            <DialogTitle>Supprimer cet accès ?</DialogTitle>
+            <DialogDescription>
+              Cette action est irréversible. Tape <strong>{deleteTarget?.email}</strong> pour confirmer.
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>First Name</Label>
-                <Input value={newUser.firstName} onChange={(e) => setNewUser({ ...newUser, firstName: e.target.value })} placeholder="John" />
-              </div>
-              <div className="space-y-2">
-                <Label>Last Name</Label>
-                <Input value={newUser.lastName} onChange={(e) => setNewUser({ ...newUser, lastName: e.target.value })} placeholder="Doe" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input type="email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} placeholder="john@example.com" />
-            </div>
-            <div className="space-y-2">
-              <Label>Password</Label>
-              <Input type="password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} placeholder="••••••••" />
-            </div>
-            <div className="space-y-2">
-              <Label>Role</Label>
-              <Select value={newUser.role} onValueChange={(v: any) => setNewUser({ ...newUser, role: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="customer">Customer</SelectItem>
-                  <SelectItem value="hotel_admin">Hotel Admin</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {newUser.role === "hotel_admin" && (
-              <div className="space-y-2">
-                <Label>Assigned Hotel</Label>
-                <Select value={newUser.hotelId} onValueChange={(v) => setNewUser({ ...newUser, hotelId: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select hotel" /></SelectTrigger>
-                  <SelectContent>
-                    {hotels?.map(h => <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label>Country</Label>
-              <CountrySelect value={newUser.country} onChange={(v) => setNewUser({ ...newUser, country: v })} placeholder="Select country" />
-            </div>
-          </div>
+          <Input
+            value={deleteConfirmEmail}
+            onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+            placeholder="Tape l'email pour confirmer..."
+          />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddUserOpen(false)}>Cancel</Button>
-            <Button onClick={() => createUserMutation.mutate(newUser)} disabled={!newUser.email || !newUser.password || !newUser.firstName || !newUser.lastName}>
-              Create User
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+              Annuler
+            </Button>
+            <Button
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteConfirmEmail !== deleteTarget?.email || deleteMutation.isPending}
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.userId)}
+            >
+              Supprimer définitivement
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   );
-};
+}
 
-export default AdminCustomers;
+export default function AdminAccounts() {
+  const [tab, setTab] = useState("clients");
+  const [teamDialogOpen, setTeamDialogOpen] = useState(false);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Comptes</h1>
+        <p className="text-muted-foreground text-xs mt-0.5">
+          Clients, partenaires et accès équipe.
+        </p>
+      </div>
+
+      <Tabs value={tab} onValueChange={setTab}>
+        <div className="flex items-center justify-between gap-3">
+          <TabsList className="rounded-full bg-muted p-1 h-auto">
+            <TabsTrigger
+              value="clients"
+              className="rounded-full px-4 py-1.5 data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive data-[state=active]:shadow-none"
+            >
+              Clients
+            </TabsTrigger>
+            <TabsTrigger
+              value="partenaires"
+              className="rounded-full px-4 py-1.5 data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive data-[state=active]:shadow-none"
+            >
+              Partenaires
+            </TabsTrigger>
+            <TabsTrigger
+              value="equipe"
+              className="rounded-full px-4 py-1.5 data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive data-[state=active]:shadow-none"
+            >
+              Équipe (accès)
+            </TabsTrigger>
+          </TabsList>
+
+          {tab === "equipe" && (
+            <Button
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => setTeamDialogOpen(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Ajouter un accès
+            </Button>
+          )}
+        </div>
+
+        <TabsContent value="clients" className="mt-4">
+          <ClientsTab />
+        </TabsContent>
+        <TabsContent value="partenaires" className="mt-4">
+          <ComingSoon title="Partenaires" description="Écran en cours de construction." />
+        </TabsContent>
+        <TabsContent value="equipe" className="mt-4">
+          <TeamTab dialogOpen={teamDialogOpen} setDialogOpen={setTeamDialogOpen} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

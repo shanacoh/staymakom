@@ -1,11 +1,13 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { format, isPast, differenceInDays } from "date-fns";
-import { Eye, Gift, Plus, Search, Trash2 } from "lucide-react";
+import { format, isPast, isThisMonth } from "date-fns";
+import { fr } from "date-fns/locale";
+import { useState } from "react";
+import { Eye, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -14,13 +16,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -39,6 +34,7 @@ type GiftCard = {
   id: string;
   code: string;
   amount: number | null;
+  amount_used: number;
   currency: string | null;
   recipient_name: string | null;
   recipient_email: string;
@@ -49,24 +45,28 @@ type GiftCard = {
   status: string;
   created_at: string;
   expires_at: string;
-  sent_at: string | null;
-  message: string | null;
-  language: string | null;
+  redeemed_at: string | null;
+};
+
+const statusLabels: Record<string, string> = {
+  draft: "Brouillon",
+  scheduled: "Planifiée",
+  sent: "Active",
+  failed: "Échec",
+  redeemed: "Utilisée",
+  expired: "Expirée",
 };
 
 const statusColors: Record<string, string> = {
-  draft: "bg-gray-100 text-gray-700",
+  draft: "bg-gray-100 text-gray-500",
   scheduled: "bg-blue-100 text-blue-700",
   sent: "bg-green-100 text-green-700",
   failed: "bg-red-100 text-red-700",
-  redeemed: "bg-purple-100 text-purple-700",
+  redeemed: "bg-gray-200 text-gray-700",
   expired: "bg-orange-100 text-orange-700",
 };
 
 export default function GiftCards() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-
   const queryClient = useQueryClient();
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
@@ -100,175 +100,165 @@ export default function GiftCards() {
     },
   });
 
-  const filteredGiftCards = giftCards?.filter((gc) => {
-    const matchesSearch =
-      searchQuery === "" ||
-      gc.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      gc.recipient_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      gc.sender_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      gc.recipient_name?.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesStatus =
-      statusFilter === "all" || gc.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
-
   const formatCurrency = (amount: number | null, currency: string | null) => {
     if (amount === null) return "-";
     const symbol = currency === "USD" ? "$" : "₪";
-    return `${symbol}${amount.toLocaleString()}`;
+    return `${symbol}${Math.round(amount).toLocaleString()}`;
   };
 
-  const getExpirationStatus = (expiresAt: string) => {
-    const expirationDate = new Date(expiresAt);
-    const isExpired = isPast(expirationDate);
-    const daysRemaining = differenceInDays(expirationDate, new Date());
+  const kpis = useMemo(() => {
+    const cards = giftCards ?? [];
+    const activeCards = cards.filter(
+      (gc) => gc.status !== "redeemed" && gc.status !== "failed" && !isPast(new Date(gc.expires_at))
+    );
+    const activeBalance = activeCards.reduce(
+      (sum, gc) => sum + Math.max((gc.amount ?? 0) - gc.amount_used, 0),
+      0
+    );
 
-    if (isExpired) {
-      return { text: "Expired", className: "text-red-600 font-medium" };
-    }
-    if (daysRemaining <= 30) {
-      return { text: `${daysRemaining} days left`, className: "text-orange-600" };
-    }
-    return { text: format(expirationDate, "MMM d, yyyy"), className: "" };
-  };
+    const issuedThisMonth = cards.filter((gc) => isThisMonth(new Date(gc.created_at)));
+    const issuedAmount = issuedThisMonth.reduce((sum, gc) => sum + (gc.amount ?? 0), 0);
+
+    const usedThisMonth = cards.filter((gc) => gc.redeemed_at && isThisMonth(new Date(gc.redeemed_at)));
+    const usedAmount = usedThisMonth.reduce((sum, gc) => sum + gc.amount_used, 0);
+
+    return {
+      activeCount: activeCards.length,
+      activeBalance,
+      issuedCount: issuedThisMonth.length,
+      issuedAmount,
+      usedCount: usedThisMonth.length,
+      usedAmount,
+    };
+  }, [giftCards]);
+
+  const monthLabel = format(new Date(), "MMM", { locale: fr }).toUpperCase();
+  const cardsList = giftCards ?? [];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Gift className="h-6 w-6" />
-            Gift Cards
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Manage all gift cards and track their status
+          <h1 className="text-2xl font-bold text-foreground">Gift cards</h1>
+          <p className="text-muted-foreground text-xs mt-0.5">
+            Suivre les cartes cadeaux émises et leur utilisation.
           </p>
         </div>
-        {/* Bouton de création — emmène l'admin vers le formulaire d'émission /gift-card,
-            désormais protégé par rôle "admin" (cf. App.tsx). */}
-        <Button asChild>
+        <Button asChild className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
           <Link to="/gift-card">
             <Plus className="h-4 w-4 mr-2" />
-            Create Gift Card
+            Émettre une carte cadeau
           </Link>
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by code, email, or name..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="scheduled">Scheduled</SelectItem>
-            <SelectItem value="sent">Sent</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
-            <SelectItem value="redeemed">Redeemed</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="grid grid-cols-3 gap-3">
+        <Card>
+          <CardHeader className="p-3 pb-1">
+            <CardTitle className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+              Cartes actives
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 pt-0">
+            <div className="font-mono text-xl font-bold">{kpis.activeCount}</div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              {formatCurrency(kpis.activeBalance, "ILS")} de solde cumulé
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="p-3 pb-1">
+            <CardTitle className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+              Émises · {monthLabel}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 pt-0">
+            <div className="font-mono text-xl font-bold">{kpis.issuedCount}</div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              {formatCurrency(kpis.issuedAmount, "ILS")}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="p-3 pb-1">
+            <CardTitle className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+              Utilisées · {monthLabel}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 pt-0">
+            <div className="font-mono text-xl font-bold">{kpis.usedCount}</div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              {formatCurrency(kpis.usedAmount, "ILS")} consommés
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Table */}
       <div className="border rounded-lg overflow-x-auto">
-        <Table className="min-w-[800px]">
+        <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead>Code</TableHead>
-              <TableHead>Recipient</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Delivery</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead>Valid Until</TableHead>
-              <TableHead className="w-[80px]">Actions</TableHead>
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Code</TableHead>
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Valeur initiale</TableHead>
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Solde restant</TableHead>
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Acheteur</TableHead>
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Émise le</TableHead>
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Expire le</TableHead>
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Statut</TableHead>
+              <TableHead className="h-8 w-[80px] px-3 text-[10px] uppercase tracking-wider">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
-                  Loading gift cards...
+                <TableCell colSpan={8} className="text-center py-6 text-sm">
+                  Chargement...
                 </TableCell>
               </TableRow>
-            ) : filteredGiftCards?.length === 0 ? (
+            ) : cardsList.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                  No gift cards found
+                <TableCell colSpan={8} className="text-center py-6 text-sm text-muted-foreground">
+                  Aucune gift card
                 </TableCell>
               </TableRow>
             ) : (
-              filteredGiftCards?.map((gc) => {
-                const expStatus = getExpirationStatus(gc.expires_at);
+              cardsList.map((gc) => {
+                const balance = Math.max((gc.amount ?? 0) - gc.amount_used, 0);
                 return (
                   <TableRow key={gc.id}>
-                    <TableCell className="font-mono text-sm">{gc.code}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        {gc.recipient_name && (
-                          <span className="font-medium">{gc.recipient_name}</span>
-                        )}
-                        <span className="text-sm text-muted-foreground">
-                          {gc.recipient_email}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">
+                    <TableCell className="py-2 px-3 font-mono text-xs font-bold tracking-wide">{gc.code}</TableCell>
+                    <TableCell className="py-2 px-3 text-sm font-medium">
                       {formatCurrency(gc.amount, gc.currency)}
                     </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="capitalize text-sm">
-                          {gc.delivery_type || "now"}
-                        </span>
-                        {gc.delivery_type === "scheduled" && (
-                          <span className="text-xs text-muted-foreground">
-                            {format(new Date(gc.delivery_date), "MMM d, yyyy")}
-                          </span>
-                        )}
-                      </div>
+                    <TableCell className="py-2 px-3 text-sm font-medium">
+                      {formatCurrency(balance, gc.currency)}
                     </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className={cn(statusColors[gc.status] || "bg-gray-100")}
-                      >
-                        {gc.status}
+                    <TableCell className="py-2 px-3 text-xs">{gc.sender_name}</TableCell>
+                    <TableCell className="py-2 px-3 text-xs text-muted-foreground">
+                      {format(new Date(gc.created_at), "d MMM yy")}
+                    </TableCell>
+                    <TableCell className="py-2 px-3 text-xs text-muted-foreground">
+                      {format(new Date(gc.expires_at), "d MMM yy")}
+                    </TableCell>
+                    <TableCell className="py-2 px-3">
+                      <Badge variant="secondary" className={cn("text-[10px] font-semibold", statusColors[gc.status] || "bg-gray-100")}>
+                        {statusLabels[gc.status] || gc.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm">
-                      {format(new Date(gc.created_at), "MMM d, yyyy")}
-                    </TableCell>
-                    <TableCell className={cn("text-sm", expStatus.className)}>
-                      {expStatus.text}
-                    </TableCell>
-                    <TableCell>
+                    <TableCell className="py-2 px-3">
                       <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
                           <Link to={`/admin/gift-cards/${gc.id}`}>
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-3.5 w-3.5" />
                           </Link>
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="text-destructive hover:text-destructive"
+                          className="h-7 w-7 text-destructive hover:text-destructive"
                           onClick={() => setPendingDeleteId(gc.id)}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </TableCell>
@@ -279,34 +269,6 @@ export default function GiftCards() {
           </TableBody>
         </Table>
       </div>
-
-      {/* Summary Stats */}
-      {giftCards && giftCards.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-muted/50 rounded-lg p-4">
-            <div className="text-2xl font-bold">{giftCards.length}</div>
-            <div className="text-sm text-muted-foreground">Total Gift Cards</div>
-          </div>
-          <div className="bg-green-50 rounded-lg p-4">
-            <div className="text-2xl font-bold text-green-700">
-              {giftCards.filter((gc) => gc.status === "sent").length}
-            </div>
-            <div className="text-sm text-green-600">Sent</div>
-          </div>
-          <div className="bg-blue-50 rounded-lg p-4">
-            <div className="text-2xl font-bold text-blue-700">
-              {giftCards.filter((gc) => gc.status === "scheduled").length}
-            </div>
-            <div className="text-sm text-blue-600">Scheduled</div>
-          </div>
-          <div className="bg-purple-50 rounded-lg p-4">
-            <div className="text-2xl font-bold text-purple-700">
-              {giftCards.filter((gc) => gc.status === "redeemed").length}
-            </div>
-            <div className="text-sm text-purple-600">Redeemed</div>
-          </div>
-        </div>
-      )}
 
       <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
         <AlertDialogContent>

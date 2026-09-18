@@ -6,6 +6,26 @@
 
 ---
 
+## [2026-09-18] — Page Comptes (Clients / Partenaires / Équipe), Tableau de bord repensé, Gift Cards
+
+### Ce qui a changé côté code
+- `src/pages/admin/Customers.tsx` (refonte complète, renommée "Comptes" dans le menu, toujours sur `/admin/customers`) : remplace l'ancienne page "User Management" par 3 onglets — **Clients** (tableau Nom/Email/Inscrit le/Opt-in marketing/Réservations/Dernière activité, calculé à partir des vraies réservations hôtel + standalone), **Partenaires** ("Bientôt disponible"), **Équipe (accès)** (créer/modifier le rôle/supprimer un accès admin ou hotel admin). Cliquer sur une ligne (Clients comme Équipe) ouvre une fiche détaillée modifiable : coordonnées, opt-in marketing, notes, et pour les clients : historique des réservations, favoris, historique de points de fidélité, paniers sauvegardés, et informations complémentaires (langue, centres d'intérêt, source d'acquisition, consentements).
+- Suppression de `src/pages/admin/Users.tsx` : ancienne page redondante avec l'onglet "Équipe" de Comptes, dont les boutons Ajouter/Modifier n'étaient jamais branchés à rien. Route `/admin/users` retirée de `src/App.tsx`, entrée retirée du menu.
+- `src/pages/admin/Dashboard.tsx` (refonte complète) : l'ancien tableau de bord affichait des indicateurs (réservations, CA, commission...) systématiquement à 0 car branché sur une table quasi vide. Remplacé par : un bandeau d'alerte qui n'apparaît que si une réservation est marquée "Confirmée" sans paiement reçu (vrai bug détecté automatiquement) ; deux blocs "Pouls des 7 derniers jours" et "Pouls des 30 derniers jours" à 4 indicateurs chacun (Réservations/Encaissé/Commission affichent "à lier une fois résa finalisée" en attendant que la logique de réservation soit nettoyée par Shana ; le 4ᵉ indicateur, "Leads inscrits", est réel et compare à la période précédente) ; un bloc "Actions à faire" pour l'instant vide.
+- `src/pages/admin/GiftCards.tsx` (refonte visuelle complète) : même gabarit que Codes promo (titre, 3 blocs récap réels, CTA rouge, tableau resserré), sans changement de fonctionnement.
+- `src/components/admin/AdminSidebar.tsx` : "Croissance" repassé avant "Autre" ; "Codes promo" et "Gift Cards" marqués en vert (temporaire, pages validées) ; "Dashboard", "Comptes" et "Leads" marqués en orange (temporaire, en cours de retouche) ; titres des pages Leads/Codes promo/Gift Cards agrandis (`text-2xl`) pour asseoir la hiérarchie visuelle de la charte back-office.
+- Nettoyage de données (pas de code) : 10 tentatives de réservation standalone en échec de paiement (bug webhook Revolut de mi-août, confirmé sans prélèvement réel) marquées comme annulées pour 3 clients, avec note interne explicative.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20260918120000_add_get_team_members_with_emails.sql` (déjà appliquée) : nouvelle fonction `get_team_members_with_emails()` pour lister les comptes admin/hotel admin avec leur email — l'ancienne méthode dépendait de la table des fiches clients, absente pour certains comptes équipe, ce qui faisait apparaître des lignes vides dans l'onglet Équipe.
+- Migration `supabase/migrations/20260918130000_add_admin_update_policies_customers_profiles.sql` (déjà appliquée) : ajoute les règles de sécurité manquantes permettant à un admin de **modifier** les fiches clients et profils (il ne pouvait jusque-là que les consulter). Sans cette règle, la base refusait silencieusement toute modification faite depuis la fiche client (aucune erreur affichée, mais rien n'était sauvegardé).
+- Données : `marketing_opt_in` passé à `true` pour 38 comptes clients (décision de Shana, aucun mécanisme d'opt-in réel n'existait jusqu'ici à l'inscription).
+
+### Pourquoi ce changement
+- Shana voulait une page "Comptes" unifiée regroupant clients, partenaires (à venir) et gestion des accès équipe, avec des fiches consultables et modifiables. Le tableau de bord affichait des chiffres à 0 qui n'avaient plus de sens : il a été recentré sur l'urgent (bugs, tendance des leads) en attendant que la logique de réservation soit clarifiée. Au passage, un vrai bug de sécurité a été découvert (les modifications de fiches clients ne s'enregistraient jamais) et corrigé.
+
+---
+
 ## [2026-09-18] — Module Codes promo, nettoyage visuel de l'admin et couleur d'action
 
 ### Ce qui a changé côté code

@@ -4364,6 +4364,15 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_team_members_with_emails: {
+        Args: never
+        Returns: {
+          account_created_at: string
+          display_name: string
+          user_email: string
+          user_id: string
+        }[]
+      }
       get_user_hotel_id: { Args: { _user_id: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }

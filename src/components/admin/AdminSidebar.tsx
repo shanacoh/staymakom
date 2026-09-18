@@ -5,7 +5,6 @@ import {
   FolderKanban,
   Building2,
   Calendar,
-  Users,
   UserCircle,
   BookOpen,
   Settings,
@@ -49,12 +48,17 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 
 type NavItem = {
   title: string;
   url: string;
   icon: LucideIcon;
   exact?: boolean;
+  // Marqueur temporaire : page dont la refonte visuelle est validée par Shana (retiré une fois tout le menu refait).
+  done?: boolean;
+  // Marqueur temporaire : page en cours de refonte, pas encore validée (retiré une fois validée).
+  inProgress?: boolean;
 };
 
 const ACTIVE_CLASS = "bg-black text-white hover:bg-neutral-800 hover:text-red-300";
@@ -62,7 +66,7 @@ const INACTIVE_CLASS = "hover:bg-muted";
 
 // Aperçu : le tableau de bord, puis les futures vues de consultation (écrans à construire)
 const apercuItems: NavItem[] = [
-  { title: "Dashboard", url: "/admin", icon: LayoutDashboard, exact: true },
+  { title: "Dashboard", url: "/admin", icon: LayoutDashboard, exact: true, inProgress: true },
   { title: "Carte", url: "/admin/carte", icon: Map },
   { title: "Catalogue", url: "/admin/catalogue", icon: Library },
 ];
@@ -80,8 +84,7 @@ const operationsItems: NavItem[] = [
 // Autre : tout ce qui existe déjà et n'a pas encore de place dédiée dans la nouvelle organisation
 const autreItems: NavItem[] = [
   { title: "Categories", url: "/admin/categories", icon: FolderKanban },
-  { title: "Users", url: "/admin/users", icon: Users },
-  { title: "Customers", url: "/admin/customers", icon: UserCircle },
+  { title: "Comptes", url: "/admin/customers", icon: UserCircle, inProgress: true },
   { title: "Favorites", url: "/admin/favorites", icon: Heart },
   { title: "Journal", url: "/admin/journal", icon: BookOpen },
   { title: "AI Insights", url: "/admin/ai-insights", icon: Brain },
@@ -94,9 +97,9 @@ const autreItems: NavItem[] = [
 
 // Croissance
 const croissanceItems: NavItem[] = [
-  { title: "Leads", url: "/admin/leads", icon: Mail },
-  { title: "Codes promo", url: "/admin/promo", icon: Percent },
-  { title: "Gift Cards", url: "/admin/gift-cards", icon: Gift },
+  { title: "Leads", url: "/admin/leads", icon: Mail, inProgress: true },
+  { title: "Codes promo", url: "/admin/promo", icon: Percent, done: true },
+  { title: "Gift Cards", url: "/admin/gift-cards", icon: Gift, done: true },
   { title: "Dossiers swipe", url: "/admin/swipe/dossiers", icon: FolderOpen },
 ];
 
@@ -150,7 +153,15 @@ function NavGroup({
                   {collapsed ? (
                     <item.icon className="h-5 w-5" />
                   ) : (
-                    <span className="text-sm font-medium">{item.title}</span>
+                    <span
+                      className={cn(
+                        "text-sm font-medium",
+                        item.done && "text-green-600",
+                        item.inProgress && "text-orange-500"
+                      )}
+                    >
+                      {item.title}
+                    </span>
                   )}
                 </Link>
               </SidebarMenuButton>
@@ -269,15 +280,15 @@ export function AdminSidebar() {
           onNavClick={handleNavClick}
         />
         <NavGroup
-          label="Autre"
-          items={autreItems}
+          label="Croissance"
+          items={croissanceItems}
           collapsed={collapsed}
           isActive={isActive}
           onNavClick={handleNavClick}
         />
         <NavGroup
-          label="Croissance"
-          items={croissanceItems}
+          label="Autre"
+          items={autreItems}
           collapsed={collapsed}
           isActive={isActive}
           onNavClick={handleNavClick}

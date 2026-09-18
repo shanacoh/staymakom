@@ -279,8 +279,7 @@ public/
 | `/admin/experiences2/edit/:experienceId` | AdminExperiences2 |
 | `/admin/bookings` | AdminBookings |
 | `/admin/reservations/:bookingId` | AdminReservationDetails |
-| `/admin/customers` | AdminCustomers |
-| `/admin/users` | AdminUsers |
+| `/admin/customers` | AdminAccounts ("Comptes" — onglets Clients / Partenaires / Équipe, remplace l'ancien AdminCustomers + AdminUsers) |
 | `/admin/journal` | AdminJournal |
 | `/admin/journal/new` | JournalEditor |
 | `/admin/journal/edit/:id` | JournalEditor |
