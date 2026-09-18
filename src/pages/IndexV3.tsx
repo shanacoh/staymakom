@@ -20,7 +20,7 @@ import {
   ArrowRight,
   Heart, Users, Sparkles, Leaf, Wine, Zap, Laptop, Brain,
   Mountain, Utensils, Coffee, Sun, Moon, Star, Compass, Globe,
-  Briefcase, Flame, Droplet, Wind, TreePine, Flower2,
+  Briefcase, Flame, Droplet, Wind, TreePine, Flower2, Sailboat,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,7 @@ const iconMap: Record<string, LucideIcon> = {
   utensils: Utensils, coffee: Coffee, sun: Sun, moon: Moon, star: Star,
   compass: Compass, globe: Globe, briefcase: Briefcase, flame: Flame,
   droplet: Droplet, wind: Wind, "tree-pine": TreePine, flower: Flower2,
+  sailboat: Sailboat,
 };
 
 
@@ -47,6 +48,9 @@ const V3_CATEGORIES = [
   { id: "foody-discovery", en: "Foody Discovery",   fr: "Évasion Gourmande",    he: "גילוי קולינרי",    slugHints: ["taste", "food", "culinar"],   icon: "wine",    img: "/icons/icon-foody.png"     },
   { id: "land-of-stories", en: "Land of Stories",  fr: "Terre d'Histoire",     he: "ארץ הסיפורים",     slugHints: ["land", "stories"],            icon: "compass", img: "/icons/icon-stories.png"   },
   { id: "nature-outdoor",  en: "Nature & Outdoor",  fr: "Nature & Aventure",    he: "טבע ושטח",         slugHints: ["nature", "beyond", "outdoor"],icon: "leaf",    img: "/icons/icon-nature.png"    },
+  // Bateaux : pas de page/grille dédiée sur cette section, le clic redirige vers /boat
+  // (catalogue dédié, jamais de réservation directe).
+  { id: "boats-tour",      en: "Boats",             fr: "Bateaux",              he: "סירות",            slugHints: ["bateaux"],                    icon: "sailboat", img: "/icons/icon-boats.svg" },
 ];
 
 /* ─── Animation CSS par icône de catégorie ──────────────────────────────── */
@@ -312,6 +316,7 @@ const IndexV3 = () => {
                   : (dbCat?.name || v3cat.en);
                 const IconComponent: LucideIcon =
                   (dbCat?.icon ? iconMap[dbCat.icon] : null) ?? iconMap[v3cat.icon] ?? Sparkles;
+                const chipIcon = dbCat?.icon_image || v3cat.img;
 
                 const words = name.split(" ");
                 const mid = Math.ceil(words.length / 2);
@@ -321,7 +326,11 @@ const IndexV3 = () => {
                 return (
                   <button
                     key={v3cat.id}
-                    onClick={() => setSelectedCategory((prev) => (prev === categoryKey ? null : categoryKey))}
+                    onClick={() =>
+                      v3cat.id === "boats-tour"
+                        ? navigate(getLocalizedPath("/boat"))
+                        : setSelectedCategory((prev) => (prev === categoryKey ? null : categoryKey))
+                    }
                     className={cn(
                       "cat-chip group relative flex flex-col items-center gap-2 flex-shrink-0 w-16 sm:w-[82px] py-2.5 px-1 rounded-2xl transition-all duration-200",
                       isDimmed ? "opacity-35" : "hover:-translate-y-0.5"
@@ -336,7 +345,7 @@ const IndexV3 = () => {
                         )}
                       />
                     )}
-                    {v3cat.img ? (
+                    {chipIcon ? (
                       isSelected ? (
                         <span
                           role="img"
@@ -344,8 +353,8 @@ const IndexV3 = () => {
                           className={cn("block w-9 h-9 sm:w-12 sm:h-12", ICON_ANIM_CLASS[v3cat.id])}
                           style={{
                             backgroundColor: "#ad1414",
-                            WebkitMaskImage: `url(${v3cat.img})`,
-                            maskImage: `url(${v3cat.img})`,
+                            WebkitMaskImage: `url(${chipIcon})`,
+                            maskImage: `url(${chipIcon})`,
                             WebkitMaskSize: "contain",
                             maskSize: "contain",
                             WebkitMaskRepeat: "no-repeat",
@@ -356,7 +365,7 @@ const IndexV3 = () => {
                         />
                       ) : (
                         <img
-                          src={v3cat.img}
+                          src={chipIcon}
                           alt={name}
                           className={cn("w-9 h-9 sm:w-12 sm:h-12 object-contain", ICON_ANIM_CLASS[v3cat.id])}
                         />

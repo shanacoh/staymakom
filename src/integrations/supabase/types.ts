@@ -356,6 +356,7 @@ export type Database = {
           hotel_id: string | null
           id: string
           idempotency_key: string | null
+          internal_notes: string | null
           is_cancelled: boolean
           lead_id: string | null
           net_price: number
@@ -374,6 +375,7 @@ export type Database = {
           room_code: string | null
           room_name: string | null
           sell_price: number
+          source: string
           status: string
           synced_at: string
           updated_at: string
@@ -397,6 +399,7 @@ export type Database = {
           hotel_id?: string | null
           id?: string
           idempotency_key?: string | null
+          internal_notes?: string | null
           is_cancelled?: boolean
           lead_id?: string | null
           net_price?: number
@@ -415,6 +418,7 @@ export type Database = {
           room_code?: string | null
           room_name?: string | null
           sell_price?: number
+          source?: string
           status?: string
           synced_at?: string
           updated_at?: string
@@ -438,6 +442,7 @@ export type Database = {
           hotel_id?: string | null
           id?: string
           idempotency_key?: string | null
+          internal_notes?: string | null
           is_cancelled?: boolean
           lead_id?: string | null
           net_price?: number
@@ -456,6 +461,7 @@ export type Database = {
           room_code?: string | null
           room_name?: string | null
           sell_price?: number
+          source?: string
           status?: string
           synced_at?: string
           updated_at?: string
@@ -494,6 +500,7 @@ export type Database = {
           editorial_tiles: Json | null
           hero_image: string | null
           icon: string | null
+          icon_image: string | null
           id: string
           intro_rich_text: string | null
           intro_rich_text_fr: string | null
@@ -534,6 +541,7 @@ export type Database = {
           editorial_tiles?: Json | null
           hero_image?: string | null
           icon?: string | null
+          icon_image?: string | null
           id?: string
           intro_rich_text?: string | null
           intro_rich_text_fr?: string | null
@@ -574,6 +582,7 @@ export type Database = {
           editorial_tiles?: Json | null
           hero_image?: string | null
           icon?: string | null
+          icon_image?: string | null
           id?: string
           intro_rich_text?: string | null
           intro_rich_text_fr?: string | null

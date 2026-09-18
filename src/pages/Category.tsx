@@ -1,4 +1,4 @@
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import V3Header from "@/components/V3Header";
@@ -92,7 +92,7 @@ const Category = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("categories")
-        .select("id, slug, name, name_he, name_fr, hero_image, seo_title_en, seo_title_he, meta_description_en, meta_description_he, og_title_en, og_title_he, og_description_en, og_description_he, og_image, presentation_title, presentation_title_he, presentation_title_fr, intro_rich_text, intro_rich_text_he, intro_rich_text_fr")
+        .select("id, slug, name, name_he, name_fr, hero_image, icon_image, seo_title_en, seo_title_he, seo_title_fr, meta_description_en, meta_description_he, meta_description_fr, og_title_en, og_title_he, og_title_fr, og_description_en, og_description_he, og_description_fr, og_image, presentation_title, presentation_title_he, presentation_title_fr, intro_rich_text, intro_rich_text_he, intro_rich_text_fr")
         .eq("slug", slug)
         .eq("status", "published")
         .single();
@@ -238,6 +238,13 @@ const Category = () => {
   const currentV3Cat = V3_CATEGORIES.find(v3cat =>
     v3cat.slugHints.some(hint => slug?.includes(hint))
   );
+  const heroIconSrc = category?.icon_image || currentV3Cat?.img;
+
+  // Bateaux n'a pas de page catégorie générique (les fiches vivent dans
+  // standalone_experiences, pas experiences2) : on renvoie vers le catalogue dédié.
+  if (slug === "bateaux") {
+    return <Navigate to="/boat" replace />;
+  }
 
   if (categoryLoading) {
     return (
@@ -291,12 +298,16 @@ const Category = () => {
       <SEOHead
         titleEn={category.seo_title_en}
         titleHe={category.seo_title_he}
+        titleFr={category.seo_title_fr}
         descriptionEn={category.meta_description_en}
         descriptionHe={category.meta_description_he}
+        descriptionFr={category.meta_description_fr}
         ogTitleEn={category.og_title_en}
         ogTitleHe={category.og_title_he}
+        ogTitleFr={category.og_title_fr}
         ogDescriptionEn={category.og_description_en}
         ogDescriptionHe={category.og_description_he}
+        ogDescriptionFr={category.og_description_fr}
         ogImage={category.og_image || category.hero_image}
         fallbackTitle={`${categoryName} - Staymakom`}
         fallbackDescription={introText}
@@ -344,13 +355,13 @@ const Category = () => {
 
         {/* ──── Hero : icône + titre ──── */}
         <section className="bg-white pt-10 pb-5 text-center px-4">
-          {currentV3Cat?.img && (
+          {heroIconSrc && (
             <div
               className="mx-auto mb-4 w-16 h-16 sm:w-20 sm:h-20"
               style={{
                 backgroundColor: "#ad1414",
-                WebkitMaskImage: `url(${currentV3Cat.img})`,
-                maskImage: `url(${currentV3Cat.img})`,
+                WebkitMaskImage: `url(${heroIconSrc})`,
+                maskImage: `url(${heroIconSrc})`,
                 WebkitMaskSize: "contain",
                 maskSize: "contain",
                 WebkitMaskRepeat: "no-repeat",
@@ -392,6 +403,7 @@ const Category = () => {
                 ? (dbCat?.name_fr || v3cat.fr)
                 : (dbCat?.name || v3cat.en);
               const IconComponent: LucideIcon = iconMap[v3cat.icon] ?? Sparkles;
+              const chipIcon = dbCat?.icon_image || v3cat.img;
 
               const words = name.split(" ");
               const mid = Math.ceil(words.length / 2);
@@ -418,7 +430,7 @@ const Category = () => {
                     />
                   )}
 
-                  {v3cat.img ? (
+                  {chipIcon ? (
                     isActive ? (
                       <span
                         role="img"
@@ -426,8 +438,8 @@ const Category = () => {
                         className="block w-9 h-9 sm:w-12 sm:h-12"
                         style={{
                           backgroundColor: "#ad1414",
-                          WebkitMaskImage: `url(${v3cat.img})`,
-                          maskImage: `url(${v3cat.img})`,
+                          WebkitMaskImage: `url(${chipIcon})`,
+                          maskImage: `url(${chipIcon})`,
                           WebkitMaskSize: "contain",
                           maskSize: "contain",
                           WebkitMaskRepeat: "no-repeat",
@@ -438,7 +450,7 @@ const Category = () => {
                       />
                     ) : (
                       <img
-                        src={v3cat.img}
+                        src={chipIcon}
                         alt={name}
                         className="w-9 h-9 sm:w-12 sm:h-12 object-contain"
                       />

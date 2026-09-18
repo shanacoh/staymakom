@@ -473,6 +473,7 @@ const LaunchExperiences = () => {
                 ? (dbCat?.name_fr || v3cat.fr)
                 : (dbCat?.name || v3cat.en);
               const IconComponent: LucideIcon = iconMap[v3cat.icon] ?? Sparkles;
+              const chipIcon = dbCat?.icon_image || v3cat.img;
 
               const words = name.split(" ");
               const mid = Math.ceil(words.length / 2);
@@ -498,7 +499,7 @@ const LaunchExperiences = () => {
                     />
                   )}
 
-                  {v3cat.img ? (
+                  {chipIcon ? (
                     isActive ? (
                       <span
                         role="img"
@@ -506,8 +507,8 @@ const LaunchExperiences = () => {
                         className="block w-9 h-9 sm:w-12 sm:h-12"
                         style={{
                           backgroundColor: "#ad1414",
-                          WebkitMaskImage: `url(${v3cat.img})`,
-                          maskImage: `url(${v3cat.img})`,
+                          WebkitMaskImage: `url(${chipIcon})`,
+                          maskImage: `url(${chipIcon})`,
                           WebkitMaskSize: "contain",
                           maskSize: "contain",
                           WebkitMaskRepeat: "no-repeat",
@@ -518,7 +519,7 @@ const LaunchExperiences = () => {
                       />
                     ) : (
                       <img
-                        src={v3cat.img}
+                        src={chipIcon}
                         alt={name}
                         className="w-9 h-9 sm:w-12 sm:h-12 object-contain"
                       />
