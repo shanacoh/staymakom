@@ -2,10 +2,11 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { subDays, isAfter } from "date-fns";
-import { AlertTriangle, ArrowUp, ArrowDown } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tile, TrendArrow } from "@/components/admin/DashboardTiles";
 
 type Lead = {
   created_at: string;
@@ -92,28 +93,6 @@ function useNewErrorsCount() {
     refetchInterval: 60000,
   });
   return data || 0;
-}
-
-function TrendArrow({ current, previous }: { current: number; previous: number }) {
-  if (current === previous) return null;
-  return current > previous ? (
-    <ArrowUp className="h-4 w-4 text-green-600" />
-  ) : (
-    <ArrowDown className="h-4 w-4 text-red-500" />
-  );
-}
-
-function Tile({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <Card>
-      <CardHeader className="p-3 pb-1">
-        <CardTitle className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
-          {label}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-3 pt-0">{children}</CardContent>
-    </Card>
-  );
 }
 
 // Réservations / Encaissé / Commission dépendent d'une logique de réservation encore éparpillée

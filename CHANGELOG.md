@@ -6,6 +6,21 @@
 
 ---
 
+## [2026-09-18] — Refonte de l'onglet Favoris (back-office)
+
+### Ce qui a changé côté code
+- `src/pages/admin/Favorites.tsx` (revu) : nouvelle présentation avec la direction artistique récente du back-office (titres discrets, chiffres en police mono, badges pastel). La vue "Par expérience" affiche maintenant deux tableaux simples classés par nombre de favoris — "Hôtel + Expérience" et "Expérience seule" — qui reprennent exactement les deux catégories du site client, plus deux tableaux similaires pour les catégories et les villes les plus favorisées. Les anciens graphiques en barres (peu lisibles) et la barre de recherche/filtre hôtel (devenus inutiles avec cette présentation simplifiée) sont retirés.
+- `src/components/admin/RankedList.tsx` (nouveau) : petit tableau réutilisable "rang + nom + compteur", pensé pour être réutilisé ailleurs dans le back-office pour d'autres classements.
+- `src/components/admin/DashboardTiles.tsx` (nouveau) : extraction des cartes KPI compactes (`Tile`) déjà utilisées sur le Tableau de bord, pour les partager avec Favoris sans dupliquer le code. `src/pages/admin/Dashboard.tsx` a été ajusté pour utiliser ce fichier partagé — aucun changement visuel sur cette page.
+
+### Ce qui a changé côté base de données
+- Aucun. Les requêtes existantes (table `wishlist`, RPC `get_wishlist_users_with_emails`, etc.) sont inchangées — seul l'affichage a été revu.
+
+### Pourquoi ce changement
+- Shana voulait que l'onglet Favoris montre l'essentiel de façon simple, avec le même style que les autres pages refaites récemment (Tableau de bord, Comptes, Gift Cards), et que les catégories affichées correspondent à la vraie structure du site (hôtel+expérience vs expérience seule) plutôt qu'un découpage inventé.
+
+---
+
 ## [2026-09-18] — Réorganise le menu Technique du back-office
 
 ### Ce qui a changé côté code
