@@ -172,6 +172,14 @@ export interface NewItemInput {
   notes?: string | null;
   city?: string | null;
   region?: string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  google_maps_link?: string | null;
+  contact_phone?: string | null;
+  contact_email?: string | null;
+  contact_instagram?: string | null;
+  contact_website?: string | null;
   commercial_status?: string;
   source?: string;
 }

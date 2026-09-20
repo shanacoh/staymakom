@@ -183,6 +183,8 @@ export default function AdminCatalogue() {
 
       <AddToCatalogueDialog
         mode={addMode}
+        entries={entries}
+        knownRegions={regions.map((r) => r.label)}
         onClose={() => setAddMode(null)}
         onCreated={(id, mode) => {
           // Un lien collé arrive en "À trier" : on bascule sur cet onglet pour que Shana le voie

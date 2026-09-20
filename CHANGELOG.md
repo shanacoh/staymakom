@@ -6,6 +6,24 @@
 
 ---
 
+## [2026-09-20] — Catalogue : la recherche préremplit un lieu à partir d'un site, d'une vidéo ou d'un nom
+
+### Ce qui a changé côté code
+- `supabase/functions/catalogue-lookup/` (nouvelle fonction serveur, déployée sur le projet, réservée aux administrateurs) : à partir d'un **site web**, elle lit la page (nom, adresse, téléphone, email, Instagram, description, photo) ; à partir d'une **vidéo TikTok** ou d'un **post Instagram**, elle copie la légende, l'auteur et la vignette ; à partir d'un **nom**, elle propose les lieux trouvés sur OpenStreetMap (avec plusieurs essais si le nom complet ne donne rien). L'IA déjà utilisée pour les traductions range le résultat et rédige une courte description en français ; elle ne fait que lire ce qu'on lui donne. La position sur la carte est retrouvée à partir de l'adresse. Chaque fichier a un rôle : lecture de page (`parse.ts`), résultats de carte (`osm.ts`), consignes à l'IA (`ai.ts`), adresses interdites (`safe-url.ts`), enchaînement de la recherche (`lookup.ts`), identification et branchements (`index.ts`). 50 tests automatiques.
+- `supabase/config.toml` : déclare la fonction (l'identification de l'administrateur est faite dans la fonction elle-même, comme `manage-users`).
+- Sécurité de la lecture des sites : adresses internes (localhost, réseaux privés, services de métadonnées) refusées, y compris après une redirection ; durée et taille de page limitées. Seules les pages web sont lues.
+- `src/lib/catalogue/lookup.ts`, `lookupApi.ts`, `lookupForm.ts` (nouveaux) : reconnaissance d'un lien ou d'un nom, fusion des résultats sans écraser ce qui a été tapé à la main, détection d'un lieu déjà présent dans le catalogue, préparation de l'enregistrement. 20 tests automatiques.
+- `src/components/admin/catalogue/LookupBox.tsx` (nouveau) et `AddToCatalogueDialog.tsx` (refait) : la fenêtre « Coller un lien » accepte aussi un nom. La recherche se lance au bouton, à la touche Entrée, ou dès qu'un lien est collé. Pour un nom, on choisit le bon lieu dans la liste. Un encart montre ce qui a été trouvé et d'où ça vient, et un avertissement signale un lieu qui ressemble à un lieu déjà dans le catalogue.
+- `src/pages/admin/Catalogue.tsx`, `src/lib/catalogue/queries.ts` : la fenêtre reçoit les lieux existants et les régions déjà utilisées (pour reprendre la même écriture).
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20260920040000_catalogue_create_item_contact_fields.sql` (appliquée) : la fonction qui crée un lieu enregistre aussi téléphone, email, Instagram et site web, toujours en une seule opération avec le lieu et son premier lien. Aucune table ni donnée existante n'est modifiée.
+
+### Pourquoi ce changement
+- Shana voulait pouvoir coller un site ou écrire un nom et que le catalogue cherche lui-même les infos, au lieu de tout saisir. Choix validé : sources gratuites d'abord (lecture du site, OpenStreetMap, IA déjà en place), sans compte ni clé supplémentaire. Limites connues : OpenStreetMap ne connaît pas tous les petits lieux ni tous les noms en hébreu ; l'aperçu Instagram est moins fiable que TikTok ; les liens Google Maps sont gardés tels quels (lecture prévue plus tard). À vérifier au premier essai réel : que l'accès IA (`LOVABLE_API_KEY`) est toujours actif. Sinon la recherche marche quand même, avec ce qui est lisible directement sur le site.
+
+---
+
 ## [2026-09-20] — Catalogue du back-office, lot 1 : le carnet unique de tous les lieux
 
 ### Ce qui a changé côté code

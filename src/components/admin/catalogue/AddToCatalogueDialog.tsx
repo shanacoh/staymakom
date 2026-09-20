@@ -7,113 +7,84 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { detectPlatform, isHttpUrl, sourceFromPlatform } from "@/lib/catalogue/embed";
+import { describeFacts, findSimilarEntries, toUrl, type AppliedLookup } from "@/lib/catalogue/lookup";
+import {
+  applyLookupToForm,
+  buildCreatePayload,
+  emptyForm,
+  markEdited,
+  type AddFormState,
+  type AddMode,
+} from "@/lib/catalogue/lookupForm";
 import { errorMessage, useCreateCatalogueItem } from "@/lib/catalogue/queries";
 import {
   NATURE_OPTIONS,
   PLACE_TYPE_OPTIONS,
-  PLATFORM_LABELS,
   STATUS_OPTIONS,
+  labelOf,
+  type CatalogueEntry,
   type CommercialStatus,
   type Nature,
   type PlaceType,
 } from "@/lib/catalogue/types";
+import { LookupBox } from "./LookupBox";
 
-export type AddMode = "place" | "link";
+export type { AddMode };
 
 interface AddToCatalogueDialogProps {
   mode: AddMode | null; // null = fermé
+  entries: CatalogueEntry[];
+  knownRegions: string[];
   onClose: () => void;
   onCreated: (id: string, mode: AddMode) => void;
 }
 
-interface FormState {
-  name: string;
-  url: string;
-  caption: string;
-  nature: Nature;
-  placeType: PlaceType;
-  status: CommercialStatus;
-  city: string;
-  region: string;
-  notes: string;
-}
-
-const EMPTY_FORM: FormState = {
-  name: "",
-  url: "",
-  caption: "",
-  nature: "inspiration",
-  placeType: "autre",
-  status: "idee",
-  city: "",
-  region: "",
-  notes: "",
-};
-
 /**
- * Deux entrées vers le même formulaire :
- * - "Coller un lien" : juste le lien (et si on veut un nom). Le lieu arrive en "À trier".
- * - "Ajouter un lieu" : un lieu décrit à la main, avec un lien en option.
+ * Deux entrées vers la même fenêtre :
+ * - "Coller un lien" : un lien ou un nom, la recherche préremplit, le lieu arrive dans "À trier".
+ * - "Ajouter un lieu" : un lieu décrit à la main, avec la même recherche en aide pour préremplir.
  */
-export function AddToCatalogueDialog({ mode, onClose, onCreated }: AddToCatalogueDialogProps) {
-  const [form, setForm] = useState<FormState>(EMPTY_FORM);
-  const [urlError, setUrlError] = useState<string | null>(null);
+export function AddToCatalogueDialog({ mode, entries, knownRegions, onClose, onCreated }: AddToCatalogueDialogProps) {
+  const [form, setForm] = useState<AddFormState>(emptyForm);
+  const [query, setQuery] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
   const create = useCreateCatalogueItem();
 
   const isLinkMode = mode === "link";
-  const update = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((f) => ({ ...f, [key]: value }));
+  const hasLookup = form.linkInfo !== null || form.sources.length > 0;
+  // En mode lien, les champs détaillés n'apparaissent qu'une fois la recherche faite
+  const showFullForm = !isLinkMode || hasLookup;
+  const status = form.statusTouched ? form.status : isLinkMode ? "a_trier" : "idee";
+  const facts = describeFacts({ ...form.extras, name: null, place_type: null, city: null, region: null, description: null });
+  // Lieu déjà dans le catalogue ? On compare le nom saisi (ou le nom écrit dans la recherche, jamais un lien)
+  const similar = findSimilarEntries(entries, form.name || (toUrl(query) ? "" : query));
+
+  const edit = <K extends keyof AddFormState>(key: K, value: AddFormState[K]) =>
+    setForm((f) => markEdited({ ...f, [key]: value }, key));
+  const applyLookup = (applied: AppliedLookup) => setForm((f) => applyLookupToForm(f, applied));
 
   const close = () => {
-    setForm(EMPTY_FORM);
-    setUrlError(null);
+    setForm(emptyForm());
+    setQuery("");
+    setFormError(null);
     onClose();
   };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const url = form.url.trim();
-
-    if (url && !isHttpUrl(url)) {
-      setUrlError("Colle un lien complet, qui commence par https://");
+    if (!mode) return;
+    const built = buildCreatePayload(form, mode, query);
+    if (built.error || !built.payload) {
+      setFormError(built.error ?? "Impossible de préparer ce lieu");
       return;
     }
-    if (isLinkMode && !url) {
-      setUrlError("Colle le lien de la vidéo ou de la page");
-      return;
-    }
-    if (!isLinkMode && !form.name.trim()) {
-      toast.error("Donne au moins un nom au lieu");
-      return;
-    }
-    setUrlError(null);
-
-    const platform = url ? detectPlatform(url) : null;
-    const name = form.name.trim() || (platform ? `À identifier (${PLATFORM_LABELS[platform]})` : "");
+    setFormError(null);
 
     try {
-      const id = await create.mutateAsync({
-        item: isLinkMode
-          ? {
-              name,
-              commercial_status: "a_trier",
-              source: platform ? sourceFromPlatform(platform) : "manuel",
-            }
-          : {
-              name,
-              nature: form.nature,
-              place_type: form.placeType,
-              commercial_status: form.status,
-              city: form.city.trim() || null,
-              region: form.region.trim() || null,
-              notes: form.notes.trim() || null,
-              source: platform ? sourceFromPlatform(platform) : "manuel",
-            },
-        link: url && platform ? { url, platform, caption: form.caption.trim() || null } : null,
-      });
-      toast.success(isLinkMode ? "Lien ajouté, à trier" : "Lieu ajouté au catalogue");
+      const id = await create.mutateAsync(built.payload);
+      toast.success(isLinkMode ? "Ajouté, à trier" : "Lieu ajouté au catalogue");
       close();
-      if (mode) onCreated(id, mode);
+      onCreated(id, mode);
     } catch (error) {
       // Cas typique : "Ce lien est déjà dans le catalogue (fiche : ...)"
       toast.error(errorMessage(error));
@@ -124,47 +95,70 @@ export function AddToCatalogueDialog({ mode, onClose, onCreated }: AddToCatalogu
     <Dialog open={mode !== null} onOpenChange={(open) => !open && close()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isLinkMode ? "Coller un lien" : "Ajouter un lieu"}</DialogTitle>
+          <DialogTitle>{isLinkMode ? "Coller un lien ou un nom" : "Ajouter un lieu"}</DialogTitle>
           <DialogDescription>
             {isLinkMode
-              ? "Colle le lien d'une vidéo TikTok, d'un reel Instagram ou d'une page. Le lieu arrive dans « À trier », tu pourras le nommer et le classer ensuite."
-              : "Décris un lieu à la main. Tu pourras compléter sa fiche après."}
+              ? "Colle un site, une vidéo TikTok, un reel Instagram, ou écris le nom d'un lieu. La recherche préremplit la fiche, tu vérifies avant d'ajouter."
+              : "Décris un lieu à la main, ou lance une recherche pour préremplir la fiche."}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={submit} className="space-y-4">
-          {isLinkMode && (
-            <div className="space-y-1.5">
-              <Label htmlFor="catalogue-url">Lien</Label>
-              <Input
-                id="catalogue-url"
-                autoFocus
-                value={form.url}
-                onChange={(e) => update("url", e.target.value)}
-                placeholder="https://www.tiktok.com/..."
-                inputMode="url"
-              />
-              {urlError && <p className="text-xs text-destructive">{urlError}</p>}
+          <LookupBox
+            query={query}
+            onQueryChange={setQuery}
+            label={isLinkMode ? "Lien ou nom du lieu" : "Rechercher pour préremplir (facultatif)"}
+            placeholder="https://... ou Vignoble Tishbi"
+            autoFocus
+            knownRegions={knownRegions}
+            onApply={applyLookup}
+          />
+
+          {hasLookup && (
+            <div className="rounded-lg border border-green-200 bg-green-50/60 p-3 text-xs">
+              <p className="font-medium text-green-800">
+                Trouvé{form.sources.length > 0 ? ` (${form.sources.join(", ")})` : ""}
+              </p>
+              {facts.length > 0 ? (
+                <ul className="mt-1.5 space-y-0.5 text-green-900">
+                  {facts.map((fact) => (
+                    <li key={fact.label}>
+                      <span className="text-green-700">{fact.label} :</span> {fact.value}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-1 text-green-800">Pas de coordonnées trouvées, complète à la main si besoin.</p>
+              )}
+              <p className="mt-1.5 text-[11px] text-green-800/80">
+                Ces infos sont enregistrées avec le lieu. Vérifie-les : la recherche peut se tromper.
+              </p>
             </div>
           )}
 
           <div className="space-y-1.5">
-            <Label htmlFor="catalogue-name">{isLinkMode ? "Nom du lieu (facultatif)" : "Nom du lieu"}</Label>
+            <Label htmlFor="catalogue-name">
+              {isLinkMode ? "Nom du lieu (facultatif)" : "Nom du lieu"}
+            </Label>
             <Input
               id="catalogue-name"
-              autoFocus={!isLinkMode}
               value={form.name}
-              onChange={(e) => update("name", e.target.value)}
+              onChange={(e) => edit("name", e.target.value)}
               placeholder={isLinkMode ? "Si tu le connais déjà" : "Ex : Vignoble des Collines"}
             />
+            {similar.length > 0 && (
+              <p className="text-xs text-amber-700">
+                Ça ressemble à un lieu déjà dans le catalogue : {similar.map((e) => e.display_name).join(", ")}.
+              </p>
+            )}
           </div>
 
-          {!isLinkMode && (
+          {showFullForm && (
             <>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label>Nature</Label>
-                  <Select value={form.nature} onValueChange={(v) => update("nature", v as Nature)}>
+                  <Select value={form.nature} onValueChange={(v) => edit("nature", v as Nature)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -179,7 +173,7 @@ export function AddToCatalogueDialog({ mode, onClose, onCreated }: AddToCatalogu
                 </div>
                 <div className="space-y-1.5">
                   <Label>Type</Label>
-                  <Select value={form.placeType} onValueChange={(v) => update("placeType", v as PlaceType)}>
+                  <Select value={form.placeType} onValueChange={(v) => edit("placeType", v as PlaceType)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -196,9 +190,12 @@ export function AddToCatalogueDialog({ mode, onClose, onCreated }: AddToCatalogu
 
               <div className="space-y-1.5">
                 <Label>Statut</Label>
-                <Select value={form.status} onValueChange={(v) => update("status", v as CommercialStatus)}>
+                <Select
+                  value={status}
+                  onValueChange={(v) => setForm((f) => ({ ...f, status: v as CommercialStatus, statusTouched: true }))}
+                >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue>{labelOf(STATUS_OPTIONS, status)}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {STATUS_OPTIONS.map((o) => (
@@ -213,11 +210,11 @@ export function AddToCatalogueDialog({ mode, onClose, onCreated }: AddToCatalogu
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="catalogue-city">Ville</Label>
-                  <Input id="catalogue-city" value={form.city} onChange={(e) => update("city", e.target.value)} />
+                  <Input id="catalogue-city" value={form.city} onChange={(e) => edit("city", e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="catalogue-region">Région</Label>
-                  <Input id="catalogue-region" value={form.region} onChange={(e) => update("region", e.target.value)} />
+                  <Input id="catalogue-region" value={form.region} onChange={(e) => edit("region", e.target.value)} />
                 </div>
               </div>
 
@@ -226,38 +223,45 @@ export function AddToCatalogueDialog({ mode, onClose, onCreated }: AddToCatalogu
                 <Textarea
                   id="catalogue-notes"
                   value={form.notes}
-                  onChange={(e) => update("notes", e.target.value)}
+                  onChange={(e) => edit("notes", e.target.value)}
                   placeholder="Pourquoi ce lieu est intéressant"
                   rows={3}
                 />
               </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="catalogue-url-optional">Lien de la vidéo ou de la page (facultatif)</Label>
-                <Input
-                  id="catalogue-url-optional"
-                  value={form.url}
-                  onChange={(e) => update("url", e.target.value)}
-                  placeholder="https://..."
-                  inputMode="url"
-                />
-                {urlError && <p className="text-xs text-destructive">{urlError}</p>}
-              </div>
             </>
           )}
 
-          {(isLinkMode || form.url.trim() !== "") && (
+          {!isLinkMode && (
+            <div className="space-y-1.5">
+              <Label htmlFor="catalogue-url-optional">Lien de la vidéo ou de la page (facultatif)</Label>
+              <Input
+                id="catalogue-url-optional"
+                value={form.url}
+                onChange={(e) => edit("url", e.target.value)}
+                placeholder="https://..."
+                inputMode="url"
+              />
+            </div>
+          )}
+
+          {(form.url.trim() !== "" || (isLinkMode && query.trim() !== "")) && (
             <div className="space-y-1.5">
               <Label htmlFor="catalogue-caption">Légende ou note sur ce lien (facultatif)</Label>
               <Textarea
                 id="catalogue-caption"
                 value={form.caption}
-                onChange={(e) => update("caption", e.target.value)}
-                placeholder="Colle ici le texte de la vidéo pour t'en souvenir si elle disparaît"
+                onChange={(e) => edit("caption", e.target.value)}
+                placeholder={
+                  form.linkInfo?.caption
+                    ? "Une légende a été copiée automatiquement, écris ici pour la remplacer"
+                    : "Colle ici le texte de la vidéo pour t'en souvenir si elle disparaît"
+                }
                 rows={2}
               />
             </div>
           )}
+
+          {formError && <p className="text-xs text-destructive">{formError}</p>}
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={close}>

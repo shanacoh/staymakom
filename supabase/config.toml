@@ -77,3 +77,6 @@ verify_jwt = false
 
 [functions.get-standalone-booking-by-token]
 verify_jwt = false
+
+[functions.catalogue-lookup]
+verify_jwt = false

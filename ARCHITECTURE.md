@@ -126,6 +126,7 @@ supabase/
     ├── send-partner-request/
     ├── collect-lead/
     ├── geocode-hotel/    # OpenStreetMap Nominatim
+    ├── catalogue-lookup/ # Recherche d'un lieu pour le catalogue (site, TikTok, Instagram, nom)
     ├── download-image/   # Image proxy/storage
     ├── manage-users/     # User CRUD (admin)
     ├── recommend-experiences/
@@ -314,7 +315,8 @@ public/
 > - **Suivi** (jamais dans les tables du site) : nature (`partenaire` / `hors_reseau` / `inspiration`), type, statut commercial (`a_trier` … `refuse`), dates de contact et de relance, cases contenu envoyé / visité / vidéo faite, catégories Staymakom, étiquettes. `catalogue_links` : plusieurs liens ou vidéos par lieu (lien, plateforme, légende et vignette copiées) ; le même lien ne peut exister qu'une fois (clé `url_key` normalisée : paramètres de partage TikTok/Instagram ignorés).
 > - **Fonctions** : `sync_catalogue_with_site()` (appelée à l'ouverture de la page ; crée une ligne pour chaque fiche publiée sans lieu ; volontairement pas un déclencheur sur les tables du site, pour ne jamais bloquer une publication) ; `catalogue_create_item(p_item, p_link)` (lieu + premier lien en une seule opération, refuse un lien déjà présent ; réutilisée au lot 2 par la capture iPhone). Toutes deux non privilégiées : les règles d'accès (admin uniquement) s'appliquent.
 > - **Code** : `src/pages/admin/Catalogue.tsx`, `src/components/admin/catalogue/*`, `src/lib/catalogue/*` (types et libellés, filtres et compteurs, brouillon de fiche, lecteurs vidéo TikTok/Instagram/YouTube reconstruits à partir de l'identifiant, requêtes). Logique pure testée (`npm test`).
-> - **À venir** : lot 2 (envoi depuis l'iPhone + aperçu automatique + boîte « À trier »), lot 3 (Carte, avec Leaflet/OpenStreetMap déjà en place), lot 4 (sélecteur dans les itinéraires). La Bibliothèque swipe reste séparée en attendant la réflexion sur les itinéraires.
+> - **Recherche d'un lieu** (`catalogue-lookup`, fonction serveur réservée aux admins, `verify_jwt = false` avec contrôle `has_role` dans la fonction) : un lien de site (lecture de la page : balises meta, données structurées JSON-LD, liens tel/mailto/Instagram, texte), un lien TikTok (service oEmbed public) ou Instagram (balises og, au mieux), ou un nom (Nominatim/OpenStreetMap, plusieurs essais plus courts si rien). L'IA (passerelle Lovable, `LOVABLE_API_KEY`, même accès que `translate-text`) range le résultat en JSON ; sans IA, la lecture directe de la page suffit. Garde-fous : adresses internes refusées (avant et après redirection), 8 s et 1,5 Mo max par page, une requête par seconde vers Nominatim. Le code est découpé en modules purs testés (`parse`, `osm`, `ai`, `safe-url`) et un enchaînement (`lookup`) dont les appels réseau sont injectés. Côté application : `lookup.ts` / `lookupForm.ts` (logique pure), `lookupApi.ts` (appel), `LookupBox.tsx` (écran). Une position n'est déduite que d'une vraie adresse (jamais d'un simple nom, risque d'homonyme).
+> - **À venir** : lot 2 (envoi depuis l'iPhone avec la même fonction, plus boîte « À trier » renforcée), lot 3 (Carte, avec Leaflet/OpenStreetMap déjà en place ; lecture des liens Google Maps), lot 4 (sélecteur dans les itinéraires). La Bibliothèque swipe reste séparée en attendant la réflexion sur les itinéraires.
 
 ### Hotel Admin Routes (`/hotel-admin/*` — role: hotel_admin)
 
