@@ -3,6 +3,7 @@
 // la fonction se teste donc sans rien appeler pour de vrai.
 
 import { buildAiMessages, parseAiSuggestion, type AiMessage } from "./ai.ts";
+import { isOutsideIsrael } from "./geo.ts";
 import { EMPTY_SUGGESTION, extractAddress, mapOsmResult, mapsLinkFor, matchKnownRegion, type Candidate, type OsmResult, type Suggestion } from "./osm.ts";
 import {
   extractHrefs,
@@ -619,7 +620,24 @@ async function lookupBySocial(url: URL, platform: LinkPlatform, deps: LookupDeps
 // Point d'entrée
 // ---------------------------------------------------------------------------
 
+/** Ajoute une alerte quand une position trouvée (ou un résultat proposé) n'est pas en Israël. */
+export function withPositionWarnings(result: LookupResult): LookupResult {
+  const warnings = [...result.warnings];
+  const { latitude, longitude } = result.suggestion;
+  if (isOutsideIsrael(latitude, longitude)) {
+    warnings.push(`La position trouvée (${latitude}, ${longitude}) n'est pas en Israël : c'est sans doute une erreur, vérifie le lieu.`);
+  }
+  if (result.candidates.some((c) => isOutsideIsrael(c.suggestion.latitude, c.suggestion.longitude))) {
+    warnings.push("Certains résultats sont hors d'Israël (ils sont signalés dans la liste) : ne choisis que celui qui est bien en Israël.");
+  }
+  return warnings.length === result.warnings.length ? result : { ...result, warnings };
+}
+
 export async function lookup(query: string, knownRegions: string[], deps: LookupDeps): Promise<LookupResult> {
+  return withPositionWarnings(await lookupUnchecked(query, knownRegions, deps));
+}
+
+async function lookupUnchecked(query: string, knownRegions: string[], deps: LookupDeps): Promise<LookupResult> {
   const text = query.trim();
   if (!text) throw new LookupError("Écris un nom de lieu ou colle un lien.");
   if (text.length > 500) throw new LookupError("La recherche est trop longue.");

@@ -1,6 +1,7 @@
 // Capture depuis le téléphone : un lien partagé devient un lieu "à trier" dans le catalogue.
 // Logique pure (testée) ; l'accès à la base et la réponse web sont dans capture-catalogue-link/index.ts.
 
+import { isOutsideIsrael } from "./geo.ts";
 import { EMPTY_SUGGESTION, type Candidate, type Suggestion } from "./osm.ts";
 import { platformOf, type LinkInfo, type LinkPlatform, type LookupResult } from "./lookup.ts";
 
@@ -40,13 +41,15 @@ const simplify = (value: string): string =>
 
 /**
  * Un lieu de la carte n'est retenu que s'il porte le même nom que celui repéré dans la légende
- * (l'un contenu dans l'autre). Sans ça, on garderait un homonyme et une mauvaise position.
+ * (l'un contenu dans l'autre) et qu'il est en Israël. Sans ça, on garderait un homonyme et une mauvaise position.
  */
 export function pickConfidentCandidate(name: string | null, candidates: Candidate[]): Candidate | null {
   const wanted = simplify(name ?? "");
   if (wanted.length < 4) return null;
   return (
     candidates.find((candidate) => {
+      // Un homonyme situé hors d'Israël n'est jamais le bon lieu
+      if (isOutsideIsrael(candidate.suggestion.latitude, candidate.suggestion.longitude)) return false;
       const other = simplify(candidate.suggestion.name ?? "");
       return other.length >= 4 && (other === wanted || other.includes(wanted) || wanted.includes(other));
     }) ?? null

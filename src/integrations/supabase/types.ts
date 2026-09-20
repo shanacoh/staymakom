@@ -4753,6 +4753,8 @@ export type Database = {
           links_count: number | null
           live_id: string | null
           live_kind: string | null
+          live_latitude: number | null
+          live_longitude: number | null
           live_slug: string | null
           live_status: string | null
           longitude: number | null

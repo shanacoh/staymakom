@@ -73,6 +73,9 @@ export interface CatalogueEntry {
   site_category_ids: string[];
   links_count: number;
   first_thumbnail: string | null;
+  /** Position écrite sur la fiche du site elle-même (même si le catalogue la corrige) : sert à alerter. */
+  live_latitude: number | null;
+  live_longitude: number | null;
 }
 
 export interface CatalogueCategory {

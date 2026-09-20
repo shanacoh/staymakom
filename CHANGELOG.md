@@ -6,6 +6,42 @@
 
 ---
 
+## [2026-09-20] — Carte : alerte quand une position n'est pas en Israël
+
+### Ce qui a changé côté code
+- `src/lib/catalogue/geo.ts` (nouveau, 7 tests) : la règle « tous les lieux sont en Israël » (un rectangle large autour du pays). Une position en dehors est une erreur de données.
+- `src/components/admin/catalogue/PositionAlerts.tsx` (nouveau) et `src/pages/admin/Carte.tsx` : les lieux dont la position n'est pas en Israël ne sont plus dessinés sur la carte (ils la faisaient dézoomer sur le monde). Ils apparaissent dans une alerte rouge, avec leur position actuelle et les mêmes outils que « À localiser » pour les corriger (Chercher, Cliquer sur la carte, Lien Maps). Une seconde alerte orange liste les fiches du SITE dont la position est aberrante, avec un bouton « Modifier la fiche ». Ces alertes ne dépendent pas des filtres.
+- `src/pages/admin/Catalogue.tsx` : bandeau d'alerte avec un lien vers la carte. `CatalogueItemPanel.tsx` : avertissement quand on saisit une latitude et une longitude hors d'Israël (peut-être inversées). `SiteLinkSection.tsx` : alerte dans la fiche d'un lieu dont la fiche du site est fausse. Sur la carte, confirmer une position hors d'Israël est bloqué.
+- `src/lib/catalogue/map.ts` : `splitByPosition` renvoie maintenant aussi les lieux suspects. Les résultats de recherche hors d'Israël sont signalés dans la liste.
+- `supabase/functions/_shared/lookup/geo.ts` (nouveau) et `lookup.ts` : la recherche prévient quand une position trouvée n'est pas en Israël ; `capture.ts` : la capture depuis l'iPhone n'adopte plus un lieu de la carte situé à l'étranger. Fonctions `catalogue-lookup` et `capture-catalogue-link` redéployées. 12 tests de plus.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20260920050000_catalogue_overview_position_override.sql` (appliquée) : dans la vue de lecture du catalogue, la position corrigée dans le catalogue l'emporte désormais sur celle de la fiche du site (si latitude ET longitude y sont renseignées), et deux colonnes (`live_latitude`, `live_longitude`) donnent la position écrite sur la fiche du site pour continuer d'alerter. Aucune table du site n'est modifiée.
+- Migration `supabase/migrations/20260920060000_fix_standalone_positions_israel.sql` (appliquée, données du site) : corrige la position de 9 expériences publiées dont la latitude et la longitude étaient des valeurs aberrantes (1, 1 / 1, 2 / 1, 3, dans l'océan). Sur le site public, leur page affichait une carte au mauvais endroit et un lien « itinéraire » qui y menait. Positions retrouvées à partir de l'adresse de chaque fiche (OpenStreetMap) et validées par Shana : 5 sûres (HaYarkon 41 à Tel Aviv, Dolphin Reef ×2, Havayat HaRochvim au Carmel, Mamilla Mall), 2 approximatives au port de Jaffa (Chocolate in the dark, Dinner in the dark), 2 au centre-ville (See through the sea à Eilat, plage introuvable ; A morning in a Tel Aviv kitchen, pas d'adresse). Chaque ligne n'est modifiée que si sa position est encore hors d'Israël (rien n'est écrasé, rejouable). Les 4 brouillons concernés (invisibles pour les clients, absents du catalogue) ne sont pas touchés : l'alerte les signalera à leur publication. Vérifié après coup : plus aucune position hors d'Israël dans le catalogue ni sur les fiches publiées.
+
+### Pourquoi ce changement
+- Shana a vu des épingles hors d'Israël sur la carte. Tous ses lieux sont en Israël : une position ailleurs est forcément un bug de données, à signaler et à corriger, plutôt qu'à afficher.
+
+---
+
+## [2026-09-20] — Catalogue, lot 3 : la Carte
+
+### Ce qui a changé côté code
+- `src/pages/admin/Carte.tsx` (nouveau) : remplace l'écran « Bientôt disponible » de `/admin/carte`. Une carte de tous les lieux du catalogue (77 sur 96 aujourd'hui), avec les mêmes onglets par nature et les mêmes filtres que le catalogue, un compteur, et une légende des couleurs. Les lieux « À trier » et « Refusé ou abandonné » n'apparaissent pas (sauf si on filtre sur ce statut).
+- `src/components/admin/catalogue/CatalogueMap.tsx` (nouveau) : la carte (fond OpenStreetMap, déjà utilisé ailleurs sur le site, gratuit). Épingles colorées par statut, épingles proches regroupées avec leur nombre (un clic sur un groupe zoome dessus), fenêtre au clic (nom, type, ville, statut, « Ouvrir la fiche », « Voir dans Google Maps »). Les noms sont affichés comme du texte simple, jamais comme du code (vérifié avec un nom piégé).
+- `src/components/admin/catalogue/LocateList.tsx` (nouveau) : la colonne « À localiser » pour les lieux sans position (19 aujourd'hui, dont 7 ont une adresse). Trois façons de les placer : « Chercher » (retrouve le lieu sur la carte par son adresse, puis son nom), « Cliquer sur la carte », ou « Lien Maps » (colle un lien Google Maps du lieu). Un repère rouge montre la position proposée et rien n'est enregistré avant « Confirmer ».
+- `src/lib/catalogue/map.ts` (nouveau) : logique de la carte (séparer lieux placés et à localiser, regrouper les épingles, préparer les recherches), 12 tests automatiques. Le regroupement est écrit à la main, sans nouvelle bibliothèque : le projet a trois fichiers de versions de paquets (npm et bun) et un seul pouvait être mis à jour ici, ce qui aurait pu bloquer un déploiement.
+- `src/components/admin/catalogue/CatalogueTabs.tsx` (nouveau, extrait de `Catalogue.tsx`) : les onglets sont partagés entre le catalogue et la carte. `CatalogueFilters.tsx` : le choix du tri devient facultatif (inutile sur la carte). `src/App.tsx` : la route `/admin/carte` affiche la nouvelle page (chargée à part).
+- Vérifié dans un vrai navigateur, sur une page de test temporaire (supprimée) : affichage de la carte, groupes, fenêtres, clic pour placer. Ce test a révélé et fait corriger un défaut : activer le mode « placer » effaçait le fond de carte.
+
+### Ce qui a changé côté base de données
+- Aucun changement de structure. Les positions confirmées s'enregistrent dans les colonnes de position déjà présentes de `catalogue_items`. Pour une fiche du site sans position, cette position sert de secours dans le catalogue et n'est pas écrite sur la fiche du site elle-même.
+
+### Pourquoi ce changement
+- Shana veut voir tous ses lieux sur une carte, filtrable comme le catalogue, pour repérer où sont ses partenaires et ses idées avant de bâtir un itinéraire, et compléter les positions manquantes sans quitter la page.
+
+---
+
 ## [2026-09-20] — Catalogue, lot 2 : envoi depuis l'iPhone et boîte « À trier »
 
 ### Ce qui a changé côté code

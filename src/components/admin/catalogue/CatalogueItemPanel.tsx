@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { buildPatch, draftFromEntry, hasChanges, type CatalogueDraft } from "@/lib/catalogue/draft";
 import { isHttpUrl } from "@/lib/catalogue/embed";
+import { outsideIsraelWarning } from "@/lib/catalogue/geo";
 import { todayIso } from "@/lib/catalogue/filters";
 import { errorMessage, useDeleteCatalogueItem, useUpdateCatalogueItem } from "@/lib/catalogue/queries";
 import {
@@ -400,6 +401,11 @@ export function CatalogueItemPanel({ entry, allEntries, categories, onClose }: C
                 <Field label="Lien Google Maps" htmlFor="panel-maps">
                   <Input id="panel-maps" value={draft.google_maps_link} onChange={(e) => set("google_maps_link", e.target.value)} inputMode="url" />
                 </Field>
+                {outsideIsraelWarning(draft.latitude, draft.longitude) && (
+                  <p role="alert" className="text-xs text-destructive">
+                    {outsideIsraelWarning(draft.latitude, draft.longitude)}
+                  </p>
+                )}
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Latitude" htmlFor="panel-lat">
                     <Input id="panel-lat" value={draft.latitude} onChange={(e) => set("latitude", e.target.value)} inputMode="decimal" placeholder="32.0853" />

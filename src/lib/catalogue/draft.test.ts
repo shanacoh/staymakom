@@ -52,6 +52,8 @@ function makeEntry(overrides: Partial<CatalogueEntry> = {}): CatalogueEntry {
     site_category_ids: [],
     links_count: 0,
     first_thumbnail: null,
+    live_latitude: null,
+    live_longitude: null,
     ...overrides,
   };
 }

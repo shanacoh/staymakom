@@ -51,6 +51,15 @@ describe("pickConfidentCandidate", () => {
     expect(pickConfidentCandidate("CAFE RIMON", list)?.label).toBe("Café Rimon");
   });
 
+  it("refuse un homonyme situé hors d'Israël, même si le nom correspond", () => {
+    const abroad = candidate("Tishbi Winery", { latitude: 48.85, longitude: 2.35 });
+    const inIsrael = candidate("Tishbi Winery", { latitude: 32.57, longitude: 34.95 });
+    expect(pickConfidentCandidate("Tishbi", [abroad])).toBeNull();
+    expect(pickConfidentCandidate("Tishbi", [abroad, inIsrael])).toBe(inIsrael);
+    // un candidat sans position n'est pas suspect
+    expect(pickConfidentCandidate("Tishbi", [candidate("Tishbi Winery")])?.label).toBe("Tishbi Winery");
+  });
+
   it("refuse un homonyme lointain, un nom trop court ou l'absence de nom", () => {
     const list = [candidate("Tishbi Winery")];
     expect(pickConfidentCandidate("Hôtel Mamilla", list)).toBeNull();

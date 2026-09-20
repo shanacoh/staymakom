@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { errorMessage, useSiteItemsForLinking, useUpdateCatalogueItem, type SiteItemOption } from "@/lib/catalogue/queries";
+import { formatPosition, positionOf, siteHasBadPosition } from "@/lib/catalogue/geo";
 import {
   LIVE_KIND_LABELS,
   siteEditPath,
@@ -92,6 +93,16 @@ export function SiteLinkSection({ entry, allEntries }: SiteLinkSectionProps) {
           Le nom, la photo, la région, la ville et la position viennent de la fiche du site. Pour les changer,
           modifie la fiche elle-même.
         </p>
+        {siteHasBadPosition(entry) && (
+          <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs text-destructive">
+            La fiche du site contient une position hors d'Israël
+            {(() => {
+              const position = positionOf(entry.live_latitude, entry.live_longitude);
+              return position ? ` (${formatPosition(position.lat, position.lng)})` : "";
+            })()}
+            : les clients voient une mauvaise carte sur la page. Corrige-la sur la fiche du site.
+          </p>
+        )}
         <div className="flex flex-wrap gap-2">
           {editPath && (
             <Button asChild size="sm" variant="outline">

@@ -23,6 +23,8 @@ interface CatalogueFiltersProps {
   categories: CatalogueCategory[];
   regions: PlaceOption[];
   cities: PlaceOption[];
+  /** Affiche le choix du tri (inutile sur la carte). */
+  showSort?: boolean;
 }
 
 const CONTENT_OPTIONS: { value: ContentFilter; label: string }[] = [
@@ -65,7 +67,7 @@ function FilterSelect({
   );
 }
 
-export function CatalogueFilters({ filters, onChange, categories, regions, cities }: CatalogueFiltersProps) {
+export function CatalogueFilters({ filters, onChange, categories, regions, cities, showSort = true }: CatalogueFiltersProps) {
   const set = <K extends keyof CatalogueFilterState>(key: K, value: CatalogueFilterState[K]) =>
     onChange({ ...filters, [key]: value });
 
@@ -81,6 +83,7 @@ export function CatalogueFilters({ filters, onChange, categories, regions, citie
             className="h-9 pl-8 text-sm"
           />
         </div>
+        {showSort && (
         <div className="w-full sm:w-52">
           <Select value={filters.sort} onValueChange={(value) => set("sort", value as SortKey)}>
             <SelectTrigger className="h-9 text-xs" aria-label="Trier par">
@@ -95,6 +98,7 @@ export function CatalogueFilters({ filters, onChange, categories, regions, citie
             </SelectContent>
           </Select>
         </div>
+        )}
         {hasActiveFilters(filters) && (
           <Button
             type="button"

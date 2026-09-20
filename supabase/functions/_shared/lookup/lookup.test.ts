@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { cleanInstagramCaption, cleanTitle, looksLikeUrl, lookup, LookupError, platformOf, queryVariants, type LookupDeps } from "./lookup";
+import { cleanInstagramCaption, cleanTitle, looksLikeUrl, lookup, LookupError, platformOf, queryVariants, withPositionWarnings, type LookupDeps } from "./lookup";
 
 const SITE_HTML = `<html lang="fr"><head>
 <title>Vignoble Éden | Accueil</title>
@@ -335,3 +335,29 @@ describe("recherche à partir d'un lien Google Maps", () => {
     expect(result.warnings[0]).toMatch(/adresse/);
   });
 });
+
+describe("alertes de position hors d'Israël", () => {
+  it("prévient quand un résultat trouvé partout dans le monde n'est pas en Israël", async () => {
+    const paris = { lat: "48.85", lon: "2.35", name: "Tishbi Winery", category: "craft", type: "winery", address: { town: "Paris" } };
+    const { deps } = makeDeps([(url) => (url.searchParams.get("countrycodes") === "il" ? json([]) : json([paris]))]);
+    const result = await lookup("Tishbi", [], deps);
+    expect(result.candidates).toHaveLength(1);
+    expect(result.warnings.join(" ")).toMatch(/hors d'Israël/);
+  });
+
+  it("prévient quand la position d'un lien Google Maps n'est pas en Israël", async () => {
+    const { deps } = makeDeps([
+      (url) => (url.pathname === "/reverse" ? json({ address: { town: "Paris" } }) : undefined),
+      (url) => (url.hostname === "nominatim.openstreetmap.org" ? json([]) : undefined),
+    ]);
+    const result = await lookup("https://www.google.com/maps/place/Tour+Eiffel/@48.8584,2.2945,17z/data=!3d48.8584!4d2.2945", [], deps);
+    expect(result.suggestion.latitude).toBe(48.8584);
+    expect(result.warnings.join(" ")).toMatch(/n'est pas en Israël/);
+  });
+
+  it("ne dit rien quand tout est en Israël, et ne modifie pas le résultat d'origine", () => {
+    const base = { kind: "site" as const, suggestion: { latitude: 32.5, longitude: 34.9 }, candidates: [], warnings: [], link: null, sources: [] };
+    expect(withPositionWarnings(base as never)).toBe(base as never);
+  });
+});
+

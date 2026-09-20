@@ -1,11 +1,12 @@
 import { useDeferredValue, useMemo, useState } from "react";
-import { Link2, Plus } from "lucide-react";
+import { Link } from "react-router-dom";
+import { AlertTriangle, Link2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tile } from "@/components/admin/DashboardTiles";
 import { AddToCatalogueDialog, type AddMode } from "@/components/admin/catalogue/AddToCatalogueDialog";
 import { CatalogueFilters } from "@/components/admin/catalogue/CatalogueFilters";
+import { CatalogueTabs } from "@/components/admin/catalogue/CatalogueTabs";
 import { CatalogueItemPanel } from "@/components/admin/catalogue/CatalogueItemPanel";
 import { CatalogueTable } from "@/components/admin/catalogue/CatalogueTable";
 import { InboxList } from "@/components/admin/catalogue/InboxList";
@@ -21,15 +22,9 @@ import {
   type QuickFilter,
   type TabKey,
 } from "@/lib/catalogue/filters";
+import { hasSuspectPosition, siteHasBadPosition } from "@/lib/catalogue/geo";
 import { errorMessage, useCatalogueCategories, useCatalogueEntries } from "@/lib/catalogue/queries";
-import { NATURE_OPTIONS } from "@/lib/catalogue/types";
 import { cn } from "@/lib/utils";
-
-const TABS: { value: TabKey; label: string }[] = [
-  { value: "all", label: "Tous" },
-  ...NATURE_OPTIONS.map((n) => ({ value: n.value as TabKey, label: n.label })),
-  { value: "a_trier", label: "À trier" },
-];
 
 function CounterTile({
   label,
@@ -70,6 +65,14 @@ export default function AdminCatalogue() {
   const today = useMemo(() => todayIso(), []);
   const counts = useMemo(() => countByTab(entries), [entries]);
   const tiles = useMemo(() => computeTiles(entries, today), [entries, today]);
+  // Tous les lieux sont en Israël : une position ailleurs est une erreur de données à signaler
+  const badPositions = useMemo(
+    () =>
+      entries.filter(
+        (e) => e.commercial_status !== "a_trier" && e.commercial_status !== "refuse" && (hasSuspectPosition(e) || siteHasBadPosition(e))
+      ).length,
+    [entries]
+  );
   const regions = useMemo(() => distinctPlaces(entries, (e) => e.display_region), [entries]);
   const cities = useMemo(() => distinctPlaces(entries, (e) => e.display_city), [entries]);
   // La liste suit les filtres avec un léger décalage : la saisie dans la recherche reste fluide
@@ -103,6 +106,20 @@ export default function AdminCatalogue() {
         </div>
       </div>
 
+      {badPositions > 0 && (
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm">
+          <span className="flex items-start gap-2 text-destructive">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>
+              {badPositions} lieu{badPositions > 1 ? "x ont" : " a"} une position hors d'Israël : c'est une erreur de données à corriger.
+            </span>
+          </span>
+          <Button asChild size="sm" variant="outline">
+            <Link to="/admin/carte">Voir sur la carte</Link>
+          </Button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <CounterTile
           label="À trier"
@@ -127,16 +144,12 @@ export default function AdminCatalogue() {
         />
       </div>
 
-      <Tabs value={filters.tab} onValueChange={(tab) => setFilters((f) => ({ ...f, tab: tab as TabKey }))}>
-        <TabsList className="h-auto flex-wrap justify-start">
-          {TABS.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value} className="text-xs">
-              {tab.label}
-              <span className="ml-1.5 text-muted-foreground">{counts[tab.value]}</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      <CatalogueTabs
+        value={filters.tab}
+        counts={counts}
+        withInbox
+        onChange={(tab) => setFilters((f) => ({ ...f, tab }))}
+      />
 
       <CatalogueFilters filters={filters} onChange={setFilters} categories={categories} regions={regions} cities={cities} />
 
