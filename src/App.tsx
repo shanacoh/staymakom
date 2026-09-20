@@ -98,7 +98,6 @@ const StandaloneBookingConfirmation = lazy(() => import("./pages/StandaloneBooki
 const TailorMadeQuestionnaire    = lazy(() => import("./pages/TailorMadeQuestionnaire"));
 const AdminStandaloneBookingDetails = lazy(() => import("./pages/admin/StandaloneBookingDetails"));
 const AdminBoatExperiences       = lazy(() => import("./pages/admin/BoatExperiences"));
-const AdminBoatRequests          = lazy(() => import("./pages/admin/BoatRequests"));
 
 // ── Module Swipe Itinéraire ────────────────────────────────────────────────
 const SwipePublic                = lazy(() => import("./pages/swipe/SwipePublic"));
@@ -285,10 +284,11 @@ const AppContent = () => {
             <Route path="standalone-bookings/grid" element={<Navigate to="/admin/bookings?tab=experiences" replace />} />
             <Route path="reservations/:bookingId" element={<AdminReservationDetails />} />
             <Route path="standalone-bookings/:bookingId" element={<AdminStandaloneBookingDetails />} />
-            <Route path="boats" element={<AdminBoatExperiences />} />
+            {/* Liste et demandes bateaux : désormais dans Expériences (onglet Bateaux) et Réservations (filtre Bateaux). */}
+            <Route path="boats" element={<Navigate to="/admin/experiences2?tab=boats" replace />} />
             <Route path="boats/new" element={<AdminBoatExperiences />} />
             <Route path="boats/edit/:experienceId" element={<AdminBoatExperiences />} />
-            <Route path="boats/requests" element={<AdminBoatRequests />} />
+            <Route path="boats/requests" element={<Navigate to="/admin/bookings?tab=experiences&boats=1&requests=1" replace />} />
             <Route path="gift-cards" element={<AdminGiftCards />} />
             <Route path="gift-cards/:id" element={<AdminGiftCardDetails />} />
             <Route path="customers" element={<AdminCustomers />} />

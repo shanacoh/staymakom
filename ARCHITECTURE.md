@@ -295,12 +295,18 @@ public/
 | `/admin/hyperguest/config` | HyperGuestConfigPage |
 | `/admin/revolut/debug` | RevolutDebugPage |
 | `/admin/standalone-bookings/grid` | AdminStandaloneBookingsGrid |
-| `/admin/boats`, `/admin/boats/requests` | AdminBoatExperiences, AdminBoatRequests |
+| `/admin/boats/new`, `/admin/boats/edit/:experienceId` | AdminBoatExperiences (formulaire bateau). `/admin/boats` et `/admin/boats/requests` sont redirigées vers Expériences (onglet Bateaux) et Réservations (filtre Bateaux). |
 | `/admin/swipe/dossiers`, `/admin/swipe/bibliotheque`, `/admin/swipe/categories` | Module Swipe Itinéraire |
 | `/admin/partenaires/experiences` | ComingSoonAdmin ("bientôt disponible") |
 | `/admin/carte`, `/admin/catalogue`, `/admin/itineraires`, `/admin/promo`, `/admin/headquarter/sales`, `/admin/headquarter/marketing`, `/admin/headquarter/operation` | ComingSoonAdmin ("bientôt disponible") |
 
 > Note (2026-09-17) : les anciennes pages de secours `/admin/backup/*` (Hotels V1, Experiences V1) ont été supprimées — plus utilisées depuis le passage aux pages V2. Le menu de gauche (`AdminSidebar.tsx`) est organisé en 4 groupes (Aperçu, Opérations, Croissance, Headquarter) plus un groupe Technique (HyperGuest, Revolut), repris de la maquette IA de Shana ; plusieurs entrées pointent encore vers des écrans "bientôt disponible" en attendant leur construction section par section.
+
+> Note (2026-09-20) — Bateaux : ce sont des expériences "Experience Only" (`standalone_experiences`) rangées dans la catégorie `bateaux`, toujours "sur demande" (`is_bookable = false`, jamais de paiement en ligne). Trois vues d'une même donnée :
+> - **Vitrine `/boat`** (page `Boats`) : toute l'année, indépendante de la catégorie (identifiant codé en dur dans `src/lib/boatsCategory.ts`), avec pop-up de détail (`BoatDetailModal`).
+> - **Catégorie Bateaux** (puce de l'accueil qui filtre la grille sur place, comme les autres catégories ; page directe `/category/bateaux`) : saisonnière. Publiée = puce visible et page accessible ; non publiée (draft) = puce et page disparaissent. Les bateaux sont absents de la grille par défaut de l'accueil. Piloté à la main depuis la page Catégories du back-office.
+> - **Back-office** : liste/prix/marges dans Expériences (onglet Bateaux), demandes et réservations dans Réservations (bouton filtre Bateaux). Les demandes sont écrites dans `standalone_experience_requests` puis converties à la main en `standalone_bookings`.
+> Sur l'accueil et la page catégorie, une puce n'apparaît que si sa catégorie est publiée en base.
 
 ### Hotel Admin Routes (`/hotel-admin/*` — role: hotel_admin)
 

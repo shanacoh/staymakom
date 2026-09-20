@@ -1,7 +1,9 @@
 /**
  * Back office dédié à la catégorie Bateaux : liste + création/édition.
- * Réutilise StandaloneExperienceForm (même éditeur que le reste des
- * expériences standalone) via defaultCategoryId, pas de formulaire dédié.
+ * La liste est affichée dans l'onglet "Bateaux" de la page Expériences
+ * (/admin/experiences2?tab=boats) ; le formulaire vit sur /admin/boats/new et
+ * /admin/boats/edit/:id. Réutilise StandaloneExperienceForm (même éditeur que
+ * le reste des expériences standalone) via defaultCategoryId, pas de formulaire dédié.
  * Bascule liste/formulaire selon la route, même pattern que Experiences2.tsx.
  */
 import { useMemo } from "react";
@@ -142,7 +144,7 @@ export default function BoatExperiences() {
   };
 
   const handleClose = () => {
-    navigate("/admin/boats");
+    navigate("/admin/experiences2?tab=boats");
     queryClient.invalidateQueries({ queryKey: BOATS_QUERY_KEY });
   };
 
@@ -162,7 +164,7 @@ export default function BoatExperiences() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold">Mes bateaux</h2>
+          <h2 className="text-xl sm:text-2xl font-bold">Mes bateaux</h2>
           <p className="text-sm text-muted-foreground">Fiches de la catégorie Bateaux, affichées sur /boat</p>
         </div>
         <Button onClick={() => navigate("/admin/boats/new")}>

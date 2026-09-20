@@ -88,16 +88,27 @@ const AdminCategories = () => {
   const togglePublishMutation = useMutation({
     mutationFn: async ({ id, currentStatus }: { id: string; currentStatus: string }) => {
       const newStatus = currentStatus === "published" ? "draft" : "published";
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("categories")
         .update({ status: newStatus })
-        .eq("id", id);
+        .eq("id", id)
+        .select("id");
 
       if (error) throw error;
+      // Une mise à jour refusée par les droits d'accès ne renvoie pas d'erreur mais 0 ligne.
+      if (!data || data.length === 0) throw new Error("Aucune catégorie modifiée");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
+      // Rafraîchit aussi les listes de catégories du site public (accueil, page catégorie),
+      // gardées en mémoire 5 minutes : sinon une puce dépubliée resterait visible.
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          typeof query.queryKey[0] === "string" && query.queryKey[0].includes("categor"),
+      });
       toast.success("Category status updated");
+    },
+    onError: (error: Error) => {
+      toast.error("Impossible de changer le statut", { description: error.message });
     },
   });
 

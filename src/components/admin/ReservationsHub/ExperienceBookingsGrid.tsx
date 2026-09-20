@@ -7,6 +7,7 @@
 
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Search, Mail } from "lucide-react";
+import { Search, Mail, Sailboat } from "lucide-react";
 import BookingsGridTable from "@/components/admin/BookingsGrid/BookingsGridTable";
 import {
   EXPERIENCE_COLUMNS,
@@ -32,6 +33,7 @@ import FiltersPopoverButton from "./FiltersPopoverButton";
 import InfoPopoverButton from "./InfoPopoverButton";
 import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
 import StandaloneRequestsTable from "@/components/admin/StandaloneRequestsTable";
+import { BOATS_CATEGORY_ID } from "@/lib/boatsCategory";
 
 function parseColumnValue(key: ColumnKey, raw: string): { ok: boolean; value?: string | number | null } {
   const trimmed = raw.trim();
@@ -78,13 +80,17 @@ interface Props {
 
 const ExperienceBookingsGrid = ({ createOpen, onCreateOpenChange }: Props) => {
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  // Le filtre Bateaux et l'ouverture du panneau de demandes peuvent venir de l'URL
+  // (ex. ancienne page "Demandes bateaux" redirigée ici).
+  const [boatsOnly, setBoatsOnly] = useState(searchParams.get("boats") === "1");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [supplierPaymentFilter, setSupplierPaymentFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [newRowDraft, setNewRowDraft] = useState<NewBookingDraft>({});
   const [isCreatingRow, setIsCreatingRow] = useState(false);
-  const [requestsOpen, setRequestsOpen] = useState(false);
+  const [requestsOpen, setRequestsOpen] = useState(searchParams.get("requests") === "1");
 
   const activeFilterCount = [dateFrom, dateTo, supplierPaymentFilter !== "all"].filter(Boolean).length;
   const resetFilters = () => {
@@ -93,16 +99,19 @@ const ExperienceBookingsGrid = ({ createOpen, onCreateOpenChange }: Props) => {
     setSupplierPaymentFilter("all");
   };
 
-  const queryKey = ["admin-standalone-bookings-grid", dateFrom, dateTo, supplierPaymentFilter] as const;
+  const queryKey = ["admin-standalone-bookings-grid", dateFrom, dateTo, supplierPaymentFilter, boatsOnly] as const;
 
   const { data: rows, isLoading } = useQuery({
     queryKey,
     queryFn: async () => {
+      // Filtre Bateaux : on passe par la fiche d'expérience liée (catégorie Bateaux).
+      // Une réservation manuelle saisie sans fiche liée n'est donc pas reconnue comme bateau.
       let query = supabase
         .from("standalone_bookings")
-        .select("*")
+        .select(boatsOnly ? "*, standalone_experiences!inner(category_id)" : "*")
         .order("booking_date", { ascending: false })
         .order("created_at", { ascending: false });
+      if (boatsOnly) query = query.eq("standalone_experiences.category_id", BOATS_CATEGORY_ID);
 
       if (dateFrom) query = query.gte("booking_date", dateFrom);
       if (dateTo) query = query.lte("booking_date", dateTo);
@@ -110,17 +119,19 @@ const ExperienceBookingsGrid = ({ createOpen, onCreateOpenChange }: Props) => {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as BookingRow[];
+      return data as unknown as BookingRow[];
     },
   });
 
   const { data: newRequestsCount } = useQuery({
-    queryKey: ["admin-standalone-requests-new-count"],
+    queryKey: ["admin-standalone-requests-new-count", boatsOnly],
     queryFn: async () => {
-      const { count, error } = await (supabase as any)
+      let countQuery = (supabase as any)
         .from("standalone_experience_requests")
-        .select("id", { count: "exact", head: true })
+        .select(boatsOnly ? "id, standalone_experiences!inner(category_id)" : "id", { count: "exact", head: true })
         .eq("status", "new");
+      if (boatsOnly) countQuery = countQuery.eq("standalone_experiences.category_id", BOATS_CATEGORY_ID);
+      const { count, error } = await countQuery;
       if (error) throw error;
       return count ?? 0;
     },
@@ -206,6 +217,16 @@ const ExperienceBookingsGrid = ({ createOpen, onCreateOpenChange }: Props) => {
           />
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant={boatsOnly ? "default" : "outline"}
+            size="sm"
+            onClick={() => setBoatsOnly((v) => !v)}
+            aria-pressed={boatsOnly}
+            className="gap-1.5"
+          >
+            <Sailboat className="h-3.5 w-3.5" />
+            Bateaux
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setRequestsOpen(true)} className="gap-1.5">
             <Mail className="h-3.5 w-3.5" />
             Demandes
@@ -273,10 +294,13 @@ const ExperienceBookingsGrid = ({ createOpen, onCreateOpenChange }: Props) => {
       <Sheet open={requestsOpen} onOpenChange={setRequestsOpen}>
         <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>Demandes à traiter</SheetTitle>
+            <SheetTitle>{boatsOnly ? "Demandes bateaux à traiter" : "Demandes à traiter"}</SheetTitle>
           </SheetHeader>
           <div className="mt-4">
-            <StandaloneRequestsTable />
+            <StandaloneRequestsTable
+              categoryId={boatsOnly ? BOATS_CATEGORY_ID : undefined}
+              showWhatsAppLink={boatsOnly}
+            />
           </div>
         </SheetContent>
       </Sheet>

@@ -6,6 +6,44 @@
 
 ---
 
+## [2026-09-20] — Correction : repasser une catégorie en brouillon depuis le back-office
+
+### Ce qui a changé côté code
+- `src/pages/admin/CategoryEditor.tsx` : le bouton « Enregistrer le brouillon » ne changeait pas le statut (une catégorie publiée restait publiée). Sur une catégorie publiée, l'éditeur propose maintenant « Enregistrer » (garde le statut) et « Repasser en brouillon » (la retire du site). Sur un brouillon : « Enregistrer le brouillon » et « Publier ».
+- `src/pages/admin/Categories.tsx` : le bouton œil de la grille rafraîchit aussi les listes de catégories du site public (gardées 5 minutes en mémoire), pour que la puce disparaisse tout de suite. Il affiche aussi une erreur si la base n'a rien modifié, au lieu d'un faux message de succès.
+
+### Ce qui a changé côté base de données
+- Aucun.
+
+### Pourquoi ce changement
+- Shana dépublie la catégorie Bateaux hors saison : il fallait que ça fonctionne de façon fiable.
+
+---
+
+## [2026-09-20] — Bateaux : vraie catégorie saisonnière + tout au même endroit dans le back-office
+
+### Ce qui a changé côté code
+- `src/pages/IndexV3.tsx` : une puce de catégorie (dont Bateaux) n'apparaît sur l'accueil que si la catégorie est publiée en base. Catégorie non publiée = puce cachée. Le clic sur Bateaux filtre la grille sur place, exactement comme les autres catégories (il n'ouvre plus la vitrine `/boat`). Les bateaux restent absents de la grille par défaut et n'apparaissent que quand la puce est sélectionnée ; un clic sur un bateau ouvre la même fenêtre de détail que sur `/boat`.
+- `src/pages/Category.tsx` : la page `/category/bateaux` (lien direct) n'est plus redirigée vers `/boat`. Elle affiche les bateaux (cartes avec durée, capacité, skipper, prix total) et ouvre la même pop-up de détail que `/boat`. Les bateaux n'ayant pas de version "avec hôtel", le sélecteur de mode est masqué sur cette page. La puce Bateaux a été ajoutée à la barre de catégories, avec la même règle de publication.
+- `src/components/boats/BoatCard.tsx` (nouveau) : carte bateau partagée entre la vitrine `/boat` et la page catégorie, pour ne pas dupliquer le code. `src/pages/Boats.tsx` l'utilise désormais.
+- `src/lib/boatsCategory.ts` : commentaire mis à jour (la catégorie est publiée en saison, en brouillon hors saison ; l'identifiant reste codé en dur pour que `/boat` fonctionne toute l'année).
+- `src/components/admin/ReservationsHub/ExperienceBookingsGrid.tsx` : nouveau bouton "Bateaux" qui filtre à la fois les réservations, le compteur de demandes et le panneau "Demandes" sur les bateaux uniquement (via la fiche d'expérience liée). Le filtre peut être activé par l'adresse (`?boats=1`, `?requests=1`).
+- `src/pages/admin/Experiences2.tsx` : nouvel onglet "Bateaux" à côté de "With Hotel" et "Experience Only" ; il affiche la liste existante des bateaux (prix, marges, ordre d'affichage).
+- `src/pages/admin/BoatExperiences.tsx` : le retour depuis le formulaire bateau renvoie vers cet onglet.
+- `src/components/admin/AdminSidebar.tsx` : les entrées "Mes bateaux" et "Demandes bateaux" sont retirées du menu.
+- `src/App.tsx` : `/admin/boats` redirige vers l'onglet Bateaux d'Expériences, `/admin/boats/requests` vers Réservations avec le filtre Bateaux (anciens liens et favoris conservés).
+- `src/pages/admin/BoatRequests.tsx` : supprimé (remplacé par le filtre Bateaux de Réservations).
+- `ARCHITECTURE.md` : section Bateaux ajoutée à la carte des routes.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20260920000000_boats_request_only.sql` (appliquée) : toutes les fiches de la catégorie Bateaux passent en "sur demande" (`is_bookable` à faux). Ce réglage était resté sur "réservable en ligne" par erreur : un client arrivant par un lien direct vers une fiche aurait pu voir un paiement au lieu du formulaire de demande.
+- La catégorie Bateaux reste en brouillon pour l'instant : rien ne change sur le site tant qu'elle n'est pas publiée depuis Catégories.
+
+### Pourquoi ce changement
+- Les bateaux reviennent chaque été : Shana veut les afficher comme une catégorie normale en saison, les masquer hors saison en dépubliant simplement la catégorie, garder la vitrine `/boat` à envoyer aux clients toute l'année, et traiter les demandes de bateaux au même endroit que le reste (Réservations).
+
+---
+
 ## [2026-09-20] — Menu de gauche : Réservations en orange, Catégories en vert
 
 ### Ce qui a changé côté code

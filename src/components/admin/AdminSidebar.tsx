@@ -23,8 +23,6 @@ import {
   Layers,
   FolderOpen,
   Tag,
-  Sailboat,
-  Inbox,
   Map,
   Library,
   Compass,
@@ -107,8 +105,6 @@ const autreItems: NavItem[] = [
   { title: "Favorites", url: "/admin/favorites", icon: Heart, done: true },
   { title: "Journal", url: "/admin/journal", icon: BookOpen },
   { title: "AI Insights", url: "/admin/ai-insights", icon: Brain },
-  { title: "Mes bateaux", url: "/admin/boats", icon: Sailboat },
-  { title: "Demandes bateaux", url: "/admin/boats/requests", icon: Inbox },
   { title: "Bibliothèque swipe", url: "/admin/swipe/bibliotheque", icon: Layers },
   { title: "Catégories swipe", url: "/admin/swipe/categories", icon: Tag },
 ];

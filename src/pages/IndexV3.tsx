@@ -28,6 +28,9 @@ import { trackGiftCardClicked, trackViewAllExperiencesClicked } from "@/lib/anal
 import heroImage from "@/assets/hero-road-desert.jpg";
 import handpickedHero from "@/assets/handpicked-hero.jpg";
 import giftCardHero from "@/assets/gift-card-hero.jpg";
+import BoatCard from "@/components/boats/BoatCard";
+import BoatDetailModal from "@/components/boats/BoatDetailModal";
+import { BOATS_CATEGORY_ID } from "@/lib/boatsCategory";
 import tailoredRequestHeroV3 from "@/assets/tailored-request-hero-roadtrip.png";
 
 /* ─── Icon map (identique à /home) ──────────────────────────────────────── */
@@ -48,8 +51,8 @@ const V3_CATEGORIES = [
   { id: "foody-discovery", en: "Foody Discovery",   fr: "Évasion Gourmande",    he: "גילוי קולינרי",    slugHints: ["taste", "food", "culinar"],   icon: "wine",    img: "/icons/icon-foody.png"     },
   { id: "land-of-stories", en: "Land of Stories",  fr: "Terre d'Histoire",     he: "ארץ הסיפורים",     slugHints: ["land", "stories"],            icon: "compass", img: "/icons/icon-stories.png"   },
   { id: "nature-outdoor",  en: "Nature & Outdoor",  fr: "Nature & Aventure",    he: "טבע ושטח",         slugHints: ["nature", "beyond", "outdoor"],icon: "leaf",    img: "/icons/icon-nature.png"    },
-  // Bateaux : pas de page/grille dédiée sur cette section, le clic redirige vers /boat
-  // (catalogue dédié, jamais de réservation directe).
+  // Bateaux : saisonnier. La puce n'apparaît que si la catégorie est publiée en base ;
+  // elle filtre la grille sur place comme les autres (demande uniquement, jamais de paiement).
   { id: "boats-tour",      en: "Boats",             fr: "Bateaux",              he: "סירות",            slugHints: ["bateaux"],                    icon: "sailboat", img: "/icons/icon-boats.svg" },
 ];
 
@@ -91,6 +94,7 @@ const IndexV3 = () => {
 
   const [mode, setMode] = useState<"stay" | "live">("live");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedBoatId, setSelectedBoatId] = useState<string | null>(null);
 
   /* ── Realtime ── */
   useEffect(() => {
@@ -160,9 +164,11 @@ const IndexV3 = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_experiences")
-        .select("id, slug, title, title_he, title_fr, hero_image, photos, base_price, base_price_type, currency, min_party, max_party, has_child_price, has_time_slots, display_order, category_ids, city, city_he, region, region_he, practical_info, show_on_v3_only, category:categories(slug), standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he, label_fr))")
+        .select("id, slug, title, title_he, title_fr, hero_image, photos, base_price, base_price_type, currency, original_price, min_party, max_party, has_child_price, has_time_slots, duration, duration_fr, duration_he, skipper_included, crew_included, display_order, category_id, category_ids, city, city_he, region, region_he, practical_info, show_on_v3_only, category:categories(slug), standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he, label_fr))")
         .eq("status", "published")
-        .eq("show_on_v3_only", false)
+        // Les bateaux sont marqués "show_on_v3_only" pour rester hors de la grille par défaut ;
+        // on les charge quand même pour la puce Bateaux (voir filteredStandalone).
+        .or(`show_on_v3_only.eq.false,category_id.eq.${BOATS_CATEGORY_ID}`)
         .order("display_order", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return data as any[];
@@ -175,7 +181,8 @@ const IndexV3 = () => {
   /* ── Filtrage standalone par catégorie ── */
   const filteredStandalone = useMemo(() => {
     if (!standaloneExperiences) return [];
-    if (!selectedCategory) return standaloneExperiences;
+    // Grille par défaut : jamais de bateaux, ils n'apparaissent qu'avec la puce Bateaux.
+    if (!selectedCategory) return standaloneExperiences.filter((exp: any) => exp.category_id !== BOATS_CATEGORY_ID);
     const selectedCatId = (categories as any[])?.find((c) => c.slug === selectedCategory)?.id;
     return standaloneExperiences.filter((exp: any) => {
       if (exp.category?.slug === selectedCategory) return true;
@@ -305,18 +312,20 @@ const IndexV3 = () => {
                 const dbCat = (categories as any[])?.find((cat) =>
                   v3cat.slugHints.some((hint) => cat.slug.includes(hint))
                 );
-                const dbSlug = dbCat?.slug ?? null;
-                const categoryKey = dbSlug ?? v3cat.id;
+                // Catégorie absente (non publiée) : pas de puce. C'est ce qui masque Bateaux hors saison.
+                if (!dbCat) return null;
+                const dbSlug = dbCat.slug;
+                const categoryKey = dbSlug;
                 const isSelected = selectedCategory === categoryKey;
                 const isDimmed = !!selectedCategory && !isSelected;
                 const name = lang === "he"
-                  ? (dbCat?.name_he || v3cat.he)
+                  ? (dbCat.name_he || v3cat.he)
                   : lang === "fr"
-                  ? (dbCat?.name_fr || v3cat.fr)
-                  : (dbCat?.name || v3cat.en);
+                  ? (dbCat.name_fr || v3cat.fr)
+                  : (dbCat.name || v3cat.en);
                 const IconComponent: LucideIcon =
-                  (dbCat?.icon ? iconMap[dbCat.icon] : null) ?? iconMap[v3cat.icon] ?? Sparkles;
-                const chipIcon = dbCat?.icon_image || v3cat.img;
+                  (dbCat.icon ? iconMap[dbCat.icon] : null) ?? iconMap[v3cat.icon] ?? Sparkles;
+                const chipIcon = dbCat.icon_image || v3cat.img;
 
                 const words = name.split(" ");
                 const mid = Math.ceil(words.length / 2);
@@ -326,11 +335,7 @@ const IndexV3 = () => {
                 return (
                   <button
                     key={v3cat.id}
-                    onClick={() =>
-                      v3cat.id === "boats-tour"
-                        ? navigate(getLocalizedPath("/boat"))
-                        : setSelectedCategory((prev) => (prev === categoryKey ? null : categoryKey))
-                    }
+                    onClick={() => setSelectedCategory((prev) => (prev === categoryKey ? null : categoryKey))}
                     className={cn(
                       "cat-chip group relative flex flex-col items-center gap-2 flex-shrink-0 w-16 sm:w-[82px] py-2.5 px-1 rounded-2xl transition-all duration-200",
                       isDimmed ? "opacity-35" : "hover:-translate-y-0.5"
@@ -404,13 +409,17 @@ const IndexV3 = () => {
                 </div>
               ) : filteredStandalone.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 transition-all duration-500">
-                  {filteredStandalone.slice(0, 12).map((exp: any, idx: number) => (
-                    <StandaloneExperienceCard
-                      key={exp.id}
-                      experience={exp}
-                      index={idx}
-                    />
-                  ))}
+                  {filteredStandalone.slice(0, 12).map((exp: any, idx: number) =>
+                    exp.category_id === BOATS_CATEGORY_ID ? (
+                      <BoatCard key={exp.id} boat={exp} index={idx} onSelect={setSelectedBoatId} />
+                    ) : (
+                      <StandaloneExperienceCard
+                        key={exp.id}
+                        experience={exp}
+                        index={idx}
+                      />
+                    )
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-10">
@@ -467,6 +476,8 @@ const IndexV3 = () => {
           </div>
 
         </section>
+
+        <BoatDetailModal boatId={selectedBoatId} onClose={() => setSelectedBoatId(null)} />
 
         {/* ──── 5. YOUR TRIP, YOUR RULES ──── */}
         <TailoredRequestSection

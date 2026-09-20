@@ -221,9 +221,10 @@ const CategoryEditor = () => {
     },
   });
 
+  // Enregistre en forçant le statut : "published" pour Publier, "draft" pour Repasser en brouillon.
   const publishMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      const publishData = { ...data, status: "published" as const };
+    mutationFn: async ({ data, status }: { data: typeof formData; status: "draft" | "published" }) => {
+      const publishData = { ...data, status };
       if (isEditing) {
         const { error } = await supabase.from("categories" as any).update(publishData).eq("id", id);
         if (error) throw error;
@@ -235,13 +236,13 @@ const CategoryEditor = () => {
         if (error) throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (_result, { status }) => {
       queryClient.invalidateQueries({
         predicate: (query) =>
           typeof query.queryKey[0] === "string" &&
           query.queryKey[0].includes("categor"),
       });
-      toast.success("Category published successfully");
+      toast.success(status === "published" ? "Catégorie publiée" : "Catégorie repassée en brouillon");
       navigate("/admin/categories");
     },
     onError: (error: any) => {
@@ -276,17 +277,30 @@ const CategoryEditor = () => {
               Aperçu
             </Button>
           )}
+          {/* Catégorie publiée : "Enregistrer" garde le statut, "Repasser en brouillon" la retire du site.
+              Catégorie brouillon : "Enregistrer le brouillon" puis "Publier". */}
           <Button variant="outline" size="sm" onClick={handleSubmit} disabled={saveMutation.isPending}>
-            Enregistrer le brouillon
+            {category?.status === "published" ? "Enregistrer" : "Enregistrer le brouillon"}
           </Button>
-          <Button
-            size="sm"
-            className="bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
-            onClick={() => publishMutation.mutate(formData)}
-            disabled={publishMutation.isPending}
-          >
-            Publier
-          </Button>
+          {category?.status === "published" ? (
+            <Button
+              size="sm"
+              className="bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
+              onClick={() => publishMutation.mutate({ data: formData, status: "draft" })}
+              disabled={publishMutation.isPending}
+            >
+              Repasser en brouillon
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              className="bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
+              onClick={() => publishMutation.mutate({ data: formData, status: "published" })}
+              disabled={publishMutation.isPending}
+            >
+              Publier
+            </Button>
+          )}
         </div>
       </div>
 

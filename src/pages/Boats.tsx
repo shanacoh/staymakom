@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
-import StandaloneExperienceCard from "@/components/StandaloneExperienceCard";
+import BoatCard from "@/components/boats/BoatCard";
 import ExperienceCardSkeleton from "@/components/ExperienceCardSkeleton";
 import { SEOHead } from "@/components/SEOHead";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -97,20 +97,7 @@ const Boats = () => {
           ) : boats && boats.filter((boat: any) => !selectedCity || boat.city === selectedCity).length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {boats.filter((boat: any) => !selectedCity || boat.city === selectedCity).map((boat: any, idx: number) => (
-                <div
-                  key={boat.id}
-                  onClickCapture={(e) => { e.preventDefault(); setSelectedBoatId(boat.id); }}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <StandaloneExperienceCard
-                    experience={boat}
-                    index={idx}
-                    linkPrefix="/boat"
-                    showTotalPrice
-                    isBoat
-                  />
-                </div>
+                <BoatCard key={boat.id} boat={boat} index={idx} onSelect={setSelectedBoatId} />
               ))}
             </div>
           ) : (

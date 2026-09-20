@@ -2,7 +2,8 @@ import { useState, useCallback, useMemo } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit, Eye, EyeOff, Copy, Trash2, ExternalLink, MoreHorizontal, GripVertical, Building2, Zap } from "lucide-react";
+import { Plus, Edit, Eye, EyeOff, Copy, Trash2, ExternalLink, MoreHorizontal, GripVertical, Building2, Zap, Sailboat } from "lucide-react";
+import BoatExperiences from "@/pages/admin/BoatExperiences";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -51,8 +52,9 @@ const AdminExperiences2 = () => {
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
 
-  const [mode, setMode] = useState<"hotel" | "standalone">(
-    searchParams.get("tab") === "standalone" ? "standalone" : "hotel"
+  const tabParam = searchParams.get("tab");
+  const [mode, setMode] = useState<"hotel" | "standalone" | "boats">(
+    tabParam === "standalone" ? "standalone" : tabParam === "boats" ? "boats" : "hotel"
   );
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -462,10 +464,12 @@ const AdminExperiences2 = () => {
             <h1 className="text-2xl sm:text-3xl font-bold">Experiences</h1>
             <p className="text-sm text-muted-foreground">Manage your curated experiences</p>
           </div>
-          <Button onClick={handleCreateNew} size="sm" className="self-start sm:self-auto">
-            <Plus className="w-4 h-4 mr-1.5" />
-            {mode === "hotel" ? "Create Experience" : "Create Standalone"}
-          </Button>
+          {mode !== "boats" && (
+            <Button onClick={handleCreateNew} size="sm" className="self-start sm:self-auto">
+              <Plus className="w-4 h-4 mr-1.5" />
+              {mode === "hotel" ? "Create Experience" : "Create Standalone"}
+            </Button>
+          )}
         </div>
 
         {/* Toggle With Hotel / Experience Only */}
@@ -492,8 +496,24 @@ const AdminExperiences2 = () => {
             <Zap className="h-3.5 w-3.5" />
             Experience Only
           </button>
+          <button
+            onClick={() => setMode("boats")}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+              mode === "boats"
+                ? "bg-[#1B2A4A] text-white"
+                : "text-[#1B2A4A]/60 hover:bg-muted/50"
+            }`}
+          >
+            <Sailboat className="h-3.5 w-3.5" />
+            Bateaux
+          </button>
         </div>
 
+        {/* Onglet Bateaux : liste dédiée (prix, marges, ordre), création/édition via /admin/boats/... */}
+        {mode === "boats" && <BoatExperiences />}
+
+        {mode !== "boats" && (
+        <>
         {/* Pills catégories */}
         {categories && categories.length > 0 && (
           <div className="flex flex-wrap gap-2">
@@ -957,6 +977,9 @@ const AdminExperiences2 = () => {
               </div>
             </Card>
           )
+        )}
+
+        </>
         )}
 
         {/* Ops slide panel */}

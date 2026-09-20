@@ -59,6 +59,7 @@ function urlEntry(loc, priority, changefreq) {
 const STATIC_PAGES = [
   { path: '/',                    priority: '1.0', changefreq: 'weekly'  },
   { path: '/experiences',         priority: '0.9', changefreq: 'daily'   },
+  { path: '/boat',                priority: '0.8', changefreq: 'weekly'  },
   { path: '/journal',             priority: '0.7', changefreq: 'weekly'  },
   { path: '/about',               priority: '0.6', changefreq: 'monthly' },
   { path: '/contact',             priority: '0.5', changefreq: 'monthly' },
@@ -74,7 +75,7 @@ const STATIC_PAGES = [
 const [experiences, hotels, categories, standalones, journals] = await Promise.all([
   fetchSlugs('experiences2', '&status=eq.published'),
   fetchSlugs('hotels2',      '&status=eq.published'),
-  fetchSlugs('categories',   ''),
+  fetchSlugs('categories',   '&status=eq.published'),
   fetchSlugs('standalone_experiences', '&status=eq.published').catch(() => []),
   fetchSlugs('journal_posts', '&status=eq.published'),
 ]);
@@ -83,7 +84,9 @@ const entries = [
   ...STATIC_PAGES.map(({ path, priority, changefreq }) =>
     urlEntry(`${BASE_URL}${path}`, priority, changefreq)
   ),
-  ...categories.map(r => urlEntry(`${BASE_URL}/category/${r.slug}`, '0.8', 'weekly')),
+  // "bateaux" est une catégorie saisonnière (publiée en été, brouillon hors saison) :
+  // on ne la liste pas, la vitrine permanente /boat est déjà dans STATIC_PAGES ci-dessus.
+  ...categories.filter(r => r.slug !== 'bateaux').map(r => urlEntry(`${BASE_URL}/category/${r.slug}`, '0.8', 'weekly')),
   ...experiences.map(r => urlEntry(`${BASE_URL}/experience/${r.slug}`, '0.9', 'weekly')),
   ...hotels.map(r => urlEntry(`${BASE_URL}/hotel/${r.slug}`, '0.8', 'weekly')),
   ...standalones.map(r => urlEntry(`${BASE_URL}/standalone-experience/${r.slug}`, '0.8', 'weekly')),

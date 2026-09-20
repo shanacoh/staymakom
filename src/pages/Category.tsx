@@ -1,4 +1,4 @@
-import { useParams, useNavigate, useSearchParams, Navigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import V3Header from "@/components/V3Header";
@@ -8,6 +8,8 @@ import { Loader2, Heart, Users, Wine, Compass, Leaf, Sparkles, type LucideIcon }
 import { Link } from "react-router-dom";
 import ExperienceCard from "@/components/ExperienceCard";
 import StandaloneExperienceCard from "@/components/StandaloneExperienceCard";
+import BoatCard from "@/components/boats/BoatCard";
+import BoatDetailModal from "@/components/boats/BoatDetailModal";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import CategoryFilters, { FilterState } from "@/components/category/CategoryFilters";
 import { useState, useMemo, useEffect, lazy, Suspense } from "react";
@@ -37,6 +39,8 @@ const V3_CATEGORIES = [
   { id: "foody-discovery", en: "Foody Discovery",   fr: "Découverte Culinaire", he: "גילוי קולינרי",    slugHints: ["taste", "food", "culinar"],   icon: "wine",    img: "/icons/icon-foody.png"     },
   { id: "land-of-stories", en: "Land of Stories",  fr: "Terre de Récits",      he: "ארץ הסיפורים",     slugHints: ["land", "stories"],            icon: "compass", img: "/icons/icon-stories.png"   },
   { id: "nature-outdoor",  en: "Nature & Outdoor",  fr: "Nature & Plein Air",   he: "טבע ושטח",         slugHints: ["nature", "beyond", "outdoor"],icon: "leaf",    img: "/icons/icon-nature.png"    },
+  // Bateaux : saisonnier. La puce n'apparaît que si la catégorie est publiée en base.
+  { id: "boats-tour",      en: "Boats",             fr: "Bateaux",              he: "סירות",            slugHints: ["bateaux"],                    icon: "sailboat", img: "/icons/icon-boats.svg"    },
 ];
 
 const iconMap: Record<string, LucideIcon> = {
@@ -56,7 +60,12 @@ const Category = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const mode = (searchParams.get("mode") as "stay" | "live") || "stay";
+  // Les bateaux sont des expériences seules : pas de version "avec hôtel".
+  const isBoatsCategory = slug === "bateaux";
+  const mode: "stay" | "live" = isBoatsCategory
+    ? "live"
+    : (searchParams.get("mode") as "stay" | "live") || "stay";
+  const [selectedBoatId, setSelectedBoatId] = useState<string | null>(null);
   const { lang } = useLanguage();
   const isRTL = lang === "he";
   const { convert } = useCurrency();
@@ -164,6 +173,8 @@ const Category = () => {
           base_price, base_price_type, currency,
           min_party, max_party, has_child_price, has_time_slots,
           city, city_he, region, region_he, practical_info,
+          original_price, duration, duration_fr, duration_he,
+          skipper_included, crew_included,
           standalone_experience_highlight_tags(
             tag_id, position,
             highlight_tags(id, slug, label_en, label_he, label_fr)
@@ -240,12 +251,6 @@ const Category = () => {
   );
   const heroIconSrc = category?.icon_image || currentV3Cat?.img;
 
-  // Bateaux n'a pas de page catégorie générique (les fiches vivent dans
-  // standalone_experiences, pas experiences2) : on renvoie vers le catalogue dédié.
-  if (slug === "bateaux") {
-    return <Navigate to="/boat" replace />;
-  }
-
   if (categoryLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -318,13 +323,13 @@ const Category = () => {
           __html: JSON.stringify(
             buildBreadcrumbJsonLd([
               { name: "Home", url: "https://staymakom.com/" },
-              { name: mode === 'stay' ? "With Hotel" : "Experience Only", url: `https://staymakom.com/category/${slug}?mode=${mode}` },
+              ...(isBoatsCategory ? [] : [{ name: mode === 'stay' ? "With Hotel" : "Experience Only", url: `https://staymakom.com/category/${slug}?mode=${mode}` }]),
               { name: categoryName, url: `https://staymakom.com/category/${slug}?mode=${mode}` },
             ])
           ),
         }}
       />
-      <V3Header showModeToggle mode={mode} setMode={handleSetMode} />
+      <V3Header showModeToggle={!isBoatsCategory} mode={mode} setMode={handleSetMode} />
 
       <main className="flex-1">
         <div className="container pt-16">
@@ -336,16 +341,20 @@ const Category = () => {
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link to={`/category/${slug}?mode=${mode}`}>
-                    {mode === 'stay'
-                      ? (lang === 'he' ? 'עם מלון' : lang === 'fr' ? 'Avec Hôtel' : 'With Hotel')
-                      : (lang === 'he' ? 'חוויה בלבד' : lang === 'fr' ? 'Expérience Seule' : 'Experience Only')}
-                  </Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
+              {!isBoatsCategory && (
+                <>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link to={`/category/${slug}?mode=${mode}`}>
+                        {mode === 'stay'
+                          ? (lang === 'he' ? 'עם מלון' : lang === 'fr' ? 'Avec Hôtel' : 'With Hotel')
+                          : (lang === 'he' ? 'חוויה בלבד' : lang === 'fr' ? 'Expérience Seule' : 'Experience Only')}
+                      </Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                </>
+              )}
               <BreadcrumbItem>
                 <BreadcrumbPage>{categoryName}</BreadcrumbPage>
               </BreadcrumbItem>
@@ -394,16 +403,18 @@ const Category = () => {
               const dbCat = (allCategories as any[])?.find((cat) =>
                 v3cat.slugHints.some((hint) => cat.slug.includes(hint))
               );
-              const dbSlug = dbCat?.slug ?? null;
-              const isActive = !!dbSlug && slug === dbSlug;
+              // Catégorie absente (non publiée) : pas de puce. C'est ce qui masque Bateaux hors saison.
+              if (!dbCat) return null;
+              const dbSlug = dbCat.slug;
+              const isActive = slug === dbSlug;
               const isDimmed = !!slug && !isActive;
               const name = lang === "he"
-                ? (dbCat?.name_he || v3cat.he)
+                ? (dbCat.name_he || v3cat.he)
                 : lang === "fr"
-                ? (dbCat?.name_fr || v3cat.fr)
-                : (dbCat?.name || v3cat.en);
+                ? (dbCat.name_fr || v3cat.fr)
+                : (dbCat.name || v3cat.en);
               const IconComponent: LucideIcon = iconMap[v3cat.icon] ?? Sparkles;
-              const chipIcon = dbCat?.icon_image || v3cat.img;
+              const chipIcon = dbCat.icon_image || v3cat.img;
 
               const words = name.split(" ");
               const mid = Math.ceil(words.length / 2);
@@ -413,7 +424,7 @@ const Category = () => {
               return (
                 <button
                   key={v3cat.id}
-                  onClick={() => { if (dbSlug && !isActive) navigate(`/category/${dbSlug}?mode=${mode}`); }}
+                  onClick={() => { if (!isActive) navigate(`/category/${dbSlug}?mode=${mode}`); }}
                   className={cn(
                     "group relative flex flex-col items-center gap-2 flex-shrink-0 w-16 sm:w-[82px] py-2.5 px-1 rounded-2xl transition-all duration-200",
                     isDimmed ? "opacity-35" : "hover:-translate-y-0.5",
@@ -533,13 +544,17 @@ const Category = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredStandalone.map((experience, idx) => (
-                    <StandaloneExperienceCard
-                      key={experience.id}
-                      experience={experience}
-                      index={idx}
-                    />
-                  ))}
+                  {filteredStandalone.map((experience, idx) =>
+                    isBoatsCategory ? (
+                      <BoatCard key={experience.id} boat={experience} index={idx} onSelect={setSelectedBoatId} />
+                    ) : (
+                      <StandaloneExperienceCard
+                        key={experience.id}
+                        experience={experience}
+                        index={idx}
+                      />
+                    )
+                  )}
                 </div>
               )}
             </div>
@@ -556,6 +571,10 @@ const Category = () => {
       </main>
 
       <LaunchFooter />
+
+      {isBoatsCategory && (
+        <BoatDetailModal boatId={selectedBoatId} onClose={() => setSelectedBoatId(null)} />
+      )}
     </div>
   );
 };
