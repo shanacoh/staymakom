@@ -116,6 +116,20 @@ function cleanWebsite(value: string | undefined): string | null {
   }
 }
 
+/** Adresse, ville et région d'un résultat OpenStreetMap (utilisé aussi pour retrouver l'adresse d'une position). */
+export function extractAddress(
+  a: Record<string, string> | undefined,
+  knownRegions: string[] = []
+): { address: string | null; city: string | null; region: string | null } {
+  const parts = a ?? {};
+  const road = parts.road || parts.pedestrian || parts.path || parts.footway || "";
+  return {
+    address: [road, parts.house_number].filter(Boolean).join(" ").trim() || null,
+    city: parts.city || parts.town || parts.village || parts.hamlet || parts.suburb || parts.municipality || null,
+    region: matchKnownRegion(parts.state || parts.region || null, knownRegions),
+  };
+}
+
 export function mapsLinkFor(latitude: number, longitude: number): string {
   return `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
 }
@@ -135,12 +149,8 @@ export function mapOsmResult(result: OsmResult, knownRegions: string[] = []): Ca
   const name = pickName(result);
   if (!name) return null;
 
-  const a = result.address ?? {};
   const tags = result.extratags ?? {};
-  const road = a.road || a.pedestrian || a.path || a.footway || "";
-  const address = [road, a.house_number].filter(Boolean).join(" ").trim() || null;
-  const city = a.city || a.town || a.village || a.hamlet || a.suburb || a.municipality || null;
-  const region = matchKnownRegion(a.state || a.region || null, knownRegions);
+  const { address, city, region } = extractAddress(result.address, knownRegions);
   const description = tags.description?.trim().slice(0, 300) || null;
 
   const suggestion: Suggestion = {

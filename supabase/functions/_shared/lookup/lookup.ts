@@ -3,7 +3,7 @@
 // la fonction se teste donc sans rien appeler pour de vrai.
 
 import { buildAiMessages, parseAiSuggestion, type AiMessage } from "./ai.ts";
-import { EMPTY_SUGGESTION, mapOsmResult, mapsLinkFor, matchKnownRegion, type Candidate, type OsmResult, type Suggestion } from "./osm.ts";
+import { EMPTY_SUGGESTION, extractAddress, mapOsmResult, mapsLinkFor, matchKnownRegion, type Candidate, type OsmResult, type Suggestion } from "./osm.ts";
 import {
   extractHrefs,
   extractLang,
@@ -15,6 +15,7 @@ import {
   htmlToText,
   pickPlaceFromJsonLd,
 } from "./parse.ts";
+import { distanceMeters, followRedirects, isShortLink, parseGoogleMapsUrl } from "./resolve.ts";
 import { isPrivateIp, parsePublicHttpUrl } from "./safe-url.ts";
 
 export type LinkPlatform = "tiktok" | "instagram" | "youtube" | "facebook" | "google_maps" | "site_web" | "autre";
@@ -202,16 +203,51 @@ export async function fetchPage(startUrl: URL, deps: LookupDeps): Promise<Fetche
 // OpenStreetMap
 // ---------------------------------------------------------------------------
 
+/** Respecte la règle d'OpenStreetMap : pas plus d'une requête par seconde. */
+async function throttleOsm(deps: LookupDeps): Promise<void> {
+  const sleep = deps.sleep ?? defaultSleep;
+  const wait = OSM_MIN_INTERVAL_MS - (Date.now() - lastOsmCall);
+  if (wait > 0) await sleep(wait);
+  lastOsmCall = Date.now();
+}
+
+/** Adresse, ville et région d'une position. */
+export async function reverseOsm(
+  latitude: number,
+  longitude: number,
+  deps: LookupDeps,
+  knownRegions: string[]
+): Promise<{ address: string | null; city: string | null; region: string | null }> {
+  await throttleOsm(deps);
+  const params = new URLSearchParams({
+    format: "jsonv2",
+    lat: String(latitude),
+    lon: String(longitude),
+    zoom: "18",
+    addressdetails: "1",
+    "accept-language": "fr,en",
+  });
+  let response: Response;
+  try {
+    response = await deps.fetchFn(`https://nominatim.openstreetmap.org/reverse?${params}`, {
+      headers: { "User-Agent": OSM_UA, Accept: "application/json" },
+      signal: AbortSignal.timeout(PAGE_TIMEOUT_MS),
+    });
+  } catch {
+    throw new LookupError("Le service de recherche de lieux ne répond pas pour le moment.", 503);
+  }
+  if (!response.ok) throw new LookupError("Le service de recherche de lieux ne répond pas pour le moment.", 503);
+  const data = (await response.json()) as OsmResult;
+  return extractAddress(data.address, knownRegions);
+}
+
 export async function searchOsm(
   query: string,
   deps: LookupDeps,
   knownRegions: string[],
   options: { israelOnly: boolean; limit?: number }
 ): Promise<Candidate[]> {
-  const sleep = deps.sleep ?? defaultSleep;
-  const wait = OSM_MIN_INTERVAL_MS - (Date.now() - lastOsmCall);
-  if (wait > 0) await sleep(wait);
-  lastOsmCall = Date.now();
+  await throttleOsm(deps);
 
   const params = new URLSearchParams({
     format: "jsonv2",
@@ -413,6 +449,79 @@ async function lookupBySite(url: URL, deps: LookupDeps, knownRegions: string[]):
   };
 }
 
+const NEARBY_METERS = 300; // un lieu de la carte à moins de 300 m de la position du lien est considéré comme le même
+const SEARCH_RADIUS_METERS = 2000;
+
+/** Recherche à partir d'un lien Google Maps : nom et position exacts, adresse retrouvée sur la carte. */
+async function lookupByMaps(original: URL, resolved: URL, deps: LookupDeps, knownRegions: string[]): Promise<LookupResult> {
+  const link: LinkInfo = { platform: "google_maps", url: original.toString(), caption: null, author: null, thumbnail_url: null };
+  const place = parseGoogleMapsUrl(resolved.toString());
+  const suggestion: Suggestion = {
+    ...EMPTY_SUGGESTION,
+    name: place.name,
+    latitude: place.latitude,
+    longitude: place.longitude,
+    google_maps_link: original.toString(),
+  };
+
+  if (!place.name && place.latitude === null) {
+    return {
+      kind: "site",
+      suggestion,
+      link,
+      candidates: [],
+      warnings: ["Ce lien Google Maps ne contient ni nom ni position lisible : il est gardé tel quel."],
+      sources: [],
+    };
+  }
+
+  const warnings: string[] = [];
+  const sources = ["Google Maps"];
+  let candidates: Candidate[] = [];
+
+  if (place.latitude !== null && place.longitude !== null) {
+    try {
+      const where = await reverseOsm(place.latitude, place.longitude, deps, knownRegions);
+      suggestion.address = where.address;
+      suggestion.city = where.city;
+      suggestion.region = where.region;
+      if (where.address || where.city) sources.push("OpenStreetMap");
+    } catch {
+      warnings.push("L'adresse de ce lieu n'a pas pu être retrouvée à partir de sa position.");
+    }
+  }
+
+  if (place.name) {
+    try {
+      const found = await searchOsm(place.name, deps, knownRegions, { israelOnly: true });
+      const withDistance = found
+        .map((candidate) => ({
+          candidate,
+          meters:
+            place.latitude !== null && place.longitude !== null && candidate.suggestion.latitude !== null && candidate.suggestion.longitude !== null
+              ? distanceMeters(place.latitude, place.longitude, candidate.suggestion.latitude, candidate.suggestion.longitude)
+              : Infinity,
+        }))
+        .sort((a, b) => a.meters - b.meters);
+      const best = withDistance[0];
+      if (best && best.meters <= NEARBY_METERS) {
+        // Le même lieu sur la carte : on complète les trous (téléphone, site, type...) sans toucher au nom ni à la position
+        for (const [key, value] of Object.entries(best.candidate.suggestion)) {
+          const current = suggestion[key as keyof Suggestion];
+          if (current === null || current === undefined) (suggestion as Record<string, unknown>)[key] = value;
+        }
+        if (!sources.includes("OpenStreetMap")) sources.push("OpenStreetMap");
+      } else {
+        candidates = withDistance.filter((entry) => entry.meters <= SEARCH_RADIUS_METERS).map((entry) => entry.candidate);
+      }
+    } catch {
+      // La recherche du lieu sur la carte est un bonus : le nom et la position du lien suffisent
+    }
+  }
+
+  return { kind: "site", suggestion, link, candidates, warnings, sources };
+}
+
 interface SocialPost {
   caption: string | null;
   author: string | null;
@@ -520,19 +629,13 @@ export async function lookup(query: string, knownRegions: string[], deps: Lookup
   const url = parsePublicHttpUrl(/^https?:\/\//i.test(text) ? text : `https://${text}`);
   if (!url) throw new LookupError("Ce lien n'est pas une adresse web valide.");
 
-  const platform = platformOf(url.hostname);
-  if (platform === "google_maps") {
-    return {
-      kind: "site",
-      suggestion: { ...EMPTY_SUGGESTION },
-      link: { platform, url: url.toString(), caption: null, author: null, thumbnail_url: null },
-      candidates: [],
-      warnings: ["Les liens Google Maps ne sont pas encore lus automatiquement : le lien est gardé tel quel."],
-      sources: [],
-    };
-  }
+  // Un lien court (vm.tiktok.com, maps.app.goo.gl...) cache la vraie adresse : on la découvre d'abord
+  const resolved = isShortLink(url) ? await followRedirects(url, deps.fetchFn, (u) => assertNotInternal(u, deps)) : url;
+  const platform = platformOf(resolved.hostname);
+
+  if (platform === "google_maps") return lookupByMaps(url, resolved, deps, knownRegions);
   if (platform === "tiktok" || platform === "instagram" || platform === "youtube" || platform === "facebook") {
-    return lookupBySocial(url, platform, deps, knownRegions);
+    return lookupBySocial(resolved, platform, deps, knownRegions);
   }
-  return lookupBySite(url, deps, knownRegions);
+  return lookupBySite(resolved, deps, knownRegions);
 }

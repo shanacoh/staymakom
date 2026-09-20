@@ -6,6 +6,25 @@
 
 ---
 
+## [2026-09-20] — Catalogue, lot 2 : envoi depuis l'iPhone et boîte « À trier »
+
+### Ce qui a changé côté code
+- `supabase/functions/capture-catalogue-link/` (nouvelle fonction serveur, déployée) : reçoit un lien partagé depuis le raccourci de l'iPhone, protégée par une clé secrète. Elle refuse les doublons avant toute recherche, plafonne à 40 ajouts par 10 minutes, lance la même recherche que l'écran, puis crée le lieu au statut « À trier » avec son lien, sa légende, son auteur et sa vignette. Si la recherche échoue ou tarde plus de 20 s, le lien est quand même gardé : un partage n'est jamais perdu. Elle répond par une phrase courte affichée dans la notification de l'iPhone.
+- `supabase/functions/_shared/lookup/` (nouveau dossier) : les briques de la recherche déplacées depuis `catalogue-lookup` pour être partagées par les deux fonctions, plus `resolve.ts` (liens courts et liens Google Maps), `capture.ts` (fabrication du lieu « à trier ») et `runtime.ts` (IA et branchements). `catalogue-lookup/index.ts` allégé. 77 tests automatiques sur ces briques.
+- La recherche lit maintenant les **liens courts** TikTok et Google Maps (elle suit la redirection en sécurité, y compris derrière la page de consentement de Google) et les **liens Google Maps** : nom et position exacte lus dans l'adresse, adresse et ville retrouvées sur OpenStreetMap, détails du lieu complétés s'il est repéré à moins de 300 m.
+- IA : possibilité de brancher Claude (secret `ANTHROPIC_API_KEY`, modèle `claude-haiku-4-5`). Tant que la clé n'existe pas, la recherche marche sans IA. Constat au passage : l'ancien accès IA (`LOVABLE_API_KEY`) n'existe pas sur le projet Supabase, donc les fonctions `translate-text` et `recommend-experiences` n'ont pas non plus leur IA (non modifié ici).
+- `src/components/admin/catalogue/InboxList.tsx` (nouveau) et `src/pages/admin/Catalogue.tsx` : l'onglet « À trier » devient une boîte de cartes (vignette, légende, proposition de la recherche, vidéo au clic) avec les boutons Valider (nom, nature, type, statut), Modifier et Écarter. `LinkPlayer.tsx` : bouton de suppression facultatif. `queries.ts` : lecture des liens de plusieurs lieux à la fois.
+- `supabase/config.toml` : déclare `capture-catalogue-link`.
+
+### Ce qui a changé côté base de données
+- Aucune migration. Un nouveau secret est enregistré sur le projet Supabase : `CATALOGUE_CAPTURE_TOKEN` (la clé du raccourci iPhone).
+- Deux lignes de test créées pendant les essais réels (un TikTok, un site, un lien Google Maps) ont été supprimées : le catalogue contient toujours 96 lieux et 0 lien.
+
+### Pourquoi ce changement
+- Shana repère ses idées en scrollant TikTok et Instagram : elle veut les envoyer au catalogue en deux appuis depuis son iPhone, puis les trier tranquillement au bureau, vidéo sous les yeux. Sans IA, les idées TikTok arrivent « à identifier » (légende et vidéo gardées) ; avec IA, le lieu cité dans la légende est repéré et cherché sur la carte. Décision en attente : activer l'IA ou non.
+
+---
+
 ## [2026-09-20] — Catalogue : la recherche préremplit un lieu à partir d'un site, d'une vidéo ou d'un nom
 
 ### Ce qui a changé côté code

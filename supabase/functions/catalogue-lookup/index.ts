@@ -1,11 +1,11 @@
 // Recherche d'un lieu pour le catalogue du back-office : à partir d'un lien (site, TikTok, Instagram)
 // ou d'un nom, retrouve nom, adresse, téléphone, Instagram, description et position.
-// Réservée aux administrateurs. La logique est dans lookup.ts ; ce fichier ne fait que le lien
-// avec l'extérieur (identification, IA, réseau).
+// Réservée aux administrateurs. La logique est dans _shared/lookup ; ce fichier ne fait que le lien
+// avec l'extérieur (identification, réponses web).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
-import type { AiMessage } from "./ai.ts";
-import { lookup, LookupError, type LookupDeps } from "./lookup.ts";
+import { lookup, LookupError } from "../_shared/lookup/lookup.ts";
+import { createLookupDeps } from "../_shared/lookup/runtime.ts";
 
 const ALLOWED_ORIGINS = [
   "https://staymakom.com",
@@ -23,51 +23,6 @@ function corsHeaders(req: Request) {
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     Vary: "Origin",
   };
-}
-
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const AI_MODEL = "google/gemini-3-flash-preview";
-const AI_TIMEOUT_MS = 20000;
-
-/** Réponse brute de l'IA (le même accès que la traduction), ou null si elle est indisponible. */
-async function askAi(messages: AiMessage[]): Promise<string | null> {
-  const key = Deno.env.get("LOVABLE_API_KEY");
-  if (!key) {
-    console.warn("catalogue-lookup: LOVABLE_API_KEY absente, la recherche se fait sans IA");
-    return null;
-  }
-  const response = await fetch(AI_URL, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: AI_MODEL, messages, temperature: 0.1 }),
-    signal: AbortSignal.timeout(AI_TIMEOUT_MS),
-  });
-  if (!response.ok) {
-    console.warn("catalogue-lookup: l'IA a répondu", response.status, (await response.text()).slice(0, 200));
-    return null;
-  }
-  const data = await response.json();
-  return data.choices?.[0]?.message?.content ?? null;
-}
-
-/**
- * Adresses IP d'un domaine, pour refuser ceux qui pointent vers un réseau interne. Renvoie null si la
- * vérification n'est pas permise dans cet environnement : elle ne doit jamais bloquer un site légitime.
- */
-async function resolveHost(hostname: string): Promise<string[] | null> {
-  const ips: string[] = [];
-  let permitted = true;
-  for (const type of ["A", "AAAA"] as const) {
-    try {
-      ips.push(...(await Deno.resolveDns(hostname, type)));
-    } catch (error) {
-      if (error instanceof Error && /permission|not.*(allowed|supported)|unsupported/i.test(`${error.name} ${error.message}`)) {
-        permitted = false;
-      }
-      // Pas d'enregistrement de ce type : normal (beaucoup de domaines n'ont pas d'IPv6)
-    }
-  }
-  return permitted ? ips : null;
 }
 
 function json(req: Request, body: unknown, status = 200) {
@@ -100,8 +55,7 @@ Deno.serve(async (req) => {
       ? body.known_regions.filter((r: unknown): r is string => typeof r === "string").slice(0, 40)
       : [];
 
-    const deps: LookupDeps = { fetchFn: fetch, resolveHost, askAi };
-    const result = await lookup(query, knownRegions, deps);
+    const result = await lookup(query, knownRegions, createLookupDeps());
     console.log(`catalogue-lookup: ${result.kind}, ${result.candidates.length} candidat(s), sources: ${result.sources.join(", ")}`);
     return json(req, { ok: true, ...result });
   } catch (error) {

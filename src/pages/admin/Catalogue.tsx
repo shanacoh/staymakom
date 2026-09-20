@@ -8,6 +8,7 @@ import { AddToCatalogueDialog, type AddMode } from "@/components/admin/catalogue
 import { CatalogueFilters } from "@/components/admin/catalogue/CatalogueFilters";
 import { CatalogueItemPanel } from "@/components/admin/catalogue/CatalogueItemPanel";
 import { CatalogueTable } from "@/components/admin/catalogue/CatalogueTable";
+import { InboxList } from "@/components/admin/catalogue/InboxList";
 import {
   DEFAULT_FILTERS,
   applyFilters,
@@ -153,6 +154,10 @@ export default function AdminCatalogue() {
         <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
           Le catalogue est vide pour l'instant. Colle un lien ou ajoute un lieu pour commencer.
         </div>
+      ) : visible.length === 0 && filters.tab === "a_trier" && !hasActiveFilters(filters) ? (
+        <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+          Rien à trier pour l'instant. Les liens envoyés depuis ton iPhone, ou collés avec « Coller un lien », arrivent ici.
+        </div>
       ) : visible.length === 0 ? (
         <div className="space-y-3 rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
           <p>Aucun lieu ne correspond à ces filtres.</p>
@@ -163,12 +168,16 @@ export default function AdminCatalogue() {
           )}
         </div>
       ) : (
-        <>
-          <p className="text-xs text-muted-foreground">
-            {visible.length} lieu{visible.length > 1 ? "x" : ""} affiché{visible.length > 1 ? "s" : ""} sur {counts.all}
-          </p>
-          <CatalogueTable entries={visible} today={today} onSelect={setSelectedId} />
-        </>
+        filters.tab === "a_trier" ? (
+          <InboxList entries={visible} onOpen={setSelectedId} />
+        ) : (
+          <>
+            <p className="text-xs text-muted-foreground">
+              {visible.length} lieu{visible.length > 1 ? "x" : ""} affiché{visible.length > 1 ? "s" : ""} sur {counts.all}
+            </p>
+            <CatalogueTable entries={visible} today={today} onSelect={setSelectedId} />
+          </>
+        )
       )}
 
       {selected && (

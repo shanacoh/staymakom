@@ -80,3 +80,6 @@ verify_jwt = false
 
 [functions.catalogue-lookup]
 verify_jwt = false
+
+[functions.capture-catalogue-link]
+verify_jwt = false

@@ -252,11 +252,86 @@ describe("recherche à partir d'une vidéo", () => {
     expect(result.link).toMatchObject({ platform: "instagram", caption: "Spot incroyable à Jaffa", author: "Chef Dan", thumbnail_url: "https://cdn.ig/p.jpg" });
   });
 
-  it("garde un lien Google Maps tel quel, sans le lire", async () => {
-    const { deps, calls } = makeDeps([]);
+  it("suit un lien court TikTok jusqu'à la vidéo avant de lire la légende", async () => {
+    const seen: string[] = [];
+    const { deps } = makeDeps([
+      (url) => (url.hostname === "vm.tiktok.com" ? new Response(null, { status: 302, headers: { location: "https://www.tiktok.com/@foodie/video/7300000000000000000?_r=1" } }) : undefined),
+      (url) => {
+        if (url.hostname === "www.tiktok.com" && url.pathname === "/oembed") {
+          seen.push(url.searchParams.get("url") ?? "");
+          return json({ title: "Belle adresse", author_name: "foodie", thumbnail_url: "https://cdn.tt/t.jpg" });
+        }
+        return undefined;
+      },
+    ]);
+    const result = await lookup("https://vm.tiktok.com/ZMabcdef/", [], deps);
+    expect(seen[0]).toBe("https://www.tiktok.com/@foodie/video/7300000000000000000?_r=1");
+    expect(result.link).toMatchObject({ platform: "tiktok", url: "https://www.tiktok.com/@foodie/video/7300000000000000000?_r=1", caption: "Belle adresse" });
+  });
+});
+
+describe("recherche à partir d'un lien Google Maps", () => {
+  const MAPS_LONG = "https://www.google.com/maps/place/Tishbi+Winery/@32.5800,34.9600,17z/data=!3d32.5723!4d34.9531";
+  const reverseRoute: Route = (url) =>
+    url.pathname === "/reverse"
+      ? json({ address: { road: "HaYekev", house_number: "1", town: "Zichron Yaakov", state: "Center District" } })
+      : undefined;
+
+  it("donne le nom et la position exacts du lien, l'adresse retrouvée et les détails du même lieu sur la carte", async () => {
+    const sameSpot = { ...OSM_WINERY, lat: "32.5724", lon: "34.9532" }; // à une quinzaine de mètres du lien
+    const { deps } = makeDeps([reverseRoute, osmRoute([sameSpot])]);
+    const result = await lookup(MAPS_LONG, ["Center District Israel"], deps);
+    expect(result.kind).toBe("site");
+    expect(result.suggestion).toMatchObject({
+      name: "Tishbi Winery",
+      latitude: 32.5723,
+      longitude: 34.9531,
+      address: "HaYekev 1",
+      city: "Zichron Yaakov",
+      region: "Center District Israel",
+      place_type: "activite", // complété par le lieu de la carte, tout proche
+      website: "https://www.tishbi.com/",
+      google_maps_link: MAPS_LONG,
+    });
+    expect(result.link).toMatchObject({ platform: "google_maps", url: MAPS_LONG });
+    expect(result.sources).toEqual(["Google Maps", "OpenStreetMap"]);
+  });
+
+  it("propose les lieux voisins de la carte quand aucun n'est assez proche", async () => {
+    const far = { ...OSM_WINERY, lat: "32.5800", lon: "34.9600" }; // environ 1 km du lien
+    const { deps } = makeDeps([reverseRoute, osmRoute([far])]);
+    const result = await lookup(MAPS_LONG, [], deps);
+    expect(result.suggestion.website).toBeNull();
+    expect(result.candidates).toHaveLength(1);
+  });
+
+  it("suit un lien court Google Maps, y compris derrière la page de consentement", async () => {
+    const { deps } = makeDeps([
+      (url) =>
+        url.hostname === "maps.app.goo.gl"
+          ? new Response(null, { status: 302, headers: { location: `https://consent.google.com/ml?continue=${encodeURIComponent(MAPS_LONG)}` } })
+          : undefined,
+      (url) => (url.hostname === "www.google.com" ? html("<html>") : undefined),
+      reverseRoute,
+      osmRoute([]),
+    ]);
+    const result = await lookup("https://maps.app.goo.gl/AbC123", [], deps);
+    expect(result.suggestion).toMatchObject({ name: "Tishbi Winery", latitude: 32.5723, longitude: 34.9531 });
+    expect(result.link?.url).toBe("https://maps.app.goo.gl/AbC123"); // on garde le lien que Shana a partagé
+  });
+
+  it("garde le lien tel quel quand il ne contient ni nom ni position", async () => {
+    const { deps } = makeDeps([]);
     const result = await lookup("https://maps.app.goo.gl/abc123", [], deps);
     expect(result.link).toMatchObject({ platform: "google_maps" });
-    expect(result.warnings[0]).toMatch(/Google Maps/);
-    expect(calls).toHaveLength(0);
+    expect(result.suggestion.name).toBeNull();
+    expect(result.warnings[0]).toMatch(/ni nom ni position/);
+  });
+
+  it("prévient sans échouer quand l'adresse ne peut pas être retrouvée", async () => {
+    const { deps } = makeDeps([(url) => (url.pathname === "/reverse" ? new Response("panne", { status: 500 }) : undefined), osmRoute([])]);
+    const result = await lookup(MAPS_LONG, [], deps);
+    expect(result.suggestion).toMatchObject({ name: "Tishbi Winery", latitude: 32.5723 });
+    expect(result.warnings[0]).toMatch(/adresse/);
   });
 });

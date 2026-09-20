@@ -250,6 +250,26 @@ export function useCatalogueLinks(itemId: string | null) {
   });
 }
 
+/** Liens de plusieurs lieux à la fois (boîte "À trier"), regroupés par lieu. */
+export function useCatalogueLinksFor(itemIds: string[]) {
+  const key = [...itemIds].sort().join(",");
+  return useQuery({
+    queryKey: ["catalogue", "links-many", key],
+    enabled: itemIds.length > 0,
+    queryFn: async (): Promise<Map<string, CatalogueLink[]>> => {
+      const { data, error } = await supabase
+        .from("catalogue_links")
+        .select("*")
+        .in("item_id", itemIds)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      const byItem = new Map<string, CatalogueLink[]>();
+      for (const link of data ?? []) byItem.set(link.item_id, [...(byItem.get(link.item_id) ?? []), link]);
+      return byItem;
+    },
+  });
+}
+
 export function useAddCatalogueLink() {
   const queryClient = useQueryClient();
   return useMutation({

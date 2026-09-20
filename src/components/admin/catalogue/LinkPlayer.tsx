@@ -7,7 +7,7 @@ import { PLATFORM_LABELS, type CatalogueLink } from "@/lib/catalogue/types";
 
 interface LinkPlayerProps {
   link: CatalogueLink;
-  onDelete: () => void;
+  onDelete?: () => void;
   deleting?: boolean;
 }
 
@@ -61,17 +61,19 @@ export function LinkPlayer({ link, onDelete, deleting }: LinkPlayerProps) {
             </a>
           </Button>
         )}
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          className="ml-auto text-muted-foreground hover:text-destructive"
-          onClick={onDelete}
-          disabled={deleting}
-          aria-label="Supprimer ce lien"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
+        {onDelete && (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="ml-auto text-muted-foreground hover:text-destructive"
+            onClick={onDelete}
+            disabled={deleting}
+            aria-label="Supprimer ce lien"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        )}
       </div>
 
       {!embed && link.platform === "tiktok" && (
