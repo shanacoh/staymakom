@@ -6,6 +6,21 @@
 
 ---
 
+## [2026-09-20] — Nouvelle icône et nouveau nom de la catégorie Bateaux
+
+### Ce qui a changé côté code
+- `public/icons/icon-boats.png` (nouveau, 512 x 512, fond transparent, noir) remplace `public/icons/icon-boats.svg` (supprimé). Le voilier fourni par Shana a été ramené de 1254 à 512 px et son trait a été épaissi (de 7 à 14 px environ) pour être au même format et au même poids visuel que les autres icônes de catégories.
+- `src/pages/IndexV3.tsx`, `src/pages/Category.tsx`, `src/pages/admin/Categories.tsx`, `src/pages/admin/CategoryEditor.tsx` : l'adresse de l'icône pointe vers le nouveau fichier PNG.
+- `src/pages/IndexV3.tsx`, `src/pages/Category.tsx` : texte de secours du nom de la catégorie mis à jour (voir base de données ci-dessous).
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20260920010000_rename_bateaux_category.sql` (appliquée) : la catégorie Bateaux s'appelle désormais « On the Water » (EN), « Prendre le Large » (FR) et « יוצאים לים » (HE), comme le titre de la vitrine `/boat`. Deux ou trois mots pour tenir sur deux lignes, comme les autres puces.
+
+### Pourquoi ce changement
+- L'ancienne icône (un bateau à vapeur en trait fin) paraissait petite et pâle à côté des autres, dessinées au trait épais.
+
+---
+
 ## [2026-09-20] — Correction : repasser une catégorie en brouillon depuis le back-office
 
 ### Ce qui a changé côté code

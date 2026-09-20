@@ -32,7 +32,7 @@ const CATEGORY_ICON_IMAGES: { slugHints: string[]; img: string }[] = [
   { slugHints: ["taste", "food", "culinar"], img: "/icons/icon-foody.png" },
   { slugHints: ["land", "stories"], img: "/icons/icon-stories.png" },
   { slugHints: ["nature", "beyond", "outdoor"], img: "/icons/icon-nature.png" },
-  { slugHints: ["bateaux"], img: "/icons/icon-boats.svg" },
+  { slugHints: ["bateaux"], img: "/icons/icon-boats.png" },
 ];
 
 const getCategoryIconImage = (slug?: string | null) => {

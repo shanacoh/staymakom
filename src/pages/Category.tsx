@@ -40,7 +40,7 @@ const V3_CATEGORIES = [
   { id: "land-of-stories", en: "Land of Stories",  fr: "Terre de Récits",      he: "ארץ הסיפורים",     slugHints: ["land", "stories"],            icon: "compass", img: "/icons/icon-stories.png"   },
   { id: "nature-outdoor",  en: "Nature & Outdoor",  fr: "Nature & Plein Air",   he: "טבע ושטח",         slugHints: ["nature", "beyond", "outdoor"],icon: "leaf",    img: "/icons/icon-nature.png"    },
   // Bateaux : saisonnier. La puce n'apparaît que si la catégorie est publiée en base.
-  { id: "boats-tour",      en: "Boats",             fr: "Bateaux",              he: "סירות",            slugHints: ["bateaux"],                    icon: "sailboat", img: "/icons/icon-boats.svg"    },
+  { id: "boats-tour",      en: "On the Water",       fr: "Prendre le Large",     he: "יוצאים לים",        slugHints: ["bateaux"],                    icon: "sailboat", img: "/icons/icon-boats.png"    },
 ];
 
 const iconMap: Record<string, LucideIcon> = {
