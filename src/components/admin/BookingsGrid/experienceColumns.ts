@@ -1,4 +1,5 @@
 import type { Database } from "@/integrations/supabase/types";
+import { type ColumnDef, type SelectOption, formatCurrency } from "./columnTypes";
 
 export type BookingRow = Database["public"]["Tables"]["standalone_bookings"]["Row"];
 
@@ -23,7 +24,7 @@ export type NewBookingDraft = Partial<
   >
 >;
 
-export type ColumnKey =
+export type ExperienceColumnKey =
   | "status"
   | "customer_name"
   | "customer_email"
@@ -39,22 +40,6 @@ export type ColumnKey =
   | "payment_status"
   | "supplier_payment_status"
   | "internal_notes";
-
-export type ColumnType = "text" | "number" | "date" | "select" | "readonly";
-
-export interface SelectOption {
-  value: string;
-  label: string;
-}
-
-export interface ColumnDef {
-  key: ColumnKey;
-  label: string;
-  type: ColumnType;
-  options?: SelectOption[];
-  widthClass?: string;
-  align?: "left" | "right";
-}
 
 // "pending" existe déjà sur des réservations créées via l'ancien flux (site
 // public / process-standalone-booking) — on le garde dans la liste pour que
@@ -81,19 +66,17 @@ export const SUPPLIER_PAYMENT_OPTIONS: SelectOption[] = [
   { value: "paid", label: "Payé" },
 ];
 
-export const CURRENCY_OPTIONS = ["ILS", "USD", "EUR"];
+export { formatCurrency };
 
-const CURRENCY_SYMBOLS: Record<string, string> = { ILS: "₪", USD: "$", EUR: "€" };
-
-export function formatCurrency(amount: number | null | undefined, currency: string | null | undefined) {
-  if (amount === null || amount === undefined) return "—";
-  const symbol = CURRENCY_SYMBOLS[currency || "ILS"] || currency || "₪";
-  return `${symbol}${amount.toLocaleString("fr-FR")}`;
-}
-
-export const COLUMNS: ColumnDef[] = [
+export const EXPERIENCE_COLUMNS: ColumnDef[] = [
   { key: "status", label: "Statut", type: "select", options: STATUS_OPTIONS, widthClass: "w-[130px]" },
-  { key: "customer_name", label: "Client", type: "text", widthClass: "w-[160px]" },
+  {
+    key: "customer_name",
+    label: "Client",
+    type: "text",
+    widthClass: "w-[160px]",
+    newRowPlaceholder: "+ Ajouter une réservation",
+  },
   { key: "customer_email", label: "Email", type: "text", widthClass: "w-[190px]" },
   { key: "customer_phone", label: "Téléphone", type: "text", widthClass: "w-[130px]" },
   { key: "custom_experience_title", label: "Expérience", type: "text", widthClass: "w-[180px]" },
@@ -101,15 +84,35 @@ export const COLUMNS: ColumnDef[] = [
   { key: "booking_date", label: "Date", type: "date", widthClass: "w-[150px]" },
   { key: "time_slot", label: "Créneau", type: "text", widthClass: "w-[110px]" },
   { key: "party_size", label: "Pers.", type: "number", widthClass: "w-[70px]", align: "right" },
-  { key: "sell_price", label: "Montant client", type: "number", widthClass: "w-[150px]", align: "right" },
+  {
+    key: "sell_price",
+    label: "Montant client",
+    type: "number",
+    widthClass: "w-[150px]",
+    align: "right",
+    locksWhenAutomatic: true,
+  },
   { key: "supplier_cost", label: "Coût fournisseur", type: "number", widthClass: "w-[140px]", align: "right" },
   { key: "commission", label: "Commission", type: "readonly", widthClass: "w-[110px]", align: "right" },
-  { key: "payment_status", label: "Paiement client", type: "select", options: CLIENT_PAYMENT_OPTIONS, widthClass: "w-[140px]" },
-  { key: "supplier_payment_status", label: "Paiement fournisseur", type: "select", options: SUPPLIER_PAYMENT_OPTIONS, widthClass: "w-[150px]" },
+  {
+    key: "payment_status",
+    label: "Paiement client",
+    type: "select",
+    options: CLIENT_PAYMENT_OPTIONS,
+    widthClass: "w-[140px]",
+    locksWhenAutomatic: true,
+  },
+  {
+    key: "supplier_payment_status",
+    label: "Paiement fournisseur",
+    type: "select",
+    options: SUPPLIER_PAYMENT_OPTIONS,
+    widthClass: "w-[150px]",
+  },
   { key: "internal_notes", label: "Notes / relance", type: "text", widthClass: "w-[260px]" },
 ];
 
-export const INTERACTIVE_COLUMNS = COLUMNS.filter((c) => c.type !== "readonly");
+export const EXPERIENCE_INTERACTIVE_COLUMNS = EXPERIENCE_COLUMNS.filter((c) => c.type !== "readonly");
 
 export const NEW_ROW_DEFAULTS: NewBookingDraft = {
   status: "draft",

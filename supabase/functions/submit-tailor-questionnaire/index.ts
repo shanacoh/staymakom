@@ -114,6 +114,18 @@ serve(async (req) => {
       );
     }
 
+    // Reporte aussi les dates/région dans la ligne de suivi de l'onglet
+    // Itinéraires du back-office. Ne bloque jamais la réponse au client si
+    // cette écriture secondaire échoue.
+    const { error: itineraryError } = await supabase
+      .from('itinerary_requests')
+      .update({
+        requested_dates: (dates as string).trim(),
+        region: region === 'Other' && otherRegion ? (otherRegion as string).trim() : region,
+      })
+      .eq('lead_id', lead.id);
+    if (itineraryError) console.error('Failed to enrich itinerary_requests (non-blocking):', itineraryError);
+
     console.log(`Questionnaire submitted for lead ${lead.id}`);
 
     return new Response(

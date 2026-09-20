@@ -2,7 +2,7 @@ import { forwardRef, useState } from "react";
 import { TableCell } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import type { SelectOption } from "./columns";
+import type { SelectOption } from "./columnTypes";
 
 interface GridSelectCellProps {
   value: string | null;

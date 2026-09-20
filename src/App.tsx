@@ -96,9 +96,7 @@ const StandaloneExperience       = lazy(() => import("./pages/StandaloneExperien
 const StandaloneCheckout         = lazy(() => import("./pages/StandaloneCheckout"));
 const StandaloneBookingConfirmation = lazy(() => import("./pages/StandaloneBookingConfirmation"));
 const TailorMadeQuestionnaire    = lazy(() => import("./pages/TailorMadeQuestionnaire"));
-const AdminStandaloneBookings    = lazy(() => import("./pages/admin/StandaloneBookings"));
 const AdminStandaloneBookingDetails = lazy(() => import("./pages/admin/StandaloneBookingDetails"));
-const AdminStandaloneBookingsGrid = lazy(() => import("./pages/admin/StandaloneBookingsGrid"));
 const AdminBoatExperiences       = lazy(() => import("./pages/admin/BoatExperiences"));
 const AdminBoatRequests          = lazy(() => import("./pages/admin/BoatRequests"));
 
@@ -280,10 +278,12 @@ const AppContent = () => {
             <Route path="experiences/new" element={<AdminExperiences2 key="new" />} />
             <Route path="experiences/edit/:experienceId" element={<AdminExperiences2 key="edit" />} />
             <Route path="bookings" element={<AdminBookings />} />
-            <Route path="reservations" element={<AdminBookings />} />
+            {/* Anciennes URLs fusionnées dans la page Réservations unique — redirections
+                gardées car plusieurs edge functions envoient des liens en dur vers elles. */}
+            <Route path="reservations" element={<Navigate to="/admin/bookings" replace />} />
+            <Route path="standalone-bookings" element={<Navigate to="/admin/bookings?tab=experiences" replace />} />
+            <Route path="standalone-bookings/grid" element={<Navigate to="/admin/bookings?tab=experiences" replace />} />
             <Route path="reservations/:bookingId" element={<AdminReservationDetails />} />
-            <Route path="standalone-bookings" element={<AdminStandaloneBookings />} />
-            <Route path="standalone-bookings/grid" element={<AdminStandaloneBookingsGrid />} />
             <Route path="standalone-bookings/:bookingId" element={<AdminStandaloneBookingDetails />} />
             <Route path="boats" element={<AdminBoatExperiences />} />
             <Route path="boats/new" element={<AdminBoatExperiences />} />

@@ -113,7 +113,7 @@ const GridCell = forwardRef<HTMLTableCellElement, GridCellProps>(function GridCe
       onClick={() => !isEditing && startEditing()}
       onKeyDown={handleCellKeyDown}
       className={cn(
-        "relative cursor-text text-sm focus:outline focus:outline-2 focus:outline-primary focus:-outline-offset-2",
+        "relative cursor-text py-2 px-3 text-sm focus:outline focus:outline-2 focus:outline-primary focus:-outline-offset-2",
         align === "right" && "text-right",
         className,
       )}

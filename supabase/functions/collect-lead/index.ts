@@ -201,6 +201,22 @@ serve(async (req) => {
         );
       }
 
+      // Enrichit aussi la ligne de suivi dans l'onglet Itinéraires du back-office
+      // (étape 2 du formulaire : ambiance, période, budget, souhaits). Ne bloque
+      // jamais la réponse au client si cette écriture secondaire échoue.
+      const itineraryUpdates: Record<string, unknown> = {};
+      if (requestData.metadata?.moods !== undefined) itineraryUpdates.moods = requestData.metadata.moods;
+      if (requestData.metadata?.timing) itineraryUpdates.timing = requestData.metadata.timing;
+      if (requestData.metadata?.budget) itineraryUpdates.budget_hint = requestData.metadata.budget;
+      if (requestData.metadata?.description) itineraryUpdates.description = requestData.metadata.description;
+      if (Object.keys(itineraryUpdates).length > 0) {
+        const { error: itineraryError } = await supabase
+          .from('itinerary_requests')
+          .update(itineraryUpdates)
+          .eq('lead_id', requestData.leadId);
+        if (itineraryError) console.error('Failed to enrich itinerary_requests (non-blocking):', itineraryError);
+      }
+
       console.log('tailored_request lead enriched (step 2):', requestData.leadId);
       return new Response(
         JSON.stringify({ success: true, leadId: requestData.leadId }),
@@ -258,6 +274,21 @@ serve(async (req) => {
       }
 
       console.log(`${requestData.source} lead saved:`, data.id);
+
+      // Crée la ligne de suivi correspondante dans l'onglet Itinéraires du
+      // back-office. Best-effort : ne bloque jamais la réponse au client.
+      if (requestData.source === 'tailored_request') {
+        const { error: itineraryError } = await supabase.from('itinerary_requests').insert([{
+          lead_id: data.id,
+          customer_name: leadRecord.name || leadRecord.email,
+          customer_email: leadRecord.email,
+          customer_phone: leadRecord.phone || null,
+          occasion: requestData.metadata?.occasion || null,
+          party_size: requestData.metadata?.people || null,
+        }]);
+        if (itineraryError) console.error('Failed to create itinerary_requests row (non-blocking):', itineraryError);
+      }
+
       return new Response(
         JSON.stringify({ success: true, leadId: data.id }),
         { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

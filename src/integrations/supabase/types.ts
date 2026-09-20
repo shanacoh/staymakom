@@ -2883,6 +2883,83 @@ export type Database = {
         }
         Relationships: []
       }
+      itinerary_requests: {
+        Row: {
+          amount: number | null
+          budget_hint: string | null
+          created_at: string
+          currency: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string | null
+          description: string | null
+          id: string
+          internal_notes: string | null
+          lead_id: string | null
+          moods: string[] | null
+          occasion: string | null
+          party_size: string | null
+          payment_status: string
+          region: string | null
+          requested_dates: string | null
+          timing: string | null
+          updated_at: string
+          workflow_status: string
+        }
+        Insert: {
+          amount?: number | null
+          budget_hint?: string | null
+          created_at?: string
+          currency?: string
+          customer_email: string
+          customer_name: string
+          customer_phone?: string | null
+          description?: string | null
+          id?: string
+          internal_notes?: string | null
+          lead_id?: string | null
+          moods?: string[] | null
+          occasion?: string | null
+          party_size?: string | null
+          payment_status?: string
+          region?: string | null
+          requested_dates?: string | null
+          timing?: string | null
+          updated_at?: string
+          workflow_status?: string
+        }
+        Update: {
+          amount?: number | null
+          budget_hint?: string | null
+          created_at?: string
+          currency?: string
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string | null
+          description?: string | null
+          id?: string
+          internal_notes?: string | null
+          lead_id?: string | null
+          moods?: string[] | null
+          occasion?: string | null
+          party_size?: string | null
+          payment_status?: string
+          region?: string | null
+          requested_dates?: string | null
+          timing?: string | null
+          updated_at?: string
+          workflow_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itinerary_requests_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       journal_posts: {
         Row: {
           author_name: string

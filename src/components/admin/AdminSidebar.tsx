@@ -95,7 +95,7 @@ const apercuItems: NavItem[] = [
 const operationsItems: NavItem[] = [
   { title: "Experiences", url: "/admin/experiences2", icon: Sparkles },
   { title: "Itinéraires", url: "/admin/itineraires", icon: Compass },
-  { title: "Réservations", url: "/admin/bookings", icon: Calendar },
+  { title: "Réservations", url: "/admin/bookings", icon: Calendar, inProgress: true },
   { title: "Partenaires · Hôtels", url: "/admin/hotels2", icon: Building2 },
   { title: "Partenaires · Expériences", url: "/admin/partenaires/experiences", icon: Handshake },
 ];

@@ -6,30 +6,48 @@
 
 ---
 
-## [2026-09-18] — Favoris en vert dans le menu + colonne Favoris sur la page Comptes
+## [2026-09-20] — Onglet "Itinéraires" : suivi des demandes de séjour sur mesure
 
 ### Ce qui a changé côté code
-- `src/components/admin/AdminSidebar.tsx` : l'entrée "Favorites" du menu de gauche passe en vert, comme les autres pages dont la refonte visuelle est validée (Comptes, CRM, Gift Cards).
-- `src/pages/admin/Customers.tsx` (revu) : la page Comptes affiche maintenant une colonne "Favoris" juste après "Résa", avec le nombre de favoris de chaque client. Le tableau reste trié par date d'inscription par défaut, mais cliquer sur l'en-tête "Résa" ou "Favoris" trie désormais par ce nombre (le plus grand en premier), avec une flèche indiquant le sens ; un second clic inverse l'ordre.
+- `src/components/admin/ReservationsHub/ItineraryRequestsTable.tsx` (nouveau) : remplace le placeholder "page en construction" de l'onglet Itinéraires par un vrai tableau des demandes reçues via le bouton "Design my stay" du site. Colonnes : client, occasion/nombre de personnes, dates et région souhaitées (une fois le questionnaire de suivi rempli), un bouton "Détails" qui regroupe budget/période/ambiance/message dans un petit panneau, un statut de suivi (Non traité / Message envoyé / En cours de création / Créé et envoyé), un statut de paiement (Pas payé / Payé) avec un montant éditable, et des notes internes.
+- `src/pages/admin/Reservations.tsx` : l'onglet "Itinéraires" devient cliquable (n'est plus désactivé) et affiche ce nouveau tableau ; le bouton "Nouvelle réservation" est masqué sur cet onglet (les demandes arrivent automatiquement du site, rien à créer à la main pour l'instant).
+- `supabase/functions/collect-lead/index.ts` : quand une demande "Design my stay" arrive (étape 1 du formulaire), une ligne de suivi est créée en plus du contact CRM habituel ; l'étape 2 (ambiance, période, budget, message) vient compléter cette même ligne.
+- `supabase/functions/submit-tailor-questionnaire/index.ts` : quand le client répond au questionnaire de suivi envoyé par email (dates, région), ces informations viennent aussi compléter la ligne de suivi.
 
 ### Ce qui a changé côté base de données
-- Aucun. La colonne Favoris réutilise la table `wishlist` déjà utilisée par l'onglet Favoris.
+- Migration `supabase/migrations/20260919001000_create_itinerary_requests.sql` (appliquée) : nouvelle table `itinerary_requests`, une ligne par demande de séjour sur mesure, reliée au contact du CRM (`lead_id`) sans dupliquer sa gestion. Statut de suivi et statut de paiement avec des valeurs fixes (pour éviter les fautes de frappe), montant et devise, notes internes.
 
 ### Pourquoi ce changement
-- Shana voulait retrouver d'un coup d'œil, sur la fiche de chaque client, autant son nombre de réservations que son nombre de favoris, et pouvoir trier la liste des clients par l'un ou l'autre.
+- Avant, une demande de séjour sur mesure atterrissait uniquement comme un contact générique dans le CRM, noyée avec les newsletters et les demandes de partenariat — impossible de suivre où en est chaque demande ni si elle a été payée. Version volontairement simple pour commencer (comme convenu avec Shana) : à faire évoluer une fois l'usage réel du tableau observé.
 
 ---
 
-## [2026-09-18] — Réglages du site : nouvelle apparence back-office
+## [2026-09-18] — Refonte des pages Catégories du back-office
 
 ### Ce qui a changé côté code
-- `src/pages/admin/Settings.tsx` (revu) : la page adopte la même direction artistique que les pages déjà refaites (titre compact, petits titres de section discrets en majuscules) et tous les libellés/boutons passent en français ("Réglages", "Nom du site", "Enregistrer", etc.). Aucune fonctionnalité n'a changé — mêmes champs, même sauvegarde en base.
+- `src/pages/admin/Categories.tsx` (revu) : la liste des catégories passe d'un tableau à une grille de cartes visuelles — icône, nom, nombre d'expériences, actions (modifier/publier-dépublier/supprimer) au survol, réordonnancement toujours par glisser-déposer, carte pointillée "+ Ajouter" en fin de grille.
+- `src/pages/admin/CategoryEditor.tsx` (réécrit) : formulaire allégé — suppression de la grille de 32 icônes (remplacée par un aperçu + un bouton pour charger une image), suppression du champ "ordre d'affichage" tapé à la main (géré depuis la grille), suppression du bloc "Key Features" jamais affiché sur le site, ajout des champs français manquants (titre de présentation, texte d'intro), contenu réorganisé en deux blocs clairs ("Sous-titre — page Lancement" vs "Titre et texte — page Catégorie dédiée") avec des onglets par langue au lieu de 3 colonnes.
+- `src/pages/IndexV3.tsx`, `src/pages/LaunchExperiences.tsx`, `src/pages/Category.tsx` : l'icône affichée sur le site vient maintenant en priorité de la base (`icon_image`) si elle a été chargée depuis le back office, sinon des dessins codés en dur comme avant.
+- `src/pages/Category.tsx` : correction d'un bug — le SEO en français (titre/description) n'était jamais transmis à la page, les visiteurs recevaient toujours le SEO anglais.
 
 ### Ce qui a changé côté base de données
-- Aucun.
+- Migration `supabase/migrations/20260918150000_add_categories_icon_image.sql` (appliquée) : ajoute la colonne `icon_image` à la table `categories`, pour stocker l'URL d'une icône chargée depuis le back office.
 
 ### Pourquoi ce changement
-- Shana trouve la page Settings peu utile en l'état, mais voulait qu'elle reprenne quand même la nouvelle apparence du back-office plutôt que de rester dans l'ancien style.
+- Shana trouvait la page catégories peu lisible (tableau) et le formulaire d'édition trop chargé avec des champs qui ne servaient plus (bibliothèque d'icônes, ordre tapé à la main, "key features" jamais affichées). L'objectif était de ne garder que ce qui compte vraiment et de rendre l'icône de chaque catégorie modifiable sans passer par le code.
+
+---
+
+## [2026-09-18] — Réorganise le menu Technique du back-office
+
+### Ce qui a changé côté code
+- `src/components/admin/AdminSidebar.tsx` (revu) : le menu "Technique" du back-office est maintenant replié par défaut. Un clic dessus déroule tout d'un coup, dans l'ordre : "Erreurs" (avec un rond rouge affichant le nombre d'erreurs non traitées), "Settings" (déplacé depuis le menu "Autre"), puis les pages HyperGuest et Revolut, chacune sous son propre titre coloré (bleu roi) pour bien les distinguer visuellement. Avant, "Technique" restait toujours ouvert avec trois petits accordéons imbriqués, ce que Shana trouvait confus. Le titre "Technique" lui-même est passé en vert pour se démarquer des autres groupes du menu.
+
+### Ce qui a changé côté base de données
+- Aucun. Le rond rouge réutilise la même donnée que le Tableau de bord (table `error_groups`, erreurs au statut "new").
+
+### Pourquoi ce changement
+- Shana voulait un menu Technique plus clair et compact au premier coup d'œil, sans avoir à ouvrir plusieurs petits sous-menus pour voir toutes les pages techniques disponibles.
 
 ---
 
@@ -48,16 +66,31 @@
 
 ---
 
-## [2026-09-18] — Réorganise le menu Technique du back-office
+## [2026-09-18] — Fusion des 3 pages Réservations en une seule interface
 
 ### Ce qui a changé côté code
-- `src/components/admin/AdminSidebar.tsx` (revu) : le menu "Technique" du back-office est maintenant replié par défaut. Un clic dessus déroule tout d'un coup, dans l'ordre : "Erreurs" (avec un rond rouge affichant le nombre d'erreurs non traitées), "Settings" (déplacé depuis le menu "Autre"), puis les pages HyperGuest et Revolut, chacune sous son propre titre coloré (bleu roi) pour bien les distinguer visuellement. Avant, "Technique" restait toujours ouvert avec trois petits accordéons imbriqués, ce que Shana trouvait confus. Le titre "Technique" lui-même est passé en vert pour se démarquer des autres groupes du menu.
+- `src/pages/admin/Reservations.tsx` (réécrit) : devient le point d'entrée unique de "Réservations" (`/admin/bookings`), avec deux onglets — "Expériences & bateaux" et "Hôtels" — plus un onglet "Itinéraires" désactivé ("page en construction"). Remplace l'ancien pill "With Hotel / Experience Only".
+- `src/pages/admin/StandaloneBookings.tsx` et `src/pages/admin/StandaloneBookingsGrid.tsx` (supprimés) : ces deux pages faisaient doublon avec la nouvelle interface — même table, logiques différentes, sources de confusion pour Shana.
+- `src/components/admin/ReservationsHub/` (nouveau dossier) :
+  - `ExperienceBookingsGrid.tsx` : vue tableur (façon Excel) sur les réservations expérience/bateau, reprend et fusionne les filtres, le panneau "Demandes à traiter" (maintenant en panneau latéral plutôt qu'une page séparée) et la création manuelle.
+  - `HotelBookingsGrid.tsx` (nouveau) : même principe de tableur, cette fois pour les réservations hôtel — n'existait sous aucune forme éditable en ligne auparavant.
+  - `HotelPartnerCell.tsx` (nouveau) : sélecteur d'hôtel avec recherche et "+ Créer «nom»" quand l'hôtel tapé n'existe pas encore (créé en brouillon, à compléter ensuite dans sa fiche complète).
+  - `RowActionsCell.tsx` (nouveau) : les 3 actions par ligne de la maquette (lien de paiement, facture, déclenchement partenaire) — affichées mais désactivées ("bientôt disponible"), car aucune de ces 3 fonctionnalités n'existe encore ; à construire une par une dans de prochaines sessions.
+  - `CreateManualHotelBookingDialog.tsx` (nouveau) : formulaire de réservation hôtel manuelle (client contacté en direct), symétrique du formulaire existant côté expérience.
+- `src/components/admin/BookingsGrid/BookingsGridTable.tsx` : rendu générique (les colonnes sont passées en props) pour pouvoir servir à la fois aux réservations expérience et hôtel ; ajoute la gestion des cellules verrouillées (réservations automatiques) et d'une colonne Actions.
+- `src/components/admin/BookingsGrid/columns.ts` renommé `experienceColumns.ts` ; nouveau fichier `hotelColumns.ts` (colonnes hôtel) et `columnTypes.ts` (types partagés).
+- `src/App.tsx` : routes `/admin/reservations`, `/admin/standalone-bookings` et `/admin/standalone-bookings/grid` redirigent maintenant vers `/admin/bookings` (au lieu d'afficher une page à part) — pour ne jamais casser les liens envoyés par email par le site.
+- `src/components/admin/AdminSidebar.tsx` : suppression de l'entrée "à supp réservation tableau", déjà identifiée comme obsolète.
+- Nouvelle edge function `supabase/functions/create-hotel-manual-booking` : crée une réservation hôtel saisie à la main (jamais confondue avec une vraie synchro, grâce à la nouvelle colonne `source`), sans envoyer d'email — Shana confirme le paiement et l'envoi ensuite depuis la fiche.
+- Deuxième passe de mise en cohérence visuelle avec la nouvelle direction artistique du back-office (celle déjà en place sur Comptes/CRM) : titre de page en noir standard (`h1` au lieu de rouge), onglets en pastille arrondie rouge quand actif, bouton "Nouvelle réservation" en rouge au même niveau que les onglets, ordre des onglets Hôtels puis Expériences puis Itinéraires, tableau resserré au même style que Gift Cards (en-têtes gris clair en petites majuscules, lignes compactes). Les longues rangées de filtres et les paragraphes d'explication toujours affichés ont été remplacés par un bouton "Filtres" (avec pastille de compte) et un petit "i" cliquable, pour désencombrer l'écran. Nouveaux composants `FiltersPopoverButton.tsx` et `InfoPopoverButton.tsx` dans `ReservationsHub/`.
 
 ### Ce qui a changé côté base de données
-- Aucun. Le rond rouge réutilise la même donnée que le Tableau de bord (table `error_groups`, erreurs au statut "new").
+- Migration `supabase/migrations/20260919000800_add_source_and_notes_to_bookings_hg.sql` (appliquée) : ajoute à la table `bookings_hg` (réservations hôtel) :
+  - `source` (`hyperguest_sync` par défaut, ou `manual_admin`) : distingue une réservation venue automatiquement de la synchro HyperGuest d'une réservation saisie à la main. La synchro existante n'a rien à changer, elle reçoit la bonne valeur automatiquement.
+  - `internal_notes` : notes internes de suivi, éditables directement dans le tableau, comme pour les réservations expérience.
 
 ### Pourquoi ce changement
-- Shana voulait un menu Technique plus clair et compact au premier coup d'œil, sans avoir à ouvrir plusieurs petits sous-menus pour voir toutes les pages techniques disponibles.
+- Shana gérait la même chose (réservations expérience) sur 3 pages différentes qui se marchaient dessus, et n'avait aucun moyen de saisir une réservation hôtel manuelle (uniquement via son Excel de l'été). Cette refonte unifie tout en une seule interface façon tableur, sans toucher au fonctionnement réel du site (paiements Revolut, synchro HyperGuest, emails).
 
 ---
 
