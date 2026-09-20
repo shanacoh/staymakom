@@ -102,7 +102,7 @@ const operationsItems: NavItem[] = [
 
 // Autre : tout ce qui existe déjà et n'a pas encore de place dédiée dans la nouvelle organisation
 const autreItems: NavItem[] = [
-  { title: "Categories", url: "/admin/categories", icon: FolderKanban },
+  { title: "Categories", url: "/admin/categories", icon: FolderKanban, done: true },
   { title: "Comptes", url: "/admin/customers", icon: UserCircle, done: true },
   { title: "Favorites", url: "/admin/favorites", icon: Heart, done: true },
   { title: "Journal", url: "/admin/journal", icon: BookOpen },

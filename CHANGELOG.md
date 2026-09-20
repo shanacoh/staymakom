@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-09-20] — Menu de gauche : Réservations en orange, Catégories en vert
+
+### Ce qui a changé côté code
+- `src/components/admin/AdminSidebar.tsx` : "Réservations" passe en orange (page encore en cours de refonte) et "Categories" en vert (refonte validée), selon les marqueurs déjà utilisés dans le menu.
+
+### Ce qui a changé côté base de données
+- Aucun.
+
+### Pourquoi ce changement
+- Shana suit l'avancement de la refonte du back-office grâce aux couleurs du menu (vert = validé, orange = en cours).
+
+---
+
 ## [2026-09-20] — Onglet "Itinéraires" : suivi des demandes de séjour sur mesure
 
 ### Ce qui a changé côté code
