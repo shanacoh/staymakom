@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-09-20] — Version hébreu des fiches bateaux
+
+### Ce qui a changé côté code
+- Aucun : les champs hébreu existaient déjà (formulaire du back-office et pages du site), ils étaient simplement vides. Un visiteur en hébreu voyait donc l'anglais.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20260920020000_fill_bateaux_hebrew.sql` (appliquée) : remplit l'hébreu des 12 fiches de la catégorie Bateaux (7 publiées et 5 brouillons) : titre, sous-titre, description, durée, ville, région. Elle traduit aussi les 71 lignes « ce qui est inclus » et les 36 extras de ces fiches. Elle ne remplit que les champs encore vides : elle peut être rejouée sans écraser une traduction saisie à la main.
+- Les autres champs hébreu (annulation, adresse, « bon à savoir », référencement) sont vides parce que leur version anglaise l'est aussi : rien à traduire.
+
+### Pourquoi ce changement
+- Les clients qui consultent le site en hébreu voyaient les bateaux en anglais. Traductions rédigées par Claude : à faire relire par une personne qui parle hébreu.
+
+---
+
 ## [2026-09-20] — Nouvelle icône et nouveau nom de la catégorie Bateaux
 
 ### Ce qui a changé côté code
