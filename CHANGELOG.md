@@ -6,6 +6,31 @@
 
 ---
 
+## [2026-09-20] — Catalogue du back-office, lot 1 : le carnet unique de tous les lieux
+
+### Ce qui a changé côté code
+- `src/pages/admin/Catalogue.tsx` (nouveau) : remplace l'écran « Bientôt disponible » de `/admin/catalogue`. Onglets Tous / Partenaires / Hors réseau / Inspiration / À trier, 3 compteurs cliquables (à trier, à relancer, à visiter), filtres (recherche, type, catégorie, région, ville, statut, contenu, origine), tableau, et deux boutons « Coller un lien » et « Ajouter un lieu ».
+- `src/components/admin/catalogue/*` (nouveau) : le tableau, les filtres, les pastilles de statut, le panneau latéral d'un lieu (classement, suivi du contenu et commercial, contact, lieu, notes), la liaison avec une fiche du site, la liste des liens et vidéos avec lecteur intégré, et la fenêtre d'ajout.
+- `src/lib/catalogue/*` (nouveau) : types et libellés, filtres et compteurs, brouillon de fiche, reconnaissance des liens vidéo (TikTok, Instagram, YouTube) et requêtes vers la base. 32 tests automatiques couvrent la logique (filtres, relances, doublons de lien, validation de la position).
+- `src/App.tsx` : la route `/admin/catalogue` affiche la nouvelle page (chargée à part, jamais téléchargée par les visiteurs du site).
+- `src/integrations/supabase/types.ts` : régénéré pour connaître les nouvelles tables (ajout uniquement, rien de retiré).
+- Le lecteur vidéo ne se charge qu'au clic. Il est reconstruit à partir de l'identifiant de la vidéo, donc seuls les lecteurs officiels de TikTok, Instagram et YouTube peuvent s'afficher. Les liens courts TikTok (vm.tiktok.com) ne s'affichent pas encore : ils seront traités au lot 2.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20260920030000_create_catalogue.sql` (appliquée sur le projet via l'outil Supabase) :
+  - table `catalogue_items` : une ligne par lieu (nom, nature, type, notes, localisation, contact, statut commercial, dates de contact et de relance, contenu envoyé / visité / vidéo faite, catégories, étiquettes, lien éventuel vers une fiche du site, origine) ;
+  - table `catalogue_links` : les liens et vidéos d'un lieu (plusieurs possibles) ; le même lien ne peut pas être ajouté deux fois ;
+  - vue `catalogue_overview` : la « vitre » qui relit en direct nom, photo, ville, région, position et catégories des fiches du site ;
+  - fonction `sync_catalogue_with_site()` : ajoute au catalogue les fiches publiées qui n'y sont pas (appelée à l'ouverture de la page) ; fonction `catalogue_create_item()` : crée un lieu et son premier lien d'un seul bloc.
+- Accès réservé aux administrateurs (vérifié : une cliente et un visiteur anonyme voient 0 ligne et ne peuvent rien créer).
+- La première synchronisation a créé 96 lieux : les 96 fiches publiées (30 hôtels, 17 expériences hôtel, 49 expériences seules, dont 7 bateaux). Les 123 brouillons ne sont pas importés : ils arriveront quand ils seront publiés.
+- Aucune table existante n'est modifiée : réservations, paiements et pages publiques ne sont pas touchés.
+
+### Pourquoi ce changement
+- Shana veut un carnet unique de tous les lieux : ceux du site, ses partenaires en cours de discussion, et ses idées (TikTok, Instagram, lieux non commerciaux) pour suivre l'avancement (commercial, visite, vidéo) et nourrir plus tard la Carte et les itinéraires. Ce lot pose la base ; suivront l'envoi depuis l'iPhone (lot 2), la Carte (lot 3) et le sélecteur d'itinéraires (lot 4).
+
+---
+
 ## [2026-09-20] — Version hébreu des fiches bateaux
 
 ### Ce qui a changé côté code

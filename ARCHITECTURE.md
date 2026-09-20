@@ -298,7 +298,8 @@ public/
 | `/admin/boats/new`, `/admin/boats/edit/:experienceId` | AdminBoatExperiences (formulaire bateau). `/admin/boats` et `/admin/boats/requests` sont redirigées vers Expériences (onglet Bateaux) et Réservations (filtre Bateaux). |
 | `/admin/swipe/dossiers`, `/admin/swipe/bibliotheque`, `/admin/swipe/categories` | Module Swipe Itinéraire |
 | `/admin/partenaires/experiences` | ComingSoonAdmin ("bientôt disponible") |
-| `/admin/carte`, `/admin/catalogue`, `/admin/itineraires`, `/admin/promo`, `/admin/headquarter/sales`, `/admin/headquarter/marketing`, `/admin/headquarter/operation` | ComingSoonAdmin ("bientôt disponible") |
+| `/admin/catalogue` | AdminCatalogue (carnet unique de tous les lieux, voir la note Catalogue ci-dessous) |
+| `/admin/carte`, `/admin/itineraires`, `/admin/promo`, `/admin/headquarter/sales`, `/admin/headquarter/marketing`, `/admin/headquarter/operation` | ComingSoonAdmin ("bientôt disponible") |
 
 > Note (2026-09-17) : les anciennes pages de secours `/admin/backup/*` (Hotels V1, Experiences V1) ont été supprimées — plus utilisées depuis le passage aux pages V2. Le menu de gauche (`AdminSidebar.tsx`) est organisé en 4 groupes (Aperçu, Opérations, Croissance, Headquarter) plus un groupe Technique (HyperGuest, Revolut), repris de la maquette IA de Shana ; plusieurs entrées pointent encore vers des écrans "bientôt disponible" en attendant leur construction section par section.
 
@@ -307,6 +308,13 @@ public/
 > - **Catégorie Bateaux** (puce de l'accueil qui filtre la grille sur place, comme les autres catégories ; page directe `/category/bateaux`) : saisonnière. Publiée = puce visible et page accessible ; non publiée (draft) = puce et page disparaissent. Les bateaux sont absents de la grille par défaut de l'accueil. Piloté à la main depuis la page Catégories du back-office.
 > - **Back-office** : liste/prix/marges dans Expériences (onglet Bateaux), demandes et réservations dans Réservations (bouton filtre Bateaux). Les demandes sont écrites dans `standalone_experience_requests` puis converties à la main en `standalone_bookings`.
 > Sur l'accueil et la page catégorie, une puce n'apparaît que si sa catégorie est publiée en base.
+
+> Note (2026-09-20) — Catalogue (`/admin/catalogue`, lot 1) : carnet unique de tous les lieux (ceux du site, partenaires en cours, idées vues sur TikTok/Instagram, lieux non commerciaux pour les itinéraires). Strictement interne (rôle admin), chargé à part (lazy) : aucun impact sur le site public.
+> - **Principe : on relie, on ne recopie pas.** Une ligne par lieu dans `catalogue_items` ; pour un lieu publié sur le site, elle pointe vers sa fiche (`hotel_id`, `experience_id` ou `standalone_experience_id`, un seul des trois, unique). La vue `catalogue_overview` (`security_invoker`) relit en direct nom, photo, ville, région, position et catégories depuis `hotels2` / `experiences2` (position via l'hôtel) / `standalone_experiences`. Si des champs des formulaires du site changent, c'est la seule vue à ajuster (elle fige `ci.*` à sa création : toute nouvelle colonne de `catalogue_items` demande de la recréer).
+> - **Suivi** (jamais dans les tables du site) : nature (`partenaire` / `hors_reseau` / `inspiration`), type, statut commercial (`a_trier` … `refuse`), dates de contact et de relance, cases contenu envoyé / visité / vidéo faite, catégories Staymakom, étiquettes. `catalogue_links` : plusieurs liens ou vidéos par lieu (lien, plateforme, légende et vignette copiées) ; le même lien ne peut exister qu'une fois (clé `url_key` normalisée : paramètres de partage TikTok/Instagram ignorés).
+> - **Fonctions** : `sync_catalogue_with_site()` (appelée à l'ouverture de la page ; crée une ligne pour chaque fiche publiée sans lieu ; volontairement pas un déclencheur sur les tables du site, pour ne jamais bloquer une publication) ; `catalogue_create_item(p_item, p_link)` (lieu + premier lien en une seule opération, refuse un lien déjà présent ; réutilisée au lot 2 par la capture iPhone). Toutes deux non privilégiées : les règles d'accès (admin uniquement) s'appliquent.
+> - **Code** : `src/pages/admin/Catalogue.tsx`, `src/components/admin/catalogue/*`, `src/lib/catalogue/*` (types et libellés, filtres et compteurs, brouillon de fiche, lecteurs vidéo TikTok/Instagram/YouTube reconstruits à partir de l'identifiant, requêtes). Logique pure testée (`npm test`).
+> - **À venir** : lot 2 (envoi depuis l'iPhone + aperçu automatique + boîte « À trier »), lot 3 (Carte, avec Leaflet/OpenStreetMap déjà en place), lot 4 (sélecteur dans les itinéraires). La Bibliothèque swipe reste séparée en attendant la réflexion sur les itinéraires.
 
 ### Hotel Admin Routes (`/hotel-admin/*` — role: hotel_admin)
 

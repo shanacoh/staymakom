@@ -491,6 +491,190 @@ export type Database = {
           },
         ]
       }
+      catalogue_items: {
+        Row: {
+          address: string | null
+          city: string | null
+          commercial_status: string
+          contact_email: string | null
+          contact_instagram: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          contact_website: string | null
+          content_sent: boolean
+          content_sent_at: string | null
+          created_at: string
+          created_by: string | null
+          experience_id: string | null
+          google_maps_link: string | null
+          hotel_id: string | null
+          id: string
+          last_contact_date: string | null
+          latitude: number | null
+          longitude: number | null
+          name: string
+          nature: string
+          next_followup_date: string | null
+          notes: string | null
+          place_type: string
+          region: string | null
+          source: string
+          standalone_experience_id: string | null
+          staymakom_category_ids: string[]
+          tags: string[]
+          updated_at: string
+          video_done: boolean
+          video_url: string | null
+          visited: boolean
+          visited_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          commercial_status?: string
+          contact_email?: string | null
+          contact_instagram?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          contact_website?: string | null
+          content_sent?: boolean
+          content_sent_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          experience_id?: string | null
+          google_maps_link?: string | null
+          hotel_id?: string | null
+          id?: string
+          last_contact_date?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          nature?: string
+          next_followup_date?: string | null
+          notes?: string | null
+          place_type?: string
+          region?: string | null
+          source?: string
+          standalone_experience_id?: string | null
+          staymakom_category_ids?: string[]
+          tags?: string[]
+          updated_at?: string
+          video_done?: boolean
+          video_url?: string | null
+          visited?: boolean
+          visited_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          commercial_status?: string
+          contact_email?: string | null
+          contact_instagram?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          contact_website?: string | null
+          content_sent?: boolean
+          content_sent_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          experience_id?: string | null
+          google_maps_link?: string | null
+          hotel_id?: string | null
+          id?: string
+          last_contact_date?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          nature?: string
+          next_followup_date?: string | null
+          notes?: string | null
+          place_type?: string
+          region?: string | null
+          source?: string
+          standalone_experience_id?: string | null
+          staymakom_category_ids?: string[]
+          tags?: string[]
+          updated_at?: string
+          video_done?: boolean
+          video_url?: string | null
+          visited?: boolean
+          visited_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogue_items_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogue_items_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogue_items_standalone_experience_id_fkey"
+            columns: ["standalone_experience_id"]
+            isOneToOne: false
+            referencedRelation: "standalone_experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalogue_links: {
+        Row: {
+          author: string | null
+          caption: string | null
+          created_at: string
+          id: string
+          item_id: string
+          platform: string
+          thumbnail_url: string | null
+          url: string
+          url_key: string | null
+        }
+        Insert: {
+          author?: string | null
+          caption?: string | null
+          created_at?: string
+          id?: string
+          item_id: string
+          platform?: string
+          thumbnail_url?: string | null
+          url: string
+          url_key?: string | null
+        }
+        Update: {
+          author?: string | null
+          caption?: string | null
+          created_at?: string
+          id?: string
+          item_id?: string
+          platform?: string
+          thumbnail_url?: string | null
+          url?: string
+          url_key?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogue_links_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "catalogue_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogue_links_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "catalogue_overview"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           bullets: string[] | null
@@ -4537,8 +4721,89 @@ export type Database = {
           },
         ]
       }
+      catalogue_overview: {
+        Row: {
+          address: string | null
+          city: string | null
+          commercial_status: string | null
+          contact_email: string | null
+          contact_instagram: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          contact_website: string | null
+          content_sent: boolean | null
+          content_sent_at: string | null
+          created_at: string | null
+          created_by: string | null
+          display_address: string | null
+          display_city: string | null
+          display_image: string | null
+          display_latitude: number | null
+          display_longitude: number | null
+          display_maps_link: string | null
+          display_name: string | null
+          display_region: string | null
+          experience_id: string | null
+          first_thumbnail: string | null
+          google_maps_link: string | null
+          hotel_id: string | null
+          id: string | null
+          last_contact_date: string | null
+          latitude: number | null
+          links_count: number | null
+          live_id: string | null
+          live_kind: string | null
+          live_slug: string | null
+          live_status: string | null
+          longitude: number | null
+          name: string | null
+          nature: string | null
+          next_followup_date: string | null
+          notes: string | null
+          place_type: string | null
+          region: string | null
+          site_category_ids: string[] | null
+          source: string | null
+          standalone_experience_id: string | null
+          staymakom_category_ids: string[] | null
+          tags: string[] | null
+          updated_at: string | null
+          video_done: boolean | null
+          video_url: string | null
+          visited: boolean | null
+          visited_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogue_items_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogue_items_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogue_items_standalone_experience_id_fkey"
+            columns: ["standalone_experience_id"]
+            isOneToOne: false
+            referencedRelation: "standalone_experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      catalogue_create_item: {
+        Args: { p_item: Json; p_link?: Json }
+        Returns: string
+      }
+      catalogue_normalize_url: { Args: { p_url: string }; Returns: string }
       find_or_create_lead_for_email: {
         Args: { p_email: string; p_name: string; p_phone: string }
         Returns: string
@@ -4677,6 +4942,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      sync_catalogue_with_site: { Args: never; Returns: number }
       uuid_generate_v4: { Args: never; Returns: string }
       validate_gift_card: { Args: { p_code: string }; Returns: Json }
       validate_promo_code: {

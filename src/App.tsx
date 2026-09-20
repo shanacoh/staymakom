@@ -98,6 +98,7 @@ const StandaloneBookingConfirmation = lazy(() => import("./pages/StandaloneBooki
 const TailorMadeQuestionnaire    = lazy(() => import("./pages/TailorMadeQuestionnaire"));
 const AdminStandaloneBookingDetails = lazy(() => import("./pages/admin/StandaloneBookingDetails"));
 const AdminBoatExperiences       = lazy(() => import("./pages/admin/BoatExperiences"));
+const AdminCatalogue             = lazy(() => import("./pages/admin/Catalogue"));
 
 // ── Module Swipe Itinéraire ────────────────────────────────────────────────
 const SwipePublic                = lazy(() => import("./pages/swipe/SwipePublic"));
@@ -311,7 +312,7 @@ const AppContent = () => {
             <Route path="swipe/categories" element={<AdminSwipeCategories />} />
             {/* Charpente de navigation : écrans pas encore construits, en attendant leur tour */}
             <Route path="carte" element={<ComingSoonAdmin title="Carte" description="Vue géographique de tout le catalogue, filtrable par région et qualificatifs." />} />
-            <Route path="catalogue" element={<ComingSoonAdmin title="Catalogue" description="Partenaires, réservable hors réseau et contenu & inspiration réunis dans une seule vue." />} />
+            <Route path="catalogue" element={<AdminCatalogue />} />
             <Route path="itineraires" element={<ComingSoonAdmin title="Itinéraires" description="Brief, propositions IA et recherche manuelle pour construire un itinéraire client." />} />
             <Route path="partenaires/experiences" element={<ComingSoonAdmin title="Partenaires · Expériences" description="Gestion de la relation partenaire pour les expériences : contrat, commission, relance." />} />
             <Route path="promo" element={<AdminPromoCodes />} />
