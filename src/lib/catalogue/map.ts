@@ -21,12 +21,11 @@ export interface MapPoint {
 
 /**
  * Lieux visibles sur la carte : on écarte ceux qui sont encore "À trier" (pas encore rangés) et,
- * sauf demande explicite, ceux qui sont écartés ou abandonnés.
+ * sauf demande explicite (`showDiscarded`), ceux qui sont écartés ou abandonnés.
  */
-export function mapBaseEntries(entries: CatalogueEntry[], statusFilter: string): CatalogueEntry[] {
+export function mapBaseEntries(entries: CatalogueEntry[], showDiscarded: boolean): CatalogueEntry[] {
   return entries.filter(
-    (entry) =>
-      entry.commercial_status !== "a_trier" && (entry.commercial_status !== "refuse" || statusFilter === "refuse")
+    (entry) => entry.commercial_status !== "a_trier" && (entry.commercial_status !== "refuse" || showDiscarded)
   );
 }
 

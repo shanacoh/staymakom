@@ -1,35 +1,37 @@
-import type { CatalogueEntry, Nature } from "./types";
+import type { CatalogueEntry, CommercialStatus, Nature } from "./types";
 
 export type TabKey = "all" | Nature | "a_trier";
-export type QuickFilter = "followup" | "to_visit" | null;
-export type ContentFilter = "all" | "not_visited" | "no_video" | "content_not_sent";
 export type SortKey = "recent" | "name" | "followup";
+
+/** Ce qu'il reste à faire : chaque puce est une condition, on peut en combiner plusieurs. */
+export type TodoKey = "followup" | "to_visit" | "no_video" | "content_not_sent";
+
+/** Les critères qu'on peut cocher (plusieurs valeurs possibles pour chacun). */
+export type Dimension = "statuses" | "todo" | "placeTypes" | "categoryIds" | "regions" | "cities" | "sources";
 
 export interface CatalogueFilterState {
   tab: TabKey;
   search: string;
-  placeType: string; // "all" ou une valeur de PlaceType
-  categoryId: string; // "all" ou l'id d'une catégorie Staymakom
-  region: string; // "all" ou la clé d'une région (voir placeKey)
-  city: string; // "all" ou la clé d'une ville
-  status: string; // "all" ou une valeur de CommercialStatus
-  content: ContentFilter;
-  source: string; // "all" ou une valeur de Source
-  quick: QuickFilter;
+  statuses: CommercialStatus[];
+  todo: TodoKey[];
+  placeTypes: string[];
+  categoryIds: string[]; // ids de catégories Staymakom
+  regions: string[]; // clés de région (voir placeKey)
+  cities: string[]; // clés de ville
+  sources: string[];
   sort: SortKey;
 }
 
 export const DEFAULT_FILTERS: CatalogueFilterState = {
   tab: "all",
   search: "",
-  placeType: "all",
-  categoryId: "all",
-  region: "all",
-  city: "all",
-  status: "all",
-  content: "all",
-  source: "all",
-  quick: null,
+  statuses: [],
+  todo: [],
+  placeTypes: [],
+  categoryIds: [],
+  regions: [],
+  cities: [],
+  sources: [],
   sort: "recent",
 };
 
@@ -99,12 +101,33 @@ export function isFollowupDue(entry: CatalogueEntry, today: string): boolean {
   return !!entry.next_followup_date && entry.next_followup_date <= today;
 }
 
+/** Un partenaire, ou une discussion en cours : les lieux pour lesquels il y a du travail concret à faire. */
+const isActivePartner = (entry: CatalogueEntry): boolean =>
+  entry.commercial_status === "en_discussion" || entry.commercial_status === "partenaire";
+
 /** À visiter : partenaires et discussions en cours qui n'ont pas encore été visités. */
 export function isToVisit(entry: CatalogueEntry): boolean {
-  return (
-    !entry.visited && (entry.commercial_status === "en_discussion" || entry.commercial_status === "partenaire")
-  );
+  return !entry.visited && isActivePartner(entry);
 }
+
+/** Vidéo à faire : partenaires et discussions en cours dont la vidéo n'est pas faite. */
+export function needsVideo(entry: CatalogueEntry): boolean {
+  return !entry.video_done && isActivePartner(entry);
+}
+
+/** Contenu à envoyer : partenaires et discussions en cours à qui le contenu n'a pas été envoyé. */
+export function needsContentSent(entry: CatalogueEntry): boolean {
+  return !entry.content_sent && isActivePartner(entry);
+}
+
+const TODO_PREDICATES: Record<TodoKey, (entry: CatalogueEntry, today: string) => boolean> = {
+  followup: isFollowupDue,
+  to_visit: (entry) => isToVisit(entry),
+  no_video: (entry) => needsVideo(entry),
+  content_not_sent: (entry) => needsContentSent(entry),
+};
+
+export const TODO_KEYS: TodoKey[] = ["followup", "to_visit", "no_video", "content_not_sent"];
 
 /**
  * Les onglets par nature ne montrent pas les lieux encore "À trier" : tant qu'un lieu n'a pas été
@@ -125,43 +148,66 @@ export function countByTab(entries: CatalogueEntry[]): Record<TabKey, number> {
   return counts;
 }
 
-export function computeTiles(entries: CatalogueEntry[], today: string) {
-  const tiles = { toSort: 0, followup: 0, toVisit: 0 };
-  for (const entry of entries) {
-    if (entry.commercial_status === "a_trier") tiles.toSort += 1;
-    if (isFollowupDue(entry, today)) tiles.followup += 1;
-    if (isToVisit(entry)) tiles.toVisit += 1;
-  }
-  return tiles;
+// ---------------------------------------------------------------------------
+// Recherche
+// ---------------------------------------------------------------------------
+
+/** Les mots d'une recherche, sans accents ni majuscules. "vin eilat" donne ["vin", "eilat"]. */
+export function searchTerms(search: string): string[] {
+  return normalizeText(search).split(/\s+/).filter(Boolean);
 }
 
-function matchesContent(entry: CatalogueEntry, content: ContentFilter): boolean {
-  switch (content) {
-    case "not_visited":
-      return !entry.visited;
-    case "no_video":
-      return !entry.video_done;
-    case "content_not_sent":
-      return !entry.content_sent;
-    default:
-      return true;
-  }
-}
-
-function matchesSearch(entry: CatalogueEntry, search: string): boolean {
-  const needle = normalizeText(search);
-  if (!needle) return true;
+/** Tous les mots de la recherche doivent se retrouver quelque part dans la fiche (nom, lieu, notes, contact, étiquettes). */
+function matchesSearch(entry: CatalogueEntry, terms: string[]): boolean {
+  if (terms.length === 0) return true;
   const haystack = normalizeText(
     [
       entry.display_name,
       entry.display_city,
       entry.display_region,
+      entry.display_address,
       entry.notes,
       entry.contact_name,
+      entry.contact_instagram,
       entry.tags.join(" "),
     ].join(" ")
   );
-  return haystack.includes(needle);
+  return terms.every((term) => haystack.includes(term));
+}
+
+// ---------------------------------------------------------------------------
+// Filtres
+// ---------------------------------------------------------------------------
+
+const selected = (values: string[]) => values.length > 0;
+
+/** Les lieux qui passent tous les filtres (sans tri) ; `ignore` saute certains critères, pour calculer les nombres des puces. */
+function filterEntries(
+  entries: CatalogueEntry[],
+  filters: CatalogueFilterState,
+  today: string,
+  ignore: Dimension[] = []
+): CatalogueEntry[] {
+  const skip = new Set<Dimension>(ignore);
+  const terms = searchTerms(filters.search);
+
+  return entries.filter((entry) => {
+    if (!matchesTab(entry, filters.tab)) return false;
+    if (!skip.has("statuses") && selected(filters.statuses) && !filters.statuses.includes(entry.commercial_status)) return false;
+    if (!skip.has("todo") && !filters.todo.every((key) => TODO_PREDICATES[key](entry, today))) return false;
+    if (!skip.has("placeTypes") && selected(filters.placeTypes) && !filters.placeTypes.includes(entry.place_type)) return false;
+    if (!skip.has("sources") && selected(filters.sources) && !filters.sources.includes(entry.source)) return false;
+    if (!skip.has("regions") && selected(filters.regions) && !filters.regions.includes(placeKey(entry.display_region))) return false;
+    if (!skip.has("cities") && selected(filters.cities) && !filters.cities.includes(placeKey(entry.display_city))) return false;
+    if (
+      !skip.has("categoryIds") &&
+      selected(filters.categoryIds) &&
+      !filters.categoryIds.some((id) => entry.staymakom_category_ids.includes(id) || entry.site_category_ids.includes(id))
+    ) {
+      return false;
+    }
+    return matchesSearch(entry, terms);
+  });
 }
 
 function sortEntries(entries: CatalogueEntry[], sort: SortKey): CatalogueEntry[] {
@@ -191,39 +237,83 @@ export function applyFilters(
   filters: CatalogueFilterState,
   today: string
 ): CatalogueEntry[] {
-  const filtered = entries.filter((entry) => {
-    if (!matchesTab(entry, filters.tab)) return false;
-    if (filters.placeType !== "all" && entry.place_type !== filters.placeType) return false;
-    if (filters.status !== "all" && entry.commercial_status !== filters.status) return false;
-    if (filters.source !== "all" && entry.source !== filters.source) return false;
-    if (filters.region !== "all" && placeKey(entry.display_region) !== filters.region) return false;
-    if (filters.city !== "all" && placeKey(entry.display_city) !== filters.city) return false;
-    if (
-      filters.categoryId !== "all" &&
-      !entry.staymakom_category_ids.includes(filters.categoryId) &&
-      !entry.site_category_ids.includes(filters.categoryId)
-    ) {
-      return false;
-    }
-    if (!matchesContent(entry, filters.content)) return false;
-    if (filters.quick === "followup" && !isFollowupDue(entry, today)) return false;
-    if (filters.quick === "to_visit" && !isToVisit(entry)) return false;
-    return matchesSearch(entry, filters.search);
-  });
-  return sortEntries(filtered, filters.sort);
+  return sortEntries(filterEntries(entries, filters, today), filters.sort);
 }
 
-/** Vrai dès qu'un filtre (hors onglet et tri) est actif : sert à afficher "Réinitialiser". */
+/**
+ * Le nombre de lieux pour chaque valeur d'un critère, en tenant compte de tous les AUTRES critères
+ * (pas de celui-ci) : c'est le nombre affiché à côté d'une puce ou d'une case, "si je choisis
+ * celle-ci, combien de lieux ?". Les clés sont les valeurs du critère (statut, clé de ville...).
+ */
+export function facetCounts(
+  entries: CatalogueEntry[],
+  filters: CatalogueFilterState,
+  dimension: Exclude<Dimension, "todo">,
+  today: string
+): Map<string, number> {
+  const counts = new Map<string, number>();
+  const add = (key: string) => {
+    if (key) counts.set(key, (counts.get(key) ?? 0) + 1);
+  };
+  for (const entry of filterEntries(entries, filters, today, [dimension])) {
+    switch (dimension) {
+      case "statuses":
+        add(entry.commercial_status);
+        break;
+      case "placeTypes":
+        add(entry.place_type);
+        break;
+      case "sources":
+        add(entry.source);
+        break;
+      case "regions":
+        add(placeKey(entry.display_region));
+        break;
+      case "cities":
+        add(placeKey(entry.display_city));
+        break;
+      case "categoryIds":
+        new Set([...entry.staymakom_category_ids, ...entry.site_category_ids]).forEach(add);
+        break;
+    }
+  }
+  return counts;
+}
+
+/** Combien de lieux pour chaque puce "à faire", compte tenu des autres critères (pas des autres puces "à faire"). */
+export function todoCounts(
+  entries: CatalogueEntry[],
+  filters: CatalogueFilterState,
+  today: string
+): Record<TodoKey, number> {
+  const counts: Record<TodoKey, number> = { followup: 0, to_visit: 0, no_video: 0, content_not_sent: 0 };
+  for (const entry of filterEntries(entries, filters, today, ["todo"])) {
+    for (const key of TODO_KEYS) if (TODO_PREDICATES[key](entry, today)) counts[key] += 1;
+  }
+  return counts;
+}
+
+/** Ajoute la valeur si elle n'y est pas, la retire sinon : le geste d'une puce ou d'une case à cocher. */
+export function toggleValue<T>(list: T[], value: T): T[] {
+  return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
+}
+
+/** Le nombre de valeurs cochées dans le panneau de filtres (type, catégorie, région, ville, origine). */
+export function panelFilterCount(filters: CatalogueFilterState): number {
+  return filters.placeTypes.length + filters.categoryIds.length + filters.regions.length + filters.cities.length + filters.sources.length;
+}
+
+/** Vrai dès qu'un critère est actif (hors onglet et tri) : sert à proposer "Tout effacer". */
 export function hasActiveFilters(filters: CatalogueFilterState): boolean {
   return (
     filters.search.trim() !== "" ||
-    filters.placeType !== "all" ||
-    filters.categoryId !== "all" ||
-    filters.region !== "all" ||
-    filters.city !== "all" ||
-    filters.status !== "all" ||
-    filters.content !== "all" ||
-    filters.source !== "all" ||
-    filters.quick !== null
+    filters.statuses.length > 0 ||
+    filters.todo.length > 0 ||
+    panelFilterCount(filters) > 0
   );
+}
+
+/** Efface tous les critères, mais garde l'onglet et le tri. */
+export function clearFilters(filters: CatalogueFilterState): CatalogueFilterState {
+  return { ...DEFAULT_FILTERS, tab: filters.tab, sort: filters.sort };
 }

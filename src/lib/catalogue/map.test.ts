@@ -21,11 +21,11 @@ describe("mapBaseEntries", () => {
   ];
 
   it("écarte les lieux à trier et les lieux abandonnés", () => {
-    expect(mapBaseEntries(all, "all").map((e) => e.id)).toEqual(["a", "d"]);
+    expect(mapBaseEntries(all, false).map((e) => e.id)).toEqual(["a", "d"]);
   });
 
   it("montre les lieux abandonnés seulement si on les demande", () => {
-    expect(mapBaseEntries(all, "refuse").map((e) => e.id)).toEqual(["a", "c", "d"]);
+    expect(mapBaseEntries(all, true).map((e) => e.id)).toEqual(["a", "c", "d"]);
   });
 });
 

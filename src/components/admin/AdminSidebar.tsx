@@ -85,8 +85,8 @@ const INACTIVE_CLASS = "hover:bg-muted";
 // Aperçu : le tableau de bord, puis les futures vues de consultation (écrans à construire)
 const apercuItems: NavItem[] = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, exact: true, inProgress: true },
-  { title: "Carte", url: "/admin/carte", icon: Map },
-  { title: "Catalogue", url: "/admin/catalogue", icon: Library },
+  { title: "Carte", url: "/admin/carte", icon: Map, inProgress: true },
+  { title: "Catalogue", url: "/admin/catalogue", icon: Library, inProgress: true },
 ];
 
 // Opérations : la surface de travail au quotidien

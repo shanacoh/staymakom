@@ -1,32 +1,36 @@
 import { useDeferredValue, useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CatalogueFilters } from "@/components/admin/catalogue/CatalogueFilters";
 import { CatalogueItemPanel } from "@/components/admin/catalogue/CatalogueItemPanel";
 import { CatalogueMap } from "@/components/admin/catalogue/CatalogueMap";
 import { CatalogueTabs } from "@/components/admin/catalogue/CatalogueTabs";
-import { LocateList, type SuggestedPosition } from "@/components/admin/catalogue/LocateList";
-import { PositionAlerts } from "@/components/admin/catalogue/PositionAlerts";
+import { CatalogueToolbar } from "@/components/admin/catalogue/CatalogueToolbar";
+import type { SuggestedPosition } from "@/components/admin/catalogue/LocateList";
+import { MapSidePanel, type SideTab } from "@/components/admin/catalogue/MapSidePanel";
 import {
   DEFAULT_FILTERS,
   applyFilters,
   countByTab,
   distinctPlaces,
+  searchTerms,
   todayIso,
   type CatalogueFilterState,
 } from "@/lib/catalogue/filters";
 import { hasSuspectPosition, isInIsrael, outsideIsraelWarning, siteHasBadPosition } from "@/lib/catalogue/geo";
 import { mapBaseEntries, splitByPosition, STATUS_COLORS } from "@/lib/catalogue/map";
 import { errorMessage, useCatalogueCategories, useCatalogueEntries, useUpdateCatalogueItem } from "@/lib/catalogue/queries";
-import { STATUS_OPTIONS, type CatalogueEntry } from "@/lib/catalogue/types";
+import { STATUS_OPTIONS, type CatalogueEntry, type CommercialStatus } from "@/lib/catalogue/types";
 
 interface PendingPosition extends SuggestedPosition {
   entry: CatalogueEntry;
 }
 
 const round6 = (value: number) => Math.round(value * 1e6) / 1e6;
+
+// Les lieux « À trier » et « Refusé ou abandonné » n'ont pas leur place sur la carte : pas de puce pour eux
+const MAP_STATUSES: CommercialStatus[] = ["idee", "a_contacter", "contacte", "en_discussion", "partenaire"];
 
 export default function AdminCarte() {
   const { data: entries = [], isLoading, error } = useCatalogueEntries();
@@ -37,15 +41,17 @@ export default function AdminCarte() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [placing, setPlacing] = useState<CatalogueEntry | null>(null);
   const [pending, setPending] = useState<PendingPosition | null>(null);
+  const [sideTab, setSideTab] = useState<SideTab>("places");
+  const [hoverId, setHoverId] = useState<string | null>(null);
+  const [focus, setFocus] = useState<{ id: string; nonce: number } | null>(null);
 
   const today = useMemo(() => todayIso(), []);
-  // Les lieux "À trier" (pas encore rangés) et abandonnés n'ont pas leur place sur la carte
-  const base = useMemo(() => mapBaseEntries(entries, filters.status), [entries, filters.status]);
+  const base = useMemo(() => mapBaseEntries(entries, false), [entries]);
   const counts = useMemo(() => countByTab(base), [base]);
   const regions = useMemo(() => distinctPlaces(base, (e) => e.display_region), [base]);
-  const cities = useMemo(() => distinctPlaces(base, (e) => e.display_city), [base]);
   const deferredFilters = useDeferredValue(filters);
   const filtered = useMemo(() => applyFilters(base, deferredFilters, today), [base, deferredFilters, today]);
+  const terms = useMemo(() => searchTerms(deferredFilters.search), [deferredFilters.search]);
   const { placed, missing } = useMemo(() => splitByPosition(filtered), [filtered]);
   // Les alertes de position ne dépendent pas des filtres : une erreur de données doit toujours se voir
   const suspect = useMemo(() => base.filter(hasSuspectPosition), [base]);
@@ -57,6 +63,11 @@ export default function AdminCarte() {
     const present = new Set(placed.map((p) => p.entry.commercial_status));
     return STATUS_OPTIONS.filter((s) => present.has(s.value));
   }, [placed]);
+
+  const startPlacing = (entry: CatalogueEntry) => {
+    setPending(null);
+    setPlacing(entry);
+  };
 
   const suggest = (entry: CatalogueEntry, position: SuggestedPosition) => {
     setPlacing(null);
@@ -72,7 +83,7 @@ export default function AdminCarte() {
   const pendingWarning = pending ? outsideIsraelWarning(pending.lat, pending.lng) : null;
 
   const confirm = async () => {
-    if (!pending || (pending && !isInIsrael(pending.lat, pending.lng))) return;
+    if (!pending || !isInIsrael(pending.lat, pending.lng)) return;
     try {
       await update.mutateAsync({
         id: pending.entry.id,
@@ -85,6 +96,8 @@ export default function AdminCarte() {
     }
   };
 
+  const problems = suspect.length + siteBad.length;
+
   return (
     <div className="mx-auto max-w-7xl space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-2">
@@ -94,39 +107,31 @@ export default function AdminCarte() {
             Tous les lieux du catalogue sur une carte, avec les mêmes filtres.
           </p>
         </div>
-        {!isLoading && !error && (
-          <p className="text-xs text-muted-foreground">
-            {placed.length} lieu{placed.length > 1 ? "x" : ""} sur la carte
-            {missing.length > 0 && `, ${missing.length} à localiser`}
-            {suspect.length > 0 && `, ${suspect.length} à corriger`}
-          </p>
-        )}
       </div>
 
       <CatalogueTabs value={filters.tab} counts={counts} onChange={(tab) => setFilters((f) => ({ ...f, tab }))} />
-      <CatalogueFilters
+      <CatalogueToolbar
+        entries={base}
         filters={filters}
         onChange={setFilters}
         categories={categories}
-        regions={regions}
-        cities={cities}
-        showSort={false}
+        today={today}
+        statusChoices={MAP_STATUSES}
+        resultCount={placed.length}
       />
 
-      {!isLoading && !error && (
-        <PositionAlerts
-          suspect={suspect}
-          siteBad={siteBad}
-          knownRegions={knownRegions}
-          placingId={placing?.id ?? null}
-          onSuggest={suggest}
-          onStartPlacing={(entry) => {
-            setPending(null);
-            setPlacing(entry);
-          }}
-          onCancelPlacing={() => setPlacing(null)}
-          onOpen={setSelectedId}
-        />
+      {!isLoading && !error && problems > 0 && (
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm">
+          <span className="flex items-start gap-2 text-destructive">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>
+              {problems} position{problems > 1 ? "s" : ""} hors d'Israël à corriger : ce sont des erreurs de données.
+            </span>
+          </span>
+          <Button type="button" size="sm" variant="outline" onClick={() => setSideTab("suspect")}>
+            Voir la liste
+          </Button>
+        </div>
       )}
 
       {placing && (
@@ -165,7 +170,7 @@ export default function AdminCarte() {
           Impossible de charger le catalogue : {errorMessage(error)}
         </div>
       ) : (
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
           <div className="space-y-2">
             <CatalogueMap
               points={placed}
@@ -173,6 +178,8 @@ export default function AdminCarte() {
               placing={placing !== null}
               onPickPosition={pickOnMap}
               preview={pending ? { lat: pending.lat, lng: pending.lng } : null}
+              highlightId={hoverId}
+              focus={focus}
             />
             {legend.length > 0 && (
               <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground" aria-label="Légende des couleurs">
@@ -187,21 +194,23 @@ export default function AdminCarte() {
                 ))}
               </ul>
             )}
-            {placed.length === 0 && (
-              <p className="text-xs text-muted-foreground">Aucun lieu avec une position ne correspond à ces filtres.</p>
-            )}
           </div>
-          <LocateList
-            entries={missing}
+          <MapSidePanel
+            tab={sideTab}
+            onTabChange={setSideTab}
+            points={placed}
+            missing={missing}
+            suspect={suspect}
+            siteBad={siteBad}
+            terms={terms}
             knownRegions={knownRegions}
             placingId={placing?.id ?? null}
-            onSuggest={suggest}
-            onStartPlacing={(entry) => {
-              setPending(null);
-              setPlacing(entry);
-            }}
-            onCancelPlacing={() => setPlacing(null)}
+            onHover={setHoverId}
+            onFocus={(id) => setFocus({ id, nonce: Date.now() })}
             onOpen={setSelectedId}
+            onSuggest={suggest}
+            onStartPlacing={startPlacing}
+            onCancelPlacing={() => setPlacing(null)}
           />
         </div>
       )}

@@ -4,11 +4,14 @@ import { resizedImageUrl } from "@/lib/imageUrl";
 import { isFollowupDue } from "@/lib/catalogue/filters";
 import { LIVE_KIND_LABELS, PLACE_TYPE_OPTIONS, SOURCE_OPTIONS, labelOf, type CatalogueEntry } from "@/lib/catalogue/types";
 import { ContentChips, SiteBadge, StatusBadge } from "./CatalogueBadges";
+import { Highlighted } from "./Highlighted";
 
 interface CatalogueTableProps {
   entries: CatalogueEntry[];
   today: string;
   onSelect: (id: string) => void;
+  /** Les mots cherchés, à surligner dans le nom et le lieu. */
+  terms?: string[];
 }
 
 function formatDay(iso: string | null): string {
@@ -26,7 +29,7 @@ function Thumbnail({ entry }: { entry: CatalogueEntry }) {
   );
 }
 
-export function CatalogueTable({ entries, today, onSelect }: CatalogueTableProps) {
+export function CatalogueTable({ entries, today, onSelect, terms = [] }: CatalogueTableProps) {
   return (
     <div className="rounded-lg border border-border bg-card">
       <Table>
@@ -62,7 +65,9 @@ export function CatalogueTable({ entries, today, onSelect }: CatalogueTableProps
                   <div className="flex items-center gap-3">
                     <Thumbnail entry={entry} />
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-medium">{entry.display_name}</div>
+                      <div className="truncate text-sm font-medium">
+                        <Highlighted text={entry.display_name} terms={terms} />
+                      </div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                         <SiteBadge entry={entry} />
                         {entry.live_kind && (
@@ -80,7 +85,7 @@ export function CatalogueTable({ entries, today, onSelect }: CatalogueTableProps
                 <TableCell className="hidden text-sm md:table-cell">
                   {labelOf(PLACE_TYPE_OPTIONS, entry.place_type)}
                 </TableCell>
-                <TableCell className="hidden text-sm text-muted-foreground lg:table-cell">{where || "Non renseigné"}</TableCell>
+                <TableCell className="hidden text-sm text-muted-foreground lg:table-cell">{where ? <Highlighted text={where} terms={terms} /> : "Non renseigné"}</TableCell>
                 <TableCell>
                   <StatusBadge status={entry.commercial_status} />
                 </TableCell>

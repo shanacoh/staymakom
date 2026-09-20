@@ -6,6 +6,24 @@
 
 ---
 
+## [2026-09-20] — Catalogue et Carte : nouvelle recherche et nouveaux filtres
+
+### Ce qui a changé côté code
+- `src/components/admin/AdminSidebar.tsx` : « Carte » et « Catalogue » passent en orange dans le menu de gauche (le marqueur « en cours de refonte » déjà utilisé pour Dashboard et Réservations). Quand la page est ouverte, la ligne passe sur fond noir et le titre reste orange, comme pour Dashboard et Réservations.
+- `src/components/admin/catalogue/CatalogueToolbar.tsx` (nouveau, remplace `CatalogueFilters.tsx`, supprimé) et ses pièces `SearchBox.tsx`, `FilterChip.tsx`, `FiltersPanel.tsx`, `ActiveFilters.tsx` : la même barre sur le Catalogue et la Carte. Grande barre de recherche, statuts en puces cliquables avec leur nombre, puces « À faire » (À relancer, À visiter, Vidéo à faire, Contenu à envoyer), bouton Filtres qui ouvre un panneau de cases à cocher (type, catégorie, région, ville, origine), filtres actifs visibles avec leur croix, « Tout effacer » et le nombre de lieux affichés. On peut cocher plusieurs valeurs par critère. Les trois tuiles de compteurs du Catalogue sont remplacées par ces puces.
+- `src/lib/catalogue/filters.ts` (refait, 26 tests) : critères à valeurs multiples, nombres affichés calculés en tenant compte des autres critères, recherche en plusieurs mots (nom, ville, région, adresse, notes, contact, Instagram, étiquettes). `src/lib/catalogue/highlight.ts` (nouveau, 5 tests) et `Highlighted.tsx` : les mots trouvés sont surlignés dans le tableau et la liste de la carte.
+- Carte (`Carte.tsx`, `MapSidePanel.tsx` nouveau, `CatalogueMap.tsx`) : la liste des lieux est à côté de la carte. Survoler un lieu de la liste l'entoure d'un cercle sur la carte (même caché dans un groupe d'épingles), cliquer dessus zoome et ouvre sa fenêtre. « À localiser » et « À corriger » deviennent des onglets de cette liste, avec un bandeau d'alerte rouge quand il y a des positions à corriger. `Catalogue.tsx` : page réécrite avec la nouvelle barre.
+- Changements de comportement à connaître : les filtres « Pas encore visité », « Vidéo pas faite » et « Contenu pas envoyé » deviennent des puces qui ne concernent que les partenaires et discussions en cours ; les lieux « Refusé ou abandonné » ne sont plus affichés sur la carte.
+- Vérifié dans un vrai navigateur sur une page de test temporaire (supprimée) : barre, puces, panneau, filtres actifs, surlignage, cercle de survol, clic sur un lieu de la liste.
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Shana trouvait la recherche et les filtres mal présentés et peu pratiques : sept listes déroulantes toujours affichées, deux clics chacune, sans voir ce qui est actif ni combien de lieux correspondent. Elle utilise surtout le statut commercial et « ce qu'il reste à faire », donc ce sont eux qui sont mis en avant.
+
+---
+
 ## [2026-09-20] — Carte : alerte quand une position n'est pas en Israël
 
 ### Ce qui a changé côté code
