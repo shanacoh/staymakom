@@ -6,6 +6,7 @@ import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, ArrowLeft, MapPin, ArrowRight, Heart } from "lucide-react";
 import { format } from "date-fns";
 import NotFound from "./NotFound";

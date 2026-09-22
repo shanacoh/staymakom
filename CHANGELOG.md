@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-09-22] — Correction : la page d'un article de journal plantait pendant le chargement
+
+### Ce qui a changé côté code
+- `src/pages/JournalPost.tsx` : l'esquisse grise affichée pendant le chargement d'un article (le composant `Skeleton`) était utilisée dans la page sans être importée. La page plantait donc à chaque fois qu'elle devait s'afficher. Ajout de l'import manquant.
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Repéré via le nouvel écran de suivi des erreurs du site (bug le plus fréquent, 11 occurrences). Shana a validé la liste des erreurs et demandé la correction de celle-ci ; les autres erreurs du même écran étaient soit du bruit sans lien avec le code (extensions de navigateur, traduction automatique, rechargements pendant une mise à jour du site), soit déjà réglées par du code plus récent.
+
+---
+
 ## [2026-09-20] — Catalogue et Carte : nouvelle recherche et nouveaux filtres
 
 ### Ce qui a changé côté code
