@@ -106,11 +106,19 @@ const ExperienceBookingsGrid = ({ createOpen, onCreateOpenChange }: Props) => {
     queryFn: async () => {
       // Filtre Bateaux : on passe par la fiche d'expérience liée (catégorie Bateaux).
       // Une réservation manuelle saisie sans fiche liée n'est donc pas reconnue comme bateau.
+      // On joint la fiche expérience liée pour retrouver son titre et son
+      // fournisseur quand la réservation n'a pas ces infos saisies à la main
+      // (custom_experience_title / supplier_name restent vides pour une
+      // réservation faite sur une expérience du catalogue, voir plus bas).
       let query = supabase
         .from("standalone_bookings")
-        .select(boatsOnly ? "*, standalone_experiences!inner(category_id)" : "*")
-        .order("booking_date", { ascending: false })
-        .order("created_at", { ascending: false });
+        .select(
+          boatsOnly
+            ? "*, standalone_experiences!inner(title, title_fr, supplier_name, category_id)"
+            : "*, standalone_experiences(title, title_fr, supplier_name)",
+        )
+        .order("created_at", { ascending: false })
+        .order("booking_date", { ascending: false });
       if (boatsOnly) query = query.eq("standalone_experiences.category_id", BOATS_CATEGORY_ID);
 
       if (dateFrom) query = query.gte("booking_date", dateFrom);
@@ -119,7 +127,15 @@ const ExperienceBookingsGrid = ({ createOpen, onCreateOpenChange }: Props) => {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as unknown as BookingRow[];
+      const rows = data as unknown as (BookingRow & {
+        standalone_experiences: { title: string | null; title_fr: string | null; supplier_name: string | null } | null;
+      })[];
+      return rows.map((row) => ({
+        ...row,
+        custom_experience_title:
+          row.custom_experience_title || row.standalone_experiences?.title_fr || row.standalone_experiences?.title || null,
+        supplier_name: row.supplier_name || row.standalone_experiences?.supplier_name || null,
+      })) as BookingRow[];
     },
   });
 
@@ -285,7 +301,7 @@ const ExperienceBookingsGrid = ({ createOpen, onCreateOpenChange }: Props) => {
               row.supplier_cost === null || row.supplier_cost === undefined ? null : row.sell_price - row.supplier_cost;
             return formatCurrency(commission, row.currency);
           }}
-          renderRowActions={() => <RowActionsCell />}
+          renderRowActions={(row) => <RowActionsCell detailPath={`/admin/standalone-bookings/${row.id}`} />}
         />
       )}
 

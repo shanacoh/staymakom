@@ -6,6 +6,22 @@
 
 ---
 
+## [2026-09-24] — Réservations Expériences : tri, fiche détail et nom d'expérience manquants
+
+### Ce qui a changé côté code
+- `src/components/admin/ReservationsHub/ExperienceBookingsGrid.tsx` : le tableau triait par date de l'activité réservée (`booking_date`) et non par date de création de la réservation, ce qui faisait remonter d'anciennes réservations dont l'activité a lieu bientôt au-dessus de réservations toutes fraîches. Le tri principal est maintenant la date de création (comme pour l'onglet Hôtels), avec la date de l'activité en second critère.
+- Même fichier : la requête joint désormais la fiche expérience liée (`standalone_experiences`) pour récupérer son titre et son fournisseur. Quand une réservation porte sur une expérience du catalogue (et non une activité saisie à la main hors-catalogue), les colonnes « Expérience » et « Fournisseur » étaient vides — elles affichent maintenant le titre et le fournisseur de la fiche liée par défaut.
+- `src/components/admin/ReservationsHub/RowActionsCell.tsx` : ajout d'un bouton (icône œil) qui ouvre la fiche détaillée de la réservation — c'est là que se trouve l'historique et le bouton d'envoi/renvoi de l'email de confirmation. Ce bouton avait disparu du tableau lors de la fusion des listes Hôtels/Expériences du 20 septembre ; la fiche détaillée elle-même n'avait jamais cessé de fonctionner, elle n'était juste plus accessible depuis le tableau. Branché sur les deux onglets (Hôtels et Expériences).
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Repéré par Shana sur la réservation de Jade Tordjman : introuvable en haut de liste, impossible de retrouver le bouton d'envoi de confirmation, et fiche d'expérience/fournisseur vides alors qu'il s'agissait d'une expérience classifiée du catalogue. Les trois soucis viennent de la même fusion de tableaux du 20 septembre, restée inachevée sur ces points.
+- Non vérifié dans un navigateur réel cette session (pas d'outil de navigateur disponible) — vérifié par relecture du code, comparaison avec le comportement équivalent déjà en place côté Hôtels, et contrôle TypeScript/lint sans erreur nouvelle. À confirmer visuellement par Shana dès que possible.
+
+---
+
 ## [2026-09-22] — Correction : la page d'un article de journal plantait pendant le chargement
 
 ### Ce qui a changé côté code

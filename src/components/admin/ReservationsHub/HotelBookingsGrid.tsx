@@ -308,7 +308,7 @@ const HotelBookingsGrid = ({ createOpen, onCreateOpenChange }: Props) => {
             if (col.key !== "commission") return "—";
             return formatCurrency(row.sell_price - row.net_price, row.currency);
           }}
-          renderRowActions={() => <RowActionsCell />}
+          renderRowActions={(row) => <RowActionsCell detailPath={`/admin/reservations/${row.id}`} />}
         />
       )}
 
