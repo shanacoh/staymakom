@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
 import { Calendar, ArrowRight } from "lucide-react";
 import { format } from "date-fns";

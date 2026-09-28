@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-09-28] — Correction : la liste du journal plantait aussi pendant le chargement
+
+### Ce qui a changé côté code
+- `src/pages/Journal.tsx` : même oubli que sur la fiche d'un article corrigée le 22 septembre, mais sur la page liste du journal (`/journal`) cette fois. L'esquisse grise affichée pendant le chargement (`Skeleton`) n'était pas importée. Ajout de l'import manquant.
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- L'écran de suivi des erreurs montrait que ce bug continuait à se produire après la correction du 22 septembre (14 occurrences, la dernière le 26 septembre). La correction du 22 ne portait que sur la fiche d'un article, pas sur la liste : les deux pages partageaient le même oubli d'import, indépendamment l'une de l'autre.
+
+---
+
 ## [2026-09-24] — Réservations Expériences : tri, fiche détail et nom d'expérience manquants
 
 ### Ce qui a changé côté code
