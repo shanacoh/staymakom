@@ -6,6 +6,24 @@
 
 ---
 
+## [2026-09-28] — Retrait de la page « AI Insights » du back-office
+
+### Ce qui a changé côté code
+- `src/pages/admin/AIInsights.tsx` : fichier supprimé (page d'analyse des recherches IA, jugée inutile).
+- `src/App.tsx` : retrait de l'adresse `/admin/ai-insights`.
+- `src/components/admin/AdminSidebar.tsx` : retrait de l'entrée « AI Insights » du menu.
+- `ARCHITECTURE.md` et `LOVABLE_PROJECT_CONTEXT.md` : mise à jour (page retirée des listes).
+- Non touché volontairement : `src/lib/aiTracking.ts` et la fonction `recommend-experiences` continuent d'enregistrer les recherches IA, seule la page qui les affichait a disparu.
+
+### Ce qui a changé côté base de données
+- Rien. Les tableaux `ai_search_queries` et `ai_search_events` restent en place et continuent de se remplir.
+
+### Pourquoi ce changement
+- La page ne servait pas au quotidien ; on allège le back-office. Les données restent disponibles si on veut un jour la recréer.
+
+
+---
+
 ## [2026-09-28] — Correction : la liste du journal plantait aussi pendant le chargement
 
 ### Ce qui a changé côté code

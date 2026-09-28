@@ -209,7 +209,7 @@
 │   │   │   ├── Users.tsx / Customers.tsx
 │   │   │   ├── Journal.tsx / JournalEditor.tsx
 │   │   │   ├── GiftCards.tsx / GiftCardDetails.tsx
-│   │   │   ├── AIInsights.tsx / Leads.tsx / Favorites.tsx
+│   │   │   ├── Leads.tsx / Favorites.tsx
 │   │   └── hotel-admin/               # 11 hotel admin pages
 │   │       ├── Dashboard.tsx / Property.tsx / Experiences.tsx
 │   │       ├── Bookings.tsx / BookingDetails.tsx / BookingEdit.tsx
@@ -299,7 +299,6 @@
 | `/admin/customers` | AdminCustomers | admin |
 | `/admin/journal` | AdminJournal | admin |
 | `/admin/journal/new` | JournalEditor | admin |
-| `/admin/ai-insights` | AdminAIInsights | admin |
 | `/admin/leads` | AdminLeads | admin |
 | `/admin/favorites` | AdminFavorites | admin |
 | `/admin/settings` | AdminSettings | admin |

@@ -74,7 +74,6 @@ const JournalEditor          = lazy(() => import("./pages/admin/JournalEditor"))
 const AdminGiftCards         = lazy(() => import("./pages/admin/GiftCards"));
 const AdminGiftCardDetails   = lazy(() => import("./pages/admin/GiftCardDetails"));
 const AdminSettings          = lazy(() => import("./pages/admin/Settings"));
-const AdminAIInsights        = lazy(() => import("./pages/admin/AIInsights"));
 const AdminLeads             = lazy(() => import("./pages/admin/Leads"));
 const AdminFavorites         = lazy(() => import("./pages/admin/Favorites"));
 const DiagnosticPage         = lazy(() => import("./pages/admin/DiagnosticPage"));
@@ -297,7 +296,6 @@ const AppContent = () => {
             <Route path="journal" element={<AdminJournal />} />
             <Route path="journal/new" element={<JournalEditor />} />
             <Route path="journal/edit/:id" element={<JournalEditor />} />
-            <Route path="ai-insights" element={<AdminAIInsights />} />
             <Route path="leads" element={<AdminLeads />} />
             <Route path="favorites" element={<AdminFavorites />} />
             <Route path="settings" element={<AdminSettings />} />

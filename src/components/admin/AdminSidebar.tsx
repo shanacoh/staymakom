@@ -12,7 +12,6 @@ import {
   Settings,
   Sparkles,
   Gift,
-  Brain,
   Mail,
   Heart,
   FlaskConical,
@@ -104,7 +103,6 @@ const autreItems: NavItem[] = [
   { title: "Comptes", url: "/admin/customers", icon: UserCircle, done: true },
   { title: "Favorites", url: "/admin/favorites", icon: Heart, done: true },
   { title: "Journal", url: "/admin/journal", icon: BookOpen },
-  { title: "AI Insights", url: "/admin/ai-insights", icon: Brain },
   { title: "Bibliothèque swipe", url: "/admin/swipe/bibliotheque", icon: Layers },
   { title: "Catégories swipe", url: "/admin/swipe/categories", icon: Tag },
 ];

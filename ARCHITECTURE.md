@@ -288,7 +288,6 @@ public/
 | `/admin/journal/edit/:id` | JournalEditor |
 | `/admin/gift-cards` | AdminGiftCards |
 | `/admin/gift-cards/:id` | AdminGiftCardDetails |
-| `/admin/ai-insights` | AdminAIInsights |
 | `/admin/leads` | AdminLeads |
 | `/admin/favorites` | AdminFavorites |
 | `/admin/settings` | AdminSettings |
@@ -497,7 +496,6 @@ RESEND_API_KEY               # Resend email service
 | `JournalEditor.tsx` | 859 | MEDIUM |
 | `CategoryEditor.tsx` | 775 | LOW |
 | `Customers.tsx` | 746 | LOW |
-| `AIInsights.tsx` | 721 | LOW |
 | `MyStaymakomSection.tsx` | 679 | LOW |
 
 ### V1/V2 Dual Architecture
