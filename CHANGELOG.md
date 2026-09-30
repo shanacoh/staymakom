@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-09-30] — Correctif : la réservation manuelle créée n'apparaissait pas en haut de la liste
+
+### Ce qui a changé côté code
+- `src/components/admin/CreateManualStandaloneBookingDialog.tsx` : après création d'une réservation d'expérience, l'appli prévenait la mauvaise liste que "quelque chose a changé" — la grille de Réservations continuait donc d'afficher son ancienne copie tant qu'on ne rafraîchissait pas la page à la main. Corrigé en ajoutant la bonne référence à la liste des listes à rafraîchir.
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Repéré en testant la réservation de test du sprint "canal d'acquisition" : la réservation créée n'apparaissait pas en haut de la liste des réservations tant que la page n'était pas rafraîchie manuellement. Bug préexistant, sans lien avec le canal d'acquisition, mais bloquant pour vérifier que tout fonctionnait.
+
+---
+
 ## [2026-09-30] — Canal d'acquisition sur les réservations manuelles + CA par canal
 
 ### Ce qui a changé côté code

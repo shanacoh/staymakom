@@ -48,9 +48,13 @@ const EMPTY_MANUAL_FORM = {
 };
 
 // Requêtes à rafraîchir après création, quelle que soit la page d'où le dialog est ouvert.
+// "admin-standalone-bookings-grid" est le préfixe réel utilisé par la grille de
+// ReservationsHub (ExperienceBookingsGrid) : sans lui, une réservation fraîchement
+// créée n'apparaît pas tant que la page n'est pas rafraîchie à la main.
 const BOOKING_LIST_QUERY_KEYS = [
   ["admin-standalone-bookings"],
   ["admin-standalone-bookings-hub"],
+  ["admin-standalone-bookings-grid"],
 ];
 
 interface Props {
