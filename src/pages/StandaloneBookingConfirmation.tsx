@@ -3,8 +3,10 @@
  * Adaptée de BookingConfirmationPage — sans les sections hôtel, HyperGuest, chambre.
  * Accessible via /standalone-booking/confirmation/:token
  */
+import { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { trackConfirmationViewed } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Check, Clock, MapPin, Users, Calendar, Copy, Loader2, XCircle, Mail } from "lucide-react";
@@ -115,6 +117,11 @@ export default function StandaloneBookingConfirmation() {
     },
     enabled: !!token,
   });
+
+  useEffect(() => {
+    if (!booking || booking.is_cancelled || booking.status === "cancelled") return;
+    trackConfirmationViewed(booking.id, booking.sell_price, booking.currency);
+  }, [booking]);
 
   const copyRef = () => {
     if (booking?.id) {

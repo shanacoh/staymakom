@@ -7,6 +7,7 @@ import { ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "sonner";
+import { trackNewsletterPopupShown, trackNewsletterPopupClosed, trackNewsletterSubscribed, identifyLead } from "@/lib/analytics";
 
 /**
  * Popup d'inscription newsletter (plus de code promo — retiré le 2026-08-13).
@@ -123,8 +124,15 @@ export function NewsletterPopup({
     }
   };
 
-  const handleClose = (next: boolean) => {
-    if (!next) markSeen();
+  useEffect(() => {
+    if (open) trackNewsletterPopupShown();
+  }, [open]);
+
+  const handleClose = (next: boolean, method: "close_button" | "backdrop" = "backdrop") => {
+    if (!next) {
+      trackNewsletterPopupClosed(method);
+      markSeen();
+    }
     setOpen(next);
   };
 
@@ -146,6 +154,8 @@ export function NewsletterPopup({
         .catch((err) => {
           console.warn("Newsletter signup: collect-lead failed (non-blocking)", err);
         });
+      trackNewsletterSubscribed(email.trim().split("@")[1] || "");
+      identifyLead(email);
       setSubmitted(true);
       markSeen();
     } catch {
@@ -227,7 +237,7 @@ export function NewsletterPopup({
 
               <button
                 type="button"
-                onClick={() => handleClose(false)}
+                onClick={() => handleClose(false, "close_button")}
                 className="block w-full text-center text-xs text-black/25 hover:text-black/45 transition-colors"
               >
                 {t.close}

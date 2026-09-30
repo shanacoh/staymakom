@@ -31,9 +31,33 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/hooks/useLanguage";
 import { SEOHead } from "@/components/SEOHead";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumbJsonLd";
-import { trackExperiencePageViewed, trackTimeOnExperiencePage } from "@/lib/analytics";
+import {
+  trackExperiencePageViewed,
+  trackTimeOnExperiencePage,
+  trackExperienceViewed,
+  trackExperienceEngaged,
+  trackBookClicked,
+  type ProductLike,
+} from "@/lib/analytics";
+import { useSetCurrentProduct } from "@/contexts/CurrentProductContext";
 import { useScrollDepth } from "@/hooks/useScrollDepth";
 import { MapPin, Moon } from "lucide-react";
+
+function toProductLike(experience: any, primaryHotel: any): ProductLike {
+  return {
+    slug: experience?.slug ?? null,
+    title: experience?.title ?? null,
+    category: experience?.categories
+      ? { slug: experience.categories.slug, name: experience.categories.name }
+      : null,
+    city: primaryHotel?.city ?? null,
+    region: primaryHotel?.region ?? null,
+    base_price: experience?.base_price ?? null,
+    base_price_type: experience?.base_price_type ?? null,
+    currency: experience?.currency ?? "ILS",
+    is_bookable: true,
+  };
+}
 
 export default function Experience2() {
   const { slug } = useParams<{ slug: string }>();
@@ -226,6 +250,7 @@ export default function Experience2() {
   useEffect(() => {
     if (!experience?.slug) return;
     trackExperiencePageViewed(experience.slug, experience.title, experience.base_price);
+    trackExperienceViewed(toProductLike(experience, hasMultiHotel ? parcoursHotels[0]?.hotel : legacyHotel), "hotel_experience");
     const start = Date.now();
     const handleVisChange = () => {
       if (document.visibilityState === "hidden") {
@@ -238,6 +263,40 @@ export default function Experience2() {
       trackTimeOnExperiencePage(experience.slug, (Date.now() - start) / 1000);
     };
   }, [experience?.slug]);
+
+  // experience_engaged : à 15/30/60/120s si l'onglet est visible, avec le scroll max atteint
+  useEffect(() => {
+    if (!experience?.slug) return;
+    let maxScrollPercent = 0;
+    const updateMaxScroll = () => {
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (docHeight <= 0) return;
+      const pct = Math.round((window.scrollY / docHeight) * 100);
+      if (pct > maxScrollPercent) maxScrollPercent = pct;
+    };
+    window.addEventListener("scroll", updateMaxScroll, { passive: true });
+    updateMaxScroll();
+
+    const primaryHotelForEngagement = hasMultiHotel ? parcoursHotels[0]?.hotel : legacyHotel;
+    const thresholds = [15, 30, 60, 120] as const;
+    const timers = thresholds.map((seconds) =>
+      setTimeout(() => {
+        if (document.visibilityState === "visible") {
+          trackExperienceEngaged(toProductLike(experience, primaryHotelForEngagement), "hotel_experience", seconds, maxScrollPercent);
+        }
+      }, seconds * 1000)
+    );
+
+    return () => {
+      window.removeEventListener("scroll", updateMaxScroll);
+      timers.forEach(clearTimeout);
+    };
+  }, [experience?.slug]);
+
+  useSetCurrentProduct(
+    experience ? toProductLike(experience, hasMultiHotel ? parcoursHotels[0]?.hotel : legacyHotel) : null,
+    "hotel_experience"
+  );
 
   // ---------------------------------------------------------------------------
   // Loading state
@@ -666,6 +725,7 @@ export default function Experience2() {
                 minNights={experience.min_nights || 1}
                 availabilityRules={availabilityRules}
                 onViewDates={() => {
+                  trackBookClicked(toProductLike(experience, primaryHotel), "hotel_experience", "hero_cta");
                   const bookingPanel = document.getElementById('booking-panel-v2');
                   if (bookingPanel) {
                     bookingPanel.scrollIntoView({ behavior: 'smooth' });
@@ -732,7 +792,10 @@ export default function Experience2() {
           experienceId={experience.id}
           currency={displayCurrency}
           lang={lang as "en" | "he" | "fr"}
-          onViewDates={() => setIsSheetOpen(true)}
+          onViewDates={() => {
+            trackBookClicked(toProductLike(experience, primaryHotel), "hotel_experience", "mobile_bar");
+            setIsSheetOpen(true);
+          }}
           footerRef={footerRef}
           hyperguestPropertyId={hyperguestPropertyId || null}
           preferredBoardType={(experience as any).preferred_board_type ?? null}

@@ -1,5 +1,8 @@
+import { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { trackExperienceViewed, trackExperienceEngaged, type ProductLike } from "@/lib/analytics";
+import { useSetCurrentProduct } from "@/contexts/CurrentProductContext";
 import { supabase } from "@/integrations/supabase/client";
 import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
@@ -21,6 +24,19 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+
+function toProductLike(hotel: any): ProductLike {
+  return {
+    slug: hotel?.slug ?? null,
+    name: hotel?.name ?? null,
+    city: hotel?.city ?? null,
+    region: hotel?.region ?? null,
+    base_price: null,
+    base_price_type: null,
+    currency: null,
+    is_bookable: null,
+  };
+}
 
 const Hotel = () => {
   const { slug } = useParams<{slug: string;}>();
@@ -66,6 +82,41 @@ const Hotel = () => {
     },
     enabled: !!hotel?.id
   });
+
+  useEffect(() => {
+    if (!hotel?.slug) return;
+    trackExperienceViewed(toProductLike(hotel), "hotel");
+  }, [hotel?.slug]);
+
+  // experience_engaged : à 15/30/60/120s si l'onglet est visible, avec le scroll max atteint
+  useEffect(() => {
+    if (!hotel?.slug) return;
+    let maxScrollPercent = 0;
+    const updateMaxScroll = () => {
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (docHeight <= 0) return;
+      const pct = Math.round((window.scrollY / docHeight) * 100);
+      if (pct > maxScrollPercent) maxScrollPercent = pct;
+    };
+    window.addEventListener("scroll", updateMaxScroll, { passive: true });
+    updateMaxScroll();
+
+    const thresholds = [15, 30, 60, 120] as const;
+    const timers = thresholds.map((seconds) =>
+      setTimeout(() => {
+        if (document.visibilityState === "visible") {
+          trackExperienceEngaged(toProductLike(hotel), "hotel", seconds, maxScrollPercent);
+        }
+      }, seconds * 1000)
+    );
+
+    return () => {
+      window.removeEventListener("scroll", updateMaxScroll);
+      timers.forEach(clearTimeout);
+    };
+  }, [hotel?.slug]);
+
+  useSetCurrentProduct(hotel ? toProductLike(hotel) : null, "hotel");
 
   if (hotelLoading) {
     return (

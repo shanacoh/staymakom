@@ -99,8 +99,8 @@ src/
 │   └── lovable/
 │       └── index.ts      # Lovable OAuth integration
 ├── lib/                  # Utility libraries
-│   ├── analytics.ts      # Amplitude event tracking (70+ events)
-│   ├── amplitude.ts      # Amplitude SDK init + session replay
+│   ├── analytics.ts      # Amplitude event tracking (100+ events)
+│   ├── amplitude.ts      # Single @amplitude/unified instance (init lives in main.tsx)
 │   ├── aiTracking.ts     # AI assistant tracking
 │   ├── translations.ts   # i18n translation strings
 │   └── utils.ts          # cn() classname utility
@@ -530,7 +530,7 @@ Single JS chunk: 3.8MB (982KB gzipped). Needs code splitting via dynamic imports
 | Booking data exposure | ✅ Fixed — limited .select() fields |
 | Error boundary | ✅ Fixed — added global ErrorBoundary |
 | Edge Function JWT | ⚠️ Disabled in config, manual check in hyperguest only |
-| Cookie consent | ⚠️ Only affects Amplitude |
+| Cookie consent | ⚠️ Amplitude session replay/autocapture only — custom event tracking (analytics.ts) fires regardless of consent since 2026-09-30 |
 
 ---
 

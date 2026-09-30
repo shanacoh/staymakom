@@ -1,4 +1,4 @@
-import { safeTrack, safeIdentify, safeSetUserProperty } from "./amplitude";
+import { safeTrack, safeIdentify, safeSetUserProperty, safeIdentifySetOnce } from "./amplitude";
 
 // ============================================
 // A. ACQUISITION & IDENTITÉ (5 events)
@@ -337,4 +337,294 @@ export function trackSearchNoResults(query: {
   guests?: number;
 }) {
   safeTrack("search_no_results", query);
+}
+
+// ============================================
+// I. SPRINT 1 — PARCOURS STANDALONE & WHATSAPP
+// ============================================
+
+export type ProductType = "standalone" | "hotel_experience" | "hotel" | "boat";
+
+// Forme volontairement large : couvre standalone_experiences, experiences2, hotels2 et bateaux.
+export interface ProductLike {
+  slug?: string | null;
+  title?: string | null;
+  name?: string | null;
+  category?: { slug?: string | null; name?: string | null } | null;
+  city?: string | null;
+  region?: string | null;
+  base_price?: number | null;
+  base_price_type?: string | null;
+  currency?: string | null;
+  is_bookable?: boolean | null;
+}
+
+function amountProps(amount?: number | null, currency?: string | null) {
+  if (amount === undefined || amount === null) return {};
+  return {
+    amount_ils: currency === "ILS" ? amount : undefined,
+  };
+}
+
+export function productProps(product: ProductLike | null | undefined, productType: ProductType) {
+  if (!product) return { product_type: productType };
+  return {
+    product_type: productType,
+    slug: product.slug ?? undefined,
+    title_en: product.title ?? product.name ?? undefined,
+    category: product.category?.slug ?? product.category?.name ?? undefined,
+    city: product.city ?? undefined,
+    region: product.region ?? undefined,
+    price_from: product.base_price ?? undefined,
+    price_type: product.base_price_type ?? undefined,
+    is_bookable: product.is_bookable ?? undefined,
+    currency: product.currency ?? undefined,
+    ...amountProps(product.base_price, product.currency),
+  };
+}
+
+export function computeEntrySource(utmSource: string | undefined, referrer: string): string {
+  if (utmSource) return utmSource;
+  const ref = (referrer || "").toLowerCase();
+  if (!ref) return "direct";
+  if (ref.includes("instagram.com")) return "instagram";
+  if (ref.includes("tiktok.com")) return "tiktok";
+  if (ref.includes("facebook.com")) return "facebook";
+  if (ref.includes("google.")) return "google";
+  try {
+    return new URL(referrer).hostname;
+  } catch {
+    return "direct";
+  }
+}
+
+export function identifySessionLanded(props: {
+  firstTouchSource?: string;
+  firstTouchMedium?: string;
+  firstTouchCampaign?: string;
+  firstLandingPage: string;
+  lastTouchSource?: string;
+}) {
+  safeIdentifySetOnce({
+    first_touch_source: props.firstTouchSource,
+    first_touch_medium: props.firstTouchMedium,
+    first_touch_campaign: props.firstTouchCampaign,
+    first_landing_page: props.firstLandingPage,
+  });
+  if (props.lastTouchSource) {
+    safeSetUserProperty("last_touch_source", props.lastTouchSource);
+  }
+}
+
+export function identifyLead(email: string) {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return;
+  safeIdentify(normalized, { is_lead: true });
+}
+
+export function trackListingViewed(listing: string) {
+  safeTrack("listing_viewed", { listing });
+}
+
+export function trackFilterApplied(listing: string, filterName: string, filterValue: string | null) {
+  safeTrack("filter_applied", { listing, filter_name: filterName, filter_value: filterValue });
+}
+
+export function trackSessionLanded(props: {
+  landingPage: string;
+  referrer: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmContent?: string;
+  utmTerm?: string;
+}) {
+  safeTrack("session_landed", {
+    landing_page: props.landingPage,
+    referrer: props.referrer,
+    utm_source: props.utmSource,
+    utm_medium: props.utmMedium,
+    utm_campaign: props.utmCampaign,
+    utm_content: props.utmContent,
+    utm_term: props.utmTerm,
+  });
+}
+
+export function trackExperienceViewed(product: ProductLike, productType: ProductType) {
+  safeTrack("experience_viewed", productProps(product, productType));
+}
+
+export function trackExperienceEngaged(
+  product: ProductLike,
+  productType: ProductType,
+  seconds: 15 | 30 | 60 | 120,
+  maxScrollPercent: number
+) {
+  safeTrack("experience_engaged", {
+    ...productProps(product, productType),
+    seconds,
+    max_scroll_percent: maxScrollPercent,
+  });
+}
+
+export function trackSectionViewed(
+  section: "included" | "extras" | "map" | "reviews" | "practical_info" | "other_experiences",
+  slug?: string
+) {
+  safeTrack("section_viewed", { section, slug });
+}
+
+export function trackGalleryOpened(slug?: string) {
+  safeTrack("gallery_opened", { slug });
+}
+
+export function trackParticipantsChanged(slug: string, adults: number, children?: number) {
+  safeTrack("participants_changed", { slug, adults, children });
+}
+
+export function trackStandaloneDateSelected(slug: string, date: string, daysAhead: number) {
+  safeTrack("date_selected", { slug, date, days_ahead: daysAhead });
+}
+
+export function trackSlotSelected(slug: string, slot: string) {
+  safeTrack("slot_selected", { slug, slot });
+}
+
+export function trackRateOptionSelected(slug: string, rateName: string, price?: number, currency?: string) {
+  safeTrack("rate_option_selected", {
+    slug,
+    rate_name: rateName,
+    price,
+    currency,
+    ...amountProps(price, currency),
+  });
+}
+
+export function trackExtraToggled(slug: string, extraName: string, enabled: boolean, price?: number) {
+  safeTrack("extra_toggled", { slug, extra_name: extraName, enabled, price });
+}
+
+export function trackBookClicked(product: ProductLike, productType: ProductType, placement: string) {
+  safeTrack("book_clicked", { ...productProps(product, productType), placement });
+}
+
+export function trackRequestClicked(product: ProductLike, productType: ProductType, placement: string) {
+  safeTrack("request_clicked", { ...productProps(product, productType), placement });
+}
+
+export function trackBookingPanelOpened(slug?: string) {
+  safeTrack("booking_panel_opened", { slug });
+}
+
+export function trackVitrineBlockedShown(slug?: string) {
+  safeTrack("vitrine_blocked_shown", { slug });
+}
+
+export function trackCheckoutViewed(step: string, slug?: string, totalPrice?: number, currency?: string) {
+  safeTrack("checkout_viewed", {
+    step,
+    slug,
+    total_price: totalPrice,
+    currency,
+    ...amountProps(totalPrice, currency),
+  });
+}
+
+export function trackGuestFormStarted(slug?: string) {
+  safeTrack("guest_form_started", { slug });
+}
+
+export function trackFormErrorShown(fieldName: string, slug?: string) {
+  safeTrack("form_error_shown", { field: fieldName, slug });
+}
+
+export function trackPromoCodeApplied(code: string, discountAmount?: number) {
+  safeTrack("promo_code_applied", { code, discount_amount: discountAmount });
+}
+
+export function trackPromoCodeFailed(code: string, reason?: string) {
+  safeTrack("promo_code_failed", { code, reason });
+}
+
+export function trackGiftCardApplied(amount?: number, currency?: string) {
+  safeTrack("gift_card_applied", { amount, currency, ...amountProps(amount, currency) });
+}
+
+export function trackGiftCardFailed(reason?: string) {
+  safeTrack("gift_card_failed", { reason });
+}
+
+export function trackCheckoutStepCompleted(step: string, slug?: string) {
+  safeTrack("checkout_step_completed", { step, slug });
+}
+
+export function trackPaymentWidgetOpened(slug?: string, totalPrice?: number, currency?: string) {
+  safeTrack("payment_widget_opened", {
+    slug,
+    total_price: totalPrice,
+    currency,
+    ...amountProps(totalPrice, currency),
+  });
+}
+
+export function trackPaymentFailedClient(errorMessage: string, slug?: string) {
+  safeTrack("payment_failed_client", { error_message: errorMessage, slug });
+}
+
+export function trackCheckoutAbandoned(slug: string, step: string, secondsElapsed: number) {
+  safeTrack("checkout_abandoned", { slug, step, seconds_elapsed: Math.round(secondsElapsed) });
+}
+
+export function trackConfirmationViewed(bookingRef: string, totalPrice?: number, currency?: string) {
+  safeTrack("confirmation_viewed", {
+    booking_ref: bookingRef,
+    total_price: totalPrice,
+    currency,
+    ...amountProps(totalPrice, currency),
+  });
+}
+
+export function trackWhatsappClicked(
+  placement: string,
+  messageVariant: "site" | "ig" | "tiktok" | "google" | "facebook",
+  entrySource?: string,
+  product?: ProductLike | null,
+  productType?: ProductType
+) {
+  safeTrack("whatsapp_clicked", {
+    placement,
+    message_variant: messageVariant,
+    entry_source: entrySource,
+    ...(product && productType ? productProps(product, productType) : {}),
+  });
+}
+
+export function trackNewsletterPopupShown() {
+  safeTrack("newsletter_popup_shown");
+}
+
+export function trackNewsletterPopupClosed(method: "close_button" | "backdrop" | "submitted") {
+  safeTrack("newsletter_popup_closed", { method });
+}
+
+export function trackNewsletterSubscribed(emailDomain: string) {
+  safeTrack("newsletter_subscribed", { email_domain: emailDomain });
+}
+
+export function trackContactFormSubmitted(subject?: string) {
+  safeTrack("contact_form_submitted", { subject });
+}
+
+export function trackAuthPromptShown(context?: string) {
+  safeTrack("auth_prompt_shown", { context });
+}
+
+export function identifyWhatsappClicked() {
+  safeSetUserProperty("has_clicked_whatsapp", true);
+  const stored = parseInt(localStorage.getItem("sm_whatsapp_clicks_count") ?? "0", 10);
+  const newCount = stored + 1;
+  try {
+    localStorage.setItem("sm_whatsapp_clicks_count", String(newCount));
+  } catch {}
+  safeSetUserProperty("whatsapp_clicks_count", newCount);
 }

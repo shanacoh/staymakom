@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import tailoredHero from "@/assets/tailored-request-hero.png";
+import { trackContactFormSubmitted, identifyLead } from "@/lib/analytics";
 
 interface TailoredRequestSectionProps {
   categories?: Array<{ id: string; name: string; name_he?: string | null; slug: string }>;
@@ -178,6 +179,8 @@ const TailoredRequestSection = ({ categories, ctaClassName, heroImage, kickerCla
         },
       });
       if (error) throw error;
+      trackContactFormSubmitted("tailored_request_step1");
+      identifyLead(email);
       setLeadId(data?.leadId ?? null);
       setStep("transition");
     } catch {
@@ -209,6 +212,7 @@ const TailoredRequestSection = ({ categories, ctaClassName, heroImage, kickerCla
         },
       });
       if (error) throw error;
+      trackContactFormSubmitted("tailored_request_step2");
       setStep("done");
     } catch {
       // Silent fail — step 2 is optional, data saved is a bonus

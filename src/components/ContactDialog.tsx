@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { trackContactFormSubmitted, identifyLead } from "@/lib/analytics";
 
 interface ContactDialogProps {
   open: boolean;
@@ -86,6 +87,8 @@ const ContactDialog = ({ open, onOpenChange }: ContactDialogProps) => {
 
       if (error) throw error;
 
+      trackContactFormSubmitted("win_trip");
+      identifyLead(formData.get("email") as string);
       toast({
         title: "Registration submitted!",
         description: "We'll contact you soon about your chance to win.",

@@ -21,6 +21,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
 import StandaloneRequestPanel from "@/components/experience-test/StandaloneRequestPanel";
 import { resizedImageUrl } from "@/lib/imageUrl";
+import { trackExperienceViewed, trackRequestClicked, type ProductLike } from "@/lib/analytics";
+import { useSetCurrentProduct } from "@/contexts/CurrentProductContext";
 
 interface BoatDetailModalProps {
   boatId: string | null;
@@ -29,6 +31,19 @@ interface BoatDetailModalProps {
 
 function toLocalDateStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function toProductLike(boat: any): ProductLike {
+  return {
+    slug: boat.slug,
+    title: boat.title,
+    city: boat.city,
+    region: boat.region,
+    base_price: boat.base_price,
+    base_price_type: boat.base_price_type,
+    currency: boat.currency,
+    is_bookable: false,
+  };
 }
 
 const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
@@ -80,6 +95,13 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
     },
     enabled: !!boatId,
   });
+
+  useEffect(() => {
+    if (!boat?.slug) return;
+    trackExperienceViewed(toProductLike(boat), "boat");
+  }, [boat?.slug]);
+
+  useSetCurrentProduct(boat ? toProductLike(boat) : null, "boat");
 
   const { data: includes } = useQuery({
     queryKey: ["boat-includes", boatId],
@@ -182,7 +204,12 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
     return blockedDateStrings.includes(toLocalDateStr(date));
   };
 
-  const handleReserveClick = () => setRequestStarted(true);
+  const handleReserveClick = () => {
+    if (boat?.slug) {
+      trackRequestClicked(toProductLike(boat), "boat", "price_bar");
+    }
+    setRequestStarted(true);
+  };
 
   const closeButton = (
     <button

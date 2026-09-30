@@ -12,8 +12,8 @@ import ScrollToTop from "@/components/ScrollToTop";
 import MobileAppShell from "@/components/MobileAppShell";
 import CookieConsent from "@/components/CookieConsent";
 import { useCookieConsent } from "@/hooks/useCookieConsent";
-import { initAmplitude } from "@/lib/amplitude";
-import { trackPageViewed, trackUtmCaptured } from "@/lib/analytics";
+import { CurrentProductProvider } from "@/contexts/CurrentProductContext";
+import { trackPageViewed, trackUtmCaptured, trackSessionLanded, identifySessionLanded, computeEntrySource } from "@/lib/analytics";
 import { Loader2 } from "lucide-react";
 import { NewsletterPopup } from "@/components/NewsletterPopup";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -148,13 +148,40 @@ const AppContent = () => {
   const { showBanner, acceptCookies, declineCookies } = useCookieConsent();
 
   useEffect(() => {
-    const consent = localStorage.getItem("staymakom_cookie_consent");
-    if (consent === "accepted") initAmplitude();
-  }, []);
-
-  useEffect(() => {
     trackPageViewed(location.pathname);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (sessionStorage.getItem("staymakom_session_landed")) return;
+    const params = new URLSearchParams(window.location.search);
+    const utmSource = params.get("utm_source") || undefined;
+    const utmMedium = params.get("utm_medium") || undefined;
+    const utmCampaign = params.get("utm_campaign") || undefined;
+    const utmContent = params.get("utm_content") || undefined;
+    const utmTerm = params.get("utm_term") || undefined;
+    const referrer = document.referrer || "";
+    const entrySource = computeEntrySource(utmSource, referrer);
+    try {
+      sessionStorage.setItem("staymakom_entry_source", entrySource);
+    } catch {}
+    trackSessionLanded({
+      landingPage: window.location.pathname,
+      referrer,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmContent,
+      utmTerm,
+    });
+    identifySessionLanded({
+      firstTouchSource: entrySource,
+      firstTouchMedium: utmMedium,
+      firstTouchCampaign: utmCampaign,
+      firstLandingPage: window.location.pathname,
+      lastTouchSource: entrySource,
+    });
+    sessionStorage.setItem("staymakom_session_landed", "1");
+  }, []);
 
   useEffect(() => {
     if (sessionStorage.getItem("staymakom_utm_tracked")) return;
@@ -171,7 +198,7 @@ const AppContent = () => {
   }, []);
 
   return (
-    <>
+    <CurrentProductProvider>
       <MobileAppShell />
       <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -351,7 +378,7 @@ const AppContent = () => {
       )}
       <NewsletterPopup />
       <WhatsAppButton />
-    </>
+    </CurrentProductProvider>
   );
 };
 

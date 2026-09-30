@@ -30,6 +30,20 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  trackCheckoutViewed,
+  trackGuestFormStarted,
+  trackFormErrorShown,
+  trackPromoCodeApplied,
+  trackPromoCodeFailed,
+  trackGiftCardApplied,
+  trackGiftCardFailed,
+  trackCheckoutStepCompleted,
+  trackPaymentWidgetOpened,
+  trackPaymentFailedClient,
+  trackCheckoutAbandoned,
+  identifyLead,
+} from "@/lib/analytics";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -316,6 +330,55 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
 
   const stepLabels = [t.step2Title, t.step3Title];
 
+  // ── Analytics ───────────────────────────────────────────────────────────
+
+  React.useEffect(() => {
+    trackCheckoutViewed(step === 2 ? "guest_info" : "review", state.experienceSlug, finalTotal, state.currency);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
+  const guestFormStartedRef = React.useRef(false);
+  const handleLeadGuestChange = useCallback((value: LeadGuestData) => {
+    if (!guestFormStartedRef.current) {
+      guestFormStartedRef.current = true;
+      trackGuestFormStarted(state.experienceSlug);
+    }
+    setLeadGuest(value);
+  }, [state.experienceSlug]);
+
+  React.useEffect(() => {
+    if (!showGuestErrors) return;
+    const emailValid = /\S+@\S+\.\S+/.test(leadGuest.email.trim());
+    const fields = [
+      { name: "firstName", valid: !!leadGuest.firstName.trim() },
+      { name: "lastName", valid: !!leadGuest.lastName.trim() },
+      { name: "email", valid: emailValid },
+      { name: "phone", valid: !!leadGuest.phone.trim() },
+    ];
+    fields.filter((f) => !f.valid).forEach((f) => trackFormErrorShown(f.name, state.experienceSlug));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showGuestErrors]);
+
+  React.useEffect(() => {
+    const start = Date.now();
+    const handleVisChange = () => {
+      if (document.visibilityState === "hidden" && paymentStatus !== "paid") {
+        const secondsElapsed = (Date.now() - start) / 1000;
+        if (secondsElapsed > 30) {
+          trackCheckoutAbandoned(state.experienceSlug, step === 2 ? "guest_info" : "review", secondsElapsed);
+        }
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisChange);
+    return () => document.removeEventListener("visibilitychange", handleVisChange);
+  }, [paymentStatus, step, state.experienceSlug]);
+
+  React.useEffect(() => {
+    if (!revolutPublicId) return;
+    trackPaymentWidgetOpened(state.experienceSlug, finalTotal, state.currency);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revolutPublicId]);
+
   const inputStyle = {
     backgroundColor: "#FFFFFF",
     border: "1px solid #E8E0D4",
@@ -326,9 +389,11 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
 
   const handleContinueToStep3 = useCallback(() => {
     if (!isGuestValid) { setShowGuestErrors(true); return; }
+    trackCheckoutStepCompleted("guest_info", state.experienceSlug);
+    identifyLead(leadGuest.email);
     setStep(3);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [isGuestValid]);
+  }, [isGuestValid, state.experienceSlug, leadGuest.email]);
 
   const handleApplyGiftCard = useCallback(async () => {
     if (!giftCardCode.trim()) return;
@@ -339,6 +404,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
         p_code: giftCardCode.trim().toUpperCase(),
       });
       if (error || !data) {
+        trackGiftCardFailed("rpc_error");
         setGiftCardError(lang === "he" ? "לא ניתן לאמת את הכרטיס. נסה שוב." : lang === "fr" ? "Impossible de valider la carte. Réessayez." : "Unable to validate the card. Please try again.");
         return;
       }
@@ -352,9 +418,12 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
           no_balance: { en: "This gift card has no remaining balance.", he: "אין יתרה בכרטיס מתנה זה.", fr: "Cette carte cadeau n'a plus de solde." },
         };
         const key = result.error || "not_found";
+        trackGiftCardFailed(key);
         setGiftCardError(msgs[key]?.[lang] || msgs.not_found.en);
         return;
       }
+      const appliedAmount = Math.min(result.available_balance!, Math.max(0, state.totalPrice - promoDiscount));
+      trackGiftCardApplied(appliedAmount, result.currency);
       setAppliedGiftCard({
         id: result.id!, code: result.code!,
         totalAmount: result.amount!, amountUsed: result.amount_used!,
@@ -362,6 +431,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
       });
       setGiftCardCode("");
     } catch {
+      trackGiftCardFailed("exception");
       setGiftCardError(lang === "he" ? "שגיאה בבדיקת הכרטיס." : lang === "fr" ? "Erreur lors de la vérification." : "Error validating card.");
     } finally {
       setIsValidatingGiftCard(false);
@@ -382,6 +452,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
         p_email: leadGuest.email.trim(),
       });
       if (error || !data) {
+        trackPromoCodeFailed(promoCodeValue.trim().toUpperCase(), "rpc_error");
         setPromoError(lang === "he" ? "לא ניתן לאמת את הקוד. נסה שוב." : lang === "fr" ? "Impossible de valider le code. Réessayez." : "Unable to validate the code. Please try again.");
         return;
       }
@@ -406,9 +477,11 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
           invalid_input: { en: "Invalid code or email.", he: "קוד או אימייל לא תקינים.", fr: "Code ou email invalide." },
         };
         const key = result.error || "not_found";
+        trackPromoCodeFailed(promoCodeValue.trim().toUpperCase(), key);
         setPromoError(msgs[key]?.[lang] || msgs.not_found.en);
         return;
       }
+      trackPromoCodeApplied(result.code!, Number(result.discount_amount ?? 0));
       setAppliedPromo({
         id: result.id!,
         code: result.code!,
@@ -418,6 +491,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
       });
       setPromoCodeValue("");
     } catch {
+      trackPromoCodeFailed(promoCodeValue.trim().toUpperCase(), "exception");
       setPromoError(lang === "he" ? "שגיאה באימות הקוד." : lang === "fr" ? "Erreur lors de la vérification." : "Error validating code.");
     } finally {
       setIsValidatingPromo(false);
@@ -517,11 +591,12 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
   }, [bookingToken, navigate, lang]);
 
   const handlePaymentError = useCallback((errorMessage: string) => {
+    trackPaymentFailedClient(errorMessage, state.experienceSlug);
     setPaymentDialogOpen(false);
     setPaymentStatus("failed");
     setPaymentErrorMessage(errorMessage || "Le paiement a échoué.");
     toast.error(errorMessage);
-  }, []);
+  }, [state.experienceSlug]);
 
   // Marque la réservation "pending" comme abandonnée quand le client quitte la pop-up
   // de paiement sans payer, pour éviter d'accumuler des doublons "pending" au back office
@@ -744,7 +819,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                 {/* Formulaire client */}
                 <LeadGuestForm
                   value={leadGuest}
-                  onChange={setLeadGuest}
+                  onChange={handleLeadGuestChange}
                   lang={lang}
                   showErrors={showGuestErrors}
                 />

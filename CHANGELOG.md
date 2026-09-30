@@ -6,6 +6,26 @@
 
 ---
 
+## [2026-09-30] — Réparation du suivi Amplitude + tracking du parcours standalone et du bouton WhatsApp
+
+### Ce qui a changé côté code
+- `src/lib/amplitude.ts` : le site avait deux outils Amplitude branchés en même temps, dont un seul fonctionnait vraiment en production. Les événements personnalisés (clics, vues de page...) partaient donc dans le vide depuis juillet. Un seul outil est maintenant utilisé, avec 5 informations ajoutées automatiquement à chaque événement (langue, page, type de page, type d'appareil, source d'arrivée).
+- `src/lib/analytics.ts` : ajout de 30+ nouvelles fonctions de suivi (vue d'une fiche, engagement, sections vues, changement de participants, date/créneau/formule choisis, extras cochés, clics "Réserver"/"Demander", étapes du paiement, code promo/carte cadeau, abandon de paiement, clic WhatsApp...). Aucune fonction existante n'a été touchée.
+- `src/App.tsx` : au premier chargement, calcul et enregistrement de la source d'arrivée du visiteur (Instagram, TikTok, Facebook, Google, direct...).
+- `src/pages/StandaloneExperience.tsx`, `src/pages/Experience2.tsx`, `src/pages/Hotel.tsx`, `src/pages/Boats.tsx`, `src/components/boats/BoatDetailModal.tsx`, `src/pages/StandaloneCheckout.tsx`, `src/pages/StandaloneBookingConfirmation.tsx` : branchement des nouveaux suivis sur le parcours de réservation, du premier affichage d'une fiche jusqu'à la confirmation. Aucune logique de réservation, de prix ou de paiement n'a été modifiée.
+- `src/components/NewsletterPopup.tsx`, `src/pages/MobileAuthPrompt.tsx`, `src/components/ContactDialog.tsx`, `src/components/TailoredRequestSection.tsx` : suivi des popups et formulaires (newsletter, prompt de connexion, contact, demande sur mesure). Dès qu'un email est validé, la personne est identifiée comme prospect côté Amplitude.
+- `src/constants/whatsapp.ts` (nouveau) : message WhatsApp préparé centralisé, avec un petit marqueur discret ajouté en fin de message selon la source d'arrivée (Instagram, TikTok, Google, Facebook), invisible pour les autres visiteurs.
+- `src/contexts/CurrentProductContext.tsx` (nouveau) : petit relais qui permet au bouton WhatsApp de savoir sur quelle fiche produit se trouve la personne au moment du clic, sans recharger de données.
+- `src/components/WhatsAppButton.tsx` : branché sur les deux fichiers ci-dessus.
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Le suivi Amplitude ne fonctionnait plus depuis juillet : impossible de savoir ce que font réellement les visiteurs sur le parcours de réservation. Objectif : réparer l'envoi, suivre en détail le parcours standalone (de la fiche à la confirmation), et distinguer discrètement les demandes WhatsApp venant d'Instagram/TikTok/Google/Facebook pour mesurer l'efficacité de chaque canal.
+
+---
+
 ## [2026-09-28] — Retrait de la page « AI Insights » du back-office
 
 ### Ce qui a changé côté code

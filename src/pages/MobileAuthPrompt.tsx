@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Heart, CalendarDays, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { trackAuthPromptShown } from "@/lib/analytics";
 
 
 const contextConfig = {
@@ -29,6 +31,10 @@ const MobileAuthPrompt = () => {
   const context = (searchParams.get("context") as ContextKey) || "account";
   const config = contextConfig[context] || contextConfig.account;
   const Icon = config.icon;
+
+  useEffect(() => {
+    trackAuthPromptShown(context);
+  }, [context]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

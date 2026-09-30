@@ -3,8 +3,9 @@
  * site (réutilise StandaloneExperienceCard/ExperienceCard). Accessible
  * uniquement via lien direct (/boat) : aucune entrée de menu pour l'instant.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { trackListingViewed, trackFilterApplied } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import V3Header from "@/components/V3Header";
@@ -28,6 +29,10 @@ const Boats = () => {
     : lang === "fr"
       ? "Découvrez notre sélection de bateaux soigneusement choisis à travers Israël. Tous les prix sont indiqués pour une sortie de 2 heures, sauf mention contraire."
       : "Explore Israel from the sea with our handpicked collection of boats. All prices are based on a 2-hour experience, unless otherwise stated.";
+
+  useEffect(() => {
+    trackListingViewed("boats");
+  }, []);
 
   const { data: boats, isLoading } = useQuery({
     queryKey: ["boats-catalog"],
@@ -77,7 +82,11 @@ const Boats = () => {
             ].map(({ value, label }) => (
               <button
                 key={value}
-                onClick={() => setSelectedCity(selectedCity === value ? null : value)}
+                onClick={() => {
+                  const nextValue = selectedCity === value ? null : value;
+                  trackFilterApplied("boats", "city", nextValue);
+                  setSelectedCity(nextValue);
+                }}
                 className={cn(
                   "px-4 py-1.5 rounded-full text-sm border transition-all",
                   selectedCity === value

@@ -29,7 +29,24 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useLanguage } from "@/hooks/useLanguage";
 import { SEOHead } from "@/components/SEOHead";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumbJsonLd";
-import { trackExperiencePageViewed, trackTimeOnExperiencePage } from "@/lib/analytics";
+import {
+  trackExperiencePageViewed,
+  trackTimeOnExperiencePage,
+  trackExperienceViewed,
+  trackExperienceEngaged,
+  trackSectionViewed,
+  trackParticipantsChanged,
+  trackStandaloneDateSelected,
+  trackSlotSelected,
+  trackRateOptionSelected,
+  trackExtraToggled,
+  trackBookClicked,
+  trackRequestClicked,
+  trackBookingPanelOpened,
+  trackVitrineBlockedShown,
+  type ProductLike,
+} from "@/lib/analytics";
+import { useSetCurrentProduct } from "@/contexts/CurrentProductContext";
 import { useScrollDepth } from "@/hooks/useScrollDepth";
 import type { SelectedExtra } from "@/components/experience-test/ExtrasSection2";
 import { Users, Calendar, Clock } from "lucide-react";
@@ -124,6 +141,22 @@ function toLocalDateStr(d: Date): string {
 }
 
 
+function toProductLike(experience: StandaloneExperienceData): ProductLike {
+  return {
+    slug: experience.slug,
+    title: experience.title,
+    category: experience.categories
+      ? { slug: experience.categories.slug, name: experience.categories.name }
+      : null,
+    city: experience.city,
+    region: experience.region,
+    base_price: experience.base_price,
+    base_price_type: experience.base_price_type,
+    currency: experience.currency,
+    is_bookable: experience.is_bookable,
+  };
+}
+
 function computeTotal(
   basePrice: number,
   basePriceChild: number | null | undefined,
@@ -151,6 +184,11 @@ export default function StandaloneExperience() {
   const { lang } = useLanguage();
   const footerRef = useRef<HTMLElement>(null);
   const reviewsRef = useRef<HTMLDivElement>(null);
+  const includedRef = useRef<HTMLDivElement>(null);
+  const extrasRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const practicalInfoRef = useRef<HTMLDivElement>(null);
+  const otherExperiencesRef = useRef<HTMLDivElement>(null);
 
   // Booking form state (étape 1 uniquement — les étapes 2 et 3 sont dans StandaloneCheckout.tsx)
   const [selectedDate, setSelectedDate] = useState<string>("");
@@ -163,14 +201,6 @@ export default function StandaloneExperience() {
   // Mobile booking Sheet
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isBarHidden, setIsBarHidden] = useState(false);
-
-  const handleToggleExtra = useCallback((extra: SelectedExtra) => {
-    setSelectedExtras((prev) => {
-      const exists = prev.some((e) => e.id === extra.id);
-      if (exists) return prev.filter((e) => e.id !== extra.id);
-      return [...prev, extra];
-    });
-  }, []);
 
   // Sticky top tracking
   const [stickyTop, setStickyTop] = useState(80);
@@ -252,6 +282,17 @@ export default function StandaloneExperience() {
 
   const selectedRateOption = (rateOptions ?? []).find((o) => o.id === selectedRateOptionId) ?? null;
 
+  useSetCurrentProduct(experience ? toProductLike(experience) : null, "standalone");
+
+  const handleToggleExtra = useCallback((extra: SelectedExtra) => {
+    setSelectedExtras((prev) => {
+      const exists = prev.some((e) => e.id === extra.id);
+      trackExtraToggled(experience?.slug ?? "", extra.name, !exists, extra.price);
+      if (exists) return prev.filter((e) => e.id !== extra.id);
+      return [...prev, extra];
+    });
+  }, [experience?.slug]);
+
   // -------------------------------------------------------------------------
   // Analytics
   // -------------------------------------------------------------------------
@@ -261,6 +302,7 @@ export default function StandaloneExperience() {
   useEffect(() => {
     if (!experience?.slug) return;
     trackExperiencePageViewed(experience.slug, experience.title, experience.base_price);
+    trackExperienceViewed(toProductLike(experience), "standalone");
     const start = Date.now();
     const handleVisChange = () => {
       if (document.visibilityState === "hidden") {
@@ -272,6 +314,65 @@ export default function StandaloneExperience() {
       document.removeEventListener("visibilitychange", handleVisChange);
       trackTimeOnExperiencePage(experience.slug, (Date.now() - start) / 1000);
     };
+  }, [experience?.slug]);
+
+  // experience_engaged : à 15/30/60/120s si l'onglet est visible, avec le scroll max atteint
+  useEffect(() => {
+    if (!experience?.slug) return;
+    let maxScrollPercent = 0;
+    const updateMaxScroll = () => {
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (docHeight <= 0) return;
+      const pct = Math.round((window.scrollY / docHeight) * 100);
+      if (pct > maxScrollPercent) maxScrollPercent = pct;
+    };
+    window.addEventListener("scroll", updateMaxScroll, { passive: true });
+    updateMaxScroll();
+
+    const thresholds = [15, 30, 60, 120] as const;
+    const timers = thresholds.map((seconds) =>
+      setTimeout(() => {
+        if (document.visibilityState === "visible") {
+          trackExperienceEngaged(toProductLike(experience), "standalone", seconds, maxScrollPercent);
+        }
+      }, seconds * 1000)
+    );
+
+    return () => {
+      window.removeEventListener("scroll", updateMaxScroll);
+      timers.forEach(clearTimeout);
+    };
+  }, [experience?.slug]);
+
+  // section_viewed : une fois par section, dès qu'elle entre dans le viewport
+  useEffect(() => {
+    if (!experience?.slug) return;
+    const sections: { ref: React.RefObject<HTMLElement>; name: "included" | "extras" | "map" | "reviews" | "practical_info" | "other_experiences" }[] = [
+      { ref: includedRef, name: "included" },
+      { ref: extrasRef, name: "extras" },
+      { ref: mapRef, name: "map" },
+      { ref: reviewsRef, name: "reviews" },
+      { ref: practicalInfoRef, name: "practical_info" },
+      { ref: otherExperiencesRef, name: "other_experiences" },
+    ];
+    const seen = new Set<string>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const match = sections.find((s) => s.ref.current === entry.target);
+          if (!match || seen.has(match.name)) return;
+          seen.add(match.name);
+          trackSectionViewed(match.name, experience.slug);
+          observer.unobserve(entry.target);
+        });
+      },
+      { threshold: 0.3 }
+    );
+    sections.forEach((s) => {
+      if (s.ref.current) observer.observe(s.ref.current);
+    });
+    return () => observer.disconnect();
   }, [experience?.slug]);
 
   // Initialise adults au minimum requis une fois l'expérience chargée
@@ -564,7 +665,10 @@ export default function StandaloneExperience() {
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => setAdults((a) => Math.max(1, a - 1))}
+                    onClick={() => {
+                      trackParticipantsChanged(experience.slug, Math.max(1, adults - 1), children);
+                      setAdults((a) => Math.max(1, a - 1));
+                    }}
                     disabled={adults <= 1}
                     className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
                   >
@@ -573,7 +677,10 @@ export default function StandaloneExperience() {
                   <span className="min-w-[2ch] text-center font-semibold">{adults}</span>
                   <button
                     type="button"
-                    onClick={() => setAdults((a) => Math.min(experience.max_party - children, a + 1))}
+                    onClick={() => {
+                      trackParticipantsChanged(experience.slug, Math.min(experience.max_party - children, adults + 1), children);
+                      setAdults((a) => Math.min(experience.max_party - children, a + 1));
+                    }}
                     disabled={totalParty >= experience.max_party}
                     className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
                   >
@@ -595,7 +702,10 @@ export default function StandaloneExperience() {
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => setChildren((c) => Math.max(0, c - 1))}
+                    onClick={() => {
+                      trackParticipantsChanged(experience.slug, adults, Math.max(0, children - 1));
+                      setChildren((c) => Math.max(0, c - 1));
+                    }}
                     disabled={children <= 0}
                     className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
                   >
@@ -604,7 +714,10 @@ export default function StandaloneExperience() {
                   <span className="min-w-[2ch] text-center font-semibold">{children}</span>
                   <button
                     type="button"
-                    onClick={() => setChildren((c) => Math.min(experience.max_party - adults, c + 1))}
+                    onClick={() => {
+                      trackParticipantsChanged(experience.slug, adults, Math.min(experience.max_party - adults, children + 1));
+                      setChildren((c) => Math.min(experience.max_party - adults, c + 1));
+                    }}
                     disabled={totalParty >= experience.max_party}
                     className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
                   >
@@ -622,7 +735,10 @@ export default function StandaloneExperience() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setAdults((a) => Math.max(experience.min_party, a - 1))}
+                  onClick={() => {
+                    trackParticipantsChanged(experience.slug, Math.max(experience.min_party, adults - 1), children);
+                    setAdults((a) => Math.max(experience.min_party, a - 1));
+                  }}
                   disabled={adults <= experience.min_party}
                   className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
                 >
@@ -631,7 +747,10 @@ export default function StandaloneExperience() {
                 <span className="min-w-[2ch] text-center font-semibold">{adults}</span>
                 <button
                   type="button"
-                  onClick={() => setAdults((a) => Math.min(experience.max_party, a + 1))}
+                  onClick={() => {
+                    trackParticipantsChanged(experience.slug, Math.min(experience.max_party, adults + 1), children);
+                    setAdults((a) => Math.min(experience.max_party, a + 1));
+                  }}
                   disabled={adults >= experience.max_party}
                   className="flex h-9 w-9 items-center justify-center rounded-full border text-base hover:bg-[#FDF2F2] hover:border-[#ad1414]/40 disabled:opacity-40 transition-colors"
                 >
@@ -654,7 +773,17 @@ export default function StandaloneExperience() {
               showOutsideDays
               locale={lang === "fr" ? fr : lang === "he" ? he : undefined}
               selected={selectedDate ? new Date(selectedDate + "T12:00:00") : undefined}
-              onSelect={(date) => setSelectedDate(date ? toLocalDateStr(date) : "")}
+              onSelect={(date) => {
+                if (date) {
+                  const daysAhead = Math.round(
+                    (new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime() -
+                      new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()).getTime()) /
+                      86400000
+                  );
+                  trackStandaloneDateSelected(experience.slug, toLocalDateStr(date), daysAhead);
+                }
+                setSelectedDate(date ? toLocalDateStr(date) : "");
+              }}
               disabled={isDateUnavailable}
               defaultMonth={new Date(minDate + "T12:00:00")}
               toDate={maxDate}
@@ -685,7 +814,10 @@ export default function StandaloneExperience() {
                 <button
                   key={slot}
                   type="button"
-                  onClick={() => setSelectedSlot(slot)}
+                  onClick={() => {
+                    trackSlotSelected(experience.slug, slot);
+                    setSelectedSlot(slot);
+                  }}
                   className={cn(
                     "rounded-lg border py-2 text-sm font-medium transition-colors",
                     selectedSlot === slot
@@ -714,7 +846,10 @@ export default function StandaloneExperience() {
                   <button
                     key={option.id}
                     type="button"
-                    onClick={() => setSelectedRateOptionId(option.id)}
+                    onClick={() => {
+                      trackRateOptionSelected(experience.slug, optionLabel, option.price_adult, experience.currency);
+                      setSelectedRateOptionId(option.id);
+                    }}
                     className={cn(
                       "w-full flex items-center justify-between rounded-lg border px-3 py-2.5 text-left text-sm transition-colors",
                       selectedRateOptionId === option.id
@@ -766,9 +901,11 @@ export default function StandaloneExperience() {
           className="w-full rounded-full text-base font-semibold h-12 bg-[#ad1414] text-white hover:bg-[#9a1212] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_-4px_rgba(173,20,20,0.4)] transition-all duration-200 normal-case"
           onClick={() => {
             if (isVitrineContext) {
+              trackVitrineBlockedShown(experience.slug);
               setShowVitrineDialog(true);
               return;
             }
+            trackBookClicked(toProductLike(experience), "standalone", "panel");
             const checkoutState = {
               experienceId: experience.id,
               experienceSlug: experience.slug,
@@ -908,30 +1045,36 @@ export default function StandaloneExperience() {
             {/* Left Column */}
             <div className="space-y-10 md:space-y-12 min-w-0 overflow-x-hidden">
               {/* What's on the program */}
-              <WhatsIncludedPhotos2
-                experienceId={experience.id}
-                lang={lang}
-                longCopy={longCopy}
-                source="standalone"
-              />
+              <div ref={includedRef}>
+                <WhatsIncludedPhotos2
+                  experienceId={experience.id}
+                  lang={lang}
+                  longCopy={longCopy}
+                  source="standalone"
+                />
+              </div>
 
               {/* Extras */}
-              <StandaloneExtrasSection
-                experienceId={experience.id}
-                lang={lang}
-                currency={experience.currency}
-                selectedExtras={selectedExtras}
-                onToggleExtra={handleToggleExtra}
-              />
+              <div ref={extrasRef}>
+                <StandaloneExtrasSection
+                  experienceId={experience.id}
+                  lang={lang}
+                  currency={experience.currency}
+                  selectedExtras={selectedExtras}
+                  onToggleExtra={handleToggleExtra}
+                />
+              </div>
 
               {/* Map */}
               {experience.latitude && experience.longitude && (
-                <LocationMap
-                  latitude={experience.latitude}
-                  longitude={experience.longitude}
-                  hotelName={title}
-                  lang={lang as "en" | "he" | "fr"}
-                />
+                <div ref={mapRef}>
+                  <LocationMap
+                    latitude={experience.latitude}
+                    longitude={experience.longitude}
+                    hotelName={title}
+                    lang={lang as "en" | "he" | "fr"}
+                  />
+                </div>
               )}
 
               {/* Share with Friends */}
@@ -946,17 +1089,21 @@ export default function StandaloneExperience() {
               </div>
 
               {/* Things to know */}
-              <PracticalInfo
-                experience={experience as any}
-                lang={lang as "en" | "he" | "fr"}
-              />
+              <div ref={practicalInfoRef}>
+                <PracticalInfo
+                  experience={experience as any}
+                  lang={lang as "en" | "he" | "fr"}
+                />
+              </div>
 
               {/* Other Experiences */}
-              <OtherStandaloneExperiences
-                currentExperienceId={experience.id}
-                categoryId={experience.category_id ?? null}
-                lang={lang}
-              />
+              <div ref={otherExperiencesRef}>
+                <OtherStandaloneExperiences
+                  currentExperienceId={experience.id}
+                  categoryId={experience.category_id ?? null}
+                  lang={lang}
+                />
+              </div>
             </div>
 
             {/* Right Column — Sticky Booking Panel (Desktop) */}
@@ -987,7 +1134,15 @@ export default function StandaloneExperience() {
           <div className="px-4">
             <button
               className="flex items-center justify-between py-3.5 w-full text-left min-h-[52px]"
-              onClick={() => setIsSheetOpen(true)}
+              onClick={() => {
+                trackBookingPanelOpened(experience.slug);
+                if (experience.is_bookable === false) {
+                  trackRequestClicked(toProductLike(experience), "standalone", "mobile_bar");
+                } else {
+                  trackBookClicked(toProductLike(experience), "standalone", "mobile_bar");
+                }
+                setIsSheetOpen(true);
+              }}
             >
               <div className="flex flex-col min-w-0">
                 {experience.is_bookable === false ? (

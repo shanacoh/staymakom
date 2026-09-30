@@ -1,17 +1,13 @@
 import { useLocation } from 'react-router-dom';
 import { useLanguage } from '@/hooks/useLanguage';
-
-const WHATSAPP_NUMBER = '972555009910';
-
-const MESSAGES = {
-  he: 'שלום! אני מעוניין/ת לשמוע עוד על החוויות שלכם',
-  en: "Hello! I'd love to learn more about your experiences",
-  fr: "Bonjour ! J'aimerais en savoir plus sur vos experiences",
-};
+import { WHATSAPP_NUMBER, buildWhatsappMessage, getWhatsappMessageVariant } from '@/constants/whatsapp';
+import { useCurrentProduct } from '@/contexts/CurrentProductContext';
+import { trackWhatsappClicked, identifyWhatsappClicked } from '@/lib/analytics';
 
 const WhatsAppButton = () => {
   const { lang } = useLanguage();
   const location = useLocation();
+  const currentProduct = useCurrentProduct();
 
   if (
     location.pathname.startsWith('/admin') ||
@@ -21,13 +17,31 @@ const WhatsAppButton = () => {
     return null;
   }
 
-  const message = encodeURIComponent(MESSAGES[lang]);
+  let entrySource: string | undefined;
+  try {
+    entrySource = sessionStorage.getItem('staymakom_entry_source') || undefined;
+  } catch {
+    entrySource = undefined;
+  }
+  const message = encodeURIComponent(buildWhatsappMessage(lang, entrySource));
+
+  const handleClick = () => {
+    trackWhatsappClicked(
+      'floating_bubble',
+      getWhatsappMessageVariant(entrySource),
+      entrySource,
+      currentProduct?.product,
+      currentProduct?.productType
+    );
+    identifyWhatsappClicked();
+  };
 
   return (
     <a
       href={`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={handleClick}
       className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-40 flex items-center justify-center w-14 h-14 bg-[#25D366] rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
       aria-label="Contact us on WhatsApp"
     >
