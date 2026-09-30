@@ -28,6 +28,24 @@ export interface ColumnDef {
 
 export const CURRENCY_OPTIONS = ["ILS", "USD", "EUR"];
 
+// Canal d'acquisition des réservations manuelles (WhatsApp, Instagram...) —
+// utilisé par les dialogs de création manuelle, la grille et le CA par canal.
+export const CHANNEL_OPTIONS: SelectOption[] = [
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "instagram_dm", label: "DM Instagram" },
+  { value: "tiktok", label: "TikTok" },
+  { value: "phone", label: "Téléphone" },
+  { value: "email", label: "Email" },
+  { value: "partner", label: "Partenaire" },
+  { value: "referral", label: "Recommandation" },
+  { value: "walk_in", label: "Sur place" },
+  { value: "other", label: "Autre" },
+];
+
+export const CHANNEL_LABELS: Record<string, string> = Object.fromEntries(
+  CHANNEL_OPTIONS.map((o) => [o.value, o.label])
+);
+
 const CURRENCY_SYMBOLS: Record<string, string> = { ILS: "₪", USD: "$", EUR: "€" };
 
 export function formatCurrency(amount: number | null | undefined, currency: string | null | undefined) {

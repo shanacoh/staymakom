@@ -94,6 +94,8 @@ Deno.serve(async (req: Request) => {
       internal_notes,
       custom_regulations,
       custom_address,
+      channel,
+      channel_detail,
     } = body;
 
     const adults: number = typeof adultsRaw === 'number' ? adultsRaw : 1;
@@ -160,6 +162,8 @@ Deno.serve(async (req: Request) => {
           internal_notes: internal_notes || null,
           custom_regulations: custom_regulations || null,
           custom_address: custom_address || null,
+          channel: channel || null,
+          channel_detail: channel_detail || null,
         }])
         .select('id, confirmation_token')
         .single();
@@ -267,6 +271,8 @@ Deno.serve(async (req: Request) => {
         internal_notes: internal_notes || null,
         custom_regulations: custom_regulations || null,
         custom_address: custom_address || null,
+        channel: channel || null,
+        channel_detail: channel_detail || null,
       }])
       .select('id, confirmation_token')
       .single();

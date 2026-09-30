@@ -1,5 +1,5 @@
 import type { Database } from "@/integrations/supabase/types";
-import { type ColumnDef, type SelectOption, formatCurrency } from "./columnTypes";
+import { type ColumnDef, type SelectOption, formatCurrency, CHANNEL_OPTIONS } from "./columnTypes";
 
 export type HotelBookingRow = Database["public"]["Tables"]["bookings_hg"]["Row"] & {
   hotels2?: { id: string; name: string } | null;
@@ -20,6 +20,7 @@ export type NewHotelBookingDraft = Partial<
     | "currency"
     | "payment_status"
     | "internal_notes"
+    | "channel"
   >
 >;
 
@@ -35,7 +36,8 @@ export type HotelColumnKey =
   | "net_price"
   | "commission"
   | "payment_status"
-  | "internal_notes";
+  | "internal_notes"
+  | "channel";
 
 // Valeurs vues venant de HyperGuest (voir Reservations.tsx historique) + les
 // 3 statuts utiles pour une saisie manuelle.
@@ -109,6 +111,7 @@ export const HOTEL_COLUMNS: ColumnDef[] = [
     locksWhenAutomatic: true,
   },
   { key: "internal_notes", label: "Notes / relance", type: "text", widthClass: "w-[260px]" },
+  { key: "channel", label: "Canal", type: "select", options: CHANNEL_OPTIONS, widthClass: "w-[130px]" },
 ];
 
 export const HOTEL_INTERACTIVE_COLUMNS = HOTEL_COLUMNS.filter((c) => c.type !== "readonly");

@@ -1,5 +1,5 @@
 import type { Database } from "@/integrations/supabase/types";
-import { type ColumnDef, type SelectOption, formatCurrency } from "./columnTypes";
+import { type ColumnDef, type SelectOption, formatCurrency, CHANNEL_OPTIONS } from "./columnTypes";
 
 export type BookingRow = Database["public"]["Tables"]["standalone_bookings"]["Row"];
 
@@ -21,6 +21,7 @@ export type NewBookingDraft = Partial<
     | "payment_status"
     | "supplier_payment_status"
     | "internal_notes"
+    | "channel"
   >
 >;
 
@@ -39,7 +40,8 @@ export type ExperienceColumnKey =
   | "commission"
   | "payment_status"
   | "supplier_payment_status"
-  | "internal_notes";
+  | "internal_notes"
+  | "channel";
 
 // "pending" existe déjà sur des réservations créées via l'ancien flux (site
 // public / process-standalone-booking) — on le garde dans la liste pour que
@@ -110,6 +112,7 @@ export const EXPERIENCE_COLUMNS: ColumnDef[] = [
     widthClass: "w-[150px]",
   },
   { key: "internal_notes", label: "Notes / relance", type: "text", widthClass: "w-[260px]" },
+  { key: "channel", label: "Canal", type: "select", options: CHANNEL_OPTIONS, widthClass: "w-[130px]" },
 ];
 
 export const EXPERIENCE_INTERACTIVE_COLUMNS = EXPERIENCE_COLUMNS.filter((c) => c.type !== "readonly");

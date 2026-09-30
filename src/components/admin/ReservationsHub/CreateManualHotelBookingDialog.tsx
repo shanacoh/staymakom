@@ -21,7 +21,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { CURRENCY_OPTIONS } from "@/components/admin/BookingsGrid/columnTypes";
+import { CURRENCY_OPTIONS, CHANNEL_OPTIONS } from "@/components/admin/BookingsGrid/columnTypes";
 
 const EMPTY_FORM = {
   hotel_id: "",
@@ -35,6 +35,8 @@ const EMPTY_FORM = {
   net_price: "",
   currency: "ILS",
   internal_notes: "",
+  channel: "whatsapp",
+  channel_detail: "",
 };
 
 interface Props {
@@ -79,6 +81,8 @@ const CreateManualHotelBookingDialog = ({ open, onOpenChange }: Props) => {
           net_price: form.net_price !== "" ? parseFloat(String(form.net_price)) : undefined,
           currency: form.currency,
           internal_notes: form.internal_notes || undefined,
+          channel: form.channel,
+          channel_detail: form.channel_detail || undefined,
         },
       });
       if (error) throw error;
@@ -103,7 +107,8 @@ const CreateManualHotelBookingDialog = ({ open, onOpenChange }: Props) => {
     !!form.customer_name.trim() &&
     !!form.customer_email.trim() &&
     form.sell_price !== "" &&
-    !Number.isNaN(parseFloat(String(form.sell_price)));
+    !Number.isNaN(parseFloat(String(form.sell_price))) &&
+    !!form.channel;
 
   return (
     <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) resetForm(); }}>
@@ -196,6 +201,30 @@ const CreateManualHotelBookingDialog = ({ open, onOpenChange }: Props) => {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Canal *</Label>
+              <Select value={form.channel} onValueChange={(v) => setForm((f) => ({ ...f, channel: v }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir un canal" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CHANNEL_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Précision <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
+              <Input
+                placeholder='ex: "Israel Women"'
+                value={form.channel_detail}
+                onChange={(e) => setForm((f) => ({ ...f, channel_detail: e.target.value }))}
+              />
             </div>
           </div>
 

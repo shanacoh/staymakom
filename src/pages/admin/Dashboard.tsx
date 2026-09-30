@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tile, TrendArrow } from "@/components/admin/DashboardTiles";
+import RevenueByChannelCard from "@/components/admin/RevenueByChannelCard";
 
 type Lead = {
   created_at: string;
@@ -270,6 +271,8 @@ const AdminDashboard = () => {
           Liste de tâches à créer et à lier aux actions.
         </CardContent>
       </Card>
+
+      <RevenueByChannelCard />
     </div>
   );
 };

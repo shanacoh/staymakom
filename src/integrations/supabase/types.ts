@@ -341,6 +341,8 @@ export type Database = {
         Row: {
           board_type: string | null
           cancelled_at: string | null
+          channel: string | null
+          channel_detail: string | null
           checkin: string
           checkout: string
           commission_amount: number
@@ -384,6 +386,8 @@ export type Database = {
         Insert: {
           board_type?: string | null
           cancelled_at?: string | null
+          channel?: string | null
+          channel_detail?: string | null
           checkin: string
           checkout: string
           commission_amount?: number
@@ -427,6 +431,8 @@ export type Database = {
         Update: {
           board_type?: string | null
           cancelled_at?: string | null
+          channel?: string | null
+          channel_detail?: string | null
           checkin?: string
           checkout?: string
           commission_amount?: number
@@ -3724,6 +3730,8 @@ export type Database = {
           adults_count: number | null
           booking_date: string
           cancelled_at: string | null
+          channel: string | null
+          channel_detail: string | null
           children_count: number | null
           confirmation_email_sent_at: string | null
           confirmation_token: string | null
@@ -3764,6 +3772,8 @@ export type Database = {
           adults_count?: number | null
           booking_date: string
           cancelled_at?: string | null
+          channel?: string | null
+          channel_detail?: string | null
           children_count?: number | null
           confirmation_email_sent_at?: string | null
           confirmation_token?: string | null
@@ -3804,6 +3814,8 @@ export type Database = {
           adults_count?: number | null
           booking_date?: string
           cancelled_at?: string | null
+          channel?: string | null
+          channel_detail?: string | null
           children_count?: number | null
           confirmation_email_sent_at?: string | null
           confirmation_token?: string | null
@@ -5135,3 +5147,4 @@ export const Constants = {
     },
   },
 } as const
+

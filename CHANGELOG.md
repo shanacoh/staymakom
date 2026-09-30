@@ -6,6 +6,24 @@
 
 ---
 
+## [2026-09-30] — Canal d'acquisition sur les réservations manuelles + CA par canal
+
+### Ce qui a changé côté code
+- `src/components/admin/BookingsGrid/columnTypes.ts` : ajout de la liste des canaux (`CHANNEL_OPTIONS`, `CHANNEL_LABELS`) : WhatsApp, DM Instagram, TikTok, Téléphone, Email, Partenaire, Recommandation, Sur place, Autre.
+- `src/components/admin/CreateManualStandaloneBookingDialog.tsx`, `src/components/admin/ReservationsHub/CreateManualHotelBookingDialog.tsx` : ajout d'un select "Canal" (obligatoire) et d'un champ "Précision" (facultatif) dans les deux formulaires de réservation manuelle. Rien d'autre n'a changé dans ces formulaires (prix, statut, paiement identiques).
+- `supabase/functions/create-standalone-manual-booking/index.ts`, `supabase/functions/create-hotel-manual-booking/index.ts` : les deux fonctions enregistrent maintenant le canal choisi. Aucune autre logique touchée (calcul de prix, statut, emails, Revolut).
+- `src/components/admin/BookingsGrid/experienceColumns.ts`, `src/components/admin/BookingsGrid/hotelColumns.ts` : ajout d'une colonne "Canal" dans les deux grilles de réservations, modifiable y compris sur les anciennes réservations (pour les compléter après coup).
+- `src/components/admin/RevenueByChannelCard.tsx` (nouveau) : bloc "CA par canal" du tableau de bord — somme du prix client des réservations confirmées, groupée par canal, pour le mois en cours et le mois précédent.
+- `src/pages/admin/Dashboard.tsx` : ajout du bloc ci-dessus sous "Actions à faire".
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20260930000000_add_channel_to_bookings.sql` : ajoute les colonnes `channel` (texte, limité aux 9 valeurs listées ci-dessus) et `channel_detail` (texte libre) sur les tables `standalone_bookings` et `bookings_hg`. Les deux colonnes sont vides (non renseignées) pour toutes les réservations existantes.
+
+### Pourquoi ce changement
+- Les réservations prises sur WhatsApp (et autres canaux directs) étaient saisies à la main sans savoir par quel canal le client était arrivé. Objectif : pouvoir enfin répondre à "quel canal rapporte le plus de CA ?".
+
+---
+
 ## [2026-09-30] — Réparation du suivi Amplitude + tracking du parcours standalone et du bouton WhatsApp
 
 ### Ce qui a changé côté code

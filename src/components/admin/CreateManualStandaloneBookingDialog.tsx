@@ -21,6 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Switch } from "@/components/ui/switch";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { CHANNEL_OPTIONS } from "@/components/admin/BookingsGrid/columnTypes";
 
 const CURRENCIES = ["ILS", "USD", "EUR"];
 
@@ -42,6 +43,8 @@ const EMPTY_MANUAL_FORM = {
   internal_notes: "",
   custom_regulations: "",
   custom_address: "",
+  channel: "whatsapp",
+  channel_detail: "",
 };
 
 // Requêtes à rafraîchir après création, quelle que soit la page d'où le dialog est ouvert.
@@ -165,6 +168,8 @@ const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom
           internal_notes: manualForm.internal_notes || undefined,
           custom_regulations: manualForm.custom_regulations || undefined,
           custom_address: manualForm.custom_address || undefined,
+          channel: manualForm.channel,
+          channel_detail: manualForm.channel_detail || undefined,
         } : {
           experience_id: manualForm.experience_id,
           booking_date: manualForm.booking_date,
@@ -181,6 +186,8 @@ const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom
           internal_notes: manualForm.internal_notes || undefined,
           custom_regulations: manualForm.custom_regulations || undefined,
           custom_address: manualForm.custom_address || undefined,
+          channel: manualForm.channel,
+          channel_detail: manualForm.channel_detail || undefined,
         },
       });
       if (error) throw error;
@@ -205,6 +212,7 @@ const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom
     !!manualForm.customer_email.trim() &&
     manualForm.sell_price !== "" &&
     !Number.isNaN(parseFloat(String(manualForm.sell_price))) &&
+    !!manualForm.channel &&
     (manualForm.isCustomExperience || !selectedExperience?.has_time_slots || !!manualForm.time_slot) &&
     (manualForm.isCustomExperience || !selectedExperience?.has_rate_options || !!manualForm.selected_rate_option_id);
 
@@ -452,6 +460,33 @@ const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom
               value={manualForm.custom_regulations}
               onChange={(e) => setManualForm((f) => ({ ...f, custom_regulations: e.target.value }))}
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Canal *</Label>
+              <Select
+                value={manualForm.channel}
+                onValueChange={(v) => setManualForm((f) => ({ ...f, channel: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir un canal" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CHANNEL_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Précision <span className="text-muted-foreground font-normal">(optionnel)</span></Label>
+              <Input
+                placeholder='ex: "Israel Women"'
+                value={manualForm.channel_detail}
+                onChange={(e) => setManualForm((f) => ({ ...f, channel_detail: e.target.value }))}
+              />
+            </div>
           </div>
 
           <div className="space-y-1.5">

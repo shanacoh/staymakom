@@ -93,6 +93,8 @@ Deno.serve(async (req: Request) => {
       net_price,
       currency,
       internal_notes,
+      channel,
+      channel_detail,
     } = body;
 
     const party_size: number = typeof partySizeRaw === 'number' ? partySizeRaw : 1;
@@ -165,6 +167,8 @@ Deno.serve(async (req: Request) => {
         source: 'manual_admin',
         internal_notes: internal_notes || null,
         synced_at: new Date().toISOString(),
+        channel: channel || null,
+        channel_detail: channel_detail || null,
       }])
       .select('id, confirmation_token')
       .single();
