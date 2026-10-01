@@ -252,7 +252,7 @@ const IndexV3 = () => {
           />
           <div className="absolute inset-0 bg-black/15" />
 
-          <div className="relative z-10 text-center text-white px-4 sm:px-6 max-w-3xl mx-auto -translate-y-2 sm:translate-y-0">
+          <div className="relative z-10 text-center text-white px-4 sm:px-6 max-w-3xl mx-auto translate-y-2 sm:translate-y-4">
             <span className="md:hidden block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-[#ad1414] mb-4 opacity-0 animate-hero-fade-up">
               STAYMAKOM
             </span>
