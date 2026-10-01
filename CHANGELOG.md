@@ -6,6 +6,27 @@
 
 ---
 
+## [2026-10-01] — Chantier "Dossier de voyage" : étape 5, Composer + refonte sur la maquette de Shana
+
+### Ce qui a changé côté code
+- Refonte complète de l'écran Dossiers sur une maquette fournie par Shana : mise en page à deux colonnes (liste des dossiers toujours visible à gauche, détail à droite), avec un bandeau d'étapes (Demande reçue → Brief → Composer → Lien client) qui accumule les sections au fil de l'avancement. Nouveaux fichiers `src/components/admin/dossiers/{DossierListSidebar,DossierStepper,LieuxImposesSection,ExclusionsSection,ComposerSection}.tsx`, `src/pages/admin/dossiers/{DossiersLayout,DossierEmptyState}.tsx`. L'ancienne page de liste (`Dossiers.tsx`, créée plus tôt dans la même journée) est supprimée.
+- Liste des dossiers : filtres (Tous/Demandes/À traiter/Vente/Collab/Modèles/Archivés), tuiles rappelant les 4 canaux d'arrivée possibles, ligne de statut actionnable calculée et colorée sous chaque dossier (ex. "Envoyé il y a 52h, jamais ouvert", "Swipe terminé : brouillon IA prêt").
+- **Composer** : écran de construction du programme jour par jour — démarrage d'une version R1, ajout manuel d'un lieu depuis le Catalogue (recherche par fenêtre dédiée, pas par menu déroulant), affichage du vrai nom et de la ville de chaque fiche, verrouillage d'une suggestion IA pour qu'elle survive à une régénération, suppression, bouton "Régénérer avec l'IA" avec consigne libre.
+- **Lieux imposés** : nouvelle section au niveau du Brief (avant même que le Composer existe) — recherche dans tout le Catalogue (pas seulement les expériences), origine (imposé par Shana / demandé par le client). Insérés automatiquement comme lignes verrouillées dès la première génération IA du programme, sans action supplémentaire de Shana.
+- **Écartés automatiquement** : l'IA du Brief détecte désormais aussi les exclusions explicites du client dans son message (ex. "pas Mitzpe Ramon") ; combinées avec les lieux déjà utilisés dans un dossier précédent du même client (par email), affichées dans le Brief et systématiquement écartées des propositions du Composer.
+- **Lien client** : nouvelle section de choix du point de départ (Explorer vs Proposition direct) ; le bouton d'envoi reste volontairement désactivé — l'écran public du lien client n'existe pas encore (étape 7 du chantier), pour ne jamais risquer d'envoyer un lien qui ne mène nulle part à un vrai client.
+- Deux corrections suite à des tests de Shana : le champ de recherche des lieux imposés n'acceptait pas la saisie (mauvaise utilisation d'un composant d'interface, remplacé par une fenêtre de recherche classique) ; les cartes du Composer affichaient la nature générique du lieu au lieu de son vrai nom.
+
+### Ce qui a changé côté base de données
+- Nouvelle colonne `dossiers_voyage.lieux_imposes` (JSONB) : les lieux que Shana ou le client veulent absolument garder, saisis dès le Brief.
+- `generate-dossier-brief` (edge function) : nouveau champ `brief_data.exclusions_mentionnees`, extrait par l'IA à partir du texte du client.
+- `generate-dossier-composer` (edge function) : insère désormais automatiquement les lieux imposés comme lignes verrouillées, et écarte des propositions les lieux déjà utilisés par le même client ou explicitement exclus.
+
+### Pourquoi ce changement
+- Shana a fourni une maquette détaillée de ce qu'elle voulait concrètement pour cet écran (structure, informations affichées), assez différente de la première version construite dans la journée — cette entrée documente la refonte qui en a résulté, pour que le prochain développeur comprenne pourquoi la structure a changé en cours de route.
+
+---
+
 ## [2026-10-01] — Chantier "Dossier de voyage" : étape 1, modèle de données
 
 ### Ce qui a changé côté code
