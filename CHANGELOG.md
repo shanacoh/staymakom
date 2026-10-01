@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-10-01] — Email de paiement (acompte/solde) aligné sur l'identité visuelle de la marque
+
+### Ce qui a changé côté code
+- `supabase/functions/send-booking-payment-link-email/index.ts` : l'email reprend désormais la même photo d'ambiance (désert), les mêmes couleurs et la même structure que l'email de confirmation de réservation (`send-standalone-booking-confirmation`) ; tirets cadratins retirés du texte ; bloc expérience / référence / montant / bouton de paiement centré.
+- `CLAUDE.md` : nouvelle règle « Emails transactionnels » — tout email envoyé à l'avenir doit s'aligner au maximum sur ce modèle (même photo, mêmes couleurs, même structure), sauf raison explicite de s'en écarter.
+
+### Ce qui a changé côté base de données
+- Aucune.
+
+### Pourquoi ce changement
+- Shana a jugé le premier jet de l'email de paiement trop générique par rapport au reste de la communication StayMakom, et a demandé qu'il soit unifié avec l'email de confirmation de réservation déjà existant — et que cette cohérence devienne la norme pour tous les futurs emails du site.
+
+---
+
 ## [2026-10-01] — Liens de paiement acompte/solde : envoi par email/copie, montant libre, affichage plus clair
 
 ### Ce qui a changé côté code
