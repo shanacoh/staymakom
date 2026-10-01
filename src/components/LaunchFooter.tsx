@@ -43,15 +43,15 @@ const LaunchFooter = () => {
           {/* Center: Links */}
           <div className="flex items-center gap-4 text-xs text-white/80">
             <Link to="/partners" className="hover:text-white transition-colors">
-              {lang === "he" ? "הפוך לשותף" : "I'm a hotel"}
+              {lang === "he" ? "הפוך לשותף" : lang === "fr" ? "Je suis un hôtel" : "I'm a hotel"}
             </Link>
             <span className="text-white/30">·</span>
             <Link to="/privacy" className="hover:text-white transition-colors">
-              {lang === "he" ? "פרטיות" : "Privacy"}
+              {lang === "he" ? "פרטיות" : lang === "fr" ? "Confidentialité" : "Privacy"}
             </Link>
             <span className="text-white/30">·</span>
             <Link to="/terms" className="hover:text-white transition-colors">
-              {lang === "he" ? "תנאים" : "Terms"}
+              {lang === "he" ? "תנאים" : lang === "fr" ? "Conditions" : "Terms"}
             </Link>
           </div>
 

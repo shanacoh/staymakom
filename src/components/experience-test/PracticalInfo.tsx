@@ -52,43 +52,43 @@ const PracticalInfo = ({ experience, lang = "en" }: PracticalInfoProps) => {
   const defaultItems = [
     {
       icon: "Clock",
-      label: lang === "he" ? "משך" : "Duration",
+      label: lang === "he" ? "משך" : lang === "fr" ? "Durée" : "Duration",
       value: getLocalizedField(experience, "duration", lang) as string || experience.duration,
     },
     {
       icon: "Users",
-      label: lang === "he" ? "גודל קבוצה" : "Group size",
+      label: lang === "he" ? "גודל קבוצה" : lang === "fr" ? "Taille du groupe" : "Group size",
       value: experience.min_party && experience.max_party
-        ? `${experience.min_party} – ${experience.max_party} ${lang === "he" ? "אנשים" : "guests"}`
+        ? `${experience.min_party} – ${experience.max_party} ${lang === "he" ? "אנשים" : lang === "fr" ? "personnes" : "guests"}`
         : null,
     },
     {
       icon: "Timer",
-      label: lang === "he" ? "זמן הזמנה מראש" : "Booking lead time",
+      label: lang === "he" ? "זמן הזמנה מראש" : lang === "fr" ? "Réservation à l'avance" : "Booking lead time",
       value: experience.lead_time_days && experience.lead_time_days > 0
-        ? (lang === "he" ? `${experience.lead_time_days} ימים מראש` : `${experience.lead_time_days} days in advance`)
+        ? (lang === "he" ? `${experience.lead_time_days} ימים מראש` : lang === "fr" ? `${experience.lead_time_days} jours à l'avance` : `${experience.lead_time_days} days in advance`)
         : null,
     },
     {
       icon: "Calendar",
-      label: lang === "he" ? "צ'ק-אין / צ'ק-אאוט" : "Check-in / Check-out",
+      label: lang === "he" ? "צ'ק-אין / צ'ק-אאוט" : lang === "fr" ? "Arrivée / Départ" : "Check-in / Check-out",
       value: experience.checkin_time && experience.checkout_time
         ? `${experience.checkin_time} – ${experience.checkout_time}`
         : null,
     },
     {
       icon: "MapPin",
-      label: lang === "he" ? "מיקום" : "Location",
+      label: lang === "he" ? "מיקום" : lang === "fr" ? "Lieu" : "Location",
       value: getLocalizedField(experience, "address", lang) as string || experience.address,
     },
     {
       icon: "Accessibility",
-      label: lang === "he" ? "נגישות" : "Accessibility",
+      label: lang === "he" ? "נגישות" : lang === "fr" ? "Accessibilité" : "Accessibility",
       value: getLocalizedField(experience, "accessibility_info", lang) as string || experience.accessibility_info,
     },
     {
       icon: "AlertCircle",
-      label: lang === "he" ? "מדיניות ביטול" : "Cancellation policy",
+      label: lang === "he" ? "מדיניות ביטול" : lang === "fr" ? "Conditions d'annulation" : "Cancellation policy",
       value: getLocalizedField(experience, "cancellation_policy", lang) as string || experience.cancellation_policy,
     },
   ].filter(item => item.value);
@@ -114,7 +114,7 @@ const PracticalInfo = ({ experience, lang = "en" }: PracticalInfoProps) => {
   return (
     <section className="py-6 border-b border-border">
       <h2 className="font-serif text-xl md:text-2xl font-medium text-foreground mb-5">
-        {lang === "he" ? "חשוב לדעת" : "Things to know"}
+        {lang === "he" ? "חשוב לדעת" : lang === "fr" ? "Bon à savoir" : "Things to know"}
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -6,6 +6,24 @@
 
 ---
 
+## [2026-10-01] — Sprint 3 : signaux de confiance et version française propre (étapes 1 à 4)
+
+### Ce qui a changé côté code
+- `src/components/ExperienceCard.tsx` : les cartes d'expérience n'affichent plus l'étiquette "Nouveau"/"NEW"/"חדש" à la place de la note quand il n'y a aucun avis — l'emplacement reste vide plutôt que d'afficher un faux signal de nouveauté. L'étoile + la note ne s'affichent que s'il y a au moins un avis publié. Vérifié : `StandaloneExperienceCard.tsx` et `BoatCard.tsx` n'étaient pas concernés ; `Experience2CardWithPrice.tsx` est un simple habillage de `ExperienceCard` et hérite donc automatiquement de la correction.
+- `src/components/experience-test/ReviewsGrid2.tsx` et `src/components/reviews/ReviewsBlock.tsx` : le bloc "Les premiers avis arrivent bientôt" ne s'affiche plus du tout tant qu'il n'y a pas d'avis publié (au lieu d'un message placeholder). Il réapparaît automatiquement dès le premier avis publié.
+- `src/components/experience-test/PracticalInfo.tsx` : traduction complète en français du bloc "Bon à savoir" (Durée, Taille du groupe, Réservation à l'avance, Arrivée/Départ, Lieu, Accessibilité, Conditions d'annulation), sur le modèle déjà utilisé pour l'hébreu.
+- `src/components/MarqueeBanner.tsx` : ajout de la version française du bandeau défilant ("HÔTELS D'EXCEPTION. EXPÉRIENCES INOUBLIABLES."), même style que les versions anglaise et hébraïque.
+- Audit complet des pages fiche expérience / bateaux / paiement standalone à la recherche de textes restés en anglais en français, validé avec Shana puis traduit : en-tête de fiche (`HeroSection.tsx`, `HeroBookingPreview2.tsx`), pied de page et menu burger (`LaunchFooter.tsx`, `LaunchHamburgerMenu.tsx`), menu du compte client (`UserDropdown.tsx` — "Dashboard"/"Hotel Dashboard" volontairement laissés en anglais, pages réservées au back office), ouverture d'itinéraire (`LocationPopover.tsx`), messages d'erreur de connexion Google (`OAuthButtons.tsx`) et de paiement par carte (`RevolutPaymentWidget.tsx`).
+- `src/pages/StandaloneCheckout.tsx` et `src/components/boats/BoatDetailModal.tsx` : corrigé dans l'autre sens — deux textes étaient figés en français et s'affichaient même pour un client naviguant en anglais ou en hébreu (message d'erreur de réservation, nom de secours "Bateau"). Ils s'affichent maintenant dans la bonne langue partout.
+
+### Ce qui a changé côté base de données
+- Aucun changement (chantier limité à l'affichage, comme prévu).
+
+### Pourquoi ce changement
+- Nettoyer les faux signaux de confiance (fausses étiquettes "Nouveau", blocs d'avis vides qui donnent une impression de site peu actif) et finir la version française du site, qui comportait encore plusieurs textes oubliés en anglais sur les pages expérience, bateaux et paiement.
+
+---
+
 ## [2026-10-01] — Chantier "Dossier de voyage" : étape 5, Composer + refonte sur la maquette de Shana
 
 ### Ce qui a changé côté code

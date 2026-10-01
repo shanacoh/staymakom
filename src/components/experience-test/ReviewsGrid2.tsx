@@ -28,19 +28,8 @@ const ReviewsGrid2 = ({ experienceId, lang = "en" }: ReviewsGrid2Props) => {
     },
   });
 
-  // Empty state placeholder
   if (!reviews || reviews.length === 0) {
-    return (
-      <section className="py-8 border-b border-border">
-        <p className="italic text-muted-foreground text-sm">
-          {lang === "he" 
-            ? "ביקורות ראשונות בקרוב."
-            : lang === "fr"
-              ? "Les premiers avis arrivent bientôt."
-              : "First reviews coming soon."}
-        </p>
-      </section>
-    );
+    return null;
   }
 
   const getLocale = () => (lang === "he" ? he : lang === "fr" ? fr : undefined);

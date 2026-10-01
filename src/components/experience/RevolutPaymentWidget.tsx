@@ -38,6 +38,8 @@ const billingTranslations = {
     required: "Required",
     billingRequiredError: "Please fill in the required billing address fields.",
     cardLoadTimeout: "Payment is taking too long to load. Please try again or contact us.",
+    paymentFailed: "Payment failed",
+    cardLoadFailed: "Failed to load card payment",
   },
   he: {
     billingTitle: "כתובת לחיוב",
@@ -50,6 +52,8 @@ const billingTranslations = {
     required: "שדה חובה",
     billingRequiredError: "יש למלא את שדות כתובת החיוב החובה.",
     cardLoadTimeout: "טעינת התשלום נמשכת זמן רב מדי. נסו שוב או צרו איתנו קשר.",
+    paymentFailed: "התשלום נכשל",
+    cardLoadFailed: "טעינת התשלום בכרטיס נכשלה",
   },
   fr: {
     billingTitle: "Adresse de facturation",
@@ -62,6 +66,8 @@ const billingTranslations = {
     required: "Requis",
     billingRequiredError: "Merci de remplir les champs obligatoires de facturation.",
     cardLoadTimeout: "Le paiement met trop de temps à se charger. Merci de réessayer ou de nous contacter.",
+    paymentFailed: "Échec du paiement",
+    cardLoadFailed: "Échec du chargement du paiement par carte",
   },
 };
 
@@ -201,11 +207,11 @@ export default function RevolutPaymentWidget({
   }, [customerBirthDate]);
 
   const handleRevolutError = useCallback((error: { message?: string; type?: string }) => {
-    const msg = error?.message || error?.type || "Payment failed";
+    const msg = error?.message || error?.type || t.paymentFailed;
     setIsSubmitting(false);
     setPaymentError(msg);
     onPaymentError(msg);
-  }, [onPaymentError]);
+  }, [onPaymentError, t.paymentFailed]);
 
   useEffect(() => {
     if (!publicId || !cardFieldTargetRef.current) return;
@@ -366,7 +372,7 @@ export default function RevolutPaymentWidget({
         if (!mounted) return;
         cardFieldSettledRef.current = true;
         console.error("Revolut card field init error:", err);
-        const msg = err instanceof Error ? err.message : "Failed to load card payment";
+        const msg = err instanceof Error ? err.message : t.cardLoadFailed;
         setPaymentError(msg);
         setIsLoading(false);
       }
@@ -402,7 +408,7 @@ export default function RevolutPaymentWidget({
       checkoutRef.current = null;
       paymentsModuleRef.current = null;
     };
-  }, [publicId, merchantPublicKey, amount, currency, mode, locale, customerName, customerEmail, customerPhone, getDateOfBirthForRevolut, validateBillingAddress, onPaymentSuccess, handleRevolutError, onPaymentCancel, t.cardLoadTimeout]);
+  }, [publicId, merchantPublicKey, amount, currency, mode, locale, customerName, customerEmail, customerPhone, getDateOfBirthForRevolut, validateBillingAddress, onPaymentSuccess, handleRevolutError, onPaymentCancel, t.cardLoadTimeout, t.cardLoadFailed]);
 
   const handleSubmit = () => {
     if (!cardFieldRef.current || isSubmitting) return;
