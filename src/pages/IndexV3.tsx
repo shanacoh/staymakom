@@ -24,7 +24,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { trackGiftCardClicked, trackViewAllExperiencesClicked } from "@/lib/analytics";
+import { trackGiftCardClicked, trackViewAllExperiencesClicked, trackHeroCtaClicked } from "@/lib/analytics";
 import heroImage from "@/assets/hero-road-desert.jpg";
 import handpickedHero from "@/assets/handpicked-hero.jpg";
 import giftCardHero from "@/assets/gift-card-hero.jpg";
@@ -273,11 +273,35 @@ const IndexV3 = () => {
                   ? "Israël comme vous ne l'avez jamais vu."
                   : "The Israel most people never find."}
             </p>
+            <div
+              className="flex flex-wrap items-center justify-center gap-3 mt-5 opacity-0 animate-hero-fade-up"
+              style={{ animationDelay: "350ms" }}
+            >
+              <Button
+                onClick={() => {
+                  trackHeroCtaClicked("find");
+                  document.getElementById("hero-cards-section")?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="rounded-full bg-[#ad1414] text-white hover:bg-[#ad1414]/90 px-6 py-2.5 text-xs font-bold uppercase tracking-widest shadow-none"
+              >
+                {isRTL ? "מצאו חוויה" : lang === "fr" ? "Trouver une expérience" : "Find an experience"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  trackHeroCtaClicked("plan");
+                  window.dispatchEvent(new CustomEvent("staymakom-open-design-my-stay"));
+                }}
+                className="rounded-full border-[#ad1414] text-[#ad1414] bg-transparent hover:bg-[#ad1414]/10 px-6 py-2.5 text-xs font-bold uppercase tracking-widest shadow-none"
+              >
+                {isRTL ? "תכננו עם שנה" : lang === "fr" ? "Organiser avec Shana" : "Plan it with Shana"}
+              </Button>
+            </div>
           </div>
         </section>
 
         {/* ──── 2+3+4. Section unifiée : Handpicked + Catégories + Cartes ──── */}
-        <section className="bg-white pt-7 pb-9 sm:pt-9 sm:pb-12">
+        <section id="hero-cards-section" className="bg-white pt-7 pb-9 sm:pt-9 sm:pb-12">
 
           {/* Titre */}
           <div className="text-center px-4 mb-3">

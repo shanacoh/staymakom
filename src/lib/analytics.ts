@@ -47,6 +47,10 @@ export function trackFindEscapeClicked() {
   safeTrack("find_escape_clicked");
 }
 
+export function trackHeroCtaClicked(cta: "find" | "plan") {
+  safeTrack("hero_cta_clicked", { cta });
+}
+
 export function trackScrollDepth(page: string, depth: 25 | 50 | 75 | 100) {
   safeTrack("scroll_depth", { page, depth_percent: depth });
 }
