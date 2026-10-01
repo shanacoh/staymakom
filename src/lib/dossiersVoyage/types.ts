@@ -102,6 +102,20 @@ export function labelOf<T extends string>(options: { value: T; label: string }[]
   return options.find((o) => o.value === value)?.label ?? value;
 }
 
+export interface LieuImpose {
+  catalogue_item_id: string;
+  nom: string;
+  origine: "impose_shana" | "demande_client";
+}
+
+export function parseLieuxImposes(value: unknown): LieuImpose[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (v): v is LieuImpose =>
+      !!v && typeof v === "object" && typeof (v as LieuImpose).catalogue_item_id === "string" && typeof (v as LieuImpose).nom === "string"
+  );
+}
+
 /** Contenu de dossiers_voyage.brief_data, rempli par generate-dossier-brief (étape 4). */
 export interface BriefData {
   contraintes: string | null;
@@ -121,4 +135,52 @@ export function parseBriefData(value: unknown): BriefData {
     questions_a_poser: strArray(o.questions_a_poser),
     message_whatsapp: typeof o.message_whatsapp === "string" ? o.message_whatsapp : null,
   };
+}
+
+/** L'étape du bandeau (Demande reçue / Brief / Composer / Lien client) correspondant au statut actuel. */
+export type EtapeDossier = "demande_recue" | "brief" | "composer" | "lien_client";
+
+export function etapeDuStatut(statut: string): EtapeDossier {
+  if (statut === "nouvelle_demande") return "demande_recue";
+  if (statut === "brief") return "brief";
+  if (statut === "en_preparation") return "composer";
+  return "lien_client"; // envoye, retours, paye, collab_confirme, confirme, en_voyage, termine, perdu
+}
+
+/** La ligne d'action en un coup d'œil affichée sous chaque dossier dans la liste (file actionnable). */
+export interface StatutActionnable {
+  texte: string;
+  classe: string;
+}
+
+export function statutActionnable(d: DossierVoyage): StatutActionnable | null {
+  if (d.archive) return null;
+  if (d.statut === "nouvelle_demande") {
+    return { texte: "Demande reçue, à analyser", classe: "text-red-600" };
+  }
+  if (d.statut === "brief") {
+    return d.brief_valide_par_shana
+      ? { texte: "Brief validé : composer et envoyer", classe: "text-red-600" }
+      : { texte: "Brief généré, à valider", classe: "text-amber-600" };
+  }
+  if (d.statut === "en_preparation") {
+    return { texte: "En préparation : programme à compléter", classe: "text-indigo-600" };
+  }
+  if (d.statut === "envoye") {
+    const heuresDepuisEnvoi = d.envoye_at ? (Date.now() - new Date(d.envoye_at).getTime()) / 3_600_000 : null;
+    if (d.point_depart === "explorer" && d.statut_lecture === "termine") {
+      return { texte: "Swipe terminé : brouillon IA prêt", classe: "text-red-600" };
+    }
+    if (d.nb_ouvertures >= 3) {
+      return { texte: `Ouvert ${d.nb_ouvertures} fois, pas de réponse`, classe: "text-amber-600" };
+    }
+    if (heuresDepuisEnvoi != null && heuresDepuisEnvoi >= 48 && d.nb_ouvertures === 0) {
+      return { texte: `Envoyé il y a ${Math.round(heuresDepuisEnvoi)} h, jamais ouvert`, classe: "text-amber-600" };
+    }
+    return { texte: "Envoyé, en attente", classe: "text-muted-foreground" };
+  }
+  if (d.statut === "retours") return { texte: "Retours reçus : réviser", classe: "text-blue-600" };
+  if (d.statut === "paye") return { texte: "Payé", classe: "text-green-600" };
+  if (d.statut === "collab_confirme") return { texte: "Collab confirmée", classe: "text-green-600" };
+  return null;
 }

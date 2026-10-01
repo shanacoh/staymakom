@@ -112,7 +112,8 @@ const AdminSwipeDossierDetail    = lazy(() => import("./pages/admin/swipe/Dossie
 const AdminSwipeDossierResultats = lazy(() => import("./pages/admin/swipe/DossierResultats"));
 const AdminSwipeBibliotheque     = lazy(() => import("./pages/admin/swipe/Bibliotheque"));
 const AdminSwipeCategories       = lazy(() => import("./pages/admin/swipe/Categories"));
-const AdminDossiersVoyage        = lazy(() => import("./pages/admin/dossiers/Dossiers"));
+const AdminDossiersLayout        = lazy(() => import("./pages/admin/dossiers/DossiersLayout"));
+const AdminDossierEmptyState     = lazy(() => import("./pages/admin/dossiers/DossierEmptyState"));
 const AdminDossierVoyageDetail   = lazy(() => import("./pages/admin/dossiers/DossierVoyageDetail"));
 
 // ── Hotel admin (chargé uniquement si connecté hotel_admin) ───────────────
@@ -339,8 +340,10 @@ const AppContent = () => {
             <Route path="hyperguest/logs" element={<HyperGuestLogsPage />} />
             <Route path="hyperguest/config" element={<HyperGuestConfigPage />} />
             <Route path="revolut/debug" element={<RevolutDebugPage />} />
-            <Route path="dossiers" element={<AdminDossiersVoyage />} />
-            <Route path="dossiers/:dossierId" element={<AdminDossierVoyageDetail />} />
+            <Route path="dossiers" element={<AdminDossiersLayout />}>
+              <Route index element={<AdminDossierEmptyState />} />
+              <Route path=":dossierId" element={<AdminDossierVoyageDetail />} />
+            </Route>
             {/* Anciennes routes du module swipe : conservées en lecture, non reliées au menu
                 (leur contenu a été repris dans "Dossiers" et le Catalogue, chantier Dossier de voyage) */}
             <Route path="swipe/dossiers" element={<AdminSwipeDossiers />} />
