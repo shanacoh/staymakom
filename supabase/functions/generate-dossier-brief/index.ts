@@ -48,7 +48,15 @@ interface AiMessage {
 async function askClaude(apiKey: string, messages: AiMessage[]): Promise<string | null> {
   const system = messages.filter((m) => m.role === "system").map((m) => m.content).join("\n\n");
   const userMessages = messages.filter((m) => m.role === "user").map((m) => ({ role: "user" as const, content: m.content }));
-  const client = new Anthropic({ apiKey, timeout: AI_TIMEOUT_MS, maxRetries: 1 });
+  // Certaines clés API Anthropic sont rattachées à l'organisation entière plutôt qu'à un espace de
+  // travail précis ; Anthropic exige alors cet en-tête pour savoir où rattacher l'appel (facultatif).
+  const workspaceId = Deno.env.get("ANTHROPIC_WORKSPACE_ID");
+  const client = new Anthropic({
+    apiKey,
+    timeout: AI_TIMEOUT_MS,
+    maxRetries: 1,
+    defaultHeaders: workspaceId ? { "anthropic-workspace-id": workspaceId } : undefined,
+  });
   try {
     const response = await client.messages.create({
       model: Deno.env.get("DOSSIER_BRIEF_AI_MODEL") || DEFAULT_CLAUDE_MODEL,
