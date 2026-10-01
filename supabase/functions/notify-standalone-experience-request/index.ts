@@ -76,7 +76,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: request, error: requestError } = await supabase
       .from('standalone_experience_requests')
-      .select('id, customer_name, customer_email, customer_phone, requested_date, adults, children, message, created_at, standalone_experiences(title)')
+      .select('id, customer_name, customer_email, customer_phone, requested_date, adults, children, message, created_at, desired_time_period, desired_time_value, is_urgent, preferred_city, requested_duration_minutes, source, standalone_experiences(title)')
       .eq('id', request_id)
       .single();
 
@@ -87,18 +87,31 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // Pas toujours de bateau précis : une demande peut venir du pop-up générique
+    // (port préféré + durée souhaitée, sans fiche sélectionnée).
     const experience = request.standalone_experiences as unknown as { title: string } | null;
-    const experienceTitle = experience?.title || 'Expérience';
+    const durationLabel = request.requested_duration_minutes ? `${Math.round(request.requested_duration_minutes / 60 * 10) / 10}h` : null;
+    const subjectTitle = experience?.title
+      || [request.preferred_city, durationLabel].filter(Boolean).join(' · ')
+      || 'Bateau';
     const partySize = (request.adults ?? 0) + (request.children ?? 0);
+
+    const timePeriodLabels: Record<string, string> = {
+      morning: 'Matin', afternoon: 'Après-midi', sunset: 'Coucher de soleil', precise: request.desired_time_value || 'Heure précise',
+    };
 
     const html = `
       <div style="font-family:Helvetica,Arial,sans-serif;font-size:15px;color:#1a1a1a;line-height:1.6;">
-        <p style="font-size:17px;font-weight:700;">Nouvelle demande de dates — ${escapeHTML(experienceTitle)}</p>
+        <p style="font-size:17px;font-weight:700;">${request.is_urgent ? '⚡ URGENT — ' : ''}Nouvelle demande — ${escapeHTML(subjectTitle)}</p>
+        ${request.source === 'card_whatsapp' ? `<p style="color:#ad1414;font-size:13px;font-weight:600;margin:0 0 8px;">Clic direct "Demander sur WhatsApp" depuis la carte — coordonnées pas encore connues, le client vous écrit lui-même sur WhatsApp.</p>` : ''}
         <table cellpadding="0" cellspacing="0" style="margin:16px 0;">
-          <tr><td style="color:#999;padding-right:12px;">Client</td><td><strong>${escapeHTML(request.customer_name)}</strong></td></tr>
-          <tr><td style="color:#999;padding-right:12px;">Email</td><td><a href="mailto:${escapeHTML(request.customer_email)}">${escapeHTML(request.customer_email)}</a></td></tr>
-          ${request.customer_phone ? `<tr><td style="color:#999;padding-right:12px;">Téléphone</td><td>${escapeHTML(request.customer_phone)}</td></tr>` : ''}
+          <tr><td style="color:#999;padding-right:12px;">Client</td><td><strong>${request.customer_name ? escapeHTML(request.customer_name) : 'Non renseigné (contact via WhatsApp)'}</strong></td></tr>
+          ${request.customer_phone ? `<tr><td style="color:#999;padding-right:12px;">WhatsApp</td><td>${escapeHTML(request.customer_phone)}</td></tr>` : ''}
+          ${request.customer_email ? `<tr><td style="color:#999;padding-right:12px;">Email</td><td><a href="mailto:${escapeHTML(request.customer_email)}">${escapeHTML(request.customer_email)}</a></td></tr>` : ''}
+          ${!experience && request.preferred_city ? `<tr><td style="color:#999;padding-right:12px;">Port préféré</td><td>${escapeHTML(request.preferred_city)}</td></tr>` : ''}
+          ${durationLabel ? `<tr><td style="color:#999;padding-right:12px;">Durée souhaitée</td><td>${durationLabel}</td></tr>` : ''}
           <tr><td style="color:#999;padding-right:12px;">Date souhaitée</td><td>${request.requested_date ? formatDate(request.requested_date) : 'Non précisée'}</td></tr>
+          ${request.desired_time_period ? `<tr><td style="color:#999;padding-right:12px;">Heure souhaitée</td><td>${timePeriodLabels[request.desired_time_period] || request.desired_time_period}</td></tr>` : ''}
           <tr><td style="color:#999;padding-right:12px;">Participants</td><td>${partySize} (${request.adults} adulte${request.adults > 1 ? 's' : ''}${request.children ? `, ${request.children} enfant${request.children > 1 ? 's' : ''}` : ''})</td></tr>
         </table>
         ${request.message ? `<p style="color:#999;margin-bottom:4px;">Message</p><p style="white-space:pre-line;">${escapeHTML(request.message)}</p>` : ''}
@@ -117,9 +130,9 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         from: 'StayMakom <hello@staymakom.com>',
-        reply_to: request.customer_email,
+        ...(request.customer_email ? { reply_to: request.customer_email } : {}),
         to: [NOTIFY_EMAIL],
-        subject: `Nouvelle demande — ${experienceTitle}`,
+        subject: `${request.is_urgent ? '⚡ URGENT — ' : ''}Nouvelle demande — ${subjectTitle}`,
         html,
       }),
     });

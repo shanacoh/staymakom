@@ -8,6 +8,10 @@
  * Le formulaire ne s'affiche qu'après un clic sur le CTA (pas tout de suite
  * au chargement) — évite de montrer calendrier/champs avant que le visiteur
  * ait exprimé son intention.
+ *
+ * N'est plus utilisé par les bateaux (remplacé par BoatAvailabilityPopup,
+ * un seul formulaire pour toute la fiche + la demande) : reste le formulaire
+ * générique pour les autres expériences "sur demande".
  */
 import { useState } from "react";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
@@ -17,12 +21,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, Calendar, CheckCircle2 } from "lucide-react";
 import { fr, he } from "date-fns/locale";
-import { cn } from "@/lib/utils";
-
-interface PartyRange {
-  min: number;
-  max: number;
-}
 
 interface StandaloneRequestPanelProps {
   experienceId: string;
@@ -35,15 +33,11 @@ interface StandaloneRequestPanelProps {
   // Titre de l'expérience — transmis uniquement pour enrichir le lead créé
   // dans collect-lead (affichage dans la fiche détail de /admin/leads).
   experienceTitle?: string;
-  // Bateaux : au lieu d'un compteur exact, propose des fourchettes de
-  // personnes sélectionnables ("2-3", "4-5"...) bornées par min/maxParty.
-  usePartyRanges?: boolean;
-  // Contrôle externe de l'étape "CTA vs formulaire" — utilisé par la pop-up
-  // bateau dont la barre de prix fixe sert elle-même de déclencheur. Quand ces
-  // props sont fournies, le composant n'affiche plus son propre bouton CTA
-  // (évite un CTA en double) : avant `started`, il ne rend rien du tout. Sans
-  // ces props, il gère son état de départ tout seul avec son propre bouton
-  // (page classique /standalone-experience).
+  // Contrôle externe de l'étape "CTA vs formulaire" — utilisé par une pop-up
+  // dont un autre élément sert elle-même de déclencheur. Quand ces props sont
+  // fournies, le composant n'affiche plus son propre bouton CTA (évite un CTA
+  // en double) : avant `started`, il ne rend rien du tout. Sans ces props, il
+  // gère son état de départ tout seul avec son propre bouton.
   started?: boolean;
   onStartedChange?: (started: boolean) => void;
   // Texte formaté (ex: liste d'extras choisis) ajouté au message envoyé,
@@ -55,17 +49,6 @@ function toLocalDateStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-// Fourchettes fixes pour les bateaux (couple / moins de 7 / 8-14 / 15-24), plus
-// lisibles que des paires calculées automatiquement à partir de min/maxParty.
-// La bulle "couple" (2) chevauche volontairement "moins de 7" (1-6) : un
-// raccourci en plus, pas un remplacement.
-const BOAT_PARTY_RANGES: PartyRange[] = [
-  { min: 2, max: 2 },
-  { min: 1, max: 6 },
-  { min: 8, max: 14 },
-  { min: 15, max: 24 },
-];
-
 export default function StandaloneRequestPanel({
   experienceId,
   lang,
@@ -75,7 +58,6 @@ export default function StandaloneRequestPanel({
   maxDate,
   isDateUnavailable,
   experienceTitle,
-  usePartyRanges = false,
   started: controlledStarted,
   onStartedChange,
   extraNotes,
@@ -85,7 +67,6 @@ export default function StandaloneRequestPanel({
   const started = controlledStarted ?? internalStarted;
   const setStarted = onStartedChange ?? setInternalStarted;
   const [adults, setAdults] = useState(minParty || 1);
-  const [selectedRange, setSelectedRange] = useState<PartyRange | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -95,8 +76,6 @@ export default function StandaloneRequestPanel({
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-
-  const partyRanges = usePartyRanges ? BOAT_PARTY_RANGES : [];
 
   const t = {
     title: lang === "he" ? "בקשת תאריכים" : lang === "fr" ? "Demande de dates" : "Request dates",
@@ -112,25 +91,12 @@ export default function StandaloneRequestPanel({
     firstName: lang === "he" ? "שם פרטי" : lang === "fr" ? "Prénom" : "First name",
     lastName: lang === "he" ? "שם משפחה" : lang === "fr" ? "Nom" : "Last name",
     email: "Email",
-    phone: usePartyRanges
-      ? (lang === "he" ? "טלפון" : lang === "fr" ? "Téléphone" : "Phone")
-      : (lang === "he" ? "טלפון (אופציונלי)" : lang === "fr" ? "Téléphone (facultatif)" : "Phone (optional)"),
+    phone: lang === "he" ? "טלפון (אופציונלי)" : lang === "fr" ? "Téléphone (facultatif)" : "Phone (optional)",
     message: lang === "he" ? "הודעה (אופציונלי)" : lang === "fr" ? "Message (facultatif)" : "Message (optional)",
     submit: lang === "he" ? "שליחת הבקשה" : lang === "fr" ? "Envoyer ma demande" : "Send my request",
     sending: lang === "he" ? "שולח…" : lang === "fr" ? "Envoi…" : "Sending…",
-    consent:
-      lang === "he"
-        ? "בלחיצה על 'שליחת הבקשה' אתם מאשרים ש-STAYMAKOM תיצור עמכם קשר בטלפון ובאימייל בנוגע לבקשה זו."
-        : lang === "fr"
-        ? "En cliquant sur « Envoyer ma demande », vous reconnaissez autoriser Staymakom à vous contacter par téléphone et email au sujet de cette demande."
-        : "By clicking \"Send my request\", you agree to let Staymakom contact you by phone and email about this request.",
-    under7: lang === "he" ? "פחות מ-7" : lang === "fr" ? "Moins de 7" : "Under 7",
-    couple: lang === "he" ? "זוג" : lang === "fr" ? "Couple" : "Couple",
-    missingFields: usePartyRanges
-      ? (lang === "he" ? "יש למלא שם, אימייל וטלפון" : lang === "fr" ? "Merci de renseigner votre prénom, nom, email et téléphone" : "Please fill in your first name, last name, email and phone")
-      : (lang === "he" ? "יש למלא שם ואימייל" : lang === "fr" ? "Merci de renseigner votre prénom, nom et email" : "Please fill in your first name, last name and email"),
-    missingParty:
-      lang === "he" ? "יש לבחור מספר משתתפים" : lang === "fr" ? "Merci de choisir le nombre de personnes" : "Please choose a party size",
+    missingFields:
+      lang === "he" ? "יש למלא שם ואימייל" : lang === "fr" ? "Merci de renseigner votre prénom, nom et email" : "Please fill in your first name, last name and email",
     error:
       lang === "he" ? "שגיאה בשליחת הבקשה, נסו שוב" : lang === "fr" ? "Une erreur est survenue, merci de réessayer" : "Something went wrong, please try again",
     successTitle: lang === "he" ? "הבקשה נשלחה!" : lang === "fr" ? "Demande envoyée !" : "Request sent!",
@@ -143,12 +109,8 @@ export default function StandaloneRequestPanel({
   };
 
   const handleSubmit = async () => {
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || (usePartyRanges && !phone.trim())) {
+    if (!firstName.trim() || !lastName.trim() || !email.trim()) {
       setErrorMsg(t.missingFields);
-      return;
-    }
-    if (usePartyRanges && !selectedRange) {
-      setErrorMsg(t.missingParty);
       return;
     }
     setSubmitting(true);
@@ -167,13 +129,10 @@ export default function StandaloneRequestPanel({
         customer_email: email.trim(),
         customer_phone: phone.trim() || null,
         requested_date: selectedDate || null,
-        adults: usePartyRanges ? selectedRange!.min : adults,
+        adults,
         children: 0,
         message: fullMessage,
       };
-      if (usePartyRanges && selectedRange) {
-        insertPayload.party_max = selectedRange.max;
-      }
 
       const { error } = await (supabase as any)
         .from("standalone_experience_requests")
@@ -200,8 +159,7 @@ export default function StandaloneRequestPanel({
               experience_title: experienceTitle,
               standalone_request_id: requestId,
               requested_date: selectedDate || null,
-              adults: usePartyRanges ? selectedRange!.min : adults,
-              party_max: usePartyRanges ? selectedRange!.max : null,
+              adults,
               message: fullMessage,
             },
           },
@@ -227,8 +185,7 @@ export default function StandaloneRequestPanel({
   }
 
   if (!started) {
-    // En mode contrôlé (pop-up bateau), le déclencheur vit chez le parent
-    // (barre de prix fixe) — pas de second bouton "Demander" ici.
+    // En mode contrôlé, le déclencheur vit chez le parent — pas de second bouton ici.
     if (isControlled) return null;
     return (
       <div className="rounded-2xl border p-5 space-y-4 shadow-medium text-center">
@@ -243,143 +200,6 @@ export default function StandaloneRequestPanel({
         >
           {t.cta}
         </Button>
-      </div>
-    );
-  }
-
-  const dateSection = (
-    // order-first : sur mobile/tablette (grid en 1 colonne, sous lg), le calendrier
-    // remonte avant les coordonnées et le bouton d'envoi plutôt que de finir en
-    // dessous. lg:order-none restaure l'ordre normal (colonne de droite) sur desktop,
-    // où la mise en page 2 colonnes est déjà correcte.
-    <div className="space-y-1.5 order-first lg:order-none">
-      <p className="flex items-center gap-1.5 text-sm font-semibold">
-        <Calendar className="h-3.5 w-3.5 text-[#ad1414]" />
-        {t.date}
-      </p>
-      <div className="border rounded-lg overflow-hidden">
-        <CalendarPicker
-          mode="single"
-          showOutsideDays
-          className="w-full p-3"
-          locale={lang === "fr" ? fr : lang === "he" ? he : undefined}
-          selected={selectedDate ? new Date(selectedDate + "T12:00:00") : undefined}
-          onSelect={(date) => setSelectedDate(date ? toLocalDateStr(date) : "")}
-          disabled={isDateUnavailable}
-          defaultMonth={new Date(minDate + "T12:00:00")}
-          toDate={maxDate}
-          classNames={{
-            months: "w-full",
-            month: "w-full space-y-4",
-            table: "w-full border-collapse space-y-1",
-            head_row: "flex w-full",
-            head_cell: "flex-1 text-center text-muted-foreground font-normal text-[0.8rem]",
-            row: "flex w-full mt-2",
-            cell: "flex-1 h-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
-            day_selected: "bg-[#ad1414] text-white hover:bg-[#ad1414] hover:text-white focus:bg-[#ad1414] focus:text-white",
-            day_today: "bg-[#FDF0F0] text-[#ad1414] font-semibold rounded-lg",
-            day_disabled: "text-muted-foreground/30 cursor-not-allowed",
-            day_outside: "text-muted-foreground/30",
-          }}
-        />
-      </div>
-    </div>
-  );
-
-  const messageSection = (
-    <div className="space-y-1.5">
-      <label className="text-sm font-medium">{t.message}</label>
-      <Textarea value={message} onChange={(e) => setMessage(e.target.value)} disabled={submitting} rows={3} />
-    </div>
-  );
-
-  // Bateaux : coordonnées + participants + message à gauche, calendrier à
-  // droite — évite le grand vide à côté d'un calendrier seul sur toute la
-  // largeur de la pop-up. Téléphone obligatoire (marqué *) pour pouvoir
-  // rappeler le client, avec mention de consentement sous le bouton d'envoi.
-  if (usePartyRanges) {
-    return (
-      <div className="rounded-2xl border p-5 space-y-5 shadow-medium">
-        <div>
-          <p className="font-semibold text-lg">{t.title}</p>
-          <p className="text-sm text-muted-foreground mt-1">{t.intro}</p>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-          <div className="space-y-5">
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">{t.firstName} <span className="text-destructive">*</span></label>
-                  <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} disabled={submitting} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">{t.lastName} <span className="text-destructive">*</span></label>
-                  <Input value={lastName} onChange={(e) => setLastName(e.target.value)} disabled={submitting} />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">{t.email} <span className="text-destructive">*</span></label>
-                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={submitting} />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">{t.phone} <span className="text-destructive">*</span></label>
-                <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} disabled={submitting} />
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <p className="flex items-center gap-1.5 text-sm font-semibold">
-                <Users className="h-3.5 w-3.5 text-[#ad1414]" />
-                {t.participants}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {partyRanges.map((range) => {
-                  const isSelected = selectedRange?.min === range.min && selectedRange?.max === range.max;
-                  const label =
-                    range.min === 2 && range.max === 2
-                      ? t.couple
-                      : range.min === 1 && range.max === 6
-                      ? t.under7
-                      : `${range.min}-${range.max}`;
-                  return (
-                    <button
-                      key={`${range.min}-${range.max}`}
-                      type="button"
-                      onClick={() => setSelectedRange(range)}
-                      className={cn(
-                        "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
-                        isSelected
-                          ? "border-[#ad1414] bg-[#ad1414] text-white"
-                          : "border-border hover:border-[#ad1414]/50 hover:bg-[#FDF2F2]"
-                      )}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {messageSection}
-
-            {errorMsg && <p className="text-sm text-destructive">{errorMsg}</p>}
-
-            <div className="space-y-2">
-              <Button
-                type="button"
-                className="w-full rounded-full text-base font-semibold h-12 bg-[#ad1414] text-white hover:bg-[#9a1212] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_-4px_rgba(173,20,20,0.4)] transition-all duration-200 normal-case"
-                onClick={handleSubmit}
-                disabled={submitting}
-              >
-                {submitting ? t.sending : t.submit}
-              </Button>
-              <p className="text-[11px] text-muted-foreground text-center leading-snug">{t.consent}</p>
-            </div>
-          </div>
-
-          {dateSection}
-        </div>
       </div>
     );
   }
@@ -443,9 +263,43 @@ export default function StandaloneRequestPanel({
         </div>
       </div>
 
-      {dateSection}
+      <div className="space-y-1.5">
+        <p className="flex items-center gap-1.5 text-sm font-semibold">
+          <Calendar className="h-3.5 w-3.5 text-[#ad1414]" />
+          {t.date}
+        </p>
+        <div className="border rounded-lg overflow-hidden">
+          <CalendarPicker
+            mode="single"
+            showOutsideDays
+            className="w-full p-3"
+            locale={lang === "fr" ? fr : lang === "he" ? he : undefined}
+            selected={selectedDate ? new Date(selectedDate + "T12:00:00") : undefined}
+            onSelect={(date) => setSelectedDate(date ? toLocalDateStr(date) : "")}
+            disabled={isDateUnavailable}
+            defaultMonth={new Date(minDate + "T12:00:00")}
+            toDate={maxDate}
+            classNames={{
+              months: "w-full",
+              month: "w-full space-y-4",
+              table: "w-full border-collapse space-y-1",
+              head_row: "flex w-full",
+              head_cell: "flex-1 text-center text-muted-foreground font-normal text-[0.8rem]",
+              row: "flex w-full mt-2",
+              cell: "flex-1 h-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
+              day_selected: "bg-[#ad1414] text-white hover:bg-[#ad1414] hover:text-white focus:bg-[#ad1414] focus:text-white",
+              day_today: "bg-[#FDF0F0] text-[#ad1414] font-semibold rounded-lg",
+              day_disabled: "text-muted-foreground/30 cursor-not-allowed",
+              day_outside: "text-muted-foreground/30",
+            }}
+          />
+        </div>
+      </div>
 
-      {messageSection}
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">{t.message}</label>
+        <Textarea value={message} onChange={(e) => setMessage(e.target.value)} disabled={submitting} rows={3} />
+      </div>
 
       {errorMsg && <p className="text-sm text-destructive">{errorMsg}</p>}
 

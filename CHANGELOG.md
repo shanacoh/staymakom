@@ -6,6 +6,73 @@
 
 ---
 
+## [2026-10-01] — Suivi des demandes bateaux par étapes + boutons WhatsApp 1-clic
+
+### Ce qui a changé côté code
+- `src/components/admin/StandaloneRequestsTable.tsx` : nouvelles étapes de suivi (Nouvelle → Envoyée au prestataire → Dispo OK → Convertie / Refusée), badge "Urgent", alerte visuelle si une demande n'a pas été envoyée au prestataire après 15 min ou si le prestataire n'a pas répondu après 1h. Boutons 1-clic : "Envoyer au prestataire" (message WhatsApp en anglais, prérempli avec le nom du bateau **chez le prestataire** — pas le nom client STAYMAKOM, car certains prestataires appellent leur bateau autrement — plus date, heure, nombre de personnes, durée), "Dispo confirmée" (ouvre directement la création de la réservation pour fixer le prix), "Pas dispo" (prévient le client avec un lien /boat pré-rempli sur son port).
+- `src/pages/Boats.tsx` : quand on choisit "plus tard" dans le filtre, un petit calendrier apparaît pour préciser une date exacte (les deux autres choix de date restent aussi simples qu'avant). Le bouton WhatsApp direct des cartes enregistre maintenant une trace dans le suivi des demandes (sans nom ni contact, puisqu'on ne les demande pas à ce stade).
+- `src/components/experience-test/StandaloneRequestPanel.tsx` : retrait de l'ancien formulaire à fourchettes de personnes pour les bateaux, resté dans le code sans être utilisé par aucun écran depuis le nouveau pop-up unique.
+
+### Ce qui a changé côté base de données
+- Migration `20260930080000_booking_payments_and_deposit_rules.sql` (partie demandes) : colonnes `sent_to_provider_at`, `provider_responded_at` sur `standalone_experience_requests`.
+- Migration `20260930090000_backfill_supplier_boat_name.sql` : complète le nom du bateau chez le prestataire (`supplier_boat_name`) là où il manquait, en copiant le nom client en attendant que Shana le corrige avec le vrai nom.
+
+### Pourquoi ce changement
+- Avant, une demande bateau n'avait que 4 statuts génériques (Nouveau/Contacté/Converti/Sans suite), sans suivi de délai ni action en un clic pour contacter le prestataire ou le client. Le message au prestataire était aussi en hébreu mélangé au nom du bateau (toujours en alphabet latin), illisible sur WhatsApp — corrigé en anglais.
+
+---
+
+## [2026-10-01] — Vrais boutons de paiement : liens d'acompte et de solde Revolut depuis le back-office
+
+### Ce qui a changé côté code
+- `supabase/functions/create-booking-payment-link/` (nouvelle fonction, admin uniquement) : crée une vraie commande Revolut (acompte ou solde) pour une réservation, en réutilisant le même mécanisme que le paiement en ligne existant.
+- `supabase/functions/revolut-webhook/index.ts` : ajoute un troisième cas de correspondance (après les réservations hôtel et expérience-seule) pour ces nouveaux paiements — marque le paiement reçu, recalcule le total payé sur la réservation, et la fait passer automatiquement en "Acompte payé" puis "Soldée".
+- `src/pages/admin/StandaloneBookingDetails.tsx` : boutons "Générer lien d'acompte" / "Générer lien de solde", liste des paiements de la réservation avec leur statut, et envoi du lien par WhatsApp en un clic.
+- `src/components/admin/DepositRuleEditor.tsx` (nouveau) + section "Acompte" dans la fiche bateau : règle d'acompte réglable par expérience (aucun / montant fixe / pourcentage).
+- `supabase/functions/confirm-standalone-payment/` et `supabase/functions/reconcile-standalone-bookings/` : déployées pour la première fois (le code existait depuis juillet mais n'avait jamais été mis en ligne).
+
+### Ce qui a changé côté base de données
+- Migration `20260930080000_booking_payments_and_deposit_rules.sql` : nouvelle table `standalone_booking_payments` (un paiement par ligne — une réservation peut en accumuler plusieurs : acompte puis solde, ou plusieurs personnes qui paient leur part) ; colonnes `deposit_type` / `deposit_amount` sur `standalone_experiences` (bateaux réglés à 500₪ fixe).
+
+### Pourquoi ce changement
+- Les bateaux ne se vendent jamais en ligne (toujours sur demande), mais il fallait quand même pouvoir encaisser un acompte de 500₪ puis un solde une fois la disponibilité confirmée par le skipper, sans ressaisir un paiement à la main. Testé de bout en bout avec de fausses commandes (jamais envoyées au vrai compte Revolut) avant la première utilisation réelle.
+
+---
+
+## [2026-10-01] — Nouveau parcours public /boat : filtre en une phrase, fiche bateau, demande simplifiée
+
+### Ce qui a changé côté code
+- `src/pages/Boats.tsx`, `src/components/boats/BoatSentenceFilter.tsx` (nouveau) : la page bateaux a été reconstruite avec une colonne de filtre "façon phrase" fixe à gauche (nombre de personnes, port, durée, date, moment de la journée) et une grille de résultats qui se met à jour en direct à droite. Un seul endroit où ces critères sont choisis — avant, ils étaient redemandés à 3 endroits différents (filtre, fiche détail, formulaire), ce qui obligeait le client à tout retaper.
+- `src/components/boats/BoatAvailabilityPopup.tsx` (nouveau) : pop-up unique "Vérifier une disponibilité", utilisé à la fois depuis un bouton général et depuis la fiche d'un bateau précis. Demande uniquement prénom, WhatsApp, email facultatif et heure souhaitée — plus de redite du nombre de personnes ou de la date déjà choisis.
+- `src/components/boats/BoatDetailModal.tsx` : ajout du point de rendez-vous (adresse + lien Maps) et du total qui se met à jour quand on coche des options.
+- Chaque carte bateau garde maintenant toujours la même hauteur (ligne de description vide si rien à afficher, prix et bouton toujours alignés en bas), et le titre de la liste utilise la police du site (Inter).
+
+### Ce qui a changé côté base de données
+- Migration `20260930030000_create_experience_price_variants.sql` : nouvelle table `standalone_experience_price_variants` — une ligne par durée proposée (1h/1h30/2h/3h/4h), avec capacité max, prix d'achat (peut être vide) et prix de vente. Remplace le prix unique figé sur la fiche pour les bateaux.
+- Migrations `20260930050000_boat_journey_schema.sql`, `20260930060000_generic_boat_requests.sql`, `20260930070000_boat_card_direct_whatsapp_tracking.sql` : email redevenu facultatif sur une demande (WhatsApp devient le contact principal), nouveaux champs pour une demande sans bateau précis (port préféré, durée souhaitée), badge "Notre choix" réglable par expérience.
+
+### Pourquoi ce changement
+- Shana a testé le premier jet et repéré que les mêmes informations étaient redemandées trois fois de suite (barre de filtres, calendrier de la fiche, formulaire final) : reconstruit en un seul parcours continu.
+
+---
+
+## [2026-10-01] — Fiche prestataire unique + rentabilité bateaux
+
+### Ce qui a changé côté code
+- `src/pages/admin/Providers.tsx` (nouveau, remplace l'écran "bientôt disponible" de Partenaires · Expériences) : fiche prestataire avec contact WhatsApp, email, langue, conditions, politique annulation/météo, et badge rouge "Politique non validée" tant qu'elle n'est pas cochée.
+- `src/pages/admin/BoatsProfitability.tsx` (nouveau) : tableau bateaux × durées, avec prix de vente, marge en ₪/% et marge par heure dans chaque case, filtrable par capacité et par port. Signale "Coût manquant" plutôt que de planter quand le prix d'achat n'est pas encore renseigné.
+- `src/components/admin/BoatPriceVariantsManager.tsx`, `FeaturedBadgeToggle.tsx` : nouvelle section "Variantes de prix par durée" et interrupteur "Notre choix" dans la fiche d'un bateau.
+
+### Ce qui a changé côté base de données
+- Migration `20260930010000_create_providers.sql` : nouvelle table `providers`.
+- Migration `20260930020000_backfill_providers_and_link.sql` : reprise des 5 prestataires déjà présents dans les données existantes (texte libre, à 3 endroits différents) vers cette fiche unique, avec rattachement automatique partout où ils étaient mentionnés. Aucune réservation existante touchée.
+- Migration `20260930040000_apply_validated_boat_prices.sql` : application des 2 prix de vente validés par Shana (Cozy Sailing Herzliya, Catamaran Tel Aviv).
+
+### Pourquoi ce changement
+- Premier volet de la refonte de la vente des bateaux : le prestataire était écrit en texte libre à 3 endroits sans lien entre eux (fiche bateau, liste de comparaison, réservation), et le prix d'achat/marge à 3-4 endroits différents sans source unique. Objectif : une seule fiche par prestataire, un seul endroit pour le prix par durée.
+
+---
+
 ## [2026-09-30] — Correctif : la réservation manuelle créée n'apparaissait pas en haut de la liste
 
 ### Ce qui a changé côté code

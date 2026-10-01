@@ -268,6 +268,81 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Pas trouvé dans les deux tables historiques : ce paiement vient peut-être d'un
+      // lien acompte/solde généré à la main depuis le back-office (create-booking-payment-link).
+      // Ces paiements vivent dans standalone_booking_payments, une réservation pouvant en
+      // accumuler plusieurs (acompte puis solde, ou plusieurs personnes qui paient leur part).
+      if (!matched) {
+        const { data: paymentRow, error: paymentFetchError } = await supabase
+          .from('standalone_booking_payments')
+          .select('id, booking_id, status')
+          .eq('revolut_order_id', orderId)
+          .maybeSingle();
+
+        if (paymentFetchError) {
+          dbError = paymentFetchError;
+        } else if (paymentRow) {
+          matched = true;
+
+          // Idempotent : si un autre passage a déjà traité ce paiement, on ne refait rien.
+          if (paymentRow.status !== paymentStatus) {
+            const { error: updPaymentError } = await supabase
+              .from('standalone_booking_payments')
+              .update({ status: paymentStatus, paid_at: paymentStatus === 'paid' ? paidAt : null })
+              .eq('id', paymentRow.id);
+
+            if (updPaymentError) {
+              dbError = updPaymentError;
+            } else if (paymentStatus === 'paid') {
+              // Recalcule l'état global de la réservation à partir de la somme des
+              // paiements réussis : jamais un seul paiement isolé ne décide à lui seul.
+              const { data: booking } = await supabase
+                .from('standalone_bookings')
+                .select('id, sell_price, currency, customer_name, customer_email, status, standalone_experiences(title)')
+                .eq('id', paymentRow.booking_id)
+                .maybeSingle();
+
+              const { data: allPayments } = await supabase
+                .from('standalone_booking_payments')
+                .select('amount, status')
+                .eq('booking_id', paymentRow.booking_id);
+
+              if (booking && allPayments) {
+                const totalPaid = allPayments
+                  .filter((p: { status: string }) => p.status === 'paid')
+                  .reduce((sum: number, p: { amount: number }) => sum + Number(p.amount), 0);
+                const isFullyPaid = totalPaid >= Number(booking.sell_price);
+
+                const { error: updBookingError } = await supabase
+                  .from('standalone_bookings')
+                  .update({
+                    payment_status: isFullyPaid ? 'paid' : 'deposit_paid',
+                    status: 'confirmed',
+                  })
+                  .eq('id', booking.id);
+
+                if (updBookingError) {
+                  dbError = updBookingError;
+                } else {
+                  const exp = booking.standalone_experiences as { title: string } | null;
+                  const currencySymbol: Record<string, string> = { ILS: '₪', USD: '$', EUR: '€' };
+                  const amountDisplay = `${currencySymbol[booking.currency] || booking.currency}${totalPaid}`;
+                  await sendAdminAlertEmail(
+                    isFullyPaid ? `✅ Solde reçu — ${exp?.title || 'Réservation'}` : `💶 Acompte reçu — ${exp?.title || 'Réservation'}`,
+                    `<div style="font-family:Arial,sans-serif;padding:16px;">
+                      <p><b>${isFullyPaid ? 'Réservation soldée' : 'Acompte payé'}</b> pour ${exp?.title || 'une réservation'}.</p>
+                      <p>Client : ${booking.customer_name} (${booking.customer_email})</p>
+                      <p>Total payé à ce jour : ${amountDisplay} sur ${currencySymbol[booking.currency] || booking.currency}${booking.sell_price}</p>
+                      <a href="https://staymakom.com/admin/bookings" style="display:inline-block;margin-top:12px;background:#ad1414;color:#fff;text-decoration:none;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:700;">Voir dans le back office</a>
+                    </div>`,
+                  );
+                }
+              }
+            }
+          }
+        }
+      }
+
       if (dbError) {
         // Une vraie erreur SQL est survenue (pas juste "aucune ligne trouvée") : on prévient
         // Shana par email plutôt qu'un simple log, et on répond en erreur pour que Revolut

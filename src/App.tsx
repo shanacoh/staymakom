@@ -97,6 +97,8 @@ const StandaloneBookingConfirmation = lazy(() => import("./pages/StandaloneBooki
 const TailorMadeQuestionnaire    = lazy(() => import("./pages/TailorMadeQuestionnaire"));
 const AdminStandaloneBookingDetails = lazy(() => import("./pages/admin/StandaloneBookingDetails"));
 const AdminBoatExperiences       = lazy(() => import("./pages/admin/BoatExperiences"));
+const AdminProviders             = lazy(() => import("./pages/admin/Providers"));
+const AdminBoatsProfitability    = lazy(() => import("./pages/admin/BoatsProfitability"));
 const AdminCatalogue             = lazy(() => import("./pages/admin/Catalogue"));
 const AdminCarte                 = lazy(() => import("./pages/admin/Carte"));
 
@@ -340,7 +342,8 @@ const AppContent = () => {
             <Route path="carte" element={<AdminCarte />} />
             <Route path="catalogue" element={<AdminCatalogue />} />
             <Route path="itineraires" element={<ComingSoonAdmin title="Itinéraires" description="Brief, propositions IA et recherche manuelle pour construire un itinéraire client." />} />
-            <Route path="partenaires/experiences" element={<ComingSoonAdmin title="Partenaires · Expériences" description="Gestion de la relation partenaire pour les expériences : contrat, commission, relance." />} />
+            <Route path="partenaires/experiences" element={<AdminProviders />} />
+            <Route path="rentabilite/bateaux" element={<AdminBoatsProfitability />} />
             <Route path="promo" element={<AdminPromoCodes />} />
             <Route path="errors" element={<AdminErrors />} />
             <Route path="headquarter/sales" element={<ComingSoonAdmin title="Sales" />} />

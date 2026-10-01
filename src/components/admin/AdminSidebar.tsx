@@ -95,6 +95,7 @@ const operationsItems: NavItem[] = [
   { title: "Réservations", url: "/admin/bookings", icon: Calendar, inProgress: true },
   { title: "Partenaires · Hôtels", url: "/admin/hotels2", icon: Building2 },
   { title: "Partenaires · Expériences", url: "/admin/partenaires/experiences", icon: Handshake },
+  { title: "Rentabilité bateaux", url: "/admin/rentabilite/bateaux", icon: Percent },
 ];
 
 // Autre : tout ce qui existe déjà et n'a pas encore de place dédiée dans la nouvelle organisation

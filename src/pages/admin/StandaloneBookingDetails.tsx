@@ -48,6 +48,51 @@ export default function AdminStandaloneBookingDetails() {
     enabled: !!bookingId,
   });
 
+  const { data: payments } = useQuery({
+    queryKey: ["admin-standalone-booking-payments", bookingId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("standalone_booking_payments")
+        .select("id, kind, amount, currency, status, checkout_url, created_at")
+        .eq("booking_id", bookingId!)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data as { id: string; kind: string; amount: number; currency: string; status: string; checkout_url: string | null; created_at: string }[];
+    },
+    enabled: !!bookingId,
+  });
+
+  const generatePaymentLinkMutation = useMutation({
+    mutationFn: async (kind: "deposit" | "balance") => {
+      const { data, error } = await supabase.functions.invoke("create-booking-payment-link", {
+        body: { booking_id: bookingId, kind },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Échec de la création du lien");
+      return data as { checkout_url: string; amount: number; currency: string; kind: string };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-standalone-booking-payments", bookingId] });
+      toast.success("Lien de paiement créé");
+    },
+    onError: (error: any) => toast.error("Impossible de créer le lien", { description: error.message }),
+  });
+
+  const sendPaymentLinkOnWhatsApp = (checkoutUrl: string, kind: string) => {
+    if (!booking?.customer_phone) return;
+    const digits = booking.customer_phone.replace(/[^\d]/g, "");
+    const label = kind === "deposit" ? "l'acompte" : "le solde";
+    const text = `Bonjour ${booking.customer_name}, voici le lien pour régler ${label} de votre réservation "${booking.standalone_experiences?.title || ""}" : ${checkoutUrl}`;
+    window.open(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`, "_blank");
+  };
+
+  const totalPaid = (payments ?? [])
+    .filter((p) => p.status === "paid")
+    .reduce((sum, p) => sum + Number(p.amount), 0);
+  const hasPendingDeposit = (payments ?? []).some((p) => p.kind === "deposit" && p.status === "pending");
+  const hasPendingBalance = (payments ?? []).some((p) => p.kind === "balance" && p.status === "pending");
+  const isFullyPaidViaPayments = booking ? totalPaid >= Number(booking.sell_price) : false;
+
   const markRefundDoneMutation = useMutation({
     mutationFn: async (revolut_refund_id: string) => {
       const { error } = await supabase
@@ -492,6 +537,66 @@ export default function AdminStandaloneBookingDetails() {
               </div>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Liens de paiement — acompte / solde, générés en 1 clic (vrai paiement Revolut) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Send className="h-4 w-4" /> Liens de paiement
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={hasPendingDeposit || generatePaymentLinkMutation.isPending}
+              onClick={() => generatePaymentLinkMutation.mutate("deposit")}
+            >
+              {generatePaymentLinkMutation.isPending && generatePaymentLinkMutation.variables === "deposit" && (
+                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+              )}
+              Générer lien d'acompte
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={isFullyPaidViaPayments || hasPendingBalance || generatePaymentLinkMutation.isPending}
+              onClick={() => generatePaymentLinkMutation.mutate("balance")}
+            >
+              {generatePaymentLinkMutation.isPending && generatePaymentLinkMutation.variables === "balance" && (
+                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+              )}
+              Générer lien de solde
+            </Button>
+          </div>
+
+          {payments && payments.length > 0 ? (
+            <div className="space-y-2">
+              {payments.map((p) => (
+                <div key={p.id} className="flex items-center justify-between gap-3 rounded-lg border p-2.5 text-sm">
+                  <div>
+                    <span className="font-medium capitalize">{p.kind === "deposit" ? "Acompte" : "Solde"}</span>{" "}
+                    <span className="text-muted-foreground">{p.amount} {p.currency}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={p.status === "paid" ? "default" : p.status === "pending" ? "secondary" : "destructive"}>
+                      {p.status === "paid" ? "Payé" : p.status === "pending" ? "En attente" : p.status}
+                    </Badge>
+                    {p.status === "pending" && p.checkout_url && booking.customer_phone && (
+                      <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => sendPaymentLinkOnWhatsApp(p.checkout_url!, p.kind)}>
+                        <Send className="h-3 w-3 mr-1 text-green-700" /> Envoyer sur WhatsApp
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground italic">Aucun lien généré pour l'instant.</p>
+          )}
         </CardContent>
       </Card>
 

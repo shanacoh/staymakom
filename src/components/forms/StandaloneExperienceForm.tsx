@@ -49,6 +49,9 @@ import IncludesManagerStandalone, { type LocalIncludeEntry } from "@/components/
 import StandaloneExtrasManager, { type LocalExtraEntry } from "@/components/admin/StandaloneExtrasManager";
 import StandaloneSuppliersManager from "@/components/admin/StandaloneSuppliersManager";
 import StandaloneRateOptionsManager from "@/components/admin/StandaloneRateOptionsManager";
+import BoatPriceVariantsManager from "@/components/admin/BoatPriceVariantsManager";
+import FeaturedBadgeToggle from "@/components/admin/FeaturedBadgeToggle";
+import DepositRuleEditor from "@/components/admin/DepositRuleEditor";
 import { BOATS_CATEGORY_ID } from "@/lib/boatsCategory";
 
 // Les bateaux n'ont pas de limite de nombre de photos dans la galerie,
@@ -1554,6 +1557,44 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                   sellPrice={sellPriceAdult ?? computedAdultPrice}
                   currencySymbol={currencySymbol}
                 />
+              </CardContent>
+            </Card>
+
+            {/* Variantes de prix par durée */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Variantes de prix par durée</CardTitle>
+                <CardDescription>
+                  Une ligne par durée proposée (1h, 1h30, 2h, 3h, 4h...), avec sa capacité max, son prix
+                  d'achat et son prix de vente groupe. La marge se calcule automatiquement. Utilisé par la
+                  future page /boat ; le prix de vente ci-dessous reste utilisé par le site en attendant.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <BoatPriceVariantsManager experienceId={currentExperienceId} currencySymbol={currencySymbol} />
+              </CardContent>
+            </Card>
+
+            {/* Mise en avant */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Mise en avant</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <FeaturedBadgeToggle experienceId={currentExperienceId} />
+              </CardContent>
+            </Card>
+
+            {/* Acompte */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Acompte</CardTitle>
+                <CardDescription>
+                  Montant demandé pour bloquer la réservation avant que le solde soit payé.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <DepositRuleEditor experienceId={currentExperienceId} />
               </CardContent>
             </Card>
 

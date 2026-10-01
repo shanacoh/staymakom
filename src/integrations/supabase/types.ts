@@ -3669,6 +3669,51 @@ export type Database = {
           },
         ]
       }
+      providers: {
+        Row: {
+          cancellation_weather_policy: string | null
+          conditions: string | null
+          created_at: string
+          email: string | null
+          id: string
+          internal_notes: string | null
+          is_active: boolean
+          language: string | null
+          name: string
+          policy_validated: boolean
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          cancellation_weather_policy?: string | null
+          conditions?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          internal_notes?: string | null
+          is_active?: boolean
+          language?: string | null
+          name: string
+          policy_validated?: boolean
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          cancellation_weather_policy?: string | null
+          conditions?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          internal_notes?: string | null
+          is_active?: boolean
+          language?: string | null
+          name?: string
+          policy_validated?: boolean
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       saved_carts: {
         Row: {
           checkin: string | null
@@ -3725,6 +3770,53 @@ export type Database = {
           },
         ]
       }
+      standalone_booking_payments: {
+        Row: {
+          amount: number
+          booking_id: string
+          checkout_url: string | null
+          created_at: string
+          currency: string
+          id: string
+          kind: string
+          paid_at: string | null
+          revolut_order_id: string | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          booking_id: string
+          checkout_url?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          kind?: string
+          paid_at?: string | null
+          revolut_order_id?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string
+          checkout_url?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          kind?: string
+          paid_at?: string | null
+          revolut_order_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "standalone_booking_payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "standalone_bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       standalone_bookings: {
         Row: {
           adults_count: number | null
@@ -3751,6 +3843,7 @@ export type Database = {
           lead_id: string | null
           party_size: number
           payment_status: string | null
+          provider_id: string | null
           rate_option: Json | null
           refund_amount: number | null
           refunded_at: string | null
@@ -3793,6 +3886,7 @@ export type Database = {
           lead_id?: string | null
           party_size?: number
           payment_status?: string | null
+          provider_id?: string | null
           rate_option?: Json | null
           refund_amount?: number | null
           refunded_at?: string | null
@@ -3835,6 +3929,7 @@ export type Database = {
           lead_id?: string | null
           party_size?: number
           payment_status?: string | null
+          provider_id?: string | null
           rate_option?: Json | null
           refund_amount?: number | null
           refunded_at?: string | null
@@ -3858,6 +3953,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "standalone_bookings_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
             referencedColumns: ["id"]
           },
           {
@@ -3946,21 +4048,85 @@ export type Database = {
           },
         ]
       }
+      standalone_experience_price_variants: {
+        Row: {
+          created_at: string
+          currency: string
+          duration_label: string
+          duration_minutes: number | null
+          experience_id: string
+          id: string
+          is_active: boolean
+          max_capacity: number
+          purchase_price: number | null
+          sale_price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          duration_label: string
+          duration_minutes?: number | null
+          experience_id: string
+          id?: string
+          is_active?: boolean
+          max_capacity: number
+          purchase_price?: number | null
+          sale_price: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          duration_label?: string
+          duration_minutes?: number | null
+          experience_id?: string
+          id?: string
+          is_active?: boolean
+          max_capacity?: number
+          purchase_price?: number | null
+          sale_price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "standalone_experience_price_variants_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "standalone_experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       standalone_experience_requests: {
         Row: {
           adults: number
           children: number
           created_at: string
-          customer_email: string
-          customer_name: string
+          customer_email: string | null
+          customer_name: string | null
           customer_phone: string | null
-          experience_id: string
+          desired_time_period: string | null
+          desired_time_value: string | null
+          experience_id: string | null
           id: string
           internal_notes: string | null
+          is_urgent: boolean
+          language: string | null
           message: string | null
           notified_at: string | null
           party_max: number | null
+          preferred_city: string | null
+          price_variant_id: string | null
+          provider_responded_at: string | null
           requested_date: string | null
+          requested_duration_minutes: number | null
+          selected_extras: Json | null
+          sent_to_provider_at: string | null
+          source: string | null
           status: string
           updated_at: string
         }
@@ -3968,16 +4134,27 @@ export type Database = {
           adults?: number
           children?: number
           created_at?: string
-          customer_email: string
-          customer_name: string
+          customer_email?: string | null
+          customer_name?: string | null
           customer_phone?: string | null
-          experience_id: string
+          desired_time_period?: string | null
+          desired_time_value?: string | null
+          experience_id?: string | null
           id?: string
           internal_notes?: string | null
+          is_urgent?: boolean
+          language?: string | null
           message?: string | null
           notified_at?: string | null
           party_max?: number | null
+          preferred_city?: string | null
+          price_variant_id?: string | null
+          provider_responded_at?: string | null
           requested_date?: string | null
+          requested_duration_minutes?: number | null
+          selected_extras?: Json | null
+          sent_to_provider_at?: string | null
+          source?: string | null
           status?: string
           updated_at?: string
         }
@@ -3985,16 +4162,27 @@ export type Database = {
           adults?: number
           children?: number
           created_at?: string
-          customer_email?: string
-          customer_name?: string
+          customer_email?: string | null
+          customer_name?: string | null
           customer_phone?: string | null
-          experience_id?: string
+          desired_time_period?: string | null
+          desired_time_value?: string | null
+          experience_id?: string | null
           id?: string
           internal_notes?: string | null
+          is_urgent?: boolean
+          language?: string | null
           message?: string | null
           notified_at?: string | null
           party_max?: number | null
+          preferred_city?: string | null
+          price_variant_id?: string | null
+          provider_responded_at?: string | null
           requested_date?: string | null
+          requested_duration_minutes?: number | null
+          selected_extras?: Json | null
+          sent_to_provider_at?: string | null
+          source?: string | null
           status?: string
           updated_at?: string
         }
@@ -4004,6 +4192,13 @@ export type Database = {
             columns: ["experience_id"]
             isOneToOne: false
             referencedRelation: "standalone_experiences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "standalone_experience_requests_price_variant_id_fkey"
+            columns: ["price_variant_id"]
+            isOneToOne: false
+            referencedRelation: "standalone_experience_price_variants"
             referencedColumns: ["id"]
           },
         ]
@@ -4016,6 +4211,7 @@ export type Database = {
           is_active: boolean
           is_primary: boolean
           price: number
+          provider_id: string | null
           sort_order: number
           supplier_name: string
           updated_at: string | null
@@ -4028,6 +4224,7 @@ export type Database = {
           is_active?: boolean
           is_primary?: boolean
           price: number
+          provider_id?: string | null
           sort_order?: number
           supplier_name: string
           updated_at?: string | null
@@ -4040,6 +4237,7 @@ export type Database = {
           is_active?: boolean
           is_primary?: boolean
           price?: number
+          provider_id?: string | null
           sort_order?: number
           supplier_name?: string
           updated_at?: string | null
@@ -4051,6 +4249,13 @@ export type Database = {
             columns: ["experience_id"]
             isOneToOne: false
             referencedRelation: "standalone_experiences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "standalone_experience_suppliers_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
             referencedColumns: ["id"]
           },
         ]
@@ -4081,6 +4286,8 @@ export type Database = {
           crew_included: boolean | null
           currency: string | null
           departure_location: string | null
+          deposit_amount: number | null
+          deposit_type: string
           display_order: number | null
           duration: string | null
           duration_fr: string | null
@@ -4099,6 +4306,7 @@ export type Database = {
           includes: Json | null
           includes_he: Json | null
           is_bookable: boolean
+          is_featured: boolean
           latitude: number | null
           lead_time_days: number | null
           long_copy: string | null
@@ -4123,6 +4331,7 @@ export type Database = {
           original_price: number | null
           photos: Json | null
           practical_info: Json | null
+          provider_id: string | null
           region: string | null
           region_fr: string | null
           region_he: string | null
@@ -4177,6 +4386,8 @@ export type Database = {
           crew_included?: boolean | null
           currency?: string | null
           departure_location?: string | null
+          deposit_amount?: number | null
+          deposit_type?: string
           display_order?: number | null
           duration?: string | null
           duration_fr?: string | null
@@ -4195,6 +4406,7 @@ export type Database = {
           includes?: Json | null
           includes_he?: Json | null
           is_bookable?: boolean
+          is_featured?: boolean
           latitude?: number | null
           lead_time_days?: number | null
           long_copy?: string | null
@@ -4219,6 +4431,7 @@ export type Database = {
           original_price?: number | null
           photos?: Json | null
           practical_info?: Json | null
+          provider_id?: string | null
           region?: string | null
           region_fr?: string | null
           region_he?: string | null
@@ -4273,6 +4486,8 @@ export type Database = {
           crew_included?: boolean | null
           currency?: string | null
           departure_location?: string | null
+          deposit_amount?: number | null
+          deposit_type?: string
           display_order?: number | null
           duration?: string | null
           duration_fr?: string | null
@@ -4291,6 +4506,7 @@ export type Database = {
           includes?: Json | null
           includes_he?: Json | null
           is_bookable?: boolean
+          is_featured?: boolean
           latitude?: number | null
           lead_time_days?: number | null
           long_copy?: string | null
@@ -4315,6 +4531,7 @@ export type Database = {
           original_price?: number | null
           photos?: Json | null
           practical_info?: Json | null
+          provider_id?: string | null
           region?: string | null
           region_fr?: string | null
           region_he?: string | null
@@ -4350,6 +4567,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "standalone_experiences_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
             referencedColumns: ["id"]
           },
         ]
@@ -5147,4 +5371,3 @@ export const Constants = {
     },
   },
 } as const
-

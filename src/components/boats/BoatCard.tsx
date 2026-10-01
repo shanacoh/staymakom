@@ -10,9 +10,10 @@ interface BoatCardProps {
   boat: any;
   index: number;
   onSelect: (boatId: string) => void;
+  badge?: string | null;
 }
 
-const BoatCard = ({ boat, index, onSelect }: BoatCardProps) => (
+const BoatCard = ({ boat, index, onSelect, badge }: BoatCardProps) => (
   <div
     onClickCapture={(e) => { e.preventDefault(); onSelect(boat.id); }}
     role="button"
@@ -24,6 +25,7 @@ const BoatCard = ({ boat, index, onSelect }: BoatCardProps) => (
       linkPrefix="/boat"
       showTotalPrice
       isBoat
+      badge={badge}
     />
   </div>
 );

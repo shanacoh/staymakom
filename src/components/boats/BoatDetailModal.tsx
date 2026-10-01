@@ -1,12 +1,12 @@
 /**
  * Pop-up de détail d'un bateau, ouverte depuis /boat sans changement d'URL —
  * remplace l'ancienne navigation vers /boat/:slug. Toujours un flux "demande"
- * (StandaloneRequestPanel), jamais de paiement direct : les bateaux ne se
+ * (BoatAvailabilityPopup), jamais de paiement direct : les bateaux ne se
  * réservent pas en ligne, quel que soit le réglage is_bookable de la fiche.
  * Présentation façon fiche produit : photo pleine largeur, badges, encadré
- * "inclus", liste d'extras, barre de prix fixe en bas.
+ * "inclus", liste d'extras avec total, point de RDV, barre de prix fixe en bas.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -16,21 +16,18 @@ import {
   Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, type CarouselApi,
 } from "@/components/ui/carousel";
 import { Skeleton } from "@/components/ui/skeleton";
-import { X, Check, Plus, ChevronLeft } from "lucide-react";
+import { X, Check, Plus, MapPin } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
-import StandaloneRequestPanel from "@/components/experience-test/StandaloneRequestPanel";
+import BoatAvailabilityPopup from "@/components/boats/BoatAvailabilityPopup";
 import { resizedImageUrl } from "@/lib/imageUrl";
 import { trackExperienceViewed, trackRequestClicked, type ProductLike } from "@/lib/analytics";
 import { useSetCurrentProduct } from "@/contexts/CurrentProductContext";
+import { BOAT_MEETING_POINTS } from "@/lib/boatAvailability";
 
 interface BoatDetailModalProps {
   boatId: string | null;
   onClose: () => void;
-}
-
-function toLocalDateStr(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function toProductLike(boat: any): ProductLike {
@@ -50,20 +47,14 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
   const isMobile = useIsMobile();
   const { lang } = useLanguage();
   const [carouselIndex, setCarouselIndex] = useState(0);
-  const [requestStarted, setRequestStarted] = useState(false);
+  const [popupOpen, setPopupOpen] = useState(false);
   const [selectedExtraIds, setSelectedExtraIds] = useState<string[]>([]);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setRequestStarted(false);
+    setPopupOpen(false);
     setSelectedExtraIds([]);
     setCarouselIndex(0);
   }, [boatId]);
-
-  // Repart du haut à chaque bascule détail <-> demande, sur mobile comme desktop.
-  useEffect(() => {
-    scrollContainerRef.current?.scrollTo({ top: 0 });
-  }, [requestStarted]);
 
   const { data: boat, isLoading } = useQuery({
     queryKey: ["boat-detail", boatId],
@@ -82,11 +73,11 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
           region, region_fr, region_he,
           address, address_he, address_fr,
           accessibility_info, cancellation_policy, cancellation_policy_he,
-          available_days, blocked_dates, availability_end_date, availability_mode, whitelisted_dates,
           standalone_experience_highlight_tags(
             tag_id, position,
             highlight_tags(id, slug, label_en, label_he, label_fr)
-          )
+          ),
+          standalone_experience_price_variants(id, duration_minutes, max_capacity, sale_price, currency)
         `)
         .eq("id", boatId!)
         .single();
@@ -159,9 +150,10 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
     add: lang === "he" ? "הוסף" : lang === "fr" ? "Ajouter" : "Add",
     added: lang === "he" ? "נוסף" : lang === "fr" ? "Ajouté" : "Added",
     fromLabel: lang === "he" ? "החל מ" : lang === "fr" ? "À partir de" : "From",
+    total: lang === "he" ? "סה\"כ עם התוספות" : lang === "fr" ? "Total avec options" : "Total with options",
     cta: lang === "he" ? "שליחת הבקשה" : lang === "fr" ? "Envoyer ma demande" : "Send my request",
-    backToDetails: lang === "he" ? "חזרה" : lang === "fr" ? "Retour" : "Back",
-    extrasNoteLabel: lang === "he" ? "תוספות מבוקשות" : lang === "fr" ? "Extras souhaités" : "Requested extras",
+    meetingPoint: lang === "he" ? "נקודת מפגש" : lang === "fr" ? "Point de rendez-vous" : "Meeting point",
+    openMaps: lang === "he" ? "פתח ב-Maps" : lang === "fr" ? "Ouvrir dans Maps" : "Open in Maps",
   };
 
   const toggleExtra = (extraId: string) => {
@@ -170,45 +162,25 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
     );
   };
 
+  const extrasTotal = (extras ?? [])
+    .filter((e) => selectedExtraIds.includes(e.id))
+    .reduce((sum, e) => sum + (e.price || 0), 0);
+
   const extraNotes = (() => {
     if (!extras || selectedExtraIds.length === 0) return undefined;
     const names = extras
       .filter((e) => selectedExtraIds.includes(e.id))
       .map((e) => localized(e.title, e.title_fr, e.title_he));
-    return names.length > 0 ? `${t.extrasNoteLabel} : ${names.join(", ")}` : undefined;
+    return names.length > 0 ? names.join(", ") : undefined;
   })();
 
-  const leadTimeDays = boat?.lead_time_days ?? 0;
-  const minDate = (() => {
-    const d = new Date();
-    d.setDate(d.getDate() + leadTimeDays);
-    return toLocalDateStr(d);
-  })();
-  const maxDate = boat?.availability_end_date ? new Date(boat.availability_end_date + "T23:59:59") : undefined;
-
-  const isDateUnavailable = (date: Date): boolean => {
-    if (!boat) return false;
-    const availableDays: number[] = boat.available_days ?? [1, 2, 3, 4, 5, 6, 7];
-    const blockedDateStrings: string[] = boat.blocked_dates ?? [];
-    const isWhitelistMode = boat.availability_mode === "whitelist";
-    const whitelistedSet = new Set<string>(isWhitelistMode ? boat.whitelisted_dates ?? [] : []);
-    const minDateObj = new Date(minDate + "T00:00:00");
-    const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    if (d < minDateObj) return true;
-    if (isWhitelistMode) return !whitelistedSet.has(toLocalDateStr(date));
-    if (maxDate && d > maxDate) return true;
-    if (availableDays.length < 7) {
-      const availableJsDays = availableDays.map((n) => (n === 7 ? 0 : n));
-      if (!availableJsDays.includes(date.getDay())) return true;
-    }
-    return blockedDateStrings.includes(toLocalDateStr(date));
-  };
+  const meetingPoint = boat?.city ? BOAT_MEETING_POINTS[boat.city] : undefined;
 
   const handleReserveClick = () => {
     if (boat?.slug) {
       trackRequestClicked(toProductLike(boat), "boat", "price_bar");
     }
-    setRequestStarted(true);
+    setPopupOpen(true);
   };
 
   const closeButton = (
@@ -222,58 +194,12 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
     </button>
   );
 
-  // Ramène à l'écran détail sans fermer la pop-up — seul le bouton X (ci-dessus) ferme tout.
-  const backButton = requestStarted && (
-    <button
-      type="button"
-      onClick={() => setRequestStarted(false)}
-      className="absolute left-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 shadow-md hover:bg-white transition-colors"
-    >
-      <ChevronLeft className="h-4 w-4" />
-      <span className="sr-only">{t.backToDetails}</span>
-    </button>
-  );
-
   const body = isLoading || !boat ? (
     <div className="p-6 space-y-4">
       <Skeleton className="h-64 w-full rounded-xl" />
       <Skeleton className="h-7 w-2/3" />
       <Skeleton className="h-4 w-full" />
       <Skeleton className="h-4 w-5/6" />
-    </div>
-  ) : requestStarted ? (
-    <div key="request" className="pb-6 animate-in fade-in slide-in-from-right-4 duration-300">
-      {/* Rappel du bateau — le visiteur ne voit plus les photos/infos une fois sur cet écran */}
-      <div className="flex items-center gap-3 px-4 sm:px-6 pt-14 pb-4 border-b">
-        {photos[0] && (
-          <img
-            src={resizedImageUrl(photos[0], 100) || photos[0]}
-            alt={title}
-            className="h-14 w-14 rounded-xl object-cover shrink-0"
-          />
-        )}
-        <div className="min-w-0">
-          <h2 className="font-serif text-lg font-bold text-foreground truncate">{title}</h2>
-          {extraNotes && <p className="text-xs text-muted-foreground mt-0.5 truncate">{extraNotes}</p>}
-        </div>
-      </div>
-
-      <div className="px-4 sm:px-6 pt-5">
-        <StandaloneRequestPanel
-          experienceId={boat.id}
-          lang={lang as "en" | "fr" | "he"}
-          minParty={boat.min_party}
-          maxParty={boat.max_party}
-          minDate={minDate}
-          maxDate={maxDate}
-          isDateUnavailable={isDateUnavailable}
-          experienceTitle={title}
-          usePartyRanges
-          started
-          onStartedChange={setRequestStarted}
-          extraNotes={extraNotes}
-        />
-      </div>
     </div>
   ) : (
     <div key="detail" className="pb-6 animate-in fade-in slide-in-from-left-4 duration-300">
@@ -376,7 +302,7 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
           </div>
         )}
 
-        {/* Extras — ajoutables à la demande (informatif, pas de paiement ici) */}
+        {/* Extras — ajoutables à la demande, total mis à jour en direct (informatif, pas de paiement ici) */}
         {(extras?.length ?? 0) > 0 && (
           <div className="space-y-2">
             <p className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">{t.extrasTitle}</p>
@@ -405,6 +331,31 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
                 );
               })}
             </div>
+            {selectedExtraIds.length > 0 && (
+              <div className="flex items-center justify-between pt-2 border-t text-sm font-semibold">
+                <span>{t.total}</span>
+                <span>{Math.round(boat.base_price + extrasTotal)} {boat.currency}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Point de rendez-vous */}
+        {meetingPoint && (
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold tracking-wider uppercase text-muted-foreground flex items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5" /> {t.meetingPoint}
+            </p>
+            <p className="text-sm text-foreground">{meetingPoint.address}</p>
+            <p className="text-xs text-muted-foreground">{meetingPoint.note}</p>
+            <a
+              href={meetingPoint.mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block text-xs font-medium text-[#ad1414] underline underline-offset-2"
+            >
+              {t.openMaps}
+            </a>
           </div>
         )}
 
@@ -412,7 +363,7 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
     </div>
   );
 
-  const priceBar = !isLoading && boat && !requestStarted && (
+  const priceBar = !isLoading && boat && (
     <div className="shrink-0 border-t bg-background px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
       <div>
         <p className="text-xs text-muted-foreground">{t.fromLabel}</p>
@@ -441,34 +392,52 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
     </div>
   );
 
+  const popup = boat && (
+    <BoatAvailabilityPopup
+      open={popupOpen}
+      onOpenChange={setPopupOpen}
+      boat={{
+        id: boat.id,
+        title,
+        city: boat.city,
+        slug: boat.slug,
+        price_variants: boat.standalone_experience_price_variants ?? [],
+      }}
+    />
+  );
+
   if (isMobile) {
     return (
-      <Sheet open={!!boatId} onOpenChange={(open) => !open && onClose()}>
-        <SheetContent side="bottom" hideCloseButton className="h-[92vh] rounded-t-2xl p-0 flex flex-col overflow-hidden">
-          <VisuallyHidden.Root><SheetTitle>{title || "Bateau"}</SheetTitle></VisuallyHidden.Root>
-          <div ref={scrollContainerRef} className="relative flex-1 min-h-0 overflow-y-auto">
-            {backButton}
-            {closeButton}
-            {body}
-          </div>
-          {priceBar}
-        </SheetContent>
-      </Sheet>
+      <>
+        <Sheet open={!!boatId} onOpenChange={(open) => !open && onClose()}>
+          <SheetContent side="bottom" hideCloseButton className="h-[92vh] rounded-t-2xl p-0 flex flex-col overflow-hidden">
+            <VisuallyHidden.Root><SheetTitle>{title || "Bateau"}</SheetTitle></VisuallyHidden.Root>
+            <div className="relative flex-1 min-h-0 overflow-y-auto">
+              {closeButton}
+              {body}
+            </div>
+            {priceBar}
+          </SheetContent>
+        </Sheet>
+        {popup}
+      </>
     );
   }
 
   return (
-    <Dialog open={!!boatId} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent hideCloseButton className="max-w-3xl max-h-[90vh] rounded-2xl p-0 flex flex-col overflow-hidden">
-        <VisuallyHidden.Root><DialogTitle>{title || "Bateau"}</DialogTitle></VisuallyHidden.Root>
-        <div ref={scrollContainerRef} className="relative flex-1 min-h-0 overflow-y-auto">
-          {backButton}
-          {closeButton}
-          {body}
-        </div>
-        {priceBar}
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={!!boatId} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent hideCloseButton className="max-w-3xl max-h-[90vh] rounded-2xl p-0 flex flex-col overflow-hidden">
+          <VisuallyHidden.Root><DialogTitle>{title || "Bateau"}</DialogTitle></VisuallyHidden.Root>
+          <div className="relative flex-1 min-h-0 overflow-y-auto">
+            {closeButton}
+            {body}
+          </div>
+          {priceBar}
+        </DialogContent>
+      </Dialog>
+      {popup}
+    </>
   );
 };
 
