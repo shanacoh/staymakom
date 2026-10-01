@@ -1113,6 +1113,7 @@ export type Database = {
           id: string
           langue: string | null
           lead_id: string | null
+          lieux_imposes: Json
           message_intro: string | null
           message_intro_en: string | null
           message_intro_he: string | null
@@ -1159,6 +1160,7 @@ export type Database = {
           id?: string
           langue?: string | null
           lead_id?: string | null
+          lieux_imposes?: Json
           message_intro?: string | null
           message_intro_en?: string | null
           message_intro_he?: string | null
@@ -1205,6 +1207,7 @@ export type Database = {
           id?: string
           langue?: string | null
           lead_id?: string | null
+          lieux_imposes?: Json
           message_intro?: string | null
           message_intro_en?: string | null
           message_intro_he?: string | null
