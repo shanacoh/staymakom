@@ -6,6 +6,27 @@
 
 ---
 
+## [2026-10-01] — Chantier "Dossier de voyage" : étape 1, modèle de données
+
+### Ce qui a changé côté code
+- `supabase/migrations/20261001020000_create_dossiers_voyage_core.sql` : migration complète créant le socle du futur objet "Dossier de voyage" (fusion à venir des Itinéraires et du Dossier swipe). Rien n'a été supprimé : les anciennes tables `dossiers`, `propositions` et `swipe_categories` restent en place intactes, en parallèle, tant que la bascule complète (front-office inclus) n'est pas terminée.
+- Les 9 fonctions techniques du module swipe (RPC publiques + triggers de suivi de lecture, ex. `swipe_get_dossier_by_token`, `swipe_upsert_swipe`, `swipe_refresh_statut_lecture`...) ont été réécrites pour lire/écrire dans la nouvelle table `dossiers_voyage` au lieu de l'ancienne table `dossiers` — sans changer leur signature ni le comportement visible côté client. Testé : un lien de dossier déjà envoyé continue de fonctionner à l'identique (ouverture, swipe, affichage des cartes).
+- Appliqué en plusieurs petites migrations successives via l'outil Supabase (voir note ci-dessous) plutôt qu'en un seul bloc, pour isoler précisément quelle partie nécessitait une validation manuelle.
+
+### Ce qui a changé côté base de données
+- **Nouvelles tables** : `dossiers_voyage` (objet central, remplace à terme `dossiers` + `itineraries` + `itinerary_requests`), `dossiers_voyage_versions` (historique R1/R2... visible par Shana seulement), `dossiers_voyage_lignes` (le programme jour par jour, futur écran "Composer"), `dossiers_voyage_retours` (réactions du client sur une proposition), `catalogue_item_teasers` (habillage "qui donne envie sans tout dévoiler" d'une fiche Catalogue, pour la future étape Proposition).
+- **Catalogue (`catalogue_items`)** : nouvelles colonnes `photo_url`, `prix_achat`, `prix_client`, `commission_pourcentage`, `mode_reservation`, `lien_reservation`, `legacy_proposition_id` (traçabilité). Ces colonnes remplacent ce que portait auparavant uniquement l'ancienne "bibliothèque swipe" (table `propositions`), qui disparaît à terme au profit du Catalogue comme liste unique de lieux pour tout le site. Le contenu des 61 lieux de l'ancienne bibliothèque a été copié dedans (60 fiches Catalogue mises à jour ou créées ; une légère déduplication a eu lieu quand deux anciennes propositions pointaient vers le même lieu déjà présent au Catalogue).
+- **8 dossiers swipe existants** copiés dans `dossiers_voyage` avec exactement le même lien client (même code secret), pour que les liens déjà envoyés aux clients continuent de fonctionner sans interruption.
+- **`dossier_propositions`** et **`participants`** : leur lien vers le dossier pointe désormais vers `dossiers_voyage` au lieu de `dossiers` ; `dossier_propositions` porte en plus une nouvelle colonne `catalogue_item_id`, reliant chaque ancienne proposition à sa fiche Catalogue correspondante.
+- **`review_requests`** (système d'avis clients) : la liste des types de réservation autorisés accepte désormais aussi `'dossiers_voyage'`, en vue de réutiliser ce même système pour la demande d'avis après un voyage préparé via un dossier.
+- **Rien touché côté réservations/paiement** : les tables `bookings_hg` et `standalone_bookings` (flux HyperGuest et Revolut) n'ont pas été modifiées à cette étape, volontairement — ce lien est repoussé à une étape ultérieure du chantier, dédiée au paiement.
+- Note technique : l'outil d'application automatique des migrations a demandé une validation manuelle spécifiquement pour la réécriture des 9 fonctions techniques du swipe (elles tournent avec des droits élevés et sont exposées publiquement) — Shana l'a exécutée elle-même directement dans l'éditeur SQL de Supabase. Toutes les autres parties (nouvelles tables, nouvelles colonnes, copies de données) sont passées par l'outil automatique sans besoin d'intervention manuelle.
+
+### Pourquoi ce changement
+- Première étape du chantier de fusion des Itinéraires et du Dossier swipe en un seul objet "Dossier de voyage" avec un lien client unique qui évolue dans le temps (Explorer → Proposition → Carnet de voyage). Cette étape pose uniquement le modèle de données et migre le contenu existant sans rien casser ; les écrans back-office et client (Demande reçue, Brief IA, Composer, nouveau lien client) arrivent aux étapes suivantes du plan.
+
+---
+
 ## [2026-10-01] — Nouvelle page back-office "Automatisations"
 
 ### Ce qui a changé côté code
