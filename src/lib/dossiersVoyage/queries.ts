@@ -5,13 +5,19 @@ import type {
   CanalOrigine,
   DestinataireType,
   DossierVoyage,
+  DossierVoyageLigne,
+  DossierVoyageLigneInsert,
+  DossierVoyageLigneUpdate,
   DossierVoyageUpdate,
+  DossierVoyageVersion,
   Objectif,
   PointDepart,
 } from "./types";
 
 const LIST_KEY = ["dossiers_voyage", "liste"] as const;
 const detailKey = (id: string) => ["dossiers_voyage", "detail", id] as const;
+const versionsKey = (dossierId: string) => ["dossiers_voyage", "versions", dossierId] as const;
+const lignesKey = (versionId: string) => ["dossiers_voyage", "lignes", versionId] as const;
 
 export function errorMessage(error: unknown): string {
   if (error && typeof error === "object" && "message" in error && typeof error.message === "string") {
@@ -180,6 +186,152 @@ export function useGenerateDossierBrief(id: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: detailKey(id) });
       queryClient.invalidateQueries({ queryKey: LIST_KEY });
+    },
+  });
+}
+
+// ============================================================================
+// Composer : versions et lignes du programme (étape 5)
+// ============================================================================
+
+export function useDossierVersions(dossierId: string | undefined) {
+  return useQuery({
+    queryKey: versionsKey(dossierId ?? ""),
+    enabled: !!dossierId,
+    queryFn: async (): Promise<DossierVoyageVersion[]> => {
+      const { data, error } = await supabase
+        .from("dossiers_voyage_versions")
+        .select("*")
+        .eq("dossier_id", dossierId!)
+        .order("numero", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+/** Garantit qu'une version existe pour ce dossier : renvoie la version active, ou en crée une (R1) sinon. */
+export function useEnsureVersionActive(dossierId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (): Promise<DossierVoyageVersion> => {
+      const { data: dossier, error: dossierError } = await supabase
+        .from("dossiers_voyage")
+        .select("version_active_id, statut")
+        .eq("id", dossierId)
+        .single();
+      if (dossierError) throw dossierError;
+
+      if (dossier.version_active_id) {
+        const { data: version, error: versionError } = await supabase
+          .from("dossiers_voyage_versions")
+          .select("*")
+          .eq("id", dossier.version_active_id)
+          .single();
+        if (versionError) throw versionError;
+        return version;
+      }
+
+      const { data: existantes } = await supabase
+        .from("dossiers_voyage_versions")
+        .select("numero")
+        .eq("dossier_id", dossierId)
+        .order("numero", { ascending: false })
+        .limit(1);
+      const prochainNumero = existantes && existantes.length > 0 ? existantes[0].numero + 1 : 1;
+
+      const { data: nouvelle, error: createError } = await supabase
+        .from("dossiers_voyage_versions")
+        .insert({ dossier_id: dossierId, numero: prochainNumero, label: `R${prochainNumero}` })
+        .select()
+        .single();
+      if (createError) throw createError;
+
+      const patch: DossierVoyageUpdate = { version_active_id: nouvelle.id };
+      if (dossier.statut === "nouvelle_demande" || dossier.statut === "brief") patch.statut = "en_preparation";
+      await supabase.from("dossiers_voyage").update(patch).eq("id", dossierId);
+
+      return nouvelle;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: versionsKey(dossierId) });
+      queryClient.invalidateQueries({ queryKey: detailKey(dossierId) });
+      queryClient.invalidateQueries({ queryKey: LIST_KEY });
+    },
+  });
+}
+
+export function useVersionLignes(versionId: string | undefined) {
+  return useQuery({
+    queryKey: lignesKey(versionId ?? ""),
+    enabled: !!versionId,
+    queryFn: async (): Promise<DossierVoyageLigne[]> => {
+      const { data, error } = await supabase
+        .from("dossiers_voyage_lignes")
+        .select("*")
+        .eq("version_id", versionId!)
+        .order("jour", { ascending: true })
+        .order("ordre", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useCreateLigne(versionId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ligne: Omit<DossierVoyageLigneInsert, "version_id">): Promise<DossierVoyageLigne> => {
+      const { data, error } = await supabase
+        .from("dossiers_voyage_lignes")
+        .insert({ ...ligne, version_id: versionId })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: lignesKey(versionId) }),
+  });
+}
+
+export function useUpdateLigne(versionId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: DossierVoyageLigneUpdate }): Promise<DossierVoyageLigne> => {
+      const { data, error } = await supabase.from("dossiers_voyage_lignes").update(patch).eq("id", id).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: lignesKey(versionId) }),
+  });
+}
+
+export function useDeleteLigne(versionId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string): Promise<void> => {
+      const { error } = await supabase.from("dossiers_voyage_lignes").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: lignesKey(versionId) }),
+  });
+}
+
+/** Appelle l'edge function generate-dossier-composer : propose/régénère les lignes IA du programme. */
+export function useGenerateComposer(dossierId: string, versionId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (consigne: string): Promise<number> => {
+      const { data, error } = await supabase.functions.invoke("generate-dossier-composer", {
+        body: { dossierId, versionId, consigne: consigne || undefined },
+      });
+      if (error) throw error;
+      if (!data?.ok) throw new Error(data?.error || "Échec de la génération du programme");
+      return data.nbLignesCreees as number;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: lignesKey(versionId) });
+      queryClient.invalidateQueries({ queryKey: versionsKey(dossierId) });
     },
   });
 }

@@ -4,6 +4,46 @@ export type DossierVoyage = Database["public"]["Tables"]["dossiers_voyage"]["Row
 export type DossierVoyageInsert = Database["public"]["Tables"]["dossiers_voyage"]["Insert"];
 export type DossierVoyageUpdate = Database["public"]["Tables"]["dossiers_voyage"]["Update"];
 
+export type DossierVoyageVersion = Database["public"]["Tables"]["dossiers_voyage_versions"]["Row"];
+export type DossierVoyageLigne = Database["public"]["Tables"]["dossiers_voyage_lignes"]["Row"];
+export type DossierVoyageLigneInsert = Database["public"]["Tables"]["dossiers_voyage_lignes"]["Insert"];
+export type DossierVoyageLigneUpdate = Database["public"]["Tables"]["dossiers_voyage_lignes"]["Update"];
+
+export type NatureLigne = "hebergement" | "restaurant" | "activite" | "transport" | "lieu_a_visiter" | "autre";
+export type OrigineLigne = "impose_shana" | "demande_client" | "ia";
+
+export const NATURE_LIGNE_OPTIONS: { value: NatureLigne; label: string }[] = [
+  { value: "hebergement", label: "Hébergement" },
+  { value: "restaurant", label: "Restaurant" },
+  { value: "activite", label: "Activité" },
+  { value: "transport", label: "Transport" },
+  { value: "lieu_a_visiter", label: "Lieu à visiter" },
+  { value: "autre", label: "Autre" },
+];
+
+export const ORIGINE_LIGNE_OPTIONS: { value: OrigineLigne; label: string }[] = [
+  { value: "impose_shana", label: "Imposé par Shana" },
+  { value: "demande_client", label: "Demandé par le client" },
+  { value: "ia", label: "Proposé par l'IA" },
+];
+
+/** Mappe le type d'une fiche Catalogue vers la nature la plus proche d'une ligne de dossier. */
+export function placeTypeVersNature(placeType: string): NatureLigne {
+  switch (placeType) {
+    case "hebergement":
+      return "hebergement";
+    case "restaurant":
+      return "restaurant";
+    case "activite":
+    case "bateau":
+      return "activite";
+    case "lieu_a_visiter":
+      return "lieu_a_visiter";
+    default:
+      return "autre";
+  }
+}
+
 export type DestinataireType = "client" | "influenceur";
 export type Objectif = "vente" | "collab";
 export type PointDepart = "explorer" | "proposition";

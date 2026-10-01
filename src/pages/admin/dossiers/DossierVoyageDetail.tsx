@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { ComposerSection } from "@/components/admin/dossiers/ComposerSection";
 import {
   copierLienDossierVoyage,
   errorMessage,
@@ -357,14 +358,7 @@ export default function DossierVoyageDetail() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">À venir</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
-          Le programme jour par jour (Composer) arrive à la prochaine étape du chantier.
-        </CardContent>
-      </Card>
+      <ComposerSection dossierId={dossier.id} versionActiveId={dossier.version_active_id} />
     </div>
   );
 }
