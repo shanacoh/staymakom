@@ -11,6 +11,11 @@ const MarqueeBanner = ({ className }: { className?: string }) => {
       <span className="font-normal">מלונות נבחרים.</span>
       <span className="font-bold"> חוויות בלתי נשכחות.</span>
     </>
+  ) : lang === 'fr' ? (
+    <>
+      <span className="font-normal">HÔTELS D'EXCEPTION.</span>
+      <span className="font-bold"> EXPÉRIENCES INOUBLIABLES.</span>
+    </>
   ) : (
     <>
       <span className="font-normal">HANDPICKED HOTELS.</span>

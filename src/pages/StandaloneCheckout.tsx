@@ -533,7 +533,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
         },
       });
       if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || "Impossible de créer la réservation.");
+      if (!data?.success) throw new Error(data?.error || (lang === "he" ? "לא ניתן ליצור את ההזמנה." : lang === "fr" ? "Impossible de créer la réservation." : "Unable to create the booking."));
       // Cas carte cadeau couvre 100% : pas de widget Revolut, on va directement à la confirmation
       if (user) saveProfileFields(user.id, leadGuest).catch(() => {/* non-bloquant */});
       if (data.no_payment_required) {
@@ -555,8 +555,8 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
       setPaymentDialogOpen(true);
     } catch (err: any) {
       setPaymentStatus("failed");
-      setPaymentErrorMessage(err.message || "Impossible de créer la réservation.");
-      toast.error(err.message || "Impossible de créer la réservation. Réessayez.");
+      setPaymentErrorMessage(err.message || (lang === "he" ? "לא ניתן ליצור את ההזמנה." : lang === "fr" ? "Impossible de créer la réservation." : "Unable to create the booking."));
+      toast.error(err.message || (lang === "he" ? "לא ניתן ליצור את ההזמנה. נסה/י שוב." : lang === "fr" ? "Impossible de créer la réservation. Réessayez." : "Unable to create the booking. Please try again."));
     } finally {
       setIsBookingLoading(false);
     }

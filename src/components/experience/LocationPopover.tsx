@@ -55,9 +55,9 @@ const LocationPopover = ({
     : `https://maps.apple.com/?q=${query}`;
 
   const options = [
-    { icon: "🗺", label: lang === "he" ? "פתח ב-Google Maps" : "Open in Google Maps", url: googleUrl },
-    { icon: "🚗", label: lang === "he" ? "פתח ב-Waze" : "Open in Waze", url: wazeUrl },
-    { icon: "🍎", label: lang === "he" ? "פתח ב-Apple Maps" : "Open in Apple Maps", url: appleUrl },
+    { icon: "🗺", label: lang === "he" ? "פתח ב-Google Maps" : lang === "fr" ? "Ouvrir dans Google Maps" : "Open in Google Maps", url: googleUrl },
+    { icon: "🚗", label: lang === "he" ? "פתח ב-Waze" : lang === "fr" ? "Ouvrir dans Waze" : "Open in Waze", url: wazeUrl },
+    { icon: "🍎", label: lang === "he" ? "פתח ב-Apple Maps" : lang === "fr" ? "Ouvrir dans Apple Maps" : "Open in Apple Maps", url: appleUrl },
   ];
 
   return (

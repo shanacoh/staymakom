@@ -53,7 +53,7 @@ const HeroBookingPreview2 = ({
           <div className="bg-muted/30 rounded-xl p-3 lg:p-4">
             <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              {lang === "he" ? "בודק מחירים..." : "Checking prices..."}
+              {lang === "he" ? "בודק מחירים..." : lang === "fr" ? "Vérification des prix..." : "Checking prices..."}
             </div>
           </div>
         </div>
@@ -68,13 +68,13 @@ const HeroBookingPreview2 = ({
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="flex items-baseline gap-1">
-              <span className="text-sm text-muted-foreground">{lang === "he" ? "מ-" : "From "}</span>
+              <span className="text-sm text-muted-foreground">{lang === "he" ? "מ-" : lang === "fr" ? "À partir de " : "From "}</span>
               <span className="text-lg font-semibold text-foreground">{symbol}{displayPrice}</span>
               <span className="text-sm text-muted-foreground">{nightLabel}</span>
             </div>
             {cheapestDate && (
               <p className="text-xs text-muted-foreground">
-                {format(cheapestDate.checkin, "dd MMM")} · 1 {lang === "he" ? "לילה" : "night"}
+                {format(cheapestDate.checkin, "dd MMM")} · 1 {lang === "he" ? "לילה" : lang === "fr" ? "nuit" : "night"}
               </p>
             )}
           </div>
@@ -83,7 +83,7 @@ const HeroBookingPreview2 = ({
             onClick={onViewDates}
             className="px-4 text-sm uppercase tracking-wide bg-foreground text-background hover:bg-foreground/90"
           >
-            {lang === "he" ? "לתאריכים" : "View dates"}
+            {lang === "he" ? "לתאריכים" : lang === "fr" ? "Voir les dates" : "View dates"}
           </Button>
         </div>
       </div>

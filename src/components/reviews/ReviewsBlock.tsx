@@ -11,7 +11,6 @@ type Lang = "fr" | "en" | "he";
 const T: Record<string, Record<Lang, string>> = {
   title: { fr: "Avis", en: "Reviews", he: "ביקורות" },
   reviewsWord: { fr: "avis", en: "reviews", he: "ביקורות" },
-  empty: { fr: "Les premiers avis arrivent bientôt.", en: "First reviews coming soon.", he: "ביקורות ראשונות בקרוב." },
   verified: { fr: "Avis vérifié", en: "Verified review", he: "ביקורת מאומתת" },
   sortRecent: { fr: "Plus récents", en: "Most recent", he: "החדשים ביותר" },
   sortTop: { fr: "Mieux notés", en: "Top rated", he: "המדורגים ביותר" },
@@ -71,11 +70,7 @@ export function ReviewsBlock({ reviews, averageRating, lang = "en", scope, entit
   }, [scope, entityId]);
 
   if (!reviews || reviews.length === 0) {
-    return (
-      <section ref={sectionRef} className="py-8 border-b border-border" id="reviews-block">
-        <p className="italic text-muted-foreground text-sm">{t("empty", lang)}</p>
-      </section>
-    );
+    return null;
   }
 
   const sorted = [...reviews].sort((a, b) => {

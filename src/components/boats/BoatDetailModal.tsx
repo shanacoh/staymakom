@@ -411,7 +411,7 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
       <>
         <Sheet open={!!boatId} onOpenChange={(open) => !open && onClose()}>
           <SheetContent side="bottom" hideCloseButton className="h-[92vh] rounded-t-2xl p-0 flex flex-col overflow-hidden">
-            <VisuallyHidden.Root><SheetTitle>{title || "Bateau"}</SheetTitle></VisuallyHidden.Root>
+            <VisuallyHidden.Root><SheetTitle>{title || (lang === "he" ? "סירה" : lang === "fr" ? "Bateau" : "Boat")}</SheetTitle></VisuallyHidden.Root>
             <div className="relative flex-1 min-h-0 overflow-y-auto">
               {closeButton}
               {body}
@@ -428,7 +428,7 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
     <>
       <Dialog open={!!boatId} onOpenChange={(open) => !open && onClose()}>
         <DialogContent hideCloseButton className="max-w-3xl max-h-[90vh] rounded-2xl p-0 flex flex-col overflow-hidden">
-          <VisuallyHidden.Root><DialogTitle>{title || "Bateau"}</DialogTitle></VisuallyHidden.Root>
+          <VisuallyHidden.Root><DialogTitle>{title || (lang === "he" ? "סירה" : lang === "fr" ? "Bateau" : "Boat")}</DialogTitle></VisuallyHidden.Root>
           <div className="relative flex-1 min-h-0 overflow-y-auto">
             {closeButton}
             {body}

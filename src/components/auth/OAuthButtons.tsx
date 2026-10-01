@@ -17,16 +17,19 @@ function getCopy(lang: Lang) {
       return {
         google: "Continuer avec Google",
         or: "ou",
+        googleError: "Échec de la connexion avec Google",
       };
     case "he":
       return {
         google: "המשך עם גוגל",
         or: "או",
+        googleError: "ההתחברות עם Google נכשלה",
       };
     default:
       return {
         google: "Continue with Google",
         or: "or",
+        googleError: "Failed to connect with Google",
       };
   }
 }
@@ -46,10 +49,10 @@ export default function OAuthButtons({ lang = "en", disabled = false }: OAuthBut
       });
 
       if (error) {
-        toast.error(error.message || "Failed to connect with Google");
+        toast.error(error.message || copy.googleError);
       }
     } catch {
-      toast.error("Failed to connect with Google");
+      toast.error(copy.googleError);
     } finally {
       setLoadingGoogle(false);
     }

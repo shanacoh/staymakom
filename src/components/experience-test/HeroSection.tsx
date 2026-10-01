@@ -241,7 +241,7 @@ const HeroSection = ({
     return (
       <div className="flex items-center gap-1.5 text-xs text-cta-foreground/60 uppercase tracking-wider font-medium">
         <Sparkles className="h-3.5 w-3.5" />
-        <span>{lang === 'he' ? 'נבחר ע״י STAYMAKOM' : 'Curated by STAYMAKOM'}</span>
+        <span>{lang === 'he' ? 'נבחר ע״י STAYMAKOM' : lang === 'fr' ? 'Sélectionné par STAYMAKOM' : 'Curated by STAYMAKOM'}</span>
       </div>
     );
   };
@@ -349,7 +349,7 @@ const HeroSection = ({
           </div>
           <div className={isMobile ? "text-center" : ""}>
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              {lang === 'he' ? 'מתארחים ב' : 'Hosted at'}
+              {lang === 'he' ? 'מתארחים ב' : lang === 'fr' ? 'Hébergé à' : 'Hosted at'}
             </p>
             <p className="text-sm font-medium text-foreground break-words">{hotelName}</p>
             <LocationPopover
@@ -503,7 +503,7 @@ const HeroSection = ({
                   >
                     <Grid3X3 className="h-4 w-4 text-foreground" />
                     <span className="text-sm font-medium text-foreground">
-                      {lang === 'he' ? `הצג את כל ${photos.length} התמונות` : `View all ${photos.length} photos`}
+                      {lang === 'he' ? `הצג את כל ${photos.length} התמונות` : lang === 'fr' ? `Voir les ${photos.length} photos` : `View all ${photos.length} photos`}
                     </span>
                   </button>
                 )}

@@ -40,7 +40,7 @@ const LaunchHamburgerMenu = ({ isScrolled = false }: LaunchHamburgerMenuProps) =
             onClick={handleNavClick}
             className="px-4 py-3 text-[15px] text-foreground hover:bg-foreground/5 rounded-lg transition-colors"
           >
-            {isRTL ? "גלה חוויות" : "Explore Escapes"}
+            {isRTL ? "גלה חוויות" : lang === "fr" ? "Explorer les escapades" : "Explore Escapes"}
           </Link>
 
           <Link
@@ -48,7 +48,7 @@ const LaunchHamburgerMenu = ({ isScrolled = false }: LaunchHamburgerMenuProps) =
             onClick={handleNavClick}
             className="px-4 py-3 text-[15px] text-foreground hover:bg-foreground/5 rounded-lg transition-colors"
           >
-            {isRTL ? "כרטיס מתנה" : "Gift a Stay"}
+            {isRTL ? "כרטיס מתנה" : lang === "fr" ? "Carte cadeau" : "Gift a Stay"}
           </Link>
 
           <Link
@@ -56,7 +56,7 @@ const LaunchHamburgerMenu = ({ isScrolled = false }: LaunchHamburgerMenuProps) =
             onClick={handleNavClick}
             className="px-4 py-3 text-[15px] text-foreground hover:bg-foreground/5 rounded-lg transition-colors"
           >
-            {isRTL ? "הפוך לשותף" : "I'm a hotel"}
+            {isRTL ? "הפוך לשותף" : lang === "fr" ? "Je suis un hôtel" : "I'm a hotel"}
           </Link>
 
           <Link
@@ -64,7 +64,7 @@ const LaunchHamburgerMenu = ({ isScrolled = false }: LaunchHamburgerMenuProps) =
             onClick={handleNavClick}
             className="px-4 py-3 text-[15px] text-foreground hover:bg-foreground/5 rounded-lg transition-colors"
           >
-            {isRTL ? "אודות" : "About"}
+            {isRTL ? "אודות" : lang === "fr" ? "À propos" : "About"}
           </Link>
 
           <Link
