@@ -252,7 +252,7 @@ const IndexV3 = () => {
           />
           <div className="absolute inset-0 bg-black/15" />
 
-          <div className="relative z-10 text-center text-white px-4 sm:px-6 max-w-3xl mx-auto -translate-y-10 sm:-translate-y-8">
+          <div className="relative z-10 text-center text-white px-4 sm:px-6 max-w-3xl mx-auto -translate-y-6 sm:-translate-y-4">
             <span className="md:hidden block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-[#ad1414] mb-4 opacity-0 animate-hero-fade-up">
               STAYMAKOM
             </span>
@@ -280,7 +280,14 @@ const IndexV3 = () => {
               <Button
                 onClick={() => {
                   trackHeroCtaClicked("find");
-                  document.getElementById("hero-cards-section")?.scrollIntoView({ behavior: "smooth" });
+                  const target = document.getElementById("hero-cards-section");
+                  if (target) {
+                    // Décale du haut pour laisser la place au header fixe (h-14 = 56px),
+                    // sinon il cache le titre "Handpicked Hotels..." juste en dessous.
+                    const headerOffset = 56;
+                    const top = target.getBoundingClientRect().top + window.scrollY - headerOffset;
+                    window.scrollTo({ top, behavior: "smooth" });
+                  }
                 }}
                 className="rounded-full bg-[#ad1414] text-white hover:bg-[#ad1414]/90 px-6 py-2.5 text-xs font-bold uppercase tracking-widest shadow-none"
               >
@@ -294,7 +301,7 @@ const IndexV3 = () => {
                 }}
                 className="rounded-full border-[#ad1414] text-[#ad1414] bg-transparent hover:bg-[#ad1414]/10 px-6 py-2.5 text-xs font-bold uppercase tracking-widest shadow-none"
               >
-                {isRTL ? "תכננו עם שנה" : lang === "fr" ? "Organiser avec Shana" : "Plan it with Shana"}
+                {isRTL ? "בקשה מיוחדת" : lang === "fr" ? "Demande spéciale" : "Special request"}
               </Button>
             </div>
           </div>
