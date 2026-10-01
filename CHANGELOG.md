@@ -27,6 +27,19 @@
 
 ---
 
+## [2026-10-01] — Chantier "Dossier de voyage" : étape 2, archivage des anciens dossiers swipe
+
+### Ce qui a changé côté code
+- `supabase/migrations/20261001020100_archive_old_dossiers_and_flag_models.sql`.
+
+### Ce qui a changé côté base de données
+- Sur les 8 anciens dossiers swipe (déjà copiés dans `dossiers_voyage` à l'étape précédente) : 3 marqués comme **modèles réutilisables** (`est_modele = true`), validés avec Shana — "JEREMY AWAKENS" (référence `MODELE-JEREMY`), "DUO ESCAPE | AIJA & NAS" (référence `MODELE-NAS-DAILY`), "SUZ&DAN DAY OF FUN" (référence `MODELE-ROMANTIQUE`). Les 5 autres marqués `archive = true`, `statut = 'termine'` (lecture seule).
+
+### Pourquoi ce changement
+- Les dossiers swipe envoyés par le passé devaient être triés : certains gardés comme patron de départ à dupliquer pour un nouveau client (les 3 modèles), les autres simplement conservés en lecture seule pour l'historique.
+
+---
+
 ## [2026-10-01] — Nouvelle page back-office "Automatisations"
 
 ### Ce qui a changé côté code
