@@ -1,6 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { CanalOrigine, DestinataireType, DossierVoyage, Objectif, PointDepart } from "./types";
+import type {
+  BriefData,
+  CanalOrigine,
+  DestinataireType,
+  DossierVoyage,
+  DossierVoyageUpdate,
+  Objectif,
+  PointDepart,
+} from "./types";
 
 const LIST_KEY = ["dossiers_voyage", "liste"] as const;
 const detailKey = (id: string) => ["dossiers_voyage", "detail", id] as const;
@@ -140,4 +148,38 @@ export function useDupliquerDossierVoyage() {
 
 export function copierLienDossierVoyage(tokenPublic: string): string {
   return `${window.location.origin}/voyage/${tokenPublic}`;
+}
+
+export function useUpdateDossierVoyage(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (patch: DossierVoyageUpdate): Promise<DossierVoyage> => {
+      const { data, error } = await supabase.from("dossiers_voyage").update(patch).eq("id", id).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: detailKey(id) });
+      queryClient.invalidateQueries({ queryKey: LIST_KEY });
+    },
+  });
+}
+
+/** Appelle l'edge function generate-dossier-brief : extrait un brief structuré du texte brut reçu. */
+export function useGenerateDossierBrief(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (): Promise<BriefData> => {
+      const { data, error } = await supabase.functions.invoke("generate-dossier-brief", {
+        body: { dossierId: id },
+      });
+      if (error) throw error;
+      if (!data?.ok) throw new Error(data?.error || "Échec de la génération du brief");
+      return data.brief as BriefData;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: detailKey(id) });
+      queryClient.invalidateQueries({ queryKey: LIST_KEY });
+    },
+  });
 }

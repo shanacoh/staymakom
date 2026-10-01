@@ -61,3 +61,24 @@ export const STATUT_OPTIONS: { value: StatutDossierVoyage; label: string; classN
 export function labelOf<T extends string>(options: { value: T; label: string }[], value: T): string {
   return options.find((o) => o.value === value)?.label ?? value;
 }
+
+/** Contenu de dossiers_voyage.brief_data, rempli par generate-dossier-brief (étape 4). */
+export interface BriefData {
+  contraintes: string | null;
+  envies: string | null;
+  incertitudes: string[];
+  questions_a_poser: string[];
+  message_whatsapp: string | null;
+}
+
+export function parseBriefData(value: unknown): BriefData {
+  const o = (value && typeof value === "object" ? (value as Record<string, unknown>) : {}) as Record<string, unknown>;
+  const strArray = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
+  return {
+    contraintes: typeof o.contraintes === "string" ? o.contraintes : null,
+    envies: typeof o.envies === "string" ? o.envies : null,
+    incertitudes: strArray(o.incertitudes),
+    questions_a_poser: strArray(o.questions_a_poser),
+    message_whatsapp: typeof o.message_whatsapp === "string" ? o.message_whatsapp : null,
+  };
+}
