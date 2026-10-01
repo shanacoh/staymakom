@@ -17,6 +17,7 @@ export type CommercialStatus =
 export type Source = "manuel" | "tiktok" | "instagram" | "recommandation" | "site" | "autre";
 export type LinkPlatform = "tiktok" | "instagram" | "youtube" | "facebook" | "google_maps" | "site_web" | "autre";
 export type LiveKind = "hotel" | "experience" | "standalone";
+export type ModeReservation = "reservable_en_ligne" | "demande_necessaire";
 
 /**
  * Une ligne de la "vitre" `catalogue_overview` : un lieu du catalogue avec, pour ceux qui sont
@@ -57,6 +58,14 @@ export interface CatalogueEntry {
   source: Source;
   created_at: string;
   updated_at: string;
+
+  /** Photo dédiée et prix client : nécessaires pour que ce lieu soit proposable en Explorer. */
+  photo_url: string | null;
+  prix_achat: number | null;
+  prix_client: number | null;
+  commission_pourcentage: number | null;
+  mode_reservation: ModeReservation | null;
+  lien_reservation: string | null;
 
   display_name: string;
   display_city: string | null;
@@ -117,6 +126,16 @@ export const SOURCE_OPTIONS: { value: Source; label: string }[] = [
   { value: "site", label: "Site Staymakom" },
   { value: "autre", label: "Autre" },
 ];
+
+export const MODE_RESERVATION_OPTIONS: { value: ModeReservation; label: string }[] = [
+  { value: "reservable_en_ligne", label: "Réservable en ligne" },
+  { value: "demande_necessaire", label: "Demande nécessaire" },
+];
+
+/** Une fiche n'est proposable dans le jeu Explorer que si elle a une photo dédiée et un prix client. */
+export function estUtilisableEnExplorer(entry: Pick<CatalogueEntry, "photo_url" | "prix_client">): boolean {
+  return Boolean(entry.photo_url) && entry.prix_client != null;
+}
 
 export const PLATFORM_LABELS: Record<LinkPlatform, string> = {
   tiktok: "TikTok",
