@@ -1,32 +1,37 @@
 import { useMemo, useState } from "react";
-import { Search, X } from "lucide-react";
+import { Plus, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCatalogueEntries } from "@/lib/catalogue/queries";
+import { PLACE_TYPE_OPTIONS } from "@/lib/catalogue/types";
 import { errorMessage, useUpdateDossierVoyage } from "@/lib/dossiersVoyage/queries";
 import { parseLieuxImposes, type DossierVoyage, type LieuImpose } from "@/lib/dossiersVoyage/types";
+
+function labelPlaceType(placeType: string): string {
+  return PLACE_TYPE_OPTIONS.find((o) => o.value === placeType)?.label ?? placeType;
+}
 
 export function LieuxImposesSection({ dossier }: { dossier: DossierVoyage }) {
   const lieux = parseLieuxImposes(dossier.lieux_imposes);
   const update = useUpdateDossierVoyage(dossier.id);
-  const { data: entries } = useCatalogueEntries();
+  const { data: entries, isLoading } = useCatalogueEntries();
 
+  const [dialogOuvert, setDialogOuvert] = useState(false);
   const [recherche, setRecherche] = useState("");
   const [origine, setOrigine] = useState<LieuImpose["origine"]>("impose_shana");
-  const [ouvert, setOuvert] = useState(false);
 
-  const suggestions = useMemo(() => {
+  const resultats = useMemo(() => {
     if (!entries) return [];
     const q = recherche.trim().toLowerCase();
     const dejaChoisis = new Set(lieux.map((l) => l.catalogue_item_id));
     const filtrees = q
-      ? entries.filter((e) => e.display_name.toLowerCase().includes(q))
-      : entries.slice(0, 20);
-    return filtrees.filter((e) => !dejaChoisis.has(e.id)).slice(0, 20);
+      ? entries.filter((e) => e.display_name.toLowerCase().includes(q) || (e.display_city ?? "").toLowerCase().includes(q))
+      : entries;
+    return filtrees.filter((e) => !dejaChoisis.has(e.id)).slice(0, 50);
   }, [entries, recherche, lieux]);
 
   const ajouter = async (catalogueItemId: string, nom: string) => {
@@ -34,8 +39,7 @@ export function LieuxImposesSection({ dossier }: { dossier: DossierVoyage }) {
       await update.mutateAsync({
         lieux_imposes: [...lieux, { catalogue_item_id: catalogueItemId, nom, origine }],
       });
-      setRecherche("");
-      setOuvert(false);
+      toast.success("Lieu ajouté");
     } catch (error) {
       toast.error(errorMessage(error));
     }
@@ -74,50 +78,66 @@ export function LieuxImposesSection({ dossier }: { dossier: DossierVoyage }) {
         ))}
       </div>
 
-      <div className="flex gap-2">
-        <Popover open={ouvert} onOpenChange={setOuvert}>
-          <PopoverTrigger asChild>
+      <Button type="button" variant="outline" size="sm" onClick={() => setDialogOuvert(true)}>
+        <Plus className="mr-1.5 h-3.5 w-3.5" />
+        Ajouter un lieu que tu veux absolument (Catalogue)
+      </Button>
+
+      <Dialog open={dialogOuvert} onOpenChange={setDialogOuvert}>
+        <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col">
+          <DialogHeader>
+            <DialogTitle>Ajouter un lieu imposé</DialogTitle>
+          </DialogHeader>
+          <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 className="pl-8"
-                placeholder="Ajouter un lieu que tu veux absolument (Catalogue)"
+                placeholder="Rechercher dans le Catalogue (hôtel, restaurant, activité...)"
                 value={recherche}
-                onChange={(e) => {
-                  setRecherche(e.target.value);
-                  setOuvert(true);
-                }}
-                onFocus={() => setOuvert(true)}
+                onChange={(e) => setRecherche(e.target.value)}
+                autoFocus
               />
             </div>
-          </PopoverTrigger>
-          <PopoverContent className="w-[--radix-popover-trigger-width] p-1" align="start">
-            <div className="max-h-64 space-y-0.5 overflow-y-auto">
-              {suggestions.length === 0 && <p className="p-2 text-xs text-muted-foreground">Aucun résultat.</p>}
-              {suggestions.map((e) => (
-                <button
-                  key={e.id}
-                  type="button"
-                  className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-sm hover:bg-muted"
-                  onClick={() => ajouter(e.id, e.display_name)}
-                >
-                  <span className="truncate">{e.display_name}</span>
-                  <span className="shrink-0 text-xs text-muted-foreground">{e.display_city}</span>
-                </button>
-              ))}
-            </div>
-          </PopoverContent>
-        </Popover>
-        <Select value={origine} onValueChange={(v) => setOrigine(v as LieuImpose["origine"])}>
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="impose_shana">Imposé par toi</SelectItem>
-            <SelectItem value="demande_client">Demandé par le client</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+            <Select value={origine} onValueChange={(v) => setOrigine(v as LieuImpose["origine"])}>
+              <SelectTrigger className="w-56">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="impose_shana">Imposé par toi</SelectItem>
+                <SelectItem value="demande_client">Demandé par le client</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex-1 space-y-1 overflow-y-auto">
+            {isLoading && <p className="p-2 text-sm text-muted-foreground">Chargement...</p>}
+            {!isLoading && resultats.length === 0 && <p className="p-2 text-sm text-muted-foreground">Aucun résultat.</p>}
+            {resultats.map((e) => (
+              <button
+                key={e.id}
+                type="button"
+                onClick={() => ajouter(e.id, e.display_name)}
+                className="flex w-full items-center gap-3 rounded-md border p-2 text-left text-sm hover:bg-muted"
+              >
+                {e.display_image ? (
+                  <img src={e.display_image} alt="" className="h-10 w-10 rounded-md object-cover" />
+                ) : (
+                  <div className="h-10 w-10 rounded-md bg-muted" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{e.display_name}</p>
+                  <div className="flex gap-2 text-xs text-muted-foreground">
+                    <Badge variant="outline" className="text-[10px]">
+                      {labelPlaceType(e.place_type)}
+                    </Badge>
+                    {e.display_city && <span>{e.display_city}</span>}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
