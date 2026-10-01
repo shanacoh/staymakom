@@ -136,23 +136,25 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { bookingId, newStatus }: BookingStatusUpdateRequest = await req.json();
+    const { bookingId, newStatus, preview }: BookingStatusUpdateRequest & { preview?: boolean } = await req.json();
     console.log("Processing status update for booking:", bookingId, "new status:", newStatus);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { data: booking, error: bookingError } = await supabase
+    // En mode aperçu sans id, on prend la réservation la plus récente pour montrer un rendu réel.
+    const bookingQuery = supabase
       .from("bookings")
       .select(`
         *,
         experience:experiences(title, title_he, slug, hero_image),
         hotel:hotels(name, name_he, city, city_he, hero_image),
         customer:customers(first_name, last_name, user_id)
-      `)
-      .eq("id", bookingId)
-      .single();
+      `);
+    const { data: booking, error: bookingError } = bookingId
+      ? await bookingQuery.eq("id", bookingId).single()
+      : await bookingQuery.order("created_at", { ascending: false }).limit(1).single();
 
     if (bookingError || !booking) {
       console.error("Booking not found:", bookingError);
@@ -163,12 +165,12 @@ const handler = async (req: Request): Promise<Response> => {
       booking.customer?.user_id
     );
 
-    if (userError || !userData?.user?.email) {
+    if ((userError || !userData?.user?.email) && !preview) {
       console.error("User email not found:", userError);
       throw new Error("Customer email not found");
     }
 
-    const customerEmail = userData.user.email;
+    const customerEmail = userData?.user?.email || "preview@staymakom.com";
     const customerName = `${booking.customer?.first_name || ''} ${booking.customer?.last_name || ''}`.trim() || 'Guest';
     
     const { data: profile } = await supabase
@@ -192,7 +194,7 @@ const handler = async (req: Request): Promise<Response> => {
       : booking.hotel?.city || '';
 
     const heroImage = booking.experience?.hero_image || booking.hotel?.hero_image || '';
-    const statusConfig = getStatusConfig(newStatus);
+    const statusConfig = getStatusConfig(newStatus || "confirmed");
 
     console.log("Sending status update to:", customerEmail);
 
@@ -325,6 +327,15 @@ const handler = async (req: Request): Promise<Response> => {
 </html>
     `;
 
+    const subject = `${statusConfig.emoji} ${isHebrew ? statusConfig.title.he : statusConfig.title.en} - ${experienceTitle}`;
+
+    if (preview) {
+      return new Response(
+        JSON.stringify({ html: emailHtml, subject }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -335,7 +346,7 @@ const handler = async (req: Request): Promise<Response> => {
         from: "Staymakom Reservations <reservations@staymakom.com>",
         to: [customerEmail],
         reply_to: "shana@staymakom.com",
-        subject: `${statusConfig.emoji} ${isHebrew ? statusConfig.title.he : statusConfig.title.en} - ${experienceTitle}`,
+        subject,
         html: emailHtml,
       }),
     });

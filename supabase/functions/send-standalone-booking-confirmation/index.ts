@@ -227,9 +227,9 @@ Deno.serve(async (req: Request) => {
 
   try {
     const body = await req.json();
-    const { confirmation_token } = body;
+    const { confirmation_token, preview } = body;
 
-    if (!confirmation_token) {
+    if (!confirmation_token && !preview) {
       return new Response(JSON.stringify({ error: 'confirmation_token manquant' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -248,11 +248,13 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { data: booking, error: bookingError } = await supabase
+    // En mode aperçu sans token, on prend la réservation la plus récente pour montrer un rendu réel.
+    const bookingQuery = supabase
       .from('standalone_bookings')
-      .select('id, customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, confirmation_token, custom_experience_title, custom_address, custom_regulations, standalone_experiences(title, address, address_he)')
-      .eq('confirmation_token', confirmation_token)
-      .single();
+      .select('id, customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, confirmation_token, custom_experience_title, custom_address, custom_regulations, standalone_experiences(title, address, address_he)');
+    const { data: booking, error: bookingError } = confirmation_token
+      ? await bookingQuery.eq('confirmation_token', confirmation_token).single()
+      : await bookingQuery.order('created_at', { ascending: false }).limit(1).single();
 
     if (bookingError || !booking) {
       return new Response(JSON.stringify({ error: 'Réservation introuvable' }), {
@@ -278,6 +280,15 @@ Deno.serve(async (req: Request) => {
       bookingRef: `SM-${booking.id.slice(0, 8).toUpperCase()}`,
     });
 
+    const subject = `✓ Your experience is confirmed — ${experienceTitle}`;
+
+    if (preview) {
+      return new Response(JSON.stringify({ html, subject }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const emailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -288,7 +299,7 @@ Deno.serve(async (req: Request) => {
         from: 'StayMakom <hello@staymakom.com>',
         reply_to: 'shana@staymakom.com',
         to: [booking.customer_email],
-        subject: `✓ Your experience is confirmed — ${experienceTitle}`,
+        subject,
         html,
       }),
     });

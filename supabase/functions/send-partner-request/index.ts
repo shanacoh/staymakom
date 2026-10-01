@@ -64,7 +64,8 @@ const handler = async (req: Request): Promise<Response> => {
       message,
       language = 'en',
       qualification,
-    }: PartnerRequest = await req.json();
+      preview,
+    }: PartnerRequest & { preview?: boolean } = await req.json();
 
     const goalLabels: Record<string, string> = {
       increase_visibility: "Increase international visibility",
@@ -208,29 +209,31 @@ const handler = async (req: Request): Promise<Response> => {
 </html>
     `;
 
-    // Send notification to Staymakom team
-    const teamResponse = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: "Staymakom Partners <partners@staymakom.com>",
-        to: ["shana@staymakom.com"],
-        reply_to: email,
-        subject: `🏨 New Partner: ${hotel_name}`,
-        html: teamEmailHtml,
-      }),
-    });
+    if (!preview) {
+      // Send notification to Staymakom team
+      const teamResponse = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${RESEND_API_KEY}`,
+        },
+        body: JSON.stringify({
+          from: "Staymakom Partners <partners@staymakom.com>",
+          to: ["shana@staymakom.com"],
+          reply_to: email,
+          subject: `🏨 New Partner: ${hotel_name}`,
+          html: teamEmailHtml,
+        }),
+      });
 
-    if (!teamResponse.ok) {
-      const error = await teamResponse.text();
-      console.error("Error sending team notification:", error);
-      throw new Error(`Failed to send team notification: ${error}`);
+      if (!teamResponse.ok) {
+        const error = await teamResponse.text();
+        console.error("Error sending team notification:", error);
+        throw new Error(`Failed to send team notification: ${error}`);
+      }
+
+      console.log("Team notification sent successfully");
     }
-
-    console.log("Team notification sent successfully");
 
     // Confirmation email to partner
     const confirmationEmailHtml = `
@@ -301,6 +304,13 @@ const handler = async (req: Request): Promise<Response> => {
 </body>
 </html>
     `;
+
+    if (preview) {
+      return new Response(
+        JSON.stringify({ html: confirmationEmailHtml, subject: isHebrew ? "קיבלנו את בקשת השותפות שלך! 🤝" : "We received your partnership request! 🤝" }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     // Send confirmation to partner
     const confirmResponse = await fetch("https://api.resend.com/emails", {

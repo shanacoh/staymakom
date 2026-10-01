@@ -53,9 +53,9 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { request_id } = await req.json();
+    const { request_id, preview } = await req.json();
 
-    if (!request_id) {
+    if (!request_id && !preview) {
       return new Response(JSON.stringify({ error: 'request_id manquant' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -74,11 +74,13 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { data: request, error: requestError } = await supabase
+    // En mode aperçu sans id, on prend la demande la plus récente pour montrer un rendu réel.
+    const requestQuery = supabase
       .from('standalone_experience_requests')
-      .select('id, customer_name, customer_email, customer_phone, requested_date, adults, children, message, created_at, desired_time_period, desired_time_value, is_urgent, preferred_city, requested_duration_minutes, source, standalone_experiences(title)')
-      .eq('id', request_id)
-      .single();
+      .select('id, customer_name, customer_email, customer_phone, requested_date, adults, children, message, created_at, desired_time_period, desired_time_value, is_urgent, preferred_city, requested_duration_minutes, source, standalone_experiences(title)');
+    const { data: request, error: requestError } = request_id
+      ? await requestQuery.eq('id', request_id).single()
+      : await requestQuery.order('created_at', { ascending: false }).limit(1).single();
 
     if (requestError || !request) {
       return new Response(JSON.stringify({ error: 'Demande introuvable' }), {
@@ -122,6 +124,15 @@ Deno.serve(async (req: Request) => {
         </p>
       </div>`;
 
+    const subject = `${request.is_urgent ? '⚡ URGENT — ' : ''}Nouvelle demande — ${subjectTitle}`;
+
+    if (preview) {
+      return new Response(JSON.stringify({ html, subject }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const emailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -132,7 +143,7 @@ Deno.serve(async (req: Request) => {
         from: 'StayMakom <hello@staymakom.com>',
         ...(request.customer_email ? { reply_to: request.customer_email } : {}),
         to: [NOTIFY_EMAIL],
-        subject: `${request.is_urgent ? '⚡ URGENT — ' : ''}Nouvelle demande — ${subjectTitle}`,
+        subject,
         html,
       }),
     });

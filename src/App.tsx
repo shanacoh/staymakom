@@ -103,6 +103,7 @@ const AdminBoatsProfitability    = lazy(() => import("./pages/admin/BoatsProfita
 const AdminReviews               = lazy(() => import("./pages/admin/Reviews"));
 const AdminCatalogue             = lazy(() => import("./pages/admin/Catalogue"));
 const AdminCarte                 = lazy(() => import("./pages/admin/Carte"));
+const AdminAutomations           = lazy(() => import("./pages/admin/Automations"));
 
 // ── Module Swipe Itinéraire ────────────────────────────────────────────────
 const SwipePublic                = lazy(() => import("./pages/swipe/SwipePublic"));
@@ -341,6 +342,7 @@ const AppContent = () => {
             <Route path="swipe/dossiers/:dossierId/resultats" element={<AdminSwipeDossierResultats />} />
             <Route path="swipe/bibliotheque" element={<AdminSwipeBibliotheque />} />
             <Route path="swipe/categories" element={<AdminSwipeCategories />} />
+            <Route path="automations" element={<AdminAutomations />} />
             {/* Charpente de navigation : écrans pas encore construits, en attendant leur tour */}
             <Route path="carte" element={<AdminCarte />} />
             <Route path="catalogue" element={<AdminCatalogue />} />

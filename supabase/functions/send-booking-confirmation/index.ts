@@ -274,6 +274,13 @@ const handler = async (req: Request): Promise<Response> => {
       ? (isHebrew ? `✕ הזמנתך בוטלה - ${experienceTitle || 'Experience'}` : isFrench ? `✕ Réservation annulée - ${experienceTitle || 'Experience'}` : `✕ Booking cancelled - ${experienceTitle || 'Experience'}`)
       : (isHebrew ? `✓ הזמנתך אושרה - ${experienceTitle || 'Experience'}` : isFrench ? `✓ Réservation confirmée - ${experienceTitle || 'Experience'}` : `✓ Booking confirmed - ${experienceTitle || 'Experience'}`);
 
+    if (body.preview) {
+      return new Response(
+        JSON.stringify({ html: emailHtml, subject }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {

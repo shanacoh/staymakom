@@ -45,57 +45,68 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const { leadId } = await req.json();
+    const { leadId, preview } = await req.json();
 
-    if (!leadId) {
+    if (!leadId && !preview) {
       return new Response(
         JSON.stringify({ success: false, error: 'leadId is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const { data: lead, error: fetchError } = await supabase
-      .from('leads')
-      .select('id, email, first_name, name, source, metadata')
-      .eq('id', leadId)
-      .single();
+    // En mode aperçu, pas de lecture/écriture en base : on construit l'email avec des données factices.
+    let lead: { id: string; email: string; first_name: string | null; name: string | null } = {
+      id: 'preview', email: 'preview@staymakom.com', first_name: 'Shana', name: 'Shana',
+    };
 
-    if (fetchError || !lead) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Lead not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (!preview) {
+      const { data: fetchedLead, error: fetchError } = await supabase
+        .from('leads')
+        .select('id, email, first_name, name, source, metadata')
+        .eq('id', leadId)
+        .single();
+
+      if (fetchError || !fetchedLead) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Lead not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (fetchedLead.source !== 'tailored_request') {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Only tailored_request leads can receive this questionnaire' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const token = crypto.randomUUID();
+      const sentAt = new Date().toISOString();
+
+      const { error: updateError } = await supabase
+        .from('leads')
+        .update({
+          metadata: {
+            ...(fetchedLead.metadata || {}),
+            questionnaire_token: token,
+            questionnaire_sent_at: sentAt,
+          },
+        })
+        .eq('id', leadId);
+
+      if (updateError) {
+        console.error('Failed to update lead metadata:', updateError);
+        return new Response(
+          JSON.stringify({ success: false, error: 'Failed to prepare questionnaire' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      lead = { ...fetchedLead, id: leadId } as typeof lead;
+      (lead as any)._token = token;
     }
 
-    if (lead.source !== 'tailored_request') {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Only tailored_request leads can receive this questionnaire' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const token = crypto.randomUUID();
-    const sentAt = new Date().toISOString();
-
-    const { error: updateError } = await supabase
-      .from('leads')
-      .update({
-        metadata: {
-          ...(lead.metadata || {}),
-          questionnaire_token: token,
-          questionnaire_sent_at: sentAt,
-        },
-      })
-      .eq('id', leadId);
-
-    if (updateError) {
-      console.error('Failed to update lead metadata:', updateError);
-      return new Response(
-        JSON.stringify({ success: false, error: 'Failed to prepare questionnaire' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
+    const token = preview ? 'preview-token' : (lead as any)._token;
     const firstName = lead.first_name || (lead.name ? lead.name.split(' ')[0] : null);
     const greeting = firstName ? escapeHTML(firstName) : 'there';
     const questionnaireUrl = `https://staymakom.com/tailor-questionnaire/${token}`;
@@ -159,6 +170,15 @@ serve(async (req) => {
 </body>
 </html>`;
 
+    const subject = 'One last thing… 🌿';
+
+    if (preview) {
+      return new Response(
+        JSON.stringify({ html: emailHtml, subject }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const emailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -169,7 +189,7 @@ serve(async (req) => {
         from: 'Staymakom <noreply@staymakom.com>',
         to: [lead.email],
         reply_to: 'shana@staymakom.com',
-        subject: 'One last thing… 🌿',
+        subject,
         html: emailHtml,
       }),
     });

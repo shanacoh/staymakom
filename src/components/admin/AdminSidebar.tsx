@@ -30,6 +30,7 @@ import {
   ChevronDown,
   AlertTriangle,
   Star,
+  Zap,
 } from "lucide-react";
 import {
   Sidebar,
@@ -77,6 +78,8 @@ type NavItem = {
   done?: boolean;
   // Marqueur temporaire : page en cours de refonte, pas encore validée (retiré une fois validée).
   inProgress?: boolean;
+  // Couleur du libellé, indépendante des marqueurs temporaires ci-dessus (ex: mise en avant permanente d'une page).
+  colorClass?: string;
 };
 
 const ACTIVE_CLASS = "bg-black text-white hover:bg-neutral-800 hover:text-red-300";
@@ -108,6 +111,7 @@ const autreItems: NavItem[] = [
   { title: "Journal", url: "/admin/journal", icon: BookOpen },
   { title: "Bibliothèque swipe", url: "/admin/swipe/bibliotheque", icon: Layers },
   { title: "Catégories swipe", url: "/admin/swipe/categories", icon: Tag },
+  { title: "Automatisations", url: "/admin/automations", icon: Zap, colorClass: "text-orange-500" },
 ];
 
 // Croissance
@@ -174,7 +178,8 @@ function NavGroup({
                       className={cn(
                         "text-sm font-medium",
                         item.done && "text-green-600",
-                        item.inProgress && "text-orange-500"
+                        item.inProgress && "text-orange-500",
+                        item.colorClass
                       )}
                     >
                       {item.title}

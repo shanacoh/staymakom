@@ -66,8 +66,9 @@ const handler = async (req: Request): Promise<Response> => {
       recipient_email,
       message,
       valid_until,
-      language = 'en'
-    }: GiftCardEmailRequest = await req.json();
+      language = 'en',
+      preview,
+    }: GiftCardEmailRequest & { preview?: boolean } = await req.json();
     
     // Server-side input validation
     const validationErrors: string[] = [];
@@ -257,6 +258,17 @@ const handler = async (req: Request): Promise<Response> => {
 </html>
     `;
 
+    const subject = isHebrew
+      ? `🎁 ${sender_name} שלח/ה לך מתנה מ-Staymakom!`
+      : `🎁 ${sender_name} sent you a Staymakom gift!`;
+
+    if (preview) {
+      return new Response(
+        JSON.stringify({ html: recipientEmailHtml, subject }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     // Send email to recipient via Resend API
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -268,9 +280,7 @@ const handler = async (req: Request): Promise<Response> => {
         from: "Staymakom Gifts <gifts@staymakom.com>",
         to: [recipient_email],
         reply_to: "shana@staymakom.com",
-        subject: isHebrew 
-          ? `🎁 ${sender_name} שלח/ה לך מתנה מ-Staymakom!`
-          : `🎁 ${sender_name} sent you a Staymakom gift!`,
+        subject,
         html: recipientEmailHtml,
       }),
     });

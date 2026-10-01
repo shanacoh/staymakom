@@ -125,6 +125,15 @@ const handler = async (req: Request): Promise<Response> => {
       </html>
     `;
 
+    const subject = `New Corporate Request: ${escapeHTML(requestTypeLabels[data.requestType] || data.requestType)}${data.companyName ? ` - ${escapeHTML(data.companyName)}` : ''}`;
+
+    if ((data as any).preview) {
+      return new Response(
+        JSON.stringify({ html: emailHtml, subject }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -135,7 +144,7 @@ const handler = async (req: Request): Promise<Response> => {
         from: "Staymakom <onboarding@resend.dev>",
         to: ["shana@staymakom.com"],
         reply_to: data.email,
-        subject: `New Corporate Request: ${escapeHTML(requestTypeLabels[data.requestType] || data.requestType)}${data.companyName ? ` - ${escapeHTML(data.companyName)}` : ''}`,
+        subject,
         html: emailHtml,
       }),
     });

@@ -193,24 +193,26 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { payment_id } = await req.json();
-    if (!payment_id) {
+    const { payment_id, preview } = await req.json();
+    if (!payment_id && !preview) {
       return new Response(JSON.stringify({ success: false, error: 'payment_id requis' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const { data: payment, error: paymentError } = await supabase
+    // En mode aperçu sans id, on prend le lien de paiement le plus récent pour montrer un rendu réel.
+    const paymentQuery = supabase
       .from('standalone_booking_payments')
-      .select('id, booking_id, kind, amount, currency, checkout_url, status')
-      .eq('id', payment_id)
-      .single();
+      .select('id, booking_id, kind, amount, currency, checkout_url, status');
+    const { data: payment, error: paymentError } = payment_id
+      ? await paymentQuery.eq('id', payment_id).single()
+      : await paymentQuery.order('created_at', { ascending: false }).limit(1).single();
     if (paymentError || !payment) {
       return new Response(JSON.stringify({ success: false, error: 'Lien de paiement introuvable' }), {
         status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    if (payment.status !== 'pending' || !payment.checkout_url) {
+    if (!preview && (payment.status !== 'pending' || !payment.checkout_url)) {
       return new Response(JSON.stringify({ success: false, error: 'Ce lien de paiement n\'est plus valide' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -250,9 +252,17 @@ Deno.serve(async (req: Request) => {
       kindLabel,
       amount: payment.amount,
       currency: payment.currency,
-      checkoutUrl: payment.checkout_url,
+      checkoutUrl: payment.checkout_url || 'https://staymakom.com',
       bookingRef: `SM-${payment.booking_id.slice(0, 8).toUpperCase()}`,
     });
+
+    const subject = `${kindLabel} payment link for ${experienceTitle}`;
+
+    if (preview) {
+      return new Response(JSON.stringify({ html, subject }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const emailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -264,7 +274,7 @@ Deno.serve(async (req: Request) => {
         from: 'StayMakom <hello@staymakom.com>',
         reply_to: 'shana@staymakom.com',
         to: [booking.customer_email],
-        subject: `${kindLabel} payment link for ${experienceTitle}`,
+        subject,
         html,
       }),
     });

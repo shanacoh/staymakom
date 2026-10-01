@@ -6,6 +6,22 @@
 
 ---
 
+## [2026-10-01] — Nouvelle page back-office "Automatisations"
+
+### Ce qui a changé côté code
+- Nouveau fichier `src/config/automations.ts` : registre codé en dur de toutes les automatisations du site (emails automatiques, webhooks de paiement, demandes d'avis, monitoring). Chaque entrée décrit le déclencheur, l'action, le destinataire et le statut. C'est la seule source de vérité listée dans la nouvelle page — toute nouvelle automatisation doit y être ajoutée au moment où elle est développée.
+- Nouvelle page `src/pages/admin/Automations.tsx` (route `/admin/automations`, section "Autre" du menu) : affiche les automatisations regroupées par catégorie (emails, paiement, avis, monitoring), avec un badge de statut (actif / à confirmer / désactivé) et, quand c'est possible, un bouton "Voir l'aperçu" qui affiche le rendu réel de l'email dans une fenêtre, sans en envoyer un vrai.
+- 10 fonctions email (`send-booking-confirmation`, `send-standalone-booking-confirmation`, `send-booking-payment-link-email`, `send-booking-status-update`, `send-gift-card`, `send-tailor-questionnaire`, `send-contact-request`, `send-corporate-request`, `send-partner-request`, `notify-standalone-experience-request`) : ajout d'un mode `preview: true` qui construit l'email normalement mais renvoie son HTML au lieu de l'envoyer via Resend. Pour les fonctions qui avaient besoin d'un identifiant de réservation/demande, l'aperçu retombe automatiquement sur l'enregistrement le plus récent en base si aucun identifiant n'est fourni. Déployées en production — le comportement d'envoi normal (sans ce flag) n'est pas modifié.
+- `src/App.tsx` et `src/components/admin/AdminSidebar.tsx` : route et entrée de menu pour la nouvelle page.
+
+### Ce qui a changé côté base de données
+- Aucune.
+
+### Pourquoi ce changement
+- Shana voulait une vue de référence unique, stable, listant tout ce qui s'envoie ou se déclenche automatiquement sur le site (quel mail, à qui, quand), avec la possibilité de voir le rendu réel d'un email sans risquer d'en envoyer un par erreur — y compris les automatisations évoquées mais pas encore branchées.
+
+---
+
 ## [2026-10-01] — Email de paiement (acompte/solde) aligné sur l'identité visuelle de la marque
 
 ### Ce qui a changé côté code
