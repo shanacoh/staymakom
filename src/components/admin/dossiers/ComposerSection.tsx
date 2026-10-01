@@ -113,23 +113,29 @@ function CataloguePickerDialog({
 
 function LigneRow({
   ligne,
+  nomLieu,
+  villeLieu,
   onDelete,
   onToggleVerrou,
 }: {
   ligne: DossierVoyageLigne;
+  nomLieu: string | null;
+  villeLieu: string | null;
   onDelete: () => void;
   onToggleVerrou: () => void;
 }) {
   const natureLabel = NATURE_LIGNE_OPTIONS.find((o) => o.value === ligne.nature)?.label ?? ligne.nature;
   const origineOption = ORIGINE_LIGNE_OPTIONS.find((o) => o.value === ligne.origine);
+  const titre = ligne.texte_libre || nomLieu || natureLabel;
   return (
     <div className="flex items-center gap-2 rounded-md border p-2 text-sm">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="font-medium">{ligne.texte_libre || natureLabel}</span>
+          <span className="font-medium">{titre}</span>
           <Badge variant="outline" className="text-[10px]">
             {natureLabel}
           </Badge>
+          {villeLieu && <span className="text-xs text-muted-foreground">{villeLieu}</span>}
           {origineOption && (
             <Badge
               variant="outline"
@@ -173,6 +179,8 @@ export function ComposerSection({ dossierId, versionActiveId }: { dossierId: str
   const ensureVersion = useEnsureVersionActive(dossierId);
   const { data: versions } = useDossierVersions(dossierId);
   const { data: lignes } = useVersionLignes(versionActiveId ?? undefined);
+  const { data: catalogueEntries } = useCatalogueEntries();
+  const catalogueParId = useMemo(() => new Map((catalogueEntries ?? []).map((e) => [e.id, e])), [catalogueEntries]);
   const createLigne = useCreateLigne(versionActiveId ?? "");
   const updateLigne = useUpdateLigne(versionActiveId ?? "");
   const deleteLigne = useDeleteLigne(versionActiveId ?? "");
@@ -287,9 +295,19 @@ export function ComposerSection({ dossierId, versionActiveId }: { dossierId: str
             <div className="space-y-1.5">
               {(lignes ?? [])
                 .filter((l) => l.jour === jour)
-                .map((l) => (
-                  <LigneRow key={l.id} ligne={l} onDelete={() => retirerLigne(l.id)} onToggleVerrou={() => toggleVerrou(l)} />
-                ))}
+                .map((l) => {
+                  const fiche = l.catalogue_item_id ? catalogueParId.get(l.catalogue_item_id) : undefined;
+                  return (
+                    <LigneRow
+                      key={l.id}
+                      ligne={l}
+                      nomLieu={fiche?.display_name ?? null}
+                      villeLieu={fiche?.display_city ?? null}
+                      onDelete={() => retirerLigne(l.id)}
+                      onToggleVerrou={() => toggleVerrou(l)}
+                    />
+                  );
+                })}
             </div>
           </div>
         ))}
