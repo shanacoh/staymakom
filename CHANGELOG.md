@@ -6,6 +6,21 @@
 
 ---
 
+## [2026-10-01] — Sprint 3, étape 5 : boutons CTA dans le hero de la home
+
+### Ce qui a changé côté code
+- `src/pages/IndexV3.tsx` : ajout de deux boutons sous le sous-titre du hero de la home — "Trouver une expérience" (fait défiler en douceur jusqu'à la section des cartes juste en dessous, en tenant compte du header fixe pour que le titre "Handpicked Hotels..." ne soit pas caché dessous) et "Demande spéciale" (ouvre le même formulaire que le bouton "CRÉER MON SÉJOUR" plus bas sur la page, via un mécanisme déjà existant dans le code pour ouvrir ce formulaire depuis ailleurs). Plusieurs allers-retours avec Shana sur le rendu (position du bloc, lisibilité du second bouton sur la photo — finalement un style "verre dépoli" blanc translucide).
+- `src/lib/analytics.ts` : nouvel événement `trackHeroCtaClicked`, envoyé à Amplitude (`hero_cta_clicked`, avec `cta: "find"` ou `"plan"`) à chaque clic sur l'un des deux boutons.
+- Développé d'abord sur une branche de preview (`test-hero-cta`) comme demandé, validé par Shana sur la preview Vercel avant fusion dans `main`.
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Donner un accès plus rapide, dès le hero, à la recherche d'une expérience ou à une demande personnalisée, sans attendre que le visiteur fasse défiler toute la page. Le formulaire qui s'ouvre sur "Demande spéciale" reste à repenser dans un prochain chantier — Shana y réfléchit encore, ce n'était pas dans le périmètre ici.
+
+---
+
 ## [2026-10-01] — Sprint 3 : signaux de confiance et version française propre (étapes 1 à 4)
 
 ### Ce qui a changé côté code
