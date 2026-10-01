@@ -217,6 +217,35 @@ serve(async (req) => {
         if (itineraryError) console.error('Failed to enrich itinerary_requests (non-blocking):', itineraryError);
       }
 
+      // Enrichit aussi le dossier de voyage correspondant (chantier Dossier de voyage).
+      // Même principe : best-effort, ne bloque jamais la réponse au client.
+      const briefUpdates: Record<string, unknown> = {};
+      if (requestData.metadata?.moods !== undefined) briefUpdates.moods = requestData.metadata.moods;
+      if (requestData.metadata?.timing) briefUpdates.timing = requestData.metadata.timing;
+      if (requestData.metadata?.budget) briefUpdates.budget = requestData.metadata.budget;
+      if (requestData.metadata?.description) briefUpdates.description = requestData.metadata.description;
+      if (Object.keys(briefUpdates).length > 0) {
+        const { data: dossierRows, error: dossierFindError } = await supabase
+          .from('dossiers_voyage')
+          .select('id, brief_data')
+          .eq('lead_id', requestData.leadId)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        if (dossierFindError) {
+          console.error('Failed to find dossiers_voyage row to enrich (non-blocking):', dossierFindError);
+        } else if (dossierRows && dossierRows.length > 0) {
+          const dossierRow = dossierRows[0];
+          const mergedBriefData = { ...((dossierRow.brief_data as Record<string, unknown>) || {}), ...briefUpdates };
+          const { error: dossierUpdateError } = await supabase
+            .from('dossiers_voyage')
+            .update({ brief_data: mergedBriefData })
+            .eq('id', dossierRow.id);
+          if (dossierUpdateError) {
+            console.error('Failed to enrich dossiers_voyage (non-blocking):', dossierUpdateError);
+          }
+        }
+      }
+
       console.log('tailored_request lead enriched (step 2):', requestData.leadId);
       return new Response(
         JSON.stringify({ success: true, leadId: requestData.leadId }),
@@ -287,6 +316,26 @@ serve(async (req) => {
           party_size: requestData.metadata?.people || null,
         }]);
         if (itineraryError) console.error('Failed to create itinerary_requests row (non-blocking):', itineraryError);
+
+        // Crée aussi le dossier de voyage correspondant (chantier Dossier de voyage,
+        // destiné à remplacer à terme l'onglet Itinéraires ci-dessus). Même principe :
+        // best-effort, ne bloque jamais la réponse au client.
+        const { error: dossierError } = await supabase.from('dossiers_voyage').insert([{
+          nom_destinataire: leadRecord.name || leadRecord.email,
+          email: leadRecord.email,
+          telephone: leadRecord.phone || null,
+          lead_id: data.id,
+          destinataire_type: 'client',
+          objectif: 'vente',
+          point_depart: 'proposition',
+          canal_origine: 'formulaire_site',
+          statut: 'nouvelle_demande',
+          brief_data: {
+            occasion: requestData.metadata?.occasion || null,
+            nb_personnes: requestData.metadata?.people || null,
+          },
+        }]);
+        if (dossierError) console.error('Failed to create dossiers_voyage row (non-blocking):', dossierError);
       }
 
       return new Response(
