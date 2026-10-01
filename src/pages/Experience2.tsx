@@ -18,7 +18,8 @@ import YourStaySection from "@/components/experience-test/YourStaySection";
 const LocationMap = lazy(() => import("@/components/experience-test/LocationMap"));
 import StickyPriceBar from "@/components/experience-test/StickyPriceBar";
 import PracticalInfo from "@/components/experience-test/PracticalInfo";
-import ReviewsGrid2 from "@/components/experience-test/ReviewsGrid2";
+import { ReviewsBlock } from "@/components/reviews/ReviewsBlock";
+import { useReviewsSummary } from "@/hooks/useReviewsSummary";
 import ExtrasSection2, { type SelectedExtra } from "@/components/experience-test/ExtrasSection2";
 import ShareWithFriendsSection from "@/components/experience/ShareWithFriendsSection";
 import OtherExperiences2 from "@/components/experience-test/OtherExperiences2";
@@ -195,24 +196,9 @@ export default function Experience2() {
   // Reviews for rating display in hero
   // ---------------------------------------------------------------------------
 
-  const { data: reviewsData } = useQuery({
-    queryKey: ["experience2-reviews-rating", experience?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("experience2_reviews")
-        .select("rating")
-        .eq("experience_id", experience!.id)
-        .eq("is_visible", true);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!experience?.id,
-  });
-
-  const reviewsCount = reviewsData?.length ?? 0;
-  const averageRating = reviewsCount > 0
-    ? reviewsData!.reduce((acc, r) => acc + r.rating, 0) / reviewsCount
-    : null;
+  const { data: reviewsSummary } = useReviewsSummary({ scope: "experience2", entityId: experience?.id });
+  const reviewsCount = reviewsSummary?.count ?? 0;
+  const averageRating = reviewsSummary?.averageRating ?? null;
 
   // ---------------------------------------------------------------------------
   // Availability rules (public, only active)
@@ -697,7 +683,13 @@ export default function Experience2() {
 
             {/* Reviews */}
             <div ref={reviewsRef}>
-              <ReviewsGrid2 experienceId={experience.id} lang={lang} />
+              <ReviewsBlock
+                reviews={reviewsSummary?.reviews ?? []}
+                averageRating={averageRating}
+                lang={lang as "fr" | "en" | "he"}
+                scope="experience2"
+                entityId={experience.id}
+              />
             </div>
 
             {/* Practical Info - Things to know */}

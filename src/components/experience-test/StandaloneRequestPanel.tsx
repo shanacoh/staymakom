@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, Calendar, CheckCircle2 } from "lucide-react";
 import { fr, he } from "date-fns/locale";
+import { ReassuranceLine } from "@/components/reviews/ReassuranceLine";
 
 interface StandaloneRequestPanelProps {
   experienceId: string;
@@ -200,6 +201,7 @@ export default function StandaloneRequestPanel({
         >
           {t.cta}
         </Button>
+        <ReassuranceLine lang={lang} />
       </div>
     );
   }

@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
 import EditStandaloneBookingDialog from "@/components/admin/EditStandaloneBookingDialog";
+import { trackReviewRequestSent } from "@/lib/analytics";
 
 export default function AdminStandaloneBookingDetails() {
   const { bookingId } = useParams();
@@ -33,13 +34,14 @@ export default function AdminStandaloneBookingDetails() {
   const [duplicateOpen, setDuplicateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [customDepositDialog, setCustomDepositDialog] = useState<{ open: boolean; mode: "fixed" | "percentage"; value: string }>({ open: false, mode: "fixed", value: "" });
 
   const { data: booking, isLoading } = useQuery({
     queryKey: ["admin-standalone-booking-details", bookingId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_bookings")
-        .select("*, standalone_experiences(title, slug, address, has_time_slots, supplier_booking_url)")
+        .select("*, standalone_experiences(title, slug, address, has_time_slots, supplier_booking_url, deposit_type, deposit_amount)")
         .eq("id", bookingId!)
         .single();
       if (error) throw error;
@@ -53,19 +55,19 @@ export default function AdminStandaloneBookingDetails() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("standalone_booking_payments")
-        .select("id, kind, amount, currency, status, checkout_url, created_at")
+        .select("id, kind, amount, currency, status, checkout_url, created_at, paid_at")
         .eq("booking_id", bookingId!)
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return data as { id: string; kind: string; amount: number; currency: string; status: string; checkout_url: string | null; created_at: string }[];
+      return data as { id: string; kind: string; amount: number; currency: string; status: string; checkout_url: string | null; created_at: string; paid_at: string | null }[];
     },
     enabled: !!bookingId,
   });
 
   const generatePaymentLinkMutation = useMutation({
-    mutationFn: async (kind: "deposit" | "balance") => {
+    mutationFn: async (params: { kind: "deposit" | "balance"; manual_deposit?: { mode: "fixed" | "percentage"; value: number } }) => {
       const { data, error } = await supabase.functions.invoke("create-booking-payment-link", {
-        body: { booking_id: bookingId, kind },
+        body: { booking_id: bookingId, kind: params.kind, manual_deposit: params.manual_deposit },
       });
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || "Échec de la création du lien");
@@ -74,8 +76,21 @@ export default function AdminStandaloneBookingDetails() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-standalone-booking-payments", bookingId] });
       toast.success("Lien de paiement créé");
+      setCustomDepositDialog({ open: false, mode: "fixed", value: "" });
     },
-    onError: (error: any) => toast.error("Impossible de créer le lien", { description: error.message }),
+    onError: (error: any) => toast.error("Impossible de créer le lien", { description: error.context?.body?.error || error.message }),
+  });
+
+  const sendPaymentLinkEmailMutation = useMutation({
+    mutationFn: async (payment_id: string) => {
+      const { data, error } = await supabase.functions.invoke("send-booking-payment-link-email", {
+        body: { payment_id },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Échec de l'envoi de l'email");
+    },
+    onSuccess: () => toast.success("Email envoyé au client"),
+    onError: (error: any) => toast.error("Impossible d'envoyer l'email", { description: error.context?.body?.error || error.message }),
   });
 
   const sendPaymentLinkOnWhatsApp = (checkoutUrl: string, kind: string) => {
@@ -86,12 +101,59 @@ export default function AdminStandaloneBookingDetails() {
     window.open(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
+  const { data: existingReviewRequest } = useQuery({
+    queryKey: ["admin-standalone-booking-review-request", bookingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("review_requests")
+        .select("id, token, status, sent_at")
+        .eq("booking_type", "standalone_bookings")
+        .eq("booking_id", bookingId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!bookingId,
+  });
+
+  const requestReviewMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase
+        .from("review_requests")
+        .insert({ booking_type: "standalone_bookings", booking_id: bookingId, channel: "whatsapp", lang: "en", status: "sent_j1" })
+        .select("token")
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-standalone-booking-review-request", bookingId] });
+      trackReviewRequestSent("standalone_bookings", "whatsapp", "en");
+      const digits = (booking.customer_phone || "").replace(/[^\d]/g, "");
+      const link = `https://staymakom.com/avis/${data.token}`;
+      const text = `Bonjour ${booking.customer_name}, merci encore pour votre réservation "${booking.standalone_experiences?.title || ""}" ! Pourriez-vous nous laisser un avis ? ${link}`;
+      window.open(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`, "_blank");
+    },
+    onError: (error: any) => toast.error("Impossible de créer la demande d'avis", { description: error.message }),
+  });
+
+  const copyPaymentLink = async (checkoutUrl: string) => {
+    try {
+      await navigator.clipboard.writeText(checkoutUrl);
+      toast.success("Lien copié");
+    } catch {
+      toast.error("Impossible de copier le lien");
+    }
+  };
+
   const totalPaid = (payments ?? [])
     .filter((p) => p.status === "paid")
     .reduce((sum, p) => sum + Number(p.amount), 0);
   const hasPendingDeposit = (payments ?? []).some((p) => p.kind === "deposit" && p.status === "pending");
   const hasPendingBalance = (payments ?? []).some((p) => p.kind === "balance" && p.status === "pending");
   const isFullyPaidViaPayments = booking ? totalPaid >= Number(booking.sell_price) : false;
+  const depositRule = booking?.standalone_experiences as { deposit_type?: string; deposit_amount?: number } | null;
+  const hasConfiguredDepositRule = !!depositRule?.deposit_type && depositRule.deposit_type !== "none" && !!depositRule?.deposit_amount;
 
   const markRefundDoneMutation = useMutation({
     mutationFn: async (revolut_refund_id: string) => {
@@ -548,47 +610,185 @@ export default function AdminStandaloneBookingDetails() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap gap-2">
+          {booking && (
+            <div className="grid grid-cols-3 gap-3 rounded-lg border bg-muted/30 p-3 text-center">
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Prix total</p>
+                <p className="text-lg font-bold">{Number(booking.sell_price).toLocaleString()} {booking.currency}</p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Payé</p>
+                <p className={`text-lg font-bold ${totalPaid > 0 ? "text-green-600" : ""}`}>{totalPaid.toLocaleString()} {booking.currency}</p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Reste à payer</p>
+                {isFullyPaidViaPayments ? (
+                  <p className="text-lg font-bold text-green-600 flex items-center justify-center gap-1">
+                    <CheckCircle className="h-4 w-4" /> Soldé
+                  </p>
+                ) : (
+                  <p className="text-lg font-bold text-amber-600">
+                    {(Number(booking.sell_price) - totalPaid).toLocaleString()} {booking.currency}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center gap-2">
+            {hasConfiguredDepositRule ? (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={hasPendingDeposit || generatePaymentLinkMutation.isPending}
+                onClick={() => generatePaymentLinkMutation.mutate({ kind: "deposit" })}
+              >
+                {generatePaymentLinkMutation.isPending && generatePaymentLinkMutation.variables?.kind === "deposit" && !generatePaymentLinkMutation.variables?.manual_deposit && (
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                )}
+                Générer lien d'acompte
+              </Button>
+            ) : (
+              <>
+                <span className="text-xs text-muted-foreground">Acompte (pas de règle configurée) :</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={hasPendingDeposit || generatePaymentLinkMutation.isPending}
+                  onClick={() => generatePaymentLinkMutation.mutate({ kind: "deposit", manual_deposit: { mode: "fixed", value: 500 } })}
+                >
+                  {generatePaymentLinkMutation.isPending && generatePaymentLinkMutation.variables?.manual_deposit?.mode === "fixed" && generatePaymentLinkMutation.variables?.manual_deposit?.value === 500 && (
+                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  )}
+                  500₪
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={hasPendingDeposit || generatePaymentLinkMutation.isPending}
+                  onClick={() => generatePaymentLinkMutation.mutate({ kind: "deposit", manual_deposit: { mode: "percentage", value: 30 } })}
+                >
+                  {generatePaymentLinkMutation.isPending && generatePaymentLinkMutation.variables?.manual_deposit?.mode === "percentage" && generatePaymentLinkMutation.variables?.manual_deposit?.value === 30 && (
+                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  )}
+                  30%
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={hasPendingDeposit || generatePaymentLinkMutation.isPending}
+                  onClick={() => setCustomDepositDialog({ open: true, mode: "fixed", value: "" })}
+                >
+                  Montant / % libre
+                </Button>
+              </>
+            )}
             <Button
               size="sm"
-              variant="outline"
-              disabled={hasPendingDeposit || generatePaymentLinkMutation.isPending}
-              onClick={() => generatePaymentLinkMutation.mutate("deposit")}
-            >
-              {generatePaymentLinkMutation.isPending && generatePaymentLinkMutation.variables === "deposit" && (
-                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-              )}
-              Générer lien d'acompte
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
+              variant={!isFullyPaidViaPayments && !hasPendingBalance && totalPaid > 0 ? "default" : "outline"}
               disabled={isFullyPaidViaPayments || hasPendingBalance || generatePaymentLinkMutation.isPending}
-              onClick={() => generatePaymentLinkMutation.mutate("balance")}
+              onClick={() => generatePaymentLinkMutation.mutate({ kind: "balance" })}
             >
-              {generatePaymentLinkMutation.isPending && generatePaymentLinkMutation.variables === "balance" && (
+              {generatePaymentLinkMutation.isPending && generatePaymentLinkMutation.variables?.kind === "balance" && (
                 <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
               )}
               Générer lien de solde
             </Button>
           </div>
 
+          <Dialog open={customDepositDialog.open} onOpenChange={(open) => setCustomDepositDialog((d) => ({ ...d, open }))}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Acompte — montant ou pourcentage libre</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Select value={customDepositDialog.mode} onValueChange={(v: "fixed" | "percentage") => setCustomDepositDialog((d) => ({ ...d, mode: v }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fixed">Montant fixe ({booking?.currency})</SelectItem>
+                    <SelectItem value="percentage">Pourcentage du prix total</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div>
+                  <Label>{customDepositDialog.mode === "fixed" ? `Montant (${booking?.currency})` : "Pourcentage (%)"}</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={customDepositDialog.value}
+                    onChange={(e) => setCustomDepositDialog((d) => ({ ...d, value: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setCustomDepositDialog({ open: false, mode: "fixed", value: "" })}>Annuler</Button>
+                <Button
+                  disabled={!customDepositDialog.value || Number(customDepositDialog.value) <= 0 || generatePaymentLinkMutation.isPending}
+                  onClick={() => generatePaymentLinkMutation.mutate({
+                    kind: "deposit",
+                    manual_deposit: { mode: customDepositDialog.mode, value: Number(customDepositDialog.value) },
+                  })}
+                >
+                  {generatePaymentLinkMutation.isPending && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
+                  Générer le lien
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           {payments && payments.length > 0 ? (
             <div className="space-y-2">
               {payments.map((p) => (
-                <div key={p.id} className="flex items-center justify-between gap-3 rounded-lg border p-2.5 text-sm">
-                  <div>
-                    <span className="font-medium capitalize">{p.kind === "deposit" ? "Acompte" : "Solde"}</span>{" "}
-                    <span className="text-muted-foreground">{p.amount} {p.currency}</span>
+                <div
+                  key={p.id}
+                  className={`flex items-center justify-between gap-3 rounded-lg border p-2.5 text-sm ${
+                    p.status === "paid" ? "border-green-200 bg-green-50" : ""
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {p.status === "paid" && <CheckCircle className="h-4 w-4 text-green-600 shrink-0" />}
+                    <div>
+                      <span className="font-medium capitalize">{p.kind === "deposit" ? "Acompte" : "Solde"}</span>{" "}
+                      <span className={p.status === "paid" ? "text-green-700 font-medium" : "text-muted-foreground"}>
+                        {p.amount} {p.currency}
+                      </span>
+                      {p.status === "paid" && p.paid_at && (
+                        <p className="text-xs text-green-700/80">Payé le {format(parseISO(p.paid_at), "dd MMM yyyy à HH:mm")}</p>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={p.status === "paid" ? "default" : p.status === "pending" ? "secondary" : "destructive"}>
-                      {p.status === "paid" ? "Payé" : p.status === "pending" ? "En attente" : p.status}
-                    </Badge>
-                    {p.status === "pending" && p.checkout_url && booking.customer_phone && (
-                      <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => sendPaymentLinkOnWhatsApp(p.checkout_url!, p.kind)}>
-                        <Send className="h-3 w-3 mr-1 text-green-700" /> Envoyer sur WhatsApp
-                      </Button>
+                    {p.status !== "paid" && (
+                      <Badge variant={p.status === "pending" ? "secondary" : "destructive"}>
+                        {p.status === "pending" ? "En attente" : p.status}
+                      </Badge>
+                    )}
+                    {p.status === "pending" && p.checkout_url && (
+                      <>
+                        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => copyPaymentLink(p.checkout_url!)}>
+                          <Copy className="h-3 w-3 mr-1" /> Copier le lien
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs"
+                          disabled={sendPaymentLinkEmailMutation.isPending && sendPaymentLinkEmailMutation.variables === p.id}
+                          onClick={() => sendPaymentLinkEmailMutation.mutate(p.id)}
+                        >
+                          {sendPaymentLinkEmailMutation.isPending && sendPaymentLinkEmailMutation.variables === p.id ? (
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          ) : (
+                            <Mail className="h-3 w-3 mr-1" />
+                          )}
+                          Envoyer par email
+                        </Button>
+                        {booking.customer_phone && (
+                          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => sendPaymentLinkOnWhatsApp(p.checkout_url!, p.kind)}>
+                            <Send className="h-3 w-3 mr-1 text-green-700" /> Envoyer sur WhatsApp
+                          </Button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -596,6 +796,41 @@ export default function AdminStandaloneBookingDetails() {
             </div>
           ) : (
             <p className="text-xs text-muted-foreground italic">Aucun lien généré pour l'instant.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Send className="h-4 w-4" /> Avis client
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {existingReviewRequest ? (
+            <p className="text-sm text-muted-foreground">
+              Demande déjà envoyée le {format(parseISO(existingReviewRequest.sent_at), "dd/MM/yyyy")}
+              {existingReviewRequest.status === "submitted" ? " — avis déposé." : "."}
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Envoie le même lien que l'email automatique J+1, directement sur WhatsApp.
+            </p>
+          )}
+          {booking.customer_phone && (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={requestReviewMutation.isPending}
+              onClick={() => requestReviewMutation.mutate()}
+            >
+              {requestReviewMutation.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <Send className="h-3.5 w-3.5 mr-1.5 text-green-700" />
+              )}
+              Demander un avis sur WhatsApp
+            </Button>
           )}
         </CardContent>
       </Card>

@@ -94,11 +94,13 @@ const ItineraireChoix            = lazy(() => import("./pages/ItineraireChoix"))
 const StandaloneExperience       = lazy(() => import("./pages/StandaloneExperience"));
 const StandaloneCheckout         = lazy(() => import("./pages/StandaloneCheckout"));
 const StandaloneBookingConfirmation = lazy(() => import("./pages/StandaloneBookingConfirmation"));
+const PublicReviewForm           = lazy(() => import("./pages/PublicReviewForm"));
 const TailorMadeQuestionnaire    = lazy(() => import("./pages/TailorMadeQuestionnaire"));
 const AdminStandaloneBookingDetails = lazy(() => import("./pages/admin/StandaloneBookingDetails"));
 const AdminBoatExperiences       = lazy(() => import("./pages/admin/BoatExperiences"));
 const AdminProviders             = lazy(() => import("./pages/admin/Providers"));
 const AdminBoatsProfitability    = lazy(() => import("./pages/admin/BoatsProfitability"));
+const AdminReviews               = lazy(() => import("./pages/admin/Reviews"));
 const AdminCatalogue             = lazy(() => import("./pages/admin/Catalogue"));
 const AdminCarte                 = lazy(() => import("./pages/admin/Carte"));
 
@@ -266,6 +268,7 @@ const AppContent = () => {
           <Route path="/boat/:slug" element={<StandaloneExperience />} />
           <Route path="/standalone-checkout" element={<StandaloneCheckout />} />
           <Route path="/standalone-booking/confirmation/:token" element={<StandaloneBookingConfirmation />} />
+          <Route path="/avis/:token" element={<PublicReviewForm />} />
           <Route path="/tailor-questionnaire/:token" element={<TailorMadeQuestionnaire />} />
           <Route path="/swipe/:token" element={<SwipePublic />} />
           <Route path="/checkout" element={<Checkout />} />
@@ -344,6 +347,7 @@ const AppContent = () => {
             <Route path="itineraires" element={<ComingSoonAdmin title="Itinéraires" description="Brief, propositions IA et recherche manuelle pour construire un itinéraire client." />} />
             <Route path="partenaires/experiences" element={<AdminProviders />} />
             <Route path="rentabilite/bateaux" element={<AdminBoatsProfitability />} />
+            <Route path="avis" element={<AdminReviews />} />
             <Route path="promo" element={<AdminPromoCodes />} />
             <Route path="errors" element={<AdminErrors />} />
             <Route path="headquarter/sales" element={<ComingSoonAdmin title="Sales" />} />

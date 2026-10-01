@@ -217,15 +217,19 @@ const HeroSection = ({
     wishlistMutation.mutate({ isAdding: !isInWishlist });
   };
 
-  // Curated badge or rating display
+  // Badge "Curated" si 0 avis, avis seuls (sans moyenne) si 1-2 avis, moyenne + avis à partir de 3.
   const renderSocialProof = () => {
-    if (averageRating && reviewsCount > 0) {
+    if (reviewsCount > 0) {
       return (
         <div className="flex items-center gap-1.5 text-sm">
-          <Star className="h-3.5 w-3.5 fill-foreground text-foreground" />
-          <span className="font-medium">{averageRating.toFixed(1)}</span>
-          <span className="text-muted-foreground">·</span>
-          <button 
+          {averageRating != null && (
+            <>
+              <Star className="h-3.5 w-3.5 fill-foreground text-foreground" />
+              <span className="font-medium">{averageRating.toFixed(1)}</span>
+              <span className="text-muted-foreground">·</span>
+            </>
+          )}
+          <button
             onClick={onScrollToReviews}
             className="text-muted-foreground underline hover:text-foreground transition-colors"
           >

@@ -6,6 +6,35 @@
 
 ---
 
+## [2026-10-01] — Système d'avis clients (demande, collecte, modération, affichage)
+
+### Ce qui a changé côté code
+- Nouvelle page back-office `src/pages/admin/Reviews.tsx` (route `/admin/avis`) : file de modération (publier/masquer avec raison/épingler/répondre/rattacher), formulaire de saisie manuelle avec case "accord de publication obtenu".
+- `src/pages/admin/Dashboard.tsx` et `src/components/admin/AdminSidebar.tsx` : compteur d'avis en attente de modération.
+- `src/pages/admin/Providers.tsx` : colonne note moyenne / nombre d'avis par prestataire, alerte visuelle si la moyenne descend sous 4/5.
+- Nouveaux composants partagés `src/components/reviews/` (`ReviewsBlock`, `ReviewsTeaser`, `ReassuranceLine`, `BrandReviewsSection`) et hook `src/hooks/useReviewsSummary.ts` : remplacent `ReviewsGrid2` et la note/le nombre d'avis codés en dur (`null`/`0`) dans `StandaloneExperience.tsx`. Règle d'affichage : moyenne visible seulement à partir de 3 avis publiés.
+- `src/pages/Experience2.tsx`, `src/pages/StandaloneExperience.tsx`, `src/pages/Index.tsx`, `src/components/experience-test/HeroSection.tsx`, `src/components/experience/BookingPanel2.tsx`, `src/components/experience-test/StandaloneRequestPanel.tsx` : branchement des vrais avis, badge "Avis vérifié", repli sur les avis "bateaux" en général quand un bateau précis n'en a pas, phrase de réassurance sous le CTA.
+- Nouvelle page publique `src/pages/PublicReviewForm.tsx` (route `/avis/:token`) : formulaire sans compte (note, texte, consentement, langue du client).
+- Nouvelles fonctions Supabase : `send-review-requests` (cron à activer, J+1 + relance J+5, même mécanisme pour hôtel/standalone/bateau), `get-review-request-by-token`, `submit-review` (crédite 50 Traces si le client a un compte).
+- `supabase/functions/process-standalone-payment` et `process-booking` : enregistrent désormais la langue du client sur la réservation (`preferred_lang`), nécessaire pour l'email J+1 envoyé sans navigateur ouvert.
+- `src/pages/admin/StandaloneBookingDetails.tsx` : bouton "Demander un avis sur WhatsApp" (même lien que l'email automatique).
+- `src/pages/admin/Settings.tsx` : réglage de la phrase de réassurance (texte FR/EN/HE + interrupteur).
+
+### Ce qui a changé côté base de données
+- Migration `20261001000000_create_reviews_table.sql` : nouvelle table `reviews`, unique pour tout le site (expérience standalone, hôtel+expérience, bateau, marque).
+- Migration `20261001000100_create_review_requests_table.sql` : table `review_requests`, suivi du lien d'avis (token, J+1, relance J+5, canal email/WhatsApp).
+- Migration `20261001000200_add_preferred_lang_to_bookings.sql` : colonne `preferred_lang` sur `standalone_bookings` et `bookings_hg`.
+- Migration `20261001000300_create_app_settings_table.sql` puis `20261001000500_reassurance_on_global_settings.sql` : une table générique `app_settings` a été créée par erreur avant de découvrir que `global_settings` (déjà utilisée par la page Réglages) convenait mieux pour un réglage unique ; `app_settings` a été abandonnée et supprimée, la phrase de réassurance vit sur `global_settings.reassurance_*`.
+- Migration `20261001000400_migrate_experience2_reviews_to_reviews.sql` : reprise des 28 avis de l'ancienne table `experience2_reviews` vers `reviews`, en statut **masqué** (voir "Pourquoi" ci-dessous).
+
+### Pourquoi ce changement
+- Rassurer les visiteurs sur les pages expériences avec de vrais avis clients, collectés automatiquement après chaque expérience (hôtel, standalone, bateau, sans traitement spécial pour les bateaux) ou saisis à la main par Shana, puis modérés et affichés en respectant les règles non négociables : jamais d'avis inventé, jamais masqué pour une note basse, publication seulement avec l'accord du client.
+- **Point d'attention découvert en cours de route** : les 28 avis affichés jusqu'ici sur les fiches hôtel+expérience étaient tous à 5 étoiles avec des noms génériques ("La famille Fontaine"...) — manifestement des avis de remplissage, pas de vrais avis clients. Décision validée avec Shana : ils sont conservés en base mais **masqués**, donc invisibles sur le site dès maintenant. Les fiches hôtel+expérience afficheront "Curated by STAYMAKOM" le temps que de vrais avis arrivent, comme les fiches standalone.
+- **Reste à faire avant que la collecte automatique parte réellement** : la fonction `send-review-requests` est déployée mais **pas encore programmée pour tourner chaque jour** (ni `pg_cron` ni équivalent n'étaient configurés sur le projet) — volontairement, pour ne pas envoyer de vrais emails à de vrais clients sans l'accord explicite de Shana. À activer depuis le dashboard Supabase (Edge Functions → Cron) une fois les textes d'email validés.
+- Le bouton WhatsApp "Demander un avis" n'existe que sur les réservations standalone (bateaux inclus) : la table des réservations hôtel (`bookings_hg`) ne contient pas de numéro de téléphone client aujourd'hui.
+
+---
+
 ## [2026-10-01] — Suivi des demandes bateaux par étapes + boutons WhatsApp 1-clic
 
 ### Ce qui a changé côté code

@@ -223,6 +223,7 @@ Deno.serve(async (req: Request) => {
       user_id: body.userId || null,
       confirmation_token: confirmationToken,
       idempotency_key: idempotencyKey,
+      preferred_lang: ['fr', 'en', 'he'].includes(body.lang) ? body.lang : null,
       revolut_order_id: body.revolutOrderId || null,
       payment_status: 'paid',
       paid_at: new Date().toISOString(),

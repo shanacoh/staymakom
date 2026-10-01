@@ -513,6 +513,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
           customer_name: `${leadGuest.firstName.trim()} ${leadGuest.lastName.trim()}`,
           customer_email: leadGuest.email.trim(),
           customer_phone: leadGuest.phone.trim() || null,
+          lang,
           selected_extras_ids: state.selectedExtras?.map((e) => e.id) ?? [],
           promo_code: appliedPromo ? {
             id: appliedPromo.id,

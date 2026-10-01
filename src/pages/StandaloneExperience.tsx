@@ -15,7 +15,10 @@ import PracticalInfo from "@/components/experience-test/PracticalInfo";
 import WhatsIncludedPhotos2 from "@/components/experience-test/WhatsIncludedPhotos2";
 import StandaloneExtrasSection from "@/components/experience-test/StandaloneExtrasSection";
 import StandaloneRequestPanel from "@/components/experience-test/StandaloneRequestPanel";
-import ReviewsGrid2 from "@/components/experience-test/ReviewsGrid2";
+import { ReviewsBlock } from "@/components/reviews/ReviewsBlock";
+import { ReviewsTeaser } from "@/components/reviews/ReviewsTeaser";
+import { ReassuranceLine } from "@/components/reviews/ReassuranceLine";
+import { useReviewsSummary } from "@/hooks/useReviewsSummary";
 import OtherStandaloneExperiences from "@/components/experience-test/OtherStandaloneExperiences";
 import ShareWithFriendsSection from "@/components/experience/ShareWithFriendsSection";
 import VitrineBookingBlockedDialog from "@/components/VitrineBookingBlockedDialog";
@@ -26,7 +29,7 @@ import MobileFooterMinimal from "@/components/MobileFooterMinimal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { useLanguage } from "@/hooks/useLanguage";
+import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
 import { SEOHead } from "@/components/SEOHead";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumbJsonLd";
 import {
@@ -407,6 +410,33 @@ export default function StandaloneExperience() {
     ? (lang === "fr" ? experience.categories.name_fr || experience.categories.name : lang === "he" ? experience.categories.name_he || experience.categories.name : experience.categories.name)
     : undefined;
   const categorySlug = experience?.categories?.slug ?? undefined;
+
+  // /boat : quand ce bateau précis n'a pas encore d'avis, on élargit aux avis de la catégorie "bateaux".
+  const { data: boatExperienceIdsForFallback } = useQuery({
+    queryKey: ["boat-experience-ids-for-reviews-fallback"],
+    queryFn: async () => {
+      const { data: category } = await supabase
+        .from("categories")
+        .select("id")
+        .eq("slug", "bateaux")
+        .maybeSingle();
+      if (!category) return [];
+      const { data, error } = await supabase
+        .from("standalone_experiences")
+        .select("id")
+        .eq("category_id", category.id);
+      if (error) return [];
+      return (data || []).map((e) => e.id);
+    },
+    enabled: categorySlug === "bateaux",
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: reviewsSummary } = useReviewsSummary({
+    scope: "standalone_experience",
+    entityId: experience?.id,
+    fallbackExperienceIds: categorySlug === "bateaux" ? boatExperienceIdsForFallback : undefined,
+  });
 
   const currencySymbol = experience ? getCurrencySymbol(experience.currency) : "₪";
   const leadTimeDays = experience?.lead_time_days ?? 0;
@@ -944,6 +974,20 @@ export default function StandaloneExperience() {
         >
           {lang === "he" ? "המשך ←" : lang === "fr" ? "Continuer →" : "Continue →"}
         </Button>
+
+        <ReassuranceLine lang={lang as "fr" | "en" | "he"} />
+
+        {experience.cancellation_policy && (
+          <p className="text-xs text-muted-foreground text-center">
+            {getLocalizedField(experience, "cancellation_policy", lang) as string || experience.cancellation_policy}
+          </p>
+        )}
+
+        <ReviewsTeaser
+          reviews={reviewsSummary?.reviews ?? []}
+          lang={lang as "fr" | "en" | "he"}
+          onSeeAllClick={() => reviewsRef.current?.scrollIntoView({ behavior: "smooth" })}
+        />
       </div>
     );
   };
@@ -981,6 +1025,13 @@ export default function StandaloneExperience() {
                 "priceCurrency": experience.currency || "ILS",
                 "availability": "https://schema.org/InStock",
                 "url": `https://staymakom.com/standalone-experience/${experience.slug}`
+              }
+            }),
+            ...(reviewsSummary && reviewsSummary.count > 0 && reviewsSummary.averageRating != null && {
+              "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": Number(reviewsSummary.averageRating.toFixed(1)),
+                "reviewCount": reviewsSummary.count
               }
             })
           })
@@ -1032,8 +1083,8 @@ export default function StandaloneExperience() {
             experienceMode="live"
             minParty={experience.min_party}
             maxParty={experience.max_party}
-            averageRating={null}
-            reviewsCount={0}
+            averageRating={reviewsSummary?.averageRating ?? null}
+            reviewsCount={reviewsSummary?.count ?? 0}
             onScrollToReviews={() => reviewsRef.current?.scrollIntoView({ behavior: "smooth" })}
             slug={experience.slug}
           />
@@ -1085,7 +1136,13 @@ export default function StandaloneExperience() {
 
               {/* Reviews */}
               <div ref={reviewsRef}>
-                <ReviewsGrid2 experienceId={experience.id} lang={lang} />
+                <ReviewsBlock
+                  reviews={reviewsSummary?.reviews ?? []}
+                  averageRating={reviewsSummary?.averageRating ?? null}
+                  lang={lang as "fr" | "en" | "he"}
+                  scope="standalone_experience"
+                  entityId={experience.id}
+                />
               </div>
 
               {/* Things to know */}

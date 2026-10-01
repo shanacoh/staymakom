@@ -34,6 +34,7 @@ import { fr, he } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import type { CheckoutState } from "@/pages/Checkout";
 import { trackDurationTabClicked, trackDateSelected, trackViewDatesClicked, trackGuestsSelected, trackRoomTypeSelected, trackBookThisStayClicked, trackNoAvailabilityShown } from "@/lib/analytics";
+import { ReassuranceLine } from "@/components/reviews/ReassuranceLine";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useCustomerNationality } from "@/hooks/useCustomerNationality";
 import { DateRange } from "react-day-picker";
@@ -1118,6 +1119,8 @@ export function BookingPanel2({
         >
           {isStep1Complete ? t.next : t.selectDates}
         </Button>
+
+        <ReassuranceLine lang={lang} />
 
         <p className="text-[11px] text-muted-foreground text-center leading-snug">
           {lang === "he"

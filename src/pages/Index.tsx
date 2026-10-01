@@ -57,6 +57,7 @@ import AIExperienceAssistant from "@/components/AIExperienceAssistant";
 import StickyAIButton from "@/components/StickyAIButton";
 import MarqueeBanner from "@/components/MarqueeBanner";
 import HowItWorksBanner from "@/components/HowItWorksBanner";
+import BrandReviewsSection from "@/components/reviews/BrandReviewsSection";
 import heroImage from "@/assets/hero-image-new.jpg";
 import desertHero from "@/assets/desert-hero.jpg";
 import desertKioskHero from "@/assets/desert-kiosk-hero.png";
@@ -659,6 +660,9 @@ const Index = () => {
           )}
         </section>
 
+
+        {/* Avis sur la marque STAYMAKOM */}
+        <BrandReviewsSection lang={lang as "fr" | "en" | "he"} />
 
         {/* Journal Section */}
         <JournalSection lang={lang} />

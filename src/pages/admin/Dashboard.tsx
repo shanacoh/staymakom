@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { subDays, isAfter } from "date-fns";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -96,6 +96,23 @@ function useNewErrorsCount() {
   return data || 0;
 }
 
+// Nombre d'avis clients en attente de modération (ni publiés, ni masqués).
+function usePendingReviewsCount() {
+  const { data } = useQuery({
+    queryKey: ["dashboard-pending-reviews-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("reviews")
+        .select("id", { count: "exact", head: true })
+        .eq("moderation_status", "pending");
+      if (error) return 0;
+      return count || 0;
+    },
+    refetchInterval: 60000,
+  });
+  return data || 0;
+}
+
 // Réservations / Encaissé / Commission dépendent d'une logique de réservation encore éparpillée
 // entre bookings_hg (hôtels, quasi vide) et standalone_bookings (expériences) : tant que Shana n'a
 // pas nettoyé/lié cette logique, on affiche un état "à lier" plutôt qu'un chiffre potentiellement faux.
@@ -135,6 +152,7 @@ function LeadsTile({
 const AdminDashboard = () => {
   const issues = useUnpaidConfirmedBookings();
   const newErrorsCount = useNewErrorsCount();
+  const pendingReviewsCount = usePendingReviewsCount();
 
   const { data: leads } = useQuery({
     queryKey: ["dashboard-leads-pulse"],
@@ -224,6 +242,27 @@ const AdminDashboard = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 shrink-0"
             >
               <Link to="/admin/errors">Voir les erreurs</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {pendingReviewsCount > 0 && (
+        <Card className="border-amber-400/40 bg-amber-50/60">
+          <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Star className="h-5 w-5 text-amber-600 shrink-0" />
+              <div>
+                <div className="font-bold text-amber-700 text-sm">
+                  {pendingReviewsCount} avis à modérer
+                </div>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Avis reçus (lien automatique ou saisie manuelle) en attente de publication ou de masquage.
+                </p>
+              </div>
+            </div>
+            <Button asChild variant="outline" className="shrink-0">
+              <Link to="/admin/avis">Voir les avis</Link>
             </Button>
           </CardContent>
         </Card>

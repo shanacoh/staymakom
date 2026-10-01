@@ -136,7 +136,10 @@ Deno.serve(async (req: Request) => {
       selected_rate_option_id,
       promo_code: promoCodePayload,
       gift_card: giftCardPayload,
+      lang,
     } = body;
+
+    const preferredLang = ['fr', 'en', 'he'].includes(lang) ? lang : null;
 
     const adults: number = typeof adultsRaw === 'number' ? adultsRaw : (legacyPartySize ?? 1);
     const children: number = typeof childrenRaw === 'number' ? childrenRaw : 0;
@@ -314,6 +317,7 @@ Deno.serve(async (req: Request) => {
           status: 'confirmed', payment_status: 'paid',
           extras: extrasSnapshot.length > 0 ? extrasSnapshot : null,
           rate_option: selectedRateOption,
+          preferred_lang: preferredLang,
         }])
         .select('id, confirmation_token')
         .single();
@@ -394,6 +398,7 @@ Deno.serve(async (req: Request) => {
         revolut_public_id: revolut.publicId,
         extras: extrasSnapshot.length > 0 ? extrasSnapshot : null,
         rate_option: selectedRateOption,
+        preferred_lang: preferredLang,
       }])
       .select('id, confirmation_token')
       .single();

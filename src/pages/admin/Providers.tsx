@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Star, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -102,6 +102,27 @@ export default function AdminProviders() {
     },
   });
 
+  // Note moyenne et nombre d'avis publiés par prestataire, pour repérer une note qui baisse.
+  const { data: reviewStatsByProvider } = useQuery({
+    queryKey: ["admin-providers-review-stats"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("reviews")
+        .select("provider_id, rating")
+        .eq("moderation_status", "published")
+        .not("provider_id", "is", null);
+      if (error) throw error;
+      const stats: Record<string, { sum: number; count: number }> = {};
+      (data || []).forEach((r: { provider_id: string; rating: number | null }) => {
+        if (r.rating == null) return;
+        if (!stats[r.provider_id]) stats[r.provider_id] = { sum: 0, count: 0 };
+        stats[r.provider_id].sum += r.rating;
+        stats[r.provider_id].count += 1;
+      });
+      return stats;
+    },
+  });
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const payload = {
@@ -187,19 +208,20 @@ export default function AdminProviders() {
               <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Email</TableHead>
               <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Langue</TableHead>
               <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Politique</TableHead>
+              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Avis</TableHead>
               <TableHead className="h-8 w-[90px] px-3 text-[10px] uppercase tracking-wider">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-6 text-sm">
+                <TableCell colSpan={7} className="text-center py-6 text-sm">
                   Chargement...
                 </TableCell>
               </TableRow>
             ) : list.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-6 text-sm text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-6 text-sm text-muted-foreground">
                   Aucun prestataire pour l'instant
                 </TableCell>
               </TableRow>
@@ -216,6 +238,19 @@ export default function AdminProviders() {
                     ) : (
                       <ProviderPolicyBadge policyValidated={false} />
                     )}
+                  </TableCell>
+                  <TableCell className="py-2 px-3 text-xs">
+                    {(() => {
+                      const stats = reviewStatsByProvider?.[provider.id];
+                      if (!stats || stats.count === 0) return <span className="text-muted-foreground">—</span>;
+                      const avg = stats.sum / stats.count;
+                      return (
+                        <span className={`flex items-center gap-1 ${avg < 4 ? "text-destructive" : ""}`}>
+                          {avg < 4 && <AlertTriangle className="h-3 w-3" />}
+                          <Star className="h-3 w-3 fill-current" /> {avg.toFixed(1)} ({stats.count})
+                        </span>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell className="py-2 px-3">
                     <div className="flex items-center gap-1">

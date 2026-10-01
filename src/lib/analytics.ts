@@ -628,3 +628,27 @@ export function identifyWhatsappClicked() {
   } catch {}
   safeSetUserProperty("whatsapp_clicks_count", newCount);
 }
+
+// ============================================
+// J. AVIS CLIENTS (5 events)
+// ============================================
+
+export function trackReviewRequestSent(bookingType: "standalone_bookings" | "bookings_hg", channel: "email" | "whatsapp", lang: string) {
+  safeTrack("review_request_sent", { booking_type: bookingType, channel, lang });
+}
+
+export function trackReviewLinkOpened(status: "opened" | "already_submitted") {
+  safeTrack("review_link_opened", { status });
+}
+
+export function trackReviewSubmitted(rating: number | null, scope: string) {
+  safeTrack("review_submitted", { rating, scope });
+}
+
+export function trackReviewPublished(scope: string) {
+  safeTrack("review_published", { scope });
+}
+
+export function trackReviewsBlockScrolled(scope: string, entityId?: string) {
+  safeTrack("reviews_block_scrolled", { scope, entity_id: entityId });
+}

@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2, AlertTriangle, Mail, CheckCircle2, XCircle } from "lucide-react";
 
@@ -103,6 +105,10 @@ const AdminSettings = () => {
     default_currency: "USD",
     stripe_publishable_key: "",
     service_fee: 0,
+    reassurance_enabled: true,
+    reassurance_text_fr: "",
+    reassurance_text_en: "",
+    reassurance_text_he: "",
   });
 
   const { data: settings, isLoading } = useQuery({
@@ -131,6 +137,10 @@ const AdminSettings = () => {
         default_currency: settings.default_currency || "USD",
         stripe_publishable_key: settings.stripe_publishable_key || "",
         service_fee: (settings as any).service_fee ?? 0,
+        reassurance_enabled: (settings as any).reassurance_enabled ?? true,
+        reassurance_text_fr: (settings as any).reassurance_text_fr || "",
+        reassurance_text_en: (settings as any).reassurance_text_en || "",
+        reassurance_text_he: (settings as any).reassurance_text_he || "",
       });
     }
   }, [settings]);
@@ -314,6 +324,55 @@ const AdminSettings = () => {
                 Contacter l'administrateur pour configurer STRIPE_SECRET_KEY dans l'environnement backend.
               </AlertDescription>
             </Alert>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+              Réassurance
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Phrase affichée sous le bouton de réservation sur toutes les fiches. Ne l'active que si tu peux la tenir.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 p-4 pt-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="reassurance-enabled">Afficher la phrase</Label>
+              <Switch
+                id="reassurance-enabled"
+                checked={formData.reassurance_enabled}
+                onCheckedChange={(v) => setFormData({ ...formData, reassurance_enabled: v })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reassurance-fr">Texte (français)</Label>
+              <Textarea
+                id="reassurance-fr"
+                rows={2}
+                value={formData.reassurance_text_fr}
+                onChange={(e) => setFormData({ ...formData, reassurance_text_fr: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reassurance-en">Texte (anglais)</Label>
+              <Textarea
+                id="reassurance-en"
+                rows={2}
+                value={formData.reassurance_text_en}
+                onChange={(e) => setFormData({ ...formData, reassurance_text_en: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reassurance-he">Texte (hébreu)</Label>
+              <Textarea
+                id="reassurance-he"
+                rows={2}
+                dir="rtl"
+                value={formData.reassurance_text_he}
+                onChange={(e) => setFormData({ ...formData, reassurance_text_he: e.target.value })}
+              />
+            </div>
           </CardContent>
         </Card>
 
