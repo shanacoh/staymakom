@@ -368,6 +368,7 @@ export type Database = {
           party_size: number
           payment_method: string | null
           payment_status: string | null
+          preferred_lang: string | null
           rate_plan: string | null
           refund_amount: number
           refunded_at: string | null
@@ -413,6 +414,7 @@ export type Database = {
           party_size?: number
           payment_method?: string | null
           payment_status?: string | null
+          preferred_lang?: string | null
           rate_plan?: string | null
           refund_amount?: number
           refunded_at?: string | null
@@ -458,6 +460,7 @@ export type Database = {
           party_size?: number
           payment_method?: string | null
           payment_status?: string | null
+          preferred_lang?: string | null
           rate_plan?: string | null
           refund_amount?: number
           refunded_at?: string | null
@@ -497,11 +500,81 @@ export type Database = {
           },
         ]
       }
+      catalogue_item_teasers: {
+        Row: {
+          catalogue_item_id: string
+          description_sensorielle: string | null
+          description_sensorielle_en: string | null
+          description_sensorielle_he: string | null
+          nom_code: string
+          nom_code_en: string | null
+          nom_code_he: string | null
+          secteur_latitude: number | null
+          secteur_libelle: string | null
+          secteur_longitude: number | null
+          secteur_rayon_km: number
+          statut: string
+          updated_at: string
+          updated_by: string | null
+          visuel_url: string | null
+        }
+        Insert: {
+          catalogue_item_id: string
+          description_sensorielle?: string | null
+          description_sensorielle_en?: string | null
+          description_sensorielle_he?: string | null
+          nom_code: string
+          nom_code_en?: string | null
+          nom_code_he?: string | null
+          secteur_latitude?: number | null
+          secteur_libelle?: string | null
+          secteur_longitude?: number | null
+          secteur_rayon_km?: number
+          statut?: string
+          updated_at?: string
+          updated_by?: string | null
+          visuel_url?: string | null
+        }
+        Update: {
+          catalogue_item_id?: string
+          description_sensorielle?: string | null
+          description_sensorielle_en?: string | null
+          description_sensorielle_he?: string | null
+          nom_code?: string
+          nom_code_en?: string | null
+          nom_code_he?: string | null
+          secteur_latitude?: number | null
+          secteur_libelle?: string | null
+          secteur_longitude?: number | null
+          secteur_rayon_km?: number
+          statut?: string
+          updated_at?: string
+          updated_by?: string | null
+          visuel_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogue_item_teasers_catalogue_item_id_fkey"
+            columns: ["catalogue_item_id"]
+            isOneToOne: true
+            referencedRelation: "catalogue_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogue_item_teasers_catalogue_item_id_fkey"
+            columns: ["catalogue_item_id"]
+            isOneToOne: true
+            referencedRelation: "catalogue_overview"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       catalogue_items: {
         Row: {
           address: string | null
           city: string | null
           commercial_status: string
+          commission_pourcentage: number | null
           contact_email: string | null
           contact_instagram: string | null
           contact_name: string | null
@@ -517,12 +590,18 @@ export type Database = {
           id: string
           last_contact_date: string | null
           latitude: number | null
+          legacy_proposition_id: string | null
+          lien_reservation: string | null
           longitude: number | null
+          mode_reservation: string | null
           name: string
           nature: string
           next_followup_date: string | null
           notes: string | null
+          photo_url: string | null
           place_type: string
+          prix_achat: number | null
+          prix_client: number | null
           region: string | null
           source: string
           standalone_experience_id: string | null
@@ -538,6 +617,7 @@ export type Database = {
           address?: string | null
           city?: string | null
           commercial_status?: string
+          commission_pourcentage?: number | null
           contact_email?: string | null
           contact_instagram?: string | null
           contact_name?: string | null
@@ -553,12 +633,18 @@ export type Database = {
           id?: string
           last_contact_date?: string | null
           latitude?: number | null
+          legacy_proposition_id?: string | null
+          lien_reservation?: string | null
           longitude?: number | null
+          mode_reservation?: string | null
           name: string
           nature?: string
           next_followup_date?: string | null
           notes?: string | null
+          photo_url?: string | null
           place_type?: string
+          prix_achat?: number | null
+          prix_client?: number | null
           region?: string | null
           source?: string
           standalone_experience_id?: string | null
@@ -574,6 +660,7 @@ export type Database = {
           address?: string | null
           city?: string | null
           commercial_status?: string
+          commission_pourcentage?: number | null
           contact_email?: string | null
           contact_instagram?: string | null
           contact_name?: string | null
@@ -589,12 +676,18 @@ export type Database = {
           id?: string
           last_contact_date?: string | null
           latitude?: number | null
+          legacy_proposition_id?: string | null
+          lien_reservation?: string | null
           longitude?: number | null
+          mode_reservation?: string | null
           name?: string
           nature?: string
           next_followup_date?: string | null
           notes?: string | null
+          photo_url?: string | null
           place_type?: string
+          prix_achat?: number | null
+          prix_client?: number | null
           region?: string | null
           source?: string
           standalone_experience_id?: string | null
@@ -890,6 +983,7 @@ export type Database = {
       }
       dossier_propositions: {
         Row: {
+          catalogue_item_id: string | null
           created_at: string
           dossier_id: string
           id: string
@@ -897,6 +991,7 @@ export type Database = {
           proposition_id: string
         }
         Insert: {
+          catalogue_item_id?: string | null
           created_at?: string
           dossier_id: string
           id?: string
@@ -904,6 +999,7 @@ export type Database = {
           proposition_id: string
         }
         Update: {
+          catalogue_item_id?: string | null
           created_at?: string
           dossier_id?: string
           id?: string
@@ -912,10 +1008,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "dossier_propositions_catalogue_item_id_fkey"
+            columns: ["catalogue_item_id"]
+            isOneToOne: false
+            referencedRelation: "catalogue_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dossier_propositions_catalogue_item_id_fkey"
+            columns: ["catalogue_item_id"]
+            isOneToOne: false
+            referencedRelation: "catalogue_overview"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "dossier_propositions_dossier_id_fkey"
             columns: ["dossier_id"]
             isOneToOne: false
-            referencedRelation: "dossiers"
+            referencedRelation: "dossiers_voyage"
             referencedColumns: ["id"]
           },
           {
@@ -980,6 +1090,387 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      dossiers_voyage: {
+        Row: {
+          afficher_prix: boolean
+          archive: boolean
+          brief_data: Json
+          brief_valide_par_shana: boolean
+          budget_estime: number | null
+          canal_origine: string
+          contenu_brut_recu: string | null
+          created_at: string
+          created_by: string | null
+          dates_arrivee: string | null
+          dates_depart: string | null
+          derniere_ouverture_at: string | null
+          destinataire_type: string
+          devise: string | null
+          email: string | null
+          envoye_at: string | null
+          est_modele: boolean
+          id: string
+          langue: string | null
+          lead_id: string | null
+          message_intro: string | null
+          message_intro_en: string | null
+          message_intro_he: string | null
+          modele_source_id: string | null
+          nb_ouvertures: number
+          nb_voyageurs: number | null
+          nom_destinataire: string
+          noms_participants: string[] | null
+          objectif: string
+          ordre_categories: string[] | null
+          paye_at: string | null
+          point_depart: string
+          premiere_ouverture_at: string | null
+          reference: string | null
+          regions: string[] | null
+          retours_recus_at: string | null
+          statut: string
+          statut_lecture: string | null
+          telephone: string | null
+          token_public: string
+          trier_par_categorie: boolean
+          updated_at: string
+          version_active_id: string | null
+          version_verrouillee_id: string | null
+        }
+        Insert: {
+          afficher_prix?: boolean
+          archive?: boolean
+          brief_data?: Json
+          brief_valide_par_shana?: boolean
+          budget_estime?: number | null
+          canal_origine?: string
+          contenu_brut_recu?: string | null
+          created_at?: string
+          created_by?: string | null
+          dates_arrivee?: string | null
+          dates_depart?: string | null
+          derniere_ouverture_at?: string | null
+          destinataire_type?: string
+          devise?: string | null
+          email?: string | null
+          envoye_at?: string | null
+          est_modele?: boolean
+          id?: string
+          langue?: string | null
+          lead_id?: string | null
+          message_intro?: string | null
+          message_intro_en?: string | null
+          message_intro_he?: string | null
+          modele_source_id?: string | null
+          nb_ouvertures?: number
+          nb_voyageurs?: number | null
+          nom_destinataire: string
+          noms_participants?: string[] | null
+          objectif?: string
+          ordre_categories?: string[] | null
+          paye_at?: string | null
+          point_depart?: string
+          premiere_ouverture_at?: string | null
+          reference?: string | null
+          regions?: string[] | null
+          retours_recus_at?: string | null
+          statut?: string
+          statut_lecture?: string | null
+          telephone?: string | null
+          token_public?: string
+          trier_par_categorie?: boolean
+          updated_at?: string
+          version_active_id?: string | null
+          version_verrouillee_id?: string | null
+        }
+        Update: {
+          afficher_prix?: boolean
+          archive?: boolean
+          brief_data?: Json
+          brief_valide_par_shana?: boolean
+          budget_estime?: number | null
+          canal_origine?: string
+          contenu_brut_recu?: string | null
+          created_at?: string
+          created_by?: string | null
+          dates_arrivee?: string | null
+          dates_depart?: string | null
+          derniere_ouverture_at?: string | null
+          destinataire_type?: string
+          devise?: string | null
+          email?: string | null
+          envoye_at?: string | null
+          est_modele?: boolean
+          id?: string
+          langue?: string | null
+          lead_id?: string | null
+          message_intro?: string | null
+          message_intro_en?: string | null
+          message_intro_he?: string | null
+          modele_source_id?: string | null
+          nb_ouvertures?: number
+          nb_voyageurs?: number | null
+          nom_destinataire?: string
+          noms_participants?: string[] | null
+          objectif?: string
+          ordre_categories?: string[] | null
+          paye_at?: string | null
+          point_depart?: string
+          premiere_ouverture_at?: string | null
+          reference?: string | null
+          regions?: string[] | null
+          retours_recus_at?: string | null
+          statut?: string
+          statut_lecture?: string | null
+          telephone?: string | null
+          token_public?: string
+          trier_par_categorie?: boolean
+          updated_at?: string
+          version_active_id?: string | null
+          version_verrouillee_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dossiers_voyage_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dossiers_voyage_modele_source_id_fkey"
+            columns: ["modele_source_id"]
+            isOneToOne: false
+            referencedRelation: "dossiers_voyage"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dossiers_voyage_version_active_fkey"
+            columns: ["version_active_id"]
+            isOneToOne: false
+            referencedRelation: "dossiers_voyage_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dossiers_voyage_version_verrouillee_fkey"
+            columns: ["version_verrouillee_id"]
+            isOneToOne: false
+            referencedRelation: "dossiers_voyage_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dossiers_voyage_lignes: {
+        Row: {
+          alerte_a_contacter: boolean
+          casher: boolean | null
+          catalogue_item_id: string | null
+          consigne_regeneration: string | null
+          cout_achat_estime: number | null
+          created_at: string
+          experience_id: string | null
+          fiche_jamais_formalisee: boolean
+          hotel_id: string | null
+          id: string
+          jour: number
+          nature: string
+          ordre: number
+          origine: string
+          prix_vente_estime: number | null
+          standalone_experience_id: string | null
+          texte_libre: string | null
+          updated_at: string
+          verrouillee_regeneration: boolean
+          version_id: string
+        }
+        Insert: {
+          alerte_a_contacter?: boolean
+          casher?: boolean | null
+          catalogue_item_id?: string | null
+          consigne_regeneration?: string | null
+          cout_achat_estime?: number | null
+          created_at?: string
+          experience_id?: string | null
+          fiche_jamais_formalisee?: boolean
+          hotel_id?: string | null
+          id?: string
+          jour: number
+          nature: string
+          ordre?: number
+          origine?: string
+          prix_vente_estime?: number | null
+          standalone_experience_id?: string | null
+          texte_libre?: string | null
+          updated_at?: string
+          verrouillee_regeneration?: boolean
+          version_id: string
+        }
+        Update: {
+          alerte_a_contacter?: boolean
+          casher?: boolean | null
+          catalogue_item_id?: string | null
+          consigne_regeneration?: string | null
+          cout_achat_estime?: number | null
+          created_at?: string
+          experience_id?: string | null
+          fiche_jamais_formalisee?: boolean
+          hotel_id?: string | null
+          id?: string
+          jour?: number
+          nature?: string
+          ordre?: number
+          origine?: string
+          prix_vente_estime?: number | null
+          standalone_experience_id?: string | null
+          texte_libre?: string | null
+          updated_at?: string
+          verrouillee_regeneration?: boolean
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dossiers_voyage_lignes_catalogue_item_id_fkey"
+            columns: ["catalogue_item_id"]
+            isOneToOne: false
+            referencedRelation: "catalogue_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dossiers_voyage_lignes_catalogue_item_id_fkey"
+            columns: ["catalogue_item_id"]
+            isOneToOne: false
+            referencedRelation: "catalogue_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dossiers_voyage_lignes_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dossiers_voyage_lignes_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dossiers_voyage_lignes_standalone_experience_id_fkey"
+            columns: ["standalone_experience_id"]
+            isOneToOne: false
+            referencedRelation: "standalone_experiences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dossiers_voyage_lignes_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "dossiers_voyage_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dossiers_voyage_retours: {
+        Row: {
+          commentaire: string | null
+          created_at: string
+          id: string
+          ligne_id: string | null
+          reaction: string | null
+          version_id: string
+        }
+        Insert: {
+          commentaire?: string | null
+          created_at?: string
+          id?: string
+          ligne_id?: string | null
+          reaction?: string | null
+          version_id: string
+        }
+        Update: {
+          commentaire?: string | null
+          created_at?: string
+          id?: string
+          ligne_id?: string | null
+          reaction?: string | null
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dossiers_voyage_retours_ligne_id_fkey"
+            columns: ["ligne_id"]
+            isOneToOne: false
+            referencedRelation: "dossiers_voyage_lignes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dossiers_voyage_retours_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "dossiers_voyage_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dossiers_voyage_versions: {
+        Row: {
+          created_at: string
+          cree_depuis_version_id: string | null
+          cree_par: string | null
+          dossier_id: string
+          id: string
+          label: string | null
+          note_interne: string | null
+          numero: number
+          prix_total_achat: number | null
+          prix_total_vente: number | null
+          statut: string
+        }
+        Insert: {
+          created_at?: string
+          cree_depuis_version_id?: string | null
+          cree_par?: string | null
+          dossier_id: string
+          id?: string
+          label?: string | null
+          note_interne?: string | null
+          numero: number
+          prix_total_achat?: number | null
+          prix_total_vente?: number | null
+          statut?: string
+        }
+        Update: {
+          created_at?: string
+          cree_depuis_version_id?: string | null
+          cree_par?: string | null
+          dossier_id?: string
+          id?: string
+          label?: string | null
+          note_interne?: string | null
+          numero?: number
+          prix_total_achat?: number | null
+          prix_total_vente?: number | null
+          statut?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dossiers_voyage_versions_cree_depuis_version_id_fkey"
+            columns: ["cree_depuis_version_id"]
+            isOneToOne: false
+            referencedRelation: "dossiers_voyage_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dossiers_voyage_versions_dossier_id_fkey"
+            columns: ["dossier_id"]
+            isOneToOne: false
+            referencedRelation: "dossiers_voyage"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       error_events: {
         Row: {
@@ -2393,6 +2884,10 @@ export type Database = {
           og_title_fr: string | null
           og_title_he: string | null
           partners_email: string | null
+          reassurance_enabled: boolean
+          reassurance_text_en: string | null
+          reassurance_text_fr: string | null
+          reassurance_text_he: string | null
           seo_title_en: string | null
           seo_title_fr: string | null
           seo_title_he: string | null
@@ -2421,6 +2916,10 @@ export type Database = {
           og_title_fr?: string | null
           og_title_he?: string | null
           partners_email?: string | null
+          reassurance_enabled?: boolean
+          reassurance_text_en?: string | null
+          reassurance_text_fr?: string | null
+          reassurance_text_he?: string | null
           seo_title_en?: string | null
           seo_title_fr?: string | null
           seo_title_he?: string | null
@@ -2449,6 +2948,10 @@ export type Database = {
           og_title_fr?: string | null
           og_title_he?: string | null
           partners_email?: string | null
+          reassurance_enabled?: boolean
+          reassurance_text_en?: string | null
+          reassurance_text_fr?: string | null
+          reassurance_text_he?: string | null
           seo_title_en?: string | null
           seo_title_fr?: string | null
           seo_title_he?: string | null
@@ -3459,7 +3962,7 @@ export type Database = {
             foreignKeyName: "participants_dossier_id_fkey"
             columns: ["dossier_id"]
             isOneToOne: false
-            referencedRelation: "dossiers"
+            referencedRelation: "dossiers_voyage"
             referencedColumns: ["id"]
           },
         ]
@@ -3714,6 +4217,171 @@ export type Database = {
         }
         Relationships: []
       }
+      review_requests: {
+        Row: {
+          booking_id: string
+          booking_type: string
+          channel: string
+          created_at: string
+          id: string
+          lang: string | null
+          reminded_at: string | null
+          review_id: string | null
+          sent_at: string
+          status: string
+          submitted_at: string | null
+          token: string
+        }
+        Insert: {
+          booking_id: string
+          booking_type: string
+          channel: string
+          created_at?: string
+          id?: string
+          lang?: string | null
+          reminded_at?: string | null
+          review_id?: string | null
+          sent_at?: string
+          status?: string
+          submitted_at?: string | null
+          token?: string
+        }
+        Update: {
+          booking_id?: string
+          booking_type?: string
+          channel?: string
+          created_at?: string
+          id?: string
+          lang?: string | null
+          reminded_at?: string | null
+          review_id?: string | null
+          sent_at?: string
+          status?: string
+          submitted_at?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_requests_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reviews: {
+        Row: {
+          booking_id: string | null
+          booking_type: string | null
+          comment: string | null
+          consent_to_publish: boolean
+          created_at: string
+          customer_email: string | null
+          customer_first_name: string
+          customer_last_initial: string | null
+          customer_phone: string | null
+          customer_user_id: string | null
+          experience2_id: string | null
+          hidden_reason: string | null
+          id: string
+          is_pinned: boolean
+          lang: string | null
+          moderation_status: string
+          photo_url: string | null
+          provider_id: string | null
+          rating: number | null
+          review_date: string | null
+          scope: string
+          source: string
+          staff_reply: string | null
+          staff_reply_at: string | null
+          standalone_experience_id: string | null
+          traces_awarded: boolean
+          updated_at: string
+        }
+        Insert: {
+          booking_id?: string | null
+          booking_type?: string | null
+          comment?: string | null
+          consent_to_publish?: boolean
+          created_at?: string
+          customer_email?: string | null
+          customer_first_name: string
+          customer_last_initial?: string | null
+          customer_phone?: string | null
+          customer_user_id?: string | null
+          experience2_id?: string | null
+          hidden_reason?: string | null
+          id?: string
+          is_pinned?: boolean
+          lang?: string | null
+          moderation_status?: string
+          photo_url?: string | null
+          provider_id?: string | null
+          rating?: number | null
+          review_date?: string | null
+          scope: string
+          source: string
+          staff_reply?: string | null
+          staff_reply_at?: string | null
+          standalone_experience_id?: string | null
+          traces_awarded?: boolean
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string | null
+          booking_type?: string | null
+          comment?: string | null
+          consent_to_publish?: boolean
+          created_at?: string
+          customer_email?: string | null
+          customer_first_name?: string
+          customer_last_initial?: string | null
+          customer_phone?: string | null
+          customer_user_id?: string | null
+          experience2_id?: string | null
+          hidden_reason?: string | null
+          id?: string
+          is_pinned?: boolean
+          lang?: string | null
+          moderation_status?: string
+          photo_url?: string | null
+          provider_id?: string | null
+          rating?: number | null
+          review_date?: string | null
+          scope?: string
+          source?: string
+          staff_reply?: string | null
+          staff_reply_at?: string | null
+          standalone_experience_id?: string | null
+          traces_awarded?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_experience2_id_fkey"
+            columns: ["experience2_id"]
+            isOneToOne: false
+            referencedRelation: "experiences2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_standalone_experience_id_fkey"
+            columns: ["standalone_experience_id"]
+            isOneToOne: false
+            referencedRelation: "standalone_experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_carts: {
         Row: {
           checkin: string | null
@@ -3843,6 +4511,7 @@ export type Database = {
           lead_id: string | null
           party_size: number
           payment_status: string | null
+          preferred_lang: string | null
           provider_id: string | null
           rate_option: Json | null
           refund_amount: number | null
@@ -3886,6 +4555,7 @@ export type Database = {
           lead_id?: string | null
           party_size?: number
           payment_status?: string | null
+          preferred_lang?: string | null
           provider_id?: string | null
           rate_option?: Json | null
           refund_amount?: number | null
@@ -3929,6 +4599,7 @@ export type Database = {
           lead_id?: string | null
           party_size?: number
           payment_status?: string | null
+          preferred_lang?: string | null
           provider_id?: string | null
           rate_option?: Json | null
           refund_amount?: number | null
