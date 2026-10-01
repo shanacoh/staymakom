@@ -5633,6 +5633,7 @@ export type Database = {
           address: string | null
           city: string | null
           commercial_status: string | null
+          commission_pourcentage: number | null
           contact_email: string | null
           contact_instagram: string | null
           contact_name: string | null
@@ -5657,6 +5658,7 @@ export type Database = {
           id: string | null
           last_contact_date: string | null
           latitude: number | null
+          lien_reservation: string | null
           links_count: number | null
           live_id: string | null
           live_kind: string | null
@@ -5665,11 +5667,15 @@ export type Database = {
           live_slug: string | null
           live_status: string | null
           longitude: number | null
+          mode_reservation: string | null
           name: string | null
           nature: string | null
           next_followup_date: string | null
           notes: string | null
+          photo_url: string | null
           place_type: string | null
+          prix_achat: number | null
+          prix_client: number | null
           region: string | null
           site_category_ids: string[] | null
           source: string | null
