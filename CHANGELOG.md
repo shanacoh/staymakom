@@ -6,6 +6,26 @@
 
 ---
 
+## [2026-10-01] — Liens de paiement acompte/solde : envoi par email/copie, montant libre, affichage plus clair
+
+### Ce qui a changé côté code
+- `supabase/functions/create-booking-payment-link/index.ts` : accepte maintenant un montant ou pourcentage d'acompte choisi à la main (`manual_deposit`) quand la réservation n'est reliée à aucune fiche catalogue avec une règle d'acompte configurée (cas des anciennes réservations bateau saisies à la main). Garde-fous ajoutés : pourcentage plafonné à 100%, montant plafonné au prix total.
+- Nouvelle fonction `supabase/functions/send-booking-payment-link-email/index.ts` : envoie par email (via Resend) un lien de paiement déjà généré — jusqu'ici, le seul envoi automatique possible était WhatsApp, et seulement si un numéro de téléphone était renseigné.
+- `src/pages/admin/StandaloneBookingDetails.tsx` :
+  - Chaque lien de paiement généré peut être copié, envoyé par email ou par WhatsApp.
+  - Quand aucune règle d'acompte n'est configurée : 3 choix rapides (500₪, 30%, montant/pourcentage libre via une petite fenêtre) à la place du message d'erreur.
+  - Nouvel encadré résumé (prix total / payé / reste à payer) avec les paiements déjà réglés mis en évidence en vert et horodatés.
+  - Le bouton "Générer lien de solde" est grisé tant que l'acompte généré n'est pas payé, avec une option "Débloquer quand même" qui affiche un avertissement rouge si on force.
+  - Les messages d'erreur des boutons de paiement affichent désormais la vraie raison de l'échec (ex. "l'adresse email du client est invalide") au lieu du message technique générique de Supabase.
+
+### Ce qui a changé côté base de données
+- Aucune migration : aucune colonne/table nouvelle, uniquement de nouveaux paramètres envoyés aux fonctions existantes.
+
+### Pourquoi ce changement
+- Les boutons "Générer lien d'acompte / de solde" du back-office bateaux ne fonctionnaient pas : la cause réelle était une adresse email de test invalide, puis l'absence de règle d'acompte sur les réservations bateau saisies à la main (non reliées au catalogue, qui lui a bien une règle à 500₪ fixe sur ses 12 fiches bateau). Au passage, Shana a demandé que les liens générés puissent être transmis par email/copie en plus de WhatsApp, et que l'encadré paiement soit plus lisible visuellement.
+
+---
+
 ## [2026-10-01] — Système d'avis clients (demande, collecte, modération, affichage)
 
 ### Ce qui a changé côté code
@@ -3773,4 +3793,4 @@ Création du projet StayMakom from scratch — la base sur laquelle tout le rest
 
 ---
 
-*Dernière mise à jour : 2026-06-15*
+*Dernière mise à jour : 2026-10-01*
