@@ -252,7 +252,7 @@ const IndexV3 = () => {
           />
           <div className="absolute inset-0 bg-black/15" />
 
-          <div className="relative z-10 text-center text-white px-4 sm:px-6 max-w-3xl mx-auto translate-y-2 sm:translate-y-4">
+          <div className="relative z-10 text-center text-white px-4 sm:px-6 max-w-3xl mx-auto translate-y-0 sm:translate-y-2">
             <span className="md:hidden block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-[#ad1414] mb-4 opacity-0 animate-hero-fade-up">
               STAYMAKOM
             </span>
@@ -299,7 +299,7 @@ const IndexV3 = () => {
                   trackHeroCtaClicked("plan");
                   window.dispatchEvent(new CustomEvent("staymakom-open-design-my-stay"));
                 }}
-                className="rounded-full border-[#ad1414] text-[#ad1414] bg-white hover:bg-white/90 px-6 py-2.5 text-xs font-bold uppercase tracking-widest shadow-none"
+                className="rounded-full border-white/70 text-white bg-white/10 backdrop-blur-sm hover:bg-white/20 px-6 py-2.5 text-xs font-bold uppercase tracking-widest shadow-none"
               >
                 {isRTL ? "בקשה מיוחדת" : lang === "fr" ? "Demande spéciale" : "Special request"}
               </Button>
