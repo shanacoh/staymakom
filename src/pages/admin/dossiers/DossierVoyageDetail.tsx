@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { ComposerSection } from "@/components/admin/dossiers/ComposerSection";
 import { DossierStepper } from "@/components/admin/dossiers/DossierStepper";
+import { ExclusionsSection } from "@/components/admin/dossiers/ExclusionsSection";
 import { LieuxImposesSection } from "@/components/admin/dossiers/LieuxImposesSection";
 import {
   copierLienDossierVoyage,
@@ -299,6 +300,7 @@ export default function DossierVoyageDetail() {
             )}
 
             <LieuxImposesSection dossier={dossier} />
+            <ExclusionsSection dossier={dossier} exclusionsClient={brief.exclusions_mentionnees} />
 
             <div className="flex justify-end gap-2 pt-1">
               <Button variant="outline" onClick={enregistrerBrief} disabled={updateDossier.isPending}>

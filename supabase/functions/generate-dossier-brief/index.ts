@@ -114,6 +114,7 @@ interface BriefExtrait {
   incertitudes: string[];
   questions_a_poser: string[];
   message_whatsapp: string | null;
+  exclusions_mentionnees: string[];
 }
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -158,6 +159,7 @@ function parseBrief(raw: string): BriefExtrait | null {
     incertitudes: strArray(o.incertitudes, 10),
     questions_a_poser: strArray(o.questions_a_poser, 8),
     message_whatsapp: str(o.message_whatsapp, 1500),
+    exclusions_mentionnees: strArray(o.exclusions_mentionnees, 8),
   };
 }
 
@@ -179,7 +181,8 @@ Réponds UNIQUEMENT avec un objet JSON (rien avant, rien après), avec exactemen
   "envies": texte court résumant ce que recherche le client (ambiance, type de voyage, occasion) ou null,
   "incertitudes": [liste courte de ce qui n'est pas clair ou pourrait être mal compris, en français, à l'intention de Shana],
   "questions_a_poser": [liste de 2 à 5 questions concrètes et naturelles à poser au client pour combler ce qui manque, dans la langue du message],
-  "message_whatsapp": "un seul message, prêt à copier-coller, chaleureux et naturel, dans la langue du message reçu, signé Shana, qui pose les questions de la liste précédente"
+  "message_whatsapp": "un seul message, prêt à copier-coller, chaleureux et naturel, dans la langue du message reçu, signé Shana, qui pose les questions de la liste précédente",
+  "exclusions_mentionnees": [liste courte de lieux, villes ou régions que le client dit explicitement ne PAS vouloir (ex. "pas Mitzpe Ramon", "on a déjà fait Massada"), en reprenant le nom tel que mentionné ; liste vide si rien n'est exclu]
 }
 
 Le texte reçu peut être dans n'importe quelle langue (français, anglais, hébreu...). Ne jamais inventer d'information absente du texte : laisse le champ vide/null plutôt que de deviner.`;
@@ -271,6 +274,7 @@ Deno.serve(async (req) => {
           incertitudes: brief.incertitudes,
           questions_a_poser: brief.questions_a_poser,
           message_whatsapp: brief.message_whatsapp,
+          exclusions_mentionnees: brief.exclusions_mentionnees,
         },
         brief_valide_par_shana: false,
         statut: "brief",

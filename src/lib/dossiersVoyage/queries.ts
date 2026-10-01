@@ -190,6 +190,63 @@ export function useGenerateDossierBrief(id: string) {
   });
 }
 
+export interface LieuDejaUtilise {
+  catalogue_item_id: string;
+  nom: string;
+  dossierNom: string;
+  annee: string;
+}
+
+/** Lieux déjà présents dans d'autres dossiers du même client (même email), pour repérer ce à écarter. */
+export function useLieuxDejaUtilises(email: string | null | undefined, dossierIdAExclure: string) {
+  return useQuery({
+    queryKey: ["dossiers_voyage", "deja_utilises", email ?? "", dossierIdAExclure],
+    enabled: !!email,
+    queryFn: async (): Promise<LieuDejaUtilise[]> => {
+      const { data: autresDossiers } = await supabase
+        .from("dossiers_voyage")
+        .select("id, nom_destinataire, dates_arrivee, created_at")
+        .eq("email", email!)
+        .neq("id", dossierIdAExclure);
+      if (!autresDossiers || autresDossiers.length === 0) return [];
+
+      const { data: versions } = await supabase
+        .from("dossiers_voyage_versions")
+        .select("id, dossier_id")
+        .in("dossier_id", autresDossiers.map((d) => d.id));
+      if (!versions || versions.length === 0) return [];
+
+      const { data: lignes } = await supabase
+        .from("dossiers_voyage_lignes")
+        .select("version_id, catalogue_item_id, catalogue_items(name)")
+        .in("version_id", versions.map((v) => v.id))
+        .not("catalogue_item_id", "is", null);
+      if (!lignes || lignes.length === 0) return [];
+
+      const dossierParVersion = new Map(versions.map((v) => [v.id, v.dossier_id]));
+      const dossierParId = new Map(autresDossiers.map((d) => [d.id, d]));
+      const vus = new Set<string>();
+      const resultat: LieuDejaUtilise[] = [];
+      for (const ligne of lignes) {
+        const itemId = ligne.catalogue_item_id;
+        const nomItem = (ligne.catalogue_items as { name?: string } | null)?.name;
+        if (!itemId || !nomItem || vus.has(itemId)) continue;
+        const dossierId = dossierParVersion.get(ligne.version_id);
+        const dossier = dossierId ? dossierParId.get(dossierId) : null;
+        if (!dossier) continue;
+        vus.add(itemId);
+        resultat.push({
+          catalogue_item_id: itemId,
+          nom: nomItem,
+          dossierNom: dossier.nom_destinataire,
+          annee: new Date(dossier.dates_arrivee ?? dossier.created_at).getFullYear().toString(),
+        });
+      }
+      return resultat;
+    },
+  });
+}
+
 // ============================================================================
 // Composer : versions et lignes du programme (étape 5)
 // ============================================================================

@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
 
     const { data: dossier, error: dossierError } = await supabase
       .from("dossiers_voyage")
-      .select("id, nom_destinataire, dates_arrivee, dates_depart, nb_voyageurs, regions, langue, brief_data")
+      .select("id, nom_destinataire, email, dates_arrivee, dates_depart, nb_voyageurs, regions, langue, brief_data, lieux_imposes")
       .eq("id", dossierId)
       .single();
     if (dossierError || !dossier) return json(req, { error: "Dossier introuvable" }, 404);
@@ -151,14 +151,96 @@ Deno.serve(async (req) => {
       .eq("version_id", versionId);
     if (lignesError) return json(req, { error: "Impossible de lire le programme existant" }, 500);
 
-    const lignesVerrouillees = (lignesExistantes ?? []).filter(
+    const nbJours = joursEntre(dossier.dates_arrivee, dossier.dates_depart);
+    const brief = (dossier.brief_data as Record<string, unknown>) || {};
+
+    // Les lieux imposés dès le Brief (avant même que le Composer existe) sont systématiquement
+    // insérés comme lignes verrouillées s'ils n'y sont pas déjà — pas besoin que Shana les rajoute
+    // à la main dans le Composer.
+    type LieuImpose = { catalogue_item_id?: string; nom?: string; origine?: string };
+    const lieuxImposes: LieuImpose[] = Array.isArray(dossier.lieux_imposes) ? dossier.lieux_imposes : [];
+    const idsDejaEnLigne = new Set((lignesExistantes ?? []).map((l) => l.catalogue_item_id).filter(Boolean));
+    const lieuxAInsurer = lieuxImposes.filter(
+      (l) => l.catalogue_item_id && !idsDejaEnLigne.has(l.catalogue_item_id)
+    );
+    if (lieuxAInsurer.length > 0) {
+      const { data: fichesImposees } = await supabase
+        .from("catalogue_items")
+        .select("id, place_type, commercial_status, prix_achat, prix_client")
+        .in("id", lieuxAInsurer.map((l) => l.catalogue_item_id!));
+      const fichesParId = new Map((fichesImposees ?? []).map((f) => [f.id, f]));
+      const natureDepuisPlaceTypeInit = (placeType: string): string => {
+        if (placeType === "hebergement") return "hebergement";
+        if (placeType === "restaurant") return "restaurant";
+        if (placeType === "activite" || placeType === "bateau") return "activite";
+        if (placeType === "lieu_a_visiter") return "lieu_a_visiter";
+        return "autre";
+      };
+      const nouvellesLignesImposees = lieuxAInsurer
+        .map((l) => {
+          const fiche = fichesParId.get(l.catalogue_item_id!);
+          if (!fiche) return null;
+          return {
+            version_id: versionId,
+            jour: 1,
+            ordre: 0,
+            nature: natureDepuisPlaceTypeInit(fiche.place_type),
+            origine: l.origine === "demande_client" ? "demande_client" : "impose_shana",
+            catalogue_item_id: fiche.id,
+            fiche_jamais_formalisee: fiche.commercial_status !== "partenaire",
+            alerte_a_contacter: fiche.commercial_status !== "partenaire",
+            cout_achat_estime: fiche.prix_achat,
+            prix_vente_estime: fiche.prix_client,
+          };
+        })
+        .filter((l): l is NonNullable<typeof l> => l !== null);
+      if (nouvellesLignesImposees.length > 0) {
+        await supabase.from("dossiers_voyage_lignes").insert(nouvellesLignesImposees);
+      }
+    }
+
+    // Relit le programme (inclut les lieux imposés qu'on vient d'insérer).
+    const { data: lignesApresImposes } = await supabase
+      .from("dossiers_voyage_lignes")
+      .select("id, jour, nature, origine, verrouillee_regeneration, catalogue_item_id, texte_libre")
+      .eq("version_id", versionId);
+
+    const lignesVerrouillees = (lignesApresImposes ?? []).filter(
       (l) => l.origine === "impose_shana" || l.origine === "demande_client" || l.verrouillee_regeneration
     );
-    const lignesIaARemplacer = (lignesExistantes ?? []).filter(
+    const lignesIaARemplacer = (lignesApresImposes ?? []).filter(
       (l) => l.origine === "ia" && !l.verrouillee_regeneration
     );
 
-    const nbJours = joursEntre(dossier.dates_arrivee, dossier.dates_depart);
+    // Lieux à écarter : déjà présents dans un autre dossier du même client, ou explicitement
+    // exclus par le client dans sa demande (comparaison simple sur le nom/ville).
+    const idsDejaUtilises = new Set<string>();
+    if (dossier.email) {
+      const { data: autresDossiers } = await supabase
+        .from("dossiers_voyage")
+        .select("id")
+        .eq("email", dossier.email)
+        .neq("id", dossierId);
+      if (autresDossiers && autresDossiers.length > 0) {
+        const { data: autresVersions } = await supabase
+          .from("dossiers_voyage_versions")
+          .select("id")
+          .in("dossier_id", autresDossiers.map((d) => d.id));
+        if (autresVersions && autresVersions.length > 0) {
+          const { data: autresLignes } = await supabase
+            .from("dossiers_voyage_lignes")
+            .select("catalogue_item_id")
+            .in("version_id", autresVersions.map((v) => v.id))
+            .not("catalogue_item_id", "is", null);
+          for (const l of autresLignes ?? []) {
+            if (l.catalogue_item_id) idsDejaUtilises.add(l.catalogue_item_id);
+          }
+        }
+      }
+    }
+    const exclusionsTexte: string[] = Array.isArray(brief.exclusions_mentionnees)
+      ? (brief.exclusions_mentionnees as unknown[]).filter((x): x is string => typeof x === "string")
+      : [];
 
     // Fiches candidates : priorité aux régions du dossier si connues, sinon un large échantillon.
     let candidatsQuery = supabase
@@ -172,13 +254,18 @@ Deno.serve(async (req) => {
         dossier.regions.map((r: string) => `region.ilike.%${r}%,city.ilike.%${r}%`).join(",")
       );
     }
-    const { data: candidats, error: candidatsError } = await candidatsQuery;
+    const { data: candidatsBruts, error: candidatsError } = await candidatsQuery;
     if (candidatsError) return json(req, { error: "Impossible de lire le catalogue" }, 500);
-    if (!candidats || candidats.length === 0) {
-      return json(req, { error: "Aucune fiche Catalogue disponible pour générer un programme" }, 400);
+
+    const candidats = (candidatsBruts ?? []).filter((c) => {
+      if (idsDejaUtilises.has(c.id)) return false;
+      const texte = `${c.name} ${c.city ?? ""} ${c.region ?? ""}`.toLowerCase();
+      return !exclusionsTexte.some((ex) => ex.trim() && texte.includes(ex.trim().toLowerCase()));
+    });
+    if (candidats.length === 0) {
+      return json(req, { error: "Aucune fiche Catalogue disponible pour générer un programme (après exclusions)" }, 400);
     }
 
-    const brief = (dossier.brief_data as Record<string, unknown>) || {};
     const system = `Tu es l'assistant de Shana, qui prépare des voyages sur mesure en Israël pour l'agence Staymakom.
 Construis un programme jour par jour pour ce voyage, en piochant UNIQUEMENT parmi les fiches du Catalogue fournies ci-dessous.
 Ne propose JAMAIS un lieu qui n'est pas dans cette liste, et ne modifie jamais son identifiant.

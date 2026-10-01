@@ -123,6 +123,7 @@ export interface BriefData {
   incertitudes: string[];
   questions_a_poser: string[];
   message_whatsapp: string | null;
+  exclusions_mentionnees: string[];
 }
 
 export function parseBriefData(value: unknown): BriefData {
@@ -134,6 +135,7 @@ export function parseBriefData(value: unknown): BriefData {
     incertitudes: strArray(o.incertitudes),
     questions_a_poser: strArray(o.questions_a_poser),
     message_whatsapp: typeof o.message_whatsapp === "string" ? o.message_whatsapp : null,
+    exclusions_mentionnees: strArray(o.exclusions_mentionnees),
   };
 }
 
