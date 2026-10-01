@@ -27,6 +27,25 @@
 
 ---
 
+## [2026-10-01] — Chantier "Dossier de voyage" : étape 3, écran back-office "Dossiers" + formulaire public
+
+### Ce qui a changé côté code
+- Nouveau module `src/lib/dossiersVoyage/` (`types.ts`, `queries.ts`) : types et hooks React Query pour lire, créer et dupliquer un dossier de voyage.
+- Nouvelles pages `src/pages/admin/dossiers/Dossiers.tsx` (liste, onglets En cours / Modèles / Archivés, création manuelle d'une demande, duplication d'un modèle) et `src/pages/admin/dossiers/DossierVoyageDetail.tsx` (fiche minimale : cadrage, message d'origine — le Brief IA et le Composer arriveront aux étapes suivantes).
+- `src/components/admin/AdminSidebar.tsx` : fusion des entrées "Itinéraires" et "Dossiers swipe" en une seule entrée "Dossiers" ; retrait des entrées "Bibliothèque swipe" et "Catégories swipe" (leur fonction est reprise par le Catalogue, voir ci-dessous).
+- `src/App.tsx` : nouvelles routes `/admin/dossiers` et `/admin/dossiers/:dossierId` ; route placeholder `/admin/itineraires` retirée. Les anciennes routes `swipe/dossiers`, `swipe/bibliotheque`, `swipe/categories` restent fonctionnelles pour un accès direct, simplement retirées du menu.
+- Catalogue : nouvelle section "Disponibilité pour Explorer" dans le panneau d'édition d'une fiche (`CatalogueItemPanel.tsx`), avec photo, prix d'achat, prix client, commission, mode de réservation et lien de réservation — une fiche n'est proposable dans le jeu de swipe que si elle a une photo et un prix client. Nouveau repère visuel dans la liste (`CatalogueBadges.tsx`).
+- `supabase/functions/collect-lead/index.ts` (déployée en production, version 29) : le formulaire public "Créer mon voyage" (bouton "DESIGN MY STAY" du site) crée et enrichit désormais aussi un dossier de voyage, en plus de la ligne "Itinéraires" existante — écriture non bloquante, le comportement actuel du site n'est pas modifié si elle échoue. Testé de bout en bout sur la fonction en production.
+
+### Ce qui a changé côté base de données
+- `supabase/migrations/20261001020200_catalogue_overview_expose_offre_fields.sql` : la vue `catalogue_overview` expose désormais aussi la photo, les prix et le mode de réservation d'une fiche.
+- Régénération des types TypeScript de la base de données (`src/integrations/supabase/types.ts`), nécessaire après les migrations des étapes précédentes.
+
+### Pourquoi ce changement
+- Donne à Shana un premier écran utilisable pour les dossiers de voyage (capture d'une nouvelle demande, vue d'ensemble, modèles réutilisables), et commence à faire du Catalogue la source unique des lieux du site (photo et prix désormais saisissables directement dessus, à la place de l'ancienne bibliothèque swipe).
+
+---
+
 ## [2026-10-01] — Chantier "Dossier de voyage" : étape 2, archivage des anciens dossiers swipe
 
 ### Ce qui a changé côté code
