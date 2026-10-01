@@ -27,6 +27,24 @@
 
 ---
 
+## [2026-10-01] — Chantier "Dossier de voyage" : étape 4, Brief généré par l'IA
+
+### Ce qui a changé côté code
+- Nouvelle edge function `generate-dossier-brief` (réservée aux administrateurs, même contrôle d'accès que `catalogue-lookup`) : à partir du texte brut reçu sur un dossier (et de l'historique des autres dossiers connus pour le même email), demande à Claude (Haiku) d'extraire un brief structuré — dates, nombre de voyageurs, budget, devise, régions, langue, contraintes, envies — avec les points incertains repérés et des questions à poser au client, plus un message WhatsApp prêt à copier. Repli automatique sur la passerelle Lovable si aucune clé Anthropic n'est configurée.
+- `src/pages/admin/dossiers/DossierVoyageDetail.tsx` : nouvelle carte "Brief" avec bouton de génération, tous les champs extraits modifiables avant validation, affichage des points incertains et des questions, bouton de copie du message WhatsApp, bouton "Valider le brief".
+- `src/lib/dossiersVoyage/queries.ts` et `types.ts` : hooks `useGenerateDossierBrief`, `useUpdateDossierVoyage`, type `BriefData`.
+
+### Ce qui a changé côté base de données
+- Aucune (utilise les colonnes déjà créées à l'étape 1 : `dates_arrivee`, `dates_depart`, `nb_voyageurs`, `budget_estime`, `devise`, `regions`, `langue`, `brief_data`, `brief_valide_par_shana`).
+
+### Mise en route (à savoir si ça recasse un jour)
+- Cette fonction a besoin d'une clé IA pour fonctionner. Deux secrets ont été ajoutés dans Supabase (Edge Functions → Secrets) : `ANTHROPIC_API_KEY` (clé Claude de Shana) et `ANTHROPIC_WORKSPACE_ID` (`wrkspc_01AFUuB9MFo9KZqWUwdDGiiT`, l'espace de travail "Default" de son compte Anthropic Console). Le second secret est nécessaire uniquement parce que sa clé n'était pas rattachée à un espace de travail précis — sans lui, l'appel à Claude échoue avec une erreur 400 "not scoped to a workspace". Si la clé Anthropic est un jour régénérée, bien vérifier qu'elle est créée **depuis l'intérieur** d'un espace de travail (pas depuis la vue "Tous les espaces de travail"), ce qui évite normalement d'avoir besoin de `ANTHROPIC_WORKSPACE_ID`.
+
+### Pourquoi ce changement
+- Permet à Shana de transformer un message WhatsApp/email collé tel quel en informations exploitables pour composer le voyage, sans tout relire et retaper à la main — tout en gardant le dernier mot : rien n'est appliqué sans qu'elle puisse corriger ou valider.
+
+---
+
 ## [2026-10-01] — Chantier "Dossier de voyage" : étape 3, écran back-office "Dossiers" + formulaire public
 
 ### Ce qui a changé côté code
