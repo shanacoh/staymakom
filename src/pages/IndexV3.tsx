@@ -299,7 +299,7 @@ const IndexV3 = () => {
                   trackHeroCtaClicked("plan");
                   window.dispatchEvent(new CustomEvent("staymakom-open-design-my-stay"));
                 }}
-                className="rounded-full border-[#ad1414] text-[#ad1414] bg-transparent hover:bg-[#ad1414]/10 px-6 py-2.5 text-xs font-bold uppercase tracking-widest shadow-none"
+                className="rounded-full border-[#ad1414] text-[#ad1414] bg-white hover:bg-white/90 px-6 py-2.5 text-xs font-bold uppercase tracking-widest shadow-none"
               >
                 {isRTL ? "בקשה מיוחדת" : lang === "fr" ? "Demande spéciale" : "Special request"}
               </Button>
