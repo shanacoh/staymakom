@@ -19,12 +19,9 @@ import {
   ScrollText,
   Cog,
   CreditCard,
-  Layers,
   FolderOpen,
-  Tag,
   Map,
   Library,
-  Compass,
   Handshake,
   Percent,
   ChevronDown,
@@ -95,7 +92,7 @@ const apercuItems: NavItem[] = [
 // Opérations : la surface de travail au quotidien
 const operationsItems: NavItem[] = [
   { title: "Experiences", url: "/admin/experiences2", icon: Sparkles },
-  { title: "Itinéraires", url: "/admin/itineraires", icon: Compass },
+  { title: "Dossiers", url: "/admin/dossiers", icon: FolderOpen },
   { title: "Réservations", url: "/admin/bookings", icon: Calendar, inProgress: true },
   { title: "Avis", url: "/admin/avis", icon: Star, done: true },
   { title: "Partenaires · Hôtels", url: "/admin/hotels2", icon: Building2 },
@@ -109,8 +106,6 @@ const autreItems: NavItem[] = [
   { title: "Comptes", url: "/admin/customers", icon: UserCircle, done: true },
   { title: "Favorites", url: "/admin/favorites", icon: Heart, done: true },
   { title: "Journal", url: "/admin/journal", icon: BookOpen },
-  { title: "Bibliothèque swipe", url: "/admin/swipe/bibliotheque", icon: Layers },
-  { title: "Catégories swipe", url: "/admin/swipe/categories", icon: Tag },
   { title: "Automatisations", url: "/admin/automations", icon: Zap, colorClass: "text-orange-500" },
 ];
 
@@ -119,7 +114,6 @@ const croissanceItems: NavItem[] = [
   { title: "CRM", url: "/admin/leads", icon: Mail, done: true },
   { title: "Codes promo", url: "/admin/promo", icon: Percent, done: true },
   { title: "Gift Cards", url: "/admin/gift-cards", icon: Gift, done: true },
-  { title: "Dossiers swipe", url: "/admin/swipe/dossiers", icon: FolderOpen },
 ];
 
 // Technique : replié par défaut, tout se déroule au clic (Erreurs, Settings, puis HyperGuest et Revolut)

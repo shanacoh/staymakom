@@ -112,6 +112,8 @@ const AdminSwipeDossierDetail    = lazy(() => import("./pages/admin/swipe/Dossie
 const AdminSwipeDossierResultats = lazy(() => import("./pages/admin/swipe/DossierResultats"));
 const AdminSwipeBibliotheque     = lazy(() => import("./pages/admin/swipe/Bibliotheque"));
 const AdminSwipeCategories       = lazy(() => import("./pages/admin/swipe/Categories"));
+const AdminDossiersVoyage        = lazy(() => import("./pages/admin/dossiers/Dossiers"));
+const AdminDossierVoyageDetail   = lazy(() => import("./pages/admin/dossiers/DossierVoyageDetail"));
 
 // ── Hotel admin (chargé uniquement si connecté hotel_admin) ───────────────
 const HotelAdminLayout       = lazy(() => import("@/components/hotel-admin/HotelAdminLayout").then(m => ({ default: m.HotelAdminLayout })));
@@ -337,6 +339,10 @@ const AppContent = () => {
             <Route path="hyperguest/logs" element={<HyperGuestLogsPage />} />
             <Route path="hyperguest/config" element={<HyperGuestConfigPage />} />
             <Route path="revolut/debug" element={<RevolutDebugPage />} />
+            <Route path="dossiers" element={<AdminDossiersVoyage />} />
+            <Route path="dossiers/:dossierId" element={<AdminDossierVoyageDetail />} />
+            {/* Anciennes routes du module swipe : conservées en lecture, non reliées au menu
+                (leur contenu a été repris dans "Dossiers" et le Catalogue, chantier Dossier de voyage) */}
             <Route path="swipe/dossiers" element={<AdminSwipeDossiers />} />
             <Route path="swipe/dossiers/:dossierId" element={<AdminSwipeDossierDetail />} />
             <Route path="swipe/dossiers/:dossierId/resultats" element={<AdminSwipeDossierResultats />} />
@@ -346,7 +352,6 @@ const AppContent = () => {
             {/* Charpente de navigation : écrans pas encore construits, en attendant leur tour */}
             <Route path="carte" element={<AdminCarte />} />
             <Route path="catalogue" element={<AdminCatalogue />} />
-            <Route path="itineraires" element={<ComingSoonAdmin title="Itinéraires" description="Brief, propositions IA et recherche manuelle pour construire un itinéraire client." />} />
             <Route path="partenaires/experiences" element={<AdminProviders />} />
             <Route path="rentabilite/bateaux" element={<AdminBoatsProfitability />} />
             <Route path="avis" element={<AdminReviews />} />
