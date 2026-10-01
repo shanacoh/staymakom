@@ -94,7 +94,7 @@ const operationsItems: NavItem[] = [
   { title: "Experiences", url: "/admin/experiences2", icon: Sparkles },
   { title: "Itinéraires", url: "/admin/itineraires", icon: Compass },
   { title: "Réservations", url: "/admin/bookings", icon: Calendar, inProgress: true },
-  { title: "Avis", url: "/admin/avis", icon: Star },
+  { title: "Avis", url: "/admin/avis", icon: Star, done: true },
   { title: "Partenaires · Hôtels", url: "/admin/hotels2", icon: Building2 },
   { title: "Partenaires · Expériences", url: "/admin/partenaires/experiences", icon: Handshake },
   { title: "Rentabilité bateaux", url: "/admin/rentabilite/bateaux", icon: Percent },
