@@ -119,7 +119,7 @@ function usePendingReviewsCount() {
 function PendingTile({ label }: { label: string }) {
   return (
     <Tile label={label}>
-      <div className="font-mono text-xl font-bold text-muted-foreground">—</div>
+      <div className="font-mono text-xl font-bold text-muted-foreground">-</div>
       <div className="text-[10px] font-semibold text-destructive mt-1">
         À lier une fois résa finalisée
       </div>

@@ -1,4 +1,4 @@
-// send-review-requests — Edge Function (à appeler une fois par jour via un cron Supabase)
+// send-review-requests - Edge Function (à appeler une fois par jour via un cron Supabase)
 // Demande d'avis automatique, identique pour toute expérience (hôtel, standalone, bateau) :
 // - J+1 après la date de l'expérience : email avec le lien /avis/:token.
 // - J+5 sans avis déposé : email de relance.
@@ -19,61 +19,128 @@ function daysAgo(n: number): Date {
   return d;
 }
 
-const SUBJECT: Record<string, string> = {
-  fr: "Votre avis compte pour nous",
-  en: "We'd love your feedback",
-  he: "נשמח לשמוע את דעתך",
-};
+const escapeHTML = (str: string): string =>
+  (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-const REMINDER_SUBJECT: Record<string, string> = {
-  fr: "Un petit mot sur votre expérience ?",
-  en: "Got a minute for a quick review?",
-  he: "דקה אחת לחוות דעה?",
-};
+// Sujet personnalisé avec le nom de l'expérience plutôt qu'une phrase générique type
+// "On aimerait votre avis" : un sujet qui ressemble à un suivi personnel plutôt qu'à
+// une campagne aide à éviter le classement automatique en "Promotions" par Gmail.
+function buildSubject(experienceTitle: string, lang: string, isReminder: boolean): string {
+  const title = experienceTitle || (lang === 'fr' ? 'votre expérience' : lang === 'he' ? 'החוויה שלכם' : 'your experience');
+  if (lang === 'fr') return isReminder ? `Votre avis sur « ${title} »` : `Comment s'est passé « ${title} » ?`;
+  if (lang === 'he') return isReminder ? `מה דעתכם על ${title}?` : `איך הייתה החוויה ${title}?`;
+  return isReminder ? `Your thoughts on "${title}"?` : `How was "${title}"?`;
+}
 
+// Structure de lettre classique (en-tête discret, paragraphes, lien en ligne, signature
+// sur deux lignes) plutôt qu'un gabarit "campagne" (bandeau image, gros bouton coloré) :
+// se rapproche d'un vrai email que Shana aurait écrit elle-même, ce qui aide Gmail à le
+// classer dans "Principale" plutôt que "Promotions". Texte à la première personne.
 function buildEmailHtml(params: { guestName: string; experienceTitle: string; link: string; lang: string; isReminder: boolean }): string {
   const { guestName, experienceTitle, link, lang, isReminder } = params;
-  const texts: Record<string, { intro: string; cta: string }> = {
-    fr: {
-      intro: isReminder
-        ? `On espère que vous avez passé un bon moment avec "${experienceTitle}". On n'a pas encore reçu votre avis : ça prend une minute et ça nous aide beaucoup.`
-        : `Merci d'avoir réservé "${experienceTitle}" avec STAYMAKOM. On espère que vous avez passé un excellent moment. Pourriez-vous nous laisser un avis ?`,
-      cta: "Laisser mon avis",
-    },
-    en: {
-      intro: isReminder
-        ? `We hope you enjoyed "${experienceTitle}". We haven't received your review yet — it only takes a minute and really helps us.`
-        : `Thank you for booking "${experienceTitle}" with STAYMAKOM. We hope you had a great time. Could you share your feedback with us?`,
-      cta: "Leave my review",
-    },
-    he: {
-      intro: isReminder
-        ? `אנחנו מקווים שנהניתם מ-"${experienceTitle}". עדיין לא קיבלנו את הביקורת שלכם, זה לוקח דקה ועוזר לנו מאוד.`
-        : `תודה שהזמנתם את "${experienceTitle}" עם STAYMAKOM. אנחנו מקווים שנהניתם. נשמח לשמוע מה דעתכם.`,
-      cta: "השאירו ביקורת",
-    },
-  };
-  const t = texts[lang] || texts.en;
-  const dir = lang === 'he' ? 'rtl' : 'ltr';
+  const isHebrew = lang === 'he';
+  const isFrench = lang === 'fr';
+  const dir = isHebrew ? 'rtl' : 'ltr';
+  const arrow = isHebrew ? '←' : '→';
+
+  const withExp = (fr: string, en: string, he: string) => (isHebrew ? he : isFrench ? fr : en);
+
+  const greeting = guestName
+    ? withExp(`Bonjour ${escapeHTML(guestName)},`, `Hi ${escapeHTML(guestName)},`, `שלום ${escapeHTML(guestName)},`)
+    : withExp('Bonjour,', 'Hi,', 'שלום,');
+
+  const expName = experienceTitle ? escapeHTML(experienceTitle) : '';
+
+  const body1 = isReminder
+    ? withExp(
+        expName
+          ? `Je me permets de revenir vers vous une nouvelle fois au sujet de votre expérience « ${expName} ».`
+          : "Je me permets de revenir vers vous une nouvelle fois au sujet de votre expérience avec nous.",
+        expName
+          ? `I wanted to reach out again about your experience with "${expName}".`
+          : "I wanted to reach out again about your recent experience with us.",
+        expName
+          ? `אני פונה אליכם שוב בעניין החוויה "${expName}".`
+          : 'אני פונה אליכם שוב בעניין החוויה שלכם איתנו.'
+      )
+    : withExp(
+        expName
+          ? `Je voulais simplement revenir vers vous après votre expérience « ${expName} ».`
+          : "Je voulais simplement revenir vers vous après votre expérience avec nous.",
+        expName
+          ? `I wanted to follow up after your experience with "${expName}".`
+          : "I wanted to follow up after your recent experience with us.",
+        expName
+          ? `רציתי פשוט לחזור אליכם לאחר החוויה "${expName}".`
+          : 'רציתי פשוט לחזור אליכם לאחר החוויה שלכם איתנו.'
+      );
+
+  const body2 = withExp(
+    "Chez STAYMAKOM, nous construisons notre sélection autour d'expériences que nous avons réellement envie de partager, et vos retours nous permettent de continuer à les faire évoluer.",
+    "At STAYMAKOM, we build our selection around experiences we genuinely want to share, and your feedback helps us keep improving it.",
+    "ב-STAYMAKOM אנחנו בונים את המבחר שלנו סביב חוויות שאנחנו באמת רוצים לשתף, והמשוב שלכם עוזר לנו להמשיך ולפתח אותו."
+  );
+
+  const body3 = isReminder
+    ? withExp(
+        "Je n'ai pas encore eu de retour de votre part, et j'aimerais beaucoup savoir comment vous l'avez vécue : ce qui vous a plu, ou ce qui pourrait être amélioré pour les prochains voyageurs.",
+        "I haven't heard back from you yet, and I'd really like to know how it went for you: what you enjoyed, or what could be improved for future travelers.",
+        "עדיין לא קיבלתי מכם תגובה, ואשמח מאוד לדעת איך זה היה עבורכם: מה אהבתם, או מה אפשר לשפר עבור הנוסעים הבאים."
+      )
+    : withExp(
+        "J'aimerais beaucoup savoir comment vous avez vécu cette expérience : ce que vous avez aimé, ce qui vous a marqué, ou encore ce qui pourrait être amélioré.",
+        "I would love to know how you experienced it: what you enjoyed, what stood out to you, or what could be improved.",
+        "אשמח מאוד לדעת איך חוויתם את זה: מה אהבתם, מה נשאר אצלכם, או מה אפשר לשפר."
+      );
+
+  const body4 = withExp(
+    "Si vous avez deux minutes, vous pouvez nous laisser votre retour ici :",
+    "If you have a couple of minutes, you can share your thoughts here:",
+    "אם יש לכם שתי דקות, תוכלו לשתף אותנו כאן:"
+  );
+
+  const linkText = withExp(`Je vous écoute ici ${arrow}`, `I'm listening, right here ${arrow}`, `אני כאן, מקשיבה ${arrow}`);
+
+  const closing = isReminder
+    ? withExp("Merci encore pour votre confiance,", "Thank you again for your trust,", "תודה רבה על האמון,")
+    : withExp(
+        "Merci encore pour votre confiance, et au plaisir de vous retrouver bientôt sur STAYMAKOM.",
+        "Thank you again for your trust, and I hope to welcome you back to STAYMAKOM soon.",
+        "תודה רבה על האמון, ונשמח לארח אתכם שוב ב-STAYMAKOM בקרוב."
+      );
 
   return `<!DOCTYPE html>
-<html dir="${dir}">
-<body style="margin:0;padding:0;background:#f5f5f3;font-family:Arial,Helvetica,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f3;padding:32px 0;">
-    <tr><td align="center">
-      <table width="480" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;">
-        <tr><td style="padding:32px 40px 16px;">
-          <p style="margin:0 0 16px;font-size:15px;color:#1a1a1a;">${guestName ? `${guestName},` : ''}</p>
-          <p style="margin:0 0 24px;font-size:15px;color:#1a1a1a;line-height:1.6;">${t.intro}</p>
-          <div style="text-align:center;margin:24px 0;">
-            <a href="${link}" style="display:inline-block;background:#ad1414;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:999px;font-weight:600;font-size:14px;">${t.cta}</a>
-          </div>
-        </td></tr>
-        <tr><td style="background:#ffffff;padding:20px 40px;text-align:center;border-top:1px solid #eee;">
-          <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#1a1a1a;">STAYMAKOM</p>
-        </td></tr>
-      </table>
-    </td></tr>
+<html lang="${lang}" dir="${dir}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>STAYMAKOM</title>
+</head>
+<body style="margin:0;padding:0;background:#ffffff;font-family:Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;">
+    <tr>
+      <td align="center" style="padding:36px 20px;">
+        <table width="520" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding-bottom:20px;">
+              <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#999999;">STAYMAKOM</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-size:15px;color:#222222;line-height:1.7;">
+              <p style="margin:0 0 18px;">${greeting}</p>
+              <p style="margin:0 0 18px;">${body1}</p>
+              <p style="margin:0 0 18px;">${body2}</p>
+              <p style="margin:0 0 18px;">${body3}</p>
+              <p style="margin:0 0 10px;">${body4}</p>
+              <p style="margin:0 0 24px;"><a href="${link}" style="color:#ad1414;font-weight:600;">${linkText}</a></p>
+              <p style="margin:0 0 20px;">${closing}</p>
+              <p style="margin:0;">Shana<br/>STAYMAKOM</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
   </table>
 </body>
 </html>`;
@@ -87,7 +154,7 @@ async function sendEmail(to: string, subject: string, html: string) {
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: 'STAYMAKOM <hello@staymakom.com>', reply_to: 'shana@staymakom.com', to: [to], subject, html }),
+    body: JSON.stringify({ from: 'Shana (STAYMAKOM) <hello@staymakom.com>', reply_to: 'shana@staymakom.com', to: [to], subject, html }),
   });
   if (!res.ok) console.error('Resend error:', await res.text());
   return res.ok;
@@ -152,7 +219,7 @@ Deno.serve(async (req: Request) => {
 
       const link = `https://staymakom.com/avis/${created.token}`;
       const html = buildEmailHtml({ guestName: c.name, experienceTitle: c.title, link, lang: c.lang, isReminder: false });
-      const ok = await sendEmail(c.email, SUBJECT[c.lang] || SUBJECT.en, html);
+      const ok = await sendEmail(c.email, buildSubject(c.title, c.lang, false), html);
       if (ok) sentCount += 1;
     }
 
@@ -193,7 +260,7 @@ Deno.serve(async (req: Request) => {
 
       const link = `https://staymakom.com/avis/${r.token}`;
       const html = buildEmailHtml({ guestName: name, experienceTitle: title, link, lang: r.lang || 'en', isReminder: true });
-      const ok = await sendEmail(email, REMINDER_SUBJECT[r.lang || 'en'] || REMINDER_SUBJECT.en, html);
+      const ok = await sendEmail(email, buildSubject(title, r.lang || 'en', true), html);
       if (ok) {
         await supabase.from('review_requests').update({ status: 'reminded_j5', reminded_at: new Date().toISOString() }).eq('id', r.id);
         remindedCount += 1;

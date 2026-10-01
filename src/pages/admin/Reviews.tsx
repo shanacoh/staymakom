@@ -145,7 +145,7 @@ export default function AdminReviews() {
       return exp ? (exp.title_fr || exp.title) : "Fiche introuvable";
     }
     if (row.scope === "brand") return "STAYMAKOM (marque)";
-    return "—";
+    return "-";
   };
 
   const filtered = useMemo(() => {
@@ -327,7 +327,7 @@ export default function AdminReviews() {
                       <span className="flex items-center gap-0.5">
                         <Star className="h-3 w-3 fill-foreground text-foreground" /> {review.rating}
                       </span>
-                    ) : "—"}
+                    ) : "-"}
                   </TableCell>
                   <TableCell className="max-w-[260px] text-sm text-muted-foreground">
                     <p className="line-clamp-2">{review.comment}</p>

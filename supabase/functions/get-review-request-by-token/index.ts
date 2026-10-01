@@ -1,4 +1,4 @@
-// get-review-request-by-token — Edge Function
+// get-review-request-by-token - Edge Function
 // Utilisée par la page publique /avis/:token : charge uniquement ce qui est nécessaire
 // pour afficher le formulaire (titre de l'expérience, langue, si déjà déposé), jamais
 // les coordonnées complètes ni les données internes de la réservation.

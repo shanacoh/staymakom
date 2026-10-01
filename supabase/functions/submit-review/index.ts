@@ -1,4 +1,4 @@
-// submit-review — Edge Function
+// submit-review - Edge Function
 // Reçoit le formulaire déposé sur /avis/:token. Va chercher elle-même la réservation
 // liée au token (jamais ce que le navigateur prétend) pour déterminer la fiche à
 // rattacher, le prestataire, et si un compte client existe (pour créditer les Traces).
@@ -45,12 +45,14 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { token, rating, comment, consent_to_publish, photo_url } = await req.json();
+    const { token, rating, comment, consent_to_publish, photo_url, suggestion, newsletter_opt_in } = await req.json();
     if (!token) {
       return new Response(JSON.stringify({ error: 'token manquant' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-    if (rating == null && !comment) {
-      return new Response(JSON.stringify({ error: 'Note ou commentaire requis' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const hasReviewContent = rating != null || !!comment;
+    const hasSuggestion = !!(suggestion && String(suggestion).trim());
+    if (!hasReviewContent && !hasSuggestion) {
+      return new Response(JSON.stringify({ error: 'Note, commentaire ou suggestion requis' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
@@ -111,56 +113,99 @@ Deno.serve(async (req: Request) => {
 
     const { first, lastInitial } = splitName(customerName);
 
-    const { data: review, error: insertError } = await supabase
-      .from('reviews')
-      .insert({
-        scope,
-        standalone_experience_id: standaloneExperienceId,
-        experience2_id: experience2Id,
-        provider_id: providerId,
-        booking_type: request.booking_type,
-        booking_id: request.booking_id,
-        customer_first_name: first,
-        customer_last_initial: lastInitial,
-        customer_email: customerEmail,
-        customer_phone: customerPhone,
-        customer_user_id: customerUserId,
-        rating: rating ?? null,
-        comment: comment || null,
-        lang: request.lang,
-        photo_url: photo_url || null,
-        consent_to_publish: !!consent_to_publish,
-        moderation_status: 'pending',
-        source: 'auto_link',
-        review_date: new Date().toISOString().split('T')[0],
-      })
-      .select('id')
-      .single();
+    let reviewId: string | null = null;
+    let tracesAwarded = false;
 
-    if (insertError || !review) {
-      console.error('submit-review insert error:', insertError);
-      return new Response(JSON.stringify({ error: "Impossible d'enregistrer l'avis" }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    if (hasReviewContent) {
+      const { data: review, error: insertError } = await supabase
+        .from('reviews')
+        .insert({
+          scope,
+          standalone_experience_id: standaloneExperienceId,
+          experience2_id: experience2Id,
+          provider_id: providerId,
+          booking_type: request.booking_type,
+          booking_id: request.booking_id,
+          customer_first_name: first,
+          customer_last_initial: lastInitial,
+          customer_email: customerEmail,
+          customer_phone: customerPhone,
+          customer_user_id: customerUserId,
+          rating: rating ?? null,
+          comment: comment || null,
+          lang: request.lang,
+          photo_url: photo_url || null,
+          consent_to_publish: !!consent_to_publish,
+          moderation_status: 'pending',
+          source: 'auto_link',
+          review_date: new Date().toISOString().split('T')[0],
+        })
+        .select('id')
+        .single();
+
+      if (insertError || !review) {
+        console.error('submit-review insert error:', insertError);
+        return new Response(JSON.stringify({ error: "Impossible d'enregistrer l'avis" }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      reviewId = review.id;
+
+      // Traces créditées pour tout avis déposé, quelle que soit la note, seulement si un compte existe.
+      if (customerUserId) {
+        await supabase.from('loyalty_points').insert({
+          user_id: customerUserId,
+          points: TRACES_PER_REVIEW,
+          action: 'avis_laisse',
+          description: 'Avis déposé après une expérience',
+          reference_id: review.id,
+          reference_type: 'review',
+        });
+        await supabase.from('reviews').update({ traces_awarded: true }).eq('id', review.id);
+        tracesAwarded = true;
+      }
+    }
+
+    // Suggestion/question libre, séparée de l'avis : enregistrée dans les leads existants
+    // (visibles dans /admin/leads) plutôt qu'un nouveau système de messages en parallèle.
+    if (hasSuggestion && customerEmail) {
+      await supabase.from('leads').insert({
+        source: 'review_suggestion',
+        name: customerName || null,
+        first_name: first,
+        email: customerEmail,
+        phone: customerPhone,
+        subject: 'Suggestion depuis la page avis',
+        message: String(suggestion).trim(),
+        metadata: { booking_type: request.booking_type, booking_id: request.booking_id, review_id: reviewId },
+      });
+    }
+
+    // Inscription newsletter, seulement si on n'a pas déjà cet email en liste.
+    if (newsletter_opt_in && customerEmail) {
+      const { data: existingSubscriber } = await supabase
+        .from('leads')
+        .select('id')
+        .ilike('email', customerEmail)
+        .eq('marketing_opt_in', true)
+        .limit(1)
+        .maybeSingle();
+      if (!existingSubscriber) {
+        await supabase.from('leads').insert({
+          source: 'newsletter_popup',
+          email: customerEmail.toLowerCase().trim(),
+          name: customerName || null,
+          first_name: first,
+          marketing_opt_in: true,
+          metadata: { from: 'review_form' },
+        });
+      }
     }
 
     await supabase
       .from('review_requests')
-      .update({ status: 'submitted', submitted_at: new Date().toISOString(), review_id: review.id })
+      .update({ status: 'submitted', submitted_at: new Date().toISOString(), review_id: reviewId })
       .eq('id', request.id);
 
-    // Traces créditées pour tout avis déposé, quelle que soit la note — seulement si un compte existe.
-    if (customerUserId) {
-      await supabase.from('loyalty_points').insert({
-        user_id: customerUserId,
-        points: TRACES_PER_REVIEW,
-        action: 'avis_laisse',
-        description: 'Avis déposé après une expérience',
-        reference_id: review.id,
-        reference_type: 'review',
-      });
-      await supabase.from('reviews').update({ traces_awarded: true }).eq('id', review.id);
-    }
-
-    return new Response(JSON.stringify({ success: true, tracesAwarded: !!customerUserId }), {
+    return new Response(JSON.stringify({ success: true, tracesAwarded }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

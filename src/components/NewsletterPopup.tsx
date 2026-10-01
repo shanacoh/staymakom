@@ -175,7 +175,8 @@ export function NewsletterPopup({
     location.pathname.startsWith("/hotel-admin") ||
     location.pathname.startsWith("/swipe/") ||
     location.pathname.startsWith("/checkout") ||
-    location.pathname.startsWith("/standalone-checkout")
+    location.pathname.startsWith("/standalone-checkout") ||
+    location.pathname.startsWith("/avis/")
   ) {
     return null;
   }
