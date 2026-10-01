@@ -43,9 +43,13 @@ function buildEmailHtml(params: {
   amount: number;
   currency: string;
   checkoutUrl: string;
+  bookingRef: string;
 }): string {
-  const { guestName, experienceTitle, kindLabel, amount, currency, checkoutUrl } = params;
+  const { guestName, experienceTitle, kindLabel, amount, currency, checkoutUrl, bookingRef } = params;
   const brandRed = '#ad1414';
+  // Même photo d'ambiance (désert) que l'email de confirmation de réservation,
+  // pour que tous les emails transactionnels partagent le même univers de marque.
+  const heroImageUrl = 'https://uqeipzfdhyjkjzvqbkeu.supabase.co/storage/v1/object/public/NL/email/confirmation-hero-desert-road.jpg';
 
   return `
 <!DOCTYPE html>
@@ -53,7 +57,7 @@ function buildEmailHtml(params: {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Payment link — StayMakom</title>
+  <title>${escapeHTML(kindLabel)} Payment | StayMakom</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
   </style>
@@ -64,37 +68,61 @@ function buildEmailHtml(params: {
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
 
+          <!-- Header : photo bandeau (identique à l'email de confirmation) -->
           <tr>
-            <td style="background:#1a1a1a;padding:36px 40px;text-align:center;">
-              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;">STAYMAKOM</h1>
+            <td background="${heroImageUrl}" bgcolor="#1a1a1a" style="background-image:url('${heroImageUrl}');background-size:cover;background-position:center;padding:44px 40px;text-align:center;">
+              <p style="margin:0 0 10px;color:rgba(255,255,255,0.75);font-size:11px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;text-shadow:0 2px 12px rgba(0,0,0,0.5);">Experience Only</p>
+              <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;text-shadow:0 2px 20px rgba(0,0,0,0.5);">STAYMAKOM</h1>
             </td>
           </tr>
 
+          <!-- Banner -->
+          <tr>
+            <td style="background:#FAF9F6;padding:24px 40px;text-align:center;border-bottom:1px solid #eee;">
+              <p style="margin:0;font-size:16px;font-weight:700;color:${brandRed};">💳 ${escapeHTML(kindLabel)} Payment</p>
+              <p style="margin:6px 0 0;font-size:14px;color:#666;">
+                ${kindLabel === 'Deposit'
+                  ? 'Please complete your deposit to confirm your booking.'
+                  : 'Your experience is coming up. Here is your remaining balance.'}
+              </p>
+            </td>
+          </tr>
+
+          <!-- Body -->
           <tr>
             <td style="padding:40px;">
-              <p style="margin:0 0 20px;font-size:16px;color:#1a1a1a;">
+              <p style="margin:0 0 24px;font-size:16px;color:#1a1a1a;">
                 Dear <strong>${escapeHTML(guestName)}</strong>,
               </p>
-              <p style="margin:0 0 28px;font-size:15px;color:#555;line-height:1.6;">
-                Please find below your ${kindLabel.toLowerCase()} payment link for <strong>${escapeHTML(experienceTitle)}</strong>.
+              <p style="margin:0 0 32px;font-size:15px;color:#555;line-height:1.6;">
+                Please find below your ${kindLabel.toLowerCase()} payment for your experience.
               </p>
 
+              <!-- Payment card -->
               <table width="100%" cellpadding="0" cellspacing="0" style="background:#FAF9F6;border-radius:8px;border:1px solid #eee;margin-bottom:32px;">
                 <tr>
                   <td style="padding:24px;text-align:center;">
-                    <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#999;">${escapeHTML(kindLabel)} due</p>
-                    <p style="margin:6px 0 0;font-size:22px;font-weight:700;color:${brandRed};">${formatCurrency(amount, currency)}</p>
-                  </td>
-                </tr>
-              </table>
-
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
-                <tr>
-                  <td align="center">
-                    <a href="${checkoutUrl}"
-                       style="display:inline-block;background:${brandRed};color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:999px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;">
-                      Pay now
-                    </a>
+                    <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#999;">Experience</p>
+                    <p style="margin:4px 0 0;font-size:16px;font-weight:700;color:#1a1a1a;">${escapeHTML(experienceTitle)}</p>
+                    <p style="margin:8px 0 20px;font-size:12px;color:#999;">Booking Ref: <span style="font-weight:600;color:#1a1a1a;">${escapeHTML(bookingRef)}</span></p>
+                    <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #eee;">
+                      <tr>
+                        <td style="padding-top:16px;text-align:center;">
+                          <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#999;">${escapeHTML(kindLabel)} due</p>
+                          <p style="margin:6px 0 0;font-size:24px;font-weight:700;color:${brandRed};">${formatCurrency(amount, currency)}</p>
+                        </td>
+                      </tr>
+                    </table>
+                    <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px;">
+                      <tr>
+                        <td align="center">
+                          <a href="${checkoutUrl}"
+                             style="display:inline-block;background:${brandRed};color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:999px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;">
+                            Pay Now
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
               </table>
@@ -106,6 +134,7 @@ function buildEmailHtml(params: {
             </td>
           </tr>
 
+          <!-- Footer -->
           <tr>
             <td style="background:#ffffff;padding:24px 40px;text-align:center;border-top:1px solid #eee;">
               <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#1a1a1a;">StayMakom</p>
@@ -222,6 +251,7 @@ Deno.serve(async (req: Request) => {
       amount: payment.amount,
       currency: payment.currency,
       checkoutUrl: payment.checkout_url,
+      bookingRef: `SM-${payment.booking_id.slice(0, 8).toUpperCase()}`,
     });
 
     const emailResponse = await fetch('https://api.resend.com/emails', {
@@ -234,7 +264,7 @@ Deno.serve(async (req: Request) => {
         from: 'StayMakom <hello@staymakom.com>',
         reply_to: 'shana@staymakom.com',
         to: [booking.customer_email],
-        subject: `${kindLabel} payment link — ${experienceTitle}`,
+        subject: `${kindLabel} payment link for ${experienceTitle}`,
         html,
       }),
     });

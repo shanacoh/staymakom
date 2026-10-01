@@ -64,6 +64,14 @@
 
 ---
 
+## Emails transactionnels (obligatoire, à chaque nouvel email)
+
+- **Référence unique à suivre** : `supabase/functions/send-standalone-booking-confirmation/index.ts` (l'email de confirmation de réservation). Tout nouvel email envoyé aux clients ou prestataires doit reprendre au maximum son habillage, en l'adaptant au contenu (ne pas copier le texte, copier le style) :
+  - Même photo bandeau en en-tête (désert) : `https://uqeipzfdhyjkjzvqbkeu.supabase.co/storage/v1/object/public/NL/email/confirmation-hero-desert-road.jpg`, avec le nom "STAYMAKOM" en surimpression.
+  - Même structure : bandeau photo → bannière de contexte (ex. "✓ Booking Confirmed", "💳 Deposit Payment") → bloc carte avec les infos clés sur fond gris clair → bouton d'action arrondi en rouge marque (`#ad1414`) → texte de contact → pied de page "StayMakom — The Israel most people never find."
+  - Même police (Inter, Google Fonts) et mêmes couleurs (rouge marque `#ad1414`, fond `#FAF9F6`, texte gris `#555`/`#999`).
+- **Si un email doit s'écarter de ce modèle** pour une raison valable (ex. email interne, pas pour un client), le dire explicitement avant de le construire autrement.
+
 ## Qualité du code (obligatoire, en arrière-plan)
 
 Ces principes s'appliquent à tout le code produit, sans avoir besoin de les demander :
