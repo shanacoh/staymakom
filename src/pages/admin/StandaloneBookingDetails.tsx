@@ -35,6 +35,7 @@ export default function AdminStandaloneBookingDetails() {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [customDepositDialog, setCustomDepositDialog] = useState<{ open: boolean; mode: "fixed" | "percentage"; value: string }>({ open: false, mode: "fixed", value: "" });
+  const [forceBalanceUnlock, setForceBalanceUnlock] = useState(false);
 
   const { data: booking, isLoading } = useQuery({
     queryKey: ["admin-standalone-booking-details", bookingId],
@@ -686,7 +687,7 @@ export default function AdminStandaloneBookingDetails() {
             <Button
               size="sm"
               variant={!isFullyPaidViaPayments && !hasPendingBalance && totalPaid > 0 ? "default" : "outline"}
-              disabled={isFullyPaidViaPayments || hasPendingBalance || generatePaymentLinkMutation.isPending}
+              disabled={isFullyPaidViaPayments || hasPendingBalance || generatePaymentLinkMutation.isPending || (hasPendingDeposit && !forceBalanceUnlock)}
               onClick={() => generatePaymentLinkMutation.mutate({ kind: "balance" })}
             >
               {generatePaymentLinkMutation.isPending && generatePaymentLinkMutation.variables?.kind === "balance" && (
@@ -694,7 +695,16 @@ export default function AdminStandaloneBookingDetails() {
               )}
               Générer lien de solde
             </Button>
+            {hasPendingDeposit && !forceBalanceUnlock && (
+              <Button size="sm" variant="link" className="h-7 text-xs text-muted-foreground" onClick={() => setForceBalanceUnlock(true)}>
+                Débloquer quand même
+              </Button>
+            )}
           </div>
+
+          {hasPendingDeposit && forceBalanceUnlock && (
+            <p className="text-xs font-medium text-destructive">⚠️ L'acompte n'est pas encore payé — tu vas générer un lien de solde pour le prix total.</p>
+          )}
 
           <Dialog open={customDepositDialog.open} onOpenChange={(open) => setCustomDepositDialog((d) => ({ ...d, open }))}>
             <DialogContent>

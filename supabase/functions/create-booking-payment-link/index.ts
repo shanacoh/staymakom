@@ -110,7 +110,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { booking_id, kind } = await req.json();
+    const { booking_id, kind, manual_deposit } = await req.json();
     if (!booking_id || !['deposit', 'balance'].includes(kind)) {
       return new Response(JSON.stringify({ success: false, error: 'booking_id et kind (deposit|balance) requis' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -160,6 +160,27 @@ Deno.serve(async (req: Request) => {
         amount = depositAmount;
       } else if (depositType === 'percentage' && depositAmount) {
         amount = Math.round((booking.sell_price * depositAmount) / 100 * 100) / 100;
+      } else if (
+        manual_deposit
+        && ['fixed', 'percentage'].includes(manual_deposit.mode)
+        && typeof manual_deposit.value === 'number'
+        && manual_deposit.value > 0
+      ) {
+        // Pas de règle configurée sur l'expérience (ex. réservations bateau saisies à la main,
+        // non reliées au catalogue) — l'admin choisit le montant/pourcentage au moment de générer le lien.
+        if (manual_deposit.mode === 'percentage' && manual_deposit.value > 100) {
+          return new Response(JSON.stringify({ success: false, error: 'Le pourcentage d\'acompte ne peut pas dépasser 100%' }), {
+            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        amount = manual_deposit.mode === 'fixed'
+          ? manual_deposit.value
+          : Math.round((booking.sell_price * manual_deposit.value) / 100 * 100) / 100;
+        if (amount > booking.sell_price) {
+          return new Response(JSON.stringify({ success: false, error: 'Le montant d\'acompte dépasse le prix total de la réservation' }), {
+            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
       } else {
         return new Response(JSON.stringify({ success: false, error: 'Aucune règle d\'acompte configurée pour cette expérience' }), {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
