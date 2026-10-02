@@ -26,18 +26,22 @@ import { outsideIsraelWarning } from "@/lib/catalogue/geo";
 import { todayIso } from "@/lib/catalogue/filters";
 import { errorMessage, useDeleteCatalogueItem, useUpdateCatalogueItem } from "@/lib/catalogue/queries";
 import {
+  estUtilisableEnExplorer,
+  MODE_RESERVATION_OPTIONS,
   NATURE_OPTIONS,
   PLACE_TYPE_OPTIONS,
   STATUS_OPTIONS,
   type CatalogueCategory,
   type CatalogueEntry,
   type CommercialStatus,
+  type ModeReservation,
   type Nature,
   type PlaceType,
 } from "@/lib/catalogue/types";
 import { SiteBadge } from "./CatalogueBadges";
 import { ItemLinksSection } from "./ItemLinksSection";
 import { SiteLinkSection } from "./SiteLinkSection";
+import { TeaserSection } from "./TeaserSection";
 
 interface CatalogueItemPanelProps {
   entry: CatalogueEntry;
@@ -239,6 +243,80 @@ export function CatalogueItemPanel({ entry, allEntries, categories, onClose }: C
                   placeholder="vue mer, casher, enfants"
                 />
               </Field>
+            </Section>
+
+            <Section title="Disponibilité pour Explorer (le jeu de swipe)">
+              <p className="text-[11px] text-muted-foreground">
+                {estUtilisableEnExplorer(entry)
+                  ? "Cette fiche a une photo et un prix client : elle peut être proposée dans Explorer."
+                  : "Ajoute une photo et un prix client pour que cette fiche puisse être proposée dans Explorer."}
+              </p>
+              <Field label="Photo (lien direct vers l'image)" htmlFor="panel-photo-url">
+                <Input
+                  id="panel-photo-url"
+                  value={draft.photo_url}
+                  onChange={(e) => set("photo_url", e.target.value)}
+                  inputMode="url"
+                  placeholder="https://..."
+                />
+              </Field>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <Field label="Prix d'achat" htmlFor="panel-prix-achat">
+                  <Input
+                    id="panel-prix-achat"
+                    value={draft.prix_achat}
+                    onChange={(e) => set("prix_achat", e.target.value)}
+                    inputMode="decimal"
+                  />
+                </Field>
+                <Field label="Prix client" htmlFor="panel-prix-client">
+                  <Input
+                    id="panel-prix-client"
+                    value={draft.prix_client}
+                    onChange={(e) => set("prix_client", e.target.value)}
+                    inputMode="decimal"
+                  />
+                </Field>
+                <Field label="Commission (%)" htmlFor="panel-commission">
+                  <Input
+                    id="panel-commission"
+                    value={draft.commission_pourcentage}
+                    onChange={(e) => set("commission_pourcentage", e.target.value)}
+                    inputMode="decimal"
+                  />
+                </Field>
+              </div>
+              <Field label="Mode de réservation">
+                <Select
+                  value={draft.mode_reservation || "none"}
+                  onValueChange={(v) => set("mode_reservation", v === "none" ? "" : (v as ModeReservation))}
+                >
+                  <SelectTrigger className="text-xs">
+                    <SelectValue placeholder="Non défini" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Non défini</SelectItem>
+                    {MODE_RESERVATION_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Lien de réservation (facultatif)" htmlFor="panel-lien-reservation">
+                <Input
+                  id="panel-lien-reservation"
+                  value={draft.lien_reservation}
+                  onChange={(e) => set("lien_reservation", e.target.value)}
+                  inputMode="url"
+                  placeholder="https://..."
+                />
+              </Field>
+            </Section>
+
+            <Section title="Habillage teaser (étape Proposition)">
+              <TeaserSection catalogueItemId={entry.id} />
             </Section>
 
             <Section title="Suivi du contenu">

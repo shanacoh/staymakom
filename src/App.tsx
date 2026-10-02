@@ -107,11 +107,15 @@ const AdminAutomations           = lazy(() => import("./pages/admin/Automations"
 
 // ── Module Swipe Itinéraire ────────────────────────────────────────────────
 const SwipePublic                = lazy(() => import("./pages/swipe/SwipePublic"));
+const VoyagePublic                = lazy(() => import("./pages/voyage/VoyagePublic"));
 const AdminSwipeDossiers         = lazy(() => import("./pages/admin/swipe/Dossiers"));
 const AdminSwipeDossierDetail    = lazy(() => import("./pages/admin/swipe/DossierDetail"));
 const AdminSwipeDossierResultats = lazy(() => import("./pages/admin/swipe/DossierResultats"));
 const AdminSwipeBibliotheque     = lazy(() => import("./pages/admin/swipe/Bibliotheque"));
 const AdminSwipeCategories       = lazy(() => import("./pages/admin/swipe/Categories"));
+const AdminDossiersLayout        = lazy(() => import("./pages/admin/dossiers/DossiersLayout"));
+const AdminDossierEmptyState     = lazy(() => import("./pages/admin/dossiers/DossierEmptyState"));
+const AdminDossierVoyageDetail   = lazy(() => import("./pages/admin/dossiers/DossierVoyageDetail"));
 
 // ── Hotel admin (chargé uniquement si connecté hotel_admin) ───────────────
 const HotelAdminLayout       = lazy(() => import("@/components/hotel-admin/HotelAdminLayout").then(m => ({ default: m.HotelAdminLayout })));
@@ -272,6 +276,7 @@ const AppContent = () => {
           <Route path="/avis/:token" element={<PublicReviewForm />} />
           <Route path="/tailor-questionnaire/:token" element={<TailorMadeQuestionnaire />} />
           <Route path="/swipe/:token" element={<SwipePublic />} />
+          <Route path="/voyage/:token" element={<VoyagePublic />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/cart" element={<Cart />} />
           <Route
@@ -337,6 +342,12 @@ const AppContent = () => {
             <Route path="hyperguest/logs" element={<HyperGuestLogsPage />} />
             <Route path="hyperguest/config" element={<HyperGuestConfigPage />} />
             <Route path="revolut/debug" element={<RevolutDebugPage />} />
+            <Route path="dossiers" element={<AdminDossiersLayout />}>
+              <Route index element={<AdminDossierEmptyState />} />
+              <Route path=":dossierId" element={<AdminDossierVoyageDetail />} />
+            </Route>
+            {/* Anciennes routes du module swipe : conservées en lecture, non reliées au menu
+                (leur contenu a été repris dans "Dossiers" et le Catalogue, chantier Dossier de voyage) */}
             <Route path="swipe/dossiers" element={<AdminSwipeDossiers />} />
             <Route path="swipe/dossiers/:dossierId" element={<AdminSwipeDossierDetail />} />
             <Route path="swipe/dossiers/:dossierId/resultats" element={<AdminSwipeDossierResultats />} />
@@ -346,7 +357,6 @@ const AppContent = () => {
             {/* Charpente de navigation : écrans pas encore construits, en attendant leur tour */}
             <Route path="carte" element={<AdminCarte />} />
             <Route path="catalogue" element={<AdminCatalogue />} />
-            <Route path="itineraires" element={<ComingSoonAdmin title="Itinéraires" description="Brief, propositions IA et recherche manuelle pour construire un itinéraire client." />} />
             <Route path="partenaires/experiences" element={<AdminProviders />} />
             <Route path="rentabilite/bateaux" element={<AdminBoatsProfitability />} />
             <Route path="avis" element={<AdminReviews />} />

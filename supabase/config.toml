@@ -6,6 +6,15 @@ verify_jwt = false
 [functions.collect-lead]
 verify_jwt = false
 
+[functions.generate-dossier-brief]
+verify_jwt = false
+
+[functions.generate-dossier-composer]
+verify_jwt = false
+
+[functions.send-dossier-voyage-autoreplies]
+verify_jwt = false
+
 [functions.send-gift-card]
 verify_jwt = false
 

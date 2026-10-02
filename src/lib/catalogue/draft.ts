@@ -3,6 +3,7 @@ import type {
   CatalogueEntry,
   CatalogueItemUpdate,
   CommercialStatus,
+  ModeReservation,
   Nature,
   PlaceType,
 } from "./types";
@@ -38,6 +39,13 @@ export interface CatalogueDraft {
   video_url: string;
   category_ids: string[];
   tags: string; // séparées par des virgules
+
+  photo_url: string;
+  prix_achat: string;
+  prix_client: string;
+  commission_pourcentage: string;
+  mode_reservation: ModeReservation | "";
+  lien_reservation: string;
 }
 
 export function draftFromEntry(entry: CatalogueEntry): CatalogueDraft {
@@ -68,6 +76,13 @@ export function draftFromEntry(entry: CatalogueEntry): CatalogueDraft {
     video_url: entry.video_url ?? "",
     category_ids: [...entry.staymakom_category_ids],
     tags: entry.tags.join(", "),
+
+    photo_url: entry.photo_url ?? "",
+    prix_achat: entry.prix_achat === null ? "" : String(entry.prix_achat),
+    prix_client: entry.prix_client === null ? "" : String(entry.prix_client),
+    commission_pourcentage: entry.commission_pourcentage === null ? "" : String(entry.commission_pourcentage),
+    mode_reservation: entry.mode_reservation ?? "",
+    lien_reservation: entry.lien_reservation ?? "",
   };
 }
 
@@ -166,6 +181,44 @@ export function buildPatch(draft: CatalogueDraft, entry: CatalogueEntry): PatchR
   if (!sameSet(draft.category_ids, entry.staymakom_category_ids)) patch.staymakom_category_ids = draft.category_ids;
   const tags = parseTags(draft.tags);
   if (!sameList(tags, entry.tags)) patch.tags = tags;
+
+  if (draft.photo_url.trim() && !isHttpUrl(draft.photo_url)) {
+    return { patch: {}, error: "Le lien de la photo doit commencer par https://" };
+  }
+  setText("photo_url", draft.photo_url, entry.photo_url);
+
+  if (draft.lien_reservation.trim() && !isHttpUrl(draft.lien_reservation)) {
+    return { patch: {}, error: "Le lien de réservation doit commencer par https://" };
+  }
+  setText("lien_reservation", draft.lien_reservation, entry.lien_reservation);
+
+  const setNumber = (
+    key: "prix_achat" | "prix_client" | "commission_pourcentage",
+    next: string,
+    current: number | null
+  ): string | null => {
+    const trimmed = next.trim();
+    if (trimmed === "") {
+      if (current !== null) patch[key] = null;
+      return null;
+    }
+    const value = Number(trimmed.replace(",", "."));
+    if (!Number.isFinite(value) || value < 0) {
+      return `Le champ "${key === "prix_achat" ? "prix d'achat" : key === "prix_client" ? "prix client" : "commission"}" doit être un nombre positif`;
+    }
+    if (value !== current) patch[key] = value;
+    return null;
+  };
+
+  const prixAchatError = setNumber("prix_achat", draft.prix_achat, entry.prix_achat);
+  if (prixAchatError) return { patch: {}, error: prixAchatError };
+  const prixClientError = setNumber("prix_client", draft.prix_client, entry.prix_client);
+  if (prixClientError) return { patch: {}, error: prixClientError };
+  const commissionError = setNumber("commission_pourcentage", draft.commission_pourcentage, entry.commission_pourcentage);
+  if (commissionError) return { patch: {}, error: commissionError };
+
+  const modeReservation = draft.mode_reservation === "" ? null : draft.mode_reservation;
+  if (modeReservation !== entry.mode_reservation) patch.mode_reservation = modeReservation;
 
   return { patch, error: null };
 }

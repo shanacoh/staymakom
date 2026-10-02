@@ -6,6 +6,65 @@
 
 ---
 
+## [2026-10-02] — Chantier "Dossier de voyage" : étape 10, réponse automatique au formulaire du site
+
+### Ce qui a changé côté code
+- `supabase/functions/collect-lead/index.ts` : à la création d'un dossier de voyage depuis le formulaire "Créer mon voyage", calcule désormais le prochain moment convenable pour la réponse automatique (`autoreply_envoyer_apres`) — décalé de 5 minutes, jamais la nuit (22h-7h heure d'Israël), jamais pendant Shabbat (approximation prudente : vendredi 15h à samedi minuit).
+- Nouvelle fonction `send-dossier-voyage-autoreplies` (déployée, pensée pour être appelée périodiquement par le même mécanisme externe que `send-review-requests`) : envoie un email dans la voix de Shana avec jusqu'à 3 questions piochées dans la banque selon ce qui manque réellement au dossier. Revérifie le moment convenable au moment de l'envoi (pas seulement à la planification), pour rester prudent même si le déclencheur externe tourne en retard. Déclarée dans `src/config/automations.ts` avec aperçu.
+
+### Ce qui a changé côté base de données
+- Voir l'entrée précédente (`autoreply_question_bank`, colonnes `autoreply_envoyer_apres`/`autoreply_envoye_at` sur `dossiers_voyage`), créées dans la même session.
+
+### Limite connue
+- Le formulaire public ne transmet pas encore la langue du visiteur : l'email part en français pour l'instant, même si la banque de questions a déjà ses traductions EN/HE prêtes pour le jour où cette info sera ajoutée au formulaire.
+
+### Pourquoi ce changement
+- Donne une première réponse humaine et rapide à toute nouvelle demande arrivée par le site, sans que Shana ait à surveiller en permanence — tout en respectant son rythme de vie (jamais de notification/email la nuit ou pendant Shabbat).
+
+---
+
+## [2026-10-02] — Chantier "Dossier de voyage" : étape 9, file actionnable au Tableau de bord
+
+### Ce qui a changé côté code
+- `src/pages/admin/Dashboard.tsx` : la carte "Actions à faire" (jusqu'ici un texte placeholder) affiche maintenant les dossiers de voyage qui ont besoin d'une action (nouvelle demande à analyser, brief à valider, envoyé sans ouverture, ouvert plusieurs fois sans réponse, retours reçus...), avec un lien direct vers chaque dossier. Réutilise `statutActionnable` (déjà utilisé dans la liste des dossiers).
+
+### Ce qui a changé côté base de données
+- Aucune.
+
+### Pourquoi ce changement
+- Shana n'a plus besoin d'ouvrir l'écran Dossiers pour repérer ce qui attend une action : ça remonte directement sur l'écran d'accueil du back-office.
+
+---
+
+## [2026-10-02] — Chantier "Dossier de voyage" : étape 7, activation de l'envoi du lien client
+
+### Ce qui a changé côté code
+- `src/pages/admin/dossiers/DossierVoyageDetail.tsx` : le bouton "Créer le lien et envoyer" de la carte "Lien client" fait désormais vraiment passer le dossier au statut `envoye` (avec horodatage) — il était désactivé depuis l'étape 5 en attendant que l'écran public existe (fait à l'étape 6). "Prévisualiser" ouvre le vrai lien `/voyage/:token` dans un nouvel onglet.
+- Nouvelle check-list avant envoi (`useLienClientChecklist` dans `src/lib/dossiersVoyage/queries.ts`) : nombre de lieux sans teaser "prêt" (invisibles côté client tant qu'ils ne sont pas habillés) et nombre de lieux jamais formalisés avec le prestataire (à contacter avant envoi).
+
+### Ce qui a changé côté base de données
+- Aucune.
+
+### Pourquoi ce changement
+- Avec l'écran client Proposition fonctionnel, il n'y avait plus de raison de garder le bouton d'envoi désactivé. La check-list évite d'envoyer un dossier avec des lieux encore invisibles (teaser manquant) sans que Shana s'en rende compte.
+
+---
+
+## [2026-10-02] — Chantier "Dossier de voyage" : étape 6, teaser Catalogue + écran client "Proposition"
+
+### Ce qui a changé côté code
+- Nouvelle section "Habillage teaser" dans le panneau d'édition d'une fiche Catalogue (`src/components/admin/catalogue/TeaserSection.tsx` + `src/lib/catalogue/teaserQueries.ts`) : nom de code, description sensorielle (FR/EN/HE), visuel non identifiable, secteur affiché au client avec rayon de flou réglable, statut brouillon/prêt.
+- Nouvelle page publique `/voyage/:token` (`src/pages/voyage/VoyagePublic.tsx`) : page autonome (même patron que `/swipe/:token`, sans l'habillage du site). Résout automatiquement quelle étape afficher (redirige vers Explorer si le dossier a démarré en swipe et n'est pas terminé, affiche la Proposition sinon, prévoit un Carnet pour plus tard). Écran Proposition : programme jour par jour en teaser, réactions par ligne ("J'adore"/"Autre chose ?"), bouton "Envoyer mes retours", prix total, et bouton Réserver / "On en parle ?" qui ouvre WhatsApp vers Shana (le vrai parcours de paiement n'existe pas encore — étape 8 du chantier).
+
+### Ce qui a changé côté base de données
+- 5 nouvelles fonctions publiques token-scopées (`supabase/migrations/20261002000000_dossier_voyage_proposition_public.sql`), même patron de sécurité que le module swipe : `dossier_voyage_resoudre_etape`, `dossier_voyage_get_proposition_header_by_token` (marque aussi l'ouverture pour le suivi de Shana), `dossier_voyage_get_proposition_lignes_by_token`, `dossier_voyage_set_reaction`, `dossier_voyage_envoyer_retours`. Elles ne lisent jamais `catalogue_items` directement pour le contenu affiché — uniquement `catalogue_item_teasers` : une fiche sans teaser marqué "prêt" est simplement absente de l'écran, jamais de repli sur les vraies informations (adresse, nom réel, prix par ligne).
+- Données de test : 4 fiches Catalogue réelles (déjà utilisées dans un dossier existant) ont reçu un teaser de démonstration pour permettre à Shana de tester l'écran de bout en bout.
+
+### Pourquoi ce changement
+- Permet au client de recevoir un avant-goût désirable de son voyage avant paiement, sans jamais révéler les partenaires réels — protège la relation commerciale de Shana avec ses prestataires tout en donnant envie au client de réserver.
+
+---
+
 ## [2026-10-01] — Sprint 3, étape 5 : boutons CTA dans le hero de la home
 
 ### Ce qui a changé côté code
@@ -36,6 +95,98 @@
 
 ### Pourquoi ce changement
 - Nettoyer les faux signaux de confiance (fausses étiquettes "Nouveau", blocs d'avis vides qui donnent une impression de site peu actif) et finir la version française du site, qui comportait encore plusieurs textes oubliés en anglais sur les pages expérience, bateaux et paiement.
+
+---
+
+## [2026-10-01] — Chantier "Dossier de voyage" : étape 5, Composer + refonte sur la maquette de Shana
+
+### Ce qui a changé côté code
+- Refonte complète de l'écran Dossiers sur une maquette fournie par Shana : mise en page à deux colonnes (liste des dossiers toujours visible à gauche, détail à droite), avec un bandeau d'étapes (Demande reçue → Brief → Composer → Lien client) qui accumule les sections au fil de l'avancement. Nouveaux fichiers `src/components/admin/dossiers/{DossierListSidebar,DossierStepper,LieuxImposesSection,ExclusionsSection,ComposerSection}.tsx`, `src/pages/admin/dossiers/{DossiersLayout,DossierEmptyState}.tsx`. L'ancienne page de liste (`Dossiers.tsx`, créée plus tôt dans la même journée) est supprimée.
+- Liste des dossiers : filtres (Tous/Demandes/À traiter/Vente/Collab/Modèles/Archivés), tuiles rappelant les 4 canaux d'arrivée possibles, ligne de statut actionnable calculée et colorée sous chaque dossier (ex. "Envoyé il y a 52h, jamais ouvert", "Swipe terminé : brouillon IA prêt").
+- **Composer** : écran de construction du programme jour par jour — démarrage d'une version R1, ajout manuel d'un lieu depuis le Catalogue (recherche par fenêtre dédiée, pas par menu déroulant), affichage du vrai nom et de la ville de chaque fiche, verrouillage d'une suggestion IA pour qu'elle survive à une régénération, suppression, bouton "Régénérer avec l'IA" avec consigne libre.
+- **Lieux imposés** : nouvelle section au niveau du Brief (avant même que le Composer existe) — recherche dans tout le Catalogue (pas seulement les expériences), origine (imposé par Shana / demandé par le client). Insérés automatiquement comme lignes verrouillées dès la première génération IA du programme, sans action supplémentaire de Shana.
+- **Écartés automatiquement** : l'IA du Brief détecte désormais aussi les exclusions explicites du client dans son message (ex. "pas Mitzpe Ramon") ; combinées avec les lieux déjà utilisés dans un dossier précédent du même client (par email), affichées dans le Brief et systématiquement écartées des propositions du Composer.
+- **Lien client** : nouvelle section de choix du point de départ (Explorer vs Proposition direct) ; le bouton d'envoi reste volontairement désactivé — l'écran public du lien client n'existe pas encore (étape 7 du chantier), pour ne jamais risquer d'envoyer un lien qui ne mène nulle part à un vrai client.
+- Deux corrections suite à des tests de Shana : le champ de recherche des lieux imposés n'acceptait pas la saisie (mauvaise utilisation d'un composant d'interface, remplacé par une fenêtre de recherche classique) ; les cartes du Composer affichaient la nature générique du lieu au lieu de son vrai nom.
+
+### Ce qui a changé côté base de données
+- Nouvelle colonne `dossiers_voyage.lieux_imposes` (JSONB) : les lieux que Shana ou le client veulent absolument garder, saisis dès le Brief.
+- `generate-dossier-brief` (edge function) : nouveau champ `brief_data.exclusions_mentionnees`, extrait par l'IA à partir du texte du client.
+- `generate-dossier-composer` (edge function) : insère désormais automatiquement les lieux imposés comme lignes verrouillées, et écarte des propositions les lieux déjà utilisés par le même client ou explicitement exclus.
+
+### Pourquoi ce changement
+- Shana a fourni une maquette détaillée de ce qu'elle voulait concrètement pour cet écran (structure, informations affichées), assez différente de la première version construite dans la journée — cette entrée documente la refonte qui en a résulté, pour que le prochain développeur comprenne pourquoi la structure a changé en cours de route.
+
+---
+
+## [2026-10-01] — Chantier "Dossier de voyage" : étape 1, modèle de données
+
+### Ce qui a changé côté code
+- `supabase/migrations/20261001020000_create_dossiers_voyage_core.sql` : migration complète créant le socle du futur objet "Dossier de voyage" (fusion à venir des Itinéraires et du Dossier swipe). Rien n'a été supprimé : les anciennes tables `dossiers`, `propositions` et `swipe_categories` restent en place intactes, en parallèle, tant que la bascule complète (front-office inclus) n'est pas terminée.
+- Les 9 fonctions techniques du module swipe (RPC publiques + triggers de suivi de lecture, ex. `swipe_get_dossier_by_token`, `swipe_upsert_swipe`, `swipe_refresh_statut_lecture`...) ont été réécrites pour lire/écrire dans la nouvelle table `dossiers_voyage` au lieu de l'ancienne table `dossiers` — sans changer leur signature ni le comportement visible côté client. Testé : un lien de dossier déjà envoyé continue de fonctionner à l'identique (ouverture, swipe, affichage des cartes).
+- Appliqué en plusieurs petites migrations successives via l'outil Supabase (voir note ci-dessous) plutôt qu'en un seul bloc, pour isoler précisément quelle partie nécessitait une validation manuelle.
+
+### Ce qui a changé côté base de données
+- **Nouvelles tables** : `dossiers_voyage` (objet central, remplace à terme `dossiers` + `itineraries` + `itinerary_requests`), `dossiers_voyage_versions` (historique R1/R2... visible par Shana seulement), `dossiers_voyage_lignes` (le programme jour par jour, futur écran "Composer"), `dossiers_voyage_retours` (réactions du client sur une proposition), `catalogue_item_teasers` (habillage "qui donne envie sans tout dévoiler" d'une fiche Catalogue, pour la future étape Proposition).
+- **Catalogue (`catalogue_items`)** : nouvelles colonnes `photo_url`, `prix_achat`, `prix_client`, `commission_pourcentage`, `mode_reservation`, `lien_reservation`, `legacy_proposition_id` (traçabilité). Ces colonnes remplacent ce que portait auparavant uniquement l'ancienne "bibliothèque swipe" (table `propositions`), qui disparaît à terme au profit du Catalogue comme liste unique de lieux pour tout le site. Le contenu des 61 lieux de l'ancienne bibliothèque a été copié dedans (60 fiches Catalogue mises à jour ou créées ; une légère déduplication a eu lieu quand deux anciennes propositions pointaient vers le même lieu déjà présent au Catalogue).
+- **8 dossiers swipe existants** copiés dans `dossiers_voyage` avec exactement le même lien client (même code secret), pour que les liens déjà envoyés aux clients continuent de fonctionner sans interruption.
+- **`dossier_propositions`** et **`participants`** : leur lien vers le dossier pointe désormais vers `dossiers_voyage` au lieu de `dossiers` ; `dossier_propositions` porte en plus une nouvelle colonne `catalogue_item_id`, reliant chaque ancienne proposition à sa fiche Catalogue correspondante.
+- **`review_requests`** (système d'avis clients) : la liste des types de réservation autorisés accepte désormais aussi `'dossiers_voyage'`, en vue de réutiliser ce même système pour la demande d'avis après un voyage préparé via un dossier.
+- **Rien touché côté réservations/paiement** : les tables `bookings_hg` et `standalone_bookings` (flux HyperGuest et Revolut) n'ont pas été modifiées à cette étape, volontairement — ce lien est repoussé à une étape ultérieure du chantier, dédiée au paiement.
+- Note technique : l'outil d'application automatique des migrations a demandé une validation manuelle spécifiquement pour la réécriture des 9 fonctions techniques du swipe (elles tournent avec des droits élevés et sont exposées publiquement) — Shana l'a exécutée elle-même directement dans l'éditeur SQL de Supabase. Toutes les autres parties (nouvelles tables, nouvelles colonnes, copies de données) sont passées par l'outil automatique sans besoin d'intervention manuelle.
+
+### Pourquoi ce changement
+- Première étape du chantier de fusion des Itinéraires et du Dossier swipe en un seul objet "Dossier de voyage" avec un lien client unique qui évolue dans le temps (Explorer → Proposition → Carnet de voyage). Cette étape pose uniquement le modèle de données et migre le contenu existant sans rien casser ; les écrans back-office et client (Demande reçue, Brief IA, Composer, nouveau lien client) arrivent aux étapes suivantes du plan.
+
+---
+
+## [2026-10-01] — Chantier "Dossier de voyage" : étape 4, Brief généré par l'IA
+
+### Ce qui a changé côté code
+- Nouvelle edge function `generate-dossier-brief` (réservée aux administrateurs, même contrôle d'accès que `catalogue-lookup`) : à partir du texte brut reçu sur un dossier (et de l'historique des autres dossiers connus pour le même email), demande à Claude (Haiku) d'extraire un brief structuré — dates, nombre de voyageurs, budget, devise, régions, langue, contraintes, envies — avec les points incertains repérés et des questions à poser au client, plus un message WhatsApp prêt à copier. Repli automatique sur la passerelle Lovable si aucune clé Anthropic n'est configurée.
+- `src/pages/admin/dossiers/DossierVoyageDetail.tsx` : nouvelle carte "Brief" avec bouton de génération, tous les champs extraits modifiables avant validation, affichage des points incertains et des questions, bouton de copie du message WhatsApp, bouton "Valider le brief".
+- `src/lib/dossiersVoyage/queries.ts` et `types.ts` : hooks `useGenerateDossierBrief`, `useUpdateDossierVoyage`, type `BriefData`.
+
+### Ce qui a changé côté base de données
+- Aucune (utilise les colonnes déjà créées à l'étape 1 : `dates_arrivee`, `dates_depart`, `nb_voyageurs`, `budget_estime`, `devise`, `regions`, `langue`, `brief_data`, `brief_valide_par_shana`).
+
+### Mise en route (à savoir si ça recasse un jour)
+- Cette fonction a besoin d'une clé IA pour fonctionner. Deux secrets ont été ajoutés dans Supabase (Edge Functions → Secrets) : `ANTHROPIC_API_KEY` (clé Claude de Shana) et `ANTHROPIC_WORKSPACE_ID` (`wrkspc_01AFUuB9MFo9KZqWUwdDGiiT`, l'espace de travail "Default" de son compte Anthropic Console). Le second secret est nécessaire uniquement parce que sa clé n'était pas rattachée à un espace de travail précis — sans lui, l'appel à Claude échoue avec une erreur 400 "not scoped to a workspace". Si la clé Anthropic est un jour régénérée, bien vérifier qu'elle est créée **depuis l'intérieur** d'un espace de travail (pas depuis la vue "Tous les espaces de travail"), ce qui évite normalement d'avoir besoin de `ANTHROPIC_WORKSPACE_ID`.
+
+### Pourquoi ce changement
+- Permet à Shana de transformer un message WhatsApp/email collé tel quel en informations exploitables pour composer le voyage, sans tout relire et retaper à la main — tout en gardant le dernier mot : rien n'est appliqué sans qu'elle puisse corriger ou valider.
+
+---
+
+## [2026-10-01] — Chantier "Dossier de voyage" : étape 3, écran back-office "Dossiers" + formulaire public
+
+### Ce qui a changé côté code
+- Nouveau module `src/lib/dossiersVoyage/` (`types.ts`, `queries.ts`) : types et hooks React Query pour lire, créer et dupliquer un dossier de voyage.
+- Nouvelles pages `src/pages/admin/dossiers/Dossiers.tsx` (liste, onglets En cours / Modèles / Archivés, création manuelle d'une demande, duplication d'un modèle) et `src/pages/admin/dossiers/DossierVoyageDetail.tsx` (fiche minimale : cadrage, message d'origine — le Brief IA et le Composer arriveront aux étapes suivantes).
+- `src/components/admin/AdminSidebar.tsx` : fusion des entrées "Itinéraires" et "Dossiers swipe" en une seule entrée "Dossiers" ; retrait des entrées "Bibliothèque swipe" et "Catégories swipe" (leur fonction est reprise par le Catalogue, voir ci-dessous).
+- `src/App.tsx` : nouvelles routes `/admin/dossiers` et `/admin/dossiers/:dossierId` ; route placeholder `/admin/itineraires` retirée. Les anciennes routes `swipe/dossiers`, `swipe/bibliotheque`, `swipe/categories` restent fonctionnelles pour un accès direct, simplement retirées du menu.
+- Catalogue : nouvelle section "Disponibilité pour Explorer" dans le panneau d'édition d'une fiche (`CatalogueItemPanel.tsx`), avec photo, prix d'achat, prix client, commission, mode de réservation et lien de réservation — une fiche n'est proposable dans le jeu de swipe que si elle a une photo et un prix client. Nouveau repère visuel dans la liste (`CatalogueBadges.tsx`).
+- `supabase/functions/collect-lead/index.ts` (déployée en production, version 29) : le formulaire public "Créer mon voyage" (bouton "DESIGN MY STAY" du site) crée et enrichit désormais aussi un dossier de voyage, en plus de la ligne "Itinéraires" existante — écriture non bloquante, le comportement actuel du site n'est pas modifié si elle échoue. Testé de bout en bout sur la fonction en production.
+
+### Ce qui a changé côté base de données
+- `supabase/migrations/20261001020200_catalogue_overview_expose_offre_fields.sql` : la vue `catalogue_overview` expose désormais aussi la photo, les prix et le mode de réservation d'une fiche.
+- Régénération des types TypeScript de la base de données (`src/integrations/supabase/types.ts`), nécessaire après les migrations des étapes précédentes.
+
+### Pourquoi ce changement
+- Donne à Shana un premier écran utilisable pour les dossiers de voyage (capture d'une nouvelle demande, vue d'ensemble, modèles réutilisables), et commence à faire du Catalogue la source unique des lieux du site (photo et prix désormais saisissables directement dessus, à la place de l'ancienne bibliothèque swipe).
+
+---
+
+## [2026-10-01] — Chantier "Dossier de voyage" : étape 2, archivage des anciens dossiers swipe
+
+### Ce qui a changé côté code
+- `supabase/migrations/20261001020100_archive_old_dossiers_and_flag_models.sql`.
+
+### Ce qui a changé côté base de données
+- Sur les 8 anciens dossiers swipe (déjà copiés dans `dossiers_voyage` à l'étape précédente) : 3 marqués comme **modèles réutilisables** (`est_modele = true`), validés avec Shana — "JEREMY AWAKENS" (référence `MODELE-JEREMY`), "DUO ESCAPE | AIJA & NAS" (référence `MODELE-NAS-DAILY`), "SUZ&DAN DAY OF FUN" (référence `MODELE-ROMANTIQUE`). Les 5 autres marqués `archive = true`, `statut = 'termine'` (lecture seule).
+
+### Pourquoi ce changement
+- Les dossiers swipe envoyés par le passé devaient être triés : certains gardés comme patron de départ à dupliquer pour un nouveau client (les 3 modèles), les autres simplement conservés en lecture seule pour l'historique.
 
 ---
 

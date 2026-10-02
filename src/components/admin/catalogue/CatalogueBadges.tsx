@@ -1,7 +1,7 @@
-import { Send, MapPin, Video } from "lucide-react";
+import { Send, MapPin, Video, Shuffle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { STATUS_OPTIONS, type CatalogueEntry, type CommercialStatus } from "@/lib/catalogue/types";
+import { estUtilisableEnExplorer, STATUS_OPTIONS, type CatalogueEntry, type CommercialStatus } from "@/lib/catalogue/types";
 
 export function StatusBadge({ status }: { status: CommercialStatus }) {
   const option = STATUS_OPTIONS.find((o) => o.value === status);
@@ -51,7 +51,7 @@ function Chip({ done, label, children }: { done: boolean; label: string; childre
 export function ContentChips({
   entry,
 }: {
-  entry: Pick<CatalogueEntry, "content_sent" | "visited" | "video_done">;
+  entry: Pick<CatalogueEntry, "content_sent" | "visited" | "video_done" | "photo_url" | "prix_client">;
 }) {
   return (
     <div className="flex items-center gap-1">
@@ -63,6 +63,9 @@ export function ContentChips({
       </Chip>
       <Chip done={entry.video_done} label="Vidéo faite">
         <Video className="h-3 w-3" />
+      </Chip>
+      <Chip done={estUtilisableEnExplorer(entry)} label="Utilisable en Explorer">
+        <Shuffle className="h-3 w-3" />
       </Chip>
     </div>
   );

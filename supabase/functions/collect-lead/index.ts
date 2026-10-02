@@ -10,6 +10,29 @@ const ALLOWED_ORIGINS = [
   'http://localhost:8080',
 ];
 
+// Calcule le prochain moment où la réponse automatique peut partir : décalé de quelques minutes,
+// jamais la nuit (22h-7h heure d'Israël), jamais pendant Shabbat (approximation prudente :
+// vendredi dès 15h jusqu'à samedi minuit — plus large que l'horaire réel pour ne jamais tomber juste).
+function estMomentConvenable(date: Date): boolean {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Jerusalem', weekday: 'short', hour: 'numeric', hour12: false,
+  }).formatToParts(date);
+  const weekday = parts.find((p) => p.type === 'weekday')?.value ?? '';
+  const heure = Number(parts.find((p) => p.type === 'hour')?.value ?? '12');
+  const estShabbat = (weekday === 'Fri' && heure >= 15) || weekday === 'Sat';
+  const estNuit = heure >= 22 || heure < 7;
+  return !estShabbat && !estNuit;
+}
+
+function prochainMomentConvenable(depuis: Date): Date {
+  let candidat = new Date(depuis.getTime() + 5 * 60 * 1000); // décalé de 5 minutes
+  for (let garde = 0; garde < 48; garde++) {
+    if (estMomentConvenable(candidat)) return candidat;
+    candidat = new Date(candidat.getTime() + 60 * 60 * 1000);
+  }
+  return candidat;
+}
+
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get('Origin') || '';
   const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
@@ -217,6 +240,35 @@ serve(async (req) => {
         if (itineraryError) console.error('Failed to enrich itinerary_requests (non-blocking):', itineraryError);
       }
 
+      // Enrichit aussi le dossier de voyage correspondant (chantier Dossier de voyage).
+      // Même principe : best-effort, ne bloque jamais la réponse au client.
+      const briefUpdates: Record<string, unknown> = {};
+      if (requestData.metadata?.moods !== undefined) briefUpdates.moods = requestData.metadata.moods;
+      if (requestData.metadata?.timing) briefUpdates.timing = requestData.metadata.timing;
+      if (requestData.metadata?.budget) briefUpdates.budget = requestData.metadata.budget;
+      if (requestData.metadata?.description) briefUpdates.description = requestData.metadata.description;
+      if (Object.keys(briefUpdates).length > 0) {
+        const { data: dossierRows, error: dossierFindError } = await supabase
+          .from('dossiers_voyage')
+          .select('id, brief_data')
+          .eq('lead_id', requestData.leadId)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        if (dossierFindError) {
+          console.error('Failed to find dossiers_voyage row to enrich (non-blocking):', dossierFindError);
+        } else if (dossierRows && dossierRows.length > 0) {
+          const dossierRow = dossierRows[0];
+          const mergedBriefData = { ...((dossierRow.brief_data as Record<string, unknown>) || {}), ...briefUpdates };
+          const { error: dossierUpdateError } = await supabase
+            .from('dossiers_voyage')
+            .update({ brief_data: mergedBriefData })
+            .eq('id', dossierRow.id);
+          if (dossierUpdateError) {
+            console.error('Failed to enrich dossiers_voyage (non-blocking):', dossierUpdateError);
+          }
+        }
+      }
+
       console.log('tailored_request lead enriched (step 2):', requestData.leadId);
       return new Response(
         JSON.stringify({ success: true, leadId: requestData.leadId }),
@@ -287,6 +339,27 @@ serve(async (req) => {
           party_size: requestData.metadata?.people || null,
         }]);
         if (itineraryError) console.error('Failed to create itinerary_requests row (non-blocking):', itineraryError);
+
+        // Crée aussi le dossier de voyage correspondant (chantier Dossier de voyage,
+        // destiné à remplacer à terme l'onglet Itinéraires ci-dessus). Même principe :
+        // best-effort, ne bloque jamais la réponse au client.
+        const { error: dossierError } = await supabase.from('dossiers_voyage').insert([{
+          nom_destinataire: leadRecord.name || leadRecord.email,
+          email: leadRecord.email,
+          telephone: leadRecord.phone || null,
+          lead_id: data.id,
+          destinataire_type: 'client',
+          objectif: 'vente',
+          point_depart: 'proposition',
+          canal_origine: 'formulaire_site',
+          statut: 'nouvelle_demande',
+          brief_data: {
+            occasion: requestData.metadata?.occasion || null,
+            nb_personnes: requestData.metadata?.people || null,
+          },
+          autoreply_envoyer_apres: prochainMomentConvenable(new Date()).toISOString(),
+        }]);
+        if (dossierError) console.error('Failed to create dossiers_voyage row (non-blocking):', dossierError);
       }
 
       return new Response(

@@ -8,6 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tile, TrendArrow } from "@/components/admin/DashboardTiles";
 import RevenueByChannelCard from "@/components/admin/RevenueByChannelCard";
+import { Badge } from "@/components/ui/badge";
+import { useDossiersVoyageActionnables } from "@/lib/dossiersVoyage/queries";
+import { statutActionnable } from "@/lib/dossiersVoyage/types";
 
 type Lead = {
   created_at: string;
@@ -153,6 +156,11 @@ const AdminDashboard = () => {
   const issues = useUnpaidConfirmedBookings();
   const newErrorsCount = useNewErrorsCount();
   const pendingReviewsCount = usePendingReviewsCount();
+  const { data: dossiersVoyage } = useDossiersVoyageActionnables();
+  const dossiersActionnables = useMemo(
+    () => (dossiersVoyage ?? []).map((d) => ({ dossier: d, action: statutActionnable(d) })).filter((x) => x.action !== null),
+    [dossiersVoyage]
+  );
 
   const { data: leads } = useQuery({
     queryKey: ["dashboard-leads-pulse"],
@@ -196,6 +204,20 @@ const AdminDashboard = () => {
           Leads : ici, seulement ce qui doit changer ta journée.
         </p>
       </div>
+
+      <Card className="border-destructive/30 bg-destructive/5">
+        <CardContent className="p-4 flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+          <div>
+            <div className="font-bold text-destructive text-sm">⚠ Régler le système de paiement</div>
+            <p className="text-sm text-muted-foreground mt-1">
+              Chantier Dossier de voyage — étape 8 (paiement → verrouillage de version → génération automatique
+              des réservations) pas encore faite, volontairement mise de côté. Tant que ce n'est pas réglé, le
+              Carnet de voyage (après paiement) ne fonctionne pas pour un vrai client.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {issues.length > 0 && (
         <Card className="border-destructive/30 bg-destructive/5">
@@ -303,11 +325,27 @@ const AdminDashboard = () => {
       <Card>
         <CardHeader className="p-3 pb-1">
           <CardTitle className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
-            Actions à faire
+            Actions à faire — Dossiers de voyage
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-4 pt-0 text-sm text-muted-foreground">
-          Liste de tâches à créer et à lier aux actions.
+        <CardContent className="p-4 pt-0">
+          {dossiersActionnables.length === 0 && (
+            <p className="text-sm text-muted-foreground">Rien à traiter pour l'instant.</p>
+          )}
+          <div className="space-y-1.5">
+            {dossiersActionnables.slice(0, 10).map(({ dossier, action }) => (
+              <Link
+                key={dossier.id}
+                to={`/admin/dossiers/${dossier.id}`}
+                className="flex items-center justify-between gap-3 rounded-md border p-2.5 text-sm hover:bg-muted/40"
+              >
+                <span className="font-medium">{dossier.nom_destinataire}</span>
+                <Badge variant="outline" className={`text-xs ${action!.classe}`}>
+                  {action!.texte}
+                </Badge>
+              </Link>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
