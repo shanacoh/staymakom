@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Refonte fiche et back-office</title>
+<style>
+:root{--ink:#1a1814;--muted:#6f6a63;--line:#e9e6e1;--red:#ad1414;--soft:#faf8f6;--bg:#f1efec;--ai:#f3efff;--aiink:#5b3fc4;--ok:#1f7a4d;--okbg:#e9f6ef;--warn:#8a6100;--warnbg:#fff4d6;--int:#eef2f6}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Inter","Helvetica Neue",Arial,sans-serif;color:var(--ink);background:var(--bg);font-size:14px}
+.top{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line);display:flex;gap:6px;padding:10px 16px;align-items:center;flex-wrap:wrap}
+.top b{margin-right:10px;letter-spacing:.08em;font-size:12px;text-transform:uppercase}
+.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font-size:13px;cursor:pointer}
+.tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.view{display:none;padding:22px 16px 60px}.view.on{display:block}
+.note{max-width:1180px;margin:0 auto 16px;color:var(--muted);font-size:13px;line-height:1.5}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;border-radius:999px;padding:2px 8px;font-weight:600}
+.c-ai{background:var(--ai);color:var(--aiink)}.c-ok{background:var(--okbg);color:var(--ok)}.c-warn{background:var(--warnbg);color:var(--warn)}.c-int{background:var(--int);color:#3c4a5c}
+
+/* ===== BACK-OFFICE ===== */
+.bo{max-width:1180px;margin:0 auto;background:#fff;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.07);overflow:hidden}
+.bohead{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);gap:10px;flex-wrap:wrap}
+.bohead h1{font-size:17px}
+.bohead small{color:var(--muted);display:block;font-size:12px;margin-top:2px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer}
+.btn.red{background:var(--red);color:#fff;border-color:var(--red)}
+.btn.ai{background:var(--aiink);color:#fff;border-color:var(--aiink)}
+.langs{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.langs span{padding:7px 10px;font-size:12px;border-right:1px solid var(--line)}
+.langs span:last-child{border:0}.langs .on{background:var(--ink);color:#fff}
+.bogrid{display:grid;grid-template-columns:200px 1fr 300px}
+.side{border-right:1px solid var(--line);padding:14px 10px;font-size:13px}
+.side .it{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:8px;margin-bottom:2px}
+.side .it.on{background:var(--soft);font-weight:700}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.side .ready{margin-top:14px;padding:10px;border-radius:10px;background:var(--soft);font-size:12px;color:var(--muted);line-height:1.5}
+.bar{height:6px;background:var(--line);border-radius:9px;overflow:hidden;margin:6px 0}.bar i{display:block;height:100%;background:var(--ok)}
+.main{padding:16px 18px;max-height:none}
+.aibox{border:1.5px dashed var(--aiink);background:var(--ai);border-radius:14px;padding:14px;margin-bottom:16px}
+.aibox h3{font-size:14px;color:var(--aiink);margin-bottom:8px}
+.aiin{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.aiin div{background:#fff;border-radius:10px;padding:10px;font-size:12px;color:var(--muted);border:1px solid #e3dcff}
+.aiin b{display:block;color:var(--ink);margin-bottom:3px}
+.aifoot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;color:var(--aiink);gap:8px;flex-wrap:wrap}
+.sec{border:1px solid var(--line);border-radius:14px;margin-bottom:12px}
+.sec>h2{font-size:14px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
+.sec>h2 em{font-style:normal;font-weight:400;color:var(--muted);font-size:12px}
+.sec .in{padding:12px 14px;display:grid;gap:10px}
+.sec.closed .in{display:none}.sec.closed>h2{border-bottom:0}
+.f label{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);display:flex;gap:6px;align-items:center;margin-bottom:4px}
+.inp{border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:13px;background:#fff;min-height:36px}
+.inp.ai{background:#fbf9ff;border-color:#d9cffd}
+.inp.ta{min-height:70px;line-height:1.45}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{border:1px solid var(--line);border-radius:999px;padding:5px 10px;font-size:12px}
+.pill.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.incl{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.incl div{border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:12px}
+.incl i{display:block;height:54px;background:linear-gradient(135deg,#e7d3bf,#c99f7e)}
+.incl span{display:block;padding:6px 8px}
+.photos{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:6px}
+.photos i{display:block;height:70px;border-radius:8px;background:linear-gradient(135deg,#e7d3bf,#c99f7e)}
+.photos i.add{background:var(--soft);border:1.5px dashed var(--line);display:flex;align-items:center;justify-content:center;font-style:normal;color:var(--muted);font-size:12px}
+.internal{background:var(--int);border-radius:10px;padding:10px;font-size:12.5px;display:grid;gap:8px}
+.internal .row3 .inp{background:#fff}
+.calc{display:flex;justify-content:space-between;font-size:13px;padding:8px 10px;border-radius:9px;background:var(--okbg);color:var(--ok);font-weight:600}
+.prev{border-left:1px solid var(--line);padding:14px;background:var(--soft)}
+.prev h4{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.phone{background:#fff;border-radius:18px;border:1px solid var(--line);overflow:hidden;position:sticky;top:60px}
+.phone .ph{height:120px;background:linear-gradient(135deg,#e7d3bf,#c99f7e)}
+.phone .pb{padding:10px}
+.phone .t{font-weight:800;font-size:14px;text-transform:uppercase;line-height:1.15}
+.phone .s{font-size:11.5px;color:var(--muted);margin-top:4px}
+.ess{margin-top:10px;border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--soft)}
+.ess .k{font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ess .v{font-size:12px;margin-bottom:6px}
+.check{margin-top:12px;font-size:12px;line-height:1.7}
+.tip{font-size:12px;color:var(--muted)}
+
+/* ===== FICHE CLIENT ===== */
+.fwrap{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+.desk{width:860px;max-width:100%;background:#fff;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.07);overflow:hidden}
+.mob{width:360px;background:#fff;border-radius:22px;box-shadow:0 10px 40px rgba(0,0,0,.07);overflow:hidden}
+.gal{display:grid;grid-template-columns:2fr 1fr 1fr;grid-template-rows:110px 110px;gap:5px;padding:12px}
+.gal i{border-radius:10px;background:linear-gradient(135deg,#e7d3bf,#c99f7e)}
+.gal i:first-child{grid-row:span 2}
+.gal i:last-child{position:relative}
+.gal i:last-child::after{content:"Voir les 9 photos";position:absolute;right:8px;bottom:8px;background:#fff;font-size:11px;padding:4px 8px;border-radius:8px;font-style:normal}
+.fcols{display:grid;grid-template-columns:1fr 290px;gap:20px;padding:4px 18px 20px}
+.cat{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--red);font-weight:700}
+.ft{font-size:24px;font-weight:800;text-transform:uppercase;line-height:1.08;margin-top:4px}
+.fs{color:var(--muted);margin-top:6px;line-height:1.45}
+.essb{margin-top:14px;border:1px solid var(--line);border-radius:16px;padding:12px 14px;background:var(--soft)}
+.essb h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px}
+.eg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 14px}
+.eg .k{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.eg .v{font-size:13px;line-height:1.35;margin-top:2px}
+.blk{margin-top:14px;padding:12px 14px;border-radius:12px;background:#f6f4f1;color:var(--muted);font-size:13px}
+.blk b{color:var(--ink)}
+.blk.new{background:#fff1ef;border:1.5px solid var(--red);color:var(--ink)}
+.panel{border:1px solid var(--line);border-radius:14px;padding:14px;position:sticky;top:60px;font-size:13px}
+.panel .p{font-weight:800;font-size:20px}
+.panel .r{border-top:1px solid var(--line);padding:9px 0;color:var(--muted)}
+.cta{background:var(--red);color:#fff;border-radius:999px;padding:11px;text-align:center;font-weight:700;margin-top:6px}
+.ask{margin-top:10px;display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:9px;font-size:12px}
+.logo{width:30px;height:30px;border-radius:50%;background:#f3e7dc;color:var(--red);font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.legend{display:flex;gap:16px;justify-content:center;font-size:12px;color:var(--muted);margin-bottom:14px;flex-wrap:wrap}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+.toggle{display:flex;justify-content:center;gap:6px;margin-bottom:14px}
+.hotel-only{display:none}.is-hotel .hotel-only{display:block}.is-hotel .eg.hotel-only{display:grid}.is-hotel .exp-only{display:none}
+.mob .gal{grid-template-columns:1fr;grid-template-rows:180px;padding:0}
+.mob .gal i{border-radius:0}.mob .gal i:not(:first-child){display:none}
+.mob .gal i:first-child::after{content:"1 / 9";position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.5);color:#fff;font-size:11px;padding:3px 8px;border-radius:8px;font-style:normal}
+.mob .gal i:first-child{position:relative}
+.mob .fb{padding:14px}
+.mob .eg{grid-template-columns:1fr 1fr}
+.sticky{border-top:1px solid var(--line);padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
+
+.hero2{display:grid;grid-template-columns:58% 1fr;gap:22px;padding:14px 18px 6px;align-items:center}
+.car{position:relative}
+.car .main{height:340px;border-radius:14px;background:linear-gradient(135deg,#e7d3bf,#c99f7e);position:relative;padding:0}
+.car .arr{position:absolute;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.car .cnt{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;padding:3px 8px;border-radius:8px}
+.thumbs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:6px}
+.thumbs i{height:46px;border-radius:8px;background:linear-gradient(135deg,#e7d3bf,#c99f7e);opacity:.55}
+.thumbs i:first-child{opacity:1;outline:2px solid var(--ink);outline-offset:1px}
+.hx{text-align:center}
+.hx .ft{font-size:30px}
+.sel{color:var(--red);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-top:10px}
+.facts{display:flex;justify-content:center;gap:0;margin:14px auto 0;border:1px solid var(--line);border-radius:12px;max-width:340px}
+.facts div{flex:1;padding:8px 6px;font-size:12px;border-right:1px solid var(--line)}
+.facts div:last-child{border:0}
+.facts b{display:block;font-size:13px;color:var(--ink)}
+.facts span{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+.from{margin-top:14px;font-size:13px;color:var(--muted)}.from b{font-size:20px;color:var(--ink)}
+.cta2{display:inline-block;margin-top:10px;background:var(--red);color:#fff;border-radius:999px;padding:10px 22px;font-weight:700;font-size:13px}
+.facts.hotel-only{display:none}.is-hotel .facts.hotel-only{display:flex}.is-hotel .facts.exp-only{display:none}
+.icons{margin-top:10px;color:var(--muted);font-size:15px;letter-spacing:10px}
+@media (max-width:900px){.bogrid{grid-template-columns:1fr}.side,.prev{display:none}.fcols{grid-template-columns:1fr}.aiin,.incl,.row3{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="top">
+  <b>STAYMAKOM · Refonte</b>
+  <button class="tab on" data-v="bo">1. Back-office : créer une expérience</button>
+  <button class="tab" data-v="cl">2. Fiche client</button>
+</div>
+
+<!-- ================= BACK-OFFICE ================= -->
+<section class="view on" id="bo">
+<p class="note">Une seule page qui défile (fini les onglets). À gauche, le sommaire avec l'état de chaque section ; au centre, les champs ; à droite, l'aperçu en direct de la fiche. On écrit dans UNE langue, les deux autres se traduisent en un clic. Les champs violets ont été remplis par l'IA et attendent ta relecture. La zone bleu-gris est interne (jamais visible du client).</p>
+<div class="bo">
+  <div class="bohead">
+    <div><h1>Cours de cuisine à Tel Aviv</h1><small>Expérience seule · Brouillon · enregistré automatiquement il y a 12 s</small></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div class="langs"><span class="on">FR ✓</span><span>EN ✓</span><span>HE · 3 à relire</span></div>
+      <button class="btn">Traduire tout</button>
+      <button class="btn">Brouillon</button>
+      <button class="btn red">Publier</button>
+    </div>
+  </div>
+  <div class="bogrid">
+    <aside class="side">
+      <div class="it on">Démarrer <span class="dot" style="background:var(--ok)"></span></div>
+      <div class="it">1. L'essentiel <span class="dot" style="background:var(--ok)"></span></div>
+      <div class="it">2. Le récit <span class="dot" style="background:var(--aiink)"></span></div>
+      <div class="it">3. Photos <span class="dot" style="background:#e0a400"></span></div>
+      <div class="it">4. Prix & dispo <span class="dot" style="background:#e0a400"></span></div>
+      <div class="it">5. Conditions <span class="dot" style="background:var(--ok)"></span></div>
+      <div class="it">6. Publication <span class="dot" style="background:var(--line)"></span></div>
+      <div class="ready">
+        <b style="color:var(--ink)">Prête à publier : 78 %</b>
+        <div class="bar"><i style="width:78%"></i></div>
+        Manque : 3 photos de galerie, 2 dates ouvertes.<br>
+        <span style="color:var(--aiink)">● IA à relire</span> · <span style="color:var(--ok)">● OK</span> · <span style="color:#b98a00">● à compléter</span>
+      </div>
+    </aside>
+
+    <div class="main">
+      <div class="aibox">
+        <h3>✦ Générer avec l'IA</h3>
+        <div class="aiin">
+          <div><b>Mes notes</b>« cours chez Citrus & Salt, 3 h, chef pro, casher, 1-10 pers, dès 12 ans, une cuisine par séance… »</div>
+          <div><b>Lien</b>citrusandsalt.co.il/classes</div>
+          <div><b>PDF / brochure</b>offre-citrus-salt-2026.pdf</div>
+        </div>
+        <div class="aifoot">
+          <span>Écrit avec la voix STAYMAKOM (même consignes que ta skill), en FR + EN + HE. Ne touche jamais aux prix ni aux dates.</span>
+          <button class="btn ai">Générer le brouillon</button>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h2>Démarrer <em>Type et catégories</em></h2>
+        <div class="in">
+          <div class="pills"><span class="pill on">Expérience seule</span><span class="pill">Hôtel + expérience</span><span class="pill">Bateau</span></div>
+          <div class="pills"><span class="pill on">Foody Discovery</span><span class="pill">Romantic</span><span class="pill">Family Fun</span><span class="pill">Land of Stories</span><span class="pill">…</span></div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h2>1. L'essentiel <em>ce qui s'affiche en haut de la fiche · 8/9</em></h2>
+        <div class="in">
+          <div class="f"><label>Titre <span class="chip c-ai">IA</span></label><div class="inp ai">Cours de cuisine à Tel Aviv</div></div>
+          <div class="f"><label>Accroche <span class="chip c-ai">IA</span></label><div class="inp ai">Une cuisine par séance, un chef pro, et on mange ensemble ce qu'on a cuisiné.</div></div>
+          <div class="row3">
+            <div class="f"><label>Ville</label><div class="inp">Tel Aviv</div></div>
+            <div class="f"><label>Durée</label><div class="inp">3 h</div></div>
+            <div class="f"><label>Groupe</label><div class="inp">1 à 10 personnes</div></div>
+          </div>
+          <div class="row3">
+            <div class="f"><label>Enfants</label><div class="pills"><span class="pill">Oui</span><span class="pill on">Dès 12 ans</span><span class="pill">Non</span></div></div>
+            <div class="f"><label>Casher</label><div class="pills"><span class="pill on">Oui</span><span class="pill">Non</span><span class="pill">N/A</span></div></div>
+            <div class="f"><label>Langues</label><div class="pills"><span class="pill on">EN</span><span class="pill on">HE</span><span class="pill">FR</span></div></div>
+          </div>
+          <div class="row2">
+            <div class="f"><label>Adresse</label><div class="inp">Studio Citrus & Salt, centre de Tel Aviv · <span class="tip">☑ envoyée seulement après réservation</span></div></div>
+            <div class="f"><label>Accès <span class="chip c-ai">IA</span></label><div class="inp ai">À pied ou en bus, pas de parking</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h2>2. Le récit <em>description, inclus, options</em></h2>
+        <div class="in">
+          <div class="f"><label>Description <span class="chip c-ai">IA</span> <span class="tip" style="text-transform:none;letter-spacing:0">· 180 mots · voix STAYMAKOM</span></label><div class="inp ta ai">Ici, pas de démonstration derrière un comptoir : on coupe, on goûte, on rate un peu, on recommence. Chaque séance explore une cuisine…</div></div>
+          <div class="f"><label>Ce qui est inclus (4 avec photo)</label>
+            <div class="incl"><div><i></i><span>Chef professionnel</span></div><div><i></i><span>Ingrédients et matériel</span></div><div><i></i><span>Une cuisine par séance</span></div><div><i></i><span>Repas partagé</span></div></div>
+          </div>
+          <div class="f"><label>Options payantes</label><div class="inp" style="color:var(--muted)">+ Ajouter une option (ex. bouteille de vin, séance privée)</div></div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h2>3. Photos <em><span class="chip c-warn">1 photo · il en faut au moins 5</span></em></h2>
+        <div class="in">
+          <div class="photos"><i></i><i class="add">+ Ajouter</i><i class="add">+</i><i class="add">+</i></div>
+          <div class="tip">Glisse toutes les photos d'un coup ; la première devient la couverture. Les photos des 4 « inclus » peuvent servir de galerie en un clic.</div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h2>4. Prix & dispo <em>formulaire actuel, simplement rangé</em></h2>
+        <div class="in">
+          <div class="row3">
+            <div class="f"><label>Prix client / pers.</label><div class="inp"><b>₪326</b></div></div>
+            <div class="f"><label>Tarif enfant</label><div class="inp" style="color:var(--muted)">Non</div></div>
+            <div class="f"><label>Réserver au moins</label><div class="inp">2 jours avant</div></div>
+          </div>
+          <div class="internal">
+            <div><span class="chip c-int">Interne · jamais visible du client</span></div>
+            <div class="row3">
+              <div class="f"><label>Prestataire</label><div class="inp">Citrus & Salt</div></div>
+              <div class="f"><label>Prix net</label><div class="inp">₪310</div></div>
+              <div class="f"><label>Lien de résa prestataire</label><div class="inp">citrusandsalt.co.il/…</div></div>
+            </div>
+            <div class="calc"><span>Ta marge</span><span>₪16 / pers. · 5 %</span></div>
+          </div>
+          <div class="f"><label>Disponibilités</label><div class="pills"><span class="pill">Jours récurrents</span><span class="pill on">Dates précises</span></div></div>
+          <div class="inp"><span class="chip c-warn">Aucune date à venir</span> &nbsp;Dernière date ouverte : 4 sept. → la fiche affichera « Prochaines dates sur demande ».</div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h2>5. Conditions <em>annulation</em></h2>
+        <div class="in">
+          <div class="pills"><span class="pill on">Gratuite jusqu'à 48 h</span><span class="pill">Gratuite jusqu'à 7 j</span><span class="pill">Non remboursable</span><span class="pill">Personnalisée</span></div>
+          <div class="tip">Les modèles existent déjà traduits en FR / EN / HE ; on n'écrit plus 3 fois la même chose.</div>
+        </div>
+      </div>
+
+      <div class="sec closed">
+        <h2>6. Publication <em>SEO auto-généré, mise en avant, ordre · replié</em></h2>
+        <div class="in"></div>
+      </div>
+    </div>
+
+    <aside class="prev">
+      <h4>Aperçu en direct</h4>
+      <div class="phone">
+        <div class="ph"></div>
+        <div class="pb">
+          <div class="t">Cours de cuisine à Tel Aviv</div>
+          <div class="s">Une cuisine par séance, un chef pro, et on mange ensemble…</div>
+          <div class="ess">
+            <div class="k">Durée</div><div class="v">3 h</div>
+            <div class="k">Prochaines séances</div><div class="v">Sur demande</div>
+            <div class="k">Pour qui</div><div class="v">1 à 10 pers., dès 12 ans</div>
+            <div class="k">Casher</div><div class="v">Oui</div>
+          </div>
+        </div>
+      </div>
+      <div class="check">
+        <b>Avant de publier</b><br>
+        ✓ Titre et accroche<br>
+        ✓ 4 inclus avec photo<br>
+        ✗ Au moins 5 photos<br>
+        ✗ Une date à venir<br>
+        ● 3 textes HE à relire
+      </div>
+    </aside>
+  </div>
+</div>
+</section>
+
+<!-- ================= FICHE CLIENT ================= -->
+<section class="view" id="cl">
+<p class="note">La fiche future, pour une expérience seule et pour un hôtel + expérience : même squelette, seul le contenu de « L'essentiel » change. On garde ta mise en page actuelle (photo à gauche, texte à droite). Améliorations : la photo devient un carrousel (flèches + compteur, clic = galerie plein écran), et l'espace vide à droite sert à donner 3 infos clés, le prix « à partir de » et un bouton qui descend vers le calendrier. Aujourd'hui 40 expériences sur 47 n'ont qu'une seule photo : le carrousel n'a d'intérêt que si on les complète.</p>
+<div class="toggle"><button class="tab on" data-t="exp">Expérience seule</button><button class="tab" data-t="hotel">Hôtel + expérience</button></div>
+<div class="legend"><span><i class="sw" style="background:#f6f4f1"></i>Existe déjà</span><span><i class="sw" style="background:#fff1ef;border:1.5px solid var(--red)"></i>Nouveau ou modifié</span></div>
+<div class="fwrap" id="fiche">
+  <div class="desk">
+    <div class="hero2 blk new" style="margin:12px;padding:12px;background:#fff">
+      <div class="car">
+        <div class="main"><span class="arr" style="left:10px">‹</span><span class="arr" style="right:10px">›</span><span class="cnt">1 / 9 · Voir tout</span></div>
+        
+      </div>
+      <div class="hx">
+        <div class="cat exp-only">Foody Discovery · Tel Aviv</div><div class="cat hotel-only">Romantic · Galilée</div>
+        <div class="ft exp-only">Cours de cuisine à Tel Aviv</div><div class="ft hotel-only">Deux nuits face au Kinneret</div>
+        <div class="fs exp-only">Une cuisine par séance, un chef pro, et on mange ensemble ce qu'on a cuisiné.</div>
+        <div class="fs hotel-only">Un hôtel boutique, un dîner chez le vigneron, et le lac pour vous seuls au lever du jour.</div>
+        <div class="sel">✦ Sélectionné par STAYMAKOM</div>
+        <div class="facts exp-only"><div><span>Durée</span><b>3 h</b></div><div><span>Groupe</span><b>1 à 10</b></div><div><span>Annulation</span><b>48 h</b></div></div>
+        <div class="facts hotel-only"><div><span>Séjour</span><b>2 nuits</b></div><div><span>Pension</span><b>Petit-déj.</b></div><div><span>Annulation</span><b>7 j</b></div></div>
+        <div class="from exp-only">À partir de <b>₪326</b> / pers.</div><div class="from hotel-only">À partir de <b>₪2 480</b> / séjour</div>
+        <div class="cta2">Voir les dates</div>
+        <div class="icons">⇪ ♡</div>
+      </div>
+    </div>
+    <div class="fcols">
+      <div>
+        <div class="essb blk new" style="background:var(--soft)">
+          <h3>L'essentiel</h3>
+          <div class="eg exp-only">
+            <div><div class="k">Durée</div><div class="v">3 heures</div></div>
+            <div><div class="k">Prochaines séances</div><div class="v">jeu. 8 oct · 18 h 30</div></div>
+            <div><div class="k">Lieu</div><div class="v">Centre de Tel Aviv, à pied ou en bus</div></div>
+            <div><div class="k">Inclus</div><div class="v">Chef, ingrédients, repas partagé</div></div>
+            <div><div class="k">Pour qui</div><div class="v">1 à 10 pers., dès 12 ans</div></div>
+            <div><div class="k">Casher</div><div class="v">Oui</div></div>
+            <div><div class="k">Langue</div><div class="v">Anglais, hébreu</div></div>
+            <div><div class="k">Annulation</div><div class="v">Gratuite jusqu'à 48 h avant</div></div>
+            <div><div class="k">Accessibilité</div><div class="v">Rez-de-chaussée</div></div>
+          </div>
+          <div class="eg hotel-only">
+            <div><div class="k">Hôtel</div><div class="v">Boutique 12 chambres, vue lac</div></div>
+            <div><div class="k">Séjour</div><div class="v">2 nuits min. · arrivée 15 h</div></div>
+            <div><div class="k">Pension</div><div class="v">Petit-déjeuner inclus</div></div>
+            <div><div class="k">Expérience incluse</div><div class="v">Dîner chez le vigneron</div></div>
+            <div><div class="k">Pour qui</div><div class="v">2 adultes</div></div>
+            <div><div class="k">Casher</div><div class="v">Petit-déjeuner casher</div></div>
+            <div><div class="k">Accès</div><div class="v">1 h 45 de Tel Aviv, parking gratuit</div></div>
+            <div><div class="k">Annulation</div><div class="v">Gratuite jusqu'à 7 jours</div></div>
+            <div><div class="k">Région</div><div class="v">Kinneret, Galilée</div></div>
+          </div>
+        </div>
+        <div class="blk"><b>Au programme</b> : le récit + les 4 photos « inclus »</div>
+        <div class="blk hotel-only"><b>Votre parcours</b> : hôtel(s) et nuits</div>
+        <div class="blk"><b>Options</b></div>
+        <div class="blk"><b>Carte</b></div>
+        <div class="blk"><b>Avis</b> (masqués tant qu'il n'y en a pas)</div>
+        <div class="blk"><b>Autres expériences</b></div>
+      </div>
+      <div>
+        <div class="panel">
+          <div class="p exp-only">₪326 <span style="font-weight:400;font-size:12px;color:var(--muted)">/ pers.</span></div>
+          <div class="p hotel-only">₪2 480 <span style="font-weight:400;font-size:12px;color:var(--muted)">/ 2 nuits, 2 pers.</span></div>
+          <div class="r">Date</div><div class="r">Participants</div><div class="r">Total</div>
+          <div class="cta">Réserver</div>
+          <div style="text-align:center;font-size:11.5px;color:var(--muted);margin-top:6px">Annulation gratuite · paiement sécurisé</div>
+          <div class="ask blk new" style="margin-top:10px"><div class="logo">S</div><div>Une question ? <b style="color:var(--red)">Notre équipe vous répond sur WhatsApp</b></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mob">
+    <div class="gal"><i></i><i></i></div>
+    <div class="fb">
+      <div class="cat exp-only">Foody Discovery · Tel Aviv</div><div class="cat hotel-only">Romantic · Galilée</div>
+      <div class="ft exp-only" style="font-size:20px">Cours de cuisine à Tel Aviv</div><div class="ft hotel-only" style="font-size:20px">Deux nuits face au Kinneret</div>
+      <div class="essb" style="border:1.5px solid var(--red)">
+        <h3>L'essentiel</h3>
+        <div class="eg exp-only">
+          <div><div class="k">Durée</div><div class="v">3 h</div></div>
+          <div><div class="k">Prochaine séance</div><div class="v">jeu. 8 oct</div></div>
+          <div><div class="k">Lieu</div><div class="v">Centre TLV</div></div>
+          <div><div class="k">Pour qui</div><div class="v">Dès 12 ans</div></div>
+          <div><div class="k">Casher</div><div class="v">Oui</div></div>
+          <div><div class="k">Annulation</div><div class="v">48 h</div></div>
+        </div>
+        <div class="eg hotel-only">
+          <div><div class="k">Séjour</div><div class="v">2 nuits min.</div></div>
+          <div><div class="k">Pension</div><div class="v">Petit-déj.</div></div>
+          <div><div class="k">Inclus</div><div class="v">Dîner vigneron</div></div>
+          <div><div class="k">Pour qui</div><div class="v">2 adultes</div></div>
+          <div><div class="k">Accès</div><div class="v">1 h 45 de TLV</div></div>
+          <div><div class="k">Annulation</div><div class="v">7 jours</div></div>
+        </div>
+        <div style="font-size:12px;color:var(--red);margin-top:8px;font-weight:600">Voir tout</div>
+      </div>
+      <div class="ask blk new"><div class="logo">S</div><div>Une question ? <b style="color:var(--red)">Notre équipe vous répond</b></div></div>
+      <div class="blk"><b>Au programme</b></div>
+      <div class="blk"><b>Options · Carte · Avis</b></div>
+    </div>
+    <div class="sticky"><b class="exp-only">₪326 / pers.</b><b class="hotel-only">₪2 480</b><span class="cta" style="margin:0;padding:9px 18px">Réserver</span></div>
+  </div>
+</div>
+</section>
+
+<script>
+document.querySelectorAll('.top .tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.top .tab').forEach(x=>x.classList.remove('on'));b.classList.add('on');document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));document.getElementById(b.dataset.v).classList.add('on')});
+document.querySelectorAll('.toggle .tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.toggle .tab').forEach(x=>x.classList.remove('on'));b.classList.add('on');document.getElementById('fiche').classList.toggle('is-hotel',b.dataset.t==='hotel')});
+document.querySelectorAll('.sec>h2').forEach(h=>h.onclick=()=>h.parentElement.classList.toggle('closed'));
+</script>
+</body>
+</html>

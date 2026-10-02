@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Placement L'essentiel et bandeau presse</title>
+<style>
+  :root{--ink:#1a1814;--muted:#6f6a63;--line:#e9e6e1;--red:#ad1414;--soft:#faf8f6;--ghost:#efece8;--new:#fff1ef}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Inter","Helvetica Neue",Arial,sans-serif;color:var(--ink);background:#f1efec;padding:24px 16px 60px}
+  h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-align:center;margin:30px 0 6px}
+  .legend{display:flex;gap:16px;justify-content:center;font-size:12px;color:var(--muted);margin-bottom:14px;flex-wrap:wrap}
+  .sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+  .wrap{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+  .frame{background:#fff;border-radius:18px;box-shadow:0 10px 40px rgba(0,0,0,.08);overflow:hidden}
+  .mobile{width:330px}
+  .desktop{width:760px;max-width:100%}
+  .blk{margin:8px 12px;border-radius:10px;background:var(--ghost);color:var(--muted);font-size:12px;padding:12px;line-height:1.35}
+  .blk b{color:var(--ink);font-weight:600}
+  .hero{margin:0;border-radius:0;height:110px;display:flex;align-items:flex-end;background:linear-gradient(135deg,#e7d3bf,#c99f7e);color:#fff;padding:12px}
+  .new{background:var(--new);border:1.5px solid var(--red);color:var(--ink)}
+  .new .t{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--red);margin-bottom:6px}
+  .mini{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;font-size:11.5px}
+  .mini div span{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+  .removed{text-decoration:line-through;opacity:.6}
+  .bar{border-top:1px solid var(--line);padding:10px 12px;display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700}
+  .btn{background:var(--red);color:#fff;border-radius:999px;padding:8px 16px;font-size:12px}
+  .cols{display:grid;grid-template-columns:62% 38%;gap:0}
+  .panel{margin:8px 12px;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:12px;position:sticky;top:8px}
+  .panel .p{font-weight:800;font-size:16px}
+  .panel .row{border-top:1px solid var(--line);padding:7px 0;color:var(--muted)}
+  .panel .ask{margin-top:8px;padding:8px;border-radius:10px;font-size:11.5px}
+  .note{max-width:760px;margin:16px auto 0;font-size:12.5px;color:var(--muted);line-height:1.55}
+  .press{display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 12px}
+  .press .k{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .press .logos{display:flex;gap:20px;align-items:baseline}
+  .i24{font-weight:800;font-size:16px}.i24 span{font-weight:400;font-size:11px;letter-spacing:.06em}
+  .aj{font-family:Georgia,serif;font-style:italic;font-weight:700;font-size:15px}
+  .press .p2{font-size:11.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="legend">
+  <span><i class="sw" style="background:var(--ghost)"></i>Existe déjà, inchangé</span>
+  <span><i class="sw" style="background:var(--new);border:1.5px solid var(--red)"></i>Nouveau</span>
+  <span class="removed">Barré = remplacé</span>
+</div>
+
+<h3>Fiche expérience : ce qui change</h3>
+<div class="wrap">
+
+  <!-- MOBILE -->
+  <div>
+    <div class="legend" style="margin-bottom:6px">Mobile</div>
+    <div class="frame mobile">
+      <div class="blk hero"><b style="color:#fff">Photos + titre + sous-titre</b></div>
+      <div class="blk new">
+        <div class="t">L'essentiel</div>
+        <div class="mini">
+          <div><span>Durée</span>3 h</div>
+          <div><span>Prochaines séances</span>jeu. 8 oct…</div>
+          <div><span>Lieu</span>Centre TLV</div>
+          <div><span>Inclus</span>Chef, ingrédients…</div>
+          <div><span>Pour qui</span>1-10, dès 12 ans</div>
+          <div><span>Casher</span>Oui</div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">Version mobile compacte : 6 lignes visibles, « Voir tout » déplie le reste (langue, annulation…).</div>
+      </div>
+      <div class="blk new" style="padding:10px">Pastille équipe : « Une question ? Notre équipe vous répond sur WhatsApp »</div>
+      <div class="blk"><b>Au programme</b> : le beau texte + les 4 photos « inclus »</div>
+      <div class="blk"><b>Options / extras</b></div>
+      <div class="blk"><b>Carte</b></div>
+      <div class="blk"><b>Avis</b> (masqués tant qu'il n'y en a pas)</div>
+      <div class="blk removed"><b>Bon à savoir</b> (durée, groupe, lieu, annulation) : fusionné dans L'essentiel</div>
+      <div class="blk"><b>Autres expériences</b></div>
+      <div class="bar"><span>₪326 / pers.</span><span class="btn">Réserver</span></div>
+    </div>
+  </div>
+
+  <!-- DESKTOP -->
+  <div>
+    <div class="legend" style="margin-bottom:6px">Ordinateur</div>
+    <div class="frame desktop">
+      <div class="blk hero" style="height:120px"><b style="color:#fff">Photos + titre + sous-titre (pleine largeur)</b></div>
+      <div class="cols">
+        <div>
+          <div class="blk new">
+            <div class="t">L'essentiel</div>
+            <div class="mini" style="grid-template-columns:1fr 1fr 1fr">
+              <div><span>Durée</span>3 h</div>
+              <div><span>Prochaines séances</span>jeu. 8 oct · 10 h…</div>
+              <div><span>Lieu</span>Centre de Tel Aviv</div>
+              <div><span>Inclus</span>Chef, ingrédients, repas</div>
+              <div><span>Pour qui</span>1-10 pers., dès 12 ans</div>
+              <div><span>Casher</span>Oui</div>
+              <div><span>Langue</span>Anglais, hébreu</div>
+              <div><span>Annulation</span>Gratuite 48 h avant</div>
+              <div><span>Accès</span>À pied / bus</div>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:8px">Sur ordinateur tout est visible d'un coup, en grille de 3 colonnes.</div>
+          </div>
+          <div class="blk"><b>Au programme</b> : texte + photos « inclus »</div>
+          <div class="blk"><b>Options / extras</b></div>
+          <div class="blk"><b>Carte</b></div>
+          <div class="blk"><b>Avis</b></div>
+          <div class="blk removed"><b>Bon à savoir</b> : fusionné dans L'essentiel</div>
+          <div class="blk"><b>Autres expériences</b></div>
+        </div>
+        <div>
+          <div class="panel">
+            <div class="p">₪326 <span style="font-weight:400;font-size:11px;color:var(--muted)">/ pers.</span></div>
+            <div class="row">Participants</div>
+            <div class="row">Date</div>
+            <div class="row">Total</div>
+            <div class="btn" style="text-align:center;margin-top:6px">Réserver</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:6px;text-align:center">Annulation gratuite 48 h avant</div>
+            <div class="ask new">Une question ? <b style="color:var(--red)">Notre équipe vous répond sur WhatsApp</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3>Page d'accueil : bandeau presse plus bas</h3>
+<div class="wrap">
+  <div class="frame mobile">
+    <div class="blk hero"><b style="color:#fff">Hero « Don't choose a city »</b></div>
+    <div class="blk"><b>Catégories + cartes d'expériences</b></div>
+    <div class="blk"><b>« Vos envies, notre savoir-faire »</b> (sur mesure)</div>
+    <div class="blk"><b>Carte cadeau</b></div>
+    <div class="blk"><b>Bandeau défilant</b></div>
+    <div class="blk"><b>« Ce n'est pas du tourisme »</b></div>
+    <div class="blk new press">
+      <div class="k">Ils parlent de nous</div>
+      <div class="logos"><div class="i24">i24<span>NEWS</span></div><div class="aj">Actualité Juive</div></div>
+      <div class="p2">Une question ? Notre équipe vous répond rapidement sur WhatsApp</div>
+    </div>
+    <div class="blk"><b>Questions fréquentes</b></div>
+  </div>
+</div>
+
+<p class="note">Rien n'est retiré de la page actuelle, sauf le bloc « Bon à savoir » du bas, dont le contenu remonte dans « L'essentiel ». Le bloc se remplit depuis le back-office : une série de champs par expérience (durée, horaires, lieu, inclus, âge, casher, langue, accès). Un champ vide n'apparaît pas.</p>
+</body>
+</html>

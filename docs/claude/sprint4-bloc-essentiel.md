@@ -1,6 +1,6 @@
 # Sprint 4 : bloc « L'essentiel » sur les fiches expérience + bandeau presse home
 
-Maquettes validées : `maquette-essentiel-placement.html` (projet Claude). Travaille étape par étape et montre-moi le diff de chaque étape avant de passer à la suivante.
+Maquette validée : `docs/claude/maquettes/maquette-essentiel-placement.html` (ouvre-la et respecte-la ; l'étape 2 formulaire de cette maquette n'est pas à faire). Travaille étape par étape et montre-moi le diff de chaque étape avant de passer à la suivante.
 
 ## RÈGLES STRICTES
 - INTERDIT de modifier la logique de réservation, de prix, de paiement, de disponibilités, le checkout et les Edge Functions de paiement.
