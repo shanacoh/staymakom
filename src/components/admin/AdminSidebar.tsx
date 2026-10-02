@@ -92,7 +92,7 @@ const apercuItems: NavItem[] = [
 // Opérations : la surface de travail au quotidien
 const operationsItems: NavItem[] = [
   { title: "Experiences", url: "/admin/experiences2", icon: Sparkles },
-  { title: "Dossiers", url: "/admin/dossiers", icon: FolderOpen },
+  { title: "Dossiers", url: "/admin/dossiers", icon: FolderOpen, colorClass: "text-orange-500" },
   { title: "Réservations", url: "/admin/bookings", icon: Calendar, inProgress: true },
   { title: "Avis", url: "/admin/avis", icon: Star, done: true },
   { title: "Partenaires · Hôtels", url: "/admin/hotels2", icon: Building2 },
