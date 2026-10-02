@@ -41,6 +41,7 @@ import {
 import { SiteBadge } from "./CatalogueBadges";
 import { ItemLinksSection } from "./ItemLinksSection";
 import { SiteLinkSection } from "./SiteLinkSection";
+import { TeaserSection } from "./TeaserSection";
 
 interface CatalogueItemPanelProps {
   entry: CatalogueEntry;
@@ -312,6 +313,10 @@ export function CatalogueItemPanel({ entry, allEntries, categories, onClose }: C
                   placeholder="https://..."
                 />
               </Field>
+            </Section>
+
+            <Section title="Habillage teaser (étape Proposition)">
+              <TeaserSection catalogueItemId={entry.id} />
             </Section>
 
             <Section title="Suivi du contenu">
