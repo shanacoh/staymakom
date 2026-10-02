@@ -374,6 +374,24 @@ export function useDeleteLigne(versionId: string) {
   });
 }
 
+/** Dossiers avec une action en attente (file actionnable du tableau de bord), les plus anciens d'abord. */
+export function useDossiersVoyageActionnables() {
+  return useQuery({
+    queryKey: ["dossiers_voyage", "actionnables"],
+    queryFn: async (): Promise<DossierVoyage[]> => {
+      const { data, error } = await supabase
+        .from("dossiers_voyage")
+        .select("*")
+        .eq("archive", false)
+        .eq("est_modele", false)
+        .order("updated_at", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    refetchInterval: 60000,
+  });
+}
+
 export interface LienClientChecklist {
   totalLignes: number;
   nbAlertes: number;
