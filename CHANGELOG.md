@@ -6,6 +6,38 @@
 
 ---
 
+## [2026-10-02] — Chantier "Dossier de voyage" : étape 10, réponse automatique au formulaire du site
+
+### Ce qui a changé côté code
+- `supabase/functions/collect-lead/index.ts` : à la création d'un dossier de voyage depuis le formulaire "Créer mon voyage", calcule désormais le prochain moment convenable pour la réponse automatique (`autoreply_envoyer_apres`) — décalé de 5 minutes, jamais la nuit (22h-7h heure d'Israël), jamais pendant Shabbat (approximation prudente : vendredi 15h à samedi minuit).
+- Nouvelle fonction `send-dossier-voyage-autoreplies` (déployée, pensée pour être appelée périodiquement par le même mécanisme externe que `send-review-requests`) : envoie un email dans la voix de Shana avec jusqu'à 3 questions piochées dans la banque selon ce qui manque réellement au dossier. Revérifie le moment convenable au moment de l'envoi (pas seulement à la planification), pour rester prudent même si le déclencheur externe tourne en retard. Déclarée dans `src/config/automations.ts` avec aperçu.
+
+### Ce qui a changé côté base de données
+- Voir l'entrée précédente (`autoreply_question_bank`, colonnes `autoreply_envoyer_apres`/`autoreply_envoye_at` sur `dossiers_voyage`), créées dans la même session.
+
+### Limite connue
+- Le formulaire public ne transmet pas encore la langue du visiteur : l'email part en français pour l'instant, même si la banque de questions a déjà ses traductions EN/HE prêtes pour le jour où cette info sera ajoutée au formulaire.
+
+### Pourquoi ce changement
+- Donne une première réponse humaine et rapide à toute nouvelle demande arrivée par le site, sans que Shana ait à surveiller en permanence — tout en respectant son rythme de vie (jamais de notification/email la nuit ou pendant Shabbat).
+
+---
+
+## [2026-10-02] — Chantier "Dossier de voyage" : étape 9, file actionnable au Tableau de bord
+
+### Ce qui a changé côté code
+- `src/pages/admin/Dashboard.tsx` : la carte "Actions à faire" (jusqu'ici un texte placeholder) affiche maintenant les dossiers de voyage qui ont besoin d'une action (nouvelle demande à analyser, brief à valider, envoyé sans ouverture, ouvert plusieurs fois sans réponse, retours reçus...), avec un lien direct vers chaque dossier. Réutilise `statutActionnable` (déjà utilisé dans la liste des dossiers).
+
+### Ce qui a changé côté base de données
+- Aucune.
+
+### Pourquoi ce changement
+- Shana n'a plus besoin d'ouvrir l'écran Dossiers pour repérer ce qui attend une action : ça remonte directement sur l'écran d'accueil du back-office.
+
+---
+
+---
+
 ## [2026-10-02] — Chantier "Dossier de voyage" : étape 7, activation de l'envoi du lien client
 
 ### Ce qui a changé côté code
