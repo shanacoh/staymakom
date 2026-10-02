@@ -374,6 +374,43 @@ export function useDeleteLigne(versionId: string) {
   });
 }
 
+export interface LienClientChecklist {
+  totalLignes: number;
+  nbAlertes: number;
+  nbSansTeaserPret: number;
+}
+
+/** Récapitulatif avant envoi : lignes à contacter avant envoi, lignes sans teaser prêt. */
+export function useLienClientChecklist(versionId: string | null) {
+  return useQuery({
+    queryKey: ["dossiers_voyage", "checklist", versionId ?? ""],
+    enabled: !!versionId,
+    queryFn: async (): Promise<LienClientChecklist> => {
+      const { data: lignes, error } = await supabase
+        .from("dossiers_voyage_lignes")
+        .select("catalogue_item_id, alerte_a_contacter")
+        .eq("version_id", versionId!);
+      if (error) throw error;
+
+      const idsAvecCatalogue = (lignes ?? []).map((l) => l.catalogue_item_id).filter((id): id is string => !!id);
+      let teasersPrets = new Set<string>();
+      if (idsAvecCatalogue.length > 0) {
+        const { data: teasers } = await supabase
+          .from("catalogue_item_teasers")
+          .select("catalogue_item_id, statut")
+          .in("catalogue_item_id", idsAvecCatalogue)
+          .eq("statut", "pret");
+        teasersPrets = new Set((teasers ?? []).map((t) => t.catalogue_item_id));
+      }
+
+      const nbSansTeaserPret = (lignes ?? []).filter((l) => l.catalogue_item_id && !teasersPrets.has(l.catalogue_item_id)).length;
+      const nbAlertes = (lignes ?? []).filter((l) => l.alerte_a_contacter).length;
+
+      return { totalLignes: (lignes ?? []).length, nbAlertes, nbSansTeaserPret };
+    },
+  });
+}
+
 /** Appelle l'edge function generate-dossier-composer : propose/régénère les lignes IA du programme. */
 export function useGenerateComposer(dossierId: string, versionId: string) {
   const queryClient = useQueryClient();

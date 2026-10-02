@@ -21,6 +21,7 @@ import {
   useDossierVersions,
   useDossierVoyage,
   useGenerateDossierBrief,
+  useLienClientChecklist,
   useUpdateDossierVoyage,
 } from "@/lib/dossiersVoyage/queries";
 import {
@@ -54,6 +55,7 @@ export default function DossierVoyageDetail() {
   const { data: versions } = useDossierVersions(dossierId);
   const generateBrief = useGenerateDossierBrief(dossierId ?? "");
   const updateDossier = useUpdateDossierVoyage(dossierId ?? "");
+  const { data: checklist } = useLienClientChecklist(dossier?.version_active_id ?? null);
 
   const [draft, setDraft] = useState<BriefDraft | null>(null);
   const [messageCollé, setMessageCollé] = useState("");
@@ -148,6 +150,15 @@ export default function DossierVoyageDetail() {
 
   const versionActive = versions?.find((v) => v.id === dossier.version_active_id);
   const nbIncertitudes = brief.incertitudes.length;
+
+  const envoyerAuClient = async () => {
+    try {
+      await updateDossier.mutateAsync({ statut: "envoye", envoye_at: new Date().toISOString() });
+      toast.success("Dossier envoyé au client");
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
+  };
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -343,18 +354,32 @@ export default function DossierVoyageDetail() {
               </button>
             </div>
 
-            <p className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">
-              L'écran client (Explorer/Proposition/Carnet) n'est pas encore construit — c'est la prochaine étape du
-              chantier. Le bouton d'envoi reste désactivé en attendant, pour ne jamais envoyer un lien qui ne mène
-              nulle part.
-            </p>
+            {checklist && (checklist.nbAlertes > 0 || checklist.nbSansTeaserPret > 0) && (
+              <div className="space-y-1 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                {checklist.nbSansTeaserPret > 0 && (
+                  <p>
+                    ⚠ {checklist.nbSansTeaserPret} lieu(x) sans teaser "prêt" — n'apparaîtront pas dans la Proposition vue
+                    par le client tant que tu ne les habilles pas dans le Catalogue.
+                  </p>
+                )}
+                {checklist.nbAlertes > 0 && <p>⚠ {checklist.nbAlertes} lieu(x) jamais formalisé(s) avec le prestataire — à contacter avant envoi.</p>}
+              </div>
+            )}
+            {dossier.point_depart === "proposition" && (
+              <p className="text-xs text-muted-foreground">
+                L'étape Carnet de voyage (après paiement) n'est pas encore construite — le lien fonctionne pour la
+                Proposition, le Carnet arrivera dans une prochaine étape du chantier.
+              </p>
+            )}
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" disabled>
-                Prévisualiser
+              <Button variant="outline" asChild>
+                <a href={copierLienDossierVoyage(dossier.token_public)} target="_blank" rel="noopener noreferrer">
+                  Prévisualiser
+                </a>
               </Button>
-              <Button disabled className="bg-[#ad1414] hover:bg-[#8f1010]">
-                Créer le lien et envoyer
+              <Button onClick={envoyerAuClient} disabled={updateDossier.isPending} className="bg-[#ad1414] hover:bg-[#8f1010]">
+                {dossier.statut === "envoye" || dossier.statut === "retours" ? "Renvoyer le lien" : "Créer le lien et envoyer"}
               </Button>
             </div>
           </CardContent>
