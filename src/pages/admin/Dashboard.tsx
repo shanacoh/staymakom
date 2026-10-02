@@ -205,6 +205,20 @@ const AdminDashboard = () => {
         </p>
       </div>
 
+      <Card className="border-destructive/30 bg-destructive/5">
+        <CardContent className="p-4 flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+          <div>
+            <div className="font-bold text-destructive text-sm">⚠ Régler le système de paiement</div>
+            <p className="text-sm text-muted-foreground mt-1">
+              Chantier Dossier de voyage — étape 8 (paiement → verrouillage de version → génération automatique
+              des réservations) pas encore faite, volontairement mise de côté. Tant que ce n'est pas réglé, le
+              Carnet de voyage (après paiement) ne fonctionne pas pour un vrai client.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {issues.length > 0 && (
         <Card className="border-destructive/30 bg-destructive/5">
           <CardContent className="p-4 flex flex-col sm:flex-row sm:items-start justify-between gap-3">
