@@ -6,6 +6,23 @@
 
 ---
 
+## [2026-10-02] — Chantier "Dossier de voyage" : étape 6, teaser Catalogue + écran client "Proposition"
+
+### Ce qui a changé côté code
+- Nouvelle section "Habillage teaser" dans le panneau d'édition d'une fiche Catalogue (`src/components/admin/catalogue/TeaserSection.tsx` + `src/lib/catalogue/teaserQueries.ts`) : nom de code, description sensorielle (FR/EN/HE), visuel non identifiable, secteur affiché au client avec rayon de flou réglable, statut brouillon/prêt.
+- Nouvelle page publique `/voyage/:token` (`src/pages/voyage/VoyagePublic.tsx`) : page autonome (même patron que `/swipe/:token`, sans l'habillage du site). Résout automatiquement quelle étape afficher (redirige vers Explorer si le dossier a démarré en swipe et n'est pas terminé, affiche la Proposition sinon, prévoit un Carnet pour plus tard). Écran Proposition : programme jour par jour en teaser, réactions par ligne ("J'adore"/"Autre chose ?"), bouton "Envoyer mes retours", prix total, et bouton Réserver / "On en parle ?" qui ouvre WhatsApp vers Shana (le vrai parcours de paiement n'existe pas encore — étape 8 du chantier).
+
+### Ce qui a changé côté base de données
+- 5 nouvelles fonctions publiques token-scopées (`supabase/migrations/20261002000000_dossier_voyage_proposition_public.sql`), même patron de sécurité que le module swipe : `dossier_voyage_resoudre_etape`, `dossier_voyage_get_proposition_header_by_token` (marque aussi l'ouverture pour le suivi de Shana), `dossier_voyage_get_proposition_lignes_by_token`, `dossier_voyage_set_reaction`, `dossier_voyage_envoyer_retours`. Elles ne lisent jamais `catalogue_items` directement pour le contenu affiché — uniquement `catalogue_item_teasers` : une fiche sans teaser marqué "prêt" est simplement absente de l'écran, jamais de repli sur les vraies informations (adresse, nom réel, prix par ligne).
+- Données de test : 4 fiches Catalogue réelles (déjà utilisées dans un dossier existant) ont reçu un teaser de démonstration pour permettre à Shana de tester l'écran de bout en bout.
+
+### Pourquoi ce changement
+- Permet au client de recevoir un avant-goût désirable de son voyage avant paiement, sans jamais révéler les partenaires réels — protège la relation commerciale de Shana avec ses prestataires tout en donnant envie au client de réserver.
+
+---
+
+---
+
 ## [2026-10-01] — Sprint 3 : signaux de confiance et version française propre (étapes 1 à 4)
 
 ### Ce qui a changé côté code
