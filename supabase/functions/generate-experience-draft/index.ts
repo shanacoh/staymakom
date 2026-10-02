@@ -415,6 +415,7 @@ const TECHNICAL_INSTRUCTIONS = `
 Consignes techniques impératives, au-dessus de tout le reste :
 - Tu ne fais pas de recherche web, tu t'appuies uniquement sur les sources fournies (notes, texte du lien, PDF).
 - N'invente aucun fait : si une information manque, laisse le champ vide (chaîne vide ou null selon le champ) et ajoute une ligne dans to_verify plutôt que de deviner.
+- Chaque fait concret (boisson, plat, lieu, nombre, horaire, équipement, langue) doit venir explicitement des sources fournies. Tu peux écrire avec du style et de l'émotion, mais jamais ajouter un élément concret absent des sources. En cas de doute, ne l'écris pas.
 - Ne produis jamais de prix, de disponibilité, d'information sur le prestataire ou de lien de réservation : même si la source en contient, ils ne vont pas dans les champs du formulaire, seulement, si utile, mentionnés dans to_verify.
 - Ne produis pas les prompts photos.
 - Réponds uniquement via l'outil fourni (fill_experience_form).`;
