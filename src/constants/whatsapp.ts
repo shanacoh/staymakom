@@ -30,3 +30,13 @@ export function getWhatsappMessageVariant(entrySource?: string): WhatsappMessage
   if (entrySource === "facebook") return "facebook";
   return "site";
 }
+
+// Même message que buildWhatsappMessage, avec le nom de l'expérience ajouté à la fin
+// (bulle "Notre équipe vous répond", pastille sur une fiche, etc.).
+export function buildWhatsappMessageForExperience(
+  lang: keyof typeof WHATSAPP_MESSAGES,
+  entrySource: string | undefined,
+  experienceName: string
+): string {
+  return `${buildWhatsappMessage(lang, entrySource)} · ${experienceName}`;
+}

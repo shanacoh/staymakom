@@ -11,8 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import HeroSection from "@/components/experience-test/HeroSection";
 import LocationMap from "@/components/experience-test/LocationMap";
-import PracticalInfo from "@/components/experience-test/PracticalInfo";
 import WhatsIncludedPhotos2 from "@/components/experience-test/WhatsIncludedPhotos2";
+import EssentialsBlock from "@/components/experience/EssentialsBlock";
+import AskTeam from "@/components/experience/AskTeam";
 import StandaloneExtrasSection from "@/components/experience-test/StandaloneExtrasSection";
 import StandaloneRequestPanel from "@/components/experience-test/StandaloneRequestPanel";
 import { ReviewsBlock } from "@/components/reviews/ReviewsBlock";
@@ -113,6 +114,18 @@ interface StandaloneExperienceData {
   availability_mode?: string | null;
   whitelisted_dates?: string[] | null;
   practical_info?: unknown;
+  accessibility_info_fr?: string | null;
+  accessibility_info_he?: string | null;
+  languages?: string[] | null;
+  schedule_note?: string | null;
+  schedule_note_fr?: string | null;
+  schedule_note_he?: string | null;
+  access_note?: string | null;
+  access_note_fr?: string | null;
+  access_note_he?: string | null;
+  hide_exact_address?: boolean | null;
+  session_labels?: Record<string, { en?: string; fr?: string; he?: string }> | null;
+  essentials_private_on_request?: boolean | null;
   standalone_experience_highlight_tags?: {
     tag_id: string;
     position: number;
@@ -190,7 +203,7 @@ export default function StandaloneExperience() {
   const includedRef = useRef<HTMLDivElement>(null);
   const extrasRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
-  const practicalInfoRef = useRef<HTMLDivElement>(null);
+  const essentialsRef = useRef<HTMLDivElement>(null);
   const otherExperiencesRef = useRef<HTMLDivElement>(null);
 
   // Booking form state (étape 1 uniquement — les étapes 2 et 3 sont dans StandaloneCheckout.tsx)
@@ -247,9 +260,12 @@ export default function StandaloneExperience() {
         "city", "city_he", "city_fr",
         "region", "region_he", "region_fr",
         "latitude", "longitude",
-        "accessibility_info", "category_id", "status",
+        "accessibility_info", "accessibility_info_fr", "accessibility_info_he", "category_id", "status",
         "available_days", "blocked_dates", "availability_end_date",
         "availability_mode", "whitelisted_dates", "practical_info",
+        "languages", "schedule_note", "schedule_note_fr", "schedule_note_he",
+        "access_note", "access_note_fr", "access_note_he", "hide_exact_address",
+        "session_labels", "essentials_private_on_request",
       ].join(", ");
 
       // Une fiche est visible en détail si elle est publiée, ou si elle est en
@@ -350,12 +366,12 @@ export default function StandaloneExperience() {
   // section_viewed : une fois par section, dès qu'elle entre dans le viewport
   useEffect(() => {
     if (!experience?.slug) return;
-    const sections: { ref: React.RefObject<HTMLElement>; name: "included" | "extras" | "map" | "reviews" | "practical_info" | "other_experiences" }[] = [
+    const sections: { ref: React.RefObject<HTMLElement>; name: "included" | "extras" | "map" | "reviews" | "essentials" | "other_experiences" }[] = [
       { ref: includedRef, name: "included" },
       { ref: extrasRef, name: "extras" },
       { ref: mapRef, name: "map" },
       { ref: reviewsRef, name: "reviews" },
-      { ref: practicalInfoRef, name: "practical_info" },
+      { ref: essentialsRef, name: "essentials" },
       { ref: otherExperiencesRef, name: "other_experiences" },
     ];
     const seen = new Set<string>();
@@ -983,6 +999,8 @@ export default function StandaloneExperience() {
           </p>
         )}
 
+        <AskTeam placement="ask_team_panel" experienceTitle={title} lang={lang as "en" | "fr" | "he"} />
+
         <ReviewsTeaser
           reviews={reviewsSummary?.reviews ?? []}
           lang={lang as "fr" | "en" | "he"}
@@ -1095,6 +1113,14 @@ export default function StandaloneExperience() {
           <div className="grid md:grid-cols-[65%_35%] gap-6 lg:gap-10">
             {/* Left Column */}
             <div className="space-y-10 md:space-y-12 min-w-0 overflow-x-hidden">
+              {/* L'essentiel */}
+              <div ref={essentialsRef} className="space-y-3">
+                <EssentialsBlock experience={experience} experienceTitle={title} lang={lang as "en" | "fr" | "he"} />
+                <div className="md:hidden">
+                  <AskTeam placement="ask_team_mobile" experienceTitle={title} lang={lang as "en" | "fr" | "he"} />
+                </div>
+              </div>
+
               {/* What's on the program */}
               <div ref={includedRef}>
                 <WhatsIncludedPhotos2
@@ -1142,14 +1168,6 @@ export default function StandaloneExperience() {
                   lang={lang as "fr" | "en" | "he"}
                   scope="standalone_experience"
                   entityId={experience.id}
-                />
-              </div>
-
-              {/* Things to know */}
-              <div ref={practicalInfoRef}>
-                <PracticalInfo
-                  experience={experience as any}
-                  lang={lang as "en" | "he" | "fr"}
                 />
               </div>
 

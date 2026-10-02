@@ -472,10 +472,14 @@ export function trackExperienceEngaged(
 }
 
 export function trackSectionViewed(
-  section: "included" | "extras" | "map" | "reviews" | "practical_info" | "other_experiences",
+  section: "included" | "extras" | "map" | "reviews" | "essentials" | "other_experiences",
   slug?: string
 ) {
   safeTrack("section_viewed", { section, slug });
+}
+
+export function trackEssentialsExpanded(slug?: string) {
+  safeTrack("essentials_expanded", { slug });
 }
 
 export function trackGalleryOpened(slug?: string) {

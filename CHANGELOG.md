@@ -6,6 +6,24 @@
 
 ---
 
+## [2026-10-02] — Sprint 4 : bloc "L'essentiel", pastille équipe, bandeau presse
+
+### Ce qui a changé côté code
+- `src/components/experience/EssentialsBlock.tsx` (nouveau) : bloc "L'essentiel" affiché sur la fiche expérience standalone, juste sous les photos. Regroupe durée, prochaines séances (calculées depuis les dates/jours disponibles), lieu, inclus, pour qui, casher, langue, accessibilité et annulation — une ligne masquée si vide.
+- `src/components/experience/AskTeam.tsx` (nouveau) : pastille de contact "Notre équipe vous répond sur WhatsApp" (aucun prénom ni photo), affichée sous "L'essentiel" sur mobile et dans le panneau de réservation sur ordinateur.
+- `src/components/PressStrip.tsx` (nouveau) : bandeau "Ils parlent de nous" (i24NEWS, Actualité Juive) ajouté sur la page d'accueil, entre "Ce n'est pas du tourisme" et la FAQ.
+- `src/pages/StandaloneExperience.tsx` : ancien bloc "Bon à savoir" du bas retiré (fusionné dans "L'essentiel"), nouveaux champs ajoutés à la sélection de données publiques.
+- `src/lib/standaloneBadges.ts`, `src/constants/whatsapp.ts`, `src/lib/analytics.ts` : petits ajouts réutilisés par les nouveaux composants (libellé parking, message WhatsApp avec nom d'expérience, tracking `essentials`/`essentials_expanded`).
+- Formulaire back-office non modifié dans ce sprint (prévu pour une prochaine session).
+
+### Ce qui a changé côté base de données
+- `20261002020000_add_essentials_fields_standalone_experiences.sql` : 11 nouvelles colonnes optionnelles sur `standalone_experiences` (accessibilité FR manquante, langues de l'animation, horaire en clair, accès sans voiture, adresse masquable, libellé par date, séance privée sur demande). Aucune fiche existante n'est impactée tant que ces champs ne sont pas remplis.
+
+### Pourquoi ce changement
+Les fiches expérience manquaient d'informations pratiques visibles d'un coup d'œil en haut de page (durée, prochaines dates, accès...), reléguées tout en bas. Objectif : rassurer et répondre aux questions fréquentes avant même de faire défiler la page.
+
+---
+
 ## [2026-10-02] — Chantier "Dossier de voyage" : étape 10, réponse automatique au formulaire du site
 
 ### Ce qui a changé côté code

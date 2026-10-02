@@ -88,7 +88,7 @@ const LABELS: Record<string, Record<Language, string>> = {
   parking_paid: { en: "Paid parking", he: "חניה בתשלום", fr: "Parking payant" },
 };
 
-const kidsLabel = (age: number, lang: Language): string => {
+export const kidsLabel = (age: number, lang: Language): string => {
   if (lang === "fr") return `Dès ${age} ans`;
   if (lang === "he") return `מגיל ${age}`;
   return `From ${age}`;
@@ -180,6 +180,14 @@ export function getAutoBadgesFromPracticalInfo(
   if (info.spa === "yes") badges.push({ key: "spa", label: LABELS.spa[lang] });
 
   return badges;
+}
+
+// Libellé "Parking" pour une ligne de texte (différent des badges-chip ci-dessus) :
+// masqué si le statut n'a pas été renseigné.
+export function getParkingLabel(parking: PracticalBadgesInfo["parking"], lang: Language): string | null {
+  if (parking.status !== "yes") return null;
+  const base = parking.price_type === "paid" ? LABELS.parking_paid[lang] : LABELS.parking_free[lang];
+  return parking.price_type === "paid" && parking.price_amount ? `${base} · ${parking.price_amount}` : base;
 }
 
 export function getPracticalInfoCompleteness(info: PracticalBadgesInfo): { answered: number; total: number } {

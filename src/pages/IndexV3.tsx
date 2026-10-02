@@ -11,6 +11,7 @@ import { SEOHead } from "@/components/SEOHead";
 import MarqueeBanner from "@/components/MarqueeBanner";
 import TailoredRequestSection from "@/components/TailoredRequestSection";
 import FAQSection from "@/components/FAQSection";
+import PressStrip from "@/components/PressStrip";
 import Experience2CardWithPrice from "@/components/Experience2CardWithPrice";
 import StandaloneExperienceCard from "@/components/StandaloneExperienceCard";
 import ExperienceCardSkeleton from "@/components/ExperienceCardSkeleton";
@@ -578,6 +579,9 @@ const IndexV3 = () => {
             </div>
           </div>
         </section>
+
+        {/* ──── 9. PRESSE ──── */}
+        <PressStrip lang={lang as "en" | "fr" | "he"} />
 
         {/* ──── 10. Q&A ──── */}
         <FAQSection />
