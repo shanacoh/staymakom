@@ -10,6 +10,29 @@ const ALLOWED_ORIGINS = [
   'http://localhost:8080',
 ];
 
+// Calcule le prochain moment où la réponse automatique peut partir : décalé de quelques minutes,
+// jamais la nuit (22h-7h heure d'Israël), jamais pendant Shabbat (approximation prudente :
+// vendredi dès 15h jusqu'à samedi minuit — plus large que l'horaire réel pour ne jamais tomber juste).
+function estMomentConvenable(date: Date): boolean {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Jerusalem', weekday: 'short', hour: 'numeric', hour12: false,
+  }).formatToParts(date);
+  const weekday = parts.find((p) => p.type === 'weekday')?.value ?? '';
+  const heure = Number(parts.find((p) => p.type === 'hour')?.value ?? '12');
+  const estShabbat = (weekday === 'Fri' && heure >= 15) || weekday === 'Sat';
+  const estNuit = heure >= 22 || heure < 7;
+  return !estShabbat && !estNuit;
+}
+
+function prochainMomentConvenable(depuis: Date): Date {
+  let candidat = new Date(depuis.getTime() + 5 * 60 * 1000); // décalé de 5 minutes
+  for (let garde = 0; garde < 48; garde++) {
+    if (estMomentConvenable(candidat)) return candidat;
+    candidat = new Date(candidat.getTime() + 60 * 60 * 1000);
+  }
+  return candidat;
+}
+
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get('Origin') || '';
   const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
@@ -334,6 +357,7 @@ serve(async (req) => {
             occasion: requestData.metadata?.occasion || null,
             nb_personnes: requestData.metadata?.people || null,
           },
+          autoreply_envoyer_apres: prochainMomentConvenable(new Date()).toISOString(),
         }]);
         if (dossierError) console.error('Failed to create dossiers_voyage row (non-blocking):', dossierError);
       }
