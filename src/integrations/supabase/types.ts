@@ -163,6 +163,39 @@ export type Database = {
         }
         Relationships: []
       }
+      autoreply_question_bank: {
+        Row: {
+          actif: boolean
+          champ_manquant: string
+          created_at: string
+          id: string
+          ordre: number
+          texte_en: string
+          texte_fr: string
+          texte_he: string
+        }
+        Insert: {
+          actif?: boolean
+          champ_manquant: string
+          created_at?: string
+          id?: string
+          ordre?: number
+          texte_en: string
+          texte_fr: string
+          texte_he: string
+        }
+        Update: {
+          actif?: boolean
+          champ_manquant?: string
+          created_at?: string
+          id?: string
+          ordre?: number
+          texte_en?: string
+          texte_fr?: string
+          texte_he?: string
+        }
+        Relationships: []
+      }
       booking_extras: {
         Row: {
           booking_id: string
@@ -1095,6 +1128,8 @@ export type Database = {
         Row: {
           afficher_prix: boolean
           archive: boolean
+          autoreply_envoye_at: string | null
+          autoreply_envoyer_apres: string | null
           brief_data: Json
           brief_valide_par_shana: boolean
           budget_estime: number | null
@@ -1142,6 +1177,8 @@ export type Database = {
         Insert: {
           afficher_prix?: boolean
           archive?: boolean
+          autoreply_envoye_at?: string | null
+          autoreply_envoyer_apres?: string | null
           brief_data?: Json
           brief_valide_par_shana?: boolean
           budget_estime?: number | null
@@ -1189,6 +1226,8 @@ export type Database = {
         Update: {
           afficher_prix?: boolean
           archive?: boolean
+          autoreply_envoye_at?: string | null
+          autoreply_envoyer_apres?: string | null
           brief_data?: Json
           brief_valide_par_shana?: boolean
           budget_estime?: number | null
