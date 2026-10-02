@@ -5722,6 +5722,60 @@ export type Database = {
         Returns: string
       }
       catalogue_normalize_url: { Args: { p_url: string }; Returns: string }
+      dossier_voyage_envoyer_retours: {
+        Args: { p_token: string }
+        Returns: undefined
+      }
+      dossier_voyage_get_proposition_header_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          devise: string
+          dossier_id: string
+          langue: string
+          nom_destinataire: string
+          objectif: string
+          prix_total_vente: number
+          version_id: string
+        }[]
+      }
+      dossier_voyage_get_proposition_lignes_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          casher: boolean
+          description_sensorielle: string
+          description_sensorielle_en: string
+          description_sensorielle_he: string
+          jour: number
+          ligne_id: string
+          nature: string
+          nom_code: string
+          nom_code_en: string
+          nom_code_he: string
+          secteur_libelle: string
+          secteur_rayon_km: number
+          texte_libre: string
+          visuel_url: string
+        }[]
+      }
+      dossier_voyage_resoudre_etape: {
+        Args: { p_token: string }
+        Returns: {
+          dossier_id: string
+          etape: string
+          langue: string
+          nom_destinataire: string
+          objectif: string
+        }[]
+      }
+      dossier_voyage_set_reaction: {
+        Args: {
+          p_commentaire: string
+          p_ligne_id: string
+          p_reaction: string
+          p_token: string
+        }
+        Returns: undefined
+      }
       find_or_create_lead_for_email: {
         Args: { p_email: string; p_name: string; p_phone: string }
         Returns: string
