@@ -107,6 +107,7 @@ const AdminAutomations           = lazy(() => import("./pages/admin/Automations"
 
 // ── Module Swipe Itinéraire ────────────────────────────────────────────────
 const SwipePublic                = lazy(() => import("./pages/swipe/SwipePublic"));
+const VoyagePublic                = lazy(() => import("./pages/voyage/VoyagePublic"));
 const AdminSwipeDossiers         = lazy(() => import("./pages/admin/swipe/Dossiers"));
 const AdminSwipeDossierDetail    = lazy(() => import("./pages/admin/swipe/DossierDetail"));
 const AdminSwipeDossierResultats = lazy(() => import("./pages/admin/swipe/DossierResultats"));
@@ -275,6 +276,7 @@ const AppContent = () => {
           <Route path="/avis/:token" element={<PublicReviewForm />} />
           <Route path="/tailor-questionnaire/:token" element={<TailorMadeQuestionnaire />} />
           <Route path="/swipe/:token" element={<SwipePublic />} />
+          <Route path="/voyage/:token" element={<VoyagePublic />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/cart" element={<Cart />} />
           <Route
