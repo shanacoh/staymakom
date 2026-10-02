@@ -9,6 +9,9 @@ verify_jwt = false
 [functions.generate-dossier-brief]
 verify_jwt = false
 
+[functions.generate-experience-draft]
+verify_jwt = false
+
 [functions.generate-dossier-composer]
 verify_jwt = false
 

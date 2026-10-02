@@ -26,7 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Save, Rocket, X, Upload, Loader2, ArrowLeft, Plus, Star, Clock,
+  Save, Rocket, X, Upload, Loader2, ArrowLeft, Plus, Star, Clock, Sparkles,
   MapPin, DollarSign, Check, Tag, Car, Utensils, Dumbbell, Waves, Users,
   type LucideIcon,
 } from "lucide-react";
@@ -53,6 +53,7 @@ import BoatPriceVariantsManager from "@/components/admin/BoatPriceVariantsManage
 import FeaturedBadgeToggle from "@/components/admin/FeaturedBadgeToggle";
 import DepositRuleEditor from "@/components/admin/DepositRuleEditor";
 import { BOATS_CATEGORY_ID } from "@/lib/boatsCategory";
+import AiDraftPanel, { type AiIncludeDraft, type AiExtraDraft, type AiPracticalInfoDraft, type AiDraftPanelHandle } from "@/components/forms/ai/AiDraftPanel";
 
 // Les bateaux n'ont pas de limite de nombre de photos dans la galerie,
 // contrairement aux autres expériences standalone (limitées à 8).
@@ -150,6 +151,8 @@ const standaloneExperienceSchema = z.object({
   duration_he: z.string().optional(),
   // Accessibilité
   accessibility_info: z.string().optional(),
+  accessibility_info_fr: z.string().optional(),
+  accessibility_info_he: z.string().optional(),
   // SEO
   seo_title_en: z.string().optional(),
   seo_title_he: z.string().optional(),
@@ -301,6 +304,8 @@ interface StandaloneExperienceFormProps {
 
 export function StandaloneExperienceForm({ experienceId, onClose, defaultCategoryId }: StandaloneExperienceFormProps) {
   const queryClient = useQueryClient();
+  const aiDraftPanelRef = useRef<AiDraftPanelHandle>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
   const isMobile = useIsMobile();
 
   // Image state
@@ -548,6 +553,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       duration_fr: "",
       duration_he: "",
       accessibility_info: "",
+      accessibility_info_fr: "",
+      accessibility_info_he: "",
       seo_title_en: "",
       seo_title_he: "",
       seo_title_fr: "",
@@ -724,6 +731,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     setValue("duration_fr", exp.duration_fr || "");
     setValue("duration_he", exp.duration_he || "");
     setValue("accessibility_info", exp.accessibility_info || "");
+    setValue("accessibility_info_fr", exp.accessibility_info_fr || "");
+    setValue("accessibility_info_he", exp.accessibility_info_he || "");
     setValue("seo_title_en", exp.seo_title_en || "");
     setValue("seo_title_he", exp.seo_title_he || "");
     setValue("seo_title_fr", exp.seo_title_fr || "");
@@ -943,6 +952,195 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   };
 
   // -------------------------------------------------------------------------
+  // Générer avec l'IA : applique le brouillon reçu aux champs multi-catégories,
+  // infos pratiques, inclus et extras (les champs texte simples sont posés
+  // directement par AiDraftPanel via getValues/setValue).
+  // -------------------------------------------------------------------------
+
+  const applyAiCategoryIds = (ids: string[]) => {
+    setSelectedCategoryIds(ids);
+    setValue("category_id", ids[0] || "", { shouldValidate: true });
+  };
+
+  const isPracticalInfoEmpty = () =>
+    practicalInfo.kids.status === null && practicalInfo.kosher === null && practicalInfo.parking.status === null;
+
+  const applyAiPracticalInfo = (info: AiPracticalInfoDraft) => {
+    setPracticalInfo((prev) => ({
+      ...prev,
+      kids: info.kids.status !== null ? { status: info.kids.status, from_age: info.kids.from_age } : prev.kids,
+      kosher: info.kosher !== null ? info.kosher : prev.kosher,
+      parking: info.parking.status !== null ? { ...prev.parking, status: info.parking.status } : prev.parking,
+    }));
+  };
+
+  const handleAiIncludes = async (items: AiIncludeDraft[]) => {
+    if (!experienceId) {
+      const newEntries: LocalIncludeEntry[] = items.map((item, idx) => ({
+        _localId: `ai-${Date.now()}-${idx}`,
+        title: item.title,
+        title_fr: item.title_fr,
+        title_he: item.title_he,
+        icon_url: "",
+        published: true,
+        order_index: localStandaloneIncludes.length + idx,
+      }));
+      setLocalStandaloneIncludes((prev) => [...prev, ...newEntries]);
+      return;
+    }
+    const { error } = await (supabase as any).from("standalone_experience_includes").insert(
+      items.map((item, idx) => ({
+        experience_id: experienceId,
+        title: item.title,
+        title_fr: item.title_fr || null,
+        title_he: item.title_he || null,
+        order_index: 1000 + idx,
+        published: true,
+      }))
+    );
+    if (error) {
+      toast.error("Les inclus générés par l'IA n'ont pas pu être ajoutés.");
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["standalone-includes", experienceId] });
+  };
+
+  const handleAiExtras = async (items: AiExtraDraft[]) => {
+    if (!experienceId) {
+      const newEntries: LocalExtraEntry[] = items.map((item, idx) => ({
+        _localId: `ai-${Date.now()}-${idx}`,
+        title: item.title,
+        title_fr: item.title_fr,
+        title_he: item.title_he,
+        description: item.description,
+        price: 0,
+        currency: "ILS",
+        is_available: true,
+        sort_order: localStandaloneExtras.length + idx,
+      }));
+      setLocalStandaloneExtras((prev) => [...prev, ...newEntries]);
+      return;
+    }
+    const { error } = await (supabase as any).from("standalone_extras").insert(
+      items.map((item, idx) => ({
+        experience_id: experienceId,
+        title: item.title,
+        title_fr: item.title_fr || null,
+        title_he: item.title_he || null,
+        description: item.description || null,
+        price: 0,
+        currency: "ILS",
+        is_available: true,
+        sort_order: 1000 + idx,
+      }))
+    );
+    if (error) {
+      toast.error("Les extras générés par l'IA n'ont pas pu être ajoutés.");
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["standalone-extras", experienceId] });
+  };
+
+  // -------------------------------------------------------------------------
+  // Traduire tout (étape 4) : traduit les inclus/extras dont le titre FR est
+  // rempli vers EN/HE, uniquement les champs encore vides (pas de fenêtre de
+  // confirmation ici, contrairement aux champs texte simples : ce sont des
+  // listes, pas des champs uniques).
+  // -------------------------------------------------------------------------
+
+  const handleTranslateIncludesExtras = async () => {
+    type Row = { key: string; title_fr: string; title: string; title_he: string };
+    let includeRows: (Row & { id?: string; localId?: string })[] = [];
+    let extraRows: (Row & { id?: string; localId?: string })[] = [];
+
+    if (!experienceId) {
+      includeRows = localStandaloneIncludes.map((item, idx) => ({
+        key: `inc_${idx}`, localId: item._localId, title_fr: item.title_fr, title: item.title, title_he: item.title_he,
+      }));
+      extraRows = localStandaloneExtras.map((item, idx) => ({
+        key: `ext_${idx}`, localId: item._localId, title_fr: item.title_fr, title: item.title, title_he: item.title_he,
+      }));
+    } else {
+      const [{ data: includesData }, { data: extrasData }] = await Promise.all([
+        (supabase as any).from("standalone_experience_includes").select("id, title, title_fr, title_he").eq("experience_id", experienceId),
+        (supabase as any).from("standalone_extras").select("id, title, title_fr, title_he").eq("experience_id", experienceId),
+      ]);
+      includeRows = (includesData || []).map((item: any, idx: number) => ({
+        key: `inc_${idx}`, id: item.id, title_fr: item.title_fr || "", title: item.title || "", title_he: item.title_he || "",
+      }));
+      extraRows = (extrasData || []).map((item: any, idx: number) => ({
+        key: `ext_${idx}`, id: item.id, title_fr: item.title_fr || "", title: item.title || "", title_he: item.title_he || "",
+      }));
+    }
+
+    const translatable = [...includeRows, ...extraRows].filter((r) => r.title_fr.trim() && (!r.title.trim() || !r.title_he.trim()));
+    if (translatable.length === 0) return;
+
+    const texts = Object.fromEntries(translatable.map((r) => [r.key, r.title_fr]));
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    if (!token) return;
+
+    const { data, error } = await supabase.functions.invoke("generate-experience-draft", {
+      headers: { Authorization: `Bearer ${token}` },
+      body: { type: "standalone", mode: "translate", texts },
+    });
+    if (error || data?.error) {
+      toast.error("La traduction des inclus/extras a échoué.");
+      return;
+    }
+    const translations = (data.translations || {}) as Record<string, { en: string; he: string }>;
+
+    if (!experienceId) {
+      setLocalStandaloneIncludes((prev) =>
+        prev.map((item, idx) => {
+          const t = translations[`inc_${idx}`];
+          if (!t) return item;
+          return { ...item, title: item.title.trim() || t.en || item.title, title_he: item.title_he.trim() || t.he || item.title_he };
+        })
+      );
+      setLocalStandaloneExtras((prev) =>
+        prev.map((item, idx) => {
+          const t = translations[`ext_${idx}`];
+          if (!t) return item;
+          return { ...item, title: item.title.trim() || t.en || item.title, title_he: item.title_he.trim() || t.he || item.title_he };
+        })
+      );
+      return;
+    }
+
+    const updates: Promise<any>[] = [];
+    for (const row of includeRows) {
+      const t = translations[row.key];
+      if (!t || !row.id) continue;
+      const patch: Record<string, string> = {};
+      if (!row.title.trim() && t.en) patch.title = t.en;
+      if (!row.title_he.trim() && t.he) patch.title_he = t.he;
+      if (Object.keys(patch).length > 0) updates.push((supabase as any).from("standalone_experience_includes").update(patch).eq("id", row.id));
+    }
+    for (const row of extraRows) {
+      const t = translations[row.key];
+      if (!t || !row.id) continue;
+      const patch: Record<string, string> = {};
+      if (!row.title.trim() && t.en) patch.title = t.en;
+      if (!row.title_he.trim() && t.he) patch.title_he = t.he;
+      if (Object.keys(patch).length > 0) updates.push((supabase as any).from("standalone_extras").update(patch).eq("id", row.id));
+    }
+    await Promise.all(updates);
+    queryClient.invalidateQueries({ queryKey: ["standalone-includes", experienceId] });
+    queryClient.invalidateQueries({ queryKey: ["standalone-extras", experienceId] });
+  };
+
+  const handleTranslateAll = async () => {
+    setIsTranslating(true);
+    try {
+      await Promise.all([aiDraftPanelRef.current?.translateAll(), handleTranslateIncludesExtras()]);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  // -------------------------------------------------------------------------
   // Build experience data object
   // -------------------------------------------------------------------------
 
@@ -1038,6 +1236,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       duration_fr: data.duration_fr || null,
       duration_he: data.duration_he || null,
       accessibility_info: data.accessibility_info || null,
+      accessibility_info_fr: data.accessibility_info_fr || null,
+      accessibility_info_he: data.accessibility_info_he || null,
       hero_image: heroImageUrl || null,
       thumbnail_image: heroImageUrl || null,
       photos: photoUrls,
@@ -1334,6 +1534,15 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
             <Button
               type="button"
               variant="outline"
+              onClick={handleTranslateAll}
+              disabled={isSaving || heroImageUploading || isTranslating}
+            >
+              {isTranslating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+              Traduire tout
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
               onClick={handleSaveDraftClick}
               disabled={isSaving || heroImageUploading}
             >
@@ -1346,6 +1555,20 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
             </Button>
           </div>
         </div>
+
+        {/* Générer avec l'IA */}
+        <AiDraftPanel
+          ref={aiDraftPanelRef}
+          getValues={(name) => getValues(name as keyof StandaloneFormData)}
+          setValue={(name, value, options) => setValue(name as keyof StandaloneFormData, value as never, options)}
+          selectedCategoryIds={selectedCategoryIds}
+          onApplyCategoryIds={applyAiCategoryIds}
+          onApplyPracticalInfo={applyAiPracticalInfo}
+          isPracticalInfoEmpty={isPracticalInfoEmpty}
+          isEditMode={!!experienceId}
+          onAddIncludes={handleAiIncludes}
+          onAddExtras={handleAiExtras}
+        />
 
         {/* Sticky Tab Navigation */}
         <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b -mx-6 px-6 py-0">
@@ -2503,14 +2726,41 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
               <CardHeader>
                 <CardTitle>Accessibilité</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="accessibility_info">Informations d'accessibilité</Label>
+                  <Label htmlFor="accessibility_info" className="flex items-center gap-1.5">
+                    <span>🇬🇧</span> Informations d'accessibilité (EN)
+                  </Label>
                   <Textarea
                     id="accessibility_info"
                     {...register("accessibility_info")}
                     placeholder="Ex: Accessible en fauteuil roulant. Terrain plat."
                     rows={3}
+                    disabled={isSaving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="accessibility_info_fr" className="flex items-center gap-1.5">
+                    <span>🇫🇷</span> Informations d'accessibilité (FR)
+                  </Label>
+                  <Textarea
+                    id="accessibility_info_fr"
+                    {...register("accessibility_info_fr")}
+                    placeholder="Ex : Accessible en fauteuil roulant. Terrain plat."
+                    rows={3}
+                    disabled={isSaving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="accessibility_info_he" className="flex items-center gap-1.5">
+                    <span>🇮🇱</span> נגישות (HE)
+                  </Label>
+                  <Textarea
+                    id="accessibility_info_he"
+                    {...register("accessibility_info_he")}
+                    rows={3}
+                    dir="rtl"
+                    className="bg-hebrew-input"
                     disabled={isSaving}
                   />
                 </div>
