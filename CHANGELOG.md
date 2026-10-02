@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-10-02] — Chantier "Dossier de voyage" : étape 7, activation de l'envoi du lien client
+
+### Ce qui a changé côté code
+- `src/pages/admin/dossiers/DossierVoyageDetail.tsx` : le bouton "Créer le lien et envoyer" de la carte "Lien client" fait désormais vraiment passer le dossier au statut `envoye` (avec horodatage) — il était désactivé depuis l'étape 5 en attendant que l'écran public existe (fait à l'étape 6). "Prévisualiser" ouvre le vrai lien `/voyage/:token` dans un nouvel onglet.
+- Nouvelle check-list avant envoi (`useLienClientChecklist` dans `src/lib/dossiersVoyage/queries.ts`) : nombre de lieux sans teaser "prêt" (invisibles côté client tant qu'ils ne sont pas habillés) et nombre de lieux jamais formalisés avec le prestataire (à contacter avant envoi).
+
+### Ce qui a changé côté base de données
+- Aucune.
+
+### Pourquoi ce changement
+- Avec l'écran client Proposition fonctionnel, il n'y avait plus de raison de garder le bouton d'envoi désactivé. La check-list évite d'envoyer un dossier avec des lieux encore invisibles (teaser manquant) sans que Shana s'en rende compte.
+
+---
+
 ## [2026-10-02] — Chantier "Dossier de voyage" : étape 6, teaser Catalogue + écran client "Proposition"
 
 ### Ce qui a changé côté code
