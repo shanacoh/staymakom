@@ -59,6 +59,13 @@ interface EssentialsBlockProps {
   experience: EssentialsExperience;
   experienceTitle: string;
   lang: Language;
+  /**
+   * Rendu compact (2 colonnes, textes courts, quel que soit la largeur de la
+   * fenêtre) — utilisé par l'aperçu du back-office (sprint 5B), jamais par la
+   * fiche publique : par défaut (undefined/false), le rendu est strictement
+   * identique à avant.
+   */
+  compact?: boolean;
 }
 
 const LANGUAGE_NAMES: Record<string, Record<Language, string>> = {
@@ -99,7 +106,7 @@ function getUpcomingSessionDates(experience: EssentialsExperience, minDate: Date
   return results;
 }
 
-export default function EssentialsBlock({ experience, experienceTitle, lang }: EssentialsBlockProps) {
+export default function EssentialsBlock({ experience, experienceTitle, lang, compact = false }: EssentialsBlockProps) {
   const [expanded, setExpanded] = useState(false);
 
   const { data: includes } = useQuery({
@@ -311,24 +318,24 @@ export default function EssentialsBlock({ experience, experienceTitle, lang }: E
 
   return (
     <section
-      className="rounded-2xl border border-[#e9e6e1] bg-[#faf8f6] p-4 md:p-5"
+      className={cn("rounded-2xl border border-[#e9e6e1] bg-[#faf8f6]", compact ? "p-3" : "p-4 md:p-5")}
       dir={lang === "he" ? "rtl" : "ltr"}
     >
-      <h2 className="font-serif text-lg md:text-xl font-medium text-foreground mb-4">
+      <h2 className={cn("font-serif font-medium text-foreground", compact ? "text-sm mb-2" : "text-lg md:text-xl mb-4")}>
         {lang === "he" ? "בקצרה" : lang === "fr" ? "L'essentiel" : "The essentials"}
       </h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
+      <div className={cn("grid", compact ? "grid-cols-2 gap-x-3 gap-y-2" : "grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4")}>
         {rows.map((row, index) => {
           const Icon = row.icon;
           return (
             <div
               key={row.key}
-              className={cn("flex items-start gap-2", index >= 6 && !expanded && "hidden md:flex")}
+              className={cn("flex items-start gap-2", index >= 6 && !expanded && (compact ? "hidden" : "hidden md:flex"))}
             >
-              <Icon className="h-3.5 w-3.5 text-[#ad1414] mt-0.5 shrink-0" />
-              <div className="min-w-0 text-sm">
-                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{row.label}</div>
-                <div className="text-foreground">{row.content}</div>
+              <Icon className={cn("text-[#ad1414] mt-0.5 shrink-0", compact ? "h-3 w-3" : "h-3.5 w-3.5")} />
+              <div className={cn("min-w-0", compact ? "text-xs" : "text-sm")}>
+                <div className={cn("uppercase tracking-wide text-muted-foreground", compact ? "text-[9px]" : "text-[10px]")}>{row.label}</div>
+                <div className={cn("text-foreground", compact && "truncate")}>{row.content}</div>
               </div>
             </div>
           );

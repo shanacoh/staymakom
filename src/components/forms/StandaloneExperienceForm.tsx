@@ -243,31 +243,34 @@ function PracticalTriStateField({
   value: TriState;
   onChange: (v: TriState) => void;
 }) {
+  const options: { value: Exclude<TriState, null>; label: string }[] = [
+    { value: "yes", label: "Oui" },
+    { value: "no", label: "Non" },
+    { value: "not_relevant", label: "Non pertinent" },
+  ];
   return (
-    <div className="p-3 rounded-lg border space-y-2">
-      <div className="flex items-center gap-3">
-        <Icon className="h-4 w-4 text-muted-foreground" />
-        <span className="font-medium text-sm flex-1">{label}</span>
+    <div className="flex items-center justify-between gap-2 py-1">
+      <div className="flex items-center gap-1.5 min-w-0">
+        <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        <span className="text-[11px] font-medium truncate">{label}</span>
         {value === null && <CompletionPill />}
       </div>
-      <RadioGroup
-        value={value ?? undefined}
-        onValueChange={(v) => onChange(v as TriState)}
-        className="flex gap-4 ml-7"
-      >
-        <div className="flex items-center gap-2">
-          <RadioGroupItem value="yes" id={`${id}-yes`} />
-          <Label htmlFor={`${id}-yes`} className="text-sm font-normal cursor-pointer">Oui</Label>
-        </div>
-        <div className="flex items-center gap-2">
-          <RadioGroupItem value="no" id={`${id}-no`} />
-          <Label htmlFor={`${id}-no`} className="text-sm font-normal cursor-pointer">Non</Label>
-        </div>
-        <div className="flex items-center gap-2">
-          <RadioGroupItem value="not_relevant" id={`${id}-nr`} />
-          <Label htmlFor={`${id}-nr`} className="text-sm font-normal cursor-pointer">Non pertinent</Label>
-        </div>
-      </RadioGroup>
+      <div className="flex gap-1 shrink-0">
+        {options.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            id={`${id}-${opt.value}`}
+            onClick={() => onChange(opt.value)}
+            className={cn(
+              "px-1.5 py-0.5 rounded-full text-[10px] border transition-colors",
+              value === opt.value ? "bg-[#1a1814] text-white border-[#1a1814]" : "bg-white text-[#1a1814] border-[#e9e6e1] hover:border-[#1a1814]/40"
+            )}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -331,13 +334,13 @@ function FormSection({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between gap-3 px-3 py-3 text-left"
+        className="w-full flex items-center justify-between gap-2.5 px-2.5 py-2.5 text-left"
       >
         <div>
           <CardTitle>{title}</CardTitle>
           {description && <CardDescription className="mt-0.5">{description}</CardDescription>}
         </div>
-        <ChevronDown className={cn("h-4 w-4 shrink-0 text-[#6f6a63] transition-transform", open && "rotate-180")} />
+        <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 text-[#6f6a63] transition-transform", open && "rotate-180")} />
       </button>
       {open && <CardContent className="pt-0">{children}</CardContent>}
     </Card>
@@ -441,6 +444,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   const [availabilityEndDate, setAvailabilityEndDate] = useState<string | null>(null);
   const [availabilityMode, setAvailabilityMode] = useState<"blacklist" | "whitelist">("blacklist");
   const [whitelistedDates, setWhitelistedDates] = useState<Date[]>([]);
+  const [showPastWhitelistedDates, setShowPastWhitelistedDates] = useState(false);
 
   const defaultEndDate = useMemo(() => {
     const d = new Date();
@@ -1994,34 +1998,37 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
         />
 
         {/* Enfants */}
-        <div className="p-3 rounded-lg border space-y-2">
-          <div className="flex items-center gap-3">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium text-sm flex-1">Enfants</span>
-            {practicalInfo.kids.status === null && <CompletionPill />}
+        <div className="space-y-1">
+          <div className="flex items-center justify-between gap-2 py-1">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Users className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span className="text-[11px] font-medium truncate">Enfants</span>
+              {practicalInfo.kids.status === null && <CompletionPill />}
+            </div>
+            <div className="flex gap-1 shrink-0">
+              {(["yes", "no"] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() =>
+                    setPracticalInfo((prev) => ({
+                      ...prev,
+                      kids: { status: v, from_age: v === "yes" ? prev.kids.from_age : null },
+                    }))
+                  }
+                  className={cn(
+                    "px-1.5 py-0.5 rounded-full text-[10px] border transition-colors",
+                    practicalInfo.kids.status === v ? "bg-[#1a1814] text-white border-[#1a1814]" : "bg-white text-[#1a1814] border-[#e9e6e1] hover:border-[#1a1814]/40"
+                  )}
+                >
+                  {v === "yes" ? "Oui" : "Non"}
+                </button>
+              ))}
+            </div>
           </div>
-          <RadioGroup
-            value={practicalInfo.kids.status ?? undefined}
-            onValueChange={(v) =>
-              setPracticalInfo((prev) => ({
-                ...prev,
-                kids: { status: v as "yes" | "no", from_age: v === "yes" ? prev.kids.from_age : null },
-              }))
-            }
-            className="flex gap-4 ml-7"
-          >
-            <div className="flex items-center gap-2">
-              <RadioGroupItem value="yes" id="kids-yes" />
-              <Label htmlFor="kids-yes" className="text-sm font-normal cursor-pointer">Oui</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <RadioGroupItem value="no" id="kids-no" />
-              <Label htmlFor="kids-no" className="text-sm font-normal cursor-pointer">Non</Label>
-            </div>
-          </RadioGroup>
           {practicalInfo.kids.status === "yes" && (
-            <div className="ml-7 flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground shrink-0">À partir de :</Label>
+            <div className="flex items-center gap-2 pl-5">
+              <Label className="shrink-0">À partir de</Label>
               <Input
                 type="number"
                 min={0}
@@ -2033,73 +2040,72 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                   }))
                 }
                 placeholder="Âge"
-                className="h-8 text-sm w-24"
+                className="w-20"
               />
-              <span className="text-sm text-muted-foreground">ans (badge "KIDS from X")</span>
+              <span className="text-[11px] text-muted-foreground">ans</span>
             </div>
           )}
         </div>
 
         {/* Parking */}
-        <div className="p-3 rounded-lg border space-y-2">
-          <div className="flex items-center gap-3">
-            <Car className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium text-sm flex-1">Parking</span>
-            {practicalInfo.parking.status === null && <CompletionPill />}
+        <div className="space-y-1">
+          <div className="flex items-center justify-between gap-2 py-1">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Car className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span className="text-[11px] font-medium truncate">Parking</span>
+              {practicalInfo.parking.status === null && <CompletionPill />}
+            </div>
+            <div className="flex gap-1 shrink-0">
+              {(["yes", "no"] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() =>
+                    setPracticalInfo((prev) => ({
+                      ...prev,
+                      parking: {
+                        status: v,
+                        price_type: v === "yes" ? prev.parking.price_type : null,
+                        price_amount: v === "yes" ? prev.parking.price_amount : null,
+                      },
+                    }))
+                  }
+                  className={cn(
+                    "px-1.5 py-0.5 rounded-full text-[10px] border transition-colors",
+                    practicalInfo.parking.status === v ? "bg-[#1a1814] text-white border-[#1a1814]" : "bg-white text-[#1a1814] border-[#e9e6e1] hover:border-[#1a1814]/40"
+                  )}
+                >
+                  {v === "yes" ? "Oui" : "Non"}
+                </button>
+              ))}
+            </div>
           </div>
-          <RadioGroup
-            value={practicalInfo.parking.status ?? undefined}
-            onValueChange={(v) =>
-              setPracticalInfo((prev) => ({
-                ...prev,
-                parking: {
-                  status: v as "yes" | "no",
-                  price_type: v === "yes" ? prev.parking.price_type : null,
-                  price_amount: v === "yes" ? prev.parking.price_amount : null,
-                },
-              }))
-            }
-            className="flex gap-4 ml-7"
-          >
-            <div className="flex items-center gap-2">
-              <RadioGroupItem value="yes" id="parking-yes" />
-              <Label htmlFor="parking-yes" className="text-sm font-normal cursor-pointer">Oui</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <RadioGroupItem value="no" id="parking-no" />
-              <Label htmlFor="parking-no" className="text-sm font-normal cursor-pointer">Non</Label>
-            </div>
-          </RadioGroup>
           {practicalInfo.parking.status === "yes" && (
-            <div className="ml-7 space-y-2">
-              <RadioGroup
-                value={practicalInfo.parking.price_type ?? undefined}
-                onValueChange={(v) =>
-                  setPracticalInfo((prev) => ({ ...prev, parking: { ...prev.parking, price_type: v as "free" | "paid" } }))
-                }
-                className="flex gap-4"
-              >
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="free" id="parking-free" />
-                  <Label htmlFor="parking-free" className="text-sm font-normal cursor-pointer">Gratuit</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="paid" id="parking-paid" />
-                  <Label htmlFor="parking-paid" className="text-sm font-normal cursor-pointer">Payant</Label>
-                </div>
-              </RadioGroup>
+            <div className="flex items-center gap-2 pl-5 flex-wrap">
+              <div className="flex gap-1">
+                {(["free", "paid"] as const).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setPracticalInfo((prev) => ({ ...prev, parking: { ...prev.parking, price_type: v } }))}
+                    className={cn(
+                      "px-1.5 py-0.5 rounded-full text-[10px] border transition-colors",
+                      practicalInfo.parking.price_type === v ? "bg-[#1a1814] text-white border-[#1a1814]" : "bg-white text-[#1a1814] border-[#e9e6e1] hover:border-[#1a1814]/40"
+                    )}
+                  >
+                    {v === "free" ? "Gratuit" : "Payant"}
+                  </button>
+                ))}
+              </div>
               {practicalInfo.parking.price_type === "paid" && (
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm text-muted-foreground shrink-0">Montant :</Label>
-                  <Input
-                    value={practicalInfo.parking.price_amount ?? ""}
-                    onChange={(e) =>
-                      setPracticalInfo((prev) => ({ ...prev, parking: { ...prev.parking, price_amount: e.target.value } }))
-                    }
-                    placeholder="Ex: 20₪ par jour"
-                    className="h-8 text-sm"
-                  />
-                </div>
+                <Input
+                  value={practicalInfo.parking.price_amount ?? ""}
+                  onChange={(e) =>
+                    setPracticalInfo((prev) => ({ ...prev, parking: { ...prev.parking, price_amount: e.target.value } }))
+                  }
+                  placeholder="Ex: 20₪ par jour"
+                  className="w-36"
+                />
               )}
             </div>
           )}
@@ -2206,8 +2212,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       <Separator />
 
       <div className="space-y-2">
-        <Label className="text-sm font-medium">Coordonnées GPS</Label>
-        <div className="grid grid-cols-2 gap-4">
+        <Label>Coordonnées GPS</Label>
+        <div className="flex items-center gap-2">
           <Input
             type="number"
             step="any"
@@ -2222,22 +2228,17 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
             {...register("longitude", { valueAsNumber: true })}
             disabled={isSaving}
           />
+          <Button type="button" variant="outline" size="sm" onClick={handleGeocode} disabled={isGeocoding} className="shrink-0 whitespace-nowrap">
+            {isGeocoding ? (
+              <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+            ) : (
+              <MapPin className="h-3.5 w-3.5 mr-1" />
+            )}
+            Détecter
+          </Button>
         </div>
-        <Button type="button" variant="outline" onClick={handleGeocode} disabled={isGeocoding} className="w-full">
-          {isGeocoding ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Détection...
-            </>
-          ) : (
-            <>
-              <MapPin className="mr-2 h-4 w-4" />
-              Auto-détecter coordonnées
-            </>
-          )}
-        </Button>
         {watch("latitude") && watch("longitude") && (
-          <p className="text-sm text-emerald-600">
+          <p className="text-[11px] text-emerald-600">
             ✓ Coordonnées : {Number(watch("latitude")).toFixed(4)}, {Number(watch("longitude")).toFixed(4)}
           </p>
         )}
@@ -2398,7 +2399,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
               type="button"
               onClick={() => toggleSpokenLanguage(lng.code)}
               className={cn(
-                "px-2.5 py-1 rounded-full text-xs border transition-colors",
+                "px-2 py-0.5 rounded-full text-[10px] border transition-colors",
                 spokenLanguages.includes(lng.code)
                   ? "bg-[#1a1814] text-white border-[#1a1814]"
                   : "bg-white text-[#1a1814] border-[#e9e6e1] hover:border-[#1a1814]/40"
@@ -2495,7 +2496,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       {!isBoatsExperience && (
         <>
           {/* Fournisseur, tarif fournisseur et marge — jamais affiché côté client */}
-          <div className="rounded-lg border border-[#eef2f6] bg-[#eef2f6] p-4 space-y-4">
+          <div className="rounded-lg border border-[#e3e9ef] bg-[#eef2f6] p-3 space-y-3">
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#3c4a5c] bg-white border border-[#dbe3ea] rounded-full px-2.5 py-1">
               <EyeOff className="h-3 w-3" /> Interne, jamais visible du client
             </span>
@@ -3124,36 +3125,68 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
             </div>
             {whitelistedDates.length > 0 ? (
               <div className="mt-3 space-y-2">
-                {whitelistedDates
-                  .sort((a, b) => a.getTime() - b.getTime())
-                  .map((date) => {
-                    const iso = toLocalIso(date);
-                    return (
-                      <div key={iso} className="flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-700 border border-green-200 shrink-0">
-                          {date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                {(() => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const sorted = [...whitelistedDates].sort((a, b) => a.getTime() - b.getTime());
+                  const futureDates = sorted.filter((d) => d >= today);
+                  const pastDates = sorted.filter((d) => d < today);
+                  const removeDate = (date: Date) =>
+                    setWhitelistedDates((prev) => prev.filter((d) => d.toDateString() !== date.toDateString()));
+                  return (
+                    <>
+                      {futureDates.map((date) => {
+                        const iso = toLocalIso(date);
+                        return (
+                          <div key={iso} className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-green-50 text-green-700 border border-green-200 shrink-0">
+                              {date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                              <button type="button" onClick={() => removeDate(date)} className="hover:opacity-70">
+                                <X className="h-2.5 w-2.5" />
+                              </button>
+                            </span>
+                            <Input
+                              value={sessionLabels[iso]?.[activeLanguage] ?? ""}
+                              onChange={(e) =>
+                                setSessionLabels((prev) => ({
+                                  ...prev,
+                                  [iso]: { ...prev[iso], [activeLanguage]: e.target.value },
+                                }))
+                              }
+                              placeholder={`Libellé pour cette date (${activeLanguage.toUpperCase()}, optionnel)`}
+                            />
+                          </div>
+                        );
+                      })}
+                      {pastDates.length > 0 && (
+                        <div className="pt-1">
                           <button
                             type="button"
-                            onClick={() => setWhitelistedDates((prev) => prev.filter((d) => d.toDateString() !== date.toDateString()))}
-                            className="hover:opacity-70"
+                            onClick={() => setShowPastWhitelistedDates((v) => !v)}
+                            className="text-[11px] text-[#6f6a63] underline"
                           >
-                            <X className="h-2.5 w-2.5" />
+                            {showPastWhitelistedDates ? "Masquer" : `${pastDates.length} date${pastDates.length > 1 ? "s" : ""} passée${pastDates.length > 1 ? "s" : ""}`}
                           </button>
-                        </span>
-                        <Input
-                          value={sessionLabels[iso]?.[activeLanguage] ?? ""}
-                          onChange={(e) =>
-                            setSessionLabels((prev) => ({
-                              ...prev,
-                              [iso]: { ...prev[iso], [activeLanguage]: e.target.value },
-                            }))
-                          }
-                          placeholder={`Libellé pour cette date (${activeLanguage.toUpperCase()}, optionnel)`}
-                          className="h-7 text-xs"
-                        />
-                      </div>
-                    );
-                  })}
+                          {showPastWhitelistedDates && (
+                            <div className="mt-1.5 flex flex-wrap gap-1.5">
+                              {pastDates.map((date) => (
+                                <span
+                                  key={toLocalIso(date)}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-muted text-muted-foreground border"
+                                >
+                                  {date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                                  <button type="button" onClick={() => removeDate(date)} className="hover:opacity-70">
+                                    <X className="h-2.5 w-2.5" />
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             ) : (
               <p className="text-xs text-muted-foreground mt-2 italic">
@@ -3186,8 +3219,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
           )}
         </div>
         <Badge
-          variant={daysRemaining > 30 ? "default" : daysRemaining > 10 ? "outline" : "destructive"}
-          className={daysRemaining > 10 && daysRemaining <= 30 ? "border-orange-400 text-orange-600 bg-orange-50" : ""}
+          variant={daysRemaining > 30 ? "default" : "outline"}
+          className={daysRemaining <= 30 ? "border-[#f0dca0] text-[#8a6100] bg-[#fff4d6]" : ""}
         >
           {availabilityMode === "whitelist"
             ? `${remainingDatesCount} date${remainingDatesCount > 1 ? "s" : ""}`
@@ -3219,7 +3252,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
             type="button"
             onClick={() => selectCancellationTemplate(t.id)}
             className={cn(
-              "px-2.5 py-1 rounded-full text-xs border transition-colors",
+              "px-2 py-0.5 rounded-full text-[10px] border transition-colors",
               cancellationTemplate === t.id
                 ? "bg-[#1a1814] text-white border-[#1a1814]"
                 : "bg-white text-[#1a1814] border-[#e9e6e1] hover:border-[#1a1814]/40"
@@ -3232,7 +3265,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
           type="button"
           onClick={() => selectCancellationTemplate("custom")}
           className={cn(
-            "px-2.5 py-1 rounded-full text-xs border transition-colors",
+            "px-2 py-0.5 rounded-full text-[10px] border transition-colors",
             cancellationTemplate === "custom"
               ? "bg-[#1a1814] text-white border-[#1a1814]"
               : "bg-white text-[#1a1814] border-[#e9e6e1] hover:border-[#1a1814]/40"
@@ -3523,8 +3556,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
         <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b -mx-6 px-6 py-3 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-4">
             {onClose && (
-              <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
+              <Button type="button" variant="ghost" size="sm" className="h-8 text-[13px]" onClick={onClose}>
+                <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
                 Retour
               </Button>
             )}
@@ -3547,7 +3580,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                     type="button"
                     onClick={() => setActiveLanguage(lng.code)}
                     className={cn(
-                      "px-2.5 py-1.5 text-xs font-medium border-r border-[#e9e6e1] last:border-r-0 flex items-center gap-1",
+                      "px-2 py-1 text-[10px] font-medium border-r border-[#e9e6e1] last:border-r-0 flex items-center gap-1",
                       activeLanguage === lng.code ? "bg-[#1a1814] text-white" : "bg-white text-[#6f6a63] hover:text-[#1a1814]"
                     )}
                   >
@@ -3563,38 +3596,35 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                 );
               })}
             </div>
-            {experienceId && (
-              <Button type="button" variant="destructive" size="sm" onClick={handleDelete} disabled={isSaving}>
-                Supprimer
-              </Button>
-            )}
             <Button
               type="button"
               variant="outline"
               size="sm"
+              className="h-8 text-[13px]"
               onClick={handleTranslateAll}
               disabled={isSaving || heroImageUploading || isTranslating}
             >
-              {isTranslating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+              {isTranslating ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1.5" />}
               Traduire tout
             </Button>
             <Button
               type="button"
               variant="outline"
               size="sm"
+              className="h-8 text-[13px]"
               onClick={handleSaveDraftClick}
               disabled={isSaving || heroImageUploading}
             >
-              <Save className="h-4 w-4 mr-2" />
+              <Save className="h-3.5 w-3.5 mr-1.5" />
               Brouillon
             </Button>
             <Button
               type="submit"
               size="sm"
               disabled={!canPublish || isSaving || heroImageUploading}
-              className="bg-[#ad1414] text-white hover:bg-[#ad1414]/90"
+              className="h-8 text-[13px] bg-[#ad1414] text-white hover:bg-[#ad1414]/90"
             >
-              <Rocket className="h-4 w-4 mr-2" />
+              <Rocket className="h-3.5 w-3.5 mr-1.5" />
               Publier
             </Button>
           </div>
@@ -4288,9 +4318,9 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
         {/* Expérience standard : une seule page qui défile (sprint 5B)        */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
         {!isBoatsExperience && (
-          <div className="xl:grid xl:grid-cols-[220px_1fr_300px] xl:gap-6 xl:items-start">
+          <div className="min-[1100px]:grid min-[1100px]:grid-cols-[170px_1fr_230px] min-[1100px]:gap-4 min-[1100px]:items-start">
             {/* Sommaire (sprint 5B, étape 5) */}
-            <aside className="hidden xl:block sticky top-24 self-start space-y-4">
+            <aside className="hidden min-[1100px]:block sticky top-16 self-start space-y-3">
               <nav className="space-y-0.5">
                 {SUMMARY_SECTIONS.map((s) => (
                   <button
@@ -4327,7 +4357,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
               </div>
             </aside>
 
-            <div className="space-y-3 min-w-0">
+            <div className="space-y-2.5 min-w-0">
               <FormSection id="sec-demarrer" title="Démarrer" description="Type et catégories">
                 <div>
                   <Label className="mb-3 block">
@@ -4340,7 +4370,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                         type="button"
                         onClick={() => toggleCategory(cat.id)}
                         className={cn(
-                          "px-2.5 py-1 rounded-full text-xs border transition-colors",
+                          "px-2 py-0.5 rounded-full text-[10px] border transition-colors",
                           selectedCategoryIds.includes(cat.id)
                             ? "bg-[#1a1814] text-white border-[#1a1814]"
                             : "bg-white text-[#1a1814] border-[#e9e6e1] hover:border-[#1a1814]/40"
@@ -4442,17 +4472,14 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                 {photosFields}
               </FormSection>
 
-              <FormSection id="sec-prix" title="4. Prix & dispo" description="Formulaire actuel, simplement rangé">
+              <FormSection id="sec-prix" title="4. Prix & dispo" description="Prix, marge et disponibilités">
                 {bookingModeCard}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4" />
-                      Prix de l'expérience
-                    </CardTitle>
+                    <CardTitle>Prix de l'expérience</CardTitle>
                     <CardDescription>Tarif fournisseur, markup STAYMAKOM, prix client affiché</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-6">
+                  <CardContent className="space-y-3">
                     {priceCardContent}
                   </CardContent>
                 </Card>
@@ -4483,11 +4510,24 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                 {publicationExtras}
                 <Separator />
                 {seoCardContent}
+                {experienceId && (
+                  <>
+                    <Separator />
+                    <button
+                      type="button"
+                      onClick={handleDelete}
+                      disabled={isSaving}
+                      className="text-[11px] text-[#6f6a63] underline hover:text-destructive"
+                    >
+                      Supprimer l'expérience
+                    </button>
+                  </>
+                )}
               </FormSection>
             </div>
 
             {/* Aperçu en direct (sprint 5B, étape 5) */}
-            <aside className="hidden xl:block sticky top-24 self-start space-y-4">
+            <aside className="hidden min-[1100px]:block sticky top-16 self-start space-y-3">
               <div className="rounded-2xl border border-[#e9e6e1] overflow-hidden bg-white">
                 <div
                   className="h-28 bg-muted"
@@ -4496,7 +4536,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                 <div className="p-3 space-y-2">
                   <p className="font-extrabold uppercase text-sm leading-tight">{title || "Titre de l'expérience"}</p>
                   <p className="text-xs text-muted-foreground">{subtitleEn || "Accroche de l'expérience…"}</p>
-                  <EssentialsBlock experience={previewExperience} experienceTitle={title || ""} lang={activeLanguage} />
+                  <EssentialsBlock experience={previewExperience} experienceTitle={title || ""} lang={activeLanguage} compact />
                 </div>
               </div>
               <div className="rounded-lg border border-[#e9e6e1] bg-[#faf8f6] p-3">
@@ -4515,7 +4555,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
 
         {/* Checklist "Avant de publier" — visible en haut en dessous de 1280px (sprint 5B) */}
         {!isBoatsExperience && (
-          <div className="xl:hidden rounded-lg border border-[#e9e6e1] bg-[#faf8f6] p-4">
+          <div className="min-[1100px]:hidden rounded-lg border border-[#e9e6e1] bg-[#faf8f6] p-3">
             <p className="text-sm font-semibold mb-2">Avant de publier</p>
             <ul className="space-y-1 text-sm">
               {checklistItems.map((c) => (

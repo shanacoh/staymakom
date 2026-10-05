@@ -13,12 +13,11 @@ import {
   CardHeader as UiCardHeader,
   CardTitle as UiCardTitle,
 } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button as UiButton, type ButtonProps } from "@/components/ui/button";
 import { Input as UiInput } from "@/components/ui/input";
 import { Label as UiLabel } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Loader2, Tag, ChevronUp, ChevronDown } from "lucide-react";
+import { Plus, X, Loader2, ChevronUp, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -292,43 +291,51 @@ export function HighlightTagsSelectorStandalone({ experienceId, localTags, onLoc
             </div>
           )}
 
-          {/* Common tags grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-            {commonTags?.map((tag) => (
-              <label key={tag.id} className="flex items-center gap-2 p-2 rounded-md border cursor-pointer hover:bg-muted/50 transition-colors">
-                <Checkbox
-                  checked={selectedTagIds.includes(tag.id)}
-                  onCheckedChange={(checked) => handleTagToggle(tag.id, checked as boolean)}
+          {/* Tags disponibles — pastilles compactes, libellé FR seulement */}
+          <div className="flex flex-wrap gap-1.5">
+            {commonTags?.map((tag) => {
+              const selected = selectedTagIds.includes(tag.id);
+              return (
+                <button
+                  key={tag.id}
+                  type="button"
+                  onClick={() => handleTagToggle(tag.id, !selected)}
                   disabled={!isLocalMode && (addTagMutation.isPending || removeTagMutation.isPending)}
-                />
-                <div className="flex flex-col min-w-0">
-                  <span className="text-sm font-medium truncate">{tag.label_en}</span>
-                  {tag.label_fr && <span className="text-xs text-muted-foreground truncate">{tag.label_fr}</span>}
-                  {tag.label_he && <span className="text-xs text-muted-foreground truncate" dir="rtl">{tag.label_he}</span>}
-                </div>
-              </label>
-            ))}
-            {customTags.map((tag) => (
-              <label key={tag.id} className="flex items-center gap-2 p-2 rounded-md border border-accent/40 bg-accent/5 cursor-pointer hover:bg-accent/10 transition-colors">
-                <Checkbox
-                  checked={selectedTagIds.includes(tag.id)}
-                  onCheckedChange={(checked) => handleTagToggle(tag.id, checked as boolean)}
+                  className={cn(
+                    "px-2 py-0.5 rounded-full text-[10px] border transition-colors",
+                    selected ? "bg-[#1a1814] text-white border-[#1a1814]" : "bg-white text-[#1a1814] border-[#e9e6e1] hover:border-[#1a1814]/40"
+                  )}
+                >
+                  {tag.label_fr || tag.label_en}
+                </button>
+              );
+            })}
+            {customTags.map((tag) => {
+              const selected = selectedTagIds.includes(tag.id);
+              return (
+                <button
+                  key={tag.id}
+                  type="button"
+                  onClick={() => handleTagToggle(tag.id, !selected)}
                   disabled={!isLocalMode && (addTagMutation.isPending || removeTagMutation.isPending)}
-                />
-                <div className="flex flex-col min-w-0">
-                  <span className="text-sm font-medium truncate">{tag.label_en}</span>
-                  {tag.label_fr && <span className="text-xs text-muted-foreground truncate">{tag.label_fr}</span>}
-                  {tag.label_he && <span className="text-xs text-muted-foreground truncate" dir="rtl">{tag.label_he}</span>}
-                  <span className="text-[10px] text-accent font-medium">Custom</span>
-                </div>
-              </label>
-            ))}
+                  className={cn(
+                    "px-2 py-0.5 rounded-full text-[10px] border transition-colors",
+                    selected ? "bg-[#1a1814] text-white border-[#1a1814]" : "bg-white text-[#1a1814] border-dashed border-[#c9bfae] hover:border-[#1a1814]/40"
+                  )}
+                >
+                  {tag.label_fr || tag.label_en}
+                </button>
+              );
+            })}
           </div>
 
-          <Button type="button" variant="outline" size="sm" onClick={() => setShowCustomDialog(true)}>
-            <Tag className="h-4 w-4 mr-2" />
-            Créer un tag personnalisé
-          </Button>
+          <button
+            type="button"
+            onClick={() => setShowCustomDialog(true)}
+            className="text-[11px] text-[#6f6a63] underline hover:text-[#1a1814]"
+          >
+            + Créer un tag personnalisé
+          </button>
         </CardContent>
       </Card>
 

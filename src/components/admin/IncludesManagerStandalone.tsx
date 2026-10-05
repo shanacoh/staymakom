@@ -52,6 +52,7 @@ const IncludesManagerStandalone = ({ experienceId, localIncludes, onLocalInclude
   const queryClient = useQueryClient();
   const isLocalMode = !experienceId;
 
+  const [showAddForm, setShowAddForm] = useState(false);
   const [newInclude, setNewInclude] = useState({ title: "", title_fr: "", title_he: "", icon_url: "" });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -286,9 +287,17 @@ const IncludesManagerStandalone = ({ experienceId, localIncludes, onLocalInclude
 
   return (
     <div className="space-y-4">
-      {/* Formulaire d'ajout */}
+      {/* Formulaire d'ajout — replié derrière un lien */}
+      {!showAddForm ? (
+        <button
+          type="button"
+          onClick={() => setShowAddForm(true)}
+          className="text-[11px] text-[#6f6a63] underline hover:text-[#1a1814]"
+        >
+          + Ajouter un inclus
+        </button>
+      ) : (
       <div className="space-y-3">
-        <h4 className="font-medium text-sm">Ajouter un élément</h4>
         <div className="flex items-end gap-3 flex-wrap">
           <div className="w-32 flex-shrink-0 space-y-2">
             <Label className="text-sm">Image</Label>
@@ -339,6 +348,7 @@ const IncludesManagerStandalone = ({ experienceId, localIncludes, onLocalInclude
           </Button>
         </div>
       </div>
+      )}
 
       {/* Liste */}
       {displayItems.length === 0 ? (

@@ -57,6 +57,7 @@ const StandaloneExtrasManager = ({ experienceId, localExtras, onLocalExtrasChang
   const queryClient = useQueryClient();
   const isLocalMode = !experienceId;
 
+  const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState(EMPTY_FORM);
@@ -227,9 +228,17 @@ const StandaloneExtrasManager = ({ experienceId, localExtras, onLocalExtrasChang
 
   return (
     <div className="space-y-4">
-      {/* Formulaire d'ajout */}
+      {/* Formulaire d'ajout — replié derrière un lien */}
+      {!showAddForm ? (
+        <button
+          type="button"
+          onClick={() => setShowAddForm(true)}
+          className="text-[11px] text-[#6f6a63] underline hover:text-[#1a1814]"
+        >
+          + Ajouter une option payante
+        </button>
+      ) : (
       <div className="space-y-3">
-        <h4 className="font-medium text-sm">Ajouter un extra</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="space-y-1">
             <Label className="text-sm">Titre (EN) *</Label>
@@ -261,6 +270,7 @@ const StandaloneExtrasManager = ({ experienceId, localExtras, onLocalExtrasChang
           Ajouter l'extra
         </Button>
       </div>
+      )}
 
       {/* Liste */}
       {displayItems.length === 0 ? (
