@@ -198,13 +198,13 @@ const FAQSection = () => {
 
   return (
     <>
-      <section className="py-10 sm:py-16 border-t border-border/40" dir={isRTL ? "rtl" : "ltr"}>
+      <section className="py-8 sm:py-10 border-t border-border/40" dir={isRTL ? "rtl" : "ltr"}>
         <div className="container px-4 max-w-2xl mx-auto">
-          <div className="text-center mb-7 sm:mb-10">
-            <p className="text-[10px] sm:text-xs uppercase tracking-[0.18em] text-[#a83c3c] mb-2">
+          <div className="text-center mb-5 sm:mb-7">
+            <p className="text-[10px] sm:text-xs uppercase tracking-[0.18em] text-[#ad1414] mb-2">
               {sectionLabel}
             </p>
-            <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold uppercase tracking-[-0.02em] text-foreground">
+            <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] text-foreground">
               {sectionTitle}
             </h2>
           </div>

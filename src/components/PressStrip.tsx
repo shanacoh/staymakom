@@ -30,7 +30,7 @@ export default function PressStrip({ lang }: { lang: Lang }) {
   };
 
   return (
-    <section className="py-10 sm:py-12" dir={lang === "he" ? "rtl" : "ltr"}>
+    <section className="py-7 sm:py-9" dir={lang === "he" ? "rtl" : "ltr"}>
       <div className="container max-w-3xl flex flex-col items-center gap-3 text-center">
         <span className="text-[10px] sm:text-xs uppercase tracking-[0.18em] text-muted-foreground">
           {texts.kicker}

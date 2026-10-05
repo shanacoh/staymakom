@@ -278,7 +278,7 @@ export default function ExperienceCard({
         onClick={() => trackExperienceCardClicked(experience.slug, title, displayPrice, index)}
       >
         {/* Photo section with title overlay */}
-        <div className="relative aspect-[4/3] overflow-hidden rounded-xl mb-2">
+        <div className="relative aspect-[4/3] overflow-hidden rounded-lg mb-2">
           <img
             src={resizedImageUrl(
               (experience as any).thumbnail_image || experience.hero_image || experience.photos?.[0] || experience.hotels?.hero_image,
@@ -323,7 +323,7 @@ export default function ExperienceCard({
 
           {/* Title on image - bottom left */}
           <div className="absolute bottom-3 left-3 right-3">
-            <h3 className="font-sans text-base sm:text-lg md:text-xl font-bold text-white leading-tight line-clamp-2 min-h-[2.5em] drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
+            <h3 className="font-sans text-sm sm:text-[15px] font-bold text-white leading-tight line-clamp-2 min-h-[2.5em] drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               {splitTitleBalanced(title)}
             </h3>
           </div>

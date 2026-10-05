@@ -262,7 +262,7 @@ const TailoredRequestSection = ({ categories, ctaClassName, heroImage, kickerCla
     <>
       {/* ─── Photo Hero Banner ─── */}
       <section
-        className="relative w-full bg-cover bg-center py-10 sm:py-14 md:py-16"
+        className="relative w-full bg-cover bg-center py-8 sm:py-10"
         style={{ backgroundImage: `url(${heroImage ?? tailoredHero})` }}
         dir={isRTL ? "rtl" : "ltr"}
       >
@@ -273,7 +273,7 @@ const TailoredRequestSection = ({ categories, ctaClassName, heroImage, kickerCla
               {lang === "fr" ? "VOS ENVIES. NOTRE SAVOIR-FAIRE." : "YOUR TRIP. YOUR RULES."}
             </p>
           )}
-          <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold tracking-[-0.02em] leading-tight text-white">
+          <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] leading-tight text-white">
             {getCopy(
               "Looking for something truly unique?",
               "מחפשים משהו באמת ייחודי?",
@@ -281,14 +281,14 @@ const TailoredRequestSection = ({ categories, ctaClassName, heroImage, kickerCla
             )}
           </h2>
           <div className="space-y-2">
-            <p className="text-white/70 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
+            <p className="text-white/70 text-[13px] sm:text-sm max-w-lg mx-auto leading-relaxed">
               {getCopy(
                 "Proposal, family vacation, long stay, special occasion, business getaway...",
                 "הצעת נישואין, חופשה משפחתית, שהות ארוכה, אירוע מיוחד, נסיעת עסקים...",
                 "Demande en mariage, vacances en famille, séjour prolongé, occasion spéciale, retraite professionnelle..."
               )}
             </p>
-            <p className="text-white text-sm sm:text-base font-medium max-w-lg mx-auto">
+            <p className="text-white text-[13px] sm:text-sm font-medium max-w-lg mx-auto">
               {getCopy(
                 "Drop your idea, we handle everything.",
                 "שתפו אותנו ברעיון, אנחנו מטפלים בכל השאר.",

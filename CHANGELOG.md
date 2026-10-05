@@ -6,6 +6,26 @@
 
 ---
 
+## [2026-10-06] — Session DA, étape 2 : home à la nouvelle échelle
+
+Travail fait sur la branche `session-da-visuel`, pas encore en ligne.
+
+### Ce qui a changé côté code
+- `src/pages/IndexV3.tsx` : photo d'accueil moins haute (environ 40 % de l'écran sur ordinateur au lieu de 54 %, 30 % sur téléphone au lieu de 38 %). Titre de la photo réduit (28 au lieu de 60 sur ordinateur, 18 au lieu de 28 sur téléphone), toujours en majuscules. Titres de section réduits à 16 (14 sur téléphone), en majuscules. Icônes de catégories un peu plus petites. Bouton « Voir toutes les expériences » : contour fin au lieu du fond noir. Bloc carte cadeau et bloc « Ce n'est pas du tourisme » resserrés. Espaces entre les blocs réduits.
+- `src/components/TailoredRequestSection.tsx` : bloc sur mesure moins haut, titre et textes réduits. Le soulignement au feutre de « Créer mon séjour » est conservé tel quel.
+- `src/components/FAQSection.tsx` : titre réduit, espaces resserrés, petit libellé passé au rouge de marque (un rouge de moins dans le site).
+- `src/components/PressStrip.tsx` : bandeau presse moins haut.
+- `src/components/ExperienceCard.tsx` : titre sur la photo réduit et arrondi aligné sur la règle commune. Cette carte est partagée : le changement se voit aussi sur la liste des expériences et les pages catégorie.
+- Style uniquement. Aucune logique modifiée.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration.
+
+### Pourquoi ce changement
+Les pages client étaient jugées trop grosses et trop étendues. La home adopte l'échelle de la maquette validée : plus fine, plus compacte, avec les cartes visibles plus tôt à l'écran.
+
+---
+
 ## [2026-10-05] — Session DA, étape 1 : règles visuelles communes (couleur, arrondis, police)
 
 Travail fait sur la branche `session-da-visuel`, pas encore en ligne.

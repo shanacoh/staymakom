@@ -246,7 +246,7 @@ const IndexV3 = () => {
       <main className="flex-1 pb-[92px] md:pb-0 pt-14">
 
         {/* ──── 1. HERO ──── */}
-        <section className="relative h-[38vh] md:h-[54vh] min-h-[240px] flex items-center justify-center">
+        <section className="relative h-[30vh] md:h-[40vh] min-h-[210px] md:min-h-[300px] flex items-center justify-center">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: `url(${heroImage})` }}
@@ -254,10 +254,10 @@ const IndexV3 = () => {
           <div className="absolute inset-0 bg-black/15" />
 
           <div className="relative z-10 text-center text-white px-4 sm:px-6 max-w-3xl mx-auto translate-y-0 sm:translate-y-2">
-            <span className="md:hidden block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-[#ad1414] mb-4 opacity-0 animate-hero-fade-up">
+            <span className="md:hidden block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-[#ad1414] mb-2 opacity-0 animate-hero-fade-up">
               STAYMAKOM
             </span>
-            <h1 className="font-sans text-[28px] sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-[0.02em] leading-[1.1] mb-3 opacity-0 animate-hero-fade-up text-[#ad1414] text-center">
+            <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold uppercase tracking-[0.02em] leading-[1.15] mb-2 opacity-0 animate-hero-fade-up text-[#ad1414] text-center">
               {isRTL ? (
                 <><span className="whitespace-nowrap">אל תבחר עיר,</span><br /><span className="whitespace-nowrap">בחר את הבריחה שלך</span></>
               ) : (
@@ -265,7 +265,7 @@ const IndexV3 = () => {
               )}
             </h1>
             <p
-              className="font-sans not-italic text-[#ad1414] max-w-xl mx-auto opacity-0 animate-hero-fade-up text-xs sm:text-base md:text-lg"
+              className="font-sans not-italic text-[#ad1414] max-w-xl mx-auto opacity-0 animate-hero-fade-up text-xs sm:text-sm"
               style={{ animationDelay: "250ms" }}
             >
               {isRTL
@@ -275,7 +275,7 @@ const IndexV3 = () => {
                   : "The Israel most people never find."}
             </p>
             <div
-              className="flex flex-wrap items-center justify-center gap-3 mt-5 opacity-0 animate-hero-fade-up"
+              className="flex flex-wrap items-center justify-center gap-2 mt-4 opacity-0 animate-hero-fade-up"
               style={{ animationDelay: "350ms" }}
             >
               <Button
@@ -290,7 +290,7 @@ const IndexV3 = () => {
                     window.scrollTo({ top, behavior: "smooth" });
                   }
                 }}
-                className="rounded-full bg-[#ad1414] text-white hover:bg-[#ad1414]/90 px-6 py-2.5 text-xs font-bold uppercase tracking-widest shadow-none"
+                className="rounded-full bg-[#ad1414] text-white hover:bg-[#ad1414]/90 h-10 px-5 text-[13px] font-semibold shadow-none"
               >
                 {isRTL ? "מצאו חוויה" : lang === "fr" ? "Trouver une expérience" : "Find an experience"}
               </Button>
@@ -300,7 +300,7 @@ const IndexV3 = () => {
                   trackHeroCtaClicked("plan");
                   window.dispatchEvent(new CustomEvent("staymakom-open-design-my-stay"));
                 }}
-                className="rounded-full border-white/70 text-white bg-white/10 backdrop-blur-sm hover:bg-white/20 px-6 py-2.5 text-xs font-bold uppercase tracking-widest shadow-none"
+                className="rounded-full border-white/70 text-white bg-white/10 backdrop-blur-sm hover:bg-white/20 h-10 px-5 text-[13px] font-semibold shadow-none"
               >
                 {isRTL ? "בקשה מיוחדת" : lang === "fr" ? "Demande spéciale" : "Special request"}
               </Button>
@@ -309,11 +309,11 @@ const IndexV3 = () => {
         </section>
 
         {/* ──── 2+3+4. Section unifiée : Handpicked + Catégories + Cartes ──── */}
-        <section id="hero-cards-section" className="bg-white pt-7 pb-9 sm:pt-9 sm:pb-12">
+        <section id="hero-cards-section" className="bg-white pt-6 pb-7 sm:pt-7 sm:pb-9">
 
           {/* Titre */}
           <div className="text-center px-4 mb-3">
-            <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold uppercase tracking-[-0.02em] mb-1 leading-tight text-foreground">
+            <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-1 leading-tight text-foreground">
               {isRTL ? (
                 <>מלונות שנבחרו בקפידה.<br />חוויות בלתי נשכחות.</>
               ) : lang === "fr" ? (
@@ -369,7 +369,7 @@ const IndexV3 = () => {
                     key={v3cat.id}
                     onClick={() => setSelectedCategory((prev) => (prev === categoryKey ? null : categoryKey))}
                     className={cn(
-                      "cat-chip group relative flex flex-col items-center gap-2 flex-shrink-0 w-16 sm:w-[82px] py-2.5 px-1 rounded-2xl transition-all duration-200",
+                      "cat-chip group relative flex flex-col items-center gap-2 flex-shrink-0 w-16 sm:w-[74px] py-2 px-1 rounded-2xl transition-all duration-200",
                       isDimmed ? "opacity-35" : "hover:-translate-y-0.5"
                     )}
                   >
@@ -387,7 +387,7 @@ const IndexV3 = () => {
                         <span
                           role="img"
                           aria-label={name}
-                          className={cn("block w-9 h-9 sm:w-12 sm:h-12", ICON_ANIM_CLASS[v3cat.id])}
+                          className={cn("block w-8 h-8 sm:w-10 sm:h-10", ICON_ANIM_CLASS[v3cat.id])}
                           style={{
                             backgroundColor: "#ad1414",
                             WebkitMaskImage: `url(${chipIcon})`,
@@ -404,7 +404,7 @@ const IndexV3 = () => {
                         <img
                           src={chipIcon}
                           alt={name}
-                          className={cn("w-9 h-9 sm:w-12 sm:h-12 object-contain", ICON_ANIM_CLASS[v3cat.id])}
+                          className={cn("w-8 h-8 sm:w-10 sm:h-10 object-contain", ICON_ANIM_CLASS[v3cat.id])}
                         />
                       )
                     ) : (
@@ -485,12 +485,12 @@ const IndexV3 = () => {
                       );
                     })}
                   </div>
-                  <div className="text-center mt-8">
+                  <div className="text-center mt-5">
                     <button
                       onClick={() => { trackViewAllExperiencesClicked("v3_grid"); navigate(getLocalizedPath("/experiences")); }}
-                      className="inline-flex items-center gap-2 px-8 py-3 bg-foreground text-background text-xs font-bold uppercase tracking-widest rounded-full hover:bg-foreground/90 transition-colors"
+                      className="inline-flex items-center gap-2 h-9 px-4 border border-border bg-white text-foreground text-[13px] font-semibold rounded-full hover:bg-muted transition-colors"
                     >
-                      {isRTL ? "לכל החוויות" : lang === "fr" ? "VOIR TOUTES LES EXPÉRIENCES" : "VIEW ALL EXPERIENCES"}
+                      {isRTL ? "לכל החוויות" : lang === "fr" ? "Voir toutes les expériences" : "View all experiences"}
                     </button>
                   </div>
                 </>
@@ -520,18 +520,18 @@ const IndexV3 = () => {
         />
 
         {/* ──── 6. GIFT CARD ──── */}
-        <section className="container py-8 md:py-14 px-4">
+        <section className="container py-6 md:py-9 px-4">
           <div className={`grid md:grid-cols-2 gap-5 md:gap-8 items-center max-w-4xl mx-auto ${isRTL ? "md:grid-flow-col-dense" : ""}`}>
-            <div className={`relative overflow-hidden rounded-2xl ${isRTL ? "md:order-2" : ""}`}>
+            <div className={`relative overflow-hidden rounded-lg ${isRTL ? "md:order-2" : ""}`}>
               <img
                 src={giftCardHero}
                 alt="Gift Card"
                 loading="lazy"
-                className="w-full h-56 md:h-72 object-cover hover:scale-105 transition-transform duration-500"
+                className="w-full h-40 md:h-52 object-cover hover:scale-105 transition-transform duration-500"
               />
             </div>
-            <div className={`space-y-4 ${isRTL ? "text-right md:order-1" : ""}`}>
-              <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold tracking-[-0.02em] leading-tight text-foreground">
+            <div className={`space-y-3 ${isRTL ? "text-right md:order-1" : ""}`}>
+              <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] leading-tight text-foreground">
                 {isRTL ? (
                   <><span>מתנה מושלמת.</span><br /><span>מתנת הבריחה.</span></>
                 ) : lang === "fr" ? (
@@ -540,10 +540,10 @@ const IndexV3 = () => {
                   <><span>Perfect gift.</span><br /><span>The gift of escape.</span></>
                 )}
               </h2>
-              <p className="text-muted-foreground text-sm md:text-base max-w-md">
+              <p className="text-muted-foreground text-[13px] max-w-md">
                 {t(lang, "giftCardSectionDesc")}
               </p>
-              <Button asChild className="group rounded-full border border-foreground bg-transparent text-foreground hover:bg-foreground hover:text-background transition-colors duration-300 px-7 py-2.5 text-xs font-bold uppercase tracking-widest shadow-none" onClick={() => trackGiftCardClicked("v3_page")}>
+              <Button asChild className="group rounded-full border border-border bg-transparent text-foreground hover:bg-foreground hover:text-background transition-colors duration-300 h-9 px-4 text-[13px] font-semibold shadow-none" onClick={() => trackGiftCardClicked("v3_page")}>
                 <Link to={getLocalizedPath("/gift-card")}>
                   {t(lang, "giftCardSectionCTA")}
                   <ArrowRight
@@ -559,13 +559,13 @@ const IndexV3 = () => {
         <MarqueeBanner className="bg-muted" />
 
         {/* ──── 8. THIS IS NOT TOURISM ──── */}
-        <section className="relative py-8 sm:py-14 md:py-18 overflow-hidden">
+        <section className="relative py-7 sm:py-10 overflow-hidden">
           <div className="absolute inset-0">
             <img src={handpickedHero} alt="" loading="lazy" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-black/40" />
           </div>
           <div className="container max-w-3xl relative z-10 px-4 text-center">
-            <h2 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold tracking-[-0.02em] mb-3 text-white">
+            <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-3 text-white">
               {isRTL
                 ? <><span>זה לא תיירות.</span><br /><span>זה משהו אחר.</span></>
                 : lang === "fr"
