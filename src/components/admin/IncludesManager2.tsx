@@ -1,19 +1,20 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/forms/styled/managers";
+import { Input } from "@/components/forms/styled/managers";
 // Card removed – parent form wraps this component
 import { Plus, Trash2, ChevronUp, ChevronDown, Edit2, X, ImageIcon, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { Label } from "@/components/forms/styled/managers";
 import HotelPhotoPickerDialog from "@/components/admin/HotelPhotoPickerDialog";
 import { buildImageFileName } from "@/lib/utils";
 
 export interface LocalIncludeEntry {
   _localId: string;
   title: string;
+  title_fr: string;
   title_he: string;
   icon_url: string;
   published: boolean;
@@ -32,12 +33,13 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
   const queryClient = useQueryClient();
   const isLocalMode = !experienceId;
 
-  const [newInclude, setNewInclude] = useState({ title: "", title_he: "", icon_url: "" });
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newInclude, setNewInclude] = useState({ title: "", title_fr: "", title_he: "", icon_url: "" });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editData, setEditData] = useState({ title: "", title_he: "", icon_url: "" });
+  const [editData, setEditData] = useState({ title: "", title_fr: "", title_he: "", icon_url: "" });
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
 
@@ -114,13 +116,14 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
     const newEntry: LocalIncludeEntry = {
       _localId: `local-${Date.now()}`,
       title: newInclude.title,
+      title_fr: newInclude.title_fr,
       title_he: newInclude.title_he,
       icon_url: imageUrl,
       published: true,
       order_index: (localIncludes?.length || 0),
     };
     onLocalIncludesChange?.([...(localIncludes || []), newEntry]);
-    setNewInclude({ title: "", title_he: "", icon_url: "" });
+    setNewInclude({ title: "", title_fr: "", title_he: "", icon_url: "" });
     setImageFile(null);
     setImagePreview(null);
     toast.success("Item added");
@@ -142,6 +145,7 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
       const { error } = await (supabase as any).from("experience2_includes").insert([{
         experience_id: experienceId,
         title: newInclude.title,
+        title_fr: newInclude.title_fr || null,
         title_he: newInclude.title_he || null,
         icon_url: imageUrl || null,
         order_index: maxOrder + 1,
@@ -152,7 +156,7 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["experience2-includes", experienceId] });
-      setNewInclude({ title: "", title_he: "", icon_url: "" });
+      setNewInclude({ title: "", title_fr: "", title_he: "", icon_url: "" });
       setImageFile(null);
       setImagePreview(null);
       toast.success("Item added successfully");
@@ -167,6 +171,7 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
     mutationFn: async (payload: {
       id: string;
       title: string;
+      title_fr: string;
       title_he: string;
       icon_url: string;
       imageFile?: File | null;
@@ -177,6 +182,7 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
       if (payload.imageFile) finalIconUrl = await uploadImage(payload.imageFile, payload.title);
       const { error } = await (supabase as any).from("experience2_includes").update({
         title: payload.title,
+        title_fr: payload.title_fr || null,
         title_he: payload.title_he || null,
         icon_url: finalIconUrl,
       }).eq("id", payload.id);
@@ -192,7 +198,7 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
       }
       if (payload.closeAfter) {
         setEditingId(null);
-        setEditData({ title: "", title_he: "", icon_url: "" });
+        setEditData({ title: "", title_fr: "", title_he: "", icon_url: "" });
         setEditImageFile(null);
         setEditImagePreview(null);
       }
@@ -206,6 +212,7 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
     updateMutation.mutate({
       id,
       title: editData.title,
+      title_fr: editData.title_fr,
       title_he: editData.title_he,
       icon_url: opts?.icon_url ?? editData.icon_url,
       imageFile: opts?.imageFile ?? null,
@@ -275,14 +282,14 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
 
   const startEditing = (include: any) => {
     setEditingId(include.id);
-    setEditData({ title: include.title || "", title_he: include.title_he || "", icon_url: include.icon_url || "" });
+    setEditData({ title: include.title || "", title_fr: include.title_fr || "", title_he: include.title_he || "", icon_url: include.icon_url || "" });
     setEditImagePreview(include.icon_url);
     setEditImageFile(null);
   };
 
   const cancelEditing = () => {
     setEditingId(null);
-    setEditData({ title: "", title_he: "", icon_url: "" });
+    setEditData({ title: "", title_fr: "", title_he: "", icon_url: "" });
     setEditImageFile(null);
     setEditImagePreview(null);
   };
@@ -303,11 +310,20 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
 
   return (
     <div className="space-y-4">
-      <div className="space-y-4">
-        <h4 className="font-medium text-sm">Add new item</h4>
+      {/* Formulaire d'ajout — replié derrière un lien */}
+      {!showAddForm ? (
+        <button
+          type="button"
+          onClick={() => setShowAddForm(true)}
+          className="text-[11px] text-[#6f6a63] underline hover:text-[#1a1814]"
+        >
+          + Ajouter un inclus
+        </button>
+      ) : (
+      <div className="space-y-3">
         <div className="flex items-end gap-3 flex-wrap">
           <div className="w-36 flex-shrink-0 space-y-2">
-            <Label className="text-sm font-medium">Image</Label>
+            <Label className="text-sm">Image</Label>
             <div className="flex gap-1">
               {hasHotels && (
                 <HotelPhotoPickerDialog
@@ -316,7 +332,7 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
                   trigger={
                     <Button type="button" variant="outline" size="sm" className="flex-1">
                       <ImageIcon className="w-4 h-4 mr-1" />
-                      Gallery
+                      Galerie
                     </Button>
                   }
                 />
@@ -343,22 +359,27 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
             )}
           </div>
           <div className="flex-1 min-w-[120px]">
-            <Label htmlFor="title2">Title EN *</Label>
-            <Input id="title2" placeholder="e.g., Breakfast Included" value={newInclude.title} onChange={(e) => setNewInclude({ ...newInclude, title: e.target.value })} className="mt-1" />
+            <Label htmlFor="title2" className="text-sm">Titre (EN) *</Label>
+            <Input id="title2" placeholder="ex: Breakfast included" value={newInclude.title} onChange={(e) => setNewInclude({ ...newInclude, title: e.target.value })} className="mt-1" />
           </div>
           <div className="flex-1 min-w-[120px]">
-            <Label htmlFor="title_he2">Title HE (כותרת)</Label>
+            <Label htmlFor="title_fr2" className="text-sm">Titre (FR)</Label>
+            <Input id="title_fr2" placeholder="ex: Petit-déjeuner inclus" value={newInclude.title_fr} onChange={(e) => setNewInclude({ ...newInclude, title_fr: e.target.value })} className="mt-1" />
+          </div>
+          <div className="flex-1 min-w-[120px]">
+            <Label htmlFor="title_he2" className="text-sm">Titre (HE)</Label>
             <Input id="title_he2" placeholder="למשל: ארוחת בוקר כלולה" value={newInclude.title_he} onChange={(e) => setNewInclude({ ...newInclude, title_he: e.target.value })} dir="rtl" className="bg-hebrew-input mt-1" />
           </div>
           <Button type="button" onClick={handleAdd} disabled={createMutation.isPending || isUploading || !newInclude.title.trim()} className="flex-shrink-0">
             <Plus className="w-4 h-4 mr-2" />
-            {isUploading ? "Uploading..." : "Add"}
+            {isUploading ? "Upload…" : "Ajouter"}
           </Button>
         </div>
       </div>
+      )}
 
       {displayItems.length === 0 ? (
-        <p className="text-muted-foreground text-center py-4 text-sm">No items yet</p>
+        <p className="text-muted-foreground text-center py-4 text-sm italic">Aucun élément pour l'instant.</p>
       ) : (
         <div className="space-y-2">
           {displayItems.map((include: any, idx: number) => (
@@ -393,7 +414,8 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
                     <input id={`edit-image2-${include.id}`} type="file" accept="image/*" onChange={handleEditImageSelect} className="hidden" />
                     {editImagePreview && <img src={editImagePreview} alt="Preview" className="w-full h-16 object-cover rounded-lg border" referrerPolicy="no-referrer" />}
                   </div>
-                  <Input value={editData.title} onChange={(e) => setEditData({ ...editData, title: e.target.value })} onBlur={() => commitEdit(include.id)} placeholder="Title EN" className="flex-1 min-w-[100px]" />
+                  <Input value={editData.title} onChange={(e) => setEditData({ ...editData, title: e.target.value })} onBlur={() => commitEdit(include.id)} placeholder="Titre EN" className="flex-1 min-w-[100px]" />
+                  <Input value={editData.title_fr} onChange={(e) => setEditData({ ...editData, title_fr: e.target.value })} onBlur={() => commitEdit(include.id)} placeholder="Titre FR" className="flex-1 min-w-[100px]" />
                   <Input value={editData.title_he} onChange={(e) => setEditData({ ...editData, title_he: e.target.value })} onBlur={() => commitEdit(include.id)} placeholder="כותרת HE" dir="rtl" className="bg-hebrew-input flex-1 min-w-[100px]" />
                   <div className="flex gap-2 flex-shrink-0">
                     <Button type="button" size="sm" variant="ghost" onClick={() => handleCloseEditing(include.id)} disabled={updateMutation.isPending}><X className="w-4 h-4" /></Button>
@@ -404,6 +426,7 @@ const IncludesManager2 = ({ experienceId, hotelIds = [], localIncludes, onLocalI
                   {include.icon_url && <img src={include.icon_url} alt={include.title} className="w-12 h-12 object-cover rounded flex-shrink-0" referrerPolicy="no-referrer" />}
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm">{include.title}</div>
+                    {include.title_fr && <div className="text-xs text-muted-foreground">{include.title_fr}</div>}
                     {include.title_he && <div className="text-xs text-muted-foreground" dir="rtl">{include.title_he}</div>}
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">

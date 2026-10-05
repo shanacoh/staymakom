@@ -63,6 +63,14 @@ import { BOATS_CATEGORY_ID } from "@/lib/boatsCategory";
 import AiDraftPanel, { type AiIncludeDraft, type AiExtraDraft, type AiPracticalInfoDraft, type AiDraftPanelHandle } from "@/components/forms/ai/AiDraftPanel";
 import { CANCELLATION_TEMPLATES, matchCancellationTemplate, type CancellationTemplateId } from "@/constants/cancellationTemplates";
 import EssentialsBlock from "@/components/experience/EssentialsBlock";
+import { FormSection } from "@/components/forms/shared/FormSection";
+import { FormHeaderBar, FormMobileSaveBar } from "@/components/forms/shared/FormHeaderBar";
+import { FormSummaryNav, FormPreviewAside, PublishChecklist, type SummarySection } from "@/components/forms/shared/FormSummaryNav";
+import { InternalOnlyBox } from "@/components/forms/shared/InternalOnlyBox";
+import { CancellationPolicyFields } from "@/components/forms/shared/CancellationPolicyFields";
+import { SeoFields } from "@/components/forms/shared/SeoFields";
+import { PublicationFields } from "@/components/forms/shared/PublicationFields";
+import { useGenerateSeo } from "@/components/forms/shared/useGenerateSeo";
 
 // Les bateaux n'ont pas de limite de nombre de photos dans la galerie,
 // contrairement aux autres expériences standalone (limitées à 8).
@@ -313,39 +321,6 @@ function YesNoToggleField({
   );
 }
 
-// Une section repliable de la page qui défile (remplace les anciens onglets
-// pour les expériences standard — le mode Bateaux garde ses onglets).
-function FormSection({
-  id,
-  title,
-  description,
-  defaultOpen = true,
-  children,
-}: {
-  id?: string;
-  title: string;
-  description?: string;
-  defaultOpen?: boolean;
-  children: React.ReactNode;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <Card id={id}>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between gap-2.5 px-2.5 py-2.5 text-left"
-      >
-        <div>
-          <CardTitle>{title}</CardTitle>
-          {description && <CardDescription className="mt-0.5">{description}</CardDescription>}
-        </div>
-        <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 text-[#6f6a63] transition-transform", open && "rotate-180")} />
-      </button>
-      {open && <CardContent className="pt-0">{children}</CardContent>}
-    </Card>
-  );
-}
 
 interface StandaloneExperienceFormProps {
   experienceId?: string;
@@ -363,8 +338,6 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   const queryClient = useQueryClient();
   const aiDraftPanelRef = useRef<AiDraftPanelHandle>(null);
   const [isTranslating, setIsTranslating] = useState(false);
-  const [isGeneratingSeo, setIsGeneratingSeo] = useState(false);
-  const [showAdvancedSharing, setShowAdvancedSharing] = useState(false);
   const isMobile = useIsMobile();
 
   // Image state
@@ -1260,45 +1233,11 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   // Ne touche jamais au titre, à la description, au prix ni aux dates.
   // -------------------------------------------------------------------------
 
-  const handleGenerateSeo = async () => {
-    setIsGeneratingSeo(true);
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-      if (!token) return;
-      const content = {
-        title: getValues("title"),
-        title_fr: getValues("title_fr"),
-        title_he: getValues("title_he"),
-        subtitle: getValues("subtitle"),
-        subtitle_fr: getValues("subtitle_fr"),
-        subtitle_he: getValues("subtitle_he"),
-        long_copy: getValues("long_copy"),
-        long_copy_fr: getValues("long_copy_fr"),
-        long_copy_he: getValues("long_copy_he"),
-      };
-      const { data, error } = await supabase.functions.invoke("generate-experience-draft", {
-        headers: { Authorization: `Bearer ${token}` },
-        body: { type: "standalone", mode: "seo", content },
-      });
-      if (error || data?.error) {
-        toast.error(data?.error || "L'IA n'a pas pu générer le SEO, réessaie dans un instant.");
-        return;
-      }
-      const seo = data.seo as Record<string, string>;
-      if (seo.seo_title_en) setValue("seo_title_en", seo.seo_title_en);
-      if (seo.seo_title_fr) setValue("seo_title_fr", seo.seo_title_fr);
-      if (seo.seo_title_he) setValue("seo_title_he", seo.seo_title_he);
-      if (seo.meta_description_en) setValue("meta_description_en", seo.meta_description_en);
-      if (seo.meta_description_fr) setValue("meta_description_fr", seo.meta_description_fr);
-      if (seo.meta_description_he) setValue("meta_description_he", seo.meta_description_he);
-      toast.success("SEO généré — relis-le avant de publier.");
-    } catch {
-      toast.error("L'IA n'a pas pu générer le SEO, réessaie dans un instant.");
-    } finally {
-      setIsGeneratingSeo(false);
-    }
-  };
+  const { isGeneratingSeo, handleGenerateSeo } = useGenerateSeo(
+    "standalone",
+    (name) => getValues(name as keyof StandaloneFormData),
+    (name, value) => setValue(name as keyof StandaloneFormData, value as never),
+  );
 
   // -------------------------------------------------------------------------
   // Build experience data object
@@ -1680,11 +1619,6 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   const practicalCompleteness = getPracticalInfoCompleteness(practicalInfo);
   const autoBadgesPreview = getAutoBadgesFromPracticalInfo(practicalInfo, "fr");
   const currentStatus = (existingExperience as any)?.status === "published" ? "Publiée" : "Brouillon";
-  const LANGUAGE_PILLS: { code: "fr" | "en" | "he"; label: string }[] = [
-    { code: "fr", label: "FR" },
-    { code: "en", label: "EN" },
-    { code: "he", label: "HE" },
-  ];
   const SPOKEN_LANGUAGE_OPTIONS = [
     { code: "en", label: "EN" },
     { code: "he", label: "HE" },
@@ -1939,39 +1873,13 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   // Slug + mise en avant accueil — utilisés dans la section "6. Publication"
   // des expériences standard, et (groupés avec les catégories) pour les bateaux.
   const publicationExtras = (
-    <>
-      <div className="space-y-2">
-        <Label>Slug (URL)</Label>
-        <Input
-          value={generateSlug(watch("title") || "")}
-          readOnly
-          className="bg-muted text-muted-foreground text-sm"
-        />
-        <p className="text-xs text-muted-foreground">Généré automatiquement depuis le titre EN</p>
-      </div>
-
-      <div className="flex items-center justify-between p-4 rounded-lg border">
-        <div>
-          <p className="font-medium text-sm">Mise en avant sur l'accueil</p>
-          <p className="text-xs text-muted-foreground">Afficher cette expérience dans la section vedette de la page d'accueil</p>
-        </div>
-        <div className="flex items-center gap-3">
-          {featuredOnHome && (
-            <div className="flex items-center gap-1.5">
-              <Label className="text-xs text-muted-foreground">Ordre</Label>
-              <Input
-                type="number"
-                min={0}
-                value={homeDisplayOrder}
-                onChange={(e) => setHomeDisplayOrder(parseInt(e.target.value) || 0)}
-                className="w-16 h-7 text-sm"
-              />
-            </div>
-          )}
-          <Switch checked={featuredOnHome} onCheckedChange={setFeaturedOnHome} />
-        </div>
-      </div>
-    </>
+    <PublicationFields
+      slug={generateSlug(watch("title") || "")}
+      featuredOnHome={featuredOnHome}
+      onFeaturedOnHomeChange={setFeaturedOnHome}
+      homeDisplayOrder={homeDisplayOrder}
+      onHomeDisplayOrderChange={setHomeDisplayOrder}
+    />
   );
 
   // Badges éditoriaux + informations clés (kosher/enfants/parking/fitness/spa)
@@ -2496,10 +2404,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       {!isBoatsExperience && (
         <>
           {/* Fournisseur, tarif fournisseur et marge — jamais affiché côté client */}
-          <div className="rounded-lg border border-[#e3e9ef] bg-[#eef2f6] p-3 space-y-3">
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#3c4a5c] bg-white border border-[#dbe3ea] rounded-full px-2.5 py-1">
-              <EyeOff className="h-3 w-3" /> Interne, jamais visible du client
-            </span>
+          <InternalOnlyBox>
 
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
@@ -2629,7 +2534,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                 </div>
               </div>
             </div>
-          </div>
+          </InternalOnlyBox>
 
           <Separator />
         </>
@@ -3244,64 +3149,13 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   };
 
   const cancellationFields = (
-    <>
-      <div className="flex gap-2 flex-wrap">
-        {CANCELLATION_TEMPLATES.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => selectCancellationTemplate(t.id)}
-            className={cn(
-              "px-2 py-0.5 rounded-full text-[10px] border transition-colors",
-              cancellationTemplate === t.id
-                ? "bg-[#1a1814] text-white border-[#1a1814]"
-                : "bg-white text-[#1a1814] border-[#e9e6e1] hover:border-[#1a1814]/40"
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => selectCancellationTemplate("custom")}
-          className={cn(
-            "px-2 py-0.5 rounded-full text-[10px] border transition-colors",
-            cancellationTemplate === "custom"
-              ? "bg-[#1a1814] text-white border-[#1a1814]"
-              : "bg-white text-[#1a1814] border-[#e9e6e1] hover:border-[#1a1814]/40"
-          )}
-        >
-          Personnalisée
-        </button>
-      </div>
-
-      {cancellationTemplate !== "custom" ? (
-        <p className="text-xs text-muted-foreground">
-          Les modèles existent déjà traduits en FR / EN / HE ; on n'écrit plus 3 fois la même chose.
-        </p>
-      ) : (
-        <div className="space-y-4">
-          <div className={cn(langHidden("en") && "hidden")}>
-            <Label className="flex items-center gap-1.5 mb-1">
-              <span>🇬🇧</span> Politique (EN)
-            </Label>
-            <Textarea rows={2} {...register("cancellation_policy")} disabled={isSaving} />
-          </div>
-          <div className={cn(langHidden("fr") && "hidden")}>
-            <Label className="flex items-center gap-1.5 mb-1">
-              <span>🇫🇷</span> Politique (FR)
-            </Label>
-            <Textarea rows={2} {...register("cancellation_policy_fr")} disabled={isSaving} />
-          </div>
-          <div className={cn(langHidden("he") && "hidden")}>
-            <Label className="flex items-center gap-1.5 mb-1">
-              <span>🇮🇱</span> Politique (HE)
-            </Label>
-            <Textarea rows={2} {...register("cancellation_policy_he")} dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
-          </div>
-        </div>
-      )}
-    </>
+    <CancellationPolicyFields
+      template={cancellationTemplate}
+      onSelectTemplate={selectCancellationTemplate}
+      registerField={register}
+      langHidden={langHidden}
+      disabled={isSaving}
+    />
   );
 
   // SEO — identique pour une expérience standard et un bateau (l'étape 4 du
@@ -3313,135 +3167,23 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   const metaDescFrWatch = watch("meta_description_fr");
   const metaDescHeWatch = watch("meta_description_he");
 
-  const CharCount = ({ value, max }: { value: string | undefined; max: number }) => (
-    <p className={cn("text-xs", (value?.length ?? 0) > max ? "text-destructive" : "text-muted-foreground")}>
-      {value?.length ?? 0} / {max}
-    </p>
-  );
-
   const seoCardContent = (
-    <Card className="bg-muted/30">
-      <CardHeader>
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div>
-            <CardTitle>SEO Configuration</CardTitle>
-            <CardDescription>Configure SEO metadata for search engines and social media</CardDescription>
-          </div>
-          <Button type="button" variant="outline" size="sm" onClick={handleGenerateSeo} disabled={isGeneratingSeo || isSaving}>
-            {isGeneratingSeo ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-            Générer le SEO
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className={cn(isBoatsExperience ? "grid grid-cols-3 gap-6" : "")}>
-          {/* EN */}
-          <div className={cn("space-y-4", langHidden("en") && "hidden")}>
-            <div className="bg-background p-2 rounded flex items-center gap-1.5">
-              <span>🇬🇧</span>
-              <h4 className="font-medium text-sm">English SEO</h4>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="seo_title_en">SEO Title</Label>
-              <Input id="seo_title_en" {...register("seo_title_en")} placeholder="Browser tab & Google" />
-              <CharCount value={seoTitleEnWatch} max={60} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="meta_description_en">Meta Description</Label>
-              <Textarea id="meta_description_en" {...register("meta_description_en")} placeholder="Google results" rows={3} />
-              <CharCount value={metaDescEnWatch} max={155} />
-            </div>
-          </div>
-
-          {/* HE */}
-          <div className={cn("space-y-4", langHidden("he") && "hidden")}>
-            <div className="bg-background p-2 rounded flex items-center gap-1.5">
-              <span>🇮🇱</span>
-              <h4 className="font-medium text-sm">Hebrew SEO (עברית)</h4>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="seo_title_he">כותרת SEO</Label>
-              <Input id="seo_title_he" {...register("seo_title_he")} placeholder="כותרת עבור גוגל" dir="rtl" className="bg-hebrew-input" />
-              <CharCount value={seoTitleHeWatch} max={60} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="meta_description_he">תיאור Meta</Label>
-              <Textarea id="meta_description_he" {...register("meta_description_he")} placeholder="תיאור עבור גוגל" rows={3} dir="rtl" className="bg-hebrew-input" />
-              <CharCount value={metaDescHeWatch} max={155} />
-            </div>
-          </div>
-
-          {/* FR */}
-          <div className={cn("space-y-4", langHidden("fr") && "hidden")}>
-            <div className="bg-background p-2 rounded flex items-center gap-1.5">
-              <span>🇫🇷</span>
-              <h4 className="font-medium text-sm">French SEO</h4>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="seo_title_fr">Titre SEO</Label>
-              <Input id="seo_title_fr" {...register("seo_title_fr")} placeholder="Titre pour Google" />
-              <CharCount value={seoTitleFrWatch} max={60} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="meta_description_fr">Description Meta</Label>
-              <Textarea id="meta_description_fr" {...register("meta_description_fr")} placeholder="Description Google" rows={3} />
-              <CharCount value={metaDescFrWatch} max={155} />
-            </div>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setShowAdvancedSharing((v) => !v)}
-          className="text-sm text-primary underline"
-        >
-          {showAdvancedSharing ? "Masquer les options de partage avancées" : "Options de partage avancées"}
-        </button>
-
-        {showAdvancedSharing && (
-          <div className="space-y-6 border-t pt-6">
-            <div className={cn(isBoatsExperience ? "grid grid-cols-3 gap-6" : "space-y-4")}>
-              <div className={cn("space-y-4", langHidden("en") && "hidden")}>
-                <div className="space-y-2">
-                  <Label htmlFor="og_title_en">OG Title (EN)</Label>
-                  <Input id="og_title_en" {...register("og_title_en")} placeholder="Social media title" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="og_description_en">OG Description (EN)</Label>
-                  <Textarea id="og_description_en" {...register("og_description_en")} placeholder="Social media description" rows={3} />
-                </div>
-              </div>
-              <div className={cn("space-y-4", langHidden("he") && "hidden")}>
-                <div className="space-y-2">
-                  <Label htmlFor="og_title_he">כותרת OG (HE)</Label>
-                  <Input id="og_title_he" {...register("og_title_he")} placeholder="כותרת עבור רשתות חברתיות" dir="rtl" className="bg-hebrew-input" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="og_description_he">תיאור OG (HE)</Label>
-                  <Textarea id="og_description_he" {...register("og_description_he")} placeholder="תיאור עבור רשתות חברתיות" rows={3} dir="rtl" className="bg-hebrew-input" />
-                </div>
-              </div>
-              <div className={cn("space-y-4", langHidden("fr") && "hidden")}>
-                <div className="space-y-2">
-                  <Label htmlFor="og_title_fr">Titre OG (FR)</Label>
-                  <Input id="og_title_fr" {...register("og_title_fr")} placeholder="Réseaux sociaux" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="og_description_fr">Description OG (FR)</Label>
-                  <Textarea id="og_description_fr" {...register("og_description_fr")} placeholder="Description réseaux sociaux" rows={3} />
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="og_image">Open Graph Image</Label>
-              <Input id="og_image" {...register("og_image")} placeholder="Image URL for social media sharing" />
-              <p className="text-xs text-muted-foreground">Si vide, le site utilise la photo de couverture.</p>
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <SeoFields
+      registerField={register}
+      values={{
+        seo_title_en: seoTitleEnWatch,
+        seo_title_fr: seoTitleFrWatch,
+        seo_title_he: seoTitleHeWatch,
+        meta_description_en: metaDescEnWatch,
+        meta_description_fr: metaDescFrWatch,
+        meta_description_he: metaDescHeWatch,
+      }}
+      langHidden={langHidden}
+      threeColumns={isBoatsExperience}
+      onGenerateSeo={handleGenerateSeo}
+      isGeneratingSeo={isGeneratingSeo}
+      disabled={isSaving}
+    />
   );
 
   // -------------------------------------------------------------------------
@@ -3455,8 +3197,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     ? ((includesForChecklist as any[] | undefined)?.filter((i) => i.icon_url).length ?? 0)
     : localStandaloneIncludes.filter((i) => i.icon_url).length;
 
-  type SectionStatus = "empty" | "warning" | "ai" | "ok";
-  const SUMMARY_SECTIONS: { id: string; label: string; status: SectionStatus }[] = [
+  const SUMMARY_SECTIONS: SummarySection[] = [
     { id: "sec-demarrer", label: "Démarrer", status: selectedCategoryIds.length === 0 ? "empty" : "ok" },
     {
       id: "sec-essentiel",
@@ -3481,15 +3222,6 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     },
     { id: "sec-publication", label: "6. Publication", status: seoTitleEnWatch ? "ok" : "empty" },
   ];
-  const STATUS_DOT: Record<SectionStatus, string> = {
-    ok: "bg-[#1f7a4d]",
-    warning: "bg-[#e0a400]",
-    ai: "bg-[#5b3fc4]",
-    empty: "bg-muted-foreground/30",
-  };
-  const scrollToSection = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
 
   const checklistItems = [
     { id: "titre", label: "Titre et accroche", done: !!title && !!subtitleEn },
@@ -3504,7 +3236,6 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     },
     { id: "ia", label: "Aucun champ IA non relu", done: unreviewedAi === 0 },
   ];
-  const readinessPercent = Math.round((checklistItems.filter((c) => c.done).length / checklistItems.length) * 100);
 
   // Aperçu en direct : objet au format attendu par EssentialsBlock, alimenté
   // par les valeurs en cours de saisie (jamais enregistré, affichage seul).
@@ -3553,82 +3284,19 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     <div className="space-y-6 pb-24">
       <form onSubmit={handleSubmit(handlePublish, onInvalidSubmit)} className="space-y-6">
         {/* Barre du haut, collante */}
-        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b -mx-6 px-6 py-3 flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-4">
-            {onClose && (
-              <Button type="button" variant="ghost" size="sm" className="h-8 text-[13px]" onClick={onClose}>
-                <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-                Retour
-              </Button>
-            )}
-            <div>
-              <h1 className="text-[17px] font-bold text-[#1a1814]">
-                {title || (experienceId ? "Modifier l'expérience" : "Nouvelle expérience standalone")}
-              </h1>
-              <p className="text-xs text-[#6f6a63]">
-                Expérience seule · {currentStatus}{lastAutoSave && <> · {getAutoSaveLabel()}</>}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center border border-[#e9e6e1] rounded-[10px] overflow-hidden">
-              {LANGUAGE_PILLS.map((lng) => {
-                const missing = isBoatsExperience ? 0 : getLanguageMissingCount(lng.code);
-                return (
-                  <button
-                    key={lng.code}
-                    type="button"
-                    onClick={() => setActiveLanguage(lng.code)}
-                    className={cn(
-                      "px-2 py-1 text-[10px] font-medium border-r border-[#e9e6e1] last:border-r-0 flex items-center gap-1",
-                      activeLanguage === lng.code ? "bg-[#1a1814] text-white" : "bg-white text-[#6f6a63] hover:text-[#1a1814]"
-                    )}
-                  >
-                    {lng.label}
-                    {!isBoatsExperience && (
-                      missing === 0 ? (
-                        <Check className="h-3 w-3 text-emerald-500" />
-                      ) : (
-                        <span className="text-[10px] opacity-80">{missing}</span>
-                      )
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 text-[13px]"
-              onClick={handleTranslateAll}
-              disabled={isSaving || heroImageUploading || isTranslating}
-            >
-              {isTranslating ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1.5" />}
-              Traduire tout
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 text-[13px]"
-              onClick={handleSaveDraftClick}
-              disabled={isSaving || heroImageUploading}
-            >
-              <Save className="h-3.5 w-3.5 mr-1.5" />
-              Brouillon
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
-              disabled={!canPublish || isSaving || heroImageUploading}
-              className="h-8 text-[13px] bg-[#ad1414] text-white hover:bg-[#ad1414]/90"
-            >
-              <Rocket className="h-3.5 w-3.5 mr-1.5" />
-              Publier
-            </Button>
-          </div>
-        </div>
+        <FormHeaderBar
+          onClose={onClose}
+          heading={title || (experienceId ? "Modifier l'expérience" : "Nouvelle expérience standalone")}
+          meta={<>Expérience seule · {currentStatus}{lastAutoSave && <> · {getAutoSaveLabel()}</>}</>}
+          activeLanguage={activeLanguage}
+          onLanguageChange={setActiveLanguage}
+          getLanguageMissingCount={isBoatsExperience ? undefined : getLanguageMissingCount}
+          onTranslateAll={handleTranslateAll}
+          isTranslating={isTranslating}
+          onSaveDraft={handleSaveDraftClick}
+          canPublish={canPublish}
+          busy={isSaving || heroImageUploading}
+        />
 
         {/* Générer avec l'IA */}
         <AiDraftPanel
@@ -4320,42 +3988,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
         {!isBoatsExperience && (
           <div className="min-[1100px]:grid min-[1100px]:grid-cols-[170px_1fr_230px] min-[1100px]:gap-4 min-[1100px]:items-start">
             {/* Sommaire (sprint 5B, étape 5) */}
-            <aside className="hidden min-[1100px]:block sticky top-16 self-start space-y-3">
-              <nav className="space-y-0.5">
-                {SUMMARY_SECTIONS.map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => scrollToSection(s.id)}
-                    className="w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded-md text-sm hover:bg-muted text-left"
-                  >
-                    <span>{s.label}</span>
-                    <span className={cn("h-2 w-2 rounded-full shrink-0", STATUS_DOT[s.status])} />
-                  </button>
-                ))}
-              </nav>
-              <div className="rounded-lg border border-[#e9e6e1] bg-[#faf8f6] p-3 space-y-2 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Prête à publier</span>
-                  <span className="font-semibold">{readinessPercent} %</span>
-                </div>
-                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                  <div className="h-full bg-[#1f7a4d]" style={{ width: `${readinessPercent}%` }} />
-                </div>
-                {checklistItems.filter((c) => !c.done).length > 0 && (
-                  <ul className="text-muted-foreground space-y-0.5 pt-1">
-                    {checklistItems.filter((c) => !c.done).map((c) => (
-                      <li key={c.id}>Manque : {c.label}</li>
-                    ))}
-                  </ul>
-                )}
-                <p className="text-muted-foreground pt-1">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#5b3fc4] mr-1" /> IA à relire ·{" "}
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#1f7a4d] mr-1" /> OK ·{" "}
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#e0a400] mr-1" /> à compléter
-                </p>
-              </div>
-            </aside>
+            <FormSummaryNav sections={SUMMARY_SECTIONS} checklistItems={checklistItems} />
 
             <div className="space-y-2.5 min-w-0">
               <FormSection id="sec-demarrer" title="Démarrer" description="Type et catégories">
@@ -4527,70 +4160,24 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
             </div>
 
             {/* Aperçu en direct (sprint 5B, étape 5) */}
-            <aside className="hidden min-[1100px]:block sticky top-16 self-start space-y-3">
-              <div className="rounded-2xl border border-[#e9e6e1] overflow-hidden bg-white">
-                <div
-                  className="h-28 bg-muted"
-                  style={heroImagePreview ? { backgroundImage: `url(${heroImagePreview})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
-                />
-                <div className="p-3 space-y-2">
-                  <p className="font-extrabold uppercase text-sm leading-tight">{title || "Titre de l'expérience"}</p>
-                  <p className="text-xs text-muted-foreground">{subtitleEn || "Accroche de l'expérience…"}</p>
-                  <EssentialsBlock experience={previewExperience} experienceTitle={title || ""} lang={activeLanguage} compact />
-                </div>
-              </div>
-              <div className="rounded-lg border border-[#e9e6e1] bg-[#faf8f6] p-3">
-                <p className="text-xs font-semibold mb-2">Avant de publier</p>
-                <ul className="space-y-1 text-xs">
-                  {checklistItems.map((c) => (
-                    <li key={c.id} className={cn("flex items-center gap-1.5", c.done ? "text-emerald-600" : "text-muted-foreground")}>
-                      <span>{c.done ? "✓" : "✗"}</span> {c.label}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </aside>
+            <FormPreviewAside heroImage={heroImagePreview} title={title || ""} subtitle={subtitleEn || ""} checklistItems={checklistItems}>
+              <EssentialsBlock experience={previewExperience} experienceTitle={title || ""} lang={activeLanguage} compact />
+            </FormPreviewAside>
           </div>
         )}
 
         {/* Checklist "Avant de publier" — visible en haut en dessous de 1280px (sprint 5B) */}
-        {!isBoatsExperience && (
-          <div className="min-[1100px]:hidden rounded-lg border border-[#e9e6e1] bg-[#faf8f6] p-3">
-            <p className="text-sm font-semibold mb-2">Avant de publier</p>
-            <ul className="space-y-1 text-sm">
-              {checklistItems.map((c) => (
-                <li key={c.id} className={cn("flex items-center gap-1.5", c.done ? "text-emerald-600" : "text-muted-foreground")}>
-                  <span>{c.done ? "✓" : "✗"}</span> {c.label}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        {!isBoatsExperience && <PublishChecklist items={checklistItems} variant="top" />}
       </form>
 
       {/* Sticky bottom save bar (mobile) */}
       {isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t p-3 flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="flex-1"
-            onClick={handleSaveDraftClick}
-            disabled={isSaving || heroImageUploading}
-          >
-            <Save className="h-4 w-4 mr-2" />
-            Brouillon
-          </Button>
-          <Button
-            type="button"
-            className="flex-1 bg-[#ad1414] text-white hover:bg-[#ad1414]/90"
-            onClick={handleSubmit(handlePublish, onInvalidSubmit)}
-            disabled={!canPublish || isSaving || heroImageUploading}
-          >
-            <Rocket className="h-4 w-4 mr-2" />
-            Publier
-          </Button>
-        </div>
+        <FormMobileSaveBar
+          onSaveDraft={handleSaveDraftClick}
+          onPublish={handleSubmit(handlePublish, onInvalidSubmit)}
+          canPublish={canPublish}
+          busy={isSaving || heroImageUploading}
+        />
       )}
 
       {/* Delete Confirmation */}

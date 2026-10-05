@@ -78,6 +78,9 @@ const SIMPLE_FIELDS = [
   "og_description_en", "og_description_fr", "og_description_he",
 ] as const;
 
+// Champs numériques que certains formulaires acceptent (voir la prop numericFields).
+const isValidNumber = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+
 const isFilled = (v: unknown): boolean => typeof v === "string" && v.trim().length > 0;
 
 // Champs traduits par "Traduire tout" (étape 4) : la source est le champ FR, les cibles EN et HE.
@@ -112,6 +115,17 @@ export interface AiDraftPanelHandle {
 }
 
 interface Props {
+  /** Type de fiche : choisit les consignes de rédaction côté serveur (expérience seule par défaut). */
+  experienceType?: "standalone" | "hotel";
+  /**
+   * Champs texte que ce formulaire possède vraiment. Omis = tous (expérience seule). Le formulaire
+   * hôtel n'a ni ville, ni adresse, ni durée : l'IA ne doit pas y poser de valeur fantôme.
+   */
+  allowedFields?: readonly string[];
+  /** Champs numériques à appliquer (ex. participants, nuits) : uniquement quand rien n'est en conflit ou sur « Remplacer ». */
+  numericFields?: readonly string[];
+  /** Lignes ajoutées à « À vérifier » pour ce que l'IA a trouvé mais que le formulaire ne peut pas recevoir. */
+  getExtraToVerify?: (draft: AiExperienceDraft) => string[];
   getValues: (name: string) => unknown;
   setValue: (name: string, value: unknown, options?: { shouldDirty?: boolean; shouldValidate?: boolean }) => void;
   selectedCategoryIds: string[];
@@ -128,6 +142,10 @@ type MergeChoice = "replace" | "empty_only" | "cancel";
 
 function AiDraftPanelImpl(
   {
+    experienceType = "standalone",
+    allowedFields,
+    numericFields = [],
+    getExtraToVerify,
     getValues,
     setValue,
     selectedCategoryIds,
@@ -140,6 +158,9 @@ function AiDraftPanelImpl(
   }: Props,
   ref: Ref<AiDraftPanelHandle>
 ) {
+  const simpleFields = allowedFields ? SIMPLE_FIELDS.filter((f) => allowedFields.includes(f)) : SIMPLE_FIELDS;
+  const translateFieldMap = allowedFields ? TRANSLATE_FIELD_MAP.filter((m) => allowedFields.includes(m.fr)) : TRANSLATE_FIELD_MAP;
+
   const [expanded, setExpanded] = useState(false);
   const [notes, setNotes] = useState("");
   const [url, setUrl] = useState("");
@@ -177,13 +198,24 @@ function AiDraftPanelImpl(
     if (choice === "cancel") return;
 
     let appliedCount = 0;
-    for (const field of SIMPLE_FIELDS) {
+    for (const field of simpleFields) {
       const value = draft[field];
       if (!isFilled(value)) continue;
       const current = getValues(field);
       if (choice === "empty_only" && isFilled(current)) continue;
       setValue(field, value, { shouldDirty: true });
       appliedCount++;
+    }
+
+    // Les champs numériques ont toujours une valeur par défaut : on ne les touche pas en mode
+    // « ne remplir que les champs vides ».
+    if (choice === "replace") {
+      for (const field of numericFields) {
+        const value = draft[field];
+        if (!isValidNumber(value)) continue;
+        setValue(field, value, { shouldDirty: true, shouldValidate: true });
+        appliedCount++;
+      }
     }
 
     if (draft.category_ids.length > 0 && (choice === "replace" || selectedCategoryIds.length === 0)) {
@@ -221,7 +253,7 @@ function AiDraftPanelImpl(
 
   const translateAll = async () => {
     const texts: Record<string, string> = {};
-    for (const { fr } of TRANSLATE_FIELD_MAP) {
+    for (const { fr } of translateFieldMap) {
       const value = getValues(fr);
       if (isFilled(value)) texts[fr] = value as string;
     }
@@ -237,13 +269,13 @@ function AiDraftPanelImpl(
 
       const { data, error } = await supabase.functions.invoke("generate-experience-draft", {
         headers: { Authorization: `Bearer ${token}` },
-        body: { type: "standalone", mode: "translate", texts },
+        body: { type: experienceType, mode: "translate", texts },
       });
       if (error || data?.error) throw new Error(data?.error || error?.message || "Erreur inconnue");
 
       const translations = (data.translations || {}) as Record<string, { en: string; he: string }>;
       const overrides: Record<string, string> = {};
-      for (const { fr, en, he } of TRANSLATE_FIELD_MAP) {
+      for (const { fr, en, he } of translateFieldMap) {
         const t = translations[fr];
         if (!t) continue;
         if (isFilled(t.en)) overrides[en] = t.en;
@@ -275,7 +307,7 @@ function AiDraftPanelImpl(
 
   const countConflicts = (draft: AiExperienceDraft): number => {
     let count = 0;
-    for (const field of SIMPLE_FIELDS) {
+    for (const field of simpleFields) {
       if (isFilled(draft[field]) && isFilled(getValues(field))) count++;
     }
     if (draft.category_ids.length > 0 && selectedCategoryIds.length > 0) count++;
@@ -301,7 +333,7 @@ function AiDraftPanelImpl(
       const { data, error } = await supabase.functions.invoke("generate-experience-draft", {
         headers: { Authorization: `Bearer ${token}` },
         body: {
-          type: "standalone",
+          type: experienceType,
           notes: notes.trim() || undefined,
           url: url.trim() || undefined,
           pdf_base64,
@@ -317,7 +349,7 @@ function AiDraftPanelImpl(
       const warnings: string[] = data.warnings || [];
       warnings.forEach((w) => toast.warning(w));
 
-      setToVerify(data.to_verify || []);
+      setToVerify([...(data.to_verify || []), ...(getExtraToVerify?.(draft) ?? [])]);
       setCheckedVerify(new Set());
 
       const conflicts = countConflicts(draft);
@@ -329,7 +361,7 @@ function AiDraftPanelImpl(
       }
 
       safeTrack("ai_draft_generated", {
-        experience_type: "standalone",
+        experience_type: experienceType,
         used_notes: !!notes.trim(),
         used_url: !!url.trim(),
         used_pdf: !!pdfFile,
@@ -342,7 +374,7 @@ function AiDraftPanelImpl(
       const message = err instanceof Error ? err.message : "Erreur inconnue";
       toast.error(`Génération impossible : ${message}`);
       safeTrack("ai_draft_generated", {
-        experience_type: "standalone",
+        experience_type: experienceType,
         used_notes: !!notes.trim(),
         used_url: !!url.trim(),
         used_pdf: !!pdfFile,

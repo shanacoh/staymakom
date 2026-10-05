@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/forms/styled/managers";
+import { Input } from "@/components/forms/styled/managers";
+import { Textarea } from "@/components/forms/styled/managers";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/forms/styled/managers";
 import { Trash2, Eye, EyeOff, Star, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Label } from "@/components/ui/label";
+import { Label } from "@/components/forms/styled/managers";
 
 export interface LocalReviewEntry {
   _localId: string;

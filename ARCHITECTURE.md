@@ -37,6 +37,11 @@ src/
 │   ├── experience/       # Experience detail page components (V1 + V2)
 │   ├── experience-test/  # Experience section components (Hero, Map, Reviews, etc.)
 │   ├── forms/            # Complex forms (UnifiedExperience2Form, etc.)
+│   │   ├── shared/       # Briques communes aux formulaires expérience seule et hôtel + expérience :
+│   │   │                 #   en-tête collant (langue, Traduire tout, Brouillon, Publier), section repliable,
+│   │   │                 #   sommaire, aperçu + checklist, annulation par modèles, SEO, encadré « Interne »
+│   │   ├── styled/       # Habillage commun (index.tsx : champs du formulaire ; managers.tsx : éditeurs de listes)
+│   │   └── ai/           # AiDraftPanel : « Générer avec l'IA » (types "standalone" et "hotel")
 │   ├── account/          # User account components (MyStaymakomSection)
 │   ├── auth/             # Auth dialogs and prompts
 │   ├── category/         # Category page components

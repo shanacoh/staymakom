@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/forms/styled/managers";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/forms/styled/managers";
+import { Input } from "@/components/forms/styled/managers";
+import { Label } from "@/components/forms/styled/managers";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { Plus, X, Loader2, Tag, ChevronUp, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -293,45 +294,25 @@ export function HighlightTagsSelector2({ experienceId, localTags, onLocalTagsCha
             </div>
           )}
 
-          {/* Common tags grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-            {commonTags?.map((tag) => (
-              <label
-                key={tag.id}
-                className="flex items-center gap-2 p-2 rounded-md border cursor-pointer hover:bg-muted/50 transition-colors"
-              >
-                <Checkbox
-                  checked={selectedTagIds.includes(tag.id)}
-                  onCheckedChange={(checked) => handleTagToggle(tag.id, checked as boolean)}
+          {/* Tags disponibles — pastilles compactes, libellé FR seulement */}
+          <div className="flex flex-wrap gap-1.5">
+            {[...(commonTags ?? []), ...customTags].map((tag) => {
+              const selected = selectedTagIds.includes(tag.id);
+              return (
+                <button
+                  key={tag.id}
+                  type="button"
+                  onClick={() => handleTagToggle(tag.id, !selected)}
                   disabled={!isLocalMode && (addTagMutation.isPending || removeTagMutation.isPending)}
-                />
-                <div className="flex flex-col min-w-0">
-                  <span className="text-sm font-medium truncate">{tag.label_en}</span>
-                  {tag.label_fr && <span className="text-xs text-muted-foreground truncate">{tag.label_fr}</span>}
-                  {tag.label_he && <span className="text-xs text-muted-foreground truncate" dir="rtl">{tag.label_he}</span>}
-                </div>
-              </label>
-            ))}
-
-            {/* Custom tags (session or DB) */}
-            {customTags.map((tag) => (
-              <label
-                key={tag.id}
-                className="flex items-center gap-2 p-2 rounded-md border border-accent/40 bg-accent/5 cursor-pointer hover:bg-accent/10 transition-colors"
-              >
-                <Checkbox
-                  checked={selectedTagIds.includes(tag.id)}
-                  onCheckedChange={(checked) => handleTagToggle(tag.id, checked as boolean)}
-                  disabled={!isLocalMode && (addTagMutation.isPending || removeTagMutation.isPending)}
-                />
-                <div className="flex flex-col min-w-0">
-                  <span className="text-sm font-medium truncate">{tag.label_en}</span>
-                  {tag.label_fr && <span className="text-xs text-muted-foreground truncate">{tag.label_fr}</span>}
-                  {tag.label_he && <span className="text-xs text-muted-foreground truncate" dir="rtl">{tag.label_he}</span>}
-                  <span className="text-[10px] text-accent font-medium">Custom</span>
-                </div>
-              </label>
-            ))}
+                  className={cn(
+                    "px-2 py-0.5 rounded-full text-[10px] border transition-colors",
+                    selected ? "bg-[#1a1814] text-white border-[#1a1814]" : "bg-white text-[#1a1814] border-[#e9e6e1] hover:border-[#1a1814]/40"
+                  )}
+                >
+                  {tag.label_fr || tag.label_en}
+                </button>
+              );
+            })}
           </div>
 
           <Button type="button" variant="outline" size="sm" onClick={() => setShowCustomDialog(true)}>

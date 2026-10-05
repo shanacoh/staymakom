@@ -46,16 +46,26 @@ type ExperienceType = "standalone" | "hotel";
 
 // ---------------------------------------------------------------------------
 // Schéma de l'outil forcé : correspond aux champs du formulaire expérience
-// standalone (src/components/forms/StandaloneExperienceForm.tsx). L'IA ne
-// peut PAS produire d'autre champ que ceux-ci : prix, disponibilités et
-// prestataire ne sont volontairement pas dans ce schéma.
+// standalone (src/components/forms/StandaloneExperienceForm.tsx) et, pour le
+// type "hotel", du formulaire hôtel + expérience
+// (src/components/forms/UnifiedExperience2Form.tsx), qui ajoute seulement les
+// nuits min/max. L'IA ne peut PAS produire d'autre champ que ceux-ci : hôtel,
+// prix, BAR rate, net rate, coûts, commissions, taxes, promo, disponibilités
+// et prestataire ne sont volontairement pas dans ce schéma.
 // ---------------------------------------------------------------------------
 
 const LANG_STRING = { type: "string" as const };
 
 const TOOL_NAME = "fill_experience_form";
 
-function buildToolSchema(categorySlugs: string[]) {
+function buildToolSchema(categorySlugs: string[], type: ExperienceType) {
+  // Nuits min/max : uniquement pour une expérience hôtel (séjour).
+  const nightsProperties = type === "hotel"
+    ? {
+      min_nights: { type: "integer", minimum: 1, maximum: 8, description: "Uniquement si les sources précisent une durée de séjour minimale." },
+      max_nights: { type: "integer", minimum: 1, maximum: 8, description: "Uniquement si les sources précisent une durée de séjour maximale." },
+    }
+    : {};
   return {
     name: TOOL_NAME,
     description: "Remplit les champs éditoriaux du formulaire d'expérience STAYMAKOM. Ne jamais inclure de prix, de disponibilité ou d'information prestataire.",
@@ -108,6 +118,7 @@ function buildToolSchema(categorySlugs: string[]) {
         duration_he: LANG_STRING,
         min_party: { type: "integer", minimum: 1, maximum: 100 },
         max_party: { type: "integer", minimum: 1, maximum: 100 },
+        ...nightsProperties,
         city: LANG_STRING,
         city_fr: LANG_STRING,
         city_he: LANG_STRING,
@@ -222,6 +233,8 @@ interface ExperienceDraft {
   duration_he: string | null;
   min_party: number | null;
   max_party: number | null;
+  min_nights: number | null;
+  max_nights: number | null;
   city: string | null;
   city_fr: string | null;
   city_he: string | null;
@@ -308,6 +321,8 @@ function parseDraft(raw: Record<string, unknown>, categoriesBySlug: Map<string, 
     duration_he: str(raw.duration_he, 100),
     min_party: int(raw.min_party, 1, 100),
     max_party: int(raw.max_party, 1, 100),
+    min_nights: int(raw.min_nights, 1, 8),
+    max_nights: int(raw.max_nights, 1, 8),
     city: str(raw.city, 150),
     city_fr: str(raw.city_fr, 150),
     city_he: str(raw.city_he, 150),
@@ -692,7 +707,7 @@ Deno.serve(async (req) => {
     const userContent = await buildUserContent({ type, notes, url, pdfBase64, pdfName }, categories, warnings);
 
     const systemPrompt = loadSystemPrompt(type) + TECHNICAL_INSTRUCTIONS;
-    const tool = buildToolSchema(categories.map((c) => c.slug));
+    const tool = buildToolSchema(categories.map((c) => c.slug), type);
 
     // deno-lint-ignore no-explicit-any
     let response: any;

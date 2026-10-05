@@ -4,13 +4,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Button,
+  Input,
+  Label,
+  Card,
+  CardHeader,
+  CardContent,
+  CardTitle,
+  CardDescription,
+} from "@/components/forms/styled";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +48,24 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Slider } from "@/components/ui/slider";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import AiDraftPanel, { type AiIncludeDraft, type AiExtraDraft, type AiDraftPanelHandle } from "@/components/forms/ai/AiDraftPanel";
+import { CANCELLATION_TEMPLATES, matchCancellationTemplate, type CancellationTemplateId } from "@/constants/cancellationTemplates";
+import { FormSection } from "@/components/forms/shared/FormSection";
+import { FormHeaderBar, FormMobileSaveBar, type FormLanguage } from "@/components/forms/shared/FormHeaderBar";
+import {
+  FormSummaryNav,
+  FormPreviewAside,
+  PublishChecklist,
+  scrollToSection,
+  type SummarySection,
+  type ChecklistItem,
+} from "@/components/forms/shared/FormSummaryNav";
+import { InternalOnlyBox } from "@/components/forms/shared/InternalOnlyBox";
+import { CancellationPolicyFields } from "@/components/forms/shared/CancellationPolicyFields";
+import { SeoFields } from "@/components/forms/shared/SeoFields";
+import { PublicationFields } from "@/components/forms/shared/PublicationFields";
+import { useGenerateSeo } from "@/components/forms/shared/useGenerateSeo";
+import { Moon, Utensils, Users } from "lucide-react";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -56,19 +79,35 @@ interface ExperienceHotelEntry {
   notes_he: string;
 }
 
-// ---------------------------------------------------------------------------
-// Tabs
-// ---------------------------------------------------------------------------
+// Libellés de pension pour l'aperçu en direct (mêmes intitulés que le menu
+// « Pension affichée en priorité »).
+const BOARD_LABELS: Record<string, string> = {
+  BB: "Petit-déjeuner inclus",
+  RO: "Chambre seule",
+  HB: "Demi-pension",
+  FB: "Pension complète",
+  AI: "Tout inclus",
+};
 
-const TABS = [
-  { id: "hotel_photos", label: "Hôtel & Photos" },
-  { id: "description", label: "Description" },
-  { id: "inclus", label: "Inclus & Extras" },
-  { id: "tarification", label: "Tarification" },
-  { id: "things", label: "Things to Know" },
+// Champs que « Générer avec l'IA » et « Traduire tout » ont le droit de remplir
+// sur ce formulaire. Volontairement absents : hôtel, prix, BAR rate, net rate,
+// coûts, commissions, taxes, promo et dates.
+const AI_TEXT_FIELDS = [
+  "title", "title_fr", "title_he",
+  "subtitle", "subtitle_fr", "subtitle_he",
+  "long_copy", "long_copy_fr", "long_copy_he",
+  "cancellation_policy", "cancellation_policy_fr", "cancellation_policy_he",
+  "seo_title_en", "seo_title_fr", "seo_title_he",
+  "meta_description_en", "meta_description_fr", "meta_description_he",
+  "og_title_en", "og_title_fr", "og_title_he",
+  "og_description_en", "og_description_fr", "og_description_he",
 ] as const;
+const AI_NUMERIC_FIELDS = ["min_party", "max_party", "min_nights", "max_nights"] as const;
 
-type TabId = (typeof TABS)[number]["id"];
+// Identifiant de la section « Prix & dispo » : sert au sommaire et au
+// déclenchement du chargement HyperGuest quand la section arrive à l'écran.
+const PRICING_SECTION_ID = "sec-prix";
+
 
 // ---------------------------------------------------------------------------
 // Zod schema
@@ -160,7 +199,13 @@ export function UnifiedExperience2Form({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [createdExperienceId, setCreatedExperienceId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabId>("hotel_photos");
+  const aiDraftPanelRef = useRef<AiDraftPanelHandle>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
+  // Langue affichée dans la barre du haut.
+  const [activeLanguage, setActiveLanguage] = useState<FormLanguage>("fr");
+  // Annulation par modèles : "custom" affiche le champ texte libre ; les autres
+  // valeurs remplissent les 3 langues d'un coup.
+  const [cancellationTemplate, setCancellationTemplate] = useState<CancellationTemplateId>("custom");
 
   // Auto-save
   const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
@@ -368,13 +413,25 @@ export function UnifiedExperience2Form({
   const minBarRatePublic = barRatePublicPrices.length > 0 ? Math.min(...barRatePublicPrices) : null;
   const maxBarRatePublic = barRatePublicPrices.length > 0 ? Math.max(...barRatePublicPrices) : null;
 
-  // Auto-déclenche le fetch HyperGuest dès qu'on arrive sur l'onglet Tarification
-  // avec un hôtel HG associé, pour que le Net Rate soit pré-rempli sans clic manuel.
+  // Auto-déclenche le fetch HyperGuest dès que la section « Prix & dispo » arrive
+  // à l'écran (équivalent de l'arrivée sur l'ancien onglet Tarification) avec un
+  // hôtel HG associé, pour que le Net Rate soit pré-rempli sans clic manuel.
+  // Tant que la section n'a pas été affichée, rien n'est chargé ni modifié.
   useEffect(() => {
-    if (activeTab === "tarification" && primaryHyperguestId && !barRateRefreshEnabled) {
-      setBarRateRefreshEnabled(true);
-    }
-  }, [activeTab, primaryHyperguestId, barRateRefreshEnabled]);
+    if (!primaryHyperguestId || barRateRefreshEnabled) return;
+    const section = document.getElementById(PRICING_SECTION_ID);
+    if (!section) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) setBarRateRefreshEnabled(true);
+      },
+      // La section doit atteindre la moitié haute de l'écran : un simple
+      // affichage en bas de page au chargement ne suffit pas.
+      { rootMargin: "0px 0px -50% 0px" },
+    );
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, [primaryHyperguestId, barRateRefreshEnabled, isLoadingExperience]);
 
   // Pré-remplir room_net_rate avec le min Net Rate quand les données arrivent.
   // shouldDirty + shouldTouch forcent react-hook-form à propager la valeur au DOM
@@ -461,6 +518,13 @@ export function UnifiedExperience2Form({
       setValue("cancellation_policy", existingExperience.cancellation_policy || "");
       setValue("cancellation_policy_fr", existingExperience.cancellation_policy_fr || "");
       setValue("cancellation_policy_he", existingExperience.cancellation_policy_he || "");
+      setCancellationTemplate(
+        matchCancellationTemplate(
+          existingExperience.cancellation_policy,
+          existingExperience.cancellation_policy_fr,
+          existingExperience.cancellation_policy_he,
+        ),
+      );
       setValue("seo_title_en", existingExperience.seo_title_en || "");
       setValue("seo_title_he", existingExperience.seo_title_he || "");
       setValue("seo_title_fr", existingExperience.seo_title_fr || "");
@@ -770,6 +834,7 @@ export function UnifiedExperience2Form({
     const rows = localIncludes.map((inc, index) => ({
       experience_id: expId,
       title: inc.title,
+      title_fr: inc.title_fr || null,
       title_he: inc.title_he || null,
       icon_url: inc.icon_url || null,
       order_index: index,
@@ -932,12 +997,16 @@ export function UnifiedExperience2Form({
     const errorFields = Object.keys(errors).map((field) => fieldNames[field] || field);
     if (errorFields.length > 0) toast.error(`Please fill required fields: ${errorFields.join(", ")}`);
 
-    // Switch to the tab containing the first error
+    // Défile jusqu'à la section qui contient la première erreur, et affiche
+    // la langue du champ concerné (sinon il resterait masqué).
     const errorField = Object.keys(errors)[0];
-    if (["title", "title_he", "subtitle", "subtitle_he", "category_id", "long_copy", "long_copy_he"].includes(errorField)) {
-      setActiveTab("description");
-    } else if (["min_party", "max_party", "min_nights", "max_nights"].includes(errorField)) {
-      setActiveTab("things");
+    if (["title", "long_copy"].includes(errorField)) setActiveLanguage("en");
+    if (errorField === "category_id") {
+      scrollToSection("sec-demarrer");
+    } else if (["long_copy", "long_copy_he"].includes(errorField)) {
+      scrollToSection("sec-recit");
+    } else if (["title", "title_he", "subtitle", "subtitle_he", "min_party", "max_party", "min_nights", "max_nights"].includes(errorField)) {
+      scrollToSection("sec-essentiel");
     }
 
     const element = document.querySelector(`[name="${errorField}"]`) || document.getElementById(errorField);
@@ -947,34 +1016,187 @@ export function UnifiedExperience2Form({
   const canPublish = title && longCopy && longCopy.length >= 100 && experienceHotels.length > 0;
 
   // -------------------------------------------------------------------------
-  // Tab completion indicators
-  // -------------------------------------------------------------------------
-
-  const getTabCompletion = (tabId: TabId): boolean => {
-    switch (tabId) {
-      case "hotel_photos":
-        return experienceHotels.length > 0 && !!(heroImagePreview || galleryPreviews.length > 0);
-      case "description":
-        return !!(title && longCopy && longCopy.length >= 100 && watch("category_id"));
-      case "inclus":
-        return true;
-      case "tarification":
-        return true;
-      case "things":
-        return true;
-    }
-  };
-
-  // -------------------------------------------------------------------------
   // Auto-save time display
   // -------------------------------------------------------------------------
 
   const getAutoSaveLabel = () => {
     if (!lastAutoSave) return null;
     const diff = Math.round((Date.now() - lastAutoSave.getTime()) / 60000);
-    if (diff < 1) return "Auto-saved just now";
-    return `Auto-saved ${diff} min ago`;
+    if (diff < 1) return "Auto-sauvegardé à l'instant";
+    return `Auto-sauvegardé il y a ${diff} min`;
   };
+
+  // -------------------------------------------------------------------------
+  // Générer avec l'IA / Traduire tout / Générer le SEO
+  // L'IA ne touche jamais à l'hôtel, aux prix, aux coûts, aux commissions,
+  // aux taxes, à la promo ni aux dates, et n'enregistre rien elle-même.
+  // -------------------------------------------------------------------------
+
+  const categoryId = watch("category_id");
+
+  const applyAiCategoryIds = (ids: string[]) => {
+    setValue("category_id", ids[0] || "", { shouldValidate: true, shouldDirty: true });
+  };
+
+  // Un texte d'annulation posé par l'IA (ou par Traduire tout) doit rester
+  // visible : on repasse sur « Personnalisée » au lieu de le cacher derrière un modèle.
+  const setValueFromAi = (name: string, value: unknown, options?: { shouldDirty?: boolean; shouldValidate?: boolean }) => {
+    if (name.startsWith("cancellation_policy")) setCancellationTemplate("custom");
+    setValue(name as keyof Experience2FormData, value as never, options);
+  };
+
+  // La durée n'est pas un champ de ce formulaire (elle se règle dans « Things
+  // to Know ») : si l'IA en trouve une, on la signale au lieu de la perdre.
+  const getAiExtraToVerify = (draft: Record<string, unknown>) => {
+    const duration = draft.duration_fr || draft.duration;
+    return typeof duration === "string" && duration.trim()
+      ? [`Durée trouvée par l'IA : ${duration.trim()}. À reporter dans « Things to Know » si besoin.`]
+      : [];
+  };
+
+  const handleAiIncludes = async (items: AiIncludeDraft[]) => {
+    if (!currentExperienceId) {
+      setLocalIncludes((prev) => [
+        ...prev,
+        ...items.map((item, idx) => ({
+          _localId: `ai-${Date.now()}-${idx}`,
+          title: item.title,
+          title_fr: item.title_fr,
+          title_he: item.title_he,
+          icon_url: "",
+          published: true,
+          order_index: prev.length + idx,
+        })),
+      ]);
+      return;
+    }
+    const { error } = await (supabase as any).from("experience2_includes").insert(
+      items.map((item, idx) => ({
+        experience_id: currentExperienceId,
+        title: item.title,
+        title_fr: item.title_fr || null,
+        title_he: item.title_he || null,
+        order_index: 1000 + idx,
+        published: true,
+      })),
+    );
+    if (error) {
+      toast.error("Les inclus générés par l'IA n'ont pas pu être ajoutés.");
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["experience2-includes", currentExperienceId] });
+  };
+
+  // Les extras d'une expérience hôtel sont choisis parmi ceux de la fiche hôtel
+  // (avec leur prix) : l'IA ne peut donc que les suggérer, jamais les créer.
+  const handleAiExtras = (items: AiExtraDraft[]) => {
+    if (items.length === 0) return;
+    toast.info(`Extras suggérés par l'IA : ${items.map((i) => i.title).join(", ")}. À créer sur la fiche de l'hôtel pour pouvoir les proposer ici.`, {
+      duration: 15000,
+    });
+  };
+
+  // Traduire tout, côté inclus : traduit vers EN/HE les inclus dont le titre FR
+  // est rempli, uniquement là où EN ou HE est encore vide (rien n'est écrasé).
+  const handleTranslateIncludes = async () => {
+    type Row = { key: string; id?: string; title_fr: string; title: string; title_he: string };
+    let rows: Row[] = [];
+    if (!currentExperienceId) {
+      rows = localIncludes.map((item, idx) => ({
+        key: `inc_${idx}`, title_fr: item.title_fr || "", title: item.title || "", title_he: item.title_he || "",
+      }));
+    } else {
+      const { data } = await (supabase as any)
+        .from("experience2_includes")
+        .select("id, title, title_fr, title_he")
+        .eq("experience_id", currentExperienceId);
+      rows = (data || []).map((item: any, idx: number) => ({
+        key: `inc_${idx}`, id: item.id, title_fr: item.title_fr || "", title: item.title || "", title_he: item.title_he || "",
+      }));
+    }
+
+    const translatable = rows.filter((r) => r.title_fr.trim() && (!r.title.trim() || !r.title_he.trim()));
+    if (translatable.length === 0) return;
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    if (!token) return;
+
+    const { data, error } = await supabase.functions.invoke("generate-experience-draft", {
+      headers: { Authorization: `Bearer ${token}` },
+      body: { type: "hotel", mode: "translate", texts: Object.fromEntries(translatable.map((r) => [r.key, r.title_fr])) },
+    });
+    if (error || data?.error) {
+      toast.error("La traduction des inclus a échoué.");
+      return;
+    }
+    const translations = (data.translations || {}) as Record<string, { en: string; he: string }>;
+
+    if (!currentExperienceId) {
+      setLocalIncludes((prev) =>
+        prev.map((item, idx) => {
+          const t = translations[`inc_${idx}`];
+          if (!t) return item;
+          return { ...item, title: item.title.trim() || t.en || item.title, title_he: item.title_he.trim() || t.he || item.title_he };
+        }),
+      );
+      return;
+    }
+
+    const updates: Promise<unknown>[] = [];
+    for (const row of rows) {
+      const t = translations[row.key];
+      if (!t || !row.id) continue;
+      const patch: Record<string, string> = {};
+      if (!row.title.trim() && t.en) patch.title = t.en;
+      if (!row.title_he.trim() && t.he) patch.title_he = t.he;
+      if (Object.keys(patch).length > 0) updates.push((supabase as any).from("experience2_includes").update(patch).eq("id", row.id));
+    }
+    await Promise.all(updates);
+    queryClient.invalidateQueries({ queryKey: ["experience2-includes", currentExperienceId] });
+  };
+
+  const handleTranslateAll = async () => {
+    setIsTranslating(true);
+    try {
+      await Promise.all([aiDraftPanelRef.current?.translateAll(), handleTranslateIncludes()]);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  const { isGeneratingSeo, handleGenerateSeo } = useGenerateSeo(
+    "hotel",
+    (name) => getValues(name as keyof Experience2FormData),
+    (name, value) => setValue(name as keyof Experience2FormData, value as never),
+  );
+
+  // Choisir un modèle d'annulation remplit les 3 langues d'un coup avec le
+  // texte déjà rédigé ; on ne touche jamais au texte sans clic explicite.
+  const selectCancellationTemplate = (id: CancellationTemplateId) => {
+    setCancellationTemplate(id);
+    if (id === "custom") return;
+    const template = CANCELLATION_TEMPLATES.find((t) => t.id === id);
+    if (!template) return;
+    setValue("cancellation_policy", template.en);
+    setValue("cancellation_policy_fr", template.fr);
+    setValue("cancellation_policy_he", template.he);
+  };
+
+  // Même clé de cache que IncludesManager2 : sert à la checklist et à l'aperçu.
+  const { data: savedIncludes } = useQuery({
+    queryKey: ["experience2-includes", currentExperienceId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("experience2_includes")
+        .select("*")
+        .eq("experience_id", currentExperienceId)
+        .order("order_index");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!currentExperienceId,
+  });
 
   // -------------------------------------------------------------------------
   // Loading state
@@ -989,100 +1211,224 @@ export function UnifiedExperience2Form({
   }
 
   // -------------------------------------------------------------------------
+  // Sommaire, aperçu, checklist
+  // -------------------------------------------------------------------------
+
+  // Une langue à la fois : seuls les champs de la langue choisie dans la barre
+  // du haut sont affichés (les autres restent remplis, simplement masqués).
+  const langHidden = (lang: FormLanguage) => activeLanguage !== lang;
+
+  // Complétude par langue — champs principaux : titre, accroche, description.
+  const subtitleEn = watch("subtitle");
+  const titleFr = watch("title_fr");
+  const titleHe = watch("title_he");
+  const subtitleFr = watch("subtitle_fr");
+  const subtitleHe = watch("subtitle_he");
+  const longCopyFr = watch("long_copy_fr");
+  const getLanguageMissingCount = (lang: FormLanguage) => {
+    const values =
+      lang === "fr"
+        ? [titleFr, subtitleFr, longCopyFr]
+        : lang === "en"
+        ? [title, subtitleEn, longCopy]
+        : [titleHe, subtitleHe, longCopyHe];
+    return values.filter((v) => !v || !v.trim()).length;
+  };
+  const seoTitleEn = watch("seo_title_en");
+  const totalPhotosCount = (heroImagePreview ? 1 : 0) + galleryPreviews.length;
+  const unreviewedAi = aiDraftPanelRef.current?.getUnreviewedAiCount() ?? 0;
+  const currentStatus = existingExperience?.status === "published" ? "Publiée" : "Brouillon";
+
+  const includesForPreview: { title: string; icon_url?: string | null }[] = currentExperienceId
+    ? ((savedIncludes as any[] | undefined) ?? []).filter((i) => i.published)
+    : localIncludes;
+  const includesWithPhotoCount = includesForPreview.filter((i) => i.icon_url).length;
+
+  const hasPricing =
+    (watch("room_net_rate") || 0) > 0 ||
+    (watch("experience_sell_fixed") || 0) > 0 ||
+    (watch("experience_sell_per_person") || 0) > 0;
+
+  const SUMMARY_SECTIONS: SummarySection[] = [
+    { id: "sec-demarrer", label: "Démarrer", status: categoryId ? "ok" : "empty" },
+    {
+      id: "sec-essentiel",
+      label: "1. L'essentiel",
+      status: unreviewedAi > 0 ? "ai" : !title ? "empty" : subtitleEn && experienceHotels.length > 0 ? "ok" : "warning",
+    },
+    {
+      id: "sec-recit",
+      label: "2. Le récit",
+      status: (longCopy?.length ?? 0) === 0 ? "empty" : (longCopy?.length ?? 0) >= 100 ? "ok" : "warning",
+    },
+    { id: "sec-photos", label: "3. Photos", status: totalPhotosCount === 0 ? "empty" : totalPhotosCount >= 5 ? "ok" : "warning" },
+    { id: PRICING_SECTION_ID, label: "4. Prix & dispo", status: hasPricing ? "ok" : "empty" },
+    {
+      id: "sec-conditions",
+      label: "5. Conditions",
+      status: cancellationTemplate !== "custom" || watch("cancellation_policy") ? "ok" : "empty",
+    },
+    { id: "sec-publication", label: "6. Publication", status: seoTitleEn ? "ok" : "empty" },
+  ];
+
+  const checklistItems: ChecklistItem[] = [
+    { id: "titre", label: "Titre et accroche", done: !!title && !!subtitleEn },
+    { id: "hotel", label: "Au moins un hôtel dans le parcours", done: experienceHotels.length > 0 },
+    { id: "description", label: "Description", done: (longCopy?.length ?? 0) >= 100 },
+    { id: "inclus", label: "4 inclus avec photo", done: includesWithPhotoCount >= 4 },
+    { id: "photos", label: "Au moins 5 photos", done: totalPhotosCount >= 5 },
+    {
+      id: "langues",
+      label: "Versions EN et HE remplies",
+      done: getLanguageMissingCount("en") === 0 && getLanguageMissingCount("he") === 0,
+    },
+    { id: "ia", label: "Aucun champ IA non relu", done: unreviewedAi === 0 },
+  ];
+
+  const nightsLabel =
+    minNights && maxNights && minNights !== maxNights
+      ? `${minNights} à ${maxNights} nuits`
+      : `${minNights || maxNights || 1} nuit${(minNights || maxNights || 1) > 1 ? "s" : ""}`;
+
+  // -------------------------------------------------------------------------
   // Render
   // -------------------------------------------------------------------------
 
   return (
     <div className="space-y-6 pb-24">
       <form onSubmit={handleSubmit(handlePublish, onInvalidSubmit)} className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-4">
-            {onClose && (
-              <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-            )}
-            <div>
-              <h1 className="text-2xl font-bold">{experienceId ? "Edit Experience" : "New Experience"}</h1>
-              {hotelName && <p className="text-sm text-muted-foreground">Hotel: {hotelName}</p>}
-              {lastAutoSave && (
-                <p className="text-xs text-muted-foreground">{getAutoSaveLabel()}</p>
-              )}
-            </div>
-          </div>
-          {/* Desktop save buttons */}
-          <div className="hidden md:flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleSubmit(handleSaveDraft, onInvalidSubmit)}
-              disabled={isSaving}
-            >
-              <Save className="h-4 w-4 mr-2" />
-              Save Draft
-            </Button>
-            <Button type="submit" disabled={!canPublish || isSaving}>
-              <Rocket className="h-4 w-4 mr-2" />
-              Publish
-            </Button>
-          </div>
-        </div>
+        {/* Barre du haut, collante */}
+        <FormHeaderBar
+          onClose={onClose}
+          heading={title || (experienceId ? "Modifier l'expérience" : "Nouvelle expérience hôtel")}
+          meta={
+            <>
+              Hôtel + expérience{hotelName && <> · {hotelName}</>} · {currentStatus}
+              {lastAutoSave && <> · {getAutoSaveLabel()}</>}
+            </>
+          }
+          activeLanguage={activeLanguage}
+          onLanguageChange={setActiveLanguage}
+          getLanguageMissingCount={getLanguageMissingCount}
+          onTranslateAll={handleTranslateAll}
+          isTranslating={isTranslating}
+          onSaveDraft={handleSubmit(handleSaveDraft, onInvalidSubmit)}
+          canPublish={!!canPublish}
+          busy={isSaving || heroImageUploading}
+        />
 
-        {/* ── Sticky Tab Navigation ── */}
-        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b -mx-6 px-6 py-0">
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
-            {TABS.map((tab, index) => {
-              const isComplete = getTabCompletion(tab.id);
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTab(tab.id)}
-                  className={cn(
-                    "relative flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2",
-                    isActive
-                      ? "border-primary text-foreground"
-                      : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
-                  )}
-                >
-                  <span className={cn(
-                    "flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold",
-                    isComplete
-                      ? "bg-green-600 text-white"
-                      : "bg-muted text-muted-foreground"
-                  )}>
-                    {isComplete ? <Check className="h-3 w-3" /> : index + 1}
-                  </span>
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        {/* Générer avec l'IA */}
+        <AiDraftPanel
+          ref={aiDraftPanelRef}
+          experienceType="hotel"
+          allowedFields={AI_TEXT_FIELDS}
+          numericFields={AI_NUMERIC_FIELDS}
+          getExtraToVerify={getAiExtraToVerify}
+          getValues={(name) => getValues(name as keyof Experience2FormData)}
+          setValue={setValueFromAi}
+          selectedCategoryIds={categoryId ? [categoryId] : []}
+          onApplyCategoryIds={applyAiCategoryIds}
+          onApplyPracticalInfo={() => {}}
+          isPracticalInfoEmpty={() => false}
+          isEditMode={!!experienceId}
+          onAddIncludes={handleAiIncludes}
+          onAddExtras={handleAiExtras}
+        />
 
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* TAB: Hôtel & Photos */}
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {activeTab === "hotel_photos" && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Parcours & Hôtels</CardTitle>
-                <CardDescription>
-                  Multi-hôtel : ordonnez les étapes du séjour.{" "}
-                  {experienceHotels.length > 0 && (
-                    <span className="font-medium text-foreground">
-                      {experienceHotels.length} hôtel(s) — Total {totalNights} nuit(s)
-                    </span>
-                  )}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+        <div className="min-[1100px]:grid min-[1100px]:grid-cols-[170px_1fr_230px] min-[1100px]:gap-4 min-[1100px]:items-start">
+          <FormSummaryNav sections={SUMMARY_SECTIONS} checklistItems={checklistItems} />
+
+          <div className="space-y-2.5 min-w-0">
+            {/* ═══════════════ Démarrer ═══════════════ */}
+            <FormSection id="sec-demarrer" title="Démarrer" description="Type et catégorie">
+              <div>
+                <Label className="mb-3 block">
+                  Catégorie <span className="text-destructive">*</span>
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {categories?.map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      disabled={isSaving}
+                      onClick={() => setValue("category_id", cat.id, { shouldValidate: true, shouldDirty: true })}
+                      className={cn(
+                        "px-2 py-0.5 rounded-full text-[10px] border transition-colors",
+                        categoryId === cat.id
+                          ? "bg-[#1a1814] text-white border-[#1a1814]"
+                          : "bg-white text-[#1a1814] border-[#e9e6e1] hover:border-[#1a1814]/40"
+                      )}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+                {errors.category_id && <p className="text-destructive text-xs mt-2">{errors.category_id.message}</p>}
+              </div>
+            </FormSection>
+
+            {/* ═══════════════ 1. L'essentiel ═══════════════ */}
+            <FormSection id="sec-essentiel" title="1. L'essentiel" description="Ce qui s'affiche en haut de la fiche">
+              <div className="space-y-4">
+                <div className={cn("space-y-2", langHidden("en") && "hidden")}>
+                  <Label htmlFor="title" className="flex items-center gap-1.5">
+                    <span>🇬🇧</span> Titre (EN) <span className="text-destructive">*</span>
+                  </Label>
+                  <Input id="title" {...register("title")} placeholder="Ex: Weekend at the Sea" disabled={isSaving} />
+                  {errors.title && <p className="text-destructive text-xs">{errors.title.message}</p>}
+                </div>
+                <div className={cn("space-y-2", langHidden("fr") && "hidden")}>
+                  <Label htmlFor="title_fr" className="flex items-center gap-1.5">
+                    <span>🇫🇷</span> Titre (FR)
+                  </Label>
+                  <Input id="title_fr" {...register("title_fr")} placeholder="Ex: Week-end au bord de la mer" disabled={isSaving} />
+                </div>
+                <div className={cn("space-y-2", langHidden("he") && "hidden")}>
+                  <Label htmlFor="title_he" className="flex items-center gap-1.5">
+                    <span>🇮🇱</span> כותרת (HE)
+                  </Label>
+                  <Input id="title_he" {...register("title_he")} placeholder="כותרת בעברית" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className={cn("space-y-2", langHidden("en") && "hidden")}>
+                  <Label htmlFor="subtitle" className="flex items-center gap-1.5">
+                    <span>🇬🇧</span> Sous-titre (EN)
+                  </Label>
+                  <Input id="subtitle" {...register("subtitle")} placeholder="Courte accroche" disabled={isSaving} />
+                </div>
+                <div className={cn("space-y-2", langHidden("fr") && "hidden")}>
+                  <Label htmlFor="subtitle_fr" className="flex items-center gap-1.5">
+                    <span>🇫🇷</span> Sous-titre (FR)
+                  </Label>
+                  <Input id="subtitle_fr" {...register("subtitle_fr")} placeholder="Courte accroche en français" disabled={isSaving} />
+                </div>
+                <div className={cn("space-y-2", langHidden("he") && "hidden")}>
+                  <Label htmlFor="subtitle_he" className="flex items-center gap-1.5">
+                    <span>🇮🇱</span> תת-כותרת (HE)
+                  </Label>
+                  <Input id="subtitle_he" {...register("subtitle_he")} placeholder="תת-כותרת בעברית" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Parcours & hôtels (bloc existant) */}
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-medium block">Parcours & hôtels</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Multi-hôtel : ordonnez les étapes du séjour.{" "}
+                    {experienceHotels.length > 0 && (
+                      <span className="font-medium text-foreground">
+                        {experienceHotels.length} hôtel(s) — Total {totalNights} nuit(s)
+                      </span>
+                    )}
+                  </p>
+                </div>
                 {experienceHotels.length === 0 && (
-                  <p className="text-sm text-muted-foreground italic py-4 text-center">
+                  <p className="text-[11px] text-muted-foreground italic py-2 text-center">
                     Aucun hôtel dans le parcours. Ajoutez-en au moins un ci-dessous.
                   </p>
                 )}
@@ -1090,9 +1436,9 @@ export function UnifiedExperience2Form({
                 {experienceHotels.map((eh, index) => {
                   const hotel = hotels?.find((h) => h.id === eh.hotel_id);
                   return (
-                    <div key={eh.hotel_id} className="flex items-center gap-3 p-3 rounded-lg border bg-card">
+                    <div key={eh.hotel_id} className="flex items-center gap-2.5 p-2 rounded-[9px] border border-[#e9e6e1] bg-card">
                       <div className="flex flex-col items-center gap-1">
-                        <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#1a1814] text-white text-[11px] font-bold">
                           {index + 1}
                         </span>
                         <div className="flex flex-col gap-0.5">
@@ -1105,28 +1451,27 @@ export function UnifiedExperience2Form({
                         </div>
                       </div>
                       {hotel?.hero_image && (
-                        <img src={hotel.hero_image} alt={hotel.name || "Hotel"} className="w-16 h-16 rounded-md object-cover flex-shrink-0" />
+                        <img src={hotel.hero_image} alt={hotel.name || "Hotel"} className="w-11 h-11 rounded-md object-cover flex-shrink-0" />
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{hotel?.name || "Unknown hotel"}</p>
+                        <p className="text-[12px] font-medium truncate">{hotel?.name || "Unknown hotel"}</p>
                         <div className="flex items-center gap-3 mt-1">
                           <div className="flex items-center gap-1">
-                            <Label className="text-xs text-muted-foreground whitespace-nowrap">Nuits :</Label>
+                            <Label className="whitespace-nowrap">Nuits :</Label>
                             <Input
                               type="number"
                               min={1}
                               value={eh.nights}
                               onChange={(e) => updateHotelNights(index, parseInt(e.target.value) || 1)}
-                              className="w-16 h-7 text-sm"
+                              className="w-14"
                             />
                           </div>
                           <div className="flex items-center gap-1 flex-1">
-                            <Label className="text-xs text-muted-foreground whitespace-nowrap">Notes :</Label>
+                            <Label className="whitespace-nowrap">Notes :</Label>
                             <Input
                               value={eh.notes}
                               onChange={(e) => updateHotelNotes(index, e.target.value)}
                               placeholder="Ex: Arrivée, détente..."
-                              className="h-7 text-sm"
                             />
                           </div>
                         </div>
@@ -1162,16 +1507,167 @@ export function UnifiedExperience2Form({
                 {experienceHotels.length === 0 && (
                   <p className="text-sm text-destructive">Au moins un hôtel est requis dans le parcours.</p>
                 )}
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Photos */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Photos</CardTitle>
-                <CardDescription>Images de l'expérience pour les listings et la page détail</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
+              <Separator />
+
+              <div>
+                <div className="grid grid-cols-2 gap-4 max-w-2xl">
+                  <div>
+                    <Label className="mb-2 block">Nuits min / max</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input id="min_nights" type="number" min={1} max={8} {...register("min_nights", { valueAsNumber: true })} placeholder="1" disabled={isSaving} />
+                      <Input id="max_nights" type="number" min={1} max={8} {...register("max_nights", { valueAsNumber: true })} placeholder="4" disabled={isSaving} />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="mb-2 block">Participants min / max</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input id="min_party" type="number" min={1} max={100} {...register("min_party", { valueAsNumber: true })} placeholder="2" disabled={isSaving} />
+                      <Input id="max_party" type="number" min={1} max={100} {...register("max_party", { valueAsNumber: true })} placeholder="4" disabled={isSaving} />
+                    </div>
+                    {(errors.min_party || errors.max_party) && (
+                      <p className="text-destructive text-xs mt-1">Valeurs min/max invalides</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Points forts (badges) — par expérience */}
+            <HighlightTagsSelector2
+              experienceId={currentExperienceId || undefined}
+              localTags={!currentExperienceId ? localTags : undefined}
+              onLocalTagsChange={!currentExperienceId ? setLocalTags : undefined}
+            />
+
+              {/* Things to Know : durée, adresse, horaires, délai… */}
+              {experienceId && (
+                <>
+                  <Separator />
+                  <div>
+                    <Label className="text-sm font-medium block">Things to Know</Label>
+                    <p className="text-xs text-muted-foreground mb-3">Durée, adresse, horaires et infos pratiques affichées aux voyageurs.</p>
+                  <PracticalInfoManager
+                    experienceId={experienceId}
+                    experience={{
+                      min_party: existingExperience?.min_party ?? watch("min_party"),
+                      max_party: existingExperience?.max_party ?? watch("max_party"),
+                      cancellation_policy: existingExperience?.cancellation_policy || watch("cancellation_policy") || undefined,
+                      cancellation_policy_he: existingExperience?.cancellation_policy_he || watch("cancellation_policy_he") || undefined,
+                      duration: existingExperience?.duration || undefined,
+                      duration_he: existingExperience?.duration_he || undefined,
+                      checkin_time: existingExperience?.checkin_time || undefined,
+                      checkout_time: existingExperience?.checkout_time || undefined,
+                      address: existingExperience?.address || undefined,
+                      address_he: existingExperience?.address_he || undefined,
+                      lead_time_days: existingExperience?.lead_time_days || undefined,
+                    }}
+                    hotelId={experienceHotels.length > 0 ? experienceHotels[0].hotel_id : undefined}
+                  />
+                  </div>
+                </>
+              )}
+            </FormSection>
+
+            {/* ═══════════════ 2. Le récit ═══════════════ */}
+            <FormSection id="sec-recit" title="2. Le récit" description="Description, inclus, extras">
+              <div className={cn("space-y-2", langHidden("en") && "hidden")}>
+                <Label className="flex items-center gap-1.5">
+                  <span>🇬🇧</span> Description longue (EN) <span className="text-destructive">*</span>
+                </Label>
+                <Controller
+                  name="long_copy"
+                  control={control}
+                  render={({ field }) => (
+                    <RichTextEditor content={field.value || ""} onChange={field.onChange} placeholder="Description complète de l'expérience..." />
+                  )}
+                />
+                {errors.long_copy && <p className="text-destructive text-xs">{errors.long_copy.message}</p>}
+              </div>
+
+              <div className={cn("space-y-2", langHidden("fr") && "hidden")}>
+                <Label className="flex items-center gap-1.5">
+                  <span>🇫🇷</span> Description longue (FR)
+                </Label>
+                <Controller
+                  name="long_copy_fr"
+                  control={control}
+                  render={({ field }) => (
+                    <RichTextEditor content={field.value || ""} onChange={field.onChange} placeholder="Description complète de l'expérience en français..." />
+                  )}
+                />
+              </div>
+
+              <div className={cn("space-y-2", langHidden("he") && "hidden")}>
+                <Label className="flex items-center gap-1.5">
+                  <span>🇮🇱</span> תיאור ארוך (HE)
+                </Label>
+                <Controller
+                  name="long_copy_he"
+                  control={control}
+                  render={({ field }) => (
+                    <RichTextEditor content={field.value || ""} onChange={field.onChange} placeholder="תיאור מלא של החוויה..." dir="rtl" />
+                  )}
+                />
+              </div>
+
+              <Separator />
+
+              <div>
+                <Label className="text-sm font-medium mb-3 block">Le séjour comprend</Label>
+                <p className="text-xs text-muted-foreground mb-3">Les éléments inclus dans cette expérience</p>
+                <IncludesManager2
+                  experienceId={currentExperienceId || undefined}
+                  hotelIds={experienceHotels.map((h) => h.hotel_id)}
+                  localIncludes={!currentExperienceId ? localIncludes : undefined}
+                  onLocalIncludesChange={!currentExperienceId ? setLocalIncludes : undefined}
+                />
+              </div>
+
+              <Separator />
+
+              <div>
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div>
+                    <Label className="text-sm font-medium block">Options & extras</Label>
+                    <p className="text-xs text-muted-foreground">Extras que les voyageurs peuvent ajouter</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground">{showExtras ? "Activés" : "Désactivés"}</span>
+                    <Switch checked={showExtras} onCheckedChange={setShowExtras} />
+                  </div>
+                </div>
+                {showExtras && (
+                  <>
+                  {currentExperienceId && experienceHotels.length > 0 ? (
+                    <ExperienceExtrasSelector2
+                      experienceId={currentExperienceId}
+                      hotelIds={experienceHotels.map((h) => h.hotel_id)}
+                    />
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic text-center py-4">
+                      {experienceHotels.length === 0 ? "Ajoutez au moins un hôtel au parcours." : "Disponible après la première sauvegarde."}
+                    </p>
+                  )}
+                  </>
+                )}
+              </div>
+            </FormSection>
+
+            {/* ═══════════════ 3. Photos ═══════════════ */}
+            <FormSection
+              id="sec-photos"
+              title="3. Photos"
+              description={`${totalPhotosCount} photo${totalPhotosCount > 1 ? "s" : ""}${totalPhotosCount < 5 ? " · il en faut au moins 5" : ""}`}
+            >
+              {totalPhotosCount < 5 && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-[#fff4d6] text-[#8a6100] text-sm">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  Les fiches avec plusieurs photos convertissent mieux.
+                </div>
+              )}
                 {/* Reload HyperGuest photos for hotels with HG link but no photos */}
                 {(() => {
                   const hotelsWithHGNoPhotos = experienceHotels
@@ -1380,307 +1876,19 @@ export function UnifiedExperience2Form({
                     )}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+            </FormSection>
 
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* TAB: Description */}
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {activeTab === "description" && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Titres & Description</CardTitle>
-                <CardDescription>Contenu principal de la fiche expérience (EN + FR + HE)</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Titres */}
-                <div className="grid grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="title" className="flex items-center gap-1.5">
-                      <span>🇬🇧</span> Titre (EN) <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="title"
-                      {...register("title")}
-                      placeholder="Ex: Weekend at the Sea"
-                      disabled={isSaving}
-                    />
-                    {errors.title && <p className="text-destructive text-xs">{errors.title.message}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="title_fr" className="flex items-center gap-1.5">
-                      <span>🇫🇷</span> Titre (FR)
-                    </Label>
-                    <Input
-                      id="title_fr"
-                      {...register("title_fr")}
-                      placeholder="Ex: Week-end au bord de la mer"
-                      disabled={isSaving}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="title_he" className="flex items-center gap-1.5">
-                      <span>🇮🇱</span> כותרת (HE)
-                    </Label>
-                    <Input
-                      id="title_he"
-                      {...register("title_he")}
-                      placeholder="כותרת בעברית"
-                      dir="rtl"
-                      className="bg-hebrew-input"
-                      disabled={isSaving}
-                    />
-                  </div>
-                </div>
-
-                {/* Sous-titres */}
-                <div className="grid grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="subtitle" className="flex items-center gap-1.5">
-                      <span>🇬🇧</span> Sous-titre (EN)
-                    </Label>
-                    <Input
-                      id="subtitle"
-                      {...register("subtitle")}
-                      placeholder="Courte accroche"
-                      disabled={isSaving}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="subtitle_fr" className="flex items-center gap-1.5">
-                      <span>🇫🇷</span> Sous-titre (FR)
-                    </Label>
-                    <Input
-                      id="subtitle_fr"
-                      {...register("subtitle_fr")}
-                      placeholder="Courte accroche en français"
-                      disabled={isSaving}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="subtitle_he" className="flex items-center gap-1.5">
-                      <span>🇮🇱</span> תת-כותרת (HE)
-                    </Label>
-                    <Input
-                      id="subtitle_he"
-                      {...register("subtitle_he")}
-                      placeholder="תת-כותרת בעברית"
-                      dir="rtl"
-                      className="bg-hebrew-input"
-                      disabled={isSaving}
-                    />
-                  </div>
-                </div>
-
-                {/* Descriptions longues */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1.5">
-                    <span>🇬🇧</span> Description longue (EN) <span className="text-destructive">*</span>
-                  </Label>
-                  <Controller
-                    name="long_copy"
-                    control={control}
-                    render={({ field }) => (
-                      <RichTextEditor
-                        content={field.value || ""}
-                        onChange={field.onChange}
-                        placeholder="Description complète de l'expérience..."
-                      />
-                    )}
-                  />
-                  {errors.long_copy && <p className="text-destructive text-xs">{errors.long_copy.message}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1.5">
-                    <span>🇫🇷</span> Description longue (FR)
-                  </Label>
-                  <Controller
-                    name="long_copy_fr"
-                    control={control}
-                    render={({ field }) => (
-                      <RichTextEditor
-                        content={field.value || ""}
-                        onChange={field.onChange}
-                        placeholder="Description complète de l'expérience en français..."
-                      />
-                    )}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1.5">
-                    <span>🇮🇱</span> תיאור ארוך (HE)
-                  </Label>
-                  <Controller
-                    name="long_copy_he"
-                    control={control}
-                    render={({ field }) => (
-                      <RichTextEditor
-                        content={field.value || ""}
-                        onChange={field.onChange}
-                        placeholder="תיאור מלא של החוויה..."
-                        dir="rtl"
-                      />
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Catégorie & mise en avant */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Catégorie & Mise en avant</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="category_id">
-                      Catégorie <span className="text-destructive">*</span>
-                    </Label>
-                    <Controller
-                      name="category_id"
-                      control={control}
-                      render={({ field }) => (
-                        <Select value={field.value || ""} onValueChange={field.onChange} disabled={isSaving}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner une catégorie" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories?.map((cat) => (
-                              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                    {errors.category_id && <p className="text-destructive text-xs">{errors.category_id.message}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Slug (URL)</Label>
-                    <div className="flex gap-2 items-center">
-                      <Input
-                        value={generateSlug(watch("title") || "")}
-                        readOnly
-                        className="bg-muted text-muted-foreground text-sm"
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground">Généré automatiquement depuis le titre EN</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-4 rounded-lg border">
-                  <div>
-                    <p className="font-medium text-sm">Mise en avant sur l'accueil</p>
-                    <p className="text-xs text-muted-foreground">Afficher cette expérience dans la section vedette de la page d'accueil</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {featuredOnHome && (
-                      <div className="flex items-center gap-1.5">
-                        <Label className="text-xs text-muted-foreground">Ordre</Label>
-                        <Input
-                          type="number"
-                          min={0}
-                          value={homeDisplayOrder}
-                          onChange={(e) => setHomeDisplayOrder(parseInt(e.target.value) || 0)}
-                          className="w-16 h-7 text-sm"
-                        />
-                      </div>
-                    )}
-                    <Switch checked={featuredOnHome} onCheckedChange={setFeaturedOnHome} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* TAB: Inclus & Extras */}
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {activeTab === "inclus" && (
-          <div className="space-y-6">
-            {/* Highlight Tags — par expérience */}
-            <HighlightTagsSelector2
-              experienceId={currentExperienceId || undefined}
-              localTags={!currentExperienceId ? localTags : undefined}
-              onLocalTagsChange={!currentExperienceId ? setLocalTags : undefined}
-            />
-
-            {/* Includes */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Le séjour comprend</CardTitle>
-                <CardDescription>Les éléments inclus dans cette expérience</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <IncludesManager2
-                  experienceId={currentExperienceId || undefined}
-                  hotelIds={experienceHotels.map((h) => h.hotel_id)}
-                  localIncludes={!currentExperienceId ? localIncludes : undefined}
-                  onLocalIncludesChange={!currentExperienceId ? setLocalIncludes : undefined}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Extras */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Options & extras</CardTitle>
-                    <CardDescription>Extras que les voyageurs peuvent ajouter</CardDescription>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-muted-foreground">{showExtras ? "Activés" : "Désactivés"}</span>
-                    <Switch checked={showExtras} onCheckedChange={setShowExtras} />
-                  </div>
-                </div>
-              </CardHeader>
-              {showExtras && (
-                <CardContent>
-                  {currentExperienceId && experienceHotels.length > 0 ? (
-                    <ExperienceExtrasSelector2
-                      experienceId={currentExperienceId}
-                      hotelIds={experienceHotels.map((h) => h.hotel_id)}
-                    />
-                  ) : (
-                    <p className="text-sm text-muted-foreground italic text-center py-4">
-                      {experienceHotels.length === 0 ? "Ajoutez au moins un hôtel au parcours." : "Disponible après la première sauvegarde."}
-                    </p>
-                  )}
-                </CardContent>
-              )}
-            </Card>
-
-            {/* Reviews */}
-            <ReviewsManager2
-              experienceId={currentExperienceId || undefined}
-              localReviews={!currentExperienceId ? localReviews : undefined}
-              onLocalReviewsChange={!currentExperienceId ? setLocalReviews : undefined}
-            />
-          </div>
-        )}
-
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* TAB: Tarification */}
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {activeTab === "tarification" && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Tarification</CardTitle>
-                <CardDescription>Paramétrez les tarifs chambre et expérience, puis simulez votre commission</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-
+            {/* ═══════════════ 4. Prix & dispo ═══════════════ */}
+            <FormSection id={PRICING_SECTION_ID} title="4. Prix & dispo" description="Tarification, promo et disponibilités">
+              {/* Tarification : blocs existants, inchangés, seulement déplacés */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tarification</CardTitle>
+                  <CardDescription>Paramétrez les tarifs chambre et expérience, puis simulez votre commission</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
                 {/* ── Bloc tête : Pension préférée — pilote tous les filtres HyperGuest ── */}
-                <div className="rounded-lg border-2 border-primary/40 bg-primary/5 p-4 space-y-2">
+                <div className="rounded-[9px] border border-[#e9e6e1] bg-[#faf8f6] p-3 space-y-2">
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-4 w-4 text-primary" />
                     <Label htmlFor="preferred_board_type" className="text-sm font-semibold">
@@ -1724,8 +1932,9 @@ export function UnifiedExperience2Form({
                   </p>
                 </div>
 
+                  <InternalOnlyBox>
                 {/* ── Bloc 0 : Indicatif HyperGuest ── */}
-                <div className="rounded-lg bg-muted/50 border p-4 space-y-3">
+                <div className="rounded-[9px] bg-white border border-[#dbe3ea] p-3 space-y-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -1807,7 +2016,7 @@ export function UnifiedExperience2Form({
 
                 {/* ── MODÈLE STANDARD ── */}
                 {/* ── Bloc 1 : Chambre ── */}
-                <div className="rounded-lg border bg-card p-5 space-y-4">
+                <div className="rounded-[9px] border border-[#dbe3ea] bg-white p-3 space-y-3">
                   <div className="flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-primary" />
                     <p className="font-semibold text-sm">Chambre</p>
@@ -1870,7 +2079,7 @@ export function UnifiedExperience2Form({
                 </div>
 
                 {/* ── Bloc 2 : Expérience ── */}
-                <div className="rounded-lg border bg-card p-5 space-y-3">
+                <div className="rounded-[9px] border border-[#dbe3ea] bg-white p-3 space-y-3">
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-4 w-4 text-primary" />
                     <p className="font-semibold text-sm">Expérience <span className="text-xs font-normal text-muted-foreground ml-1">— remplis l'un ou l'autre</span></p>
@@ -1967,7 +2176,7 @@ export function UnifiedExperience2Form({
                 </div>
 
                 {/* ── Taxes (repliable) ── */}
-                <div className="rounded-lg bg-muted/40 overflow-hidden">
+                <div className="rounded-[9px] bg-white border border-[#dbe3ea] overflow-hidden">
                   <button
                     type="button"
                     onClick={() => setTaxesOpen((o) => !o)}
@@ -2024,7 +2233,7 @@ export function UnifiedExperience2Form({
                   const belowParity = barFloorRoom !== null && clientRoomPrice < barFloorRoom - 0.5;
 
                   return (
-                    <div className="rounded-lg border bg-card p-5 space-y-4">
+                    <div className="rounded-[9px] border border-[#dbe3ea] bg-white p-3 space-y-3">
                       <div className="flex items-center gap-2">
                         <Percent className="h-4 w-4 text-primary" />
                         <p className="font-semibold text-sm">Simulateur</p>
@@ -2134,22 +2343,30 @@ export function UnifiedExperience2Form({
                     </div>
                   );
                 })()}
+                  </InternalOnlyBox>
+                </CardContent>
+              </Card>
 
-              </CardContent>
-            </Card>
-
-            {/* Promo & dates */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Tag className="h-4 w-4" />
-                  Promo & dates
-                </CardTitle>
-                <CardDescription>Réductions promotionnelles et dates disponibles prédéfinies</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
+              {/* Promo & dates */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Tag className="h-4 w-4" />
+                    Promo & dates
+                  </CardTitle>
+                  <CardDescription>Réductions promotionnelles et dates disponibles prédéfinies</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
                 <div>
                   <p className="font-medium text-sm mb-3">Type de promo</p>
+                  {/* « Faux prix barré » n'est plus proposé. Une fiche qui l'aurait encore
+                      garde sa valeur (rien n'est modifié tant qu'on ne choisit pas autre chose). */}
+                  {watch("promo_type") === "fake_markup" && (
+                    <div className="flex items-center gap-2 p-3 mb-3 rounded-lg bg-[#fff4d6] text-[#8a6100] text-sm">
+                      <AlertTriangle className="h-4 w-4 shrink-0" />
+                      Type de promo non conforme, choisissez une remise réelle.
+                    </div>
+                  )}
                   <div className="flex items-end gap-3">
                     <div className="w-[200px] shrink-0">
                       <Label className="text-xs">Type</Label>
@@ -2164,7 +2381,9 @@ export function UnifiedExperience2Form({
                             <SelectContent>
                               <SelectItem value="none">Aucune promo</SelectItem>
                               <SelectItem value="real_discount">Remise réelle</SelectItem>
-                              <SelectItem value="fake_markup">Faux prix barré</SelectItem>
+                              {field.value === "fake_markup" && (
+                                <SelectItem value="fake_markup" disabled>Faux prix barré (non conforme)</SelectItem>
+                              )}
                             </SelectContent>
                           </Select>
                         )}
@@ -2214,20 +2433,35 @@ export function UnifiedExperience2Form({
                   </div>
                 </div>
 
-                <div className="border-t pt-6">
-                  <p className="font-medium text-sm mb-3">Dates disponibles</p>
-                  <DateOptionsManager experienceId={currentExperienceId} disabled={isSaving} />
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="border-t pt-6">
+                    <p className="font-medium text-sm mb-3">Dates disponibles</p>
+                    <DateOptionsManager experienceId={currentExperienceId} disabled={isSaving} />
+                  </div>
+                </CardContent>
+              </Card>
 
-            {/* Aperçu Prix & Disponibilités — en bas de page */}
-            {experienceHotels.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Aperçu Prix & Disponibilités</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
+              {/* Disponibilité */}
+              {experienceId && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Disponibilité</CardTitle>
+                    <CardDescription>
+                      Définissez les contraintes temporelles de cette expérience (jours, périodes, dates ponctuelles ou bloquées).
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <AvailabilityRulesManager experienceId={experienceId} />
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Aperçu Prix & Disponibilités */}
+              {experienceHotels.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Aperçu Prix & Disponibilités</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
                   {experienceHotels.map((eh, index) => {
                     const hotel = hotels?.find((h) => h.id === eh.hotel_id);
                     if (!hotel) return null;
@@ -2287,270 +2521,126 @@ export function UnifiedExperience2Form({
                       </Card>
                     );
                   })()}
-                </CardContent>
-              </Card>
-            )}
+                  </CardContent>
+                </Card>
+              )}
+            </FormSection>
+
+            {/* ═══════════════ 5. Conditions ═══════════════ */}
+            <FormSection id="sec-conditions" title="5. Conditions" description="Politique d'annulation de l'expérience (3 langues)">
+              <CancellationPolicyFields
+                template={cancellationTemplate}
+                onSelectTemplate={selectCancellationTemplate}
+                registerField={register}
+                langHidden={langHidden}
+                disabled={isSaving}
+              />
+            </FormSection>
+
+            {/* ═══════════════ 6. Publication ═══════════════ */}
+            <FormSection id="sec-publication" title="6. Publication" description="Slug, mise en avant, SEO" defaultOpen={false}>
+              <PublicationFields
+                slug={(currentExperienceId && existingExperience?.slug) || generateSlug(title || "")}
+                slugHelp={
+                  currentExperienceId && existingExperience?.slug
+                    ? "Défini à la création de l'expérience, il ne change plus ensuite"
+                    : undefined
+                }
+                featuredOnHome={featuredOnHome}
+                onFeaturedOnHomeChange={setFeaturedOnHome}
+                homeDisplayOrder={homeDisplayOrder}
+                onHomeDisplayOrderChange={setHomeDisplayOrder}
+              />
+
+              <Separator />
+
+              <SeoFields
+                registerField={register}
+                values={{
+                  seo_title_en: seoTitleEn,
+                  seo_title_fr: watch("seo_title_fr"),
+                  seo_title_he: watch("seo_title_he"),
+                  meta_description_en: watch("meta_description_en"),
+                  meta_description_fr: watch("meta_description_fr"),
+                  meta_description_he: watch("meta_description_he"),
+                }}
+                langHidden={langHidden}
+                onGenerateSeo={handleGenerateSeo}
+                isGeneratingSeo={isGeneratingSeo}
+                disabled={isSaving}
+              />
+
+              <Separator />
+
+              {/* Avis */}
+            <ReviewsManager2
+              experienceId={currentExperienceId || undefined}
+              localReviews={!currentExperienceId ? localReviews : undefined}
+              onLocalReviewsChange={!currentExperienceId ? setLocalReviews : undefined}
+            />
+
+              {experienceId && (
+                <>
+                  <Separator />
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={isSaving}
+                    className="text-[11px] text-[#6f6a63] underline hover:text-destructive"
+                  >
+                    Supprimer l'expérience
+                  </button>
+                </>
+              )}
+            </FormSection>
           </div>
-        )}
 
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* TAB: Things to Know */}
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {activeTab === "things" && (
-          <div className="space-y-6">
-            {/* Availability Rules */}
-            {experienceId && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Disponibilité</CardTitle>
-                  <CardDescription>
-                    Définissez les contraintes temporelles de cette expérience (jours, périodes, dates ponctuelles ou bloquées).
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <AvailabilityRulesManager experienceId={experienceId} />
-                </CardContent>
-              </Card>
+          {/* Aperçu en direct */}
+          <FormPreviewAside
+            heroImage={heroImagePreview || firstHotel?.hero_image || null}
+            title={title || ""}
+            subtitle={subtitleEn || ""}
+            checklistItems={checklistItems}
+          >
+            <ul className="space-y-1 text-xs text-[#1a1814]">
+              <li className="flex items-center gap-1.5">
+                <Moon className="h-3.5 w-3.5 text-muted-foreground shrink-0" /> {nightsLabel}
+              </li>
+              <li className="flex items-center gap-1.5">
+                <Utensils className="h-3.5 w-3.5 text-muted-foreground shrink-0" />{" "}
+                {preferredBoardType ? BOARD_LABELS[preferredBoardType] : "Pension la moins chère"}
+              </li>
+              <li className="flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5 text-muted-foreground shrink-0" /> {watch("min_party")} à {watch("max_party")} pers.
+              </li>
+            </ul>
+            {includesForPreview.length > 0 && (
+              <div className="border-t border-[#e9e6e1] pt-2">
+                <p className="text-[10px] uppercase tracking-[0.04em] text-[#6f6a63] font-medium mb-1">Le séjour comprend</p>
+                <ul className="space-y-0.5 text-xs text-[#1a1814]">
+                  {includesForPreview.map((inc, idx) => (
+                    <li key={idx} className="flex items-start gap-1.5">
+                      <Check className="h-3 w-3 mt-0.5 text-[#1f7a4d] shrink-0" /> {inc.title}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
+          </FormPreviewAside>
+        </div>
 
-            {/* Cancellation Policy */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Conditions</CardTitle>
-                <CardDescription>Politique d'annulation de l'expérience</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-6">
-                  <div>
-                    <Label className="flex items-center gap-1.5 mb-1">
-                      <span>🇬🇧</span> Politique d'annulation (EN)
-                    </Label>
-                    <Input id="cancellation_policy" {...register("cancellation_policy")} />
-                  </div>
-                  <div>
-                    <Label className="flex items-center gap-1.5 mb-1">
-                      <span>🇫🇷</span> Politique d'annulation (FR)
-                    </Label>
-                    <Input id="cancellation_policy_fr" {...register("cancellation_policy_fr")} />
-                  </div>
-                  <div>
-                    <Label className="flex items-center gap-1.5 mb-1">
-                      <span>🇮🇱</span> Politique d'annulation (HE)
-                    </Label>
-                    <Input id="cancellation_policy_he" {...register("cancellation_policy_he")} dir="rtl" className="bg-hebrew-input" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Participants & Durée */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Participants & Durée</CardTitle>
-                <CardDescription>Nombre de participants et durée du séjour</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="min_party">Participants min</Label>
-                    <Input
-                      id="min_party"
-                      type="number"
-                      min={1}
-                      max={100}
-                      {...register("min_party", { valueAsNumber: true })}
-                      disabled={isSaving}
-                    />
-                    {errors.min_party && <p className="text-destructive text-xs">{errors.min_party.message}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="max_party">Participants max</Label>
-                    <Input
-                      id="max_party"
-                      type="number"
-                      min={1}
-                      max={100}
-                      {...register("max_party", { valueAsNumber: true })}
-                      disabled={isSaving}
-                    />
-                    {errors.max_party && <p className="text-destructive text-xs">{errors.max_party.message}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="min_nights">Nuits min</Label>
-                    <Input
-                      id="min_nights"
-                      type="number"
-                      min={1}
-                      max={8}
-                      {...register("min_nights", { valueAsNumber: true })}
-                      disabled={isSaving}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="max_nights">Nuits max</Label>
-                    <Input
-                      id="max_nights"
-                      type="number"
-                      min={1}
-                      max={8}
-                      {...register("max_nights", { valueAsNumber: true })}
-                      disabled={isSaving}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Things to Know */}
-            {experienceId && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Things to Know</CardTitle>
-                  <CardDescription>Manage practical info shown to travelers.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <PracticalInfoManager
-                    experienceId={experienceId}
-                    experience={{
-                      min_party: existingExperience?.min_party ?? watch("min_party"),
-                      max_party: existingExperience?.max_party ?? watch("max_party"),
-                      cancellation_policy: existingExperience?.cancellation_policy || watch("cancellation_policy") || undefined,
-                      cancellation_policy_he: existingExperience?.cancellation_policy_he || watch("cancellation_policy_he") || undefined,
-                      duration: existingExperience?.duration || undefined,
-                      duration_he: existingExperience?.duration_he || undefined,
-                      checkin_time: existingExperience?.checkin_time || undefined,
-                      checkout_time: existingExperience?.checkout_time || undefined,
-                      address: existingExperience?.address || undefined,
-                      address_he: existingExperience?.address_he || undefined,
-                      lead_time_days: existingExperience?.lead_time_days || undefined,
-                    }}
-                    hotelId={experienceHotels.length > 0 ? experienceHotels[0].hotel_id : undefined}
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            {/* SEO */}
-            <Card className="bg-muted/30">
-              <CardHeader>
-                <CardTitle>SEO Configuration</CardTitle>
-                <CardDescription>Configure SEO metadata for search engines and social media</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-3 gap-6">
-                  {/* EN */}
-                  <div className="space-y-4">
-                    <div className="bg-background p-2 rounded flex items-center gap-1.5">
-                      <span>🇬🇧</span>
-                      <h4 className="font-medium text-sm">English SEO</h4>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="seo_title_en">SEO Title</Label>
-                      <Input id="seo_title_en" {...register("seo_title_en")} placeholder="Browser tab & Google" />
-                      <p className="text-xs text-muted-foreground">Max ~60 chars</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="meta_description_en">Meta Description</Label>
-                      <Textarea id="meta_description_en" {...register("meta_description_en")} placeholder="Google results" rows={3} />
-                      <p className="text-xs text-muted-foreground">Max ~155 chars</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="og_title_en">OG Title</Label>
-                      <Input id="og_title_en" {...register("og_title_en")} placeholder="Social media title" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="og_description_en">OG Description</Label>
-                      <Textarea id="og_description_en" {...register("og_description_en")} placeholder="Social media description" rows={3} />
-                    </div>
-                  </div>
-
-                  {/* HE */}
-                  <div className="space-y-4">
-                    <div className="bg-background p-2 rounded flex items-center gap-1.5">
-                      <span>🇮🇱</span>
-                      <h4 className="font-medium text-sm">Hebrew SEO (עברית)</h4>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="seo_title_he">כותרת SEO</Label>
-                      <Input id="seo_title_he" {...register("seo_title_he")} placeholder="כותרת עבור גוגל" dir="rtl" className="bg-hebrew-input" />
-                      <p className="text-xs text-muted-foreground">Max ~60 chars</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="meta_description_he">תיאור Meta</Label>
-                      <Textarea id="meta_description_he" {...register("meta_description_he")} placeholder="תיאור עבור גוגל" rows={3} dir="rtl" className="bg-hebrew-input" />
-                      <p className="text-xs text-muted-foreground">Max ~155 chars</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="og_title_he">כותרת OG</Label>
-                      <Input id="og_title_he" {...register("og_title_he")} placeholder="כותרת עבור רשתות חברתיות" dir="rtl" className="bg-hebrew-input" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="og_description_he">תיאור OG</Label>
-                      <Textarea id="og_description_he" {...register("og_description_he")} placeholder="תיאור עבור רשתות חברתיות" rows={3} dir="rtl" className="bg-hebrew-input" />
-                    </div>
-                  </div>
-
-                  {/* FR */}
-                  <div className="space-y-4">
-                    <div className="bg-background p-2 rounded flex items-center gap-1.5">
-                      <span>🇫🇷</span>
-                      <h4 className="font-medium text-sm">French SEO</h4>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="seo_title_fr">Titre SEO</Label>
-                      <Input id="seo_title_fr" {...register("seo_title_fr")} placeholder="Titre pour Google" />
-                      <p className="text-xs text-muted-foreground">Max ~60 chars</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="meta_description_fr">Description Meta</Label>
-                      <Textarea id="meta_description_fr" {...register("meta_description_fr")} placeholder="Description Google" rows={3} />
-                      <p className="text-xs text-muted-foreground">Max ~155 chars</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="og_title_fr">Titre OG</Label>
-                      <Input id="og_title_fr" {...register("og_title_fr")} placeholder="Réseaux sociaux" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="og_description_fr">Description OG</Label>
-                      <Textarea id="og_description_fr" {...register("og_description_fr")} placeholder="Description réseaux sociaux" rows={3} />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="og_image">Open Graph Image</Label>
-                  <Input id="og_image" {...register("og_image")} placeholder="Image URL for social media sharing" />
-                  <p className="text-xs text-muted-foreground">Recommended: 1200x630px. Leave empty to use hero image.</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+        {/* Checklist "Avant de publier" — visible sous le formulaire sur écran étroit */}
+        <PublishChecklist items={checklistItems} variant="top" />
       </form>
 
       {/* ── Sticky bottom save bar (mobile) ── */}
       {isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t p-3 flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="flex-1"
-            onClick={handleSubmit(handleSaveDraft, onInvalidSubmit)}
-            disabled={isSaving}
-          >
-            <Save className="h-4 w-4 mr-2" />
-            Draft
-          </Button>
-          <Button
-            type="button"
-            className="flex-1"
-            onClick={handleSubmit(handlePublish, onInvalidSubmit)}
-            disabled={!canPublish || isSaving}
-          >
-            <Rocket className="h-4 w-4 mr-2" />
-            Publish
-          </Button>
-        </div>
+        <FormMobileSaveBar
+          onSaveDraft={handleSubmit(handleSaveDraft, onInvalidSubmit)}
+          onPublish={handleSubmit(handlePublish, onInvalidSubmit)}
+          canPublish={!!canPublish}
+          busy={isSaving || heroImageUploading}
+        />
       )}
 
       {/* Delete Confirmation – requires typing experience name */}

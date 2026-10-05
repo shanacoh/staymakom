@@ -6,6 +6,27 @@
 
 ---
 
+## [2026-10-05] — Sprint 5C : refonte du formulaire « hôtel + expérience »
+
+### Ce qui a changé côté code
+- `src/components/forms/UnifiedExperience2Form.tsx` : les 5 onglets sont remplacés par une seule page qui défile, avec les mêmes sections repliables que le formulaire expérience seule (Démarrer, L'essentiel, Le récit, Photos, Prix & dispo, Conditions, Publication), le même en-tête collant, le sommaire à gauche, l'aperçu et la checklist à droite. Une langue à la fois (FR | EN | HE) avec compteur de champs manquants, « Traduire tout », « Générer avec l'IA » en mode hôtel, « Générer le SEO », annulation par modèles, lien « Supprimer l'expérience » en bas. **Le code d'enregistrement et le code de tarification (pension, HyperGuest, chambre, expérience, taxes, simulateur) sont identiques ligne pour ligne à la version précédente** : seuls leur emplacement et l'habillage des encadrés ont changé.
+- Chargement HyperGuest : il se déclenchait à l'ouverture de l'onglet Tarification ; il se déclenche maintenant quand la section « Prix & dispo » arrive à l'écran (même effet, sans onglet).
+- Promo : l'option « Faux prix barré » n'est plus proposée dans la liste. Une fiche qui l'aurait encore garde sa valeur et affiche un bandeau jaune. Le calcul des prix (`useExperience2Price.ts`) n'est pas modifié.
+- `src/components/forms/shared/` (nouveau dossier) : briques sorties du formulaire expérience seule pour être utilisées par les deux formulaires, sans changement visuel : `FormHeaderBar`, `FormSection`, `FormSummaryNav` (sommaire, aperçu, checklist), `CancellationPolicyFields`, `SeoFields`, `PublicationFields`, `InternalOnlyBox`, `useGenerateSeo`.
+- `src/components/forms/styled/managers.tsx` (nouveau) : habillage des éditeurs de listes, qui existait en 4 copies dans les éditeurs standalone ; il est maintenant unique et utilisé aussi par les éditeurs du formulaire hôtel (`IncludesManager2`, `HighlightTagsSelector2`, `ReviewsManager2`, `PracticalInfoManager`, `DateOptionsManager`, `AvailabilityRulesManager`, `Experience2AddonsManager`). Changement d'apparence uniquement.
+- `src/components/forms/StandaloneExperienceForm.tsx` et les 4 éditeurs standalone : utilisent les briques communes ci-dessus. Aucun changement visuel ni de comportement.
+- `src/components/forms/ai/AiDraftPanel.tsx` : nouveau réglage `experienceType` ("standalone" par défaut, "hotel"), liste des champs autorisés par formulaire, champs numériques (participants, nuits). Sur le formulaire hôtel, l'IA ne remplit que titres, accroches, descriptions, annulation, SEO, participants et nuits.
+- `src/components/admin/IncludesManager2.tsx` : champ « Titre (FR) » ajouté, formulaire d'ajout replié derrière un lien. `HighlightTagsSelector2.tsx` : badges en pastilles compactes.
+- `supabase/functions/generate-experience-draft/index.ts` : pour le type hôtel, l'IA peut proposer les nuits min/max. **À redéployer.**
+
+### Ce qui a changé côté base de données
+- `20261005000000_add_fr_fields_experience2_includes.sql` : 2 nouvelles colonnes optionnelles `title_fr` et `description_fr` sur `experience2_includes` (version française des inclus des expériences hôtel). Aucune colonne existante n'est modifiée. Tant qu'elles sont vides, le site affiche l'anglais comme avant. **À appliquer en base avant de mettre le code en ligne**, sinon l'ajout ou la modification d'un inclus hôtel échoue.
+
+### Pourquoi ce changement
+Shana voulait que le formulaire hôtel ait exactement le même rendu et les mêmes outils (IA, traduction, sommaire, checklist) que le formulaire expérience seule refait aux sprints 5A et 5B, sans toucher à la tarification ni aux données existantes.
+
+---
+
 ## [2026-10-02] — Sprint 4 : bloc "L'essentiel", pastille équipe, bandeau presse
 
 ### Ce qui a changé côté code
