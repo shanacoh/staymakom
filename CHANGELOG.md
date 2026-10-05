@@ -6,6 +6,26 @@
 
 ---
 
+## [2026-10-05] — Sprint 5D : carrousel et infos clés en haut de fiche
+
+### Ce qui a changé côté code
+- `src/components/experience/HeroPhotoCarousel.tsx` (nouveau) : la grande photo du haut de fiche devient un carrousel (couverture puis galerie, même liste de photos qu'avant). Ordinateur : flèches rondes blanches à gauche et à droite. Mobile : glisser au doigt. Dans les deux cas, compteur en bas à droite « 1 / 9 · Voir tout ». Clic sur la photo ou sur le compteur : galerie plein écran, ouverte sur la photo affichée. **Pas de vignettes sous la photo.** Avec une seule photo : ni flèches ni compteur, simple image comme avant.
+- `src/components/experience-test/HeroSection.tsx` : utilise ce carrousel sur mobile et sur ordinateur. Sur mobile, les petits points et le compteur en haut à droite sont remplacés par le compteur en bas à droite, et la limite de 8 photos est levée. Nouveau réglage `keyFacts` : un emplacement sous « Sélectionné par STAYMAKOM » (ordinateur uniquement), au-dessus de partage et favori. La mise en page (photo à gauche, texte centré à droite) n'a pas changé. Ce composant sert aussi à l'ancienne page `Experience.tsx`, qui reçoit donc le carrousel, sans la bande d'infos.
+- `src/components/experience/HeroKeyFacts.tsx` (nouveau) : bande de 3 cases séparées par des traits fins, puis « À partir de ₪X », puis bouton rouge arrondi « Voir les dates ». Une case vide est masquée ; à moins de 2 cases, la bande n'apparaît pas. Ce composant ne calcule aucun prix : il affiche le texte qu'on lui donne.
+- `src/components/experience/HotelHeroKeyFacts.tsx` (nouveau) : version hôtel + expérience. Lit le prix avec le même outil (`useFromPrice`) et les mêmes réglages que l'encart prix du panneau de réservation (`HeroBookingPreview2`) et la barre du bas (`StickyPriceBar`). Ce prix est celui d'une nuit : on écrit « / séjour » seulement si le séjour minimum est d'une nuit, sinon « / nuit ».
+- `src/lib/heroKeyFacts.ts` (nouveau) + `heroKeyFacts.test.ts` : textes courts des cases. Expérience seule : Durée / Groupe (« 1 à 10 ») / Annulation. Hôtel : Séjour (nuits min) / Pension / Annulation. Le résumé d'annulation (« 48 h », « 7 j », « Non remboursable ») vient d'abord des modèles du back-office ; pour un texte libre, on prend le premier délai lisible ; si rien n'est reconnaissable, la case est masquée.
+- `src/pages/StandaloneExperience.tsx` et `src/pages/Experience2.tsx` : branchent la bande, le prix et le bouton. Expérience seule : le prix est la même valeur, écrite de la même façon, que dans le panneau de réservation (prix de base de la fiche) ; pas de prix si la fiche est « sur demande ». Le bouton fait défiler jusqu'au panneau de réservation (ou ouvre la feuille de réservation sur petit écran). **Aucune ligne de la réservation, du prix, du paiement, des disponibilités ou du checkout n'a été modifiée.**
+- `src/components/experience/GalleryModal.tsx` : envoie aussi le nouvel événement de suivi à chaque photo vue en plein écran.
+- `src/lib/analytics.ts` : `gallery_opened` (déjà existant, maintenant envoyé), nouveau `gallery_photo_viewed` (index de la photo, nombre total, `surface` = `carousel` ou `fullscreen`), et `hero_cta_clicked` accepte `cta = see_dates` (avec le slug de la fiche). Les anciens événements `photo_gallery_clicked` et `photo_index_viewed` sont conservés pour ne pas casser les graphiques existants.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration.
+
+### Pourquoi ce changement
+Shana voulait que le haut de fiche donne envie et informe tout de suite : plusieurs photos sans quitter la page, puis les 3 infos qui décident (durée ou séjour, groupe ou pension, annulation), le prix « à partir de » et un accès direct aux dates, en gardant la mise en page actuelle.
+
+---
+
 ## [2026-10-05] — Sprint 5C : refonte du formulaire « hôtel + expérience »
 
 ### Ce qui a changé côté code

@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Star, Share, Heart, Sparkles, Users, Leaf, Wine, Zap, Laptop, Brain, Mountain, Utensils, Plane, Camera, Music, Book, Coffee, Sun, Moon, Compass, Map, Globe, Briefcase, Award, Gift, Gem, Crown, Shield, Flame, Droplet, Wind, Cloud, TreePine, Flower2, type LucideIcon } from "lucide-react";
-import { Grid3X3 } from "lucide-react";
 import { resizedImageUrl } from "@/lib/imageUrl";
 import {
   Breadcrumb,
@@ -35,12 +34,8 @@ function getCategoryImage(slug?: string): string | null {
   if (s.includes("sporty"))                                        return "/icons/icon-sporty.png";
   return null;
 }
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-} from "@/components/ui/carousel";
 import GalleryModal from "@/components/experience/GalleryModal";
+import HeroPhotoCarousel from "@/components/experience/HeroPhotoCarousel";
 import ShareDialog from "@/components/experience/ShareDialog";
 import { useLocalizedNavigation } from "@/hooks/useLocalizedNavigation";
 import { useSearchParams } from "react-router-dom";
@@ -52,7 +47,7 @@ import { toast } from "sonner";
 import AuthPromptDialog from "@/components/auth/AuthPromptDialog";
 import HeartBurst from "@/components/ui/HeartBurst";
 import LocationPopover from "@/components/experience/LocationPopover";
-import { trackPhotoGalleryClicked } from "@/lib/analytics";
+import { trackPhotoGalleryClicked, trackGalleryOpened, trackGalleryPhotoViewed } from "@/lib/analytics";
 
 interface Review {
   id: string;
@@ -93,6 +88,8 @@ interface HeroSectionProps {
   experienceMode?: 'stay' | 'live';
   /** Table d'origine de experienceId, pour que le favori soit enregistré avec le bon type */
   experienceType?: 'experiences' | 'experiences2' | 'standalone';
+  /** Bande d'infos clés + prix « à partir de » + bouton « Voir les dates » (colonne de droite, ordinateur uniquement). */
+  keyFacts?: ReactNode;
 }
 
 const HeroSection = ({ 
@@ -125,10 +122,10 @@ const HeroSection = ({
   slug,
   experienceMode = 'stay',
   experienceType = 'experiences2',
+  keyFacts,
 }: HeroSectionProps) => {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [galleryStartIndex, setGalleryStartIndex] = useState(0);
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [showBurst, setShowBurst] = useState(false);
@@ -139,7 +136,17 @@ const HeroSection = ({
   const [searchParams] = useSearchParams();
   const isLaunch = searchParams.get("context") === "launch";
 
-  const displayPhotos = photos.slice(0, 4);
+  const openGallery = (index: number) => {
+    trackPhotoGalleryClicked(title);
+    trackGalleryOpened(slug);
+    setGalleryStartIndex(index);
+    setIsGalleryOpen(true);
+  };
+
+  const handleCarouselPhotoViewed = useCallback(
+    (index: number) => trackGalleryPhotoViewed(slug, index, photos.length, "carousel"),
+    [slug, photos.length],
+  );
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -309,6 +316,9 @@ const HeroSection = ({
         {renderSocialProof()}
       </div>
 
+      {/* 4bis. Infos clés, prix « à partir de » et bouton « Voir les dates » (ordinateur) */}
+      {!isMobile && keyFacts}
+
       {/* 5. Share + Wishlist — inline */}
       <div className={cn("flex items-center gap-2", isMobile ? "justify-center" : "justify-center")}>
         <button 
@@ -425,55 +435,18 @@ const HeroSection = ({
           </Breadcrumb>
         </div>
 
-        {/* MOBILE: Full-width carousel */}
+        {/* MOBILE: carrousel pleine largeur, glisser au doigt */}
         <div className="block md:hidden">
           <div className="px-4 pt-2">
-            <div className="relative">
-              <Carousel 
-                className="w-full"
-                opts={{ loop: true }}
-                setApi={(api) => {
-                  api?.on("select", () => {
-                    setCarouselIndex(api.selectedScrollSnap());
-                  });
-                }}
-              >
-                <CarouselContent>
-                  {photos.slice(0, 8).map((photo, index) => (
-                    <CarouselItem key={index}>
-                      <div 
-                        className="aspect-[4/3] w-full cursor-pointer rounded-2xl overflow-hidden"
-                        onClick={() => { trackPhotoGalleryClicked(title); setIsGalleryOpen(true); }}
-                      >
-                        <img
-                          src={resizedImageUrl(photo, 900) || "/placeholder.svg"}
-                          alt={`${title} - ${index + 1}`}
-                          loading={index === 0 ? undefined : "lazy"}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-              </Carousel>
-              
-              {/* Dots indicator */}
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
-                {photos.slice(0, 8).map((_, index) => (
-                  <div 
-                    key={index}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      index === carouselIndex ? 'bg-white' : 'bg-white/40'
-                    }`}
-                  />
-                ))}
-              </div>
-
-              {/* Photo counter */}
-              <div className="absolute top-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-md">
-                {carouselIndex + 1} / {Math.min(photos.length, 8)}
-              </div>
-            </div>
+            <HeroPhotoCarousel
+              variant="mobile"
+              photos={photos}
+              title={title}
+              lang={lang}
+              onOpenGallery={openGallery}
+              onPhotoViewed={handleCarouselPhotoViewed}
+              className="aspect-[4/3] w-full rounded-2xl"
+            />
           </div>
 
           {/* Mobile: Header block below photos */}
@@ -485,29 +458,17 @@ const HeroSection = ({
         {/* DESKTOP: 2-column layout */}
         <div className="hidden md:block max-w-6xl mx-auto px-4 sm:px-6 lg:px-12 xl:px-16">
           <div className="grid grid-cols-[65fr_35fr] gap-4 md:gap-6 xl:gap-8 items-center">
-            {/* LEFT: Single large photo */}
+            {/* LEFT: grande photo en carrousel (couverture puis galerie) */}
             <div className="relative h-[calc(100vh-12rem)]">
-              <div 
-                className="relative w-full h-full rounded-xl overflow-hidden cursor-pointer"
-                onClick={() => { trackPhotoGalleryClicked(title); setCurrentPhotoIndex(0); setIsGalleryOpen(true); }}
-              >
-                <img
-                  src={resizedImageUrl(photos[0], 1400, 80) || "/placeholder.svg"}
-                  alt={title}
-                  className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                />
-                {photos.length > 1 && (
-                  <button
-                    className="absolute bottom-4 right-4 z-10 px-3 py-2 rounded-lg bg-white/90 hover:bg-white shadow-md transition-all flex items-center gap-2"
-                    onClick={(e) => { e.stopPropagation(); setCurrentPhotoIndex(0); setIsGalleryOpen(true); }}
-                  >
-                    <Grid3X3 className="h-4 w-4 text-foreground" />
-                    <span className="text-sm font-medium text-foreground">
-                      {lang === 'he' ? `הצג את כל ${photos.length} התמונות` : lang === 'fr' ? `Voir les ${photos.length} photos` : `View all ${photos.length} photos`}
-                    </span>
-                  </button>
-                )}
-              </div>
+              <HeroPhotoCarousel
+                variant="desktop"
+                photos={photos}
+                title={title}
+                lang={lang}
+                onOpenGallery={openGallery}
+                onPhotoViewed={handleCarouselPhotoViewed}
+                className="w-full h-full rounded-xl"
+              />
             </div>
 
             {/* RIGHT: Header block */}
@@ -524,7 +485,7 @@ const HeroSection = ({
         onOpenChange={setIsGalleryOpen}
         photos={photos}
         title={title}
-        initialIndex={carouselIndex}
+        initialIndex={galleryStartIndex}
         slug={slug}
       />
 

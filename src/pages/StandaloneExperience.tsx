@@ -14,6 +14,8 @@ import LocationMap from "@/components/experience-test/LocationMap";
 import WhatsIncludedPhotos2 from "@/components/experience-test/WhatsIncludedPhotos2";
 import EssentialsBlock from "@/components/experience/EssentialsBlock";
 import AskTeam from "@/components/experience/AskTeam";
+import HeroKeyFacts from "@/components/experience/HeroKeyFacts";
+import { buildStandaloneKeyFacts } from "@/lib/heroKeyFacts";
 import StandaloneExtrasSection from "@/components/experience-test/StandaloneExtrasSection";
 import StandaloneRequestPanel from "@/components/experience-test/StandaloneRequestPanel";
 import { ReviewsBlock } from "@/components/reviews/ReviewsBlock";
@@ -48,6 +50,7 @@ import {
   trackRequestClicked,
   trackBookingPanelOpened,
   trackVitrineBlockedShown,
+  trackHeroCtaClicked,
   type ProductLike,
 } from "@/lib/analytics";
 import { useSetCurrentProduct } from "@/contexts/CurrentProductContext";
@@ -1134,6 +1137,43 @@ export default function StandaloneExperience() {
             reviewsCount={reviewsSummary?.count ?? 0}
             onScrollToReviews={() => reviewsRef.current?.scrollIntoView({ behavior: "smooth" })}
             slug={experience.slug}
+            keyFacts={
+              <HeroKeyFacts
+                lang={lang as "en" | "he" | "fr"}
+                facts={buildStandaloneKeyFacts(
+                  {
+                    duration: (getLocalizedField(experience, "duration", lang) as string) || experience.duration || null,
+                    minParty: experience.min_party,
+                    maxParty: experience.max_party,
+                    cancellation_policy: experience.cancellation_policy,
+                    cancellation_policy_fr: experience.cancellation_policy_fr,
+                    cancellation_policy_he: experience.cancellation_policy_he,
+                  },
+                  lang as "en" | "he" | "fr",
+                )}
+                // Même valeur et même mise en forme que le panneau de réservation (aucun calcul).
+                fromPrice={
+                  experience.is_bookable === false
+                    ? null
+                    : {
+                        amount: `${currencySymbol}${experience.base_price.toFixed(0)}`,
+                        unit:
+                          experience.base_price_type === "fixed"
+                            ? (lang === "he" ? "מחיר קבוע" : lang === "fr" ? "forfait" : "fixed")
+                            : (lang === "he" ? "לאדם" : lang === "fr" ? "/ pers." : "/ person"),
+                      }
+                }
+                onSeeDates={() => {
+                  trackHeroCtaClicked("see_dates", experience.slug);
+                  // Ordinateur : on descend jusqu'au panneau. Mobile : on ouvre la feuille de réservation.
+                  if (window.matchMedia("(min-width: 768px)").matches) {
+                    document.getElementById("standalone-booking-panel")?.scrollIntoView({ behavior: "smooth" });
+                  } else {
+                    setIsSheetOpen(true);
+                  }
+                }}
+              />
+            }
           />
         </section>
 

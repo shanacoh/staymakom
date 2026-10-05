@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { BookingPanel2 } from "@/components/experience/BookingPanel2";
 import HeroSection from "@/components/experience-test/HeroSection";
 import HeroBookingPreview2 from "@/components/experience-test/HeroBookingPreview2";
+import HotelHeroKeyFacts from "@/components/experience/HotelHeroKeyFacts";
+import { buildHotelKeyFacts } from "@/lib/heroKeyFacts";
 
 import YourStaySection from "@/components/experience-test/YourStaySection";
 // Chargée à la demande : embarque Leaflet (carte interactive), inutile tant
@@ -38,6 +40,7 @@ import {
   trackExperienceViewed,
   trackExperienceEngaged,
   trackBookClicked,
+  trackHeroCtaClicked,
   type ProductLike,
 } from "@/lib/analytics";
 import { useSetCurrentProduct } from "@/contexts/CurrentProductContext";
@@ -644,6 +647,37 @@ export default function Experience2() {
         reviewsCount={reviewsCount}
         onScrollToReviews={scrollToReviews}
         slug={experience.slug}
+        keyFacts={
+          <HotelHeroKeyFacts
+            lang={lang as "en" | "he" | "fr"}
+            facts={buildHotelKeyFacts(
+              {
+                minNights: experience.min_nights,
+                boardType: (experience as any).preferred_board_type,
+                cancellation_policy: experience.cancellation_policy,
+                cancellation_policy_fr: (experience as any).cancellation_policy_fr,
+                cancellation_policy_he: experience.cancellation_policy_he,
+              },
+              lang as "en" | "he" | "fr",
+            )}
+            // Mêmes réglages que l'encart prix du panneau de réservation et la barre du bas.
+            experienceId={experience.id}
+            hyperguestPropertyId={hyperguestPropertyId || null}
+            preferredBoardType={(experience as any).preferred_board_type ?? null}
+            minParty={experience.min_party || 2}
+            minNights={experience.min_nights || 1}
+            availabilityRules={availabilityRules as any}
+            onSeeDates={() => {
+              trackHeroCtaClicked("see_dates", experience.slug);
+              // Ordinateur : on descend jusqu'au panneau. Mobile : on ouvre la feuille de réservation.
+              if (window.matchMedia("(min-width: 768px)").matches) {
+                document.getElementById("booking-panel-v2")?.scrollIntoView({ behavior: "smooth" });
+              } else {
+                setIsSheetOpen(true);
+              }
+            }}
+          />
+        }
       />
         </section>
 

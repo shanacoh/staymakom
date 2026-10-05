@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
-import { trackPhotoIndexViewed } from "@/lib/analytics";
+import { trackPhotoIndexViewed, trackGalleryPhotoViewed } from "@/lib/analytics";
 
 interface GalleryModalProps {
   open: boolean;
@@ -36,6 +36,7 @@ const GalleryModal = ({
     setCurrentIndex(index);
     if (hasMounted.current && slug) {
       trackPhotoIndexViewed(slug, index, photos.length);
+      trackGalleryPhotoViewed(slug, index, photos.length, "fullscreen");
     }
   }, [emblaApi, slug, photos.length]);
 

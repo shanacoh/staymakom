@@ -47,8 +47,8 @@ export function trackFindEscapeClicked() {
   safeTrack("find_escape_clicked");
 }
 
-export function trackHeroCtaClicked(cta: "find" | "plan") {
-  safeTrack("hero_cta_clicked", { cta });
+export function trackHeroCtaClicked(cta: "find" | "plan" | "see_dates", slug?: string) {
+  safeTrack("hero_cta_clicked", slug ? { cta, slug } : { cta });
 }
 
 export function trackScrollDepth(page: string, depth: 25 | 50 | 75 | 100) {
@@ -484,6 +484,17 @@ export function trackEssentialsExpanded(slug?: string) {
 
 export function trackGalleryOpened(slug?: string) {
   safeTrack("gallery_opened", { slug });
+}
+
+// index = position de la photo (0 = couverture). surface = où la photo a été vue :
+// dans le carrousel du haut de fiche ou dans la galerie plein écran.
+export function trackGalleryPhotoViewed(
+  slug: string | undefined,
+  index: number,
+  totalPhotos: number,
+  surface: "carousel" | "fullscreen",
+) {
+  safeTrack("gallery_photo_viewed", { slug, index, total_photos: totalPhotos, surface });
 }
 
 export function trackParticipantsChanged(slug: string, adults: number, children?: number) {
