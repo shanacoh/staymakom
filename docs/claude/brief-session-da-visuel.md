@@ -25,3 +25,13 @@ Priorité : unifier l'identité (une seule couleur de marque, le rouge #ad1414, 
 - Titre du hero de la home « Don't choose a city, choose your escape » : reste en anglais. Catégories conservées.
 - Aucun prénom de personne sur le site, voix « notre équipe ». Jamais de tiret long dans les textes visibles.
 - Maquette HTML d'abord, validation, puis code. Étape par étape avec le diff à chaque étape.
+
+## Décisions du 5 et 6 octobre 2026
+- Maquette validée : docs/claude/maquettes/maquette-da-home-panier-paiement.html.
+- Lien région : au-dessus des cartes, à droite. « Autour de moi » dès le lancement.
+- 6 grandes régions : Tel Aviv et la côte, Jérusalem, Galilée et Golan (avec le Kinneret), Carmel et Haïfa, Néguev et mer Morte, Eilat et Arava.
+- Titres en majuscules, mais petits.
+- Traits de feutre : conservés uniquement là où ils existent déjà, aucun ajout.
+
+## À traiter plus tard (ne pas oublier)
+- Harmoniser le back-office avec la nouvelle DA. Il reste volontairement en bleu marine pour l'instant (classe `.backoffice`). Tout n'a pas vocation à devenir rouge : passage dédié, écran par écran, pour un résultat cohérent et naturel. À rappeler dans chaque rapport de fin de session.

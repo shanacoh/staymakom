@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Session DA : home, panier, paiement</title>
+<style>
+/* ===== Les seules valeurs autorisées par la nouvelle DA ===== */
+:root{
+  --red:#ad1414;      /* la seule couleur de marque */
+  --redsoft:#fdf2f2;  /* son fond très pâle (sélection, survol) */
+  --ink:#1a1814;      /* le seul noir */
+  --muted:#6f6a63;    /* le seul gris de texte */
+  --line:#e9e6e1;     /* traits et bordures */
+  --soft:#faf8f6;     /* le seul beige de fond */
+  --r-pill:999px;     /* boutons et pastilles */
+  --r-card:14px;      /* cartes et blocs */
+  --r-field:10px;     /* champs et petites vignettes */
+  --bg:#f1efec;       /* fond de la maquette, pas du site */
+  --photo:linear-gradient(135deg,#e7d3bf,#c99f7e);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Inter",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;color:var(--ink);background:var(--bg);font-size:14px;line-height:1.5}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
+.top{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--line);display:flex;gap:6px;padding:10px 16px;align-items:center;flex-wrap:wrap}
+.top b{margin-right:10px;letter-spacing:.08em;font-size:12px;text-transform:uppercase}
+.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font-size:13px}
+.tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.view{display:none;padding:22px 16px 60px}.view.on{display:block}
+.note{max-width:1180px;margin:0 auto 16px;color:var(--muted);font-size:13px;line-height:1.55}
+.note b{color:var(--ink)}
+.toggle{display:flex;justify-content:center;gap:6px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.toggle span{font-size:12px;color:var(--muted);margin-right:4px}
+.fwrap{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+.cap{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:8px}
+.desk{width:900px;max-width:100%;background:#fff;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.07);overflow:hidden;position:relative}
+.mob{width:360px;max-width:100%;background:#fff;border-radius:22px;box-shadow:0 10px 40px rgba(0,0,0,.07);overflow:hidden;position:relative}
+
+/* ===== Éléments communs du site ===== */
+.hd{display:flex;justify-content:space-between;align-items:center;padding:0 18px;height:48px;border-bottom:1px solid var(--line)}
+.hd .lg{font-weight:800;letter-spacing:-.03em;color:var(--red);font-size:15px}
+.hd .sw{display:flex;border:1px solid var(--line);border-radius:var(--r-pill);padding:2px;font-size:11.5px}
+.hd .sw span{padding:4px 11px;border-radius:var(--r-pill);color:var(--muted)}
+.hd .sw .on{background:var(--ink);color:#fff}
+.hd .ic{color:var(--muted);font-size:12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:40px;padding:0 20px;border-radius:var(--r-pill);font-size:13px;font-weight:600;background:var(--red);color:#fff;border:1px solid var(--red)}
+.btn.ghost{background:#fff;color:var(--ink);border-color:var(--line)}
+.btn.glass{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.7);color:#fff}
+.feutre{position:relative;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#fff;padding:8px 10px;z-index:0}
+.feutre::before{content:"";position:absolute;left:8px;right:8px;bottom:6px;height:12px;z-index:-1;background:rgba(173,20,20,.55);border-radius:60% 40% 70% 30%/40% 60% 30% 70%;transform:rotate(-1deg)}
+.btn.sm{height:34px;padding:0 14px;font-size:12.5px}
+.btn.full{width:100%}
+.lab{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* ===== HOME ===== */
+.hero{position:relative;height:300px;display:flex;align-items:center;justify-content:center;text-align:center;background:linear-gradient(180deg,#d8c2a6,#b98f6c);background-size:cover;background-position:center}
+.hero::before{content:"";position:absolute;inset:0;background:url("../../../src/assets/hero-road-desert.jpg") center/cover}
+.hero::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.15)}
+.hero>div{position:relative;z-index:1;padding:0 16px}
+.hero h1{font-size:28px;font-weight:700;line-height:1.15;letter-spacing:.02em;text-transform:uppercase;color:var(--red)}
+.hero p{font-size:14px;color:var(--red);margin-top:8px}
+.hero .cta{display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.sect{padding:26px 22px 28px}
+.sect h2{font-size:16px;font-weight:700;line-height:1.25;letter-spacing:.03em;text-transform:uppercase;text-align:center}
+.sect .sub{font-size:13px;color:var(--muted);text-align:center;margin-top:4px}
+.cats{display:flex;justify-content:center;gap:6px;margin-top:16px;overflow-x:auto;scrollbar-width:none}
+.cats::-webkit-scrollbar{display:none}
+.cat{flex-shrink:0;width:74px;padding:8px 2px;border-radius:var(--r-card);display:flex;flex-direction:column;align-items:center;gap:5px;font-size:10px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;line-height:1.25;text-align:center;border:1px solid transparent}
+.cat i{width:34px;height:34px;border-radius:50%;background:var(--soft);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:16px}
+.cat{position:relative;z-index:0}
+.cat.on{color:var(--red)}
+.cat.on::before{content:"";position:absolute;inset:2px;z-index:-1;background:rgba(173,20,20,.14);border-radius:60% 40% 75% 25%/35% 65% 45% 55%;transform:rotate(-3deg)}
+.cat.on:nth-child(even)::before{border-radius:35% 65% 40% 60%/65% 40% 70% 30%;transform:rotate(3deg)}
+.cat.on i{border-color:var(--red);background:#fff}
+.cats.has .cat:not(.on){opacity:.45}
+
+/* --- La ligne du filtre région (le seul ajout fonctionnel) --- */
+.frow{display:flex;justify-content:space-between;align-items:center;margin:14px 0 12px;min-height:28px;gap:10px;position:relative}
+.frow .count{font-size:12.5px;color:var(--muted)}
+.rlink{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--ink);padding:5px 2px;border-bottom:1px solid var(--line)}
+.rlink .pin{color:var(--red);font-size:11px}
+.rlink .car{font-size:9px;color:var(--muted)}
+.rlink.act{color:var(--red);border-color:var(--red);font-weight:600}
+.rclear{font-size:12px;color:var(--muted);margin-left:8px;text-decoration:underline;text-underline-offset:3px;display:none}
+.rclear.show{display:inline}
+.pop{position:absolute;right:0;top:34px;z-index:20;width:250px;background:#fff;border:1px solid var(--line);border-radius:var(--r-card);box-shadow:0 12px 32px rgba(26,24,20,.12);padding:6px;display:none}
+.pop.open{display:block}
+.pop button{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;padding:8px 10px;border-radius:var(--r-field);font-size:13px}
+.pop button:hover{background:var(--soft)}
+.pop button.sel{background:var(--redsoft);color:var(--red);font-weight:600}
+.pop button em{font-style:normal;font-size:11.5px;color:var(--muted)}
+.pop hr{border:0;border-top:1px solid var(--line);margin:5px 4px}
+.pop .near{color:var(--ink)}
+.pop .near small{display:block;font-size:11px;color:var(--muted);font-weight:400}
+/* Mobile : la liste s'ouvre en panneau depuis le bas */
+.mob .pop{position:absolute;left:0;right:0;top:auto;bottom:0;width:auto;border-radius:18px 18px 0 0;border-width:1px 0 0;padding:10px 10px 16px;transform:none;box-shadow:0 -12px 40px rgba(26,24,20,.18)}
+.mob .pop::before{content:"";display:block;width:36px;height:4px;border-radius:4px;background:var(--line);margin:0 auto 8px}
+.mob .pop button{padding:11px 12px;font-size:14px}
+.veil{position:absolute;inset:0;background:rgba(26,24,20,.35);z-index:15;display:none}
+.veil.open{display:block}
+
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.card{border-radius:var(--r-card);overflow:hidden;border:1px solid var(--line);background:#fff;display:flex;flex-direction:column}
+.card .ph{aspect-ratio:5/4;background:var(--photo);position:relative}
+.card .ph span{position:absolute;left:8px;top:8px;background:#fff;border-radius:var(--r-pill);font-size:10px;font-weight:600;padding:2px 8px}
+.card .ph b{position:absolute;right:8px;top:8px;width:26px;height:26px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:400;color:var(--muted)}
+.card .bd{padding:9px 10px 10px}
+.card .t{font-size:13px;font-weight:600;line-height:1.3}
+.card .l{font-size:11.5px;color:var(--muted);margin-top:2px}
+.card .p{font-size:12px;margin-top:6px}.card .p b{font-weight:700}
+.card.hide{display:none}
+.empty{display:none;text-align:center;padding:26px 10px;font-size:13px;color:var(--muted);border:1px dashed var(--line);border-radius:var(--r-card)}
+.empty.show{display:block}
+.empty button{color:var(--red);text-decoration:underline;text-underline-offset:3px;margin-top:4px}
+.more{text-align:center;margin-top:18px}
+.band{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 22px 26px}
+.band div{border-radius:var(--r-card);background:var(--soft);border:1px solid var(--line);padding:16px}
+.band .tm{position:relative;overflow:hidden;border:0;color:#fff;background:linear-gradient(135deg,#8a6a4f,#3d2f25)}
+.band .tm::before{content:"";position:absolute;inset:0;background:url("../../../src/assets/tailored-request-hero-roadtrip.png") center/cover;opacity:.55}
+.band .tm>*{position:relative}
+.band .tm p{color:rgba(255,255,255,.85)}
+.band h3{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.band p{font-size:12.5px;color:var(--muted);margin:3px 0 10px}
+.mob .hd{padding:0 14px}
+.mob .hero{height:210px}
+.mob .hero h1{font-size:18px}
+.mob .hero p{font-size:12.5px}
+.mob .sect{padding:20px 14px 22px}
+.mob .sect h2{font-size:14px}
+.mob .cats{justify-content:flex-start;margin-left:-14px;margin-right:-14px;padding:0 14px}
+.mob .cat{width:66px;font-size:9.5px}
+.mob .grid{grid-template-columns:1fr 1fr;gap:10px}
+.mob .band{grid-template-columns:1fr;padding:0 14px 22px}
+.mob .btn{height:38px}
+
+/* ===== PANIER + PAIEMENT ===== */
+.page{padding:22px}
+.page h1{font-size:16px;font-weight:700;letter-spacing:.03em;text-transform:uppercase}
+.page .lead{font-size:13px;color:var(--muted);margin-top:2px}
+.steps{display:flex;align-items:center;gap:8px;margin:16px 0 18px;font-size:12px;color:var(--muted)}
+.steps i{width:22px;height:22px;border-radius:50%;border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:11px;margin-right:6px}
+.steps .done i,.steps .now i{background:var(--red);border-color:var(--red);color:#fff}
+.steps .now{color:var(--ink);font-weight:600}
+.steps u{flex:1;height:1px;background:var(--line);max-width:60px}
+.steps .done+u{background:var(--red)}
+.cols{display:grid;grid-template-columns:1fr 290px;gap:20px;align-items:flex-start}
+.box{border:1px solid var(--line);border-radius:var(--r-card);padding:14px 16px}
+.box+.box{margin-top:12px}
+.box h3{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:10px}
+.line{display:flex;justify-content:space-between;gap:12px;padding:7px 0;font-size:13px;border-top:1px solid var(--line)}
+.line:first-of-type{border-top:0}
+.line span:first-child{color:var(--muted)}
+.item{display:flex;gap:12px;align-items:center}
+.item i{width:74px;height:60px;border-radius:var(--r-field);background:var(--photo);flex-shrink:0}
+.item b{font-size:14px;font-weight:600;display:block;line-height:1.3}
+.item small{font-size:12px;color:var(--muted)}
+.f{display:grid;gap:4px}
+.inp{border:1px solid var(--line);border-radius:var(--r-field);height:38px;padding:0 11px;font-size:13px;display:flex;align-items:center;color:var(--muted);background:#fff}
+.inp.fill{color:var(--ink)}
+.inp.focus{border-color:var(--red);box-shadow:0 0 0 3px var(--redsoft)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gap{display:grid;gap:10px}
+.code{display:flex;gap:8px}.code .inp{flex:1}
+.sum{background:var(--soft);position:sticky;top:60px}
+.tot{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--line);margin-top:8px;padding-top:10px}
+.tot b{font-size:20px;font-weight:700}
+.reass{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.5;text-align:center}
+.wa{margin-top:10px;display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:var(--r-card);padding:9px 10px;font-size:12px;background:#fff}
+.wa i{width:28px;height:28px;border-radius:50%;background:var(--redsoft);color:var(--red);font-weight:800;font-style:normal;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px}
+.mob .page{padding:16px 14px 0}
+.mob .cols{grid-template-columns:1fr}
+.mob .row2{grid-template-columns:1fr}
+.mob .sum{position:static}
+.stick{border-top:1px solid var(--line);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:14px;background:#fff}
+.stick b{font-size:16px}
+.narrow{max-width:440px;margin:0 auto}
+
+/* ===== RÈGLES ===== */
+.rules{max-width:1000px;margin:0 auto;display:grid;gap:14px}
+.rb{background:#fff;border-radius:16px;padding:18px 20px;box-shadow:0 10px 40px rgba(0,0,0,.05)}
+.rb h2{font-size:15px;margin-bottom:10px}
+.sws{display:flex;gap:10px;flex-wrap:wrap}
+.swt{width:118px;font-size:11.5px;color:var(--muted)}
+.swt i{display:block;height:44px;border-radius:var(--r-field);border:1px solid var(--line);margin-bottom:5px}
+.swt b{display:block;color:var(--ink);font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+td:nth-child(2){color:var(--muted)}
+td:nth-child(3){font-weight:600}
+.shapes{display:flex;gap:18px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.shapes div{text-align:center}
+.shapes .s1{width:120px;height:36px;border-radius:var(--r-pill);background:var(--red);margin-bottom:5px}
+.shapes .s2{width:120px;height:70px;border-radius:var(--r-card);border:1px solid var(--line);background:var(--soft);margin-bottom:5px}
+.shapes .s3{width:120px;height:36px;border-radius:var(--r-field);border:1px solid var(--line);margin-bottom:5px}
+.todo li{margin:0 0 6px 18px;font-size:13px}
+@media (max-width:900px){.grid{grid-template-columns:1fr 1fr}.cols{grid-template-columns:1fr}.band{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <b>Session DA</b>
+  <button class="tab on" data-v="home">1. Home et filtre région</button>
+  <button class="tab" data-v="cart">2. Panier</button>
+  <button class="tab" data-v="pay">3. Paiement</button>
+  <button class="tab" data-v="rules">4. Règles de la DA</button>
+</div>
+
+<!-- ================= HOME ================= -->
+<div class="view on" id="home">
+<p class="note"><b>Ce qui change :</b> tout est plus fin et plus serré (titres, hauteur de la photo, boutons, cartes), avec une seule couleur de marque, un seul noir, une seule police et un seul arrondi pour les cartes. <b>Ce qui reste :</b> les traits de feutre là où ils existent déjà (la catégorie choisie, le soulignement de « Créer mon séjour »), sans en ajouter ailleurs. Les titres restent en majuscules, en plus petit. <b>Le seul ajout :</b> le lien discret « Partout en Israël » qui ouvre la liste des régions et « Autour de moi ». Les catégories restent l'entrée principale. Tu peux cliquer sur les catégories et sur le lien région, les deux se combinent. Les photos sont remplacées par des aplats beiges, les textes et les prix sont des exemples.</p>
+
+
+<div class="fwrap" id="homewrap">
+
+  <!-- Ordinateur -->
+  <div>
+    <div class="cap">Ordinateur</div>
+    <div class="desk homeui">
+      <div class="hd"><span class="lg">STAYMAKOM</span><div class="sw"><span class="on">Expérience seule</span><span>Avec hôtel</span></div><span class="ic">FR · Menu</span></div>
+      <div class="hero"><div>
+        <h1>Don't choose a city,<br>choose your escape</h1>
+        <p>Israël comme vous ne l'avez jamais vu.</p>
+        <div class="cta"><span class="btn">Trouver une expérience</span><span class="btn glass">Demande spéciale</span></div>
+      </div></div>
+      <div class="sect">
+        <h2>Hôtels d'exception. Expériences inoubliables.</h2>
+        <p class="sub">Pour quelques heures, une nuit ou une expérience sur mesure.</p>
+        <div class="cats"></div>
+        <div class="frow">
+          <span class="count"></span>
+          <span class="rwrap"><button class="rlink"><span class="pin">●</span><span class="rname">Partout en Israël</span><span class="car">▼</span></button><button class="rclear">Effacer</button></span>
+          <div class="pop"></div>
+        </div>
+        <div class="grid"></div>
+        <div class="empty">Aucune expérience ne correspond pour l'instant.<br><button class="reset">Voir toutes les expériences</button></div>
+        <div class="more"><span class="btn ghost sm">Voir toutes les expériences</span></div>
+      </div>
+      <div class="band">
+        <div class="tm"><h3>Votre voyage, vos règles</h3><p>Notre équipe compose un séjour sur mesure selon vos envies.</p><span class="feutre">Créer mon séjour →</span></div>
+        <div><h3>Offrir une carte cadeau</h3><p>Une expérience à choisir librement, valable partout sur le site.</p><span class="btn ghost sm">Découvrir la carte cadeau</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Téléphone -->
+  <div>
+    <div class="cap">Téléphone</div>
+    <div class="mob homeui">
+      <div class="hd"><span class="lg">STAYMAKOM</span><div class="sw"><span class="on">Expérience</span><span>Avec hôtel</span></div></div>
+      <div class="hero"><div>
+        <h1>Don't choose a city,<br>choose your escape</h1>
+        <p>Israël comme vous ne l'avez jamais vu.</p>
+        <div class="cta"><span class="btn sm">Trouver une expérience</span><span class="btn glass sm">Demande spéciale</span></div>
+      </div></div>
+      <div class="sect">
+        <h2>Hôtels d'exception.<br>Expériences inoubliables.</h2>
+        <p class="sub">Pour quelques heures, une nuit ou sur mesure.</p>
+        <div class="cats"></div>
+        <div class="frow">
+          <span class="count"></span>
+          <span class="rwrap"><button class="rlink"><span class="pin">●</span><span class="rname">Partout en Israël</span><span class="car">▼</span></button></span>
+        </div>
+        <div class="grid"></div>
+        <div class="empty">Aucune expérience ne correspond pour l'instant.<br><button class="reset">Voir toutes les expériences</button></div>
+        <div class="more"><span class="btn ghost sm">Voir toutes les expériences</span></div>
+      </div>
+      <div class="veil"></div>
+      <div class="pop"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ================= PANIER ================= -->
+<div class="view" id="cart">
+<p class="note"><b>Ce qui change :</b> le bleu marine disparaît, le bouton principal passe au rouge de marque comme partout ailleurs. La grande icône de sac est retirée, le titre est plus petit, la carte de récapitulatif reprend le même arrondi et les mêmes lignes que le paiement. <b>Rien ne change dans le fonctionnement</b> : mêmes informations, mêmes boutons.</p>
+<div class="fwrap">
+  <div>
+    <div class="cap">Ordinateur</div>
+    <div class="desk">
+      <div class="hd"><span class="lg">STAYMAKOM</span><span class="ic">FR · Menu</span></div>
+      <div class="page"><div class="narrow">
+        <h1>Votre escapade enregistrée</h1>
+        <p class="lead">Enregistrée il y a 2 heures.</p>
+        <div class="box" style="margin-top:14px">
+          <div class="item"><i></i><div><b>Nuit dans le désert et dîner sous les étoiles</b><small>Hôtel partenaire, Néguev</small></div></div>
+          <div style="margin-top:10px">
+            <div class="line"><span>Dates</span><span>12 nov. au 13 nov. · 1 nuit</span></div>
+            <div class="line"><span>Voyageurs</span><span>2 adultes</span></div>
+            <div class="line"><span>Chambre</span><span>Suite vue désert</span></div>
+            <div class="line"><span>Options</span><span>Petit-déjeuner bédouin</span></div>
+          </div>
+        </div>
+        <div style="display:grid;gap:8px;margin:14px 0 26px">
+          <span class="btn full">Continuer la réservation</span>
+          <span class="btn ghost full">Retirer du panier</span>
+        </div>
+      </div></div>
+    </div>
+  </div>
+  <div>
+    <div class="cap">Téléphone</div>
+    <div class="mob">
+      <div class="hd"><span class="lg">STAYMAKOM</span><span class="ic">Menu</span></div>
+      <div class="page">
+        <h1>Votre escapade enregistrée</h1>
+        <p class="lead">Enregistrée il y a 2 heures.</p>
+        <div class="box" style="margin-top:12px">
+          <div class="item"><i></i><div><b>Nuit dans le désert et dîner sous les étoiles</b><small>Hôtel partenaire, Néguev</small></div></div>
+          <div style="margin-top:10px">
+            <div class="line"><span>Dates</span><span>12 au 13 nov. · 1 nuit</span></div>
+            <div class="line"><span>Voyageurs</span><span>2 adultes</span></div>
+            <div class="line"><span>Chambre</span><span>Suite vue désert</span></div>
+          </div>
+        </div>
+        <div style="display:grid;gap:8px;margin:14px 0 20px">
+          <span class="btn full">Continuer la réservation</span>
+          <span class="btn ghost full">Retirer du panier</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ================= PAIEMENT ================= -->
+<div class="view" id="pay">
+<p class="note"><b>Ce qui change :</b> les étapes, le champ actif et le bouton de paiement passent au rouge de marque (aujourd'hui : bleu marine pour les étapes, noir pour les boutons). Les petits boutons « Appliquer » prennent la même forme arrondie que le reste du site, les champs ont tous la même hauteur. <b>Visuel uniquement :</b> les étapes, les champs, les prix et le paiement restent strictement les mêmes.</p>
+<div class="fwrap">
+  <div>
+    <div class="cap">Ordinateur</div>
+    <div class="desk">
+      <div class="hd"><span class="lg">STAYMAKOM</span><span class="ic">Paiement sécurisé</span></div>
+      <div class="page">
+        <h1>Finaliser la réservation</h1>
+        <div class="steps"><span class="done"><i>✓</i>Vos coordonnées</span><u></u><span class="now"><i>2</i>Paiement</span></div>
+        <div class="cols">
+          <div>
+            <div class="box">
+              <h3>Vos coordonnées</h3>
+              <div class="gap">
+                <div class="row2">
+                  <div class="f"><span class="lab">Prénom</span><div class="inp fill">Votre prénom</div></div>
+                  <div class="f"><span class="lab">Nom</span><div class="inp fill">Votre nom</div></div>
+                </div>
+                <div class="row2">
+                  <div class="f"><span class="lab">Email</span><div class="inp fill">vous@exemple.com</div></div>
+                  <div class="f"><span class="lab">Téléphone</span><div class="inp focus fill">+972 50 000 0000</div></div>
+                </div>
+                <div class="f"><span class="lab">Demande particulière</span><div class="inp" style="height:60px;align-items:flex-start;padding-top:9px">Allergies, occasion à fêter, accessibilité</div></div>
+              </div>
+            </div>
+            <div class="box">
+              <h3>Carte cadeau ou code promo</h3>
+              <div class="row2">
+                <div class="code"><div class="inp">Code carte cadeau</div><span class="btn ghost sm" style="height:38px">Appliquer</span></div>
+                <div class="code"><div class="inp">Code promo</div><span class="btn ghost sm" style="height:38px">Appliquer</span></div>
+              </div>
+            </div>
+            <div class="box">
+              <h3>Paiement par carte</h3>
+              <div class="gap">
+                <div class="f"><span class="lab">Numéro de carte</span><div class="inp">0000 0000 0000 0000</div></div>
+                <div class="row2">
+                  <div class="f"><span class="lab">Expiration</span><div class="inp">MM / AA</div></div>
+                  <div class="f"><span class="lab">Code de sécurité</span><div class="inp">CVC</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="box sum">
+            <div class="item"><i></i><div><b>Dégustation au coucher du soleil</b><small>Carmel</small></div></div>
+            <div style="margin-top:10px">
+              <div class="line"><span>Date</span><span>Jeudi 12 novembre</span></div>
+              <div class="line"><span>Horaire</span><span>17h00</span></div>
+              <div class="line"><span>Participants</span><span>2 personnes</span></div>
+            </div>
+            <div class="tot"><span class="lab">Total</span><b>640 ₪</b></div>
+            <span class="btn full" style="margin-top:12px">Payer 640 ₪</span>
+            <p class="reass">Annulation gratuite jusqu'à 48 h avant.<br>Paiement sécurisé.</p>
+            <div class="wa"><i>S</i><span>Une question ? Notre équipe vous répond sur WhatsApp.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="cap">Téléphone</div>
+    <div class="mob">
+      <div class="hd"><span class="lg">STAYMAKOM</span><span class="ic">Sécurisé</span></div>
+      <div class="page">
+        <h1>Finaliser la réservation</h1>
+        <div class="steps" style="margin:12px 0 14px"><span class="done"><i>✓</i>Coordonnées</span><u></u><span class="now"><i>2</i>Paiement</span></div>
+        <div class="box sum">
+          <div class="item"><i></i><div><b>Dégustation au coucher du soleil</b><small>Jeu. 12 nov. · 17h00 · 2 pers.</small></div></div>
+        </div>
+        <div class="box">
+          <h3>Carte cadeau ou code promo</h3>
+          <div class="gap">
+            <div class="code"><div class="inp">Code carte cadeau</div><span class="btn ghost sm" style="height:38px">Appliquer</span></div>
+            <div class="code"><div class="inp">Code promo</div><span class="btn ghost sm" style="height:38px">Appliquer</span></div>
+          </div>
+        </div>
+        <div class="box">
+          <h3>Paiement par carte</h3>
+          <div class="gap">
+            <div class="f"><span class="lab">Numéro de carte</span><div class="inp focus">0000 0000 0000 0000</div></div>
+            <div class="row2" style="grid-template-columns:1fr 1fr">
+              <div class="f"><span class="lab">Expiration</span><div class="inp">MM / AA</div></div>
+              <div class="f"><span class="lab">Sécurité</span><div class="inp">CVC</div></div>
+            </div>
+          </div>
+        </div>
+        <p class="reass">Annulation gratuite jusqu'à 48 h avant. Paiement sécurisé.</p>
+      </div>
+      <div class="stick"><div><span class="lab">Total</span><br><b>640 ₪</b></div><span class="btn">Payer 640 ₪</span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ================= RÈGLES ================= -->
+<div class="view" id="rules">
+<p class="note">Les règles appliquées dans les trois maquettes. Une fois validées, elles servent de référence unique pour la home, les fiches, la page bateaux, le panier et le paiement.</p>
+<div class="rules">
+  <div class="rb">
+    <h2>Couleurs : 6 valeurs au lieu d'une vingtaine</h2>
+    <div class="sws">
+      <div class="swt"><i style="background:#ad1414"></i><b>Rouge de marque</b>Boutons, liens actifs, étapes. Remplace le bleu marine et les 3 autres rouges.</div>
+      <div class="swt"><i style="background:#fdf2f2"></i><b>Rouge très pâle</b>Fond d'un élément sélectionné.</div>
+      <div class="swt"><i style="background:#1a1814"></i><b>Noir</b>Textes et titres. Remplace le second noir.</div>
+      <div class="swt"><i style="background:#6f6a63"></i><b>Gris</b>Textes secondaires.</div>
+      <div class="swt"><i style="background:#e9e6e1"></i><b>Trait</b>Bordures et séparateurs.</div>
+      <div class="swt"><i style="background:#faf8f6"></i><b>Beige</b>Fonds doux. Remplace les 5 autres beiges.</div>
+    </div>
+  </div>
+  <div class="rb">
+    <h2>Tailles : avant et après</h2>
+    <table>
+      <tr><th>Élément</th><th>Aujourd'hui</th><th>Proposé</th></tr>
+      <tr><td>Titre de la photo d'accueil (ordinateur)</td><td>jusqu'à 60, majuscules</td><td>28, majuscules</td></tr>
+      <tr><td>Titre de la photo d'accueil (téléphone)</td><td>28, majuscules</td><td>18, majuscules</td></tr>
+      <tr><td>Hauteur de la photo d'accueil (ordinateur)</td><td>un peu plus de la moitié de l'écran</td><td>environ un tiers (300)</td></tr>
+      <tr><td>Titres de section</td><td>jusqu'à 30, majuscules</td><td>16 (14 sur téléphone), majuscules</td></tr>
+      <tr><td>Titres de bloc</td><td>variable</td><td>12 à 13, majuscules</td></tr>
+      <tr><td>Texte courant</td><td>14</td><td>14 (13 dans les cartes)</td></tr>
+      <tr><td>Petites étiquettes en majuscules</td><td>9 à 13 selon les pages</td><td>10,5 partout</td></tr>
+      <tr><td>Bouton principal</td><td>hauteur et forme variables, texte en majuscules espacées</td><td>hauteur 40 (38 sur téléphone), texte normal</td></tr>
+      <tr><td>Total à payer</td><td>20 à 24</td><td>20</td></tr>
+    </table>
+  </div>
+  <div class="rb">
+    <h2>Formes : 3 arrondis nets, et le trait de feutre là où il existe déjà</h2>
+    <div class="shapes">
+      <div><div class="s1"></div>Boutons et pastilles : arrondi complet</div>
+      <div><div class="s2"></div>Cartes et blocs : 14</div>
+      <div><div class="s3"></div>Champs et vignettes : 10</div>
+    </div>
+    <p class="note" style="margin:12px 0 0">Le trait de feutre est conservé exactement là où il est aujourd'hui, sans en ajouter : surlignage de la catégorie choisie (home, pages catégorie), de la langue et de la devise choisies dans le menu, et soulignement des liens d'action sur photo ou en bas de fenêtre (« Créer mon séjour », pied de page, connexion, newsletter, cookies). Tous les autres boutons sont nets. Les angles droits disparaissent.</p>
+  </div>
+  <div class="rb">
+    <h2>Police : Inter uniquement</h2>
+    <p class="note" style="margin:0">Les deux polices à empattements encore chargées par le site ne sont plus utilisées sur les pages client. Le site se charge un peu plus vite.</p>
+  </div>
+  <div class="rb">
+    <h2>Filtre région : ce que disent les données</h2>
+    <table>
+      <tr><th>Point vérifié le 5 octobre 2026</th><th>Constat</th><th>Conséquence</th></tr>
+      <tr><td>Expériences seules publiées (47)</td><td>46 ont une région, mais écrite librement : 23 façons différentes (« Tel Aviv », « Tel Aviv area », « Tel Aviv District »...). Deux valeurs ne sont pas des régions (« Sea outing », « Water sports »).</td><td>Il faut ranger chaque fiche dans une des 6 grandes régions ci-dessous.</td></tr>
+      <tr><td>Position sur la carte</td><td>32 sur 47 en ont une.</td><td>« Autour de moi » est lancé tout de suite. Les 15 fiches sans position n'y apparaissent pas tant que leur position n'est pas saisie : à compléter dans le back-office.</td></tr>
+      <tr><td>Hôtels publiés (30)</td><td>30 ont une région (11 façons différentes), 28 une position.</td><td>Même rangement à faire, presque complet pour « Autour de moi ».</td></tr>
+    </table>
+    <p class="note" style="margin:12px 0 6px"><b>Les 6 grandes régions validées :</b> Tel Aviv et la côte · Jérusalem · Galilée et Golan (avec le Kinneret) · Carmel et Haïfa · Néguev et mer Morte · Eilat et Arava.</p>
+    <ul class="todo">
+      <li>Une région sans aucune expérience n'est pas affichée dans la liste.</li>
+      <li>« Autour de moi » demande l'autorisation de localisation seulement au clic, jamais à l'arrivée sur le site. En cas de refus, la liste des régions reste disponible.</li>
+      <li>Les cartes affichent alors la distance (« à 12 km ») et sont triées de la plus proche à la plus lointaine.</li>
+      <li>Suivi Amplitude : un événement à l'ouverture du filtre, un au choix d'une région, un pour « Autour de moi » (accepté ou refusé).</li>
+    </ul>
+  </div>
+</div>
+</div>
+
+<script>
+// ----- Données d'exemple (fictives) -----
+const CATS=[["nature","Nature","🌿"],["food","Gourmand","🍷"],["well","Bien-être","🕯"],["story","Histoires","🏛"],["sport","Sportif","🚲"],["family","Famille","🧺"]];
+const REGIONS=[["tlv","Tel Aviv et la côte"],["jlm","Jérusalem"],["gal","Galilée et Golan"],["car","Carmel et Haïfa"],["neg","Néguev et mer Morte"],["eil","Eilat et Arava"]];
+const EXPS=[
+ ["Dégustation au coucher du soleil","food","car","Carmel",320,78],
+ ["Balade à vélo dans les ruelles de Jaffa","sport","tlv","Jaffa",180,4],
+ ["Atelier de cuisine au marché","food","tlv","Tel Aviv",290,2],
+ ["Lever de soleil sur le cratère","nature","neg","Mitzpe Ramon",240,165],
+ ["Marche contée dans la vieille ville","story","jlm","Jérusalem",150,62],
+ ["Bain sonore et méditation","well","neg","Mer Morte",210,null],
+ ["Kayak au petit matin","sport","gal","Kinneret",170,128],
+ ["Plongée avec masque sur le récif","nature","eil","Eilat",260,340],
+ ["Cueillette et pique-nique à la ferme","family","car","Carmel",140,null],
+ ["Table d'hôte chez un vigneron","food","gal","Galilée",380,142],
+ ["Hammam et massage","well","tlv","Tel Aviv",330,3],
+ ["Sur les traces des artisans","story","jlm","Jérusalem",160,60]
+];
+let cat=null, region=null; // region : null, un code, ou "near"
+
+function label(){ if(region==="near")return "Autour de moi"; const r=REGIONS.find(r=>r[0]===region); return r?r[1]:"Partout en Israël"; }
+function matches(e){ if(cat&&e[1]!==cat)return false; if(region==="near")return e[5]!==null&&e[5]<=80; if(region)return e[2]===region; return true; }
+
+function render(){
+  document.querySelectorAll(".homeui").forEach(ui=>{
+    const mob=ui.classList.contains("mob");
+    const cats=ui.querySelector(".cats");
+    cats.className="cats"+(cat?" has":"");
+    cats.innerHTML=CATS.map(c=>`<button class="cat${cat===c[0]?" on":""}" data-c="${c[0]}"><i>${c[2]}</i>${c[1]}</button>`).join("");
+    let list=EXPS.filter(matches);
+    if(region==="near")list=list.slice().sort((a,b)=>a[5]-b[5]);
+    list=list.slice(0,mob?4:8);
+    ui.querySelector(".grid").innerHTML=list.map(e=>`<div class="card"><div class="ph"><span>${CATS.find(c=>c[0]===e[1])[1]}</span><b>♡</b></div><div class="bd"><div class="t">${e[0]}</div><div class="l">${e[3]}${region==="near"?" · à "+e[5]+" km":""}</div><div class="p">À partir de <b>${e[4]} ₪</b></div></div></div>`).join("");
+    const n=EXPS.filter(matches).length;
+    ui.querySelector(".count").textContent=n+(n>1?" expériences":" expérience");
+    ui.querySelector(".empty").classList.toggle("show",n===0);
+    ui.querySelector(".more").style.display=n===0?"none":"";
+    ui.querySelectorAll(".rlink").forEach(l=>{
+      l.classList.toggle("act",!!region);
+      const inl=l.closest(".inline-r");
+      l.querySelector(".rname").textContent=inl&&!region?"partout en Israël":(inl?label().toLowerCase().replace("tel aviv","Tel Aviv").replace("jérusalem","Jérusalem").replace("galilée","Galilée").replace("golan","Golan").replace("carmel","Carmel").replace("haïfa","Haïfa").replace("néguev","Néguev").replace("eilat","Eilat").replace("arava","Arava"):label());
+    });
+    const clr=ui.querySelector(".rclear"); if(clr)clr.classList.toggle("show",!!region);
+    ui.querySelector(".pop").innerHTML=
+      `<button data-r="" class="${!region?"sel":""}">Partout en Israël</button>`+
+      `<button data-r="near" class="near ${region==="near"?"sel":""}"><span>◎ Autour de moi<small>Utilise votre position, à moins de 80 km</small></span></button><hr>`+
+      REGIONS.map(r=>{const k=EXPS.filter(e=>e[2]===r[0]&&(!cat||e[1]===cat)).length;return k?`<button data-r="${r[0]}" class="${region===r[0]?"sel":""}">${r[1]}<em>${k}</em></button>`:""}).join("");
+  });
+}
+function closePops(){document.querySelectorAll(".pop,.veil").forEach(p=>p.classList.remove("open"));}
+document.getElementById("homewrap").addEventListener("click",ev=>{
+  const ui=ev.target.closest(".homeui"); if(!ui)return;
+  const c=ev.target.closest(".cat"), r=ev.target.closest(".pop button"), l=ev.target.closest(".rlink");
+  if(c){cat=cat===c.dataset.c?null:c.dataset.c;closePops();render();return;}
+  if(r){region=r.dataset.r||null;closePops();render();return;}
+  if(l){const p=ui.querySelector(".pop"),open=p.classList.contains("open");closePops();if(!open){p.classList.add("open");const v=ui.querySelector(".veil");if(v)v.classList.add("open");}return;}
+  if(ev.target.closest(".rclear")){region=null;render();return;}
+  if(ev.target.closest(".reset")){cat=null;region=null;render();return;}
+  if(!ev.target.closest(".pop"))closePops();
+});
+document.querySelectorAll(".top .tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".top .tab").forEach(x=>x.classList.remove("on"));b.classList.add("on");document.querySelectorAll(".view").forEach(v=>v.classList.remove("on"));document.getElementById(b.dataset.v).classList.add("on");window.scrollTo(0,0)});
+render();
+</script>
+</body>
+</html>

@@ -6,6 +6,40 @@
 
 ---
 
+## [2026-10-05] — Session DA, étape 1 : règles visuelles communes (couleur, arrondis, police)
+
+Travail fait sur la branche `session-da-visuel`, pas encore en ligne.
+
+### Ce qui a changé côté code
+- `src/index.css` : la couleur principale du site passe du bleu marine au rouge de marque `#ad1414` (y compris le contour des champs actifs). Tout ce qui utilisait la couleur principale côté client (panier, étapes et liens du paiement, fiches) devient rouge sans toucher aux pages une par une. L'arrondi de base des cartes et blocs passe de 12 à 14. Nouveau bloc `.backoffice` qui remet les valeurs d'origine (bleu marine, arrondi 12) pour le back-office.
+- `src/hooks/useBackofficeTheme.ts` (créé) : pose la classe `backoffice` sur la page quand on est dans un back-office, et la retire en sortant. Posée sur la page entière pour que les fenêtres et menus qui s'ouvrent par-dessus gardent aussi le bleu marine.
+- `src/components/admin/AdminLayout.tsx`, `src/components/hotel-admin/HotelAdminLayout.tsx` : appellent ce hook. Le back-office Staymakom et l'espace hôtelier gardent leur apparence actuelle.
+- `tailwind.config.ts` : les anciennes classes de police à empattements (`font-serif`, `font-display`) affichent maintenant Inter. Une seule police sur les pages client, sans modifier la trentaine de fichiers concernés.
+- `index.html` : la police Playfair Display n'est plus téléchargée (plus utilisée nulle part). Cormorant Garamond reste chargée, car le journal l'utilise volontairement pour ses titres.
+- Aucune logique modifiée : ni réservation, ni prix, ni paiement.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration.
+
+### Pourquoi ce changement
+Première étape de la session DA : une seule couleur de marque partout côté client, pour que le client ne change plus d'ambiance entre la home (rouge) et le panier ou le paiement (bleu marine).
+
+---
+
+## [2026-10-05] — Session DA : maquette home (filtre région), panier et paiement
+
+### Ce qui a changé côté code
+- `docs/claude/maquettes/maquette-da-home-panier-paiement.html` (créé) : maquette cliquable à ouvrir dans un navigateur, avec 4 onglets. Home (ordinateur et téléphone) avec le lien discret « Partout en Israël » qui ouvre la liste des régions et « Autour de moi », combinable avec les catégories, placé au-dessus des cartes à droite (emplacement validé). Panier. Paiement. Règles de la DA (6 couleurs, 3 arrondis, police Inter seule, tableau des tailles avant et après). Décisions de Shana : titres en majuscules mais plus petits, « Autour de moi » dès le lancement, 6 grandes régions, et traits de feutre rouges conservés uniquement là où ils existent déjà (aucun ajout).
+- Aucun fichier du site n'est modifié : c'est une proposition en attente de validation, le code viendra ensuite étape par étape.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration. Simple lecture pour mesurer le remplissage : sur 47 expériences seules publiées, 46 ont une région mais écrite de 23 façons différentes, et 32 ont une position sur la carte. Sur 30 hôtels, 30 ont une région (11 façons différentes) et 28 une position.
+
+### Pourquoi ce changement
+Les pages client sont jugées trop grosses et l'identité change entre la home (rouge) et le panier et le paiement (bleu marine et noir). Les clients demandent aussi à pouvoir filtrer par région. La maquette fixe les règles visuelles et l'emplacement du filtre avant de toucher au site.
+
+---
+
 ## [2026-10-05] — Sprint 5D : photos de l'hôtel en complément du carrousel
 
 ### Ce qui a changé côté code

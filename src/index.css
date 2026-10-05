@@ -19,9 +19,10 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 7%;
 
-    --primary: 207 62% 15%;
-    --primary-foreground: 40 33% 93%;
-    --primary-glow: 208 61% 20%;
+    /* Couleur de marque unique : rouge #ad1414 (le back-office garde le bleu marine, voir .backoffice) */
+    --primary: 0 79% 38%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 0 79% 33%;
 
     --secondary: 36 38% 78%;
     --secondary-foreground: 0 0% 7%;
@@ -51,11 +52,12 @@ All colors MUST be HSL.
 
     --border: 23 10% 15% / 0.12;
     --input: 23 10% 15% / 0.25;
-    --ring: 207 62% 15%;
+    --ring: 0 79% 38%;
 
     --logo: 207 62% 15%;
 
-    --radius: 0.75rem;
+    /* Cartes et blocs : 14px. Champs : 10px (rounded-sm). */
+    --radius: 0.875rem;
 
     /* Sidebar tokens */
     --sidebar: 0 0% 100%;
@@ -78,6 +80,15 @@ All colors MUST be HSL.
     
     /* Hebrew input background – warm neutral */
     --input-hebrew-bg: 30 25% 94%;
+  }
+
+  /* Back-office : apparence d'origine conservée (posée sur <html> par useBackofficeTheme) */
+  .backoffice {
+    --primary: 207 62% 15%;
+    --primary-foreground: 40 33% 93%;
+    --primary-glow: 208 61% 20%;
+    --ring: 207 62% 15%;
+    --radius: 0.75rem;
   }
 
   .dark {

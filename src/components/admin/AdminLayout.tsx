@@ -3,8 +3,11 @@ import { useEffect } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import { AlertBanner } from "./AlertBanner";
+import { useBackofficeTheme } from "@/hooks/useBackofficeTheme";
 
 export function AdminLayout() {
+  useBackofficeTheme();
+
   // Réduit l'échelle générale de l'affichage admin (le back-office paraissait plus "zoomé"
   // que le reste du site) : équivalent d'un Ctrl+- appliqué seulement à /admin.
   useEffect(() => {

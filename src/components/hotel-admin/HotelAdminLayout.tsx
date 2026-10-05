@@ -16,6 +16,7 @@ import {
   Settings,
   ArrowLeft
 } from "lucide-react";
+import { useBackofficeTheme } from "@/hooks/useBackofficeTheme";
 
 const navigation = [
   { name: "Dashboard", href: "/hotel-admin", icon: LayoutDashboard, end: true },
@@ -31,6 +32,7 @@ const navigation = [
 
 export const HotelAdminLayout = () => {
   const location = useLocation();
+  useBackofficeTheme();
 
   return (
     <div className="flex min-h-screen bg-background">
