@@ -17,8 +17,9 @@ interface HotelHeroKeyFactsProps {
 }
 
 // Fiche hôtel + expérience : le prix « à partir de » est LU avec le même outil
-// (useFromPrice) et les mêmes réglages que l'encart prix du panneau de réservation
-// (HeroBookingPreview2) et la barre du bas (StickyPriceBar). Aucun calcul ici.
+// (useFromPrice) et les mêmes réglages que la barre du bas sur mobile (StickyPriceBar).
+// Il remplace l'ancien encart prix affiché au-dessus du panneau de réservation
+// (HeroBookingPreview2, qui n'est plus affiché). Aucun calcul ici.
 const HotelHeroKeyFacts = ({
   facts,
   experienceId,

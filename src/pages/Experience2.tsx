@@ -10,7 +10,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { BookingPanel2 } from "@/components/experience/BookingPanel2";
 import HeroSection from "@/components/experience-test/HeroSection";
-import HeroBookingPreview2 from "@/components/experience-test/HeroBookingPreview2";
 import HotelHeroKeyFacts from "@/components/experience/HotelHeroKeyFacts";
 import { buildHotelKeyFacts } from "@/lib/heroKeyFacts";
 
@@ -739,27 +738,6 @@ export default function Experience2() {
 
           {/* Right Column - Sticky Booking Panel (Desktop) */}
           <div className="hidden md:block pr-1 md:-mt-10">
-            {/* Price callout — non sticky, scrolls with page */}
-            <div className="mb-3">
-              <HeroBookingPreview2
-                experienceId={experience.id}
-                currency={displayCurrency}
-                lang={lang as "en" | "he" | "fr"}
-                hyperguestPropertyId={hyperguestPropertyId || null}
-                preferredBoardType={(experience as any).preferred_board_type ?? null}
-                minParty={experience.min_party || 2}
-                minNights={experience.min_nights || 1}
-                availabilityRules={availabilityRules}
-                onViewDates={() => {
-                  trackBookClicked(toProductLike(experience, primaryHotel), "hotel_experience", "hero_cta");
-                  const bookingPanel = document.getElementById('booking-panel-v2');
-                  if (bookingPanel) {
-                    bookingPanel.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }}
-              />
-            </div>
-
             <div
               className="sticky flex flex-col gap-3 will-change-transform"
               style={{

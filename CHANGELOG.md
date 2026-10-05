@@ -6,6 +6,21 @@
 
 ---
 
+## [2026-10-05] — Sprint 5D : retrait du doublon de prix sur les fiches hôtel
+
+### Ce qui a changé côté code
+- `src/pages/Experience2.tsx` : l'ancien encart « À partir de… Voir les dates », affiché au-dessus du panneau de réservation sur ordinateur, n'est plus affiché. Il faisait doublon avec le prix et le bouton « Voir les dates » ajoutés en haut de fiche. Affichage seul : le calcul et la lecture du prix (`useFromPrice`), le panneau de réservation (`BookingPanel2`) et la barre du bas sur mobile (`StickyPriceBar`) ne sont pas modifiés.
+- `src/components/experience-test/HeroBookingPreview2.tsx` : fichier conservé mais plus utilisé nulle part.
+- Suivi : le clic sur cet ancien encart envoyait `book_clicked` avec l'emplacement `hero_cta`. Cet emplacement n'est donc plus envoyé ; le nouveau bouton envoie `hero_cta_clicked` avec `cta = see_dates`.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration.
+
+### Pourquoi ce changement
+Sur une fiche hôtel, le même prix « à partir de » et le même bouton apparaissaient deux fois sur ordinateur. Shana a demandé de ne garder que la nouvelle version du haut de fiche.
+
+---
+
 ## [2026-10-05] — Sprint 5D : carrousel et infos clés en haut de fiche
 
 ### Ce qui a changé côté code
