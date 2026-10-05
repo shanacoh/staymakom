@@ -126,6 +126,19 @@ interface StandaloneExperienceData {
   hide_exact_address?: boolean | null;
   session_labels?: Record<string, { en?: string; fr?: string; he?: string }> | null;
   essentials_private_on_request?: boolean | null;
+  seo_title_en?: string | null;
+  seo_title_fr?: string | null;
+  seo_title_he?: string | null;
+  meta_description_en?: string | null;
+  meta_description_fr?: string | null;
+  meta_description_he?: string | null;
+  og_title_en?: string | null;
+  og_title_fr?: string | null;
+  og_title_he?: string | null;
+  og_description_en?: string | null;
+  og_description_fr?: string | null;
+  og_description_he?: string | null;
+  og_image?: string | null;
   standalone_experience_highlight_tags?: {
     tag_id: string;
     position: number;
@@ -266,6 +279,10 @@ export default function StandaloneExperience() {
         "languages", "schedule_note", "schedule_note_fr", "schedule_note_he",
         "access_note", "access_note_fr", "access_note_he", "hide_exact_address",
         "session_labels", "essentials_private_on_request",
+        "seo_title_en", "seo_title_fr", "seo_title_he",
+        "meta_description_en", "meta_description_fr", "meta_description_he",
+        "og_title_en", "og_title_fr", "og_title_he",
+        "og_description_en", "og_description_fr", "og_description_he", "og_image",
       ].join(", ");
 
       // Une fiche est visible en détail si elle est publiée, ou si elle est en
@@ -1022,8 +1039,20 @@ export default function StandaloneExperience() {
     >
       <SEOHead
         title={title}
+        titleEn={experience.seo_title_en || undefined}
+        titleFr={experience.seo_title_fr || undefined}
+        titleHe={experience.seo_title_he || undefined}
         description={subtitle}
-        ogImage={experience.hero_image || undefined}
+        descriptionEn={experience.meta_description_en || undefined}
+        descriptionFr={experience.meta_description_fr || undefined}
+        descriptionHe={experience.meta_description_he || undefined}
+        ogTitleEn={experience.og_title_en || undefined}
+        ogTitleFr={experience.og_title_fr || undefined}
+        ogTitleHe={experience.og_title_he || undefined}
+        ogDescriptionEn={experience.og_description_en || undefined}
+        ogDescriptionFr={experience.og_description_fr || undefined}
+        ogDescriptionHe={experience.og_description_he || undefined}
+        ogImage={experience.og_image || experience.hero_image || undefined}
       />
       <script
         type="application/ld+json"

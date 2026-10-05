@@ -4,13 +4,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Button,
+  Input,
+  Label,
+  Textarea,
+  Card,
+  CardHeader,
+  CardContent,
+  CardTitle,
+  CardDescription,
+} from "@/components/forms/styled";
 import { Slider } from "@/components/ui/slider";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -28,6 +34,7 @@ import {
 import {
   Save, Rocket, X, Upload, Loader2, ArrowLeft, Plus, Star, Clock, Sparkles,
   MapPin, DollarSign, Check, Tag, Car, Utensils, Dumbbell, Waves, Users,
+  ChevronDown, Globe, AlertTriangle, EyeOff,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -54,6 +61,8 @@ import FeaturedBadgeToggle from "@/components/admin/FeaturedBadgeToggle";
 import DepositRuleEditor from "@/components/admin/DepositRuleEditor";
 import { BOATS_CATEGORY_ID } from "@/lib/boatsCategory";
 import AiDraftPanel, { type AiIncludeDraft, type AiExtraDraft, type AiPracticalInfoDraft, type AiDraftPanelHandle } from "@/components/forms/ai/AiDraftPanel";
+import { CANCELLATION_TEMPLATES, matchCancellationTemplate, type CancellationTemplateId } from "@/constants/cancellationTemplates";
+import EssentialsBlock from "@/components/experience/EssentialsBlock";
 
 // Les bateaux n'ont pas de limite de nombre de photos dans la galerie,
 // contrairement aux autres expériences standalone (limitées à 8).
@@ -153,6 +162,17 @@ const standaloneExperienceSchema = z.object({
   accessibility_info: z.string().optional(),
   accessibility_info_fr: z.string().optional(),
   accessibility_info_he: z.string().optional(),
+  // Bloc "L'essentiel" (sprint 4) — colonnes déjà en base, branchées au
+  // formulaire dans ce sprint (5B).
+  languages: z.array(z.string()).optional(),
+  schedule_note: z.string().optional(),
+  schedule_note_fr: z.string().optional(),
+  schedule_note_he: z.string().optional(),
+  access_note: z.string().optional(),
+  access_note_fr: z.string().optional(),
+  access_note_he: z.string().optional(),
+  hide_exact_address: z.boolean().default(false),
+  essentials_private_on_request: z.boolean().default(false),
   // SEO
   seo_title_en: z.string().optional(),
   seo_title_he: z.string().optional(),
@@ -204,7 +224,7 @@ const ALL_DAYS = WEEKDAYS.map((d) => d.id);
 
 function CompletionPill() {
   return (
-    <span className="text-[11px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+    <span className="text-[11px] font-medium text-[#8a6100] bg-[#fff4d6] px-2 py-0.5 rounded-full">
       à compléter
     </span>
   );
@@ -290,6 +310,40 @@ function YesNoToggleField({
   );
 }
 
+// Une section repliable de la page qui défile (remplace les anciens onglets
+// pour les expériences standard — le mode Bateaux garde ses onglets).
+function FormSection({
+  id,
+  title,
+  description,
+  defaultOpen = true,
+  children,
+}: {
+  id?: string;
+  title: string;
+  description?: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <Card id={id}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between gap-3 px-3 py-3 text-left"
+      >
+        <div>
+          <CardTitle>{title}</CardTitle>
+          {description && <CardDescription className="mt-0.5">{description}</CardDescription>}
+        </div>
+        <ChevronDown className={cn("h-4 w-4 shrink-0 text-[#6f6a63] transition-transform", open && "rotate-180")} />
+      </button>
+      {open && <CardContent className="pt-0">{children}</CardContent>}
+    </Card>
+  );
+}
+
 interface StandaloneExperienceFormProps {
   experienceId?: string;
   onClose?: () => void;
@@ -306,6 +360,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   const queryClient = useQueryClient();
   const aiDraftPanelRef = useRef<AiDraftPanelHandle>(null);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [isGeneratingSeo, setIsGeneratingSeo] = useState(false);
+  const [showAdvancedSharing, setShowAdvancedSharing] = useState(false);
   const isMobile = useIsMobile();
 
   // Image state
@@ -323,6 +379,19 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     defaultCategoryId === BOATS_CATEGORY_ID ? "bateau_champs" : "medias"
   );
   const [isGeocoding, setIsGeocoding] = useState(false);
+
+  // Sprint 5B — langue affichée dans la barre du haut (étape 2 : filtrera les
+  // champs multilingues ; pour l'instant utilisée par les libellés par date).
+  const [activeLanguage, setActiveLanguage] = useState<"fr" | "en" | "he">("fr");
+
+  // Libellés personnalisés par date (ex. "Session du jeudi"), bloc "L'essentiel"
+  // du sprint 4 — un texte par langue, non lié à react-hook-form (même
+  // fonctionnement que practicalInfo / availableDays).
+  const [sessionLabels, setSessionLabels] = useState<Record<string, { en?: string; fr?: string; he?: string }>>({});
+
+  // Annulation par modèles (sprint 5B, étape 3) — "custom" affiche le champ
+  // texte libre ; les autres valeurs remplissent les 3 langues d'un coup.
+  const [cancellationTemplate, setCancellationTemplate] = useState<CancellationTemplateId>("custom");
 
   // Auto-save
   const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
@@ -487,6 +556,22 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   });
   const primarySupplier = (boatSuppliers as any[] | undefined)?.find((s) => s.is_primary);
 
+  // Même clé de cache que IncludesManagerStandalone (sprint 5B, checklist étape 5) :
+  // juste pour compter les inclus avec photo, sans dupliquer la requête.
+  const { data: includesForChecklist } = useQuery({
+    queryKey: ["standalone-includes", currentExperienceId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("standalone_experience_includes")
+        .select("*")
+        .eq("experience_id", currentExperienceId)
+        .order("order_index");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !isBoatsExperience && !!currentExperienceId,
+  });
+
   // -------------------------------------------------------------------------
   // Form setup
   // -------------------------------------------------------------------------
@@ -555,6 +640,15 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       accessibility_info: "",
       accessibility_info_fr: "",
       accessibility_info_he: "",
+      languages: [],
+      schedule_note: "",
+      schedule_note_fr: "",
+      schedule_note_he: "",
+      access_note: "",
+      access_note_fr: "",
+      access_note_he: "",
+      hide_exact_address: false,
+      essentials_private_on_request: false,
       seo_title_en: "",
       seo_title_he: "",
       seo_title_fr: "",
@@ -643,6 +737,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
         practicalInfo,
         availableDays,
         blockedDates: blockedDates.map((d) => toLocalIso(d)),
+        sessionLabels,
         featuredOnHome,
         homeDisplayOrder,
         savedAt: new Date().toISOString(),
@@ -652,7 +747,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     } catch {
       // silent fail
     }
-  }, [getValues, heroImagePreview, galleryPreviews, timeSlots, includes, notIncludes, goodToKnow, highlightTags, selectedCategoryIds, practicalInfo, availableDays, blockedDates, featuredOnHome, homeDisplayOrder, autoSaveKey]);
+  }, [getValues, heroImagePreview, galleryPreviews, timeSlots, includes, notIncludes, goodToKnow, highlightTags, selectedCategoryIds, practicalInfo, availableDays, blockedDates, sessionLabels, featuredOnHome, homeDisplayOrder, autoSaveKey]);
 
   autoSaveFnRef.current = doAutoSave;
 
@@ -686,6 +781,9 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     setValue("cancellation_policy", exp.cancellation_policy || "");
     setValue("cancellation_policy_fr", exp.cancellation_policy_fr || "");
     setValue("cancellation_policy_he", exp.cancellation_policy_he || "");
+    setCancellationTemplate(
+      matchCancellationTemplate(exp.cancellation_policy, exp.cancellation_policy_fr, exp.cancellation_policy_he)
+    );
     setValue("supplier_name", exp.supplier_name || "");
     setValue("supplier_boat_name", exp.supplier_boat_name || "");
     // Pricing — fallback to base_price for existing records without supplier_price_adult
@@ -733,6 +831,18 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     setValue("accessibility_info", exp.accessibility_info || "");
     setValue("accessibility_info_fr", exp.accessibility_info_fr || "");
     setValue("accessibility_info_he", exp.accessibility_info_he || "");
+    setValue("languages", Array.isArray(exp.languages) ? exp.languages : []);
+    setValue("schedule_note", exp.schedule_note || "");
+    setValue("schedule_note_fr", exp.schedule_note_fr || "");
+    setValue("schedule_note_he", exp.schedule_note_he || "");
+    setValue("access_note", exp.access_note || "");
+    setValue("access_note_fr", exp.access_note_fr || "");
+    setValue("access_note_he", exp.access_note_he || "");
+    setValue("hide_exact_address", exp.hide_exact_address ?? false);
+    setValue("essentials_private_on_request", exp.essentials_private_on_request ?? false);
+    if (exp.session_labels && typeof exp.session_labels === "object") {
+      setSessionLabels(exp.session_labels);
+    }
     setValue("seo_title_en", exp.seo_title_en || "");
     setValue("seo_title_he", exp.seo_title_he || "");
     setValue("seo_title_fr", exp.seo_title_fr || "");
@@ -1141,6 +1251,52 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   };
 
   // -------------------------------------------------------------------------
+  // Générer le SEO (sprint 5B, étape 4) : à partir du titre/accroche/
+  // description déjà rédigés, demande à l'IA les 4 champs SEO par langue.
+  // Ne touche jamais au titre, à la description, au prix ni aux dates.
+  // -------------------------------------------------------------------------
+
+  const handleGenerateSeo = async () => {
+    setIsGeneratingSeo(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) return;
+      const content = {
+        title: getValues("title"),
+        title_fr: getValues("title_fr"),
+        title_he: getValues("title_he"),
+        subtitle: getValues("subtitle"),
+        subtitle_fr: getValues("subtitle_fr"),
+        subtitle_he: getValues("subtitle_he"),
+        long_copy: getValues("long_copy"),
+        long_copy_fr: getValues("long_copy_fr"),
+        long_copy_he: getValues("long_copy_he"),
+      };
+      const { data, error } = await supabase.functions.invoke("generate-experience-draft", {
+        headers: { Authorization: `Bearer ${token}` },
+        body: { type: "standalone", mode: "seo", content },
+      });
+      if (error || data?.error) {
+        toast.error(data?.error || "L'IA n'a pas pu générer le SEO, réessaie dans un instant.");
+        return;
+      }
+      const seo = data.seo as Record<string, string>;
+      if (seo.seo_title_en) setValue("seo_title_en", seo.seo_title_en);
+      if (seo.seo_title_fr) setValue("seo_title_fr", seo.seo_title_fr);
+      if (seo.seo_title_he) setValue("seo_title_he", seo.seo_title_he);
+      if (seo.meta_description_en) setValue("meta_description_en", seo.meta_description_en);
+      if (seo.meta_description_fr) setValue("meta_description_fr", seo.meta_description_fr);
+      if (seo.meta_description_he) setValue("meta_description_he", seo.meta_description_he);
+      toast.success("SEO généré — relis-le avant de publier.");
+    } catch {
+      toast.error("L'IA n'a pas pu générer le SEO, réessaie dans un instant.");
+    } finally {
+      setIsGeneratingSeo(false);
+    }
+  };
+
+  // -------------------------------------------------------------------------
   // Build experience data object
   // -------------------------------------------------------------------------
 
@@ -1238,6 +1394,16 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       accessibility_info: data.accessibility_info || null,
       accessibility_info_fr: data.accessibility_info_fr || null,
       accessibility_info_he: data.accessibility_info_he || null,
+      languages: data.languages && data.languages.length > 0 ? data.languages : null,
+      schedule_note: data.schedule_note || null,
+      schedule_note_fr: data.schedule_note_fr || null,
+      schedule_note_he: data.schedule_note_he || null,
+      access_note: data.access_note || null,
+      access_note_fr: data.access_note_fr || null,
+      access_note_he: data.access_note_he || null,
+      hide_exact_address: data.hide_exact_address,
+      essentials_private_on_request: data.essentials_private_on_request,
+      session_labels: Object.keys(sessionLabels).length > 0 ? sessionLabels : null,
       hero_image: heroImageUrl || null,
       thumbnail_image: heroImageUrl || null,
       photos: photoUrls,
@@ -1434,8 +1600,14 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       max_party: "Participants max",
       supplier_price_adult: "Prix adulte",
     };
-    const errorFields = Object.keys(errs).map((field) => fieldNames[field] || field);
-    if (errorFields.length > 0) toast.error(`Champs requis manquants : ${errorFields.join(", ")}`);
+
+    if (!isBoatsExperience && (errs.title || errs.long_copy)) {
+      toast.error("Il manque la version anglaise : clique sur Traduire tout");
+      setActiveLanguage("en");
+    } else {
+      const errorFields = Object.keys(errs).map((field) => fieldNames[field] || field);
+      if (errorFields.length > 0) toast.error(`Champs requis manquants : ${errorFields.join(", ")}`);
+    }
 
     const errorField = Object.keys(errs)[0];
     if (isBoatsExperience) {
@@ -1503,12 +1675,1852 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
 
   const practicalCompleteness = getPracticalInfoCompleteness(practicalInfo);
   const autoBadgesPreview = getAutoBadgesFromPracticalInfo(practicalInfo, "fr");
+  const currentStatus = (existingExperience as any)?.status === "published" ? "Publiée" : "Brouillon";
+  const LANGUAGE_PILLS: { code: "fr" | "en" | "he"; label: string }[] = [
+    { code: "fr", label: "FR" },
+    { code: "en", label: "EN" },
+    { code: "he", label: "HE" },
+  ];
+  const SPOKEN_LANGUAGE_OPTIONS = [
+    { code: "en", label: "EN" },
+    { code: "he", label: "HE" },
+    { code: "fr", label: "FR" },
+    { code: "ru", label: "RU" },
+    { code: "es", label: "ES" },
+    { code: "ar", label: "AR" },
+  ];
+  const spokenLanguages = watch("languages") ?? [];
+  const toggleSpokenLanguage = (code: string) => {
+    const current = getValues("languages") ?? [];
+    setValue(
+      "languages",
+      current.includes(code) ? current.filter((c) => c !== code) : [...current, code]
+    );
+  };
+
+  // Complétude par langue (étape 2) — champs principaux : titre, accroche, description.
+  const subtitleEn = watch("subtitle");
+  const subtitleFr = watch("subtitle_fr");
+  const subtitleHe = watch("subtitle_he");
+  const titleFrWatch = watch("title_fr");
+  const titleHeWatch = watch("title_he");
+  const longCopyEn = watch("long_copy");
+  const longCopyFr = watch("long_copy_fr");
+  const longCopyHe = watch("long_copy_he");
+  const getLanguageMissingCount = (lang: "fr" | "en" | "he") => {
+    const values =
+      lang === "fr"
+        ? [titleFrWatch, subtitleFr, longCopyFr]
+        : lang === "en"
+        ? [title, subtitleEn, longCopyEn]
+        : [titleHeWatch, subtitleHe, longCopyHe];
+    return values.filter((v) => !v || !v.trim()).length;
+  };
+
+  const totalPhotosCount = (heroImagePreview ? 1 : 0) + galleryPreviews.length;
+
+  // Champs communs à la carte Photos — identiques pour une expérience
+  // standard et pour un bateau, seul l'emplacement dans la page change.
+  const photosFields = (
+    <>
+      {/* Hero Image */}
+      <div>
+        <Label className="flex items-center gap-2">
+          <Star className="h-4 w-4" />
+          Photo de couverture
+        </Label>
+        <p className="text-xs text-muted-foreground mb-2">Grande image affichée en haut de la fiche.</p>
+        <div
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={handleHeroDrop}
+          className="border-2 border-dashed rounded-lg p-4 transition-colors hover:border-primary/50"
+        >
+          <div className="grid grid-cols-2 gap-4 items-center">
+            <div className="relative rounded-lg overflow-hidden bg-muted h-40">
+              {heroImageUploading ? (
+                <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+                  <Loader2 className="h-6 w-6 animate-spin mb-1 opacity-50" />
+                  <p className="text-xs">Upload en cours…</p>
+                </div>
+              ) : heroImagePreview ? (
+                <>
+                  <img src={heroImagePreview} alt="Hero" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setHeroImagePreview(null)}
+                    className="absolute top-1.5 right-1.5 bg-destructive text-destructive-foreground rounded-full p-1"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </>
+              ) : (
+                <div className="h-full flex items-center justify-center text-muted-foreground/40 text-xs">Aucune photo</div>
+              )}
+            </div>
+            <div className="space-y-3">
+              <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 text-sm rounded-md border bg-background hover:bg-muted transition-colors w-full justify-center">
+                <Upload className="h-4 w-4" />
+                {heroImagePreview ? "Changer la photo" : "Choisir une photo"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleHeroImageChange(e.target.files?.[0] || null)}
+                />
+              </label>
+              <p className="text-xs text-muted-foreground text-center">ou glisser-déposer ici</p>
+              <p className="text-xs text-muted-foreground text-center">1600×900px min · max 5MB</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Gallery */}
+      <div>
+        <Label>{isBoatsExperience ? "Galerie" : "Galerie (max. 8)"}</Label>
+        <p className="text-xs text-muted-foreground mb-2">
+          Glisser les images pour les ajouter. 1600×900px recommandé, max 5MB par image.
+        </p>
+        <div
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={handleGalleryDrop}
+          className="grid grid-cols-4 gap-4"
+        >
+          {galleryPreviews.map((preview, index) => (
+            <div key={index} className="relative group">
+              <img src={preview} alt={`Gallery ${index + 1}`} className="w-full h-32 object-cover rounded-lg" />
+              <span className="absolute top-1 left-1 bg-foreground/80 text-background text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                {index + 1}
+              </span>
+              <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  type="button"
+                  onClick={() => setHeroImagePreview(preview)}
+                  className="bg-secondary text-secondary-foreground rounded-full p-1"
+                  title="Définir comme couverture"
+                >
+                  <Star className="h-3 w-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeGalleryImage(index)}
+                  className="bg-destructive text-destructive-foreground rounded-full p-1"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+              {heroImagePreview === preview && (
+                <span className="absolute bottom-1 right-1 text-[9px] bg-accent text-accent-foreground px-1 rounded">COUV.</span>
+              )}
+            </div>
+          ))}
+          {galleryPreviews.length < galleryMax && (
+            <label className="border-2 border-dashed rounded-lg h-32 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors text-muted-foreground">
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleGalleryImagesChange(e.target.files)}
+              />
+              <Upload className="h-8 w-8 mb-1 opacity-40" />
+              <span className="text-xs">Ajouter</span>
+            </label>
+          )}
+        </div>
+      </div>
+    </>
+  );
+
+  // Titre + accroche — masqués pour les bateaux (qui ont leurs propres champs
+  // dans l'onglet "Champs bateaux"), inchangé dans les deux emplacements.
+  // Une langue à la fois (étape 2) — ne s'applique qu'aux expériences
+  // standard : le mode Bateaux garde ses 3 colonnes FR/EN/HE visibles en
+  // permanence, inchangé.
+  const langHidden = (lang: "fr" | "en" | "he") => !isBoatsExperience && activeLanguage !== lang;
+
+  const titleAndSubtitleFields = (
+    <>
+      {!isBoatsExperience && (
+        <div className="space-y-4">
+          <div className={cn("space-y-2", langHidden("en") && "hidden")}>
+            <Label htmlFor="title" className="flex items-center gap-1.5">
+              <span>🇬🇧</span> Titre (EN) <span className="text-destructive">*</span>
+            </Label>
+            <Input id="title" {...register("title")} placeholder="Ex: Wine tasting in the Galilee" disabled={isSaving} />
+            {errors.title && <p className="text-destructive text-xs">{errors.title.message}</p>}
+          </div>
+          <div className={cn("space-y-2", langHidden("fr") && "hidden")}>
+            <Label htmlFor="title_fr" className="flex items-center gap-1.5">
+              <span>🇫🇷</span> Titre (FR)
+            </Label>
+            <Input id="title_fr" {...register("title_fr")} placeholder="Ex: Dégustation de vins en Galilée" disabled={isSaving} />
+          </div>
+          <div className={cn("space-y-2", langHidden("he") && "hidden")}>
+            <Label htmlFor="title_he" className="flex items-center gap-1.5">
+              <span>🇮🇱</span> כותרת (HE)
+            </Label>
+            <Input id="title_he" {...register("title_he")} placeholder="כותרת בעברית" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
+          </div>
+        </div>
+      )}
+
+      <div className={cn(isBoatsExperience ? "grid grid-cols-3 gap-6" : "space-y-4")}>
+        <div className={cn("space-y-2", langHidden("en") && "hidden")}>
+          <Label htmlFor="subtitle" className="flex items-center gap-1.5">
+            <span>🇬🇧</span> Sous-titre (EN)
+          </Label>
+          <Input id="subtitle" {...register("subtitle")} placeholder="Courte accroche" disabled={isSaving} />
+        </div>
+        <div className={cn("space-y-2", langHidden("fr") && "hidden")}>
+          <Label htmlFor="subtitle_fr" className="flex items-center gap-1.5">
+            <span>🇫🇷</span> Sous-titre (FR)
+          </Label>
+          <Input id="subtitle_fr" {...register("subtitle_fr")} placeholder="Courte accroche en français" disabled={isSaving} />
+        </div>
+        <div className={cn("space-y-2", langHidden("he") && "hidden")}>
+          <Label htmlFor="subtitle_he" className="flex items-center gap-1.5">
+            <span>🇮🇱</span> תת-כותרת (HE)
+          </Label>
+          <Input id="subtitle_he" {...register("subtitle_he")} placeholder="תת-כותרת בעברית" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
+        </div>
+      </div>
+    </>
+  );
+
+  const descriptionFields = (
+    <>
+      <div className={cn("space-y-2", langHidden("en") && "hidden")}>
+        <Label className="flex items-center gap-1.5">
+          <span>🇬🇧</span> Description longue (EN) <span className="text-destructive">*</span>
+        </Label>
+        <Controller
+          name="long_copy"
+          control={control}
+          render={({ field }) => (
+            <RichTextEditor content={field.value || ""} onChange={field.onChange} placeholder="Description complète de l'expérience..." />
+          )}
+        />
+        {errors.long_copy && <p className="text-destructive text-xs">{errors.long_copy.message}</p>}
+      </div>
+
+      <div className={cn("space-y-2", langHidden("fr") && "hidden")}>
+        <Label className="flex items-center gap-1.5">
+          <span>🇫🇷</span> Description longue (FR)
+        </Label>
+        <Controller
+          name="long_copy_fr"
+          control={control}
+          render={({ field }) => (
+            <RichTextEditor content={field.value || ""} onChange={field.onChange} placeholder="Description complète de l'expérience en français..." />
+          )}
+        />
+      </div>
+
+      <div className={cn("space-y-2", langHidden("he") && "hidden")}>
+        <Label className="flex items-center gap-1.5">
+          <span>🇮🇱</span> תיאור ארוך (HE)
+        </Label>
+        <Controller
+          name="long_copy_he"
+          control={control}
+          render={({ field }) => (
+            <RichTextEditor content={field.value || ""} onChange={field.onChange} placeholder="תיאור מלא של החוויה..." dir="rtl" />
+          )}
+        />
+      </div>
+    </>
+  );
+
+  // Slug + mise en avant accueil — utilisés dans la section "6. Publication"
+  // des expériences standard, et (groupés avec les catégories) pour les bateaux.
+  const publicationExtras = (
+    <>
+      <div className="space-y-2">
+        <Label>Slug (URL)</Label>
+        <Input
+          value={generateSlug(watch("title") || "")}
+          readOnly
+          className="bg-muted text-muted-foreground text-sm"
+        />
+        <p className="text-xs text-muted-foreground">Généré automatiquement depuis le titre EN</p>
+      </div>
+
+      <div className="flex items-center justify-between p-4 rounded-lg border">
+        <div>
+          <p className="font-medium text-sm">Mise en avant sur l'accueil</p>
+          <p className="text-xs text-muted-foreground">Afficher cette expérience dans la section vedette de la page d'accueil</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {featuredOnHome && (
+            <div className="flex items-center gap-1.5">
+              <Label className="text-xs text-muted-foreground">Ordre</Label>
+              <Input
+                type="number"
+                min={0}
+                value={homeDisplayOrder}
+                onChange={(e) => setHomeDisplayOrder(parseInt(e.target.value) || 0)}
+                className="w-16 h-7 text-sm"
+              />
+            </div>
+          )}
+          <Switch checked={featuredOnHome} onCheckedChange={setFeaturedOnHome} />
+        </div>
+      </div>
+    </>
+  );
+
+  // Badges éditoriaux + informations clés (kosher/enfants/parking/fitness/spa)
+  // — identiques pour une expérience standard et pour un bateau.
+  const badgesContent = (
+    <>
+      <HighlightTagsSelectorStandalone
+        experienceId={currentExperienceId}
+        localTags={localTags}
+        onLocalTagsChange={setLocalTags}
+      />
+
+      <Separator />
+
+      <div className="space-y-3">
+        <p className="text-sm font-medium text-foreground">Informations clés</p>
+
+        <PracticalTriStateField
+          id="kosher"
+          icon={Utensils}
+          label="Kosher"
+          value={practicalInfo.kosher}
+          onChange={(v) => setPracticalInfo((prev) => ({ ...prev, kosher: v }))}
+        />
+
+        {/* Enfants */}
+        <div className="p-3 rounded-lg border space-y-2">
+          <div className="flex items-center gap-3">
+            <Users className="h-4 w-4 text-muted-foreground" />
+            <span className="font-medium text-sm flex-1">Enfants</span>
+            {practicalInfo.kids.status === null && <CompletionPill />}
+          </div>
+          <RadioGroup
+            value={practicalInfo.kids.status ?? undefined}
+            onValueChange={(v) =>
+              setPracticalInfo((prev) => ({
+                ...prev,
+                kids: { status: v as "yes" | "no", from_age: v === "yes" ? prev.kids.from_age : null },
+              }))
+            }
+            className="flex gap-4 ml-7"
+          >
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="yes" id="kids-yes" />
+              <Label htmlFor="kids-yes" className="text-sm font-normal cursor-pointer">Oui</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="no" id="kids-no" />
+              <Label htmlFor="kids-no" className="text-sm font-normal cursor-pointer">Non</Label>
+            </div>
+          </RadioGroup>
+          {practicalInfo.kids.status === "yes" && (
+            <div className="ml-7 flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground shrink-0">À partir de :</Label>
+              <Input
+                type="number"
+                min={0}
+                value={practicalInfo.kids.from_age ?? ""}
+                onChange={(e) =>
+                  setPracticalInfo((prev) => ({
+                    ...prev,
+                    kids: { ...prev.kids, from_age: e.target.value ? parseInt(e.target.value) : null },
+                  }))
+                }
+                placeholder="Âge"
+                className="h-8 text-sm w-24"
+              />
+              <span className="text-sm text-muted-foreground">ans (badge "KIDS from X")</span>
+            </div>
+          )}
+        </div>
+
+        {/* Parking */}
+        <div className="p-3 rounded-lg border space-y-2">
+          <div className="flex items-center gap-3">
+            <Car className="h-4 w-4 text-muted-foreground" />
+            <span className="font-medium text-sm flex-1">Parking</span>
+            {practicalInfo.parking.status === null && <CompletionPill />}
+          </div>
+          <RadioGroup
+            value={practicalInfo.parking.status ?? undefined}
+            onValueChange={(v) =>
+              setPracticalInfo((prev) => ({
+                ...prev,
+                parking: {
+                  status: v as "yes" | "no",
+                  price_type: v === "yes" ? prev.parking.price_type : null,
+                  price_amount: v === "yes" ? prev.parking.price_amount : null,
+                },
+              }))
+            }
+            className="flex gap-4 ml-7"
+          >
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="yes" id="parking-yes" />
+              <Label htmlFor="parking-yes" className="text-sm font-normal cursor-pointer">Oui</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="no" id="parking-no" />
+              <Label htmlFor="parking-no" className="text-sm font-normal cursor-pointer">Non</Label>
+            </div>
+          </RadioGroup>
+          {practicalInfo.parking.status === "yes" && (
+            <div className="ml-7 space-y-2">
+              <RadioGroup
+                value={practicalInfo.parking.price_type ?? undefined}
+                onValueChange={(v) =>
+                  setPracticalInfo((prev) => ({ ...prev, parking: { ...prev.parking, price_type: v as "free" | "paid" } }))
+                }
+                className="flex gap-4"
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="free" id="parking-free" />
+                  <Label htmlFor="parking-free" className="text-sm font-normal cursor-pointer">Gratuit</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="paid" id="parking-paid" />
+                  <Label htmlFor="parking-paid" className="text-sm font-normal cursor-pointer">Payant</Label>
+                </div>
+              </RadioGroup>
+              {practicalInfo.parking.price_type === "paid" && (
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm text-muted-foreground shrink-0">Montant :</Label>
+                  <Input
+                    value={practicalInfo.parking.price_amount ?? ""}
+                    onChange={(e) =>
+                      setPracticalInfo((prev) => ({ ...prev, parking: { ...prev.parking, price_amount: e.target.value } }))
+                    }
+                    placeholder="Ex: 20₪ par jour"
+                    className="h-8 text-sm"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <PracticalTriStateField
+          id="fitness"
+          icon={Dumbbell}
+          label="Centre fitness"
+          value={practicalInfo.fitness}
+          onChange={(v) => setPracticalInfo((prev) => ({ ...prev, fitness: v }))}
+        />
+
+        <PracticalTriStateField
+          id="spa"
+          icon={Waves}
+          label="Spa"
+          value={practicalInfo.spa}
+          onChange={(v) => setPracticalInfo((prev) => ({ ...prev, spa: v }))}
+        />
+      </div>
+
+      {autoBadgesPreview.length > 0 && (
+        <div className="pt-3 border-t">
+          <p className="text-xs text-muted-foreground mb-2">Aperçu des badges générés automatiquement sur la fiche publique :</p>
+          <div className="flex flex-wrap gap-2">
+            {autoBadgesPreview.map((b) => (
+              <Badge key={b.key} variant="secondary">{b.label}</Badge>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  // Localisation — identique pour une expérience standard et pour un bateau.
+  const locationFields = (
+    <>
+      <div className={cn(isBoatsExperience ? "grid grid-cols-3 gap-4" : "space-y-4")}>
+        <div className={cn("space-y-2", langHidden("en") && "hidden")}>
+          <Label htmlFor="city" className="flex items-center gap-1.5">
+            <span>🇬🇧</span> Ville (EN)
+          </Label>
+          <Input id="city" {...register("city")} placeholder="Ex: Tel Aviv" disabled={isSaving} />
+        </div>
+        <div className={cn("space-y-2", langHidden("fr") && "hidden")}>
+          <Label htmlFor="city_fr" className="flex items-center gap-1.5">
+            <span>🇫🇷</span> Ville (FR)
+          </Label>
+          <Input id="city_fr" {...register("city_fr")} placeholder="Ex: Tel Aviv" disabled={isSaving} />
+        </div>
+        <div className={cn("space-y-2", langHidden("he") && "hidden")}>
+          <Label htmlFor="city_he" className="flex items-center gap-1.5">
+            <span>🇮🇱</span> עיר (HE)
+          </Label>
+          <Input id="city_he" {...register("city_he")} placeholder="תל אביב" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
+        </div>
+      </div>
+      <div className={cn(isBoatsExperience ? "grid grid-cols-3 gap-4" : "space-y-4")}>
+        <div className={cn("space-y-2", langHidden("en") && "hidden")}>
+          <Label htmlFor="region" className="flex items-center gap-1.5">
+            <span>🇬🇧</span> Région (EN)
+          </Label>
+          <Input id="region" {...register("region")} placeholder="Ex: Tel Aviv, Galilee, Dead Sea..." disabled={isSaving} />
+        </div>
+        <div className={cn("space-y-2", langHidden("fr") && "hidden")}>
+          <Label htmlFor="region_fr" className="flex items-center gap-1.5">
+            <span>🇫🇷</span> Région (FR)
+          </Label>
+          <Input id="region_fr" {...register("region_fr")} placeholder="Ex: Galilée, Mer Morte..." disabled={isSaving} />
+        </div>
+        <div className={cn("space-y-2", langHidden("he") && "hidden")}>
+          <Label htmlFor="region_he" className="flex items-center gap-1.5">
+            <span>🇮🇱</span> אזור (HE)
+          </Label>
+          <Input id="region_he" {...register("region_he")} placeholder="אזור" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
+        </div>
+      </div>
+      <div className={cn(isBoatsExperience ? "grid grid-cols-3 gap-4" : "space-y-4")}>
+        <div className={cn("space-y-2", langHidden("en") && "hidden")}>
+          <Label htmlFor="address" className="flex items-center gap-1.5">
+            <span>🇬🇧</span> Adresse (EN)
+          </Label>
+          <Input id="address" {...register("address")} placeholder="Ex: 12 Rothschild Blvd, Tel Aviv" disabled={isSaving} />
+        </div>
+        <div className={cn("space-y-2", langHidden("fr") && "hidden")}>
+          <Label htmlFor="address_fr" className="flex items-center gap-1.5">
+            <span>🇫🇷</span> Adresse (FR)
+          </Label>
+          <Input id="address_fr" {...register("address_fr")} placeholder="Ex: 12 Rothschild Blvd, Tel Aviv" disabled={isSaving} />
+        </div>
+        <div className={cn("space-y-2", langHidden("he") && "hidden")}>
+          <Label htmlFor="address_he" className="flex items-center gap-1.5">
+            <span>🇮🇱</span> כתובת (HE)
+          </Label>
+          <Input id="address_he" {...register("address_he")} placeholder="כתובת בעברית" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="google_maps_link">Lien Google Maps</Label>
+        <Input id="google_maps_link" {...register("google_maps_link")} placeholder="https://maps.google.com/..." disabled={isSaving} />
+      </div>
+
+      <Separator />
+
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Coordonnées GPS</Label>
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            type="number"
+            step="any"
+            placeholder="Latitude"
+            {...register("latitude", { valueAsNumber: true })}
+            disabled={isSaving}
+          />
+          <Input
+            type="number"
+            step="any"
+            placeholder="Longitude"
+            {...register("longitude", { valueAsNumber: true })}
+            disabled={isSaving}
+          />
+        </div>
+        <Button type="button" variant="outline" onClick={handleGeocode} disabled={isGeocoding} className="w-full">
+          {isGeocoding ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Détection...
+            </>
+          ) : (
+            <>
+              <MapPin className="mr-2 h-4 w-4" />
+              Auto-détecter coordonnées
+            </>
+          )}
+        </Button>
+        {watch("latitude") && watch("longitude") && (
+          <p className="text-sm text-emerald-600">
+            ✓ Coordonnées : {Number(watch("latitude")).toFixed(4)}, {Number(watch("longitude")).toFixed(4)}
+          </p>
+        )}
+      </div>
+    </>
+  );
+
+  // Durée — identique pour une expérience standard et pour un bateau.
+  const durationFields = (
+    <div className={cn(isBoatsExperience ? "grid grid-cols-3 gap-6" : "space-y-4")}>
+      <div className={cn("space-y-2", langHidden("en") && "hidden")}>
+        <Label htmlFor="duration" className="flex items-center gap-1.5">
+          <span>🇬🇧</span> Duration (EN)
+        </Label>
+        <Input id="duration" {...register("duration")} placeholder="Ex: 3 hours" disabled={isSaving} />
+      </div>
+      <div className={cn("space-y-2", langHidden("fr") && "hidden")}>
+        <Label htmlFor="duration_fr" className="flex items-center gap-1.5">
+          <span>🇫🇷</span> Durée (FR)
+        </Label>
+        <Input id="duration_fr" {...register("duration_fr")} placeholder="Ex: 3 heures" disabled={isSaving} />
+      </div>
+      <div className={cn("space-y-2", langHidden("he") && "hidden")}>
+        <Label htmlFor="duration_he" className="flex items-center gap-1.5">
+          <span>🇮🇱</span> משך (HE)
+        </Label>
+        <Input id="duration_he" {...register("duration_he")} placeholder="Ex: 3 שעות" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
+      </div>
+    </div>
+  );
+
+  // Accessibilité — identique pour une expérience standard et pour un bateau.
+  const accessibilityFields = (
+    <>
+      <div className={cn("space-y-2", langHidden("en") && "hidden")}>
+        <Label htmlFor="accessibility_info" className="flex items-center gap-1.5">
+          <span>🇬🇧</span> Informations d'accessibilité (EN)
+        </Label>
+        <Textarea
+          id="accessibility_info"
+          {...register("accessibility_info")}
+          placeholder="Ex: Accessible en fauteuil roulant. Terrain plat."
+          rows={3}
+          disabled={isSaving}
+        />
+      </div>
+      <div className={cn("space-y-2", langHidden("fr") && "hidden")}>
+        <Label htmlFor="accessibility_info_fr" className="flex items-center gap-1.5">
+          <span>🇫🇷</span> Informations d'accessibilité (FR)
+        </Label>
+        <Textarea
+          id="accessibility_info_fr"
+          {...register("accessibility_info_fr")}
+          placeholder="Ex : Accessible en fauteuil roulant. Terrain plat."
+          rows={3}
+          disabled={isSaving}
+        />
+      </div>
+      <div className={cn("space-y-2", langHidden("he") && "hidden")}>
+        <Label htmlFor="accessibility_info_he" className="flex items-center gap-1.5">
+          <span>🇮🇱</span> נגישות (HE)
+        </Label>
+        <Textarea
+          id="accessibility_info_he"
+          {...register("accessibility_info_he")}
+          rows={3}
+          dir="rtl"
+          className="bg-hebrew-input"
+          disabled={isSaving}
+        />
+      </div>
+    </>
+  );
+
+  // Nouveaux champs "L'essentiel" (sprint 4, branchés dans ce sprint) —
+  // uniquement pour les expériences standard.
+  const essentialsExtraFields = (
+    <>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex items-center justify-between p-3 rounded-lg border">
+          <div className="flex items-center gap-2">
+            <EyeOff className="h-4 w-4 text-muted-foreground" />
+            <Label htmlFor="hide_exact_address" className="cursor-pointer">Masquer l'adresse exacte</Label>
+          </div>
+          <Controller
+            name="hide_exact_address"
+            control={control}
+            render={({ field }) => (
+              <Switch id="hide_exact_address" checked={field.value} onCheckedChange={field.onChange} />
+            )}
+          />
+        </div>
+        <div className="flex items-center justify-between p-3 rounded-lg border">
+          <Label htmlFor="essentials_private_on_request" className="cursor-pointer">Séance privée sur demande</Label>
+          <Controller
+            name="essentials_private_on_request"
+            control={control}
+            render={({ field }) => (
+              <Switch id="essentials_private_on_request" checked={field.value} onCheckedChange={field.onChange} />
+            )}
+          />
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground -mt-2">
+        Adresse envoyée seulement après réservation si cette option est activée.
+      </p>
+
+      <div className="space-y-4">
+        <div className={cn("space-y-2", langHidden("en") && "hidden")}>
+          <Label htmlFor="access_note" className="flex items-center gap-1.5">
+            <Car className="h-4 w-4" /> Accès sans voiture (EN)
+          </Label>
+          <Input id="access_note" {...register("access_note")} placeholder="Ex: Walk or bus, no parking" disabled={isSaving} />
+        </div>
+        <div className={cn("space-y-2", langHidden("fr") && "hidden")}>
+          <Label htmlFor="access_note_fr" className="flex items-center gap-1.5">
+            <Car className="h-4 w-4" /> Accès sans voiture (FR)
+          </Label>
+          <Input id="access_note_fr" {...register("access_note_fr")} placeholder="Ex: À pied ou en bus, pas de parking" disabled={isSaving} />
+        </div>
+        <div className={cn("space-y-2", langHidden("he") && "hidden")}>
+          <Label htmlFor="access_note_he" className="flex items-center gap-1.5">
+            <Car className="h-4 w-4" /> גישה בלי רכב (HE)
+          </Label>
+          <Input id="access_note_he" {...register("access_note_he")} dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className={cn("space-y-2", langHidden("en") && "hidden")}>
+          <Label htmlFor="schedule_note" className="flex items-center gap-1.5">
+            <Clock className="h-4 w-4" /> Horaire en clair (EN)
+          </Label>
+          <Input id="schedule_note" {...register("schedule_note")} placeholder="Ex: Every Thursday at 6:30pm" disabled={isSaving} />
+        </div>
+        <div className={cn("space-y-2", langHidden("fr") && "hidden")}>
+          <Label htmlFor="schedule_note_fr" className="flex items-center gap-1.5">
+            <Clock className="h-4 w-4" /> Horaire en clair (FR)
+          </Label>
+          <Input id="schedule_note_fr" {...register("schedule_note_fr")} placeholder="Ex: Tous les jeudis à 18h30" disabled={isSaving} />
+        </div>
+        <div className={cn("space-y-2", langHidden("he") && "hidden")}>
+          <Label htmlFor="schedule_note_he" className="flex items-center gap-1.5">
+            <Clock className="h-4 w-4" /> שעות בעברית (HE)
+          </Label>
+          <Input id="schedule_note_he" {...register("schedule_note_he")} dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
+        </div>
+      </div>
+
+      <div>
+        <Label className="flex items-center gap-1.5 mb-2">
+          <Globe className="h-4 w-4" /> Langues parlées
+        </Label>
+        <div className="flex gap-2 flex-wrap">
+          {SPOKEN_LANGUAGE_OPTIONS.map((lng) => (
+            <button
+              key={lng.code}
+              type="button"
+              onClick={() => toggleSpokenLanguage(lng.code)}
+              className={cn(
+                "px-2.5 py-1 rounded-full text-xs border transition-colors",
+                spokenLanguages.includes(lng.code)
+                  ? "bg-[#1a1814] text-white border-[#1a1814]"
+                  : "bg-white text-[#1a1814] border-[#e9e6e1] hover:border-[#1a1814]/40"
+              )}
+            >
+              {lng.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+
+  // Mode de réservation — identique pour une expérience standard et un bateau.
+  const bookingModeCard = (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Mode de réservation</CardTitle>
+            <CardDescription>
+              {isBookable
+                ? "Le visiteur choisit ses dates et paie directement en ligne."
+                : "Le visiteur envoie une demande de dates (sans paiement) ; elle apparaît dans l'onglet \"Demandes à traiter\" des réservations standalone."}
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">{isBookable ? "Réservable en ligne" : "Sur demande"}</span>
+            <Controller
+              name="is_bookable"
+              control={control}
+              render={({ field }) => (
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
+              )}
+            />
+          </div>
+        </div>
+      </CardHeader>
+    </Card>
+  );
+
+  // Prix de l'expérience — mêmes champs et même calcul qu'avant (règle
+  // stricte du sprint 5B), seule la partie fournisseur est maintenant
+  // regroupée dans un encadré "Interne, jamais visible du client".
+  const priceCardContent = (
+    <>
+      {/* Paramètres de base */}
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Paramètres de base</p>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Type de tarification <span className="text-destructive">*</span></Label>
+            <Controller
+              name="base_price_type"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange} disabled={isSaving}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="per_person">Par personne (× nb. participants)</SelectItem>
+                    <SelectItem value="fixed">Forfait (prix unique, tout groupe)</SelectItem>
+                    <SelectItem value="per_person_per_night">Par personne / nuit</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Devise</Label>
+            <Controller
+              name="currency"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange} disabled={isSaving}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ILS">ILS ₪</SelectItem>
+                    <SelectItem value="USD">USD $</SelectItem>
+                    <SelectItem value="EUR">EUR €</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+        </div>
+      </div>
+
+      <Separator />
+
+      {!isBoatsExperience && (
+        <>
+          {/* Fournisseur, tarif fournisseur et marge — jamais affiché côté client */}
+          <div className="rounded-lg border border-[#eef2f6] bg-[#eef2f6] p-4 space-y-4">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#3c4a5c] bg-white border border-[#dbe3ea] rounded-full px-2.5 py-1">
+              <EyeOff className="h-3 w-3" /> Interne, jamais visible du client
+            </span>
+
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+                Fournisseur
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="supplier_name">Société / prestataire</Label>
+                  <Input
+                    id="supplier_name"
+                    {...register("supplier_name")}
+                    placeholder="ex. BALAGUNA, MARK"
+                    disabled={isSaving}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="supplier_boat_name">Nom d'origine chez le fournisseur</Label>
+                  <Input
+                    id="supplier_boat_name"
+                    {...register("supplier_boat_name")}
+                    placeholder="ex. Thirty Eight Catamaran"
+                    disabled={isSaving}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Le titre affiché au client (section L'essentiel) peut être différent.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Tarif fournisseur */}
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Tarif fournisseur (Prix net achat)</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="supplier_price_adult">
+                    {isFixed ? "Prix total forfait" : "Prix adulte"} <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="supplier_price_adult"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      {...register("supplier_price_adult", { valueAsNumber: true })}
+                      placeholder="0"
+                      disabled={isSaving}
+                      className="pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {isFixed
+                      ? "Prix total que vous payez au prestataire, pour tout le groupe"
+                      : "Prix que vous payez au prestataire"}
+                  </p>
+                  {errors.supplier_price_adult && <p className="text-destructive text-xs">{errors.supplier_price_adult.message}</p>}
+                </div>
+
+                {isFixed ? (
+                  <div className="space-y-2 flex items-center">
+                    <p className="text-xs text-muted-foreground italic">
+                      Le tarif enfant n'est pas applicable pour un forfait — le prix est le même pour tout le groupe.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="supplier_price_child">Prix enfant</Label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">Tarif différent</span>
+                        <Controller
+                          name="has_child_price"
+                          control={control}
+                          render={({ field }) => (
+                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                          )}
+                        />
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="supplier_price_child"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        {...register("supplier_price_child", { valueAsNumber: true })}
+                        placeholder="100"
+                        disabled={isSaving || !hasChildPrice}
+                        className={cn("pr-8", !hasChildPrice && "opacity-40")}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {hasChildPrice ? "Prix enfant au prestataire" : "Activer pour saisir un prix enfant"}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Markup STAYMAKOM */}
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Markup STAYMAKOM</p>
+              <div className="rounded-lg border bg-white p-4">
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-muted-foreground shrink-0 w-16">Marge %</span>
+                  <Controller
+                    name="markup_percent"
+                    control={control}
+                    render={({ field }) => (
+                      <Slider
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={[field.value ?? 0]}
+                        onValueChange={([v]) => field.onChange(v)}
+                        className="flex-1"
+                      />
+                    )}
+                  />
+                  <span className="text-sm font-semibold w-12 text-right">{markupPercent}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+        </>
+      )}
+
+      {/* Lien de réservation fournisseur — usage interne uniquement */}
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+          Lien de réservation fournisseur (usage interne, jamais visible des clients)
+        </p>
+        <div className="space-y-2">
+          <Label htmlFor="supplier_booking_url">URL de réservation chez le prestataire</Label>
+          <Input
+            id="supplier_booking_url"
+            type="url"
+            {...register("supplier_booking_url")}
+            placeholder="https://..."
+            disabled={isSaving}
+          />
+          <p className="text-xs text-muted-foreground">
+            Pour les expériences que vous réservez vous-même chez le fournisseur : ce lien apparaîtra
+            uniquement dans le récapitulatif de vos réservations, jamais sur le site public.
+          </p>
+        </div>
+      </div>
+
+      {/* Prix de vente réellement enregistré (celui lu par le site public).
+          Éditable : le curseur de marge ci-dessus ne fait que proposer une
+          suggestion, tant que ce champ n'est pas modifié à la main il reste
+          synchronisé dessus (cf. useEffect plus haut dans le composant). */}
+      {!isBoatsExperience && supplierPriceAdult > 0 && (
+        <div className="grid grid-cols-3 gap-3">
+          <div className="rounded-lg border p-4 bg-background">
+            <div className="flex items-center justify-between gap-1.5 text-muted-foreground text-xs mb-2">
+              <span className="flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5" />
+                {isFixed ? "Prix total affiché" : "Adulte"}
+              </span>
+              {priceTouched && (
+                <button
+                  type="button"
+                  className="text-primary underline text-[11px]"
+                  onClick={() => { setPriceTouched(false); setValue("base_price", computedAdultPrice); }}
+                >
+                  Reprendre la suggestion
+                </button>
+              )}
+            </div>
+            <Controller
+              name="base_price"
+              control={control}
+              render={({ field }) => (
+                <div className="relative">
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={field.value ?? ""}
+                    disabled={isSaving}
+                    className="text-lg font-bold h-auto py-1.5 pr-8"
+                    onChange={(e) => {
+                      setPriceTouched(true);
+                      field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value));
+                    }}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
+                </div>
+              )}
+            />
+            {isFixed ? (
+              <p className="text-xs text-muted-foreground mt-1">Prix forfait tout groupe</p>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-1">Suggestion : {supplierPriceAdult} + {markupPercent}% = {computedAdultPrice}</p>
+            )}
+          </div>
+          {isFixed ? (
+            <div className="rounded-lg border p-4 bg-accent/20">
+              <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
+                <Users className="h-3.5 w-3.5" /> À partir de
+              </div>
+              {maxPartyWatch > 0 ? (
+                <>
+                  <p className="text-2xl font-bold">{prixParPersonneAffiche} <span className="text-base font-normal">{currencySymbol}</span></p>
+                  <p className="text-xs text-muted-foreground mt-1">/ pers. (groupe de {maxPartyWatch})</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-2xl font-bold text-muted-foreground">—</p>
+                  <p className="text-xs text-muted-foreground mt-1">Renseigner max participants</p>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className={cn("rounded-lg border p-4", hasChildPrice ? "bg-background" : "bg-muted/30")}>
+              <div className="flex items-center justify-between gap-1.5 text-muted-foreground text-xs mb-2">
+                <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> Enfant</span>
+                {hasChildPrice && childPriceTouched && (
+                  <button
+                    type="button"
+                    className="text-primary underline text-[11px]"
+                    onClick={() => { setChildPriceTouched(false); setValue("base_price_child", computedChildPrice); }}
+                  >
+                    Reprendre la suggestion
+                  </button>
+                )}
+              </div>
+              {hasChildPrice ? (
+                <>
+                  <Controller
+                    name="base_price_child"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={field.value ?? ""}
+                          disabled={isSaving}
+                          className="text-lg font-bold h-auto py-1.5 pr-8"
+                          onChange={(e) => {
+                            setChildPriceTouched(true);
+                            field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value));
+                          }}
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
+                      </div>
+                    )}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Suggestion : {supplierPriceChild} + {markupPercent}% = {computedChildPrice}</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-2xl font-bold text-muted-foreground">—</p>
+                  <p className="text-xs text-muted-foreground mt-1">Tarif enfant désactivé</p>
+                </>
+              )}
+            </div>
+          )}
+          <div className="rounded-lg border p-4 bg-background">
+            <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
+              <span className="text-xs font-bold">%</span> Marge unitaire
+            </div>
+            <p className="text-2xl font-bold">{margeUnitaireAdult} <span className="text-base font-normal">{currencySymbol}</span></p>
+            <p className="text-xs text-muted-foreground mt-1">{isFixed ? "sur le forfait" : "par adulte"}</p>
+          </div>
+        </div>
+      )}
+
+      <Separator />
+
+      {/* Délai de réservation */}
+      <div className="space-y-2">
+        <Label htmlFor="lead_time_days">Délai minimum avant réservation (jours)</Label>
+        <div className="flex items-center gap-3">
+          <Input
+            id="lead_time_days"
+            type="number"
+            min={0}
+            max={365}
+            {...register("lead_time_days", { valueAsNumber: true })}
+            disabled={isSaving}
+            className="w-32"
+          />
+          <p className="text-sm text-muted-foreground">
+            Les clients devront réserver au moins {watch("lead_time_days") ?? 0} jour{(watch("lead_time_days") ?? 0) > 1 ? "s" : ""} à l'avance.
+          </p>
+        </div>
+      </div>
+    </>
+  );
+
+  // Options tarifaires — identique pour une expérience standard et un bateau.
+  const rateOptionsCard = (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Options tarifaires</CardTitle>
+            <CardDescription>
+              Proposez plusieurs formules à prix différents (ex: "12h — Menu Découverte" à 150₪, "19h — Menu Dégustation" à 280₪)
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">{hasRateOptions ? "Activées" : "Désactivées"}</span>
+            <Controller
+              name="has_rate_options"
+              control={control}
+              render={({ field }) => (
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
+              )}
+            />
+          </div>
+        </div>
+      </CardHeader>
+      {hasRateOptions && (
+        <CardContent>
+          <StandaloneRateOptionsManager
+            experienceId={currentExperienceId}
+            hasChildPrice={hasChildPrice}
+            markupPercent={markupPercent}
+          />
+        </CardContent>
+      )}
+    </Card>
+  );
+
+  // Créneaux horaires — identique pour une expérience standard et un bateau.
+  const timeSlotsCard = (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Créneaux horaires
+            </CardTitle>
+            <CardDescription>Activez si l'expérience se déroule à des horaires précis</CardDescription>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">{hasTimeSlots ? "Activés" : "Désactivés"}</span>
+            <Controller
+              name="has_time_slots"
+              control={control}
+              render={({ field }) => (
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
+              )}
+            />
+          </div>
+        </div>
+      </CardHeader>
+      {hasTimeSlots && (
+        <CardContent className="space-y-4">
+          <div className="flex gap-2">
+            <Input type="time" value={newSlot} onChange={(e) => setNewSlot(e.target.value)} className="w-40" />
+            <Button type="button" variant="outline" onClick={addTimeSlot} disabled={!newSlot}>
+              <Plus className="h-4 w-4 mr-1" />
+              Ajouter
+            </Button>
+          </div>
+          {timeSlots.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {timeSlots.map((slot) => (
+                <span key={slot} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                  {slot}
+                  <button type="button" onClick={() => removeTimeSlot(slot)} className="hover:text-destructive transition-colors">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground italic">Aucun créneau ajouté.</p>
+          )}
+        </CardContent>
+      )}
+    </Card>
+  );
+
+  // Disponibilités — identique pour une expérience standard et un bateau,
+  // avec en plus (sprint 5B) le bandeau "aucune date à venir" et un libellé
+  // optionnel par date pour le mode "Dates spécifiques".
+  const availabilityCardContent = (
+    <>
+      {remainingDatesCount === 0 && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-[#fff4d6] text-[#8a6100] text-sm">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          Aucune date à venir : la fiche affichera « Prochaines dates sur demande ».
+        </div>
+      )}
+
+      {/* Toggle mode */}
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => setAvailabilityMode("blacklist")}
+          className={cn(
+            "flex flex-col items-start gap-0.5 rounded-lg border-2 px-4 py-3 text-left transition-colors",
+            availabilityMode === "blacklist"
+              ? "border-primary bg-primary/5"
+              : "border-muted bg-background hover:border-primary/30"
+          )}
+        >
+          <span className="text-sm font-semibold">Jours récurrents</span>
+          <span className="text-xs text-muted-foreground">Ouvert selon les jours de la semaine, avec des exceptions</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setAvailabilityMode("whitelist")}
+          className={cn(
+            "flex flex-col items-start gap-0.5 rounded-lg border-2 px-4 py-3 text-left transition-colors",
+            availabilityMode === "whitelist"
+              ? "border-primary bg-primary/5"
+              : "border-muted bg-background hover:border-primary/30"
+          )}
+        >
+          <span className="text-sm font-semibold">Dates spécifiques</span>
+          <span className="text-xs text-muted-foreground">Seulement 2-3 dates précises à ouvrir</span>
+        </button>
+      </div>
+
+      <Separator />
+
+      {/* ── Mode Jours récurrents (blacklist) ── */}
+      {availabilityMode === "blacklist" && (
+        <>
+          {/* Jours de la semaine */}
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+              Jours disponibles chaque semaine
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              {WEEKDAYS.map((day) => {
+                const active = availableDays.includes(day.id);
+                return (
+                  <button
+                    key={day.id}
+                    type="button"
+                    title={day.full}
+                    onClick={() =>
+                      setAvailableDays((prev) =>
+                        prev.includes(day.id)
+                          ? prev.filter((d) => d !== day.id)
+                          : [...prev, day.id].sort((a, b) => a - b)
+                      )
+                    }
+                    className={cn(
+                      "w-10 h-10 rounded-full text-sm font-semibold border-2 transition-colors",
+                      active
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-muted-foreground border-muted hover:border-primary/50"
+                    )}
+                  >
+                    {day.label}
+                  </button>
+                );
+              })}
+            </div>
+            {availableDays.length === 0 && (
+              <p className="text-xs text-destructive mt-2">Aucun jour sélectionné — l'expérience sera indisponible.</p>
+            )}
+            {availableDays.length > 0 && availableDays.length < 7 && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Disponible : {availableDays.map((id) => WEEKDAYS.find((d) => d.id === id)?.full).join(", ")}
+              </p>
+            )}
+            {availableDays.length === 7 && (
+              <p className="text-xs text-muted-foreground mt-2">Disponible tous les jours</p>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Dates bloquées */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  Dates bloquées (exceptions)
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Cliquez sur une date pour la marquer comme indisponible — cliquez à nouveau pour la débloquer
+                </p>
+              </div>
+              {blockedDates.length > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setBlockedDates([])}
+                  className="text-destructive hover:text-destructive text-xs"
+                >
+                  Tout débloquer
+                </Button>
+              )}
+            </div>
+            <div className="rounded-lg border bg-background overflow-hidden">
+              <Calendar
+                mode="multiple"
+                selected={blockedDates}
+                onSelect={(dates) => setBlockedDates(dates || [])}
+                month={calendarMonth}
+                onMonthChange={setCalendarMonth}
+                numberOfMonths={2}
+                fromDate={new Date()}
+                modifiers={{
+                  weekdayUnavailable: (date: Date) => {
+                    if (availableDays.length === 7) return false;
+                    const availableJsDays = availableDays.map((d) => (d === 7 ? 0 : d));
+                    return !availableJsDays.includes(date.getDay());
+                  },
+                }}
+                modifiersClassNames={{ weekdayUnavailable: "opacity-30" }}
+                classNames={{
+                  day_selected:
+                    "bg-destructive text-destructive-foreground hover:bg-destructive hover:text-destructive-foreground focus:bg-destructive focus:text-destructive-foreground",
+                }}
+              />
+            </div>
+            {availableDays.length < 7 && (
+              <p className="text-xs text-muted-foreground mt-2 italic">
+                Les jours en fondu sont déjà indisponibles selon les restrictions ci-dessus.
+              </p>
+            )}
+            {blockedDates.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {blockedDates
+                  .sort((a, b) => a.getTime() - b.getTime())
+                  .map((date) => (
+                    <span
+                      key={date.toISOString()}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-destructive/10 text-destructive border border-destructive/20"
+                    >
+                      {date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                      <button
+                        type="button"
+                        onClick={() => setBlockedDates((prev) => prev.filter((d) => d.toDateString() !== date.toDateString()))}
+                        className="hover:opacity-70"
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    </span>
+                  ))}
+              </div>
+            )}
+            {blockedDates.length === 0 && (
+              <p className="text-xs text-muted-foreground mt-2 italic">
+                Aucune date bloquée — disponible tous les jours autorisés ci-dessus.
+              </p>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Date de fermeture */}
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+              Disponible jusqu'au
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Le calendrier se ferme automatiquement après cette date. Par défaut : 6 mois.
+            </p>
+            <Input
+              type="date"
+              value={availabilityEndDate ?? defaultEndDate}
+              min={new Date().toISOString().split("T")[0]}
+              onChange={(e) => setAvailabilityEndDate(e.target.value || null)}
+              className="w-48"
+            />
+          </div>
+        </>
+      )}
+
+      {/* ── Mode Dates spécifiques (whitelist) ── */}
+      {availabilityMode === "whitelist" && (
+        <>
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  Dates disponibles
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Cliquez sur les dates pour les ouvrir — tout le reste sera fermé
+                </p>
+              </div>
+              {whitelistedDates.length > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setWhitelistedDates([])}
+                  className="text-destructive hover:text-destructive text-xs"
+                >
+                  Tout effacer
+                </Button>
+              )}
+            </div>
+            <div className="rounded-lg border bg-background overflow-hidden">
+              <Calendar
+                mode="multiple"
+                selected={whitelistedDates}
+                onSelect={(dates) => setWhitelistedDates(dates || [])}
+                month={calendarMonth}
+                onMonthChange={setCalendarMonth}
+                numberOfMonths={2}
+                fromDate={new Date()}
+                classNames={{
+                  day_selected:
+                    "bg-green-600 text-white hover:bg-green-600 hover:text-white focus:bg-green-600 focus:text-white",
+                }}
+              />
+            </div>
+            {whitelistedDates.length > 0 ? (
+              <div className="mt-3 space-y-2">
+                {whitelistedDates
+                  .sort((a, b) => a.getTime() - b.getTime())
+                  .map((date) => {
+                    const iso = toLocalIso(date);
+                    return (
+                      <div key={iso} className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-700 border border-green-200 shrink-0">
+                          {date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                          <button
+                            type="button"
+                            onClick={() => setWhitelistedDates((prev) => prev.filter((d) => d.toDateString() !== date.toDateString()))}
+                            className="hover:opacity-70"
+                          >
+                            <X className="h-2.5 w-2.5" />
+                          </button>
+                        </span>
+                        <Input
+                          value={sessionLabels[iso]?.[activeLanguage] ?? ""}
+                          onChange={(e) =>
+                            setSessionLabels((prev) => ({
+                              ...prev,
+                              [iso]: { ...prev[iso], [activeLanguage]: e.target.value },
+                            }))
+                          }
+                          placeholder={`Libellé pour cette date (${activeLanguage.toUpperCase()}, optionnel)`}
+                          className="h-7 text-xs"
+                        />
+                      </div>
+                    );
+                  })}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-2 italic">
+                Aucune date sélectionnée — l'expérience sera invisible dans le calendrier.
+              </p>
+            )}
+          </div>
+        </>
+      )}
+
+      <Separator />
+
+      {/* Indicateur dernière date disponible */}
+      <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+            Dernière date disponible
+          </p>
+          <p className="text-sm font-medium mt-0.5">
+            {lastAvailableDate
+              ? new Date(lastAvailableDate + "T12:00:00").toLocaleDateString("fr-FR", {
+                  day: "numeric", month: "long", year: "numeric",
+                })
+              : "Aucune date disponible"}
+          </p>
+          {remainingDatesCount > 0 && remainingDatesCount <= 10 && (
+            <p className="text-xs text-destructive mt-0.5 font-medium">
+              Il ne reste que {remainingDatesCount} créneau{remainingDatesCount > 1 ? "x" : ""} disponible{remainingDatesCount > 1 ? "s" : ""}
+            </p>
+          )}
+        </div>
+        <Badge
+          variant={daysRemaining > 30 ? "default" : daysRemaining > 10 ? "outline" : "destructive"}
+          className={daysRemaining > 10 && daysRemaining <= 30 ? "border-orange-400 text-orange-600 bg-orange-50" : ""}
+        >
+          {availabilityMode === "whitelist"
+            ? `${remainingDatesCount} date${remainingDatesCount > 1 ? "s" : ""}`
+            : daysRemaining > 0 ? `${daysRemaining}j restants` : "Expiré"}
+        </Badge>
+      </div>
+    </>
+  );
+
+  // Conditions d'annulation (textes) — le choix par modèles arrive au sprint 3.
+  // Choisir un modèle remplit les 3 langues d'un coup avec le texte déjà
+  // rédigé ; on ne touche jamais au texte sans que Shana clique elle-même.
+  const selectCancellationTemplate = (id: CancellationTemplateId) => {
+    setCancellationTemplate(id);
+    if (id === "custom") return;
+    const template = CANCELLATION_TEMPLATES.find((t) => t.id === id);
+    if (!template) return;
+    setValue("cancellation_policy", template.en);
+    setValue("cancellation_policy_fr", template.fr);
+    setValue("cancellation_policy_he", template.he);
+  };
+
+  const cancellationFields = (
+    <>
+      <div className="flex gap-2 flex-wrap">
+        {CANCELLATION_TEMPLATES.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => selectCancellationTemplate(t.id)}
+            className={cn(
+              "px-2.5 py-1 rounded-full text-xs border transition-colors",
+              cancellationTemplate === t.id
+                ? "bg-[#1a1814] text-white border-[#1a1814]"
+                : "bg-white text-[#1a1814] border-[#e9e6e1] hover:border-[#1a1814]/40"
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => selectCancellationTemplate("custom")}
+          className={cn(
+            "px-2.5 py-1 rounded-full text-xs border transition-colors",
+            cancellationTemplate === "custom"
+              ? "bg-[#1a1814] text-white border-[#1a1814]"
+              : "bg-white text-[#1a1814] border-[#e9e6e1] hover:border-[#1a1814]/40"
+          )}
+        >
+          Personnalisée
+        </button>
+      </div>
+
+      {cancellationTemplate !== "custom" ? (
+        <p className="text-xs text-muted-foreground">
+          Les modèles existent déjà traduits en FR / EN / HE ; on n'écrit plus 3 fois la même chose.
+        </p>
+      ) : (
+        <div className="space-y-4">
+          <div className={cn(langHidden("en") && "hidden")}>
+            <Label className="flex items-center gap-1.5 mb-1">
+              <span>🇬🇧</span> Politique (EN)
+            </Label>
+            <Textarea rows={2} {...register("cancellation_policy")} disabled={isSaving} />
+          </div>
+          <div className={cn(langHidden("fr") && "hidden")}>
+            <Label className="flex items-center gap-1.5 mb-1">
+              <span>🇫🇷</span> Politique (FR)
+            </Label>
+            <Textarea rows={2} {...register("cancellation_policy_fr")} disabled={isSaving} />
+          </div>
+          <div className={cn(langHidden("he") && "hidden")}>
+            <Label className="flex items-center gap-1.5 mb-1">
+              <span>🇮🇱</span> Politique (HE)
+            </Label>
+            <Textarea rows={2} {...register("cancellation_policy_he")} dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  // SEO — identique pour une expérience standard et un bateau (l'étape 4 du
+  // sprint 5B ajoutera la génération automatique).
+  const seoTitleEnWatch = watch("seo_title_en");
+  const seoTitleFrWatch = watch("seo_title_fr");
+  const seoTitleHeWatch = watch("seo_title_he");
+  const metaDescEnWatch = watch("meta_description_en");
+  const metaDescFrWatch = watch("meta_description_fr");
+  const metaDescHeWatch = watch("meta_description_he");
+
+  const CharCount = ({ value, max }: { value: string | undefined; max: number }) => (
+    <p className={cn("text-xs", (value?.length ?? 0) > max ? "text-destructive" : "text-muted-foreground")}>
+      {value?.length ?? 0} / {max}
+    </p>
+  );
+
+  const seoCardContent = (
+    <Card className="bg-muted/30">
+      <CardHeader>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <CardTitle>SEO Configuration</CardTitle>
+            <CardDescription>Configure SEO metadata for search engines and social media</CardDescription>
+          </div>
+          <Button type="button" variant="outline" size="sm" onClick={handleGenerateSeo} disabled={isGeneratingSeo || isSaving}>
+            {isGeneratingSeo ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+            Générer le SEO
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className={cn(isBoatsExperience ? "grid grid-cols-3 gap-6" : "")}>
+          {/* EN */}
+          <div className={cn("space-y-4", langHidden("en") && "hidden")}>
+            <div className="bg-background p-2 rounded flex items-center gap-1.5">
+              <span>🇬🇧</span>
+              <h4 className="font-medium text-sm">English SEO</h4>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="seo_title_en">SEO Title</Label>
+              <Input id="seo_title_en" {...register("seo_title_en")} placeholder="Browser tab & Google" />
+              <CharCount value={seoTitleEnWatch} max={60} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="meta_description_en">Meta Description</Label>
+              <Textarea id="meta_description_en" {...register("meta_description_en")} placeholder="Google results" rows={3} />
+              <CharCount value={metaDescEnWatch} max={155} />
+            </div>
+          </div>
+
+          {/* HE */}
+          <div className={cn("space-y-4", langHidden("he") && "hidden")}>
+            <div className="bg-background p-2 rounded flex items-center gap-1.5">
+              <span>🇮🇱</span>
+              <h4 className="font-medium text-sm">Hebrew SEO (עברית)</h4>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="seo_title_he">כותרת SEO</Label>
+              <Input id="seo_title_he" {...register("seo_title_he")} placeholder="כותרת עבור גוגל" dir="rtl" className="bg-hebrew-input" />
+              <CharCount value={seoTitleHeWatch} max={60} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="meta_description_he">תיאור Meta</Label>
+              <Textarea id="meta_description_he" {...register("meta_description_he")} placeholder="תיאור עבור גוגל" rows={3} dir="rtl" className="bg-hebrew-input" />
+              <CharCount value={metaDescHeWatch} max={155} />
+            </div>
+          </div>
+
+          {/* FR */}
+          <div className={cn("space-y-4", langHidden("fr") && "hidden")}>
+            <div className="bg-background p-2 rounded flex items-center gap-1.5">
+              <span>🇫🇷</span>
+              <h4 className="font-medium text-sm">French SEO</h4>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="seo_title_fr">Titre SEO</Label>
+              <Input id="seo_title_fr" {...register("seo_title_fr")} placeholder="Titre pour Google" />
+              <CharCount value={seoTitleFrWatch} max={60} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="meta_description_fr">Description Meta</Label>
+              <Textarea id="meta_description_fr" {...register("meta_description_fr")} placeholder="Description Google" rows={3} />
+              <CharCount value={metaDescFrWatch} max={155} />
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setShowAdvancedSharing((v) => !v)}
+          className="text-sm text-primary underline"
+        >
+          {showAdvancedSharing ? "Masquer les options de partage avancées" : "Options de partage avancées"}
+        </button>
+
+        {showAdvancedSharing && (
+          <div className="space-y-6 border-t pt-6">
+            <div className={cn(isBoatsExperience ? "grid grid-cols-3 gap-6" : "space-y-4")}>
+              <div className={cn("space-y-4", langHidden("en") && "hidden")}>
+                <div className="space-y-2">
+                  <Label htmlFor="og_title_en">OG Title (EN)</Label>
+                  <Input id="og_title_en" {...register("og_title_en")} placeholder="Social media title" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="og_description_en">OG Description (EN)</Label>
+                  <Textarea id="og_description_en" {...register("og_description_en")} placeholder="Social media description" rows={3} />
+                </div>
+              </div>
+              <div className={cn("space-y-4", langHidden("he") && "hidden")}>
+                <div className="space-y-2">
+                  <Label htmlFor="og_title_he">כותרת OG (HE)</Label>
+                  <Input id="og_title_he" {...register("og_title_he")} placeholder="כותרת עבור רשתות חברתיות" dir="rtl" className="bg-hebrew-input" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="og_description_he">תיאור OG (HE)</Label>
+                  <Textarea id="og_description_he" {...register("og_description_he")} placeholder="תיאור עבור רשתות חברתיות" rows={3} dir="rtl" className="bg-hebrew-input" />
+                </div>
+              </div>
+              <div className={cn("space-y-4", langHidden("fr") && "hidden")}>
+                <div className="space-y-2">
+                  <Label htmlFor="og_title_fr">Titre OG (FR)</Label>
+                  <Input id="og_title_fr" {...register("og_title_fr")} placeholder="Réseaux sociaux" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="og_description_fr">Description OG (FR)</Label>
+                  <Textarea id="og_description_fr" {...register("og_description_fr")} placeholder="Description réseaux sociaux" rows={3} />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="og_image">Open Graph Image</Label>
+              <Input id="og_image" {...register("og_image")} placeholder="Image URL for social media sharing" />
+              <p className="text-xs text-muted-foreground">Si vide, le site utilise la photo de couverture.</p>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  // -------------------------------------------------------------------------
+  // Sommaire, aperçu, checklist (sprint 5B, étape 5) — uniquement pour les
+  // expériences standard. "unreviewedAi" vient du panneau IA (liste "À
+  // vérifier" pas encore cochée) : approximatif, pas un suivi champ par champ.
+  // -------------------------------------------------------------------------
+
+  const unreviewedAi = aiDraftPanelRef.current?.getUnreviewedAiCount() ?? 0;
+  const includesWithPhotoCount = currentExperienceId
+    ? ((includesForChecklist as any[] | undefined)?.filter((i) => i.icon_url).length ?? 0)
+    : localStandaloneIncludes.filter((i) => i.icon_url).length;
+
+  type SectionStatus = "empty" | "warning" | "ai" | "ok";
+  const SUMMARY_SECTIONS: { id: string; label: string; status: SectionStatus }[] = [
+    { id: "sec-demarrer", label: "Démarrer", status: selectedCategoryIds.length === 0 ? "empty" : "ok" },
+    {
+      id: "sec-essentiel",
+      label: "1. L'essentiel",
+      status: unreviewedAi > 0 ? "ai" : !title ? "empty" : title && subtitleEn ? "ok" : "warning",
+    },
+    {
+      id: "sec-recit",
+      label: "2. Le récit",
+      status: (longCopyEn?.length ?? 0) === 0 ? "empty" : (longCopyEn?.length ?? 0) >= 100 ? "ok" : "warning",
+    },
+    { id: "sec-photos", label: "3. Photos", status: totalPhotosCount === 0 ? "empty" : totalPhotosCount >= 5 ? "ok" : "warning" },
+    {
+      id: "sec-prix",
+      label: "4. Prix & dispo",
+      status: supplierPriceAdult === 0 ? "empty" : remainingDatesCount > 0 ? "ok" : "warning",
+    },
+    {
+      id: "sec-conditions",
+      label: "5. Conditions",
+      status: cancellationTemplate !== "custom" || getValues("cancellation_policy") ? "ok" : "empty",
+    },
+    { id: "sec-publication", label: "6. Publication", status: seoTitleEnWatch ? "ok" : "empty" },
+  ];
+  const STATUS_DOT: Record<SectionStatus, string> = {
+    ok: "bg-[#1f7a4d]",
+    warning: "bg-[#e0a400]",
+    ai: "bg-[#5b3fc4]",
+    empty: "bg-muted-foreground/30",
+  };
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const checklistItems = [
+    { id: "titre", label: "Titre et accroche", done: !!title && !!subtitleEn },
+    { id: "description", label: "Description", done: (longCopyEn?.length ?? 0) >= 100 },
+    { id: "inclus", label: "4 inclus avec photo", done: includesWithPhotoCount >= 4 },
+    { id: "photos", label: "Au moins 5 photos", done: totalPhotosCount >= 5 },
+    { id: "dates", label: "Au moins une date à venir", done: remainingDatesCount > 0 },
+    {
+      id: "langues",
+      label: "Versions EN et HE remplies",
+      done: getLanguageMissingCount("en") === 0 && getLanguageMissingCount("he") === 0,
+    },
+    { id: "ia", label: "Aucun champ IA non relu", done: unreviewedAi === 0 },
+  ];
+  const readinessPercent = Math.round((checklistItems.filter((c) => c.done).length / checklistItems.length) * 100);
+
+  // Aperçu en direct : objet au format attendu par EssentialsBlock, alimenté
+  // par les valeurs en cours de saisie (jamais enregistré, affichage seul).
+  const previewExperience = {
+    id: currentExperienceId || "preview",
+    slug: (existingExperience as any)?.slug || "preview",
+    duration: watch("duration"),
+    duration_fr: watch("duration_fr"),
+    duration_he: watch("duration_he"),
+    min_party: watch("min_party") ?? 1,
+    max_party: watch("max_party") ?? 10,
+    lead_time_days: watch("lead_time_days") ?? 0,
+    has_time_slots: watch("has_time_slots"),
+    time_slots: timeSlots,
+    available_days: availableDays,
+    blocked_dates: blockedDates.map((d) => toLocalIso(d)),
+    availability_end_date: effectiveEndDate,
+    availability_mode: availabilityMode,
+    whitelisted_dates: whitelistedDates.map((d) => toLocalIso(d)),
+    schedule_note: watch("schedule_note"),
+    schedule_note_fr: watch("schedule_note_fr"),
+    schedule_note_he: watch("schedule_note_he"),
+    essentials_private_on_request: watch("essentials_private_on_request"),
+    session_labels: sessionLabels,
+    city: watch("city"),
+    city_fr: watch("city_fr"),
+    city_he: watch("city_he"),
+    address: watch("address"),
+    address_fr: watch("address_fr"),
+    address_he: watch("address_he"),
+    hide_exact_address: watch("hide_exact_address"),
+    access_note: watch("access_note"),
+    access_note_fr: watch("access_note_fr"),
+    access_note_he: watch("access_note_he"),
+    languages: spokenLanguages,
+    practical_info: practicalInfo,
+    accessibility_info: watch("accessibility_info"),
+    accessibility_info_fr: watch("accessibility_info_fr"),
+    accessibility_info_he: watch("accessibility_info_he"),
+    cancellation_policy: watch("cancellation_policy"),
+    cancellation_policy_fr: watch("cancellation_policy_fr"),
+    cancellation_policy_he: watch("cancellation_policy_he"),
+  };
 
   return (
     <div className="space-y-6 pb-24">
       <form onSubmit={handleSubmit(handlePublish, onInvalidSubmit)} className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
+        {/* Barre du haut, collante */}
+        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b -mx-6 px-6 py-3 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-4">
             {onClose && (
               <Button type="button" variant="ghost" size="sm" onClick={onClose}>
@@ -1517,15 +3529,40 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
               </Button>
             )}
             <div>
-              <h1 className="text-2xl font-bold">
-                {experienceId ? "Modifier l'expérience" : "Nouvelle expérience standalone"}
+              <h1 className="text-[17px] font-bold text-[#1a1814]">
+                {title || (experienceId ? "Modifier l'expérience" : "Nouvelle expérience standalone")}
               </h1>
-              {lastAutoSave && (
-                <p className="text-xs text-muted-foreground">{getAutoSaveLabel()}</p>
-              )}
+              <p className="text-xs text-[#6f6a63]">
+                Expérience seule · {currentStatus}{lastAutoSave && <> · {getAutoSaveLabel()}</>}
+              </p>
             </div>
           </div>
-          <div className="hidden md:flex gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center border border-[#e9e6e1] rounded-[10px] overflow-hidden">
+              {LANGUAGE_PILLS.map((lng) => {
+                const missing = isBoatsExperience ? 0 : getLanguageMissingCount(lng.code);
+                return (
+                  <button
+                    key={lng.code}
+                    type="button"
+                    onClick={() => setActiveLanguage(lng.code)}
+                    className={cn(
+                      "px-2.5 py-1.5 text-xs font-medium border-r border-[#e9e6e1] last:border-r-0 flex items-center gap-1",
+                      activeLanguage === lng.code ? "bg-[#1a1814] text-white" : "bg-white text-[#6f6a63] hover:text-[#1a1814]"
+                    )}
+                  >
+                    {lng.label}
+                    {!isBoatsExperience && (
+                      missing === 0 ? (
+                        <Check className="h-3 w-3 text-emerald-500" />
+                      ) : (
+                        <span className="text-[10px] opacity-80">{missing}</span>
+                      )
+                    )}
+                  </button>
+                );
+              })}
+            </div>
             {experienceId && (
               <Button type="button" variant="destructive" size="sm" onClick={handleDelete} disabled={isSaving}>
                 Supprimer
@@ -1534,6 +3571,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={handleTranslateAll}
               disabled={isSaving || heroImageUploading || isTranslating}
             >
@@ -1543,13 +3581,19 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={handleSaveDraftClick}
               disabled={isSaving || heroImageUploading}
             >
               <Save className="h-4 w-4 mr-2" />
               Brouillon
             </Button>
-            <Button type="submit" disabled={!canPublish || isSaving || heroImageUploading}>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!canPublish || isSaving || heroImageUploading}
+              className="bg-[#ad1414] text-white hover:bg-[#ad1414]/90"
+            >
               <Rocket className="h-4 w-4 mr-2" />
               Publier
             </Button>
@@ -1570,41 +3614,47 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
           onAddExtras={handleAiExtras}
         />
 
-        {/* Sticky Tab Navigation */}
-        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b -mx-6 px-6 py-0">
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
-            {visibleTabs.map((tab, index) => {
-              const isComplete = getTabCompletion(tab.id);
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTab(tab.id)}
-                  className={cn(
-                    "relative flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2",
-                    isActive
-                      ? "border-primary text-foreground"
-                      : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
-                  )}
-                >
-                  <span className={cn(
-                    "flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold",
-                    isComplete ? "bg-green-600 text-white" : "bg-muted text-muted-foreground"
-                  )}>
-                    {isComplete ? <Check className="h-3 w-3" /> : index + 1}
-                  </span>
-                  {tab.label}
-                </button>
-              );
-            })}
+        {/* Onglets — conservés uniquement pour le mode Bateaux, qui n'est pas
+            touché dans ce sprint (refonte prévue séparément). */}
+        {isBoatsExperience && (
+          <div className="sticky top-[53px] z-20 bg-background/95 backdrop-blur-sm border-b -mx-6 px-6 py-0">
+            <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
+              {visibleTabs.map((tab, index) => {
+                const isComplete = getTabCompletion(tab.id);
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={cn(
+                      "relative flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2",
+                      isActive
+                        ? "border-primary text-foreground"
+                        : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
+                    )}
+                  >
+                    <span className={cn(
+                      "flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold",
+                      isComplete ? "bg-green-600 text-white" : "bg-muted text-muted-foreground"
+                    )}>
+                      {isComplete ? <Check className="h-3 w-3" /> : index + 1}
+                    </span>
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* PAGE 1 : Médias */}
+        {/* Mode Bateaux : tous les blocs regroupés (onglets "Champs bateaux" /    */}
+        {/* "Autres"), contenu inchangé — seul l'emplacement dans le fichier a     */}
+        {/* bougé pour que les sections de l'expérience standard soient           */}
+        {/* contiguës (voir étape 5 du sprint 5B).                                */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {(activeTab === "medias" || activeTab === "bateau_champs") && (
+        {isBoatsExperience && activeTab === "bateau_champs" && (
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -1612,120 +3662,12 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                 <CardDescription>Images de l'expérience pour les listings et la page détail</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Hero Image */}
-                <div>
-                  <Label className="flex items-center gap-2">
-                    <Star className="h-4 w-4" />
-                    Photo de couverture
-                  </Label>
-                  <p className="text-xs text-muted-foreground mb-2">Grande image affichée en haut de la fiche.</p>
-                  <div
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={handleHeroDrop}
-                    className="border-2 border-dashed rounded-lg p-4 transition-colors hover:border-primary/50"
-                  >
-                    <div className="grid grid-cols-2 gap-4 items-center">
-                      <div className="relative rounded-lg overflow-hidden bg-muted h-40">
-                        {heroImageUploading ? (
-                          <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
-                            <Loader2 className="h-6 w-6 animate-spin mb-1 opacity-50" />
-                            <p className="text-xs">Upload en cours…</p>
-                          </div>
-                        ) : heroImagePreview ? (
-                          <>
-                            <img src={heroImagePreview} alt="Hero" className="w-full h-full object-cover" />
-                            <button
-                              type="button"
-                              onClick={() => setHeroImagePreview(null)}
-                              className="absolute top-1.5 right-1.5 bg-destructive text-destructive-foreground rounded-full p-1"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </>
-                        ) : (
-                          <div className="h-full flex items-center justify-center text-muted-foreground/40 text-xs">Aucune photo</div>
-                        )}
-                      </div>
-                      <div className="space-y-3">
-                        <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 text-sm rounded-md border bg-background hover:bg-muted transition-colors w-full justify-center">
-                          <Upload className="h-4 w-4" />
-                          {heroImagePreview ? "Changer la photo" : "Choisir une photo"}
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => handleHeroImageChange(e.target.files?.[0] || null)}
-                          />
-                        </label>
-                        <p className="text-xs text-muted-foreground text-center">ou glisser-déposer ici</p>
-                        <p className="text-xs text-muted-foreground text-center">1600×900px min · max 5MB</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Gallery */}
-                <div>
-                  <Label>{isBoatsExperience ? "Galerie" : "Galerie (max. 8)"}</Label>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Glisser les images pour les ajouter. 1600×900px recommandé, max 5MB par image.
-                  </p>
-                  <div
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={handleGalleryDrop}
-                    className="grid grid-cols-4 gap-4"
-                  >
-                    {galleryPreviews.map((preview, index) => (
-                      <div key={index} className="relative group">
-                        <img src={preview} alt={`Gallery ${index + 1}`} className="w-full h-32 object-cover rounded-lg" />
-                        <span className="absolute top-1 left-1 bg-foreground/80 text-background text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full">
-                          {index + 1}
-                        </span>
-                        <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            type="button"
-                            onClick={() => setHeroImagePreview(preview)}
-                            className="bg-secondary text-secondary-foreground rounded-full p-1"
-                            title="Définir comme couverture"
-                          >
-                            <Star className="h-3 w-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => removeGalleryImage(index)}
-                            className="bg-destructive text-destructive-foreground rounded-full p-1"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                        {heroImagePreview === preview && (
-                          <span className="absolute bottom-1 right-1 text-[9px] bg-accent text-accent-foreground px-1 rounded">COUV.</span>
-                        )}
-                      </div>
-                    ))}
-                    {galleryPreviews.length < galleryMax && (
-                      <label className="border-2 border-dashed rounded-lg h-32 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors text-muted-foreground">
-                        <input
-                          type="file"
-                          multiple
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => handleGalleryImagesChange(e.target.files)}
-                        />
-                        <Upload className="h-8 w-8 mb-1 opacity-40" />
-                        <span className="text-xs">Ajouter</span>
-                      </label>
-                    )}
-                  </div>
-                </div>
+                {photosFields}
               </CardContent>
             </Card>
           </div>
         )}
 
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* PAGE BATEAUX : Champs bateaux (uniquement isBoatsExperience) */}
-        {/* ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === "bateau_champs" && (
           <div className="space-y-6">
             {/* Prestataire */}
@@ -2170,10 +4112,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
           </div>
         )}
 
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* PAGE 2 : Contenu */}
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {(activeTab === "contenu" || activeTab === "autres") && (
+        {isBoatsExperience && activeTab === "autres" && (
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -2181,90 +4120,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                 <CardDescription>Contenu principal de la fiche expérience (EN + FR + HE)</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {!isBoatsExperience && (
-                  <div className="grid grid-cols-3 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="title" className="flex items-center gap-1.5">
-                        <span>🇬🇧</span> Titre (EN) <span className="text-destructive">*</span>
-                      </Label>
-                      <Input id="title" {...register("title")} placeholder="Ex: Wine tasting in the Galilee" disabled={isSaving} />
-                      {errors.title && <p className="text-destructive text-xs">{errors.title.message}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="title_fr" className="flex items-center gap-1.5">
-                        <span>🇫🇷</span> Titre (FR)
-                      </Label>
-                      <Input id="title_fr" {...register("title_fr")} placeholder="Ex: Dégustation de vins en Galilée" disabled={isSaving} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="title_he" className="flex items-center gap-1.5">
-                        <span>🇮🇱</span> כותרת (HE)
-                      </Label>
-                      <Input id="title_he" {...register("title_he")} placeholder="כותרת בעברית" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
-                    </div>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="subtitle" className="flex items-center gap-1.5">
-                      <span>🇬🇧</span> Sous-titre (EN)
-                    </Label>
-                    <Input id="subtitle" {...register("subtitle")} placeholder="Courte accroche" disabled={isSaving} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="subtitle_fr" className="flex items-center gap-1.5">
-                      <span>🇫🇷</span> Sous-titre (FR)
-                    </Label>
-                    <Input id="subtitle_fr" {...register("subtitle_fr")} placeholder="Courte accroche en français" disabled={isSaving} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="subtitle_he" className="flex items-center gap-1.5">
-                      <span>🇮🇱</span> תת-כותרת (HE)
-                    </Label>
-                    <Input id="subtitle_he" {...register("subtitle_he")} placeholder="תת-כותרת בעברית" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1.5">
-                    <span>🇬🇧</span> Description longue (EN) <span className="text-destructive">*</span>
-                  </Label>
-                  <Controller
-                    name="long_copy"
-                    control={control}
-                    render={({ field }) => (
-                      <RichTextEditor content={field.value || ""} onChange={field.onChange} placeholder="Description complète de l'expérience..." />
-                    )}
-                  />
-                  {errors.long_copy && <p className="text-destructive text-xs">{errors.long_copy.message}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1.5">
-                    <span>🇫🇷</span> Description longue (FR)
-                  </Label>
-                  <Controller
-                    name="long_copy_fr"
-                    control={control}
-                    render={({ field }) => (
-                      <RichTextEditor content={field.value || ""} onChange={field.onChange} placeholder="Description complète de l'expérience en français..." />
-                    )}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1.5">
-                    <span>🇮🇱</span> תיאור ארוך (HE)
-                  </Label>
-                  <Controller
-                    name="long_copy_he"
-                    control={control}
-                    render={({ field }) => (
-                      <RichTextEditor content={field.value || ""} onChange={field.onChange} placeholder="תיאור מלא של החוויה..." dir="rtl" />
-                    )}
-                  />
-                </div>
+                {titleAndSubtitleFields}
+                {descriptionFields}
               </CardContent>
             </Card>
 
@@ -2319,46 +4176,13 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Slug (URL)</Label>
-                  <Input
-                    value={generateSlug(watch("title") || "")}
-                    readOnly
-                    className="bg-muted text-muted-foreground text-sm"
-                  />
-                  <p className="text-xs text-muted-foreground">Généré automatiquement depuis le titre EN</p>
-                </div>
-
-                <div className="flex items-center justify-between p-4 rounded-lg border">
-                  <div>
-                    <p className="font-medium text-sm">Mise en avant sur l'accueil</p>
-                    <p className="text-xs text-muted-foreground">Afficher cette expérience dans la section vedette de la page d'accueil</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {featuredOnHome && (
-                      <div className="flex items-center gap-1.5">
-                        <Label className="text-xs text-muted-foreground">Ordre</Label>
-                        <Input
-                          type="number"
-                          min={0}
-                          value={homeDisplayOrder}
-                          onChange={(e) => setHomeDisplayOrder(parseInt(e.target.value) || 0)}
-                          className="w-16 h-7 text-sm"
-                        />
-                      </div>
-                    )}
-                    <Switch checked={featuredOnHome} onCheckedChange={setFeaturedOnHome} />
-                  </div>
-                </div>
+                {publicationExtras}
               </CardContent>
             </Card>
           </div>
         )}
 
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* PAGE 3 : Infos pratiques */}
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {(activeTab === "pratique" || activeTab === "autres") && (
+        {isBoatsExperience && activeTab === "autres" && (
           <div className="space-y-6">
             {/* Badges : points forts éditoriaux + informations clés (badges automatiques) */}
             <Card>
@@ -2368,8 +4192,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                   <span className={cn(
                     "text-xs font-medium px-2 py-0.5 rounded-full",
                     practicalCompleteness.answered === practicalCompleteness.total
-                      ? "text-emerald-700 bg-emerald-50"
-                      : "text-amber-600 bg-amber-50"
+                      ? "text-[#1f7a4d] bg-[#e9f6ef]"
+                      : "text-[#8a6100] bg-[#fff4d6]"
                   )}>
                     {practicalCompleteness.answered}/{practicalCompleteness.total} informations clés répondues
                   </span>
@@ -2380,200 +4204,9 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <HighlightTagsSelectorStandalone
-                  experienceId={currentExperienceId}
-                  localTags={localTags}
-                  onLocalTagsChange={setLocalTags}
-                />
-
-                <Separator />
-
-                <div className="space-y-3">
-                  <p className="text-sm font-medium text-foreground">Informations clés</p>
-
-                  <PracticalTriStateField
-                    id="kosher"
-                    icon={Utensils}
-                    label="Kosher"
-                    value={practicalInfo.kosher}
-                    onChange={(v) => setPracticalInfo((prev) => ({ ...prev, kosher: v }))}
-                  />
-
-                  {/* Enfants */}
-                  <div className="p-3 rounded-lg border space-y-2">
-                    <div className="flex items-center gap-3">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium text-sm flex-1">Enfants</span>
-                      {practicalInfo.kids.status === null && <CompletionPill />}
-                    </div>
-                    <RadioGroup
-                      value={practicalInfo.kids.status ?? undefined}
-                      onValueChange={(v) =>
-                        setPracticalInfo((prev) => ({
-                          ...prev,
-                          kids: { status: v as "yes" | "no", from_age: v === "yes" ? prev.kids.from_age : null },
-                        }))
-                      }
-                      className="flex gap-4 ml-7"
-                    >
-                      <div className="flex items-center gap-2">
-                        <RadioGroupItem value="yes" id="kids-yes" />
-                        <Label htmlFor="kids-yes" className="text-sm font-normal cursor-pointer">Oui</Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <RadioGroupItem value="no" id="kids-no" />
-                        <Label htmlFor="kids-no" className="text-sm font-normal cursor-pointer">Non</Label>
-                      </div>
-                    </RadioGroup>
-                    {practicalInfo.kids.status === "yes" && (
-                      <div className="ml-7 flex items-center gap-2">
-                        <Label className="text-sm text-muted-foreground shrink-0">À partir de :</Label>
-                        <Input
-                          type="number"
-                          min={0}
-                          value={practicalInfo.kids.from_age ?? ""}
-                          onChange={(e) =>
-                            setPracticalInfo((prev) => ({
-                              ...prev,
-                              kids: { ...prev.kids, from_age: e.target.value ? parseInt(e.target.value) : null },
-                            }))
-                          }
-                          placeholder="Âge"
-                          className="h-8 text-sm w-24"
-                        />
-                        <span className="text-sm text-muted-foreground">ans (badge "KIDS from X")</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Parking */}
-                  <div className="p-3 rounded-lg border space-y-2">
-                    <div className="flex items-center gap-3">
-                      <Car className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium text-sm flex-1">Parking</span>
-                      {practicalInfo.parking.status === null && <CompletionPill />}
-                    </div>
-                    <RadioGroup
-                      value={practicalInfo.parking.status ?? undefined}
-                      onValueChange={(v) =>
-                        setPracticalInfo((prev) => ({
-                          ...prev,
-                          parking: {
-                            status: v as "yes" | "no",
-                            price_type: v === "yes" ? prev.parking.price_type : null,
-                            price_amount: v === "yes" ? prev.parking.price_amount : null,
-                          },
-                        }))
-                      }
-                      className="flex gap-4 ml-7"
-                    >
-                      <div className="flex items-center gap-2">
-                        <RadioGroupItem value="yes" id="parking-yes" />
-                        <Label htmlFor="parking-yes" className="text-sm font-normal cursor-pointer">Oui</Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <RadioGroupItem value="no" id="parking-no" />
-                        <Label htmlFor="parking-no" className="text-sm font-normal cursor-pointer">Non</Label>
-                      </div>
-                    </RadioGroup>
-                    {practicalInfo.parking.status === "yes" && (
-                      <div className="ml-7 space-y-2">
-                        <RadioGroup
-                          value={practicalInfo.parking.price_type ?? undefined}
-                          onValueChange={(v) =>
-                            setPracticalInfo((prev) => ({ ...prev, parking: { ...prev.parking, price_type: v as "free" | "paid" } }))
-                          }
-                          className="flex gap-4"
-                        >
-                          <div className="flex items-center gap-2">
-                            <RadioGroupItem value="free" id="parking-free" />
-                            <Label htmlFor="parking-free" className="text-sm font-normal cursor-pointer">Gratuit</Label>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <RadioGroupItem value="paid" id="parking-paid" />
-                            <Label htmlFor="parking-paid" className="text-sm font-normal cursor-pointer">Payant</Label>
-                          </div>
-                        </RadioGroup>
-                        {practicalInfo.parking.price_type === "paid" && (
-                          <div className="flex items-center gap-2">
-                            <Label className="text-sm text-muted-foreground shrink-0">Montant :</Label>
-                            <Input
-                              value={practicalInfo.parking.price_amount ?? ""}
-                              onChange={(e) =>
-                                setPracticalInfo((prev) => ({ ...prev, parking: { ...prev.parking, price_amount: e.target.value } }))
-                              }
-                              placeholder="Ex: 20₪ par jour"
-                              className="h-8 text-sm"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <PracticalTriStateField
-                    id="fitness"
-                    icon={Dumbbell}
-                    label="Centre fitness"
-                    value={practicalInfo.fitness}
-                    onChange={(v) => setPracticalInfo((prev) => ({ ...prev, fitness: v }))}
-                  />
-
-                  <PracticalTriStateField
-                    id="spa"
-                    icon={Waves}
-                    label="Spa"
-                    value={practicalInfo.spa}
-                    onChange={(v) => setPracticalInfo((prev) => ({ ...prev, spa: v }))}
-                  />
-                </div>
-
-                {autoBadgesPreview.length > 0 && (
-                  <div className="pt-3 border-t">
-                    <p className="text-xs text-muted-foreground mb-2">Aperçu des badges générés automatiquement sur la fiche publique :</p>
-                    <div className="flex flex-wrap gap-2">
-                      {autoBadgesPreview.map((b) => (
-                        <Badge key={b.key} variant="secondary">{b.label}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {badgesContent}
               </CardContent>
             </Card>
-
-            {/* Ce qui est inclus */}
-            {!isBoatsExperience && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Ce qui est inclus</CardTitle>
-                  <CardDescription>Listez tout ce qui est compris dans le prix (avec photo et traduction HE)</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <IncludesManagerStandalone
-                    experienceId={currentExperienceId}
-                    localIncludes={localStandaloneIncludes}
-                    onLocalIncludesChange={setLocalStandaloneIncludes}
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Extras (options payantes) */}
-            {!isBoatsExperience && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Extras (options payantes)</CardTitle>
-                  <CardDescription>Options supplémentaires que le client peut ajouter à sa réservation</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <StandaloneExtrasManager
-                    experienceId={currentExperienceId}
-                    localExtras={localStandaloneExtras}
-                    onLocalExtrasChange={setLocalStandaloneExtras}
-                  />
-                </CardContent>
-              </Card>
-            )}
 
             {/* Localisation */}
             <Card>
@@ -2585,110 +4218,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                 <CardDescription>Adresse et informations géographiques de l'expérience</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="city" className="flex items-center gap-1.5">
-                      <span>🇬🇧</span> Ville (EN)
-                    </Label>
-                    <Input id="city" {...register("city")} placeholder="Ex: Tel Aviv" disabled={isSaving} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="city_fr" className="flex items-center gap-1.5">
-                      <span>🇫🇷</span> Ville (FR)
-                    </Label>
-                    <Input id="city_fr" {...register("city_fr")} placeholder="Ex: Tel Aviv" disabled={isSaving} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="city_he" className="flex items-center gap-1.5">
-                      <span>🇮🇱</span> עיר (HE)
-                    </Label>
-                    <Input id="city_he" {...register("city_he")} placeholder="תל אביב" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="region" className="flex items-center gap-1.5">
-                      <span>🇬🇧</span> Région (EN)
-                    </Label>
-                    <Input id="region" {...register("region")} placeholder="Ex: Tel Aviv, Galilee, Dead Sea..." disabled={isSaving} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="region_fr" className="flex items-center gap-1.5">
-                      <span>🇫🇷</span> Région (FR)
-                    </Label>
-                    <Input id="region_fr" {...register("region_fr")} placeholder="Ex: Galilée, Mer Morte..." disabled={isSaving} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="region_he" className="flex items-center gap-1.5">
-                      <span>🇮🇱</span> אזור (HE)
-                    </Label>
-                    <Input id="region_he" {...register("region_he")} placeholder="אזור" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="address" className="flex items-center gap-1.5">
-                      <span>🇬🇧</span> Adresse (EN)
-                    </Label>
-                    <Input id="address" {...register("address")} placeholder="Ex: 12 Rothschild Blvd, Tel Aviv" disabled={isSaving} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="address_fr" className="flex items-center gap-1.5">
-                      <span>🇫🇷</span> Adresse (FR)
-                    </Label>
-                    <Input id="address_fr" {...register("address_fr")} placeholder="Ex: 12 Rothschild Blvd, Tel Aviv" disabled={isSaving} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="address_he" className="flex items-center gap-1.5">
-                      <span>🇮🇱</span> כתובת (HE)
-                    </Label>
-                    <Input id="address_he" {...register("address_he")} placeholder="כתובת בעברית" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="google_maps_link">Lien Google Maps</Label>
-                  <Input id="google_maps_link" {...register("google_maps_link")} placeholder="https://maps.google.com/..." disabled={isSaving} />
-                </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Coordonnées GPS</Label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input
-                      type="number"
-                      step="any"
-                      placeholder="Latitude"
-                      {...register("latitude", { valueAsNumber: true })}
-                      disabled={isSaving}
-                    />
-                    <Input
-                      type="number"
-                      step="any"
-                      placeholder="Longitude"
-                      {...register("longitude", { valueAsNumber: true })}
-                      disabled={isSaving}
-                    />
-                  </div>
-                  <Button type="button" variant="outline" onClick={handleGeocode} disabled={isGeocoding} className="w-full">
-                    {isGeocoding ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Détection...
-                      </>
-                    ) : (
-                      <>
-                        <MapPin className="mr-2 h-4 w-4" />
-                        Auto-détecter coordonnées
-                      </>
-                    )}
-                  </Button>
-                  {watch("latitude") && watch("longitude") && (
-                    <p className="text-sm text-emerald-600">
-                      ✓ Coordonnées : {Number(watch("latitude")).toFixed(4)}, {Number(watch("longitude")).toFixed(4)}
-                    </p>
-                  )}
-                </div>
+                {locationFields}
               </CardContent>
             </Card>
 
@@ -2698,26 +4228,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                 <CardTitle>Durée de l'expérience</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="duration" className="flex items-center gap-1.5">
-                      <span>🇬🇧</span> Duration (EN)
-                    </Label>
-                    <Input id="duration" {...register("duration")} placeholder="Ex: 3 hours" disabled={isSaving} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="duration_fr" className="flex items-center gap-1.5">
-                      <span>🇫🇷</span> Durée (FR)
-                    </Label>
-                    <Input id="duration_fr" {...register("duration_fr")} placeholder="Ex: 3 heures" disabled={isSaving} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="duration_he" className="flex items-center gap-1.5">
-                      <span>🇮🇱</span> משך (HE)
-                    </Label>
-                    <Input id="duration_he" {...register("duration_he")} placeholder="Ex: 3 שעות" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
-                  </div>
-                </div>
+                {durationFields}
               </CardContent>
             </Card>
 
@@ -2727,78 +4238,15 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                 <CardTitle>Accessibilité</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="accessibility_info" className="flex items-center gap-1.5">
-                    <span>🇬🇧</span> Informations d'accessibilité (EN)
-                  </Label>
-                  <Textarea
-                    id="accessibility_info"
-                    {...register("accessibility_info")}
-                    placeholder="Ex: Accessible en fauteuil roulant. Terrain plat."
-                    rows={3}
-                    disabled={isSaving}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="accessibility_info_fr" className="flex items-center gap-1.5">
-                    <span>🇫🇷</span> Informations d'accessibilité (FR)
-                  </Label>
-                  <Textarea
-                    id="accessibility_info_fr"
-                    {...register("accessibility_info_fr")}
-                    placeholder="Ex : Accessible en fauteuil roulant. Terrain plat."
-                    rows={3}
-                    disabled={isSaving}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="accessibility_info_he" className="flex items-center gap-1.5">
-                    <span>🇮🇱</span> נגישות (HE)
-                  </Label>
-                  <Textarea
-                    id="accessibility_info_he"
-                    {...register("accessibility_info_he")}
-                    rows={3}
-                    dir="rtl"
-                    className="bg-hebrew-input"
-                    disabled={isSaving}
-                  />
-                </div>
+                {accessibilityFields}
               </CardContent>
             </Card>
           </div>
         )}
 
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* PAGE 4 : Tarif & Dispo */}
-        {/* ═══════════════════════════════════════════════════════════════════ */}
-        {(activeTab === "tarif_dispo" || activeTab === "autres") && (
+        {isBoatsExperience && activeTab === "autres" && (
           <div className="space-y-6">
-            {/* Prix de l'expérience */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Mode de réservation</CardTitle>
-                    <CardDescription>
-                      {isBookable
-                        ? "Le visiteur choisit ses dates et paie directement en ligne."
-                        : "Le visiteur envoie une demande de dates (sans paiement) ; elle apparaît dans l'onglet \"Demandes à traiter\" des réservations standalone."}
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-muted-foreground">{isBookable ? "Réservable en ligne" : "Sur demande"}</span>
-                    <Controller
-                      name="is_bookable"
-                      control={control}
-                      render={({ field }) => (
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      )}
-                    />
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
+            {bookingModeCard}
 
             <Card>
               <CardHeader>
@@ -2809,452 +4257,13 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                 <CardDescription>Tarif fournisseur, markup STAYMAKOM, prix client affiché</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Paramètres de base */}
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Paramètres de base</p>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label>Type de tarification <span className="text-destructive">*</span></Label>
-                      <Controller
-                        name="base_price_type"
-                        control={control}
-                        render={({ field }) => (
-                          <Select value={field.value} onValueChange={field.onChange} disabled={isSaving}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="per_person">Par personne (× nb. participants)</SelectItem>
-                              <SelectItem value="fixed">Forfait (prix unique, tout groupe)</SelectItem>
-                              <SelectItem value="per_person_per_night">Par personne / nuit</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Devise</Label>
-                      <Controller
-                        name="currency"
-                        control={control}
-                        render={({ field }) => (
-                          <Select value={field.value} onValueChange={field.onChange} disabled={isSaving}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="ILS">ILS ₪</SelectItem>
-                              <SelectItem value="USD">USD $</SelectItem>
-                              <SelectItem value="EUR">EUR €</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
-                      />
-                    </div>
-                    {!isBoatsExperience && (
-                      <div className="space-y-2">
-                        <Label>Participants min / max</Label>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Input type="number" min={1} max={100} {...register("min_party", { valueAsNumber: true })} placeholder="1" disabled={isSaving} />
-                          <Input type="number" min={1} max={100} {...register("max_party", { valueAsNumber: true })} placeholder="10" disabled={isSaving} />
-                        </div>
-                        {(errors.min_party || errors.max_party) && (
-                          <p className="text-destructive text-xs">Valeurs min/max invalides</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <Separator />
-
-                {!isBoatsExperience && (
-                  <>
-                    {/* Identification fournisseur — jamais affiché côté client */}
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                        Fournisseur (usage interne, jamais visible des clients)
-                      </p>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="supplier_name">Société / prestataire</Label>
-                          <Input
-                            id="supplier_name"
-                            {...register("supplier_name")}
-                            placeholder="ex. BALAGUNA, MARK"
-                            disabled={isSaving}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="supplier_boat_name">Nom d'origine chez le fournisseur</Label>
-                          <Input
-                            id="supplier_boat_name"
-                            {...register("supplier_boat_name")}
-                            placeholder="ex. Thirty Eight Catamaran"
-                            disabled={isSaving}
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            Le titre affiché au client (onglet Contenu) peut être différent.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* Tarif fournisseur */}
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Tarif fournisseur (Prix net achat)</p>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="supplier_price_adult">
-                            {isFixed ? "Prix total forfait" : "Prix adulte"} <span className="text-destructive">*</span>
-                          </Label>
-                          <div className="relative">
-                            <Input
-                              id="supplier_price_adult"
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              {...register("supplier_price_adult", { valueAsNumber: true })}
-                              placeholder="0"
-                              disabled={isSaving}
-                              className="pr-8"
-                            />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {isFixed
-                              ? "Prix total que vous payez au prestataire, pour tout le groupe"
-                              : "Prix que vous payez au prestataire"}
-                          </p>
-                          {errors.supplier_price_adult && <p className="text-destructive text-xs">{errors.supplier_price_adult.message}</p>}
-                        </div>
-
-                        {isFixed ? (
-                          <div className="space-y-2 flex items-center">
-                            <p className="text-xs text-muted-foreground italic">
-                              Le tarif enfant n'est pas applicable pour un forfait — le prix est le même pour tout le groupe.
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="supplier_price_child">Prix enfant</Label>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-muted-foreground">Tarif différent</span>
-                                <Controller
-                                  name="has_child_price"
-                                  control={control}
-                                  render={({ field }) => (
-                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                  )}
-                                />
-                              </div>
-                            </div>
-                            <div className="relative">
-                              <Input
-                                id="supplier_price_child"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                {...register("supplier_price_child", { valueAsNumber: true })}
-                                placeholder="100"
-                                disabled={isSaving || !hasChildPrice}
-                                className={cn("pr-8", !hasChildPrice && "opacity-40")}
-                              />
-                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              {hasChildPrice ? "Prix enfant au prestataire" : "Activer pour saisir un prix enfant"}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* Markup STAYMAKOM */}
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Markup STAYMAKOM</p>
-                      <div className="rounded-lg border bg-muted/30 p-4">
-                        <div className="flex items-center gap-4">
-                          <span className="text-sm text-muted-foreground shrink-0 w-16">Marge %</span>
-                          <Controller
-                            name="markup_percent"
-                            control={control}
-                            render={({ field }) => (
-                              <Slider
-                                min={0}
-                                max={100}
-                                step={1}
-                                value={[field.value ?? 0]}
-                                onValueChange={([v]) => field.onChange(v)}
-                                className="flex-1"
-                              />
-                            )}
-                          />
-                          <span className="text-sm font-semibold w-12 text-right">{markupPercent}%</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <Separator />
-                  </>
-                )}
-
-                {/* Lien de réservation fournisseur — usage interne uniquement */}
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                    Lien de réservation fournisseur (usage interne, jamais visible des clients)
-                  </p>
-                  <div className="space-y-2">
-                    <Label htmlFor="supplier_booking_url">URL de réservation chez le prestataire</Label>
-                    <Input
-                      id="supplier_booking_url"
-                      type="url"
-                      {...register("supplier_booking_url")}
-                      placeholder="https://..."
-                      disabled={isSaving}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Pour les expériences que vous réservez vous-même chez le fournisseur : ce lien apparaîtra
-                      uniquement dans le récapitulatif de vos réservations, jamais sur le site public.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Prix de vente réellement enregistré (celui lu par le site public).
-                    Éditable : le curseur de marge ci-dessus ne fait que proposer une
-                    suggestion, tant que ce champ n'est pas modifié à la main il reste
-                    synchronisé dessus (cf. useEffect plus haut dans le composant). */}
-                {!isBoatsExperience && supplierPriceAdult > 0 && (
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="rounded-lg border p-4 bg-background">
-                      <div className="flex items-center justify-between gap-1.5 text-muted-foreground text-xs mb-2">
-                        <span className="flex items-center gap-1.5">
-                          <Users className="h-3.5 w-3.5" />
-                          {isFixed ? "Prix total affiché" : "Adulte"}
-                        </span>
-                        {priceTouched && (
-                          <button
-                            type="button"
-                            className="text-primary underline text-[11px]"
-                            onClick={() => { setPriceTouched(false); setValue("base_price", computedAdultPrice); }}
-                          >
-                            Reprendre la suggestion
-                          </button>
-                        )}
-                      </div>
-                      <Controller
-                        name="base_price"
-                        control={control}
-                        render={({ field }) => (
-                          <div className="relative">
-                            <Input
-                              type="number"
-                              min={0}
-                              step="0.01"
-                              value={field.value ?? ""}
-                              disabled={isSaving}
-                              className="text-lg font-bold h-auto py-1.5 pr-8"
-                              onChange={(e) => {
-                                setPriceTouched(true);
-                                field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value));
-                              }}
-                            />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
-                          </div>
-                        )}
-                      />
-                      {isFixed ? (
-                        <p className="text-xs text-muted-foreground mt-1">Prix forfait tout groupe</p>
-                      ) : (
-                        <p className="text-xs text-muted-foreground mt-1">Suggestion : {supplierPriceAdult} + {markupPercent}% = {computedAdultPrice}</p>
-                      )}
-                    </div>
-                    {isFixed ? (
-                      <div className="rounded-lg border p-4 bg-accent/20">
-                        <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
-                          <Users className="h-3.5 w-3.5" /> À partir de
-                        </div>
-                        {maxPartyWatch > 0 ? (
-                          <>
-                            <p className="text-2xl font-bold">{prixParPersonneAffiche} <span className="text-base font-normal">{currencySymbol}</span></p>
-                            <p className="text-xs text-muted-foreground mt-1">/ pers. (groupe de {maxPartyWatch})</p>
-                          </>
-                        ) : (
-                          <>
-                            <p className="text-2xl font-bold text-muted-foreground">—</p>
-                            <p className="text-xs text-muted-foreground mt-1">Renseigner max participants</p>
-                          </>
-                        )}
-                      </div>
-                    ) : (
-                      <div className={cn("rounded-lg border p-4", hasChildPrice ? "bg-background" : "bg-muted/30")}>
-                        <div className="flex items-center justify-between gap-1.5 text-muted-foreground text-xs mb-2">
-                          <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> Enfant</span>
-                          {hasChildPrice && childPriceTouched && (
-                            <button
-                              type="button"
-                              className="text-primary underline text-[11px]"
-                              onClick={() => { setChildPriceTouched(false); setValue("base_price_child", computedChildPrice); }}
-                            >
-                              Reprendre la suggestion
-                            </button>
-                          )}
-                        </div>
-                        {hasChildPrice ? (
-                          <>
-                            <Controller
-                              name="base_price_child"
-                              control={control}
-                              render={({ field }) => (
-                                <div className="relative">
-                                  <Input
-                                    type="number"
-                                    min={0}
-                                    step="0.01"
-                                    value={field.value ?? ""}
-                                    disabled={isSaving}
-                                    className="text-lg font-bold h-auto py-1.5 pr-8"
-                                    onChange={(e) => {
-                                      setChildPriceTouched(true);
-                                      field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value));
-                                    }}
-                                  />
-                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
-                                </div>
-                              )}
-                            />
-                            <p className="text-xs text-muted-foreground mt-1">Suggestion : {supplierPriceChild} + {markupPercent}% = {computedChildPrice}</p>
-                          </>
-                        ) : (
-                          <>
-                            <p className="text-2xl font-bold text-muted-foreground">—</p>
-                            <p className="text-xs text-muted-foreground mt-1">Tarif enfant désactivé</p>
-                          </>
-                        )}
-                      </div>
-                    )}
-                    <div className="rounded-lg border p-4 bg-background">
-                      <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
-                        <span className="text-xs font-bold">%</span> Marge unitaire
-                      </div>
-                      <p className="text-2xl font-bold">{margeUnitaireAdult} <span className="text-base font-normal">{currencySymbol}</span></p>
-                      <p className="text-xs text-muted-foreground mt-1">{isFixed ? "sur le forfait" : "par adulte"}</p>
-                    </div>
-                  </div>
-                )}
-
-                <Separator />
-
-                {/* Délai de réservation */}
-                <div className="space-y-2">
-                  <Label htmlFor="lead_time_days">Délai minimum avant réservation (jours)</Label>
-                  <div className="flex items-center gap-3">
-                    <Input
-                      id="lead_time_days"
-                      type="number"
-                      min={0}
-                      max={365}
-                      {...register("lead_time_days", { valueAsNumber: true })}
-                      disabled={isSaving}
-                      className="w-32"
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      Les clients devront réserver au moins {watch("lead_time_days") ?? 0} jour{(watch("lead_time_days") ?? 0) > 1 ? "s" : ""} à l'avance.
-                    </p>
-                  </div>
-                </div>
+                {priceCardContent}
               </CardContent>
             </Card>
 
-            {/* Options tarifaires (plusieurs formules à prix différents, ex: menus au restaurant) */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Options tarifaires</CardTitle>
-                    <CardDescription>
-                      Proposez plusieurs formules à prix différents (ex: "12h — Menu Découverte" à 150₪, "19h — Menu Dégustation" à 280₪)
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-muted-foreground">{hasRateOptions ? "Activées" : "Désactivées"}</span>
-                    <Controller
-                      name="has_rate_options"
-                      control={control}
-                      render={({ field }) => (
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      )}
-                    />
-                  </div>
-                </div>
-              </CardHeader>
-              {hasRateOptions && (
-                <CardContent>
-                  <StandaloneRateOptionsManager
-                    experienceId={currentExperienceId}
-                    hasChildPrice={hasChildPrice}
-                    markupPercent={markupPercent}
-                  />
-                </CardContent>
-              )}
-            </Card>
+            {rateOptionsCard}
+            {timeSlotsCard}
 
-            {/* Créneaux horaires */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      Créneaux horaires
-                    </CardTitle>
-                    <CardDescription>Activez si l'expérience se déroule à des horaires précis</CardDescription>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-muted-foreground">{hasTimeSlots ? "Activés" : "Désactivés"}</span>
-                    <Controller
-                      name="has_time_slots"
-                      control={control}
-                      render={({ field }) => (
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      )}
-                    />
-                  </div>
-                </div>
-              </CardHeader>
-              {hasTimeSlots && (
-                <CardContent className="space-y-4">
-                  <div className="flex gap-2">
-                    <Input type="time" value={newSlot} onChange={(e) => setNewSlot(e.target.value)} className="w-40" />
-                    <Button type="button" variant="outline" onClick={addTimeSlot} disabled={!newSlot}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      Ajouter
-                    </Button>
-                  </div>
-                  {timeSlots.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {timeSlots.map((slot) => (
-                        <span key={slot} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium">
-                          {slot}
-                          <button type="button" onClick={() => removeTimeSlot(slot)} className="hover:text-destructive transition-colors">
-                            <X className="h-3 w-3" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground italic">Aucun créneau ajouté.</p>
-                  )}
-                </CardContent>
-              )}
-            </Card>
-
-            {/* Disponibilités */}
             <Card>
               <CardHeader>
                 <CardTitle>Disponibilités</CardTitle>
@@ -3263,424 +4272,258 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-
-                {/* Toggle mode */}
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setAvailabilityMode("blacklist")}
-                    className={cn(
-                      "flex flex-col items-start gap-0.5 rounded-lg border-2 px-4 py-3 text-left transition-colors",
-                      availabilityMode === "blacklist"
-                        ? "border-primary bg-primary/5"
-                        : "border-muted bg-background hover:border-primary/30"
-                    )}
-                  >
-                    <span className="text-sm font-semibold">Jours récurrents</span>
-                    <span className="text-xs text-muted-foreground">Ouvert selon les jours de la semaine, avec des exceptions</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAvailabilityMode("whitelist")}
-                    className={cn(
-                      "flex flex-col items-start gap-0.5 rounded-lg border-2 px-4 py-3 text-left transition-colors",
-                      availabilityMode === "whitelist"
-                        ? "border-primary bg-primary/5"
-                        : "border-muted bg-background hover:border-primary/30"
-                    )}
-                  >
-                    <span className="text-sm font-semibold">Dates spécifiques</span>
-                    <span className="text-xs text-muted-foreground">Seulement 2-3 dates précises à ouvrir</span>
-                  </button>
-                </div>
-
-                <Separator />
-
-                {/* ── Mode Jours récurrents (blacklist) ── */}
-                {availabilityMode === "blacklist" && (
-                  <>
-                    {/* Jours de la semaine */}
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                        Jours disponibles chaque semaine
-                      </p>
-                      <div className="flex gap-2 flex-wrap">
-                        {WEEKDAYS.map((day) => {
-                          const active = availableDays.includes(day.id);
-                          return (
-                            <button
-                              key={day.id}
-                              type="button"
-                              title={day.full}
-                              onClick={() =>
-                                setAvailableDays((prev) =>
-                                  prev.includes(day.id)
-                                    ? prev.filter((d) => d !== day.id)
-                                    : [...prev, day.id].sort((a, b) => a - b)
-                                )
-                              }
-                              className={cn(
-                                "w-10 h-10 rounded-full text-sm font-semibold border-2 transition-colors",
-                                active
-                                  ? "bg-primary text-primary-foreground border-primary"
-                                  : "bg-background text-muted-foreground border-muted hover:border-primary/50"
-                              )}
-                            >
-                              {day.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      {availableDays.length === 0 && (
-                        <p className="text-xs text-destructive mt-2">Aucun jour sélectionné — l'expérience sera indisponible.</p>
-                      )}
-                      {availableDays.length > 0 && availableDays.length < 7 && (
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Disponible : {availableDays.map((id) => WEEKDAYS.find((d) => d.id === id)?.full).join(", ")}
-                        </p>
-                      )}
-                      {availableDays.length === 7 && (
-                        <p className="text-xs text-muted-foreground mt-2">Disponible tous les jours</p>
-                      )}
-                    </div>
-
-                    <Separator />
-
-                    {/* Dates bloquées */}
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-                            Dates bloquées (exceptions)
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            Cliquez sur une date pour la marquer comme indisponible — cliquez à nouveau pour la débloquer
-                          </p>
-                        </div>
-                        {blockedDates.length > 0 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setBlockedDates([])}
-                            className="text-destructive hover:text-destructive text-xs"
-                          >
-                            Tout débloquer
-                          </Button>
-                        )}
-                      </div>
-                      <div className="rounded-lg border bg-background overflow-hidden">
-                        <Calendar
-                          mode="multiple"
-                          selected={blockedDates}
-                          onSelect={(dates) => setBlockedDates(dates || [])}
-                          month={calendarMonth}
-                          onMonthChange={setCalendarMonth}
-                          numberOfMonths={2}
-                          fromDate={new Date()}
-                          modifiers={{
-                            weekdayUnavailable: (date: Date) => {
-                              if (availableDays.length === 7) return false;
-                              const availableJsDays = availableDays.map((d) => (d === 7 ? 0 : d));
-                              return !availableJsDays.includes(date.getDay());
-                            },
-                          }}
-                          modifiersClassNames={{ weekdayUnavailable: "opacity-30" }}
-                          classNames={{
-                            day_selected:
-                              "bg-destructive text-destructive-foreground hover:bg-destructive hover:text-destructive-foreground focus:bg-destructive focus:text-destructive-foreground",
-                          }}
-                        />
-                      </div>
-                      {availableDays.length < 7 && (
-                        <p className="text-xs text-muted-foreground mt-2 italic">
-                          Les jours en fondu sont déjà indisponibles selon les restrictions ci-dessus.
-                        </p>
-                      )}
-                      {blockedDates.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-1.5">
-                          {blockedDates
-                            .sort((a, b) => a.getTime() - b.getTime())
-                            .map((date) => (
-                              <span
-                                key={date.toISOString()}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-destructive/10 text-destructive border border-destructive/20"
-                              >
-                                {date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
-                                <button
-                                  type="button"
-                                  onClick={() => setBlockedDates((prev) => prev.filter((d) => d.toDateString() !== date.toDateString()))}
-                                  className="hover:opacity-70"
-                                >
-                                  <X className="h-2.5 w-2.5" />
-                                </button>
-                              </span>
-                            ))}
-                        </div>
-                      )}
-                      {blockedDates.length === 0 && (
-                        <p className="text-xs text-muted-foreground mt-2 italic">
-                          Aucune date bloquée — disponible tous les jours autorisés ci-dessus.
-                        </p>
-                      )}
-                    </div>
-
-                    <Separator />
-
-                    {/* Date de fermeture */}
-                    <div className="space-y-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-                        Disponible jusqu'au
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Le calendrier se ferme automatiquement après cette date. Par défaut : 6 mois.
-                      </p>
-                      <Input
-                        type="date"
-                        value={availabilityEndDate ?? defaultEndDate}
-                        min={new Date().toISOString().split("T")[0]}
-                        onChange={(e) => setAvailabilityEndDate(e.target.value || null)}
-                        className="w-48"
-                      />
-                    </div>
-                  </>
-                )}
-
-                {/* ── Mode Dates spécifiques (whitelist) ── */}
-                {availabilityMode === "whitelist" && (
-                  <>
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-                            Dates disponibles
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            Cliquez sur les dates pour les ouvrir — tout le reste sera fermé
-                          </p>
-                        </div>
-                        {whitelistedDates.length > 0 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setWhitelistedDates([])}
-                            className="text-destructive hover:text-destructive text-xs"
-                          >
-                            Tout effacer
-                          </Button>
-                        )}
-                      </div>
-                      <div className="rounded-lg border bg-background overflow-hidden">
-                        <Calendar
-                          mode="multiple"
-                          selected={whitelistedDates}
-                          onSelect={(dates) => setWhitelistedDates(dates || [])}
-                          month={calendarMonth}
-                          onMonthChange={setCalendarMonth}
-                          numberOfMonths={2}
-                          fromDate={new Date()}
-                          classNames={{
-                            day_selected:
-                              "bg-green-600 text-white hover:bg-green-600 hover:text-white focus:bg-green-600 focus:text-white",
-                          }}
-                        />
-                      </div>
-                      {whitelistedDates.length > 0 ? (
-                        <div className="mt-3 flex flex-wrap gap-1.5">
-                          {whitelistedDates
-                            .sort((a, b) => a.getTime() - b.getTime())
-                            .map((date) => (
-                              <span
-                                key={date.toISOString()}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-700 border border-green-200"
-                              >
-                                {date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
-                                <button
-                                  type="button"
-                                  onClick={() => setWhitelistedDates((prev) => prev.filter((d) => d.toDateString() !== date.toDateString()))}
-                                  className="hover:opacity-70"
-                                >
-                                  <X className="h-2.5 w-2.5" />
-                                </button>
-                              </span>
-                            ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground mt-2 italic">
-                          Aucune date sélectionnée — l'expérience sera invisible dans le calendrier.
-                        </p>
-                      )}
-                    </div>
-                  </>
-                )}
-
-                <Separator />
-
-                {/* Indicateur dernière date disponible */}
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-                      Dernière date disponible
-                    </p>
-                    <p className="text-sm font-medium mt-0.5">
-                      {lastAvailableDate
-                        ? new Date(lastAvailableDate + "T12:00:00").toLocaleDateString("fr-FR", {
-                            day: "numeric", month: "long", year: "numeric",
-                          })
-                        : "Aucune date disponible"}
-                    </p>
-                    {remainingDatesCount > 0 && remainingDatesCount <= 10 && (
-                      <p className="text-xs text-destructive mt-0.5 font-medium">
-                        Il ne reste que {remainingDatesCount} créneau{remainingDatesCount > 1 ? "x" : ""} disponible{remainingDatesCount > 1 ? "s" : ""}
-                      </p>
-                    )}
-                  </div>
-                  <Badge
-                    variant={daysRemaining > 30 ? "default" : daysRemaining > 10 ? "outline" : "destructive"}
-                    className={daysRemaining > 10 && daysRemaining <= 30 ? "border-orange-400 text-orange-600 bg-orange-50" : ""}
-                  >
-                    {availabilityMode === "whitelist"
-                      ? `${remainingDatesCount} date${remainingDatesCount > 1 ? "s" : ""}`
-                      : daysRemaining > 0 ? `${daysRemaining}j restants` : "Expiré"}
-                  </Badge>
-                </div>
-
+                {availabilityCardContent}
               </CardContent>
             </Card>
+          </div>
+        )}
 
-            {/* Conditions d'annulation */}
-            {!isBoatsExperience && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Conditions d'annulation</CardTitle>
-                  <CardDescription>Politique d'annulation de l'expérience (3 langues)</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-6">
-                    <div>
-                      <Label className="flex items-center gap-1.5 mb-1">
-                        <span>🇬🇧</span> Politique (EN)
-                      </Label>
-                      <Input {...register("cancellation_policy")} disabled={isSaving} />
-                    </div>
-                    <div>
-                      <Label className="flex items-center gap-1.5 mb-1">
-                        <span>🇫🇷</span> Politique (FR)
-                      </Label>
-                      <Input {...register("cancellation_policy_fr")} disabled={isSaving} />
-                    </div>
-                    <div>
-                      <Label className="flex items-center gap-1.5 mb-1">
-                        <span>🇮🇱</span> Politique (HE)
-                      </Label>
-                      <Input {...register("cancellation_policy_he")} dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+        {isBoatsExperience && activeTab === "autres" && (
+          <div className="space-y-6">
+            {seoCardContent}
           </div>
         )}
 
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {/* PAGE 5 : SEO */}
+        {/* Expérience standard : une seule page qui défile (sprint 5B)        */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
-        {(activeTab === "seo" || activeTab === "autres") && (
-          <div className="space-y-6">
-            <Card className="bg-muted/30">
-              <CardHeader>
-                <CardTitle>SEO Configuration</CardTitle>
-                <CardDescription>Configure SEO metadata for search engines and social media</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-3 gap-6">
-                  {/* EN */}
-                  <div className="space-y-4">
-                    <div className="bg-background p-2 rounded flex items-center gap-1.5">
-                      <span>🇬🇧</span>
-                      <h4 className="font-medium text-sm">English SEO</h4>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="seo_title_en">SEO Title</Label>
-                      <Input id="seo_title_en" {...register("seo_title_en")} placeholder="Browser tab & Google" />
-                      <p className="text-xs text-muted-foreground">Max ~60 chars</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="meta_description_en">Meta Description</Label>
-                      <Textarea id="meta_description_en" {...register("meta_description_en")} placeholder="Google results" rows={3} />
-                      <p className="text-xs text-muted-foreground">Max ~155 chars</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="og_title_en">OG Title</Label>
-                      <Input id="og_title_en" {...register("og_title_en")} placeholder="Social media title" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="og_description_en">OG Description</Label>
-                      <Textarea id="og_description_en" {...register("og_description_en")} placeholder="Social media description" rows={3} />
-                    </div>
-                  </div>
+        {!isBoatsExperience && (
+          <div className="xl:grid xl:grid-cols-[220px_1fr_300px] xl:gap-6 xl:items-start">
+            {/* Sommaire (sprint 5B, étape 5) */}
+            <aside className="hidden xl:block sticky top-24 self-start space-y-4">
+              <nav className="space-y-0.5">
+                {SUMMARY_SECTIONS.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => scrollToSection(s.id)}
+                    className="w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded-md text-sm hover:bg-muted text-left"
+                  >
+                    <span>{s.label}</span>
+                    <span className={cn("h-2 w-2 rounded-full shrink-0", STATUS_DOT[s.status])} />
+                  </button>
+                ))}
+              </nav>
+              <div className="rounded-lg border border-[#e9e6e1] bg-[#faf8f6] p-3 space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Prête à publier</span>
+                  <span className="font-semibold">{readinessPercent} %</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div className="h-full bg-[#1f7a4d]" style={{ width: `${readinessPercent}%` }} />
+                </div>
+                {checklistItems.filter((c) => !c.done).length > 0 && (
+                  <ul className="text-muted-foreground space-y-0.5 pt-1">
+                    {checklistItems.filter((c) => !c.done).map((c) => (
+                      <li key={c.id}>Manque : {c.label}</li>
+                    ))}
+                  </ul>
+                )}
+                <p className="text-muted-foreground pt-1">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#5b3fc4] mr-1" /> IA à relire ·{" "}
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#1f7a4d] mr-1" /> OK ·{" "}
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#e0a400] mr-1" /> à compléter
+                </p>
+              </div>
+            </aside>
 
-                  {/* HE */}
-                  <div className="space-y-4">
-                    <div className="bg-background p-2 rounded flex items-center gap-1.5">
-                      <span>🇮🇱</span>
-                      <h4 className="font-medium text-sm">Hebrew SEO (עברית)</h4>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="seo_title_he">כותרת SEO</Label>
-                      <Input id="seo_title_he" {...register("seo_title_he")} placeholder="כותרת עבור גוגל" dir="rtl" className="bg-hebrew-input" />
-                      <p className="text-xs text-muted-foreground">Max ~60 chars</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="meta_description_he">תיאור Meta</Label>
-                      <Textarea id="meta_description_he" {...register("meta_description_he")} placeholder="תיאור עבור גוגל" rows={3} dir="rtl" className="bg-hebrew-input" />
-                      <p className="text-xs text-muted-foreground">Max ~155 chars</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="og_title_he">כותרת OG</Label>
-                      <Input id="og_title_he" {...register("og_title_he")} placeholder="כותרת עבור רשתות חברתיות" dir="rtl" className="bg-hebrew-input" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="og_description_he">תיאור OG</Label>
-                      <Textarea id="og_description_he" {...register("og_description_he")} placeholder="תיאור עבור רשתות חברתיות" rows={3} dir="rtl" className="bg-hebrew-input" />
-                    </div>
+            <div className="space-y-3 min-w-0">
+              <FormSection id="sec-demarrer" title="Démarrer" description="Type et catégories">
+                <div>
+                  <Label className="mb-3 block">
+                    Catégories <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {categories?.map((cat) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => toggleCategory(cat.id)}
+                        className={cn(
+                          "px-2.5 py-1 rounded-full text-xs border transition-colors",
+                          selectedCategoryIds.includes(cat.id)
+                            ? "bg-[#1a1814] text-white border-[#1a1814]"
+                            : "bg-white text-[#1a1814] border-[#e9e6e1] hover:border-[#1a1814]/40"
+                        )}
+                      >
+                        {cat.name}
+                      </button>
+                    ))}
                   </div>
+                  {errors.category_id && (
+                    <p className="text-destructive text-xs mt-2">{errors.category_id.message}</p>
+                  )}
+                </div>
+              </FormSection>
 
-                  {/* FR */}
-                  <div className="space-y-4">
-                    <div className="bg-background p-2 rounded flex items-center gap-1.5">
-                      <span>🇫🇷</span>
-                      <h4 className="font-medium text-sm">French SEO</h4>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="seo_title_fr">Titre SEO</Label>
-                      <Input id="seo_title_fr" {...register("seo_title_fr")} placeholder="Titre pour Google" />
-                      <p className="text-xs text-muted-foreground">Max ~60 chars</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="meta_description_fr">Description Meta</Label>
-                      <Textarea id="meta_description_fr" {...register("meta_description_fr")} placeholder="Description Google" rows={3} />
-                      <p className="text-xs text-muted-foreground">Max ~155 chars</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="og_title_fr">Titre OG</Label>
-                      <Input id="og_title_fr" {...register("og_title_fr")} placeholder="Réseaux sociaux" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="og_description_fr">Description OG</Label>
-                      <Textarea id="og_description_fr" {...register("og_description_fr")} placeholder="Description réseaux sociaux" rows={3} />
-                    </div>
+              <FormSection id="sec-essentiel" title="1. L'essentiel" description="Ce qui s'affiche en haut de la fiche">
+                {titleAndSubtitleFields}
+
+                <Separator />
+
+                <div>
+                  <Label className="mb-2 block">Participants min / max</Label>
+                  <div className="grid grid-cols-2 gap-2 max-w-sm">
+                    <Input type="number" min={1} max={100} {...register("min_party", { valueAsNumber: true })} placeholder="1" disabled={isSaving} />
+                    <Input type="number" min={1} max={100} {...register("max_party", { valueAsNumber: true })} placeholder="10" disabled={isSaving} />
                   </div>
+                  {(errors.min_party || errors.max_party) && (
+                    <p className="text-destructive text-xs mt-1">Valeurs min/max invalides</p>
+                  )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="og_image">Open Graph Image</Label>
-                  <Input id="og_image" {...register("og_image")} placeholder="Image URL for social media sharing" />
-                  <p className="text-xs text-muted-foreground">Recommended: 1200x630px. Leave empty to use hero image.</p>
+                <Separator />
+
+                {badgesContent}
+
+                <Separator />
+
+                {essentialsExtraFields}
+
+                <Separator />
+
+                <div>
+                  <Label className="flex items-center gap-2 mb-3 text-sm font-medium">
+                    <MapPin className="h-4 w-4" /> Localisation
+                  </Label>
+                  {locationFields}
                 </div>
-              </CardContent>
-            </Card>
+
+                <Separator />
+
+                <div>
+                  <Label className="text-sm font-medium mb-3 block">Durée de l'expérience</Label>
+                  {durationFields}
+                </div>
+
+                <Separator />
+
+                <div>
+                  <Label className="text-sm font-medium mb-3 block">Accessibilité</Label>
+                  {accessibilityFields}
+                </div>
+              </FormSection>
+
+              <FormSection id="sec-recit" title="2. Le récit" description="Description, inclus, extras">
+                {descriptionFields}
+
+                <Separator />
+
+                <div>
+                  <Label className="text-sm font-medium mb-3 block">Ce qui est inclus</Label>
+                  <p className="text-xs text-muted-foreground mb-3">Listez tout ce qui est compris dans le prix (avec photo et traduction HE)</p>
+                  <IncludesManagerStandalone
+                    experienceId={currentExperienceId}
+                    localIncludes={localStandaloneIncludes}
+                    onLocalIncludesChange={setLocalStandaloneIncludes}
+                  />
+                </div>
+
+                <Separator />
+
+                <div>
+                  <Label className="text-sm font-medium mb-3 block">Extras (options payantes)</Label>
+                  <p className="text-xs text-muted-foreground mb-3">Options supplémentaires que le client peut ajouter à sa réservation</p>
+                  <StandaloneExtrasManager
+                    experienceId={currentExperienceId}
+                    localExtras={localStandaloneExtras}
+                    onLocalExtrasChange={setLocalStandaloneExtras}
+                  />
+                </div>
+              </FormSection>
+
+              <FormSection id="sec-photos" title="3. Photos" description={`${totalPhotosCount} photo${totalPhotosCount > 1 ? "s" : ""}${totalPhotosCount < 5 ? " · il en faut au moins 5" : ""}`}>
+                {totalPhotosCount < 5 && (
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-[#fff4d6] text-[#8a6100] text-sm">
+                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                    Les fiches avec plusieurs photos convertissent mieux.
+                  </div>
+                )}
+                {photosFields}
+              </FormSection>
+
+              <FormSection id="sec-prix" title="4. Prix & dispo" description="Formulaire actuel, simplement rangé">
+                {bookingModeCard}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" />
+                      Prix de l'expérience
+                    </CardTitle>
+                    <CardDescription>Tarif fournisseur, markup STAYMAKOM, prix client affiché</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {priceCardContent}
+                  </CardContent>
+                </Card>
+                {rateOptionsCard}
+                {timeSlotsCard}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Disponibilités</CardTitle>
+                    <CardDescription>
+                      Choisissez le mode qui correspond à votre situation, et ajoutez un libellé par date si besoin.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {availabilityCardContent}
+                  </CardContent>
+                </Card>
+              </FormSection>
+
+              <FormSection id="sec-conditions" title="5. Conditions" description="Politique d'annulation de l'expérience (3 langues)">
+                {cancellationFields}
+              </FormSection>
+
+              <FormSection id="sec-publication"
+                title="6. Publication"
+                description="Slug, mise en avant, SEO"
+                defaultOpen={false}
+              >
+                {publicationExtras}
+                <Separator />
+                {seoCardContent}
+              </FormSection>
+            </div>
+
+            {/* Aperçu en direct (sprint 5B, étape 5) */}
+            <aside className="hidden xl:block sticky top-24 self-start space-y-4">
+              <div className="rounded-2xl border border-[#e9e6e1] overflow-hidden bg-white">
+                <div
+                  className="h-28 bg-muted"
+                  style={heroImagePreview ? { backgroundImage: `url(${heroImagePreview})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+                />
+                <div className="p-3 space-y-2">
+                  <p className="font-extrabold uppercase text-sm leading-tight">{title || "Titre de l'expérience"}</p>
+                  <p className="text-xs text-muted-foreground">{subtitleEn || "Accroche de l'expérience…"}</p>
+                  <EssentialsBlock experience={previewExperience} experienceTitle={title || ""} lang={activeLanguage} />
+                </div>
+              </div>
+              <div className="rounded-lg border border-[#e9e6e1] bg-[#faf8f6] p-3">
+                <p className="text-xs font-semibold mb-2">Avant de publier</p>
+                <ul className="space-y-1 text-xs">
+                  {checklistItems.map((c) => (
+                    <li key={c.id} className={cn("flex items-center gap-1.5", c.done ? "text-emerald-600" : "text-muted-foreground")}>
+                      <span>{c.done ? "✓" : "✗"}</span> {c.label}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </aside>
+          </div>
+        )}
+
+        {/* Checklist "Avant de publier" — visible en haut en dessous de 1280px (sprint 5B) */}
+        {!isBoatsExperience && (
+          <div className="xl:hidden rounded-lg border border-[#e9e6e1] bg-[#faf8f6] p-4">
+            <p className="text-sm font-semibold mb-2">Avant de publier</p>
+            <ul className="space-y-1 text-sm">
+              {checklistItems.map((c) => (
+                <li key={c.id} className={cn("flex items-center gap-1.5", c.done ? "text-emerald-600" : "text-muted-foreground")}>
+                  <span>{c.done ? "✓" : "✗"}</span> {c.label}
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </form>
@@ -3700,7 +4543,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
           </Button>
           <Button
             type="button"
-            className="flex-1"
+            className="flex-1 bg-[#ad1414] text-white hover:bg-[#ad1414]/90"
             onClick={handleSubmit(handlePublish, onInvalidSubmit)}
             disabled={!canPublish || isSaving || heroImageUploading}
           >

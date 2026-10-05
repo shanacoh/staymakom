@@ -11,10 +11,7 @@
  */
 
 import { forwardRef, useImperativeHandle, useRef, useState, type Ref } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button, Input, Label, Textarea } from "@/components/forms/styled";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
@@ -110,6 +107,8 @@ const emptyDraft = (overrides: Partial<AiExperienceDraft>): AiExperienceDraft =>
 export interface AiDraftPanelHandle {
   /** Traduit les champs texte simples déjà remplis en français vers EN/HE (bouton "Traduire tout" du header). */
   translateAll: () => Promise<void>;
+  /** Nombre d'éléments "À vérifier" renvoyés par la dernière génération IA, pas encore cochés (sprint 5B, checklist). */
+  getUnreviewedAiCount: () => number;
 }
 
 interface Props {
@@ -269,7 +268,10 @@ function AiDraftPanelImpl(
     }
   };
 
-  useImperativeHandle(ref, () => ({ translateAll }));
+  useImperativeHandle(ref, () => ({
+    translateAll,
+    getUnreviewedAiCount: () => toVerify.length - checkedVerify.size,
+  }));
 
   const countConflicts = (draft: AiExperienceDraft): number => {
     let count = 0;
@@ -363,11 +365,11 @@ function AiDraftPanelImpl(
 
   return (
     <div className="space-y-3">
-      <div className="rounded-lg border bg-gradient-to-r from-purple-50 to-white">
+      <div className="rounded-[14px] border border-dashed border-[#5b3fc4] bg-[#f3efff]">
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-purple-800"
+          className="w-full flex items-center justify-between px-4 py-2.5 text-[13px] font-medium text-[#5b3fc4]"
         >
           <span className="flex items-center gap-2">
             <Sparkles className="h-4 w-4" />
@@ -434,7 +436,7 @@ function AiDraftPanelImpl(
               />
             </div>
 
-            <Button type="button" onClick={handleGenerate} disabled={loading} className="w-full">
+            <Button type="button" onClick={handleGenerate} disabled={loading} className="w-full bg-[#5b3fc4] text-white hover:bg-[#5b3fc4]/90">
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -449,7 +451,7 @@ function AiDraftPanelImpl(
       </div>
 
       {aiActive && (
-        <div className="flex items-center justify-between rounded-lg border border-purple-200 bg-purple-50 px-4 py-2.5 text-sm text-purple-900">
+        <div className="flex items-center justify-between rounded-lg border border-[#d9cffd] bg-[#f3efff] px-4 py-2.5 text-[13px] text-[#5b3fc4]">
           <span>✦ Brouillon généré par l'IA. Relis avant d'enregistrer.</span>
           <Button type="button" size="sm" variant="outline" onClick={() => setAiActive(false)}>
             Tout valider
@@ -458,10 +460,10 @@ function AiDraftPanelImpl(
       )}
 
       {(toVerify.length > 0 || pendingIncludes.length > 0 || pendingExtras.length > 0) && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 space-y-3">
+        <div className="rounded-lg border border-[#f0dca0] bg-[#fff4d6] px-4 py-3 space-y-3">
           {toVerify.length > 0 && (
             <div className="space-y-2">
-              <p className="text-sm font-medium text-amber-900">À vérifier</p>
+              <p className="text-sm font-medium text-[#8a6100]">À vérifier</p>
               <ul className="space-y-1.5">
                 {toVerify.map((line, idx) => (
                   <li key={idx} className="flex items-start gap-2">
@@ -473,7 +475,7 @@ function AiDraftPanelImpl(
                     />
                     <Label
                       htmlFor={`verify-${idx}`}
-                      className={cn("text-sm font-normal text-amber-900 cursor-pointer", checkedVerify.has(idx) && "line-through opacity-60")}
+                      className={cn("text-sm font-normal text-[#8a6100] cursor-pointer", checkedVerify.has(idx) && "line-through opacity-60")}
                     >
                       {line}
                     </Label>
@@ -485,8 +487,8 @@ function AiDraftPanelImpl(
 
           {(pendingIncludes.length > 0 || pendingExtras.length > 0) && (
             <div className="space-y-2 border-t border-amber-200 pt-3">
-              <p className="text-sm font-medium text-amber-900">Inclus et extras proposés par l'IA</p>
-              <ul className="space-y-1 text-sm text-amber-900">
+              <p className="text-sm font-medium text-[#8a6100]">Inclus et extras proposés par l'IA</p>
+              <ul className="space-y-1 text-sm text-[#8a6100]">
                 {pendingIncludes.map((item, idx) => (
                   <li key={`inc-${idx}`}>Inclus : {item.title}</li>
                 ))}

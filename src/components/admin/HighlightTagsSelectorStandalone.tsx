@@ -3,17 +3,66 @@
  * Même UI que HighlightTagsSelector2, mais branché sur standalone_experience_highlight_tags.
  */
 
-import { useState } from "react";
+import { forwardRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card as UiCard,
+  CardContent as UiCardContent,
+  CardDescription as UiCardDescription,
+  CardHeader as UiCardHeader,
+  CardTitle as UiCardTitle,
+} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button as UiButton, type ButtonProps } from "@/components/ui/button";
+import { Input as UiInput } from "@/components/ui/input";
+import { Label as UiLabel } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Plus, X, Loader2, Tag, ChevronUp, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+// Style maquette (sprint 5B) — surcharge visuelle locale, voir
+// StandaloneExperienceForm.tsx pour le détail des valeurs reprises.
+const Label = forwardRef<HTMLLabelElement, React.ComponentProps<typeof UiLabel>>(({ className, ...props }, ref) => (
+  <UiLabel ref={ref} className={cn("text-[11px] uppercase tracking-[0.05em] text-[#6f6a63] font-medium", className)} {...props} />
+));
+Label.displayName = "Label";
+
+const Input = forwardRef<HTMLInputElement, React.ComponentProps<typeof UiInput>>(({ className, ...props }, ref) => (
+  <UiInput ref={ref} className={cn("h-9 rounded-[9px] border-[#e9e6e1] px-2.5 py-2 text-[13px]", className)} {...props} />
+));
+Input.displayName = "Input";
+
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(({ className, ...props }, ref) => (
+  <UiButton ref={ref} className={cn("h-[34px] rounded-[10px] text-[13px] normal-case tracking-normal", className)} {...props} />
+));
+Button.displayName = "Button";
+
+const Card = forwardRef<HTMLDivElement, React.ComponentProps<typeof UiCard>>(({ className, ...props }, ref) => (
+  <UiCard ref={ref} className={cn("rounded-[14px] border-[#e9e6e1] shadow-none", className)} {...props} />
+));
+Card.displayName = "Card";
+
+const CardHeader = forwardRef<HTMLDivElement, React.ComponentProps<typeof UiCardHeader>>(({ className, ...props }, ref) => (
+  <UiCardHeader ref={ref} className={cn("space-y-1 p-3", className)} {...props} />
+));
+CardHeader.displayName = "CardHeader";
+
+const CardContent = forwardRef<HTMLDivElement, React.ComponentProps<typeof UiCardContent>>(({ className, ...props }, ref) => (
+  <UiCardContent ref={ref} className={cn("space-y-2.5 p-3 pt-0", className)} {...props} />
+));
+CardContent.displayName = "CardContent";
+
+const CardTitle = forwardRef<HTMLParagraphElement, React.ComponentProps<typeof UiCardTitle>>(({ className, ...props }, ref) => (
+  <UiCardTitle ref={ref} className={cn("text-[14px] font-bold leading-tight tracking-normal text-[#1a1814]", className)} {...props} />
+));
+CardTitle.displayName = "CardTitle";
+
+const CardDescription = forwardRef<HTMLParagraphElement, React.ComponentProps<typeof UiCardDescription>>(({ className, ...props }, ref) => (
+  <UiCardDescription ref={ref} className={cn("text-xs text-[#6f6a63]", className)} {...props} />
+));
+CardDescription.displayName = "CardDescription";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";

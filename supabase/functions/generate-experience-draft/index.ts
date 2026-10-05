@@ -517,6 +517,113 @@ async function handleTranslate(
   return json(req, { translations });
 }
 
+// ---------------------------------------------------------------------------
+// Mode "seo" (sprint 5B, étape 4) : à partir du titre/accroche/description
+// déjà rédigés par Shana (pas de notes, lien ou PDF), produit uniquement les
+// 4 champs SEO par langue. Ne touche jamais au titre, à la description ou à
+// tout autre champ du formulaire.
+// ---------------------------------------------------------------------------
+
+const SEO_TOOL_NAME = "fill_seo_fields";
+
+const seoToolSchema = {
+  name: SEO_TOOL_NAME,
+  description: "Renvoie les champs SEO (titre et méta-description) pour chaque langue fournie.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      seo_title_en: LANG_STRING,
+      seo_title_fr: LANG_STRING,
+      seo_title_he: LANG_STRING,
+      meta_description_en: LANG_STRING,
+      meta_description_fr: LANG_STRING,
+      meta_description_he: LANG_STRING,
+    },
+    required: [],
+  },
+};
+
+const SEO_INSTRUCTIONS = `
+---
+Tâche : rédiger uniquement le titre SEO et la méta-description, pas de rédaction depuis zéro du contenu.
+- Source : le titre, l'accroche et la description déjà rédigés par Shana, fournis ci-dessous par langue. N'invente aucun fait qui n'y figure pas.
+- Pour chaque langue effectivement fournie (titre ou description non vide), produis :
+  - seo_title_* : 60 caractères maximum, incluant si pertinent le lieu ou la catégorie, pensé pour Google et l'onglet du navigateur.
+  - meta_description_* : 155 caractères maximum, qui donne envie de cliquer, dans la voix STAYMAKOM.
+- Si une langue n'a ni titre ni description fournis, laisse ses deux champs SEO vides pour cette langue.
+- Ne produis rien d'autre que les champs SEO : pas de titre, pas de description, pas de prix.
+- Réponds uniquement via l'outil fourni (fill_seo_fields).`;
+
+function cleanSeoText(v: unknown, max: number): string {
+  const s = str(v, max);
+  return s ?? "";
+}
+
+async function handleSeo(
+  req: Request,
+  client: Anthropic,
+  type: ExperienceType,
+  content: Record<string, unknown>
+): Promise<Response> {
+  const pick = (key: string) => (typeof content[key] === "string" ? (content[key] as string).trim() : "");
+  const langs: { code: "en" | "fr" | "he"; label: string; title: string; subtitle: string; description: string }[] = [
+    { code: "en", label: "Anglais", title: pick("title"), subtitle: pick("subtitle"), description: pick("long_copy") },
+    { code: "fr", label: "Français", title: pick("title_fr"), subtitle: pick("subtitle_fr"), description: pick("long_copy_fr") },
+    { code: "he", label: "Hébreu", title: pick("title_he"), subtitle: pick("subtitle_he"), description: pick("long_copy_he") },
+  ];
+
+  const usable = langs.filter((l) => l.title || l.description);
+  if (usable.length === 0) {
+    return json(req, { error: "Renseigne au moins un titre ou une description avant de générer le SEO." }, 400);
+  }
+
+  const userText = usable
+    .map((l) => {
+      const descriptionText = l.description ? htmlToText(l.description, 2000) : "";
+      return `### ${l.label}\nTitre : ${l.title || "(vide)"}\nAccroche : ${l.subtitle || "(vide)"}\nDescription : ${descriptionText || "(vide)"}`;
+    })
+    .join("\n\n");
+
+  const systemPrompt = loadSystemPrompt(type) + SEO_INSTRUCTIONS;
+
+  // deno-lint-ignore no-explicit-any
+  let response: any;
+  try {
+    response = await client.messages.create({
+      model: Deno.env.get("EXPERIENCE_DRAFT_AI_MODEL") || DEFAULT_CLAUDE_MODEL,
+      max_tokens: MAX_TOKENS,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userText }],
+      tools: [seoToolSchema],
+      tool_choice: { type: "tool", name: SEO_TOOL_NAME },
+    } as any);
+  } catch (error) {
+    if (error instanceof Anthropic.APIError) {
+      console.error("generate-experience-draft (seo): Claude a répondu", error.status, error.message.slice(0, 300));
+    } else {
+      console.error("generate-experience-draft (seo): Claude injoignable", error instanceof Error ? error.message : error);
+    }
+    return json(req, { error: "L'IA n'a pas pu générer le SEO, réessaie dans un instant." }, 503);
+  }
+
+  const toolUse = response.content.find((block: any) => block.type === "tool_use" && block.name === SEO_TOOL_NAME);
+  if (!toolUse) {
+    console.error("generate-experience-draft (seo): pas de tool_use dans la réponse", response.stop_reason);
+    return json(req, { error: "La réponse de l'IA n'a pas pu être lue, réessaie." }, 502);
+  }
+
+  const raw = toolUse.input as Record<string, unknown>;
+  const seo = {
+    seo_title_en: cleanSeoText(raw.seo_title_en, 60),
+    seo_title_fr: cleanSeoText(raw.seo_title_fr, 60),
+    seo_title_he: cleanSeoText(raw.seo_title_he, 60),
+    meta_description_en: cleanSeoText(raw.meta_description_en, 155),
+    meta_description_fr: cleanSeoText(raw.meta_description_fr, 155),
+    meta_description_he: cleanSeoText(raw.meta_description_he, 155),
+  };
+  return json(req, { seo });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders(req) });
   if (req.method !== "POST") return json(req, { error: "Méthode non autorisée" }, 405);
@@ -539,7 +646,8 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const type: ExperienceType = body?.type === "hotel" ? "hotel" : "standalone";
-    const mode: "draft" | "translate" = body?.mode === "translate" ? "translate" : "draft";
+    const mode: "draft" | "translate" | "seo" =
+      body?.mode === "translate" ? "translate" : body?.mode === "seo" ? "seo" : "draft";
 
     const workspaceIdEarly = Deno.env.get("ANTHROPIC_WORKSPACE_ID");
     const anthropicClient = new Anthropic({
@@ -556,6 +664,11 @@ Deno.serve(async (req) => {
         if (typeof key === "string" && typeof value === "string") cleanTexts[key.slice(0, 100)] = value.slice(0, 8000);
       }
       return await handleTranslate(req, anthropicClient, type, cleanTexts);
+    }
+
+    if (mode === "seo") {
+      const content = body?.content && typeof body.content === "object" ? (body.content as Record<string, unknown>) : {};
+      return await handleSeo(req, anthropicClient, type, content);
     }
 
     const notes = typeof body?.notes === "string" && body.notes.trim() ? body.notes.trim().slice(0, 20_000) : null;

@@ -4,16 +4,33 @@
  * Pas de HotelPhotoPickerDialog (pas d'hôtel lié).
  */
 
-import { useState } from "react";
+import { forwardRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button as UiButton, type ButtonProps } from "@/components/ui/button";
+import { Input as UiInput } from "@/components/ui/input";
+import { Label as UiLabel } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2, ChevronUp, ChevronDown, Edit2, X, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { buildImageFileName } from "@/lib/utils";
+import { buildImageFileName, cn } from "@/lib/utils";
+
+// Style maquette (sprint 5B) — surcharge visuelle locale, voir
+// StandaloneExperienceForm.tsx pour le détail des valeurs reprises.
+const Label = forwardRef<HTMLLabelElement, React.ComponentProps<typeof UiLabel>>(({ className, ...props }, ref) => (
+  <UiLabel ref={ref} className={cn("text-[11px] uppercase tracking-[0.05em] text-[#6f6a63] font-medium", className)} {...props} />
+));
+Label.displayName = "Label";
+
+const Input = forwardRef<HTMLInputElement, React.ComponentProps<typeof UiInput>>(({ className, ...props }, ref) => (
+  <UiInput ref={ref} className={cn("h-9 rounded-[9px] border-[#e9e6e1] px-2.5 py-2 text-[13px]", className)} {...props} />
+));
+Input.displayName = "Input";
+
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(({ className, ...props }, ref) => (
+  <UiButton ref={ref} className={cn("h-[34px] rounded-[10px] text-[13px] normal-case tracking-normal", className)} {...props} />
+));
+Button.displayName = "Button";
 
 export interface LocalIncludeEntry {
   _localId: string;
