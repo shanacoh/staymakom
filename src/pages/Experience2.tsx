@@ -370,19 +370,21 @@ export default function Experience2() {
   // All prices are computed in ILS internally, converted at display time via CurrencyContext
   const displayCurrency = "ILS";
 
-  // Photos rule: if experience has its own hero/gallery → use only those (never mix with hotel photos)
-  // If experience has NO photos at all → fall back to hotel photos so there's always something to show
-  const hasExpPhotos = !!experience.hero_image || (experience.photos?.length ?? 0) > 0;
-  const expHero = experience.hero_image;
-  const expGallery: string[] = experience.photos ?? [];
+  // Règle des photos (affichage uniquement, rien n'est modifié dans les données) :
+  // - 3 photos ou plus propres à l'expérience (couverture + galerie) → uniquement les siennes.
+  // - moins de 3 → les siennes d'abord, puis celles de l'hôtel du parcours, sans doublon.
+  // - aucune → celles de l'hôtel, pour qu'il y ait toujours quelque chose à montrer.
+  const MIN_OWN_PHOTOS = 3;
+  const expPhotos: string[] = Array.from(
+    new Set([experience.hero_image, ...(experience.photos ?? [])].filter(Boolean) as string[])
+  );
+  const hotelPhotos: string[] =
+    allHotelPhotos.length > 0 ? allHotelPhotos : ([primaryHotel?.hero_image].filter(Boolean) as string[]);
 
-  const photos: string[] = hasExpPhotos
-    ? expHero
-      ? [expHero, ...expGallery.filter((p: string) => p !== expHero)]
-      : expGallery
-    : allHotelPhotos.length > 0
-      ? allHotelPhotos
-      : ([primaryHotel?.hero_image].filter(Boolean) as string[]);
+  const photos: string[] =
+    expPhotos.length >= MIN_OWN_PHOTOS
+      ? expPhotos
+      : Array.from(new Set([...expPhotos, ...hotelPhotos.filter(Boolean)]));
 
   // ---------------------------------------------------------------------------
   // Localized content

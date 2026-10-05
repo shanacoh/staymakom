@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-10-05] — Sprint 5D : photos de l'hôtel en complément du carrousel
+
+### Ce qui a changé côté code
+- `src/pages/Experience2.tsx` : nouvelle règle pour les photos du haut de fiche hôtel + expérience. Si l'expérience a moins de 3 photos à elle (couverture + galerie), le carrousel est complété par les photos de l'hôtel (ou des hôtels) du parcours, placées après les siennes, sans doublon. Avec 3 photos ou plus, rien ne change : on ne montre que les siennes. Sans aucune photo, on montre celles de l'hôtel, comme avant. Une même photo présente deux fois dans la liste n'est plus affichée qu'une fois.
+- Affichage uniquement : aucune donnée n'est modifiée, ni les prix, ni la réservation.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration.
+
+### Pourquoi ce changement
+La plupart des fiches hôtel n'ont qu'une photo de couverture et une galerie vide (c'est le cas de « Jeep Tour to the Hidden Springs of Nahal Tzin »), donc le carrousel n'apparaissait pas. Les photos de l'hôtel permettent de le faire vivre sans attendre que chaque galerie soit complétée.
+
+---
+
 ## [2026-10-05] — Sprint 5D : retrait du doublon de prix sur les fiches hôtel
 
 ### Ce qui a changé côté code
