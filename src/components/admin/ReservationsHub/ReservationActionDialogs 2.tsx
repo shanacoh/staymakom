@@ -28,7 +28,7 @@ import {
   saveSupplierCost,
   type BalanceLink,
 } from "@/lib/reservations/actions";
-import { FOLLOW_UP_LANGUAGES, buildNotAvailableMessage, buildProviderMessage, buildWhatsAppLink } from "@/lib/reservations/whatsapp";
+import { buildProviderMessage, buildWhatsAppLink } from "@/lib/reservations/whatsapp";
 import type { NextAction, ReservationRow } from "@/lib/reservations/types";
 
 export interface PendingAction {
@@ -132,69 +132,15 @@ function SendToProviderDialog({ row, onClose, onDone }: DialogProps) {
 }
 
 function ProviderAnswerDialog({ row, onClose, onDone }: DialogProps) {
-  // Après « Pas disponible », la fenêtre reste ouverte pour proposer de prévenir le client.
-  const [declined, setDeclined] = useState(false);
-  const { data: request } = useQuery({
-    queryKey: ["admin-reservation-request", row.id],
-    queryFn: () => fetchRequestForAction(row.id),
-  });
   const answer = useMutation({
     mutationFn: (available: boolean) => recordProviderAnswer(row.id, available),
     onSuccess: (_data, available) => {
       toast.success(available ? "Dispo confirmée" : "Demande fermée : pas de disponibilité");
       onDone();
-      if (available) onClose();
-      else setDeclined(true);
+      onClose();
     },
     onError: errorToast,
   });
-
-  if (declined) {
-    const city = request?.preferred_city;
-    const alternativesUrl =
-      row.type === "boat"
-        ? `https://staymakom.com/boat${city ? `?city=${encodeURIComponent(city)}` : ""}`
-        : "https://staymakom.com/experiences";
-    return (
-      <Dialog open onOpenChange={(open) => !open && onClose()}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Prévenir le client</DialogTitle>
-            <DialogDescription>
-              La demande de {row.client} est fermée. Tu peux le prévenir et lui proposer autre chose.
-            </DialogDescription>
-          </DialogHeader>
-          {request?.customer_phone ? (
-            <div className="flex flex-wrap gap-2">
-              {FOLLOW_UP_LANGUAGES.map((language) => (
-                <Button key={language.value} asChild variant="outline" size="sm">
-                  <a
-                    href={buildWhatsAppLink(
-                      request.customer_phone,
-                      buildNotAvailableMessage(request.customer_name || row.client, alternativesUrl, language.value),
-                    )}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <MessageCircle className="h-3.5 w-3.5" />
-                    WhatsApp · {language.label}
-                  </a>
-                </Button>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">Pas de numéro de téléphone pour ce client.</p>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={onClose}>
-              Fermer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent>

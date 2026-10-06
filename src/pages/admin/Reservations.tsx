@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import LinkPaidDossierDialog from "@/components/admin/ReservationsHub/LinkPaidDossierDialog";
+import ItineraryRequestsSection from "@/components/admin/ReservationsHub/ItineraryRequestsSection";
 import EditRequestDialog from "@/components/admin/ReservationsHub/EditRequestDialog";
 import DeleteReservationDialog from "@/components/admin/ReservationsHub/DeleteReservationDialog";
 import UnfinishedPaymentsTable from "@/components/admin/ReservationsHub/UnfinishedPaymentsTable";
@@ -379,6 +380,8 @@ const AdminReservations = () => {
         unfinishedOpen={unfinishedOpen}
         onUnfinishedOpenChange={setUnfinishedOpen}
       />
+
+      {tab === "itineraries" && !unfinishedOpen && <ItineraryRequestsSection />}
 
       {unfinishedOpen ? (
         <UnfinishedPaymentsTable payments={unfinishedPayments ?? []} />

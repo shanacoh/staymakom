@@ -55,7 +55,6 @@ export type CellMode = "edit" | "locked" | "readonly";
 
 const REVOLUT_COLUMNS: EntryColumnKey[] = ["amount", "collected", "clientPayment"];
 const REQUEST_EDITABLE: EntryColumnKey[] = ["status", "client", "date", "notes"];
-const HOTEL_MANUAL_EDITABLE: EntryColumnKey[] = ["client", "pax", "amount", "clientPayment", "supplierCost", "channel"];
 
 export function cellMode(row: ReservationRow, key: EntryColumnKey): CellMode {
   if (key === "ref" || key === "margin") return "readonly";
@@ -71,9 +70,8 @@ export function cellMode(row: ReservationRow, key: EntryColumnKey): CellMode {
       return REQUEST_EDITABLE.includes(key) ? "edit" : "readonly";
     case "hotel":
       if (key === "notes") return "edit";
-      // Une réservation d'hôtel synchronisée automatiquement ne se corrige pas à la main.
-      // Les dates (arrivée et départ) et le statut se changent dans la fiche.
-      return !row.isOnline && HOTEL_MANUAL_EDITABLE.includes(key) ? "edit" : "readonly";
+      if (key === "channel" && !row.isOnline) return "edit";
+      return "readonly";
     default:
       return "readonly";
   }
@@ -213,41 +211,11 @@ function requestPatch(row: ReservationRow, key: EntryColumnKey, raw: string): Re
   }
 }
 
-const HOTEL_PAYMENT_TO_DB: Record<string, string> = {
-  unpaid: "unpaid",
-  deposit: "deposit_paid",
-  paid: "paid",
-  refunded: "refunded",
-};
-
-// Pour un hôtel, la commission enregistrée (montant client moins coût net) suit chaque
-// modification de l'un ou de l'autre, pour que les deux restent cohérents.
-function hotelPatch(row: ReservationRow, key: EntryColumnKey, raw: string): Record<string, unknown> | string {
+function hotelPatch(key: EntryColumnKey, raw: string): Record<string, unknown> | string {
   const trimmed = raw.trim();
-  switch (key) {
-    case "notes":
-      return { internal_notes: trimmed || null };
-    case "channel":
-      return { channel: trimmed === "manual" || trimmed === "" ? null : trimmed };
-    case "client":
-      return trimmed ? { customer_name: trimmed } : "Le nom du client ne peut pas être vide";
-    case "pax": {
-      const n = parseInt(trimmed, 10);
-      return Number.isNaN(n) || n < 1 ? "Nombre de personnes invalide" : { party_size: n };
-    }
-    case "amount": {
-      const n = parseAmount(raw);
-      return n === undefined || n === null ? "Montant invalide" : { sell_price: n, commission_amount: n - (row.supplierCost ?? 0) };
-    }
-    case "supplierCost": {
-      const n = parseAmount(raw);
-      return n === undefined || n === null ? "Coût invalide" : { net_price: n, commission_amount: (row.amount ?? 0) - n };
-    }
-    case "clientPayment":
-      return HOTEL_PAYMENT_TO_DB[trimmed] ? { payment_status: HOTEL_PAYMENT_TO_DB[trimmed] } : "Paiement invalide";
-    default:
-      return "Cette cellule n'est pas modifiable";
-  }
+  if (key === "notes") return { internal_notes: trimmed || null };
+  if (key === "channel") return { channel: trimmed === "manual" || trimmed === "" ? null : trimmed };
+  return "Cette cellule n'est pas modifiable";
 }
 
 /** Traduit une cellule validée en modification à écrire, ou en message d'erreur si la valeur est refusée. */
@@ -255,7 +223,7 @@ export function buildCellUpdate(row: ReservationRow, key: EntryColumnKey, raw: s
   const table = TABLES[row.source];
   if (!table || cellMode(row, key) !== "edit") return invalid("Cette cellule n'est pas modifiable");
   const patch =
-    row.source === "booking" ? bookingPatch(key, raw) : row.source === "request" ? requestPatch(row, key, raw) : hotelPatch(row, key, raw);
+    row.source === "booking" ? bookingPatch(key, raw) : row.source === "request" ? requestPatch(row, key, raw) : hotelPatch(key, raw);
   return typeof patch === "string" ? invalid(patch) : { ok: true, table, patch };
 }
 

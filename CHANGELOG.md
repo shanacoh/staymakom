@@ -6,6 +6,37 @@
 
 ---
 
+## [2026-10-06] — Réservations : demandes de voyage dans l'onglet Itinéraire, et trois fonctions remises
+
+### Ce qui a changé côté code
+- `src/components/admin/ReservationsHub/ItineraryRequestsSection.tsx` (nouveau) : dans l'onglet Itinéraire, au-dessus des dossiers payés, la liste des demandes de voyage sur mesure reçues par le site (`itinerary_requests`). Pour chacune : date, client, résumé de la demande, suivi (Non traitée, Message envoyé, En cours de création, Créée et envoyée), note de suivi, bouton WhatsApp ou email. Les demandes « Créée et envoyée » sont masquées par défaut. Ces demandes ne comptent dans aucun total.
+- `src/components/admin/ReservationsHub/ReservationActionDialogs.tsx` : après « Pas disponible », la fenêtre propose de prévenir le client sur WhatsApp, en français, anglais ou hébreu, avec un lien vers d'autres bateaux (ou vers les expériences).
+- `src/lib/reservations/rules.ts` : alertes de délai sous la date d'une demande, en rouge. « pas encore envoyée, reçue il y a X » au-delà de 15 minutes, « prestataire sans réponse depuis X » au-delà d'une heure.
+- `src/lib/reservations/entryGrid.ts` : une réservation d'hôtel saisie à la main redevient modifiable dans la grille (client, personnes, montant, paiement client, coût, canal, notes). Quand le montant ou le coût change, la commission enregistrée est recalculée en même temps. Les dates et le statut se changent toujours dans la fiche. Une réservation d'hôtel synchronisée automatiquement reste en lecture seule, sauf les notes.
+- `src/lib/reservations/whatsapp.ts` : message « créneau pas disponible » en trois langues.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration.
+
+### Pourquoi ce changement
+Les demandes de voyage venues du site n'apparaissaient plus nulle part dans Réservations après la refonte, et trois petites fonctions de l'ancienne page avaient disparu. Shana a demandé de les retrouver.
+
+---
+
+## [2026-10-06] — Réservations : relance WhatsApp des paiements non aboutis en trois langues
+
+### Ce qui a changé côté code
+- `src/lib/reservations/whatsapp.ts` : le message de relance existe en français, en anglais et en hébreu.
+- `src/components/admin/ReservationsHub/UnfinishedPaymentsTable.tsx` : le bouton « Relancer sur WhatsApp » ouvre un petit menu pour choisir la langue du message. Limite connue : le nom de l'expérience cité dans le message reste celui affiché dans la liste (le titre français quand il existe), quelle que soit la langue choisie.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration.
+
+### Pourquoi ce changement
+Tous les clients ne lisent pas le français : Shana veut pouvoir relancer chacun dans sa langue.
+
+---
+
 ## [2026-10-06] — Réservations, lot 5 : onglet Itinéraire et retrait des anciens écrans
 
 ### Ce qui a changé côté code

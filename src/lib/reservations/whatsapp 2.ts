@@ -45,35 +45,7 @@ export function buildProviderMessage(request: any): string {
   return `Hi, new request from STAYMAKOM: ${boatName}, ${dateTxt}, ${timeTxt}, ${partyTxt} people, ${durationTxt}.${notesLine} Any availability? Thanks!`;
 }
 
-export type FollowUpLanguage = "fr" | "en" | "he";
-
-export const FOLLOW_UP_LANGUAGES: { value: FollowUpLanguage; label: string }[] = [
-  { value: "fr", label: "Français" },
-  { value: "en", label: "English" },
-  { value: "he", label: "עברית" },
-];
-
-// Relance d'un client dont le paiement en ligne n'a pas abouti, dans la langue choisie.
-// En hébreu, la formulation évite d'accorder au masculin ou au féminin.
-export function buildPaymentFollowUpMessage(clientName: string, product: string, language: FollowUpLanguage = "fr"): string {
-  switch (language) {
-    case "en":
-      return `Hi ${clientName}, this is Shana from Staymakom. I saw that your payment for "${product}" didn't go through. Would you like me to help you complete your booking?`;
-    case "he":
-      return `היי ${clientName}, כאן שנה מ-Staymakom. ראיתי שהתשלום עבור "${product}" לא הושלם. אפשר לעזור להשלים את ההזמנה?`;
-    default:
-      return `Bonjour ${clientName}, ici Shana de Staymakom. J'ai vu que votre paiement pour « ${product} » n'a pas abouti. Souhaitez-vous que je vous aide à finaliser votre réservation ?`;
-  }
-}
-
-// Le prestataire n'a pas de disponibilité : on prévient le client et on lui propose autre chose.
-export function buildNotAvailableMessage(clientName: string, alternativesUrl: string, language: FollowUpLanguage = "fr"): string {
-  switch (language) {
-    case "en":
-      return `Hi ${clientName}, this is Shana from Staymakom. Unfortunately this slot isn't available after all. Here are other options that might work for you: ${alternativesUrl}`;
-    case "he":
-      return `היי ${clientName}, כאן שנה מ-Staymakom. לצערי המועד הזה לא זמין בסופו של דבר. הנה אפשרויות נוספות שיכולות להתאים: ${alternativesUrl}`;
-    default:
-      return `Bonjour ${clientName}, ici Shana de Staymakom. Ce créneau n'est finalement pas disponible. Voici d'autres propositions qui pourraient vous convenir : ${alternativesUrl}`;
-  }
+// Relance d'un client dont le paiement en ligne n'a pas abouti.
+export function buildPaymentFollowUpMessage(clientName: string, product: string): string {
+  return `Bonjour ${clientName}, ici Shana de Staymakom. J'ai vu que votre paiement pour « ${product} » n'a pas abouti. Souhaitez-vous que je vous aide à finaliser votre réservation ?`;
 }

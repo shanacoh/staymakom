@@ -5,14 +5,13 @@
  */
 
 import { format, parseISO } from "date-fns";
-import { ChevronDown, MessageCircle } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/components/admin/BookingsGrid/columnTypes";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { FOLLOW_UP_LANGUAGES, buildPaymentFollowUpMessage, buildWhatsAppLink } from "@/lib/reservations/whatsapp";
+import { buildPaymentFollowUpMessage, buildWhatsAppLink } from "@/lib/reservations/whatsapp";
 import type { UnfinishedPayment } from "@/lib/reservations/types";
 
 const UnfinishedPaymentsTable = ({ payments }: { payments: UnfinishedPayment[] }) => (
@@ -70,31 +69,16 @@ const UnfinishedPaymentsTable = ({ payments }: { payments: UnfinishedPayment[] }
                   {payment.converted ? (
                     <span className="text-xs">Rien à faire</span>
                   ) : payment.customerPhone ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button size="sm" variant="outline">
-                          <MessageCircle className="h-3.5 w-3.5" />
-                          Relancer sur WhatsApp
-                          <ChevronDown className="h-3 w-3" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        {FOLLOW_UP_LANGUAGES.map((language) => (
-                          <DropdownMenuItem key={language.value} asChild>
-                            <a
-                              href={buildWhatsAppLink(
-                                payment.customerPhone as string,
-                                buildPaymentFollowUpMessage(payment.client, payment.product, language.value),
-                              )}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              {language.label}
-                            </a>
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <Button asChild size="sm" variant="outline">
+                      <a
+                        href={buildWhatsAppLink(payment.customerPhone, buildPaymentFollowUpMessage(payment.client, payment.product))}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <MessageCircle className="h-3.5 w-3.5" />
+                        Relancer sur WhatsApp
+                      </a>
+                    </Button>
                   ) : (
                     <span className="text-xs text-muted-foreground">Pas de téléphone</span>
                   )}

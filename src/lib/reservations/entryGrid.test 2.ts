@@ -119,25 +119,3 @@ describe("canDeleteRow", () => {
     expect(canDeleteRow(row({ source: "dossier" }))).toBe(false);
   });
 });
-
-describe("réservation d'hôtel dans la grille", () => {
-  const hotel = (overrides: Partial<ReservationRow> = {}) =>
-    row({ source: "hotel", type: "hotel", supplierPayment: "none", amount: 2000, supplierCost: 1500, ...overrides });
-
-  it("saisie à la main : modifiable, sauf la date ; synchronisée : seules les notes", () => {
-    expect(cellMode(hotel(), "amount")).toBe("edit");
-    expect(cellMode(hotel(), "date")).toBe("readonly");
-    expect(cellMode(hotel({ isOnline: true }), "client")).toBe("readonly");
-    expect(cellMode(hotel({ isOnline: true }), "notes")).toBe("edit");
-  });
-
-  it("la commission suit le montant et le coût", () => {
-    expect(buildCellUpdate(hotel(), "amount", "2400")).toEqual({
-      ok: true,
-      table: "bookings_hg",
-      patch: { sell_price: 2400, commission_amount: 900 },
-    });
-    expect(buildCellUpdate(hotel(), "supplierCost", "1600")).toMatchObject({ patch: { net_price: 1600, commission_amount: 400 } });
-    expect(buildCellUpdate(hotel(), "supplierCost", "").ok).toBe(false);
-  });
-});

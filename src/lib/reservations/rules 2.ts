@@ -1,7 +1,7 @@
 // Règles métier de la page Réservations, sans aucun accès à la base ni à l'écran :
 // prochaine action d'une ligne, groupes, filtres et chiffres clés.
 
-import { differenceInCalendarDays, differenceInMinutes, isSameMonth, parseISO, subMonths } from "date-fns";
+import { differenceInCalendarDays, isSameMonth, parseISO, subMonths } from "date-fns";
 import { formatCurrency } from "@/components/admin/BookingsGrid/columnTypes";
 import type {
   MoneyByCurrency,
@@ -85,33 +85,14 @@ export function nextAction(row: ReservationRow, today: Date = new Date()): NextA
   return null;
 }
 
-const elapsed = (minutes: number) =>
-  minutes < 60 ? `${Math.max(minutes, 0)} min` : minutes < 24 * 60 ? `${Math.floor(minutes / 60)} h` : `${Math.floor(minutes / (24 * 60))} j`;
-
-// Délais d'alerte d'une demande : à envoyer au prestataire sous 15 minutes, réponse attendue sous 1 heure.
-const SEND_ALERT_MINUTES = 15;
-const ANSWER_ALERT_MINUTES = 60;
-
-function requestHint(row: ReservationRow, today: Date): { text: string; soon: boolean } {
-  if (row.status === "demande" && row.sentToProviderAt) {
-    const waiting = differenceInMinutes(today, parseISO(row.sentToProviderAt));
-    return waiting > ANSWER_ALERT_MINUTES
-      ? { text: `prestataire sans réponse depuis ${elapsed(waiting)}`, soon: true }
-      : { text: "envoyée au prestataire", soon: false };
-  }
-  if (!row.receivedAt) return { text: "", soon: false };
-  const age = differenceInMinutes(today, parseISO(row.receivedAt));
-  if (row.status === "demande") {
-    return age > SEND_ALERT_MINUTES
-      ? { text: `pas encore envoyée, reçue il y a ${elapsed(age)}`, soon: true }
-      : { text: "reçue à l'instant", soon: false };
-  }
-  return { text: `reçue il y a ${elapsed(age)}`, soon: false };
-}
-
 /** Texte sous la date (« dans 3 j », « passée »...) et s'il faut le mettre en rouge. */
 export function dateHint(row: ReservationRow, today: Date = new Date()): { text: string; soon: boolean } {
-  if (isRequest(row)) return requestHint(row, today);
+  if (isRequest(row)) {
+    if (!row.receivedAt) return { text: "", soon: false };
+    const ago = differenceInCalendarDays(today, parseISO(row.receivedAt));
+    const text = ago <= 0 ? "reçue aujourd'hui" : ago === 1 ? "reçue hier" : `reçue il y a ${ago} j`;
+    return { text, soon: row.status === "demande" && !row.sentToProviderAt };
+  }
   const days = daysUntil(row.date, today);
   if (days === null) return { text: "", soon: false };
   const upcoming = row.status !== "annulee";

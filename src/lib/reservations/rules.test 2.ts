@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyToolbarFilters, computeKpis, dateHint, groupRows, nextAction } from "./rules";
+import { applyToolbarFilters, computeKpis, groupRows, nextAction } from "./rules";
 import type { ReservationRow } from "./types";
 
 const TODAY = new Date("2026-10-06T10:00:00");
@@ -139,21 +139,5 @@ describe("groupes, filtres et chiffres clés", () => {
     expect(applyToolbarFilters(rows, { ...base, boatsOnly: true }, TODAY).map((r) => r.key)).toEqual(["b1"]);
     expect(applyToolbarFilters(rows, { ...base, search: "adda boat" }, TODAY)).toHaveLength(5);
     expect(applyToolbarFilters(rows, { ...base, search: "adda safari" }, TODAY)).toHaveLength(0);
-  });
-});
-
-describe("alertes de délai d'une demande", () => {
-  it("alerte au-delà de 15 minutes sans envoi au prestataire", () => {
-    expect(dateHint(request({ receivedAt: "2026-10-06T09:50:00" }), TODAY)).toEqual({ text: "reçue à l'instant", soon: false });
-    expect(dateHint(request({ receivedAt: "2026-10-06T09:20:00" }), TODAY)).toEqual({
-      text: "pas encore envoyée, reçue il y a 40 min",
-      soon: true,
-    });
-  });
-
-  it("alerte au-delà d'une heure sans réponse du prestataire", () => {
-    const sent = (at: string) => request({ receivedAt: "2026-10-05T09:00:00", sentToProviderAt: at });
-    expect(dateHint(sent("2026-10-06T09:30:00"), TODAY)).toEqual({ text: "envoyée au prestataire", soon: false });
-    expect(dateHint(sent("2026-10-06T07:00:00"), TODAY)).toEqual({ text: "prestataire sans réponse depuis 3 h", soon: true });
   });
 });
