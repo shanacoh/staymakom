@@ -33,7 +33,7 @@ export function RevolutDebugTestCard({ step, running }: Props) {
         <div className="flex items-center gap-3">
           {statusIcon()}
           <span className="text-sm font-medium text-foreground">
-            ÉTAPE {step.stepIndex + 1} — {step.name}
+            ÉTAPE {step.stepIndex + 1} · {step.name}
           </span>
         </div>
         <div className="flex items-center gap-3">

@@ -102,7 +102,7 @@ export default function AdminCarte() {
     <div className="mx-auto max-w-7xl space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Carte</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Carte</h1>
           <p className="text-sm text-muted-foreground">
             Tous les lieux du catalogue sur une carte, avec les mêmes filtres.
           </p>

@@ -9,7 +9,7 @@ export default function ComingSoon({ title, description }: ComingSoonProps) {
       <span className="rounded-full bg-destructive/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-destructive">
         Bientôt disponible
       </span>
-      <h2 className="text-lg font-bold text-foreground">{title}</h2>
+      <h1 className="text-xl font-bold tracking-tight text-foreground">{title}</h1>
       {description && (
         <p className="max-w-md text-sm text-muted-foreground">{description}</p>
       )}

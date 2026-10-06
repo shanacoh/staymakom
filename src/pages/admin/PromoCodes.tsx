@@ -182,7 +182,7 @@ export default function PromoCodes() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Codes promo</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Codes promo</h1>
           <p className="text-muted-foreground text-xs mt-0.5">
             Créer et suivre les codes promotionnels du site.
           </p>
@@ -229,7 +229,7 @@ export default function PromoCodes() {
           </CardHeader>
           <CardContent className="p-3 pt-0">
             <div className="font-mono text-xl font-bold truncate">
-              {kpis.mostUsed ? kpis.mostUsed.code : "—"}
+              {kpis.mostUsed ? kpis.mostUsed.code : "-"}
             </div>
           </CardContent>
         </Card>

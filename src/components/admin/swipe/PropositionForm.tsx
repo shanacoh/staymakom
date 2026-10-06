@@ -359,7 +359,7 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
                     {resultatsCourants?.map((r) => (
                       <SelectItem key={r.id} value={r.id}>
                         {r.label}
-                        {r.sousLabel ? ` — ${r.sousLabel}` : ""}
+                        {r.sousLabel ? ` : ${r.sousLabel}` : ""}
                         {r.statut === "draft" ? " (brouillon)" : ""}
                       </SelectItem>
                     ))}

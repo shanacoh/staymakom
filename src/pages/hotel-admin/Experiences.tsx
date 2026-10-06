@@ -131,7 +131,7 @@ export default function HotelExperiences() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="font-sans text-3xl font-bold">Experiences</h1>
+        <h1 className="text-xl font-bold tracking-tight text-foreground">Experiences</h1>
         <p className="text-muted-foreground text-sm mt-1">
           View experiences and manage extras availability
         </p>

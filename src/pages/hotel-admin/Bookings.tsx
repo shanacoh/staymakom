@@ -112,7 +112,7 @@ export default function HotelBookings() {
       pending: { variant: "outline", label: "Pending" },
       pendingreview: { variant: "secondary", label: "Under Review" },
     };
-    const c = map[booking.status?.toLowerCase()] || { variant: "outline" as const, label: booking.status || "—" };
+    const c = map[booking.status?.toLowerCase()] || { variant: "outline" as const, label: booking.status || "-" };
     return <Badge variant={c.variant}>{c.label}</Badge>;
   };
 
@@ -124,7 +124,7 @@ export default function HotelBookings() {
       unpaid: { variant: "outline", label: "Unpaid" },
       no_refund_due: { variant: "outline", label: "No Refund" },
     };
-    const c = map[booking.payment_status] || { variant: "outline" as const, label: booking.payment_status || "—" };
+    const c = map[booking.payment_status] || { variant: "outline" as const, label: booking.payment_status || "-" };
     return <Badge variant={c.variant}>{c.label}</Badge>;
   };
 
@@ -139,7 +139,7 @@ export default function HotelBookings() {
 
   return (
     <div className="p-8 space-y-6">
-      <h1 className="font-sans text-4xl font-bold">Bookings</h1>
+      <h1 className="text-xl font-bold tracking-tight text-foreground">Bookings</h1>
 
       {refundsPending.length > 0 && (
         <div className="rounded-lg border border-destructive bg-destructive/10 p-4 space-y-3">
@@ -163,7 +163,7 @@ export default function HotelBookings() {
                     {b.customer_email}
                   </a>
                   <p className="text-xs text-muted-foreground">
-                    {b.experiences2?.title || "—"} · Cancelled {b.cancelled_at ? format(parseISO(b.cancelled_at), "dd MMM yyyy") : ""}
+                    {b.experiences2?.title || "-"} · Cancelled {b.cancelled_at ? format(parseISO(b.cancelled_at), "dd MMM yyyy") : ""}
                   </p>
                   {b.refund_amount > 0 ? (
                     <p className="text-sm font-semibold text-destructive">
@@ -226,7 +226,7 @@ export default function HotelBookings() {
                       {getPriorityBadge(booking.checkin, booking.is_cancelled)}
                     </TableCell>
                     <TableCell>
-                      <div className="font-medium text-sm">{booking.customer_name || "—"}</div>
+                      <div className="font-medium text-sm">{booking.customer_name || "-"}</div>
                       {booking.customer_email && (
                         <a
                           href={`mailto:${booking.customer_email}`}
@@ -238,7 +238,7 @@ export default function HotelBookings() {
                       )}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {booking.experiences2?.title || "—"}
+                      {booking.experiences2?.title || "-"}
                     </TableCell>
                     <TableCell>
                       {format(parseISO(booking.checkin), "dd MMM yyyy")}

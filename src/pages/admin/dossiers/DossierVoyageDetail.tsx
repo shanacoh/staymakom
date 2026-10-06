@@ -358,16 +358,16 @@ export default function DossierVoyageDetail() {
               <div className="space-y-1 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
                 {checklist.nbSansTeaserPret > 0 && (
                   <p>
-                    ⚠ {checklist.nbSansTeaserPret} lieu(x) sans teaser "prêt" — n'apparaîtront pas dans la Proposition vue
+                    ⚠ {checklist.nbSansTeaserPret} lieu(x) sans teaser "prêt" : n'apparaîtront pas dans la Proposition vue
                     par le client tant que tu ne les habilles pas dans le Catalogue.
                   </p>
                 )}
-                {checklist.nbAlertes > 0 && <p>⚠ {checklist.nbAlertes} lieu(x) jamais formalisé(s) avec le prestataire — à contacter avant envoi.</p>}
+                {checklist.nbAlertes > 0 && <p>⚠ {checklist.nbAlertes} lieu(x) jamais formalisé(s) avec le prestataire : à contacter avant envoi.</p>}
               </div>
             )}
             {dossier.point_depart === "proposition" && (
               <p className="text-xs text-muted-foreground">
-                L'étape Carnet de voyage (après paiement) n'est pas encore construite — le lien fonctionne pour la
+                L'étape Carnet de voyage (après paiement) n'est pas encore construite : le lien fonctionne pour la
                 Proposition, le Carnet arrivera dans une prochaine étape du chantier.
               </p>
             )}

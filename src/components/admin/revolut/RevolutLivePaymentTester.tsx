@@ -221,7 +221,7 @@ export function RevolutLivePaymentTester() {
             <DialogTitle>Test paiement {amount} {currency}</DialogTitle>
             <DialogDescription>
               Choisis une méthode de paiement et finalise.
-              {isProd && " ⚠️ Mode production — vraie transaction !"}
+              {isProd && " ⚠️ Mode production : vraie transaction !"}
             </DialogDescription>
           </DialogHeader>
           {orderResult && (

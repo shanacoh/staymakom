@@ -115,7 +115,7 @@ export default function BookingEdit() {
         </Button>
       </div>
 
-      <h1 className="font-sans text-4xl font-bold mb-8">Edit Booking</h1>
+      <h1 className="text-xl font-bold tracking-tight text-foreground mb-8">Edit Booking</h1>
 
       <Card>
         <CardHeader>

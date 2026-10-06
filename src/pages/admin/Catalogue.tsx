@@ -57,7 +57,7 @@ export default function AdminCatalogue() {
     <div className="mx-auto max-w-7xl space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Catalogue</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Catalogue</h1>
           <p className="text-sm text-muted-foreground">
             Tous les lieux : ceux du site, tes partenaires en cours et tes idées. Ta base pour les itinéraires.
           </p>

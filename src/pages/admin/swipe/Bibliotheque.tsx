@@ -172,7 +172,7 @@ const AdminSwipeBibliotheque = () => {
         <div className="border rounded-md p-4 mb-6 bg-muted/30">
           <p className="text-sm text-muted-foreground mb-3">
             Hôtels, expériences et expériences seules du site (brouillons inclus) qui n'ont pas encore de proposition
-            dans la bibliothèque swipe. Aucune action automatique — cette liste sert uniquement de repère.
+            dans la bibliothèque swipe. Aucune action automatique : cette liste sert uniquement de repère.
           </p>
           <div className="grid grid-cols-3 gap-4">
             <div>
@@ -180,7 +180,7 @@ const AdminSwipeBibliotheque = () => {
               <ul className="text-sm space-y-1 max-h-40 overflow-y-auto">
                 {fichesManquantes?.hotels.map((h) => (
                   <li key={h.id}>
-                    {h.name} {h.city ? `— ${h.city}` : ""}
+                    {h.name} {h.city ? `${h.city}` : ""}
                   </li>
                 ))}
               </ul>
@@ -234,8 +234,8 @@ const AdminSwipeBibliotheque = () => {
           {propositions?.map((p) => (
             <TableRow key={p.id}>
               <TableCell className="font-medium">{p.titre}</TableCell>
-              <TableCell>{p.swipe_categories?.nom ?? "—"}</TableCell>
-              <TableCell>{p.ville ?? "—"}</TableCell>
+              <TableCell>{p.swipe_categories?.nom ?? "-"}</TableCell>
+              <TableCell>{p.ville ?? "-"}</TableCell>
               <TableCell>
                 {p.hotels2 ? (
                   <Badge variant="secondary">Hôtel lié</Badge>
@@ -245,7 +245,7 @@ const AdminSwipeBibliotheque = () => {
                   <Badge variant="outline">Indépendante</Badge>
                 )}
               </TableCell>
-              <TableCell>{p.prix_client != null ? `${p.prix_client} €` : "—"}</TableCell>
+              <TableCell>{p.prix_client != null ? `${p.prix_client} €` : "-"}</TableCell>
               <TableCell>
                 {editingCommissionId === p.id ? (
                   <Input
@@ -264,7 +264,7 @@ const AdminSwipeBibliotheque = () => {
                     onClick={() => startEditCommission(p)}
                     title="Cliquer pour modifier"
                   >
-                    {p.commission_pourcentage != null ? `${p.commission_pourcentage}%` : "—"}
+                    {p.commission_pourcentage != null ? `${p.commission_pourcentage}%` : "-"}
                   </button>
                 )}
               </TableCell>

@@ -183,7 +183,7 @@ const EditStandaloneBookingDialog = ({ open, onOpenChange, booking }: Props) => 
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Prix total client ({booking?.currency || "—"}) *</Label>
+              <Label>Prix total client ({booking?.currency || "-"}) *</Label>
               <Input
                 type="number"
                 min={0}
@@ -209,7 +209,7 @@ const EditStandaloneBookingDialog = ({ open, onOpenChange, booking }: Props) => 
             <Label>Adresse et directions <span className="text-muted-foreground font-normal">(visible du client, si rempli)</span></Label>
             <Textarea
               rows={2}
-              placeholder="ex: Ponton B, Marina de Herzliya — se présenter 15 min avant"
+              placeholder="ex: Ponton B, Marina de Herzliya : se présenter 15 min avant"
               value={form.custom_address}
               onChange={(e) => setForm((f) => ({ ...f, custom_address: e.target.value }))}
             />

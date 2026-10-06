@@ -187,7 +187,7 @@ export default function AdminProviders() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Prestataires</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Prestataires</h1>
           <p className="text-muted-foreground text-xs mt-0.5">
             Contact, langue, conditions et politique annulation/météo. Tant que la politique n'est pas
             validée, le badge rouge apparaît partout où le prestataire est utilisé.
@@ -229,9 +229,9 @@ export default function AdminProviders() {
               list.map((provider) => (
                 <TableRow key={provider.id}>
                   <TableCell className="py-2 px-3 text-sm font-medium">{provider.name}</TableCell>
-                  <TableCell className="py-2 px-3 text-xs">{provider.whatsapp || "—"}</TableCell>
-                  <TableCell className="py-2 px-3 text-xs">{provider.email || "—"}</TableCell>
-                  <TableCell className="py-2 px-3 text-xs">{provider.language || "—"}</TableCell>
+                  <TableCell className="py-2 px-3 text-xs">{provider.whatsapp || "-"}</TableCell>
+                  <TableCell className="py-2 px-3 text-xs">{provider.email || "-"}</TableCell>
+                  <TableCell className="py-2 px-3 text-xs">{provider.language || "-"}</TableCell>
                   <TableCell className="py-2 px-3">
                     {provider.policy_validated ? (
                       <span className="text-xs text-muted-foreground">Validée</span>
@@ -242,7 +242,7 @@ export default function AdminProviders() {
                   <TableCell className="py-2 px-3 text-xs">
                     {(() => {
                       const stats = reviewStatsByProvider?.[provider.id];
-                      if (!stats || stats.count === 0) return <span className="text-muted-foreground">—</span>;
+                      if (!stats || stats.count === 0) return <span className="text-muted-foreground">-</span>;
                       const avg = stats.sum / stats.count;
                       return (
                         <span className={`flex items-center gap-1 ${avg < 4 ? "text-destructive" : ""}`}>

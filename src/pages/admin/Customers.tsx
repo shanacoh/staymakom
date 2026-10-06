@@ -417,7 +417,7 @@ function ClientDetailSheet({
                           <span className="text-xs text-muted-foreground">{format(new Date(r.date), "dd/MM/yy")}</span>
                         </div>
                         <div className="flex items-center justify-between gap-2 mt-0.5">
-                          <span className="text-xs text-muted-foreground capitalize">{r.status || "—"}</span>
+                          <span className="text-xs text-muted-foreground capitalize">{r.status || "-"}</span>
                           <span className="text-xs font-medium">₪{Number(r.amount || 0).toLocaleString()}</span>
                         </div>
                       </div>
@@ -455,7 +455,7 @@ function ClientDetailSheet({
                   <p className="text-sm text-muted-foreground">Chargement...</p>
                 ) : fullDetail?.club.loyaltyTier || fullDetail?.club.points || fullDetail?.club.progress ? (
                   <div className="border rounded-md p-2.5 text-sm space-y-0.5">
-                    <div>Palier : <span className="font-medium capitalize">{fullDetail.club.loyaltyTier || "—"}</span></div>
+                    <div>Palier : <span className="font-medium capitalize">{fullDetail.club.loyaltyTier || "-"}</span></div>
                     <div>Points : <span className="font-medium">{fullDetail.club.points}</span></div>
                     <div>Progression : <span className="font-medium">{fullDetail.club.progress}</span></div>
                   </div>
@@ -490,7 +490,7 @@ function ClientDetailSheet({
                       <div key={c.id} className="border rounded-md p-2.5 text-sm">
                         <div className="font-medium">{c.title}</div>
                         <div className="text-xs text-muted-foreground mt-0.5">
-                          {c.checkin ? format(new Date(c.checkin), "dd/MM/yy") : "—"}
+                          {c.checkin ? format(new Date(c.checkin), "dd/MM/yy") : "-"}
                           {c.checkout ? ` → ${format(new Date(c.checkout), "dd/MM/yy")}` : ""}
                           {c.partySize ? ` · ${c.partySize} pers.` : ""}
                         </div>
@@ -510,24 +510,24 @@ function ClientDetailSheet({
                   <p className="text-sm text-muted-foreground">Chargement...</p>
                 ) : (
                   <div className="border rounded-md p-2.5 text-sm space-y-0.5">
-                    <div>Langue : <span className="font-medium uppercase">{fullDetail?.profile.locale || "—"}</span></div>
+                    <div>Langue : <span className="font-medium uppercase">{fullDetail?.profile.locale || "-"}</span></div>
                     <div>
                       Centres d'intérêt :{" "}
                       <span className="font-medium">
-                        {fullDetail?.profile.interests?.length ? fullDetail.profile.interests.join(", ") : "—"}
+                        {fullDetail?.profile.interests?.length ? fullDetail.profile.interests.join(", ") : "-"}
                       </span>
                     </div>
-                    <div>Source d'acquisition : <span className="font-medium">{fullDetail?.profile.referralSource || "—"}</span></div>
+                    <div>Source d'acquisition : <span className="font-medium">{fullDetail?.profile.referralSource || "-"}</span></div>
                     <div>
                       CGU acceptées le :{" "}
                       <span className="font-medium">
-                        {fullDetail?.profile.tosAcceptedAt ? format(new Date(fullDetail.profile.tosAcceptedAt), "dd/MM/yyyy") : "—"}
+                        {fullDetail?.profile.tosAcceptedAt ? format(new Date(fullDetail.profile.tosAcceptedAt), "dd/MM/yyyy") : "-"}
                       </span>
                     </div>
                     <div>
                       Consentement RGPD :{" "}
                       <span className="font-medium">
-                        {fullDetail?.profile.gdprConsentAt ? format(new Date(fullDetail.profile.gdprConsentAt), "dd/MM/yyyy") : "—"}
+                        {fullDetail?.profile.gdprConsentAt ? format(new Date(fullDetail.profile.gdprConsentAt), "dd/MM/yyyy") : "-"}
                       </span>
                     </div>
                     <div>
@@ -535,7 +535,7 @@ function ClientDetailSheet({
                       <span className="font-medium">
                         {fullDetail?.profile.onboardingCompletedAt
                           ? format(new Date(fullDetail.profile.onboardingCompletedAt), "dd/MM/yyyy")
-                          : "—"}
+                          : "-"}
                       </span>
                     </div>
                   </div>
@@ -791,7 +791,7 @@ function TeamDetailSheet({
         {member && (
           <div className="space-y-5 mt-2">
             <SheetHeader>
-              <SheetTitle>{member.name || "—"}</SheetTitle>
+              <SheetTitle>{member.name || "-"}</SheetTitle>
             </SheetHeader>
 
             <div className="text-sm text-muted-foreground">{member.email}</div>
@@ -914,8 +914,8 @@ function TeamTab({ dialogOpen, setDialogOpen }: { dialogOpen: boolean; setDialog
           roleId: r.id,
           user_id: r.user_id,
           role: r.role as "admin" | "hotel_admin",
-          name: m?.display_name || "—",
-          email: m?.user_email || "—",
+          name: m?.display_name || "-",
+          email: m?.user_email || "-",
           hotelId: ha?.hotel_id || "",
           hotelName: ha?.hotels?.name || null,
           createdAt: m?.account_created_at || null,
@@ -1061,7 +1061,7 @@ function TeamTab({ dialogOpen, setDialogOpen }: { dialogOpen: boolean; setDialog
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => setSelectedMemberId(member.user_id)}
                 >
-                  <TableCell className="py-2 px-3 text-sm font-medium">{member.name || "—"}</TableCell>
+                  <TableCell className="py-2 px-3 text-sm font-medium">{member.name || "-"}</TableCell>
                   <TableCell className="py-2 px-3 text-sm text-muted-foreground">{member.email}</TableCell>
                   <TableCell className="py-2 px-3">
                     <Badge
@@ -1248,7 +1248,7 @@ export default function AdminAccounts() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Comptes</h1>
+        <h1 className="text-xl font-bold tracking-tight text-foreground">Comptes</h1>
         <p className="text-muted-foreground text-xs mt-0.5">
           Clients, partenaires et accès équipe.
         </p>

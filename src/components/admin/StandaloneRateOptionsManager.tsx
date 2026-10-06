@@ -161,11 +161,11 @@ const StandaloneRateOptionsManager = ({ experienceId, hasChildPrice, markupPerce
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="space-y-1">
             <Label className="text-sm">Libellé (EN) *</Label>
-            <Input placeholder="ex: 12pm — Tasting Menu" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
+            <Input placeholder="ex: 12pm : Tasting Menu" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
           </div>
           <div className="space-y-1">
             <Label className="text-sm">Libellé (FR)</Label>
-            <Input placeholder="ex: 12h — Menu Découverte" value={form.label_fr} onChange={(e) => setForm({ ...form, label_fr: e.target.value })} />
+            <Input placeholder="ex: 12h : Menu Découverte" value={form.label_fr} onChange={(e) => setForm({ ...form, label_fr: e.target.value })} />
           </div>
           <div className="space-y-1">
             <Label className="text-sm">Libellé (HE)</Label>

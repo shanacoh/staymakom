@@ -71,7 +71,7 @@ export function AlertBanner() {
             <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
             <p className="text-sm font-medium truncate">
               {criticalAlerts.length} alerte{criticalAlerts.length > 1 ? 's' : ''} critique{criticalAlerts.length > 1 ? 's' : ''}
-              {' — '}
+              {' : '}
               {criticalAlerts[0].message.length > 80
                 ? criticalAlerts[0].message.substring(0, 80) + '...'
                 : criticalAlerts[0].message}

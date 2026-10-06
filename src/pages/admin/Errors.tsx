@@ -96,7 +96,7 @@ export default function AdminErrors() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Erreurs</h1>
+        <h1 className="text-xl font-bold tracking-tight text-foreground">Erreurs</h1>
         <p className="text-muted-foreground text-xs mt-0.5">
           Erreurs rencontrées par les visiteurs sur le site, regroupées par type. Reste en rouge tant
           qu'aucun statut n'est choisi.
@@ -134,7 +134,7 @@ export default function AdminErrors() {
           </CardHeader>
           <CardContent className="p-3 pt-0">
             <div className="text-xs font-medium truncate">
-              {kpis.mostFrequent ? `${kpis.mostFrequent.message} (×${kpis.mostFrequent.occurrences})` : "—"}
+              {kpis.mostFrequent ? `${kpis.mostFrequent.message} (×${kpis.mostFrequent.occurrences})` : "-"}
             </div>
           </CardContent>
         </Card>
@@ -172,7 +172,7 @@ export default function AdminErrors() {
                     {group.message}
                   </TableCell>
                   <TableCell className="py-2 px-3 text-xs text-muted-foreground max-w-[160px] truncate" title={group.page_url ?? ""}>
-                    {group.page_url || "—"}
+                    {group.page_url || "-"}
                   </TableCell>
                   <TableCell className="py-2 px-3 font-mono text-xs">×{group.occurrences}</TableCell>
                   <TableCell className="py-2 px-3 text-xs text-muted-foreground" title={format(new Date(group.last_seen_at), "d MMM yyyy à HH:mm")}>

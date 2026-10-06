@@ -99,8 +99,8 @@ export function RevolutWebhookTester() {
 
   const StatusBadge = ({ status }: { status: number }) => {
     if (status === 0) return <Badge variant="destructive">injoignable</Badge>;
-    if (status === 401) return <Badge variant="destructive">401 — rejeté</Badge>;
-    if (status >= 200 && status < 300) return <Badge className="bg-emerald-600">{status} — accepté</Badge>;
+    if (status === 401) return <Badge variant="destructive">401 : rejeté</Badge>;
+    if (status >= 200 && status < 300) return <Badge className="bg-emerald-600">{status} : accepté</Badge>;
     return <Badge variant="secondary">{status}</Badge>;
   };
 
@@ -114,7 +114,7 @@ export function RevolutWebhookTester() {
         <p className="text-sm text-muted-foreground">
           Vérifie si notre serveur accepte bien les notifications de paiement envoyées par
           Revolut. C'est ce mécanisme qui valide automatiquement les réservations
-          « expérience only » après paiement — s'il est cassé, l'argent arrive mais la
+          « expérience only » après paiement : s'il est cassé, l'argent arrive mais la
           réservation reste « en attente ».
         </p>
       </CardHeader>
@@ -258,7 +258,7 @@ export function RevolutWebhookTester() {
                     {config.verdict === 'ok'
                       ? '✅ Webhook correctement paramétré'
                       : config.verdict === 'ok_secret_unverified'
-                        ? '🟡 Paramétrage correct — secret non vérifiable'
+                        ? '🟡 Paramétrage correct : secret non vérifiable'
                         : '❌ Problème de paramétrage'}
                   </p>
                   <p className="text-xs leading-relaxed">{config.diagnosis}</p>
@@ -299,7 +299,7 @@ export function RevolutWebhookTester() {
                     {w.secretStatus === 'unverifiable' && (
                       <p className="text-muted-foreground text-[10px] italic">
                         Revolut ne communique le signing secret qu'à la création du webhook et
-                        lors d'une rotation — jamais en lecture. « Non vérifiable » n'est donc
+                        lors d'une rotation : jamais en lecture. « Non vérifiable » n'est donc
                         pas un défaut de configuration.
                       </p>
                     )}

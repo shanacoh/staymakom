@@ -110,7 +110,7 @@ const AdminAutomations = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold">Automatisations</h1>
+        <h1 className="text-xl font-bold tracking-tight text-foreground">Automatisations</h1>
         <p className="text-muted-foreground text-xs mt-1">
           Tout ce qui s'envoie ou se déclenche automatiquement sur le site : emails, paiements, avis, monitoring.
           Chaque nouvelle automatisation doit être ajoutée ici au moment où elle est développée.

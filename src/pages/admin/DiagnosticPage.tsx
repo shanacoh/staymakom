@@ -28,7 +28,7 @@ const DiagnosticPage = () => {
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-4">
             <div>
-              <h1 className="text-2xl font-bold">STAYMAKOM — System Diagnostic</h1>
+              <h1 className="text-xl font-bold tracking-tight text-foreground">STAYMAKOM : System Diagnostic</h1>
               <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
                 <span>Environment: <span className="font-mono font-semibold text-foreground">{environment}</span></span>
                 <span>Token: <span className="font-mono">...995b5f4</span></span>

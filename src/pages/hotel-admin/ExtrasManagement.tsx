@@ -156,7 +156,7 @@ export default function ExtrasManagement() {
   return (
     <div className="p-8 space-y-6">
       <div>
-        <h1 className="font-sans text-4xl font-bold">Extras Management</h1>
+        <h1 className="text-xl font-bold tracking-tight text-foreground">Extras Management</h1>
         <p className="text-muted-foreground mt-2">
           Manage extras and add-ons that can be assigned to your experiences
         </p>

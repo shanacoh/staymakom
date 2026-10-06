@@ -83,7 +83,7 @@ export default function AdminReservationDetails() {
       queryClient.invalidateQueries({ queryKey: ["admin-booking-details-hg", bookingId] });
       queryClient.invalidateQueries({ queryKey: ["admin-bookings-hg"] });
       setForceRefundDialog({ open: false, amount: "" });
-      toast.success("Remboursement déclenché — il apparaît maintenant dans la liste");
+      toast.success("Remboursement déclenché : il apparaît maintenant dans la liste");
     },
     onError: (error: any) => {
       toast.error("Erreur", { description: error.message });
@@ -98,7 +98,7 @@ export default function AdminReservationDetails() {
       pendingreview: { variant: "secondary",  label: "Under Review" },
       failed:        { variant: "destructive", label: "Failed" },
     };
-    const c = map[booking.status?.toLowerCase()] || { variant: "outline" as const, label: booking.status || "—" };
+    const c = map[booking.status?.toLowerCase()] || { variant: "outline" as const, label: booking.status || "-" };
     return <Badge variant={c.variant}>{c.label}</Badge>;
   };
 
@@ -110,7 +110,7 @@ export default function AdminReservationDetails() {
       unpaid:         { variant: "outline",    label: "Unpaid" },
       no_refund_due:  { variant: "outline",    label: "No Refund" },
     };
-    const c = map[status] || { variant: "outline" as const, label: status || "—" };
+    const c = map[status] || { variant: "outline" as const, label: status || "-" };
     return <Badge variant={c.variant}>{c.label}</Badge>;
   };
 
@@ -145,7 +145,7 @@ export default function AdminReservationDetails() {
 
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="font-sans text-3xl font-bold">Réservation</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Réservation</h1>
           <p className="font-mono text-sm text-muted-foreground mt-1">
             {booking.hg_booking_id || booking.id}
           </p>
@@ -241,7 +241,7 @@ export default function AdminReservationDetails() {
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-orange-700 font-semibold">
                 <AlertTriangle className="h-5 w-5" />
-                Remboursement marqué "aucun" — à corriger ?
+                Remboursement marqué "aucun" : à corriger ?
               </div>
               <p className="text-sm text-orange-700">
                 Le système a indiqué qu'aucun remboursement n'était dû, mais si le client avait droit à un remboursement, tu peux le corriger ici.
@@ -270,7 +270,7 @@ export default function AdminReservationDetails() {
           <CardContent className="space-y-3">
             <div>
               <p className="text-xs text-muted-foreground">Nom</p>
-              <p className="font-medium">{booking.customer_name || "—"}</p>
+              <p className="font-medium">{booking.customer_name || "-"}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Email</p>
@@ -279,7 +279,7 @@ export default function AdminReservationDetails() {
                   <Mail className="h-3.5 w-3.5" />
                   {booking.customer_email}
                 </a>
-              ) : <p className="text-sm">—</p>}
+              ) : <p className="text-sm">-</p>}
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Personnes</p>
@@ -307,12 +307,12 @@ export default function AdminReservationDetails() {
           <CardContent className="space-y-3">
             <div>
               <p className="text-xs text-muted-foreground">Hôtel</p>
-              <p className="font-medium">{booking.hotels2?.name || "—"}</p>
+              <p className="font-medium">{booking.hotels2?.name || "-"}</p>
               {booking.hotels2?.city && <p className="text-xs text-muted-foreground">{booking.hotels2.city}</p>}
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Expérience</p>
-              <p className="font-medium">{booking.experiences2?.title || "—"}</p>
+              <p className="font-medium">{booking.experiences2?.title || "-"}</p>
             </div>
             <div className="flex gap-6">
               <div>
@@ -418,11 +418,11 @@ export default function AdminReservationDetails() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-xs text-muted-foreground">Référence HG</p>
-              <p className="font-mono text-sm">{booking.hg_booking_id || "—"}</p>
+              <p className="font-mono text-sm">{booking.hg_booking_id || "-"}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Statut HG</p>
-              <p className="text-sm">{booking.hg_status || booking.status || "—"}</p>
+              <p className="text-sm">{booking.hg_status || booking.status || "-"}</p>
             </div>
             {booking.rate_plan && (
               <div>

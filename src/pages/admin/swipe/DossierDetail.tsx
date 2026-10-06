@@ -285,7 +285,7 @@ const AdminSwipeDossierDetail = () => {
       {dossier.trier_par_categorie && categoriesDuDossier.length > 1 && (
         <div className="mb-6 border rounded-md p-3 space-y-2">
           <Label>
-            Ordre des catégories pour ce dossier (facultatif) — sinon, l'ordre global de la page
+            Ordre des catégories pour ce dossier (facultatif) : sinon, l'ordre global de la page
             Catégories est utilisé
           </Label>
           <DndContext sensors={categorySensors} collisionDetection={closestCenter} onDragEnd={handleDragEndCategories}>
@@ -359,7 +359,7 @@ const AdminSwipeDossierDetail = () => {
       <div className="mb-6 border rounded-md p-3 space-y-3">
         <div className="flex items-center justify-between">
           <Label>
-            Prénoms proposés (facultatif) — si renseigné, le client choisit son prénom dans cette
+            Prénoms proposés (facultatif) : si renseigné, le client choisit son prénom dans cette
             liste au lieu de le taper
           </Label>
           {!editionNoms && (

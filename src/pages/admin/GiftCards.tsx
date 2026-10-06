@@ -139,7 +139,7 @@ export default function GiftCards() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Gift cards</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Gift cards</h1>
           <p className="text-muted-foreground text-xs mt-0.5">
             Suivre les cartes cadeaux émises et leur utilisation.
           </p>

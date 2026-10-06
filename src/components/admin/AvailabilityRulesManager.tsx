@@ -94,7 +94,7 @@ function formatRuleSummary(rule: AvailabilityRule): string {
   if (rule.rule_type === "specific_dates" && rule.specific_dates?.length) {
     return rule.specific_dates.map(formatDate).join(", ");
   }
-  return "—";
+  return "-";
 }
 
 function formatDate(d: string): string {
@@ -196,7 +196,7 @@ function SpecificDatesCalendar({
 
   return (
     <div className="space-y-2">
-      <Label className="text-xs">Dates disponibles — cliquez pour sélectionner / désélectionner</Label>
+      <Label className="text-xs">Dates disponibles : cliquez pour sélectionner / désélectionner</Label>
 
       <div className="border rounded-lg p-3 bg-background w-fit">
         <div className="flex items-center justify-between mb-3 gap-4">
@@ -532,7 +532,7 @@ export default function AvailabilityRulesManager({ experienceId }: Props) {
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
                       <span className="text-xs font-medium">{RULE_TYPE_LABELS[rule.rule_type]}</span>
-                      <span className="text-xs text-muted-foreground">—</span>
+                      <span className="text-xs text-muted-foreground">-</span>
                       <span className="text-xs text-muted-foreground">{formatRuleSummary(rule)}</span>
                       {rule.origin === "hotel" && (
                         <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">hôtel</Badge>

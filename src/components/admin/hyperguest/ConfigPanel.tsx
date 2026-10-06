@@ -24,11 +24,11 @@ export function ConfigPanel() {
     badgeClass?: string;
   }> = [
     { icon: Globe, label: 'Environment', value: dynamicEnv.label, note: 'Choisi via le toggle Dev/Prod (admin)', badgeClass: dynamicEnv.badgeClass },
-    { icon: Key, label: 'Token utilisé', value: tokenSecret, note: 'Secret Supabase — la valeur n\'est jamais exposée au navigateur' },
+    { icon: Key, label: 'Token utilisé', value: tokenSecret, note: 'Secret Supabase : la valeur n\'est jamais exposée au navigateur' },
     { icon: Shield, label: 'isTest', value: isTestValue, note: isProd ? 'false en Prod (vraie réservation)' : 'true en Dev (sandbox HyperGuest)' },
     { icon: Server, label: 'Search URL', value: 'search-api.hyperguest.io/2.0/', note: 'Availability search' },
     { icon: Server, label: 'Book URL', value: 'book-api.hyperguest.com/2.0/', note: 'Booking & cancellation' },
-    { icon: Globe, label: 'Property live', value: '113334', note: 'Hotel 1935 Tel Aviv — 4 room types' },
+    { icon: Globe, label: 'Property live', value: '113334', note: 'Hotel 1935 Tel Aviv : 4 room types' },
     { icon: Globe, label: 'Property cert', value: '19912', note: 'Certification sandbox' },
     { icon: Clock, label: 'Timeout booking', value: '300s', note: 'AbortController 300000ms' },
     { icon: Globe, label: 'CORS', value: 'staymakom.com', note: 'Allow-Origin: *' },
@@ -41,7 +41,7 @@ export function ConfigPanel() {
       <CardHeader>
         <CardTitle className="text-lg">Configuration HyperGuest</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Vue en lecture seule. L'environnement (Dev / Prod) suit le toggle de la page Debug — il n'affecte que tes tests admin, jamais le site public.
+          Vue en lecture seule. L'environnement (Dev / Prod) suit le toggle de la page Debug : il n'affecte que tes tests admin, jamais le site public.
         </p>
       </CardHeader>
       <CardContent>

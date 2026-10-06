@@ -202,7 +202,7 @@ const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom
       BOOKING_LIST_QUERY_KEYS.forEach((queryKey) => queryClient.invalidateQueries({ queryKey }));
       onOpenChange(false);
       resetManualForm();
-      toast.success("Réservation créée — marquez le paiement et envoyez l'email depuis la fiche");
+      toast.success("Réservation créée : marquez le paiement et envoyez l'email depuis la fiche");
       onBookingCreated?.();
       navigate(`/admin/standalone-bookings/${data.booking_id}`);
     },
@@ -229,8 +229,8 @@ const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom
         <div className="space-y-4 py-2">
           <p className="text-sm text-muted-foreground">
             {duplicateFrom
-              ? "Le formulaire a été pré-rempli à partir de la réservation d'origine. Ajustez ce qui doit changer — une nouvelle réservation, avec sa propre référence, sera créée."
-              : "Pour un client contacté en direct (téléphone, WhatsApp, email). La réservation sera créée comme confirmée — vous pourrez ensuite marquer le paiement et envoyer l'email de confirmation depuis la fiche de la réservation."}
+              ? "Le formulaire a été pré-rempli à partir de la réservation d'origine. Ajustez ce qui doit changer : une nouvelle réservation, avec sa propre référence, sera créée."
+              : "Pour un client contacté en direct (téléphone, WhatsApp, email). La réservation sera créée comme confirmée : vous pourrez ensuite marquer le paiement et envoyer l'email de confirmation depuis la fiche de la réservation."}
           </p>
 
           <div className="flex items-center justify-between rounded-lg border p-3">
@@ -415,7 +415,7 @@ const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Prix total client ({manualForm.isCustomExperience ? manualForm.custom_currency : selectedExperience?.currency || "—"}) *</Label>
+              <Label>Prix total client ({manualForm.isCustomExperience ? manualForm.custom_currency : selectedExperience?.currency || "-"}) *</Label>
               <Input
                 type="number"
                 min={0}
@@ -450,7 +450,7 @@ const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom
             <Label>Adresse et directions <span className="text-muted-foreground font-normal">(visible du client, si rempli)</span></Label>
             <Textarea
               rows={2}
-              placeholder="ex: Ponton B, Marina de Herzliya — se présenter 15 min avant"
+              placeholder="ex: Ponton B, Marina de Herzliya : se présenter 15 min avant"
               value={manualForm.custom_address}
               onChange={(e) => setManualForm((f) => ({ ...f, custom_address: e.target.value }))}
             />

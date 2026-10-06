@@ -261,7 +261,7 @@ const StandaloneSuppliersManager = ({ experienceId, sellPrice, currencySymbol = 
                     <div className="text-sm font-semibold flex-shrink-0 text-right">
                       <div>{item.price} {currencySymbol}</div>
                       <div className={cn("text-xs font-normal", isLoss ? "text-destructive" : "text-primary")}>
-                        {percent != null ? `${percent > 0 ? "+" : ""}${percent}%` : "—"}
+                        {percent != null ? `${percent > 0 ? "+" : ""}${percent}%` : "-"}
                         {" · "}
                         {amount > 0 ? "+" : ""}{amount} {currencySymbol}
                       </div>

@@ -79,7 +79,7 @@ export default function HotelAdminDashboard() {
             <div className="flex-1">
               <div className="flex items-start justify-between">
                 <div>
-                  <h1 className="font-sans text-3xl font-bold mb-1">{hotelAdmin.hotels?.name}</h1>
+                  <h1 className="text-xl font-bold tracking-tight text-foreground mb-1">{hotelAdmin.hotels?.name}</h1>
                   <p className="text-muted-foreground">{hotelAdmin.hotels?.city}, {hotelAdmin.hotels?.region}</p>
                 </div>
                 <div className="flex items-center gap-2">

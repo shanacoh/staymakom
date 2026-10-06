@@ -296,7 +296,7 @@ export function Hotel2ExtrasManager({ hotelId, hyperguestExtras = [] }: Hotel2Ex
                 {expandedHyperguest ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </Button>
             </div>
-            <CardDescription>Importés depuis HyperGuest — cliquez Import pour pré-remplir le formulaire</CardDescription>
+            <CardDescription>Importés depuis HyperGuest : cliquez Import pour pré-remplir le formulaire</CardDescription>
           </CardHeader>
           {expandedHyperguest && (
             <CardContent className="space-y-2">
@@ -520,7 +520,7 @@ export function Hotel2ExtrasManager({ hotelId, hyperguestExtras = [] }: Hotel2Ex
                 </Label>
                 <Select value={selectedPreset} onValueChange={handlePresetSelect}>
                   <SelectTrigger className="h-9">
-                    <SelectValue placeholder="— Choisir un preset pour pré-remplir —" />
+                    <SelectValue placeholder="Choisir un preset pour pré-remplir" />
                   </SelectTrigger>
                   <SelectContent className="max-h-[280px]">
                     <SelectItem value="__custom__">✏️ Créer un extra personnalisé</SelectItem>

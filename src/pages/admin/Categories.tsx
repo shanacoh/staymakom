@@ -159,7 +159,7 @@ const AdminCategories = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1814]">Categories</h2>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">Categories</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Manage experience categories and their visibility
             </p>

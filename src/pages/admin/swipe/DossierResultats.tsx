@@ -107,7 +107,7 @@ const AdminSwipeDossierResultats = () => {
 
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Résultats — {dossier.nom_client}</h1>
+          <h1 className="text-2xl font-bold">Résultats : {dossier.nom_client}</h1>
           <div className="flex items-center gap-2 mt-1">
             <Badge variant={dossier.statut_lecture === "termine" ? "default" : "outline"}>
               {dossier.statut_lecture === "termine" ? "Terminé" : dossier.statut_lecture === "vu" ? "Vu" : "Envoyé"}
@@ -167,7 +167,7 @@ const AdminSwipeDossierResultats = () => {
                   const cell = l.parParticipant[p.id];
                   return (
                     <td key={p.id} className="text-center p-2">
-                      {cell?.valeur === true ? "❤️" : cell?.valeur === false ? "✕" : "—"}
+                      {cell?.valeur === true ? "❤️" : cell?.valeur === false ? "✕" : "-"}
                       {cell?.coupDeCoeur ? " ⭐" : ""}
                     </td>
                   );
@@ -188,7 +188,7 @@ const AdminSwipeDossierResultats = () => {
       <div className="border rounded-md p-4">
         <h2 className="text-lg font-semibold mb-2">Générer l'itinéraire</h2>
         <p className="text-sm text-muted-foreground mb-3">
-          Propositions aimées par <strong>tous</strong> les participants — la base de l'itinéraire à affiner
+          Propositions aimées par <strong>tous</strong> les participants : la base de l'itinéraire à affiner
           manuellement. Le format d'export final (fichier ou lien dédié) sera branché ici une fois choisi.
         </p>
         {propositionsAimeesParTous.length === 0 ? (
@@ -203,7 +203,7 @@ const AdminSwipeDossierResultats = () => {
               <li key={l.dossierProposition.id}>
                 <strong>{l.dossierProposition.propositions.titre}</strong>
                 {l.dossierProposition.propositions.description
-                  ? ` — ${l.dossierProposition.propositions.description}`
+                  ? ` : ${l.dossierProposition.propositions.description}`
                   : ""}
               </li>
             ))}

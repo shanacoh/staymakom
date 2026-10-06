@@ -104,7 +104,7 @@ const GridCell = forwardRef<HTMLTableCellElement, GridCellProps>(function GridCe
     }
   };
 
-  const shown = displayValue ?? (value === null || value === undefined || value === "" ? "—" : String(value));
+  const shown = displayValue ?? (value === null || value === undefined || value === "" ? "-" : String(value));
 
   return (
     <TableCell
@@ -133,7 +133,7 @@ const GridCell = forwardRef<HTMLTableCellElement, GridCellProps>(function GridCe
           )}
         />
       ) : (
-        <span className={cn(shown === "—" && "text-muted-foreground")}>{shown}</span>
+        <span className={cn(shown === "-" && "text-muted-foreground")}>{shown}</span>
       )}
       {saveState === "saving" && (
         <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-muted-foreground animate-pulse" />

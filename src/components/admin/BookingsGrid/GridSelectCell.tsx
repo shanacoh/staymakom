@@ -33,7 +33,7 @@ const GridSelectCell = forwardRef<HTMLTableCellElement, GridSelectCellProps>(fun
     <TableCell ref={ref} className={cn("relative p-1", className)}>
       <Select value={value ?? undefined} onValueChange={handleChange}>
         <SelectTrigger className="h-8 border-transparent hover:border-input focus:border-input text-sm">
-          <SelectValue placeholder="—" />
+          <SelectValue placeholder="-" />
         </SelectTrigger>
         <SelectContent>
           {options.map((opt) => (

@@ -248,7 +248,7 @@ const StandaloneRequestsTable = ({ categoryId, showWhatsAppLink }: StandaloneReq
                         </a>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm">{request.standalone_experiences?.title || request.preferred_city || "—"}</TableCell>
+                    <TableCell className="text-sm">{request.standalone_experiences?.title || request.preferred_city || "-"}</TableCell>
                     <TableCell className="text-sm whitespace-nowrap">
                       {request.requested_date ? format(parseISO(request.requested_date), "dd MMM yyyy") : "Non précisée"}
                       {request.requested_duration_minutes && <span className="text-muted-foreground"> · {durationLabel(request.requested_duration_minutes)}</span>}
@@ -322,7 +322,7 @@ const StandaloneRequestsTable = ({ categoryId, showWhatsAppLink }: StandaloneReq
                             Contacter
                           </a>
                         ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
+                          <span className="text-xs text-muted-foreground">-</span>
                         )}
                       </TableCell>
                     )}
@@ -369,7 +369,7 @@ const StandaloneRequestsTable = ({ categoryId, showWhatsAppLink }: StandaloneReq
           internal_notes: [
             convertRequest.party_max ? `Fourchette demandée : ${convertRequest.adults}-${convertRequest.party_max} personnes` : null,
             convertRequest.message ? `Demande initiale : ${convertRequest.message}` : null,
-          ].filter(Boolean).join(" — ") || undefined,
+          ].filter(Boolean).join(" · ") || undefined,
         } : null}
         onBookingCreated={() => {
           if (convertRequest) handleBookingCreated(convertRequest.id);

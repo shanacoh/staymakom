@@ -267,7 +267,7 @@ export function ComposerSection({ dossierId, versionActiveId }: { dossierId: str
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-sm">
-          Composer — {versionActive?.label ?? "Version"}
+          Composer : {versionActive?.label ?? "Version"}
           {versionActive?.prix_total_vente != null && (
             <span className="ml-2 text-xs font-normal text-muted-foreground">
               Prix total ~{versionActive.prix_total_vente} (achat ~{versionActive.prix_total_achat ?? 0})

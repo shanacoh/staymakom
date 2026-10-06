@@ -46,7 +46,7 @@ interface Props<Row extends { id: string; currency?: string | null }> {
 }
 
 function formatDateDisplay(value: string | null) {
-  if (!value) return "—";
+  if (!value) return "-";
   try {
     return format(parseISO(value), "dd MMM yyyy");
   } catch {
@@ -112,10 +112,10 @@ function BookingsGridTable<Row extends { id: string; currency?: string | null }>
       const displayValue =
         override ??
         (column.key === "sell_price" || column.key === "supplier_cost"
-          ? raw === null || raw === undefined || raw === "" ? "—" : formatCurrency(Number(raw), currency)
+          ? raw === null || raw === undefined || raw === "" ? "-" : formatCurrency(Number(raw), currency)
           : column.type === "date"
           ? formatDateDisplay((raw as string) || null)
-          : raw === null || raw === undefined || raw === "" ? "—" : String(raw));
+          : raw === null || raw === undefined || raw === "" ? "-" : String(raw));
       return (
         <Tooltip key={column.key}>
           <TooltipTrigger asChild>
@@ -168,7 +168,7 @@ function BookingsGridTable<Row extends { id: string; currency?: string | null }>
 
     let displayValue: string | undefined;
     if (column.key === "sell_price" || column.key === "supplier_cost") {
-      displayValue = raw === null || raw === undefined || raw === "" ? "—" : formatCurrency(Number(raw), currency);
+      displayValue = raw === null || raw === undefined || raw === "" ? "-" : formatCurrency(Number(raw), currency);
     } else if (column.type === "date") {
       displayValue = formatDateDisplay((raw as string) || null);
     } else if (isNewRow && column.newRowPlaceholder && !raw) {
@@ -213,7 +213,7 @@ function BookingsGridTable<Row extends { id: string; currency?: string | null }>
                   if (col.type === "readonly") {
                     return (
                       <TableCell key={col.key} className={cn(CELL_CLASS, "text-right text-muted-foreground", col.widthClass)}>
-                        {renderReadonlyCell?.(row, col) ?? "—"}
+                        {renderReadonlyCell?.(row, col) ?? "-"}
                       </TableCell>
                     );
                   }
@@ -231,7 +231,7 @@ function BookingsGridTable<Row extends { id: string; currency?: string | null }>
               if (col.type === "readonly") {
                 return (
                   <TableCell key={col.key} className={cn(CELL_CLASS, "text-right text-muted-foreground", col.widthClass)}>
-                    —
+                    -
                   </TableCell>
                 );
               }

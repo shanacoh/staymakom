@@ -26,7 +26,7 @@ export const DiagnosticBloc = ({ bloc, onRun }: DiagnosticBlocProps) => {
             <ChevronDown className={`h-5 w-5 transition-transform ${isOpen ? '' : '-rotate-90'}`} />
             <div className="text-left">
               <h3 className="font-semibold text-base">
-                BLOC {bloc.id} — {bloc.name}
+                BLOC {bloc.id} · {bloc.name}
               </h3>
               {total > 0 && (
                 <div className="flex gap-3 mt-1 text-xs">

@@ -197,6 +197,14 @@ body {
     color: hsl(var(--foreground));
   }
 
+  /* Back-office : tous les titres en noir (le rouge y est réservé à l'action). :where() garde une
+     spécificité nulle pour qu'une couleur posée sur un titre précis (blanc, gris) l'emporte encore. */
+  :where(.backoffice) h1,
+  :where(.backoffice) h2,
+  :where(.backoffice) h3 {
+    color: hsl(var(--foreground));
+  }
+
   h4, h5, h6 {
     @apply font-sans tracking-tight text-foreground;
     font-weight: 700;
@@ -205,6 +213,16 @@ body {
 }
 
 @layer utilities {
+  /* Back-office : une seule forme de bouton, en pastille, texte en minuscules. On laisse tranquilles les
+     boutons qui ont une forme voulue (tuiles hautes, arrondi choisi) et ceux qui servent de liste déroulante. */
+  .backoffice .ui-button {
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .backoffice .ui-button:not(.h-auto):not(.rounded-none):not(.rounded-sm):not(.rounded-lg):not(.rounded-xl):not([role="combobox"]) {
+    border-radius: 9999px;
+  }
+
   .gradient-primary {
     background: var(--gradient-primary);
   }

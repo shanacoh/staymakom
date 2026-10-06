@@ -654,7 +654,7 @@ const AdminLeads = () => {
       {/* ─── Header ─── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">CRM</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">CRM</h1>
           <p className="text-muted-foreground text-xs mt-0.5">
             Tous vos contacts : newsletter, clients, partenaires et équipe.
           </p>
@@ -836,7 +836,7 @@ const AdminLeads = () => {
                           {lead.is_b2b && <Badge variant="outline" className="text-[10px] px-1.5">B2B</Badge>}
                         </div>
                       ) : (
-                        <span className="text-muted-foreground">—</span>
+                        <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -942,11 +942,11 @@ const AdminLeads = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs">Name</Label>
-                    <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="—" />
+                    <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="-" />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Phone</Label>
-                    <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="—" />
+                    <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="-" />
                   </div>
                 </div>
                 {selectedLead.country && (
@@ -1060,7 +1060,7 @@ const AdminLeads = () => {
                               <dt className="text-xs text-muted-foreground w-20 shrink-0 pt-0.5">Région</dt>
                               <dd className="text-sm font-medium">
                                 {selectedLead.metadata.questionnaire_data.region}
-                                {selectedLead.metadata.questionnaire_data.otherRegion && ` — ${selectedLead.metadata.questionnaire_data.otherRegion}`}
+                                {selectedLead.metadata.questionnaire_data.otherRegion && ` : ${selectedLead.metadata.questionnaire_data.otherRegion}`}
                               </dd>
                             </div>
                           )}
@@ -1069,7 +1069,7 @@ const AdminLeads = () => {
                     ) : selectedLead.metadata.questionnaire_sent_at ? (
                       <div className="border-t pt-2.5 mt-1">
                         <p className="text-xs text-muted-foreground italic">
-                          Questionnaire envoyé le {format(new Date(selectedLead.metadata.questionnaire_sent_at), "dd/MM/yy")} — en attente de réponse
+                          Questionnaire envoyé le {format(new Date(selectedLead.metadata.questionnaire_sent_at), "dd/MM/yy")} : en attente de réponse
                         </p>
                       </div>
                     ) : null}

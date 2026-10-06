@@ -164,7 +164,7 @@ const AdminHotels2 = () => {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold">Hotels</h2>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">Hotels</h1>
             <p className="text-sm text-muted-foreground">Manage your hotel properties</p>
           </div>
           <Button onClick={() => navigate("/admin/hotels2/new")} size="sm" className="self-start sm:self-auto">

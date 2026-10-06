@@ -65,7 +65,7 @@ const AdminSwipeDossiers = () => {
   const dupliquer = async (id: string) => {
     try {
       const nouveau = await dupliquerMutation.mutateAsync(id);
-      toast.success("Dossier dupliqué — pense à renommer le client");
+      toast.success("Dossier dupliqué : pense à renommer le client");
       navigate(`/admin/swipe/dossiers/${nouveau.id}`);
     } catch (e: any) {
       toast.error(e.message || "Erreur lors de la duplication du dossier");
@@ -88,7 +88,7 @@ const AdminSwipeDossiers = () => {
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Dossiers — Swipe Itinéraire</h1>
+          <h1 className="text-2xl font-bold">Dossiers : Swipe Itinéraire</h1>
           <p className="text-muted-foreground">Propositions de voyage à faire swiper par vos clients.</p>
         </div>
         <Button onClick={() => setCreateOpen(true)}>

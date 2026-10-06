@@ -72,7 +72,7 @@ export default function HotelBilling() {
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="font-sans text-4xl font-bold">Facturation & Commissions</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Facturation & Commissions</h1>
           <p className="text-muted-foreground mt-2">
             Vue d'ensemble de vos revenus et commissions
           </p>

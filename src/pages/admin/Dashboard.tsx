@@ -198,7 +198,7 @@ const AdminDashboard = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Tableau de bord</h1>
+        <h1 className="text-xl font-bold tracking-tight text-foreground">Tableau de bord</h1>
         <p className="text-muted-foreground text-xs mt-0.5 max-w-2xl">
           L'urgence d'abord, la tendance business ensuite. Le détail chiffré du mois reste dans Réservations et
           Leads : ici, seulement ce qui doit changer ta journée.
@@ -211,7 +211,7 @@ const AdminDashboard = () => {
           <div>
             <div className="font-bold text-destructive text-sm">⚠ Régler le système de paiement</div>
             <p className="text-sm text-muted-foreground mt-1">
-              Chantier Dossier de voyage — étape 8 (paiement → verrouillage de version → génération automatique
+              Chantier Dossier de voyage : étape 8 (paiement → verrouillage de version → génération automatique
               des réservations) pas encore faite, volontairement mise de côté. Tant que ce n'est pas réglé, le
               Carnet de voyage (après paiement) ne fonctionne pas pour un vrai client.
             </p>
@@ -325,7 +325,7 @@ const AdminDashboard = () => {
       <Card>
         <CardHeader className="p-3 pb-1">
           <CardTitle className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
-            Actions à faire — Dossiers de voyage
+            Actions à faire : Dossiers de voyage
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4 pt-0">

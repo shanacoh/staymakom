@@ -110,7 +110,7 @@ const AdminJournal = () => {
     <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">Journal</h1>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">Journal</h1>
             <p className="text-sm text-muted-foreground">Manage your blog articles</p>
           </div>
           <Link to="/admin/journal/new">

@@ -51,7 +51,7 @@ export default function HotelExtras() {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="font-sans text-4xl font-bold">Extras & Add-ons</h1>
+        <h1 className="text-xl font-bold tracking-tight text-foreground">Extras & Add-ons</h1>
         <p className="text-muted-foreground mt-2">
           Overview of all extras available for your experiences
         </p>
@@ -105,7 +105,7 @@ export default function HotelExtras() {
                   <TableRow key={extra.id}>
                     <TableCell className="font-medium">{extra.name}</TableCell>
                     <TableCell className="max-w-xs truncate text-muted-foreground">
-                      {extra.description || "—"}
+                      {extra.description || "-"}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">

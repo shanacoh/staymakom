@@ -147,7 +147,7 @@ export default function GiftCardDetails() {
             <Gift className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold font-mono">{giftCard.code}</h1>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">{giftCard.code}</h1>
             <p className="text-muted-foreground text-sm">
               Created {format(new Date(giftCard.created_at), "MMMM d, yyyy 'at' h:mm a")}
             </p>

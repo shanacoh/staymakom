@@ -103,7 +103,7 @@ export default function PaymentInfo() {
   return (
     <div className="p-8 max-w-4xl">
       <div className="mb-8">
-        <h1 className="font-sans text-4xl font-bold">Payment Information</h1>
+        <h1 className="text-xl font-bold tracking-tight text-foreground">Payment Information</h1>
         <p className="text-muted-foreground mt-2">
           Manage your payout details for receiving payments
         </p>

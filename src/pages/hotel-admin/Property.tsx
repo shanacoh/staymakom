@@ -102,7 +102,7 @@ export default function HotelProperty() {
   return (
     <div className="p-8 max-w-5xl">
       <div className="mb-8">
-        <h1 className="font-sans text-4xl font-bold">Property Information</h1>
+        <h1 className="text-xl font-bold tracking-tight text-foreground">Property Information</h1>
         <p className="text-muted-foreground mt-2">
           View your property details and manage operational contact information
         </p>
@@ -149,12 +149,12 @@ export default function HotelProperty() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label>City</Label>
-                <Input value={hotel.city || "—"} disabled />
+                <Input value={hotel.city || "-"} disabled />
               </div>
               
               <div className="space-y-2">
                 <Label>Region</Label>
-                <Input value={hotel.region || "—"} disabled />
+                <Input value={hotel.region || "-"} disabled />
               </div>
             </div>
 

@@ -40,9 +40,9 @@ const AdminReservations = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Réservations</h1>
+        <h1 className="text-xl font-bold tracking-tight text-foreground">Réservations</h1>
         <p className="text-muted-foreground text-xs mt-0.5">
-          La grille remplace l'Excel de suivi — édition cellule par cellule, sauvegarde automatique.
+          La grille remplace l'Excel de suivi : édition cellule par cellule, sauvegarde automatique.
         </p>
       </div>
 

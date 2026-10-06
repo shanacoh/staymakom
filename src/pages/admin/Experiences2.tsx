@@ -461,7 +461,7 @@ const AdminExperiences2 = () => {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">Experiences</h1>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">Experiences</h1>
             <p className="text-sm text-muted-foreground">Manage your curated experiences</p>
           </div>
           {mode !== "boats" && (
@@ -678,7 +678,7 @@ const AdminExperiences2 = () => {
                         {thumb ? (
                           <img src={thumb} alt="" loading="lazy" className="w-full h-full object-cover" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-muted-foreground/30 text-xs">—</div>
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground/30 text-xs">-</div>
                         )}
                       </div>
 
@@ -716,7 +716,7 @@ const AdminExperiences2 = () => {
                       </div>
 
                       <div className="flex items-center gap-1 shrink-0">
-                        <div className="flex items-center gap-1.5 mr-1" title="Vitrine prospects — visible sur /vitrine uniquement, pas en page d'accueil">
+                        <div className="flex items-center gap-1.5 mr-1" title="Vitrine prospects : visible sur /vitrine uniquement, pas en page d'accueil">
                           <Switch
                             checked={(experience as any).show_on_v3_only ?? false}
                             onCheckedChange={() => toggleV3OnlyMutation.mutate({ id: experience.id, current: (experience as any).show_on_v3_only ?? false })}
@@ -860,7 +860,7 @@ const AdminExperiences2 = () => {
                         {thumb ? (
                           <img src={thumb} alt="" loading="lazy" className="w-full h-full object-cover" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-muted-foreground/30 text-xs">—</div>
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground/30 text-xs">-</div>
                         )}
                       </div>
 
@@ -908,7 +908,7 @@ const AdminExperiences2 = () => {
                       </div>
 
                       <div className="flex items-center gap-1 shrink-0">
-                        <div className="flex items-center gap-1.5 mr-1" title="Vitrine prospects — visible sur /vitrine uniquement, pas en page d'accueil">
+                        <div className="flex items-center gap-1.5 mr-1" title="Vitrine prospects : visible sur /vitrine uniquement, pas en page d'accueil">
                           <Switch
                             checked={exp.show_on_v3_only ?? false}
                             onCheckedChange={() => toggleStandaloneV3OnlyMutation.mutate({ id: exp.id, current: exp.show_on_v3_only ?? false })}

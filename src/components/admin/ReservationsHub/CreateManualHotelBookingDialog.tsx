@@ -94,7 +94,7 @@ const CreateManualHotelBookingDialog = ({ open, onOpenChange }: Props) => {
       queryClient.invalidateQueries({ queryKey: ["admin-bookings-hg-grid"] });
       onOpenChange(false);
       resetForm();
-      toast.success("Réservation créée — marquez le paiement et envoyez l'email depuis la fiche");
+      toast.success("Réservation créée : marquez le paiement et envoyez l'email depuis la fiche");
       navigate(`/admin/reservations/${data.booking_id}`);
     },
     onError: (e: Error) => toast.error("Erreur", { description: e.message }),
@@ -119,7 +119,7 @@ const CreateManualHotelBookingDialog = ({ open, onOpenChange }: Props) => {
         <div className="space-y-4 py-2">
           <p className="text-sm text-muted-foreground">
             Pour un client contacté en direct (téléphone, WhatsApp, email). La réservation sera créée comme confirmée
-            — vous pourrez ensuite marquer le paiement et envoyer l'email de confirmation depuis la fiche.
+            : vous pourrez ensuite marquer le paiement et envoyer l'email de confirmation depuis la fiche.
           </p>
 
           <div className="space-y-1.5">

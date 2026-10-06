@@ -468,7 +468,7 @@ const AdminFavorites = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Favoris</h1>
+        <h1 className="text-xl font-bold tracking-tight text-foreground">Favoris</h1>
         <p className="text-muted-foreground text-xs mt-0.5">
           Qui aime quoi, et qui n'a jamais réservé malgré ses favoris.
         </p>
@@ -606,7 +606,7 @@ const AdminFavorites = () => {
               À relancer en priorité
             </div>
             <p className="text-sm text-muted-foreground mb-3">
-              Clients ayant mis des expériences en favori mais n'ayant jamais réservé — à recontacter en priorité.
+              Clients ayant mis des expériences en favori mais n'ayant jamais réservé : à recontacter en priorité.
             </p>
             <div className="flex justify-end">
               <Button

@@ -117,7 +117,7 @@ export function HealthWidget() {
                       ? 'bg-emerald-500'
                       : 'bg-red-500'
                   }`}
-                  title={`${new Date(check.created_at).toLocaleString('fr-FR')} — ${check.status}`}
+                  title={`${new Date(check.created_at).toLocaleString('fr-FR')} · ${check.status}`}
                 />
               ))
             )}

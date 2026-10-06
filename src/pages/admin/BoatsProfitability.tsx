@@ -112,7 +112,7 @@ export default function AdminBoatsProfitability() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Rentabilité bateaux</h1>
+        <h1 className="text-xl font-bold tracking-tight text-foreground">Rentabilité bateaux</h1>
         <p className="text-muted-foreground text-xs mt-0.5">
           Un bateau par ligne, une durée par colonne. Case vide = cette durée n'est pas proposée pour ce
           bateau. "Coût manquant" = prix de vente connu mais prix d'achat pas encore renseigné.
@@ -174,11 +174,11 @@ export default function AdminBoatsProfitability() {
                       <span className="ml-2 text-[10px] text-muted-foreground uppercase">{boat.status}</span>
                     )}
                   </td>
-                  <td className="py-2 px-3 text-xs text-muted-foreground">{boat.city || "—"}</td>
+                  <td className="py-2 px-3 text-xs text-muted-foreground">{boat.city || "-"}</td>
                   {COLUMNS.map((col) => {
                     const v = boat.variants.get(col.minutes);
                     if (!v) {
-                      return <td key={col.minutes} className="py-2 px-3 text-center text-muted-foreground text-xs">—</td>;
+                      return <td key={col.minutes} className="py-2 px-3 text-center text-muted-foreground text-xs">-</td>;
                     }
                     const margin = computeMargin(v.sale_price, v.purchase_price, v.duration_minutes);
                     return (
@@ -189,7 +189,7 @@ export default function AdminBoatsProfitability() {
                         ) : (
                           <>
                             <div className={cn("text-xs", margin.amount != null && margin.amount < 0 ? "text-destructive" : "text-primary")}>
-                              {margin.amount != null ? `${margin.amount > 0 ? "+" : ""}${margin.amount}₪ · ${margin.percent}%` : "—"}
+                              {margin.amount != null ? `${margin.amount > 0 ? "+" : ""}${margin.amount}₪ · ${margin.percent}%` : "-"}
                             </div>
                             <div className="text-[11px] text-muted-foreground">
                               {margin.perHour != null ? `${margin.perHour}₪/h` : ""}

@@ -49,7 +49,7 @@ const RowActionsCell = ({ detailPath }: Props) => {
               </Button>
             </span>
           </TooltipTrigger>
-          <TooltipContent>Lien de paiement — bientôt disponible</TooltipContent>
+          <TooltipContent>Lien de paiement : bientôt disponible</TooltipContent>
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -59,7 +59,7 @@ const RowActionsCell = ({ detailPath }: Props) => {
               </Button>
             </span>
           </TooltipTrigger>
-          <TooltipContent>Facture — bientôt disponible</TooltipContent>
+          <TooltipContent>Facture : bientôt disponible</TooltipContent>
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -70,7 +70,7 @@ const RowActionsCell = ({ detailPath }: Props) => {
               </Button>
             </span>
           </TooltipTrigger>
-          <TooltipContent>Déclenchement partenaire — bientôt disponible</TooltipContent>
+          <TooltipContent>Déclenchement partenaire : bientôt disponible</TooltipContent>
         </Tooltip>
       </div>
     </TableCell>

@@ -33,7 +33,7 @@ export default function HotelBookingDetails() {
       pendingreview: { variant: "secondary",  label: "En révision" },
       failed:        { variant: "destructive", label: "Échoué" },
     };
-    const c = map[booking.status?.toLowerCase()] || { variant: "outline" as const, label: booking.status || "—" };
+    const c = map[booking.status?.toLowerCase()] || { variant: "outline" as const, label: booking.status || "-" };
     return <Badge variant={c.variant}>{c.label}</Badge>;
   };
 
@@ -45,7 +45,7 @@ export default function HotelBookingDetails() {
       unpaid:         { variant: "outline",    label: "Non payé" },
       no_refund_due:  { variant: "outline",    label: "Aucun remb." },
     };
-    const c = map[status] || { variant: "outline" as const, label: status || "—" };
+    const c = map[status] || { variant: "outline" as const, label: status || "-" };
     return <Badge variant={c.variant}>{c.label}</Badge>;
   };
 
@@ -80,7 +80,7 @@ export default function HotelBookingDetails() {
 
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="font-sans text-2xl font-bold">Réservation</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Réservation</h1>
           <p className="font-mono text-sm text-muted-foreground mt-1">
             {booking.hg_booking_id || booking.id}
           </p>
@@ -123,7 +123,7 @@ export default function HotelBookingDetails() {
           <CardContent className="space-y-3">
             <div>
               <p className="text-xs text-muted-foreground">Nom</p>
-              <p className="font-medium">{booking.customer_name || "—"}</p>
+              <p className="font-medium">{booking.customer_name || "-"}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Email</p>
@@ -132,7 +132,7 @@ export default function HotelBookingDetails() {
                   <Mail className="h-3.5 w-3.5" />
                   {booking.customer_email}
                 </a>
-              ) : <p className="text-sm">—</p>}
+              ) : <p className="text-sm">-</p>}
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Personnes</p>
@@ -160,7 +160,7 @@ export default function HotelBookingDetails() {
           <CardContent className="space-y-3">
             <div>
               <p className="text-xs text-muted-foreground">Expérience</p>
-              <p className="font-medium">{booking.experiences2?.title || "—"}</p>
+              <p className="font-medium">{booking.experiences2?.title || "-"}</p>
             </div>
             <div className="flex gap-6">
               <div>
@@ -234,11 +234,11 @@ export default function HotelBookingDetails() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-xs text-muted-foreground">Référence HG</p>
-              <p className="font-mono text-sm">{booking.hg_booking_id || "—"}</p>
+              <p className="font-mono text-sm">{booking.hg_booking_id || "-"}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Statut HG</p>
-              <p className="text-sm">{booking.hg_status || booking.status || "—"}</p>
+              <p className="text-sm">{booking.hg_status || booking.status || "-"}</p>
             </div>
             {booking.rate_plan && (
               <div>

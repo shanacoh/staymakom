@@ -89,7 +89,7 @@ export function TeaserSection({ catalogueItemId }: { catalogueItemId: string }) 
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-[11px] text-muted-foreground">
-          Ce que verra le client avant paiement — jamais le nom réel, l'adresse ou le prix par ligne.
+          Ce que verra le client avant paiement : jamais le nom réel, l'adresse ou le prix par ligne.
         </p>
         <Badge
           variant="outline"

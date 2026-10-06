@@ -78,7 +78,7 @@ const HotelPartnerCell = forwardRef<HTMLTableCellElement, Props>(function HotelP
     }
     queryClient.invalidateQueries({ queryKey: ["hotels2-picker"] });
     queryClient.invalidateQueries({ queryKey: ["hotels2-filter"] });
-    toast.success(`Hôtel "${name}" créé en brouillon — à compléter dans Partenaires · Hôtels`);
+    toast.success(`Hôtel "${name}" créé en brouillon : à compléter dans Partenaires · Hôtels`);
     await select((data as any).id);
   };
 
@@ -92,7 +92,7 @@ const HotelPartnerCell = forwardRef<HTMLTableCellElement, Props>(function HotelP
             className="h-8 w-full justify-between font-normal text-sm px-2"
             disabled={saving}
           >
-            <span className="truncate">{saving ? "..." : displayName || value ? displayName || value : "—"}</span>
+            <span className="truncate">{saving ? "..." : displayName || value ? displayName || value : "-"}</span>
             <ChevronsUpDown className="ml-1 h-3.5 w-3.5 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>

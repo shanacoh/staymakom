@@ -219,7 +219,7 @@ export const HotelEditor = ({ hotelId, onClose }: HotelEditorProps) => {
       <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader>
-            <CardTitle>Hotel Details — EN | FR | HE</CardTitle>
+            <CardTitle>Hotel Details : EN | FR | HE</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Basic Fields */}

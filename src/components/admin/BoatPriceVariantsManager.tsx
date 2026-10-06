@@ -244,11 +244,11 @@ export default function BoatPriceVariantsManager({ experienceId, currencySymbol 
                     <div className="text-sm font-semibold flex-shrink-0 text-right">
                       <div>{item.sale_price} {currencySymbol}</div>
                       <div className={cn("text-xs font-normal", margin.amount != null && margin.amount < 0 ? "text-destructive" : "text-primary")}>
-                        {margin.amount != null ? `${margin.amount > 0 ? "+" : ""}${margin.amount} ${currencySymbol}` : "—"}
+                        {margin.amount != null ? `${margin.amount > 0 ? "+" : ""}${margin.amount} ${currencySymbol}` : "-"}
                         {margin.percent != null && ` · ${margin.percent}%`}
                       </div>
                       <div className="text-[11px] font-normal text-muted-foreground">
-                        {margin.perHour != null ? `${margin.perHour} ${currencySymbol}/h de marge` : "marge/h : —"}
+                        {margin.perHour != null ? `${margin.perHour} ${currencySymbol}/h de marge` : "marge/h : -"}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">

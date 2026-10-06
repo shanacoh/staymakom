@@ -205,7 +205,7 @@ const HotelBookingsGrid = ({ createOpen, onCreateOpenChange }: Props) => {
                     </a>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    {b.hotels2?.name || "—"} · Annulé le {b.cancelled_at ? format(parseISO(b.cancelled_at), "dd MMM yyyy") : "—"}
+                    {b.hotels2?.name || "-"} · Annulé le {b.cancelled_at ? format(parseISO(b.cancelled_at), "dd MMM yyyy") : "-"}
                   </p>
                   {b.refund_amount > 0 ? (
                     <p className="text-sm font-semibold text-destructive">
@@ -291,7 +291,7 @@ const HotelBookingsGrid = ({ createOpen, onCreateOpenChange }: Props) => {
           isRowLocked={(row) => row.source !== "manual_admin"}
           isRowCancelled={(row) => !!row.is_cancelled}
           minWidthClass="min-w-[1500px]"
-          lockedDisplayValue={(row, col) => (col.key === "hotel_id" ? row.hotels2?.name || "—" : undefined)}
+          lockedDisplayValue={(row, col) => (col.key === "hotel_id" ? row.hotels2?.name || "-" : undefined)}
           customCellRenderers={{
             hotel_id: ({ value, onCommit, className, refCallback }) => (
               <HotelPartnerCell
@@ -305,7 +305,7 @@ const HotelBookingsGrid = ({ createOpen, onCreateOpenChange }: Props) => {
             ),
           }}
           renderReadonlyCell={(row, col) => {
-            if (col.key !== "commission") return "—";
+            if (col.key !== "commission") return "-";
             return formatCurrency(row.sell_price - row.net_price, row.currency);
           }}
           renderRowActions={(row) => <RowActionsCell detailPath={`/admin/reservations/${row.id}`} />}

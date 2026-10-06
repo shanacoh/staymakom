@@ -642,7 +642,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
               Back to Hotels
             </Button>
           </Link>
-          <h2 className="text-3xl font-bold">{hotelId ? "Edit Hotel" : "New Hotel"}</h2>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">{hotelId ? "Edit Hotel" : "New Hotel"}</h1>
         </div>
         <div className="flex gap-2">
           <Button
@@ -707,7 +707,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
               ) : (
                 <div className="mt-3 flex items-center gap-2 text-sm text-orange-600">
                   <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 rounded-full text-orange-700 font-medium">
-                    ⚠ No HyperGuest connection — online booking will be unavailable
+                    ⚠ No HyperGuest connection : online booking will be unavailable
                   </span>
                 </div>
               )}
@@ -720,7 +720,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
         ══════════════════════════════════════════════════════════ */}
         <Card>
           <CardHeader>
-            <CardTitle>Identité de l'hôtel — EN | FR | HE</CardTitle>
+            <CardTitle>Identité de l'hôtel : EN | FR | HE</CardTitle>
             <p className="text-sm text-muted-foreground">Nom, région, ville et description en trois langues.</p>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -1235,7 +1235,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="—" />
+                    <SelectValue placeholder="-" />
                   </SelectTrigger>
                   <SelectContent>
                     {[0, 1, 2, 3, 4, 5].map((n) => (
@@ -1268,7 +1268,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
                       number_of_rooms: e.target.value ? parseInt(e.target.value, 10) : null,
                     })
                   }
-                  placeholder="—"
+                  placeholder="-"
                 />
               </div>
 
@@ -1302,7 +1302,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
                   onChange={(e) =>
                     setFormData({ ...formData, min_stay: e.target.value ? parseInt(e.target.value, 10) : null })
                   }
-                  placeholder="—"
+                  placeholder="-"
                 />
               </div>
               <div className="space-y-2">
@@ -1314,7 +1314,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
                   onChange={(e) =>
                     setFormData({ ...formData, max_stay: e.target.value ? parseInt(e.target.value, 10) : null })
                   }
-                  placeholder="—"
+                  placeholder="-"
                 />
               </div>
             </div>
@@ -1322,7 +1322,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
             <div className="flex items-center justify-between rounded-lg border p-4">
               <div>
                 <p className="font-medium text-sm">Adults Only</p>
-                <p className="text-xs text-muted-foreground">למבוגרים בלבד — la sélection d'enfants sera masquée dans le panneau de réservation.</p>
+                <p className="text-xs text-muted-foreground">למבוגרים בלבד : la sélection d'enfants sera masquée dans le panneau de réservation.</p>
               </div>
               <Switch
                 checked={formData.adults_only}

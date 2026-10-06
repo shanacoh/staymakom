@@ -258,7 +258,7 @@ export default function AdminStandaloneBookingDetails() {
       pending:   { variant: "outline",    label: "En attente" },
       cancelled: { variant: "destructive", label: "Annulé" },
     };
-    const c = map[booking.status?.toLowerCase()] || { variant: "outline" as const, label: booking.status || "—" };
+    const c = map[booking.status?.toLowerCase()] || { variant: "outline" as const, label: booking.status || "-" };
     return <Badge variant={c.variant}>{c.label}</Badge>;
   };
 
@@ -271,7 +271,7 @@ export default function AdminStandaloneBookingDetails() {
       pending:        { variant: "outline",     label: "Impayé" },
       failed:         { variant: "destructive", label: "Échoué" },
     };
-    const c = map[status] || { variant: "outline" as const, label: status || "—" };
+    const c = map[status] || { variant: "outline" as const, label: status || "-" };
     return <Badge variant={c.variant}>{c.label}</Badge>;
   };
 
@@ -304,7 +304,7 @@ export default function AdminStandaloneBookingDetails() {
 
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="font-sans text-3xl font-bold">Réservation Experience Only</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Réservation Experience Only</h1>
           <p className="font-mono text-sm text-muted-foreground mt-1">{booking.id}</p>
         </div>
         <div className="flex gap-2 items-center">
@@ -442,7 +442,7 @@ export default function AdminStandaloneBookingDetails() {
           <CardContent className="space-y-3">
             <div>
               <p className="text-xs text-muted-foreground">Nom</p>
-              <p className="font-medium">{booking.customer_name || "—"}</p>
+              <p className="font-medium">{booking.customer_name || "-"}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Email</p>
@@ -450,7 +450,7 @@ export default function AdminStandaloneBookingDetails() {
                 <a href={`mailto:${booking.customer_email}`} className="text-sm hover:underline flex items-center gap-1">
                   <Mail className="h-3.5 w-3.5" />{booking.customer_email}
                 </a>
-              ) : <p className="text-sm">—</p>}
+              ) : <p className="text-sm">-</p>}
             </div>
             {booking.customer_phone && (
               <div>
@@ -484,7 +484,7 @@ export default function AdminStandaloneBookingDetails() {
           <CardContent className="space-y-3">
             <div>
               <p className="text-xs text-muted-foreground">Expérience</p>
-              <p className="font-medium">{booking.standalone_experiences?.title || booking.custom_experience_title || "—"}</p>
+              <p className="font-medium">{booking.standalone_experiences?.title || booking.custom_experience_title || "-"}</p>
               {!booking.standalone_experiences && booking.custom_experience_title && (
                 <p className="text-xs text-muted-foreground italic mt-0.5">Pas encore une fiche du catalogue</p>
               )}
@@ -492,7 +492,7 @@ export default function AdminStandaloneBookingDetails() {
             <div>
               <p className="text-xs text-muted-foreground">Date</p>
               <p className="font-medium">
-                {booking.booking_date ? format(parseISO(booking.booking_date), "dd MMM yyyy") : "—"}
+                {booking.booking_date ? format(parseISO(booking.booking_date), "dd MMM yyyy") : "-"}
               </p>
             </div>
             {booking.time_slot && (
@@ -703,13 +703,13 @@ export default function AdminStandaloneBookingDetails() {
           </div>
 
           {hasPendingDeposit && forceBalanceUnlock && (
-            <p className="text-xs font-medium text-destructive">⚠️ L'acompte n'est pas encore payé — tu vas générer un lien de solde pour le prix total.</p>
+            <p className="text-xs font-medium text-destructive">⚠️ L'acompte n'est pas encore payé : tu vas générer un lien de solde pour le prix total.</p>
           )}
 
           <Dialog open={customDepositDialog.open} onOpenChange={(open) => setCustomDepositDialog((d) => ({ ...d, open }))}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Acompte — montant ou pourcentage libre</DialogTitle>
+                <DialogTitle>Acompte : montant ou pourcentage libre</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <Select value={customDepositDialog.mode} onValueChange={(v: "fixed" | "percentage") => setCustomDepositDialog((d) => ({ ...d, mode: v }))}>
@@ -820,7 +820,7 @@ export default function AdminStandaloneBookingDetails() {
           {existingReviewRequest ? (
             <p className="text-sm text-muted-foreground">
               Demande déjà envoyée le {format(parseISO(existingReviewRequest.sent_at), "dd/MM/yyyy")}
-              {existingReviewRequest.status === "submitted" ? " — avis déposé." : "."}
+              {existingReviewRequest.status === "submitted" ? " : avis déposé." : "."}
             </p>
           ) : (
             <p className="text-xs text-muted-foreground">
@@ -876,7 +876,7 @@ export default function AdminStandaloneBookingDetails() {
                 setEditingNotes(true);
               }}
             >
-              {booking.internal_notes || <span className="italic">Aucune note — cliquer pour ajouter</span>}
+              {booking.internal_notes || <span className="italic">Aucune note : cliquer pour ajouter</span>}
             </div>
           )}
         </CardContent>

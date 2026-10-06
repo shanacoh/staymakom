@@ -7,7 +7,7 @@ export default function HotelReviews() {
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="font-sans text-4xl font-bold">Avis & Notes</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Avis & Notes</h1>
           <p className="text-muted-foreground mt-2">Gérez les retours clients sur vos expériences</p>
         </div>
       </div>

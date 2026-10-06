@@ -77,7 +77,7 @@ function SortableBoatRow({ boat, onEdit }: { boat: any; onEdit: () => void }) {
         </Badge>
       </td>
       <td className="p-3">
-        {boat.base_price != null ? `${boat.base_price} ${boat.currency}` : "—"}
+        {boat.base_price != null ? `${boat.base_price} ${boat.currency}` : "-"}
       </td>
       <td className="p-3">
         {boat.base_price != null && boat.supplier_price_adult != null
@@ -88,16 +88,16 @@ function SortableBoatRow({ boat, onEdit }: { boat: any; onEdit: () => void }) {
                 : null;
               return (
                 <span>
-                  {margePercent != null ? `${margePercent.toFixed(0)}%` : "—"}
+                  {margePercent != null ? `${margePercent.toFixed(0)}%` : "-"}
                   {" · "}
                   {margeNis.toFixed(0)} {boat.currency}
                 </span>
               );
             })()
-          : "—"}
+          : "-"}
       </td>
       <td className="p-3 text-muted-foreground">
-        {boat.updated_at ? format(new Date(boat.updated_at), "dd MMM yyyy") : "—"}
+        {boat.updated_at ? format(new Date(boat.updated_at), "dd MMM yyyy") : "-"}
       </td>
       <td className="p-3 text-right">
         <Button variant="ghost" size="sm" onClick={onEdit}>
@@ -164,7 +164,7 @@ export default function BoatExperiences() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold">Mes bateaux</h2>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Mes bateaux</h1>
           <p className="text-sm text-muted-foreground">Fiches de la catégorie Bateaux, affichées sur /boat</p>
         </div>
         <Button onClick={() => navigate("/admin/boats/new")}>

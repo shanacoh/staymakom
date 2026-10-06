@@ -267,7 +267,7 @@ const CategoryEditor = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Retour
           </Button>
-          <h2 className="text-xl font-bold text-[#1A1814]">{isEditing ? category?.name || "…" : "Nouvelle catégorie"}</h2>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">{isEditing ? category?.name || "…" : "Nouvelle catégorie"}</h1>
           {isEditing && category?.status && <StatusBadge status={category.status} />}
         </div>
         <div className="flex gap-2">

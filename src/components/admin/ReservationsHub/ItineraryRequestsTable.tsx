@@ -46,7 +46,7 @@ const PAYMENT_LABELS: Record<string, { label: string; variant: "default" | "seco
 };
 
 function formatCurrency(amount: number | null, currency: string) {
-  if (amount === null || amount === undefined) return "—";
+  if (amount === null || amount === undefined) return "-";
   const symbol = currency === "USD" ? "$" : currency === "EUR" ? "€" : "₪";
   return `${symbol}${amount.toLocaleString("fr-FR")}`;
 }
@@ -191,11 +191,11 @@ const ItineraryRequestsTable = () => {
                     )}
                   </TableCell>
                   <TableCell className="py-2 px-3 text-xs">
-                    <div>{r.occasion || "—"}</div>
+                    <div>{r.occasion || "-"}</div>
                     {r.party_size && <div className="text-muted-foreground">{r.party_size} pers.</div>}
                   </TableCell>
                   <TableCell className="py-2 px-3 text-xs">
-                    <div>{r.requested_dates || "—"}</div>
+                    <div>{r.requested_dates || "-"}</div>
                     {r.region && <div className="text-muted-foreground">{r.region}</div>}
                   </TableCell>
                   <TableCell className="py-2 px-3">
@@ -221,7 +221,7 @@ const ItineraryRequestsTable = () => {
                         </PopoverContent>
                       </Popover>
                     ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
+                      <span className="text-xs text-muted-foreground">-</span>
                     )}
                   </TableCell>
                   <TableCell className="py-2 px-3">
@@ -267,7 +267,7 @@ const ItineraryRequestsTable = () => {
                       type="number"
                       min={0}
                       step="0.01"
-                      placeholder="—"
+                      placeholder="-"
                       className="h-8 w-[100px] text-right ml-auto"
                       value={amountDraft[r.id] ?? (r.amount != null ? String(r.amount) : "")}
                       onChange={(e) => setAmountDraft((d) => ({ ...d, [r.id]: e.target.value }))}

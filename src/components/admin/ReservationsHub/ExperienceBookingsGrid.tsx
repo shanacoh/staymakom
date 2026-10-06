@@ -296,7 +296,7 @@ const ExperienceBookingsGrid = ({ createOpen, onCreateOpenChange }: Props) => {
           isRowLocked={(row) => row.source !== "manual_admin"}
           isRowCancelled={(row) => row.status === "cancelled" || !!row.is_cancelled}
           renderReadonlyCell={(row, col) => {
-            if (col.key !== "commission") return "—";
+            if (col.key !== "commission") return "-";
             const commission =
               row.supplier_cost === null || row.supplier_cost === undefined ? null : row.sell_price - row.supplier_cost;
             return formatCurrency(commission, row.currency);

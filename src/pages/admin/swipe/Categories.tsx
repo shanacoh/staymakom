@@ -222,10 +222,10 @@ const AdminSwipeCategories = () => {
 
   return (
     <div className="p-6 max-w-2xl">
-      <h1 className="text-2xl font-bold mb-1">Catégories — Swipe Itinéraire</h1>
+      <h1 className="text-2xl font-bold mb-1">Catégories : Swipe Itinéraire</h1>
       <p className="text-muted-foreground mb-6">
         Ces catégories servent à classer les propositions de la bibliothèque swipe (hôtel, restaurant, activité...).
-        Glisse-les pour choisir leur ordre — c'est cet ordre qui sera utilisé pour les dossiers avec l'option
+        Glisse-les pour choisir leur ordre : c'est cet ordre qui sera utilisé pour les dossiers avec l'option
         "Trier par catégorie" activée.
       </p>
 

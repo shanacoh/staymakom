@@ -6,6 +6,30 @@
 
 ---
 
+## [2026-10-06] — DA du back-office : titres, boutons et textes alignés sur une règle commune
+
+### Ce qui a changé côté code
+- Titres de page : 39 écrans de `src/pages/admin/` et `src/pages/hotel-admin/` ont maintenant le même titre (noir, même taille, même graisse). Sur 6 écrans, le titre de page était un titre de second niveau : il devient le titre principal (catégories, éditeur de catégorie, liste des hôtels, éditeur d'hôtel, bateaux, page « à venir »).
+- `src/index.css` : dans le back-office, tous les titres et sous-titres sont noirs (le rouge y est réservé à l'action), et tous les boutons ont la même forme en pastille avec un texte en minuscules. Les boutons à forme voulue (tuiles hautes, listes déroulantes) ne sont pas touchés.
+- `src/components/ui/button.tsx` : un repère ajouté au bouton pour que cette règle s'applique. Aucun changement visible côté client.
+- Tirets longs : 166 remplacements dans les textes visibles du back-office (environ 70 fichiers de `src/pages/admin/` et `src/components/admin/`). Une case vide affiche un trait d'union court, un séparateur dans une phrase devient deux-points, un séparateur entre deux valeurs devient un point médian. Les commentaires internes du code ne sont pas modifiés.
+- Non modifiés volontairement : le menu de gauche (`AdminSidebar.tsx`), dont les couleurs noir, vert et orange sont les repères de travail de Shana ; l'aperçu des articles du journal (`ArticlePreview.tsx`, `BlockItem.tsx`), qui imite la mise en page du journal ; la description d'un paiement de test Revolut.
+- `docs/claude/maquettes/maquette-da-backoffice-regles.html` : ajout de l'exception du menu de gauche.
+- Présentation uniquement. Aucun écran, aucune donnée, aucune action modifiés. Une note interne préremplie lors de la conversion d'une demande en réservation utilise maintenant un point médian comme séparateur.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration.
+
+### Pourquoi ce changement
+Les écrans du back-office n'avaient pas tous la même présentation. Règles validées sur maquette par Shana : titre noir en haut, boutons identiques partout, aucun tiret long.
+
+### Ce qui reste
+- Deux écrans dont le titre n'a pas pu être repéré automatiquement : `HotelEditor.tsx` et `JournalEditor.tsx`.
+- Un seul bouton rouge par écran : à régler à la relecture, écran par écran.
+- La ligne d'explication sous le titre et le placement des actions à droite ne sont pas encore homogènes partout.
+
+---
+
 ## [2026-10-06] — DA du back-office : maquette des grandes lignes (aucun code modifié)
 
 ### Ce qui a changé côté code

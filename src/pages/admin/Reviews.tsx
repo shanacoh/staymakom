@@ -269,7 +269,7 @@ export default function AdminReviews() {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-bold">Avis clients</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Avis clients</h1>
           <p className="text-sm text-muted-foreground">
             {pendingCount > 0 ? `${pendingCount} avis à modérer` : "Aucun avis en attente"}
           </p>
