@@ -1,18 +1,6 @@
 import { useState } from "react";
 import V3Header from "@/components/V3Header";
-import {
-  ArrowRight,
-  Car,
-  Coffee,
-  Flame,
-  Landmark,
-  MapPin,
-  Palette,
-  Sunset,
-  UtensilsCrossed,
-  Wine,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowRight, MapPin } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -39,8 +27,6 @@ type Step = {
   number: string;
   // Moment de la journée : affiché comme intertitre quand il change d'une étape à l'autre
   moment: string;
-  icon: LucideIcon;
-  tags?: string[];
   title: string;
   mapsUrl?: string;
   description?: string;
@@ -53,16 +39,12 @@ const STEPS: Step[] = [
   {
     number: "01",
     moment: "Morning",
-    icon: Coffee,
-    tags: ["Breakfast", "Galilee view"],
     title: "Slow morning",
     description: "No alarm. Breakfast at the hotel, coffee with a view over the Galilee hills.",
   },
   {
     number: "02",
     moment: "Morning",
-    icon: Palette,
-    tags: ["Handmade", "Blue alleys"],
     title: "The Old City",
     mapsUrl: maps("Tsfat Old City Israel"),
     description:
@@ -76,8 +58,6 @@ const STEPS: Step[] = [
   {
     number: "03",
     moment: "Morning",
-    icon: Landmark,
-    tags: ["Kabbalah", "16th century"],
     title: "Three synagogues",
     description: "Small rooms, painted ceilings, five centuries of stories.",
     items: [
@@ -89,8 +69,6 @@ const STEPS: Step[] = [
   {
     number: "04",
     moment: "Midday",
-    icon: UtensilsCrossed,
-    tags: ["Yemenite", "Local table"],
     title: "Lunch at Lahuh Tzfat",
     mapsUrl: maps("Lahuh Tzfat Restaurant Safed"),
     description:
@@ -99,8 +77,6 @@ const STEPS: Step[] = [
   {
     number: "05",
     moment: "Afternoon",
-    icon: Wine,
-    tags: ["Tasting", "Made in Safed"],
     title: "Tasting at Tzfat Distillery",
     mapsUrl: maps("Tzfat Distillery Safed"),
     description:
@@ -110,7 +86,6 @@ const STEPS: Step[] = [
   {
     number: "06",
     moment: "Afternoon",
-    icon: Flame,
     title: "Tomb of Rabbi Yonatan Ben Uziel",
     mapsUrl: maps("Tomb of Rabbi Yonatan Ben Uziel Amuka"),
     description: "A short detour into the Amuka valley, for those who want it.",
@@ -119,8 +94,6 @@ const STEPS: Step[] = [
   {
     number: "07",
     moment: "Golden hour",
-    icon: Sunset,
-    tags: ["Horseback", "Valley views"],
     title: "Bat Yaar Ranch",
     mapsUrl: maps("Bat Yaar Ranch Biriya Forest"),
     description:
@@ -130,16 +103,9 @@ const STEPS: Step[] = [
   {
     number: "08",
     moment: "Evening",
-    icon: Car,
     title: "Back to Tel Aviv",
     description: "Two hours south, home by evening.",
   },
-];
-
-const GLANCE = [
-  { value: "1", label: "Night" },
-  { value: "8", label: "Stops" },
-  { value: "2h", label: "From Tel Aviv" },
 ];
 
 // ─── Les deux hôtels ──────────────────────────────────────────────────────────
@@ -218,7 +184,7 @@ function HotelCard({ hotel }: { hotel: Hotel }) {
   )}`;
 
   return (
-    <div className="flex flex-col rounded-2xl border border-border bg-white overflow-hidden">
+    <div className="flex flex-col rounded-xl border border-border bg-white overflow-hidden">
       {/* Photos, défilent au doigt ou avec les flèches */}
       <div className="relative">
         <Carousel
@@ -231,7 +197,7 @@ function HotelCard({ hotel }: { hotel: Hotel }) {
           <CarouselContent className="ml-0">
             {hotel.photos.map((photo, i) => (
               <CarouselItem key={photo.src} className="pl-0">
-                <div className="aspect-[4/3] w-full overflow-hidden">
+                <div className="aspect-[3/2] w-full overflow-hidden">
                   <img
                     src={photo.src}
                     alt={photo.alt}
@@ -259,25 +225,25 @@ function HotelCard({ hotel }: { hotel: Hotel }) {
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col px-5 sm:px-6 pt-5 pb-6">
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#ad1414] font-sans mb-2">
+      <div className="flex flex-1 flex-col px-5 pt-4 pb-5">
+        <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-[#ad1414] font-sans mb-1.5">
           {hotel.mood}
         </p>
         <a
           href={hotel.mapsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="group inline-flex items-center gap-1.5 font-sans text-xl sm:text-2xl font-bold uppercase tracking-[-0.01em] text-foreground hover:text-[#ad1414] transition-colors"
+          className="group inline-flex items-center gap-1.5 font-sans text-base font-bold uppercase tracking-[0.04em] text-foreground hover:text-[#ad1414] transition-colors"
         >
-          <MapPin className="h-4 w-4 shrink-0 text-[#ad1414] group-hover:scale-110 transition-transform" />
           {hotel.name}
+          <MapPin className="h-3 w-3 shrink-0 text-[#ad1414]/70 group-hover:text-[#ad1414]" />
         </a>
-        <p className="mt-2 text-sm text-foreground/80 leading-relaxed font-sans">{hotel.description}</p>
-        <div className="mt-3 mb-6 flex flex-wrap gap-1.5">
+        <p className="mt-1.5 text-[13px] text-foreground/70 leading-relaxed font-sans">{hotel.description}</p>
+        <div className="mt-3 mb-5 flex flex-wrap gap-1.5">
           {hotel.tags.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-[11px] text-muted-foreground font-sans font-medium"
+              className="inline-flex items-center rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground font-sans"
             >
               {tag}
             </span>
@@ -287,7 +253,7 @@ function HotelCard({ hotel }: { hotel: Hotel }) {
           href={waLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="group mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#ad1414] px-6 py-3 text-xs font-bold uppercase tracking-widest text-white font-sans hover:bg-[#8f1010] transition-colors"
+          className="group mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#ad1414] px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-white font-sans hover:bg-[#8f1010] transition-colors"
         >
           I choose {hotel.shortName}
           <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
@@ -325,22 +291,22 @@ const CarrieSafed = () => {
       <V3Header />
 
       {/* Hero */}
-      <section className="relative h-[68vh] md:h-[72vh] min-h-[420px] flex items-center justify-center">
+      <section className="relative h-[56vh] md:h-[60vh] min-h-[360px] flex items-center justify-center">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${heroImg})` }}
         />
-        <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 bg-black/45" />
 
-        <div className="relative z-10 text-center text-white px-4 sm:px-6 max-w-3xl mx-auto">
+        <div className="relative z-10 text-center text-white px-4 sm:px-6 max-w-4xl mx-auto">
           <p
-            className="text-xs uppercase tracking-[0.18em] text-white/70 font-sans mb-3 opacity-0 animate-hero-fade-up"
+            className="text-xs sm:text-sm uppercase tracking-[0.18em] text-white/75 font-sans mb-4 opacity-0 animate-hero-fade-up"
             style={{ animationDelay: "0ms" }}
           >
             STAYMAKOM · Private Itinerary
           </p>
           <h1
-            className="font-sans text-[32px] sm:text-5xl md:text-6xl lg:text-7xl font-bold uppercase tracking-[0.02em] leading-[1.05] opacity-0 animate-hero-fade-up text-white text-center drop-shadow-lg"
+            className="font-sans text-[34px] sm:text-5xl md:text-6xl font-bold uppercase tracking-[0.02em] leading-[1.05] opacity-0 animate-hero-fade-up text-white text-center drop-shadow-lg"
             style={{ animationDelay: "150ms" }}
           >
             A Sunday in Safed
@@ -352,7 +318,7 @@ const CarrieSafed = () => {
             For Carrie · October 10-11
           </p>
           <p
-            className="mt-4 text-sm sm:text-base text-white/80 font-sans max-w-md mx-auto leading-relaxed opacity-0 animate-hero-fade-up"
+            className="mt-4 text-[15px] sm:text-lg text-white/85 font-sans max-w-md mx-auto leading-relaxed opacity-0 animate-hero-fade-up"
             style={{ animationDelay: "450ms" }}
           >
             One night and one slow day in the Galilee, on us. Everything is arranged. You just show up.
@@ -360,180 +326,126 @@ const CarrieSafed = () => {
         </div>
       </section>
 
-      {/* Dimanche : frise */}
-      <section className="pt-14 pb-16 px-4 scroll-mt-16">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-8 space-y-2">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground font-sans">
+      {/* Dimanche : programme, une ligne par étape */}
+      <section className="pt-14 pb-14 px-5 scroll-mt-16">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-10">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-sans">
               Sunday, October 11
             </p>
-            <h2 className="font-sans text-3xl sm:text-4xl font-bold uppercase tracking-[-0.02em] text-foreground">
+            <h2 className="mt-2 font-sans text-xl sm:text-2xl font-bold uppercase tracking-[0.02em] text-foreground">
               The slow day
             </h2>
+            <div className="mx-auto mt-4 h-px w-8 bg-[#ad1414]" />
           </div>
 
-          {/* La journée en trois chiffres */}
-          <div className="mb-12 grid grid-cols-3 divide-x divide-border rounded-2xl border border-border bg-white">
-            {GLANCE.map((item) => (
-              <div key={item.label} className="px-2 py-4 text-center">
-                <p className="font-sans text-xl sm:text-2xl font-bold text-[#ad1414] leading-none">{item.value}</p>
-                <p className="mt-1.5 text-[10px] sm:text-[11px] uppercase tracking-[0.14em] text-muted-foreground font-sans">
-                  {item.label}
-                </p>
-              </div>
-            ))}
-          </div>
+          <div className="border-t border-border">
+            {STEPS.map((step, index) => {
+              const startsMoment = index === 0 || STEPS[index - 1].moment !== step.moment;
+              return (
+                <div
+                  key={step.number}
+                  className="grid grid-cols-[2rem_1fr] sm:grid-cols-[6.5rem_2rem_1fr] gap-x-4 border-b border-border py-5"
+                >
+                  {/* Moment de la journée : à gauche sur ordinateur, au-dessus sur téléphone */}
+                  <p
+                    className={
+                      "col-span-2 sm:col-span-1 font-sans text-[10px] uppercase tracking-[0.25em] text-muted-foreground sm:pt-[3px] " +
+                      (startsMoment ? "mb-3 sm:mb-0" : "hidden sm:block sm:invisible")
+                    }
+                  >
+                    {step.moment}
+                  </p>
 
-          <div className="relative">
-            {/* Vertical line */}
-            <div className="absolute left-5 top-2 bottom-2 w-px bg-border sm:left-6" />
+                  <span
+                    className={
+                      "font-sans text-[11px] tracking-[0.1em] pt-[2px] " +
+                      (step.highlight ? "text-[#ad1414] font-bold" : "text-muted-foreground")
+                    }
+                  >
+                    {step.number}
+                  </span>
 
-            <div className="space-y-5">
-              {STEPS.map((step, index) => {
-                const Icon = step.icon;
-                const startsMoment = index === 0 || STEPS[index - 1].moment !== step.moment;
-                return (
-                  <div key={step.number}>
-                    {/* Intertitre du moment de la journée */}
-                    {startsMoment && (
-                      <div className={"relative flex items-center gap-4 sm:gap-5 pb-4 " + (index === 0 ? "" : "pt-5")}>
-                        <div className="relative z-10 flex w-10 sm:w-12 shrink-0 justify-center bg-white py-1">
-                          <span className="h-2 w-2 rounded-full bg-[#ad1414]" />
-                        </div>
-                        <p className="font-sans text-[11px] font-bold uppercase tracking-[0.25em] text-[#ad1414]">
-                          {step.moment}
-                        </p>
-                      </div>
+                  <div className="min-w-0">
+                    {(step.highlight || step.optional) && (
+                      <p
+                        className={
+                          "mb-1 font-sans text-[9px] font-bold uppercase tracking-[0.22em] " +
+                          (step.highlight ? "text-[#ad1414]" : "text-muted-foreground")
+                        }
+                      >
+                        {step.highlight ? "Staymakom favourite" : "Optional"}
+                      </p>
                     )}
 
-                    <div className="relative flex gap-4 sm:gap-5">
-                      {/* Icon badge */}
-                      <div
-                        className={
-                          "relative z-10 flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full border " +
-                          (step.highlight
-                            ? "bg-[#ad1414] border-[#ad1414] text-white"
-                            : "bg-white border-border text-foreground")
-                        }
+                    {step.mapsUrl ? (
+                      <a
+                        href={step.mapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex w-fit items-start gap-1.5 font-sans text-sm font-bold uppercase tracking-[0.06em] leading-snug text-foreground hover:text-[#ad1414] transition-colors"
                       >
-                        <Icon className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={1.75} />
-                      </div>
+                        {step.title}
+                        <MapPin className="h-3 w-3 shrink-0 mt-[3px] text-[#ad1414]/70 group-hover:text-[#ad1414]" />
+                      </a>
+                    ) : (
+                      <h3 className="font-sans text-sm font-bold uppercase tracking-[0.06em] leading-snug text-foreground">
+                        {step.title}
+                      </h3>
+                    )}
 
-                      {/* Content card */}
-                      <div
-                        className={
-                          "flex-1 rounded-2xl px-5 py-5 sm:px-6 " +
-                          (step.highlight
-                            ? "bg-[#fdf0ef] border border-[#ad1414]/20 shadow-[0_8px_24px_-12px_rgba(173,20,20,0.35)]"
-                            : "bg-muted/40 border border-border")
-                        }
-                      >
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className="font-sans text-[11px] font-bold tracking-[0.2em] text-[#ad1414]">
-                            {step.number}
-                          </span>
-                          {step.highlight && (
-                            <span className="rounded-full bg-[#ad1414] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white font-sans">
-                              Highlight
-                            </span>
-                          )}
-                          {step.optional && (
-                            <span className="rounded-full border border-border px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground font-sans">
-                              Optional
-                            </span>
-                          )}
-                        </div>
+                    {step.description && (
+                      <p className="mt-1.5 text-[13px] text-foreground/70 leading-relaxed font-sans">
+                        {step.description}
+                      </p>
+                    )}
 
-                        {step.mapsUrl ? (
-                          <a
-                            href={step.mapsUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="group inline-flex items-start gap-1.5 font-sans text-lg sm:text-xl font-bold uppercase tracking-[-0.01em] leading-tight text-foreground hover:text-[#ad1414] transition-colors"
-                          >
-                            <span className="underline decoration-transparent group-hover:decoration-[#ad1414] underline-offset-4 decoration-2 transition-colors">
-                              {step.title}
-                            </span>
-                            <MapPin className="h-4 w-4 shrink-0 mt-1 text-[#ad1414] group-hover:scale-110 transition-transform" />
-                          </a>
-                        ) : (
-                          <h3 className="font-sans text-lg sm:text-xl font-bold uppercase tracking-[-0.01em] leading-tight text-foreground">
-                            {step.title}
-                          </h3>
-                        )}
-
-                        {step.description && (
-                          <p className="mt-2 text-sm sm:text-[15px] text-foreground/80 leading-relaxed font-sans">
-                            {step.description}
-                          </p>
-                        )}
-
-                        {step.items && (
-                          <ul className="mt-3 space-y-1.5">
-                            {step.items.map((item) => (
-                              <li key={item.label} className="flex items-start gap-1.5 text-sm text-foreground/80 font-sans">
-                                <span className="text-[#ad1414] mt-1 leading-none">•</span>
-                                {item.mapsUrl ? (
-                                  <a
-                                    href={item.mapsUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="group inline-flex items-center gap-1 hover:text-[#ad1414] transition-colors"
-                                  >
-                                    <MapPin className="h-3 w-3 shrink-0 text-[#ad1414]/70 group-hover:text-[#ad1414]" />
-                                    <span className="underline decoration-transparent group-hover:decoration-[#ad1414] underline-offset-2 transition-colors">
-                                      {item.label}
-                                    </span>
-                                  </a>
-                                ) : (
-                                  item.label
-                                )}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-
-                        {step.tags && (
-                          <div className="mt-3.5 flex flex-wrap gap-1.5">
-                            {step.tags.map((tag) => (
-                              <span
-                                key={tag}
-                                className={
-                                  "inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-sans font-medium " +
-                                  (step.highlight ? "bg-white text-[#ad1414]" : "bg-white border border-border text-muted-foreground")
-                                }
+                    {step.items && (
+                      <ul className="mt-2.5 space-y-1">
+                        {step.items.map((item) => (
+                          <li key={item.label} className="flex items-center gap-2.5 text-[13px] text-foreground/70 font-sans">
+                            <span className="h-px w-3 shrink-0 bg-foreground/30" />
+                            {item.mapsUrl ? (
+                              <a
+                                href={item.mapsUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group inline-flex items-center gap-1 hover:text-[#ad1414] transition-colors"
                               >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                                {item.label}
+                                <MapPin className="h-2.5 w-2.5 shrink-0 text-[#ad1414]/60 group-hover:text-[#ad1414]" />
+                              </a>
+                            ) : (
+                              item.label
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* Choix de l'hôtel */}
-      <section className="py-14 px-4 border-t border-border">
-        <div className="max-w-4xl mx-auto">
+      <section className="py-12 px-5 bg-muted/40">
+        <div className="max-w-3xl mx-auto">
           <div className="text-center mb-8 space-y-2">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground font-sans">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-sans">
               Where you sleep
             </p>
-            <h2 className="font-sans text-2xl sm:text-3xl font-bold uppercase tracking-[-0.02em] text-foreground">
+            <h2 className="font-sans text-xl sm:text-2xl font-bold uppercase tracking-[0.02em] text-foreground">
               Your stay, your call
             </h2>
-            <p className="text-sm text-foreground/70 font-sans max-w-md mx-auto leading-relaxed">
+            <p className="text-[13px] text-foreground/70 font-sans max-w-sm mx-auto leading-relaxed">
               Two hotels, two very different moods. Pick the one that feels like you and I will take care of the rest.
             </p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-5 sm:grid-cols-2">
             {HOTELS.map((hotel) => (
               <HotelCard key={hotel.name} hotel={hotel} />
             ))}
@@ -542,38 +454,38 @@ const CarrieSafed = () => {
       </section>
 
       {/* Staymakom */}
-      <section className="py-14 px-4" style={{ backgroundColor: "rgba(173, 20, 20, 0.06)" }}>
-        <div className="max-w-3xl mx-auto">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#ad1414] font-sans mb-3">
+      <section className="py-12 px-5">
+        <div className="max-w-2xl mx-auto">
+          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#ad1414] font-sans mb-2">
             Why I am inviting you
           </p>
-          <h2 className="font-sans text-2xl sm:text-3xl font-bold uppercase tracking-[-0.02em] text-foreground leading-tight">
+          <h2 className="font-sans text-xl sm:text-2xl font-bold uppercase tracking-[0.02em] text-foreground leading-tight">
             Staymakom, in a few words
           </h2>
-          <p className="mt-4 text-sm sm:text-base text-foreground/80 leading-relaxed font-sans">
+          <p className="mt-3 text-[13px] sm:text-sm text-foreground/75 leading-relaxed font-sans">
             Israelis and visitors alike, we all end up doing the same Israel: the same cities, the same sites, the
             same weekend. Staymakom exists to open up the rest. The places beyond the headlines, and the people who
             live there and are happy to open their door.
           </p>
 
-          <p className="mt-8 text-xs uppercase tracking-[0.18em] text-muted-foreground font-sans">
+          <p className="mt-8 text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-sans">
             On the site, three ways to travel
           </p>
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <div className="mt-3 grid sm:grid-cols-3 border-t border-border sm:border-b sm:divide-x divide-border">
             {OFFERS.map((offer) => (
-              <div key={offer.number} className="rounded-2xl bg-white border border-border px-5 py-5">
-                <p className="font-sans text-[11px] uppercase tracking-[0.2em] text-[#ad1414] font-bold mb-2">
+              <div key={offer.number} className="border-b border-border sm:border-b-0 py-4 sm:px-4 sm:first:pl-0 sm:last:pr-0">
+                <p className="font-sans text-[11px] tracking-[0.1em] text-[#ad1414] font-bold mb-1.5">
                   {offer.number}
                 </p>
-                <h3 className="font-sans text-sm font-bold uppercase tracking-[-0.01em] text-foreground leading-snug">
+                <h3 className="font-sans text-[13px] font-bold uppercase tracking-[0.06em] text-foreground leading-snug">
                   {offer.title}
                 </h3>
-                <p className="mt-1.5 text-sm text-foreground/70 leading-relaxed font-sans">{offer.description}</p>
+                <p className="mt-1 text-[13px] text-foreground/70 leading-relaxed font-sans">{offer.description}</p>
               </div>
             ))}
           </div>
 
-          <div className="mt-8 space-y-3 text-sm sm:text-base text-foreground/80 leading-relaxed font-sans">
+          <div className="mt-7 space-y-3 text-[13px] sm:text-sm text-foreground/75 leading-relaxed font-sans">
             <p>
               What would help me most: a few stories from your day, so people see there is still so much to discover
               here. A video on your profile would be exceptional. And if you enjoyed it, tell the people around you.
@@ -586,14 +498,14 @@ const CarrieSafed = () => {
       </section>
 
       {/* P.S. */}
-      <section className="py-12 px-4">
-        <div className="max-w-xl mx-auto text-center">
-          <p className="text-sm sm:text-base text-foreground/80 leading-relaxed font-sans italic">
+      <section className="py-10 px-5 border-t border-border">
+        <div className="max-w-md mx-auto text-center">
+          <p className="text-[13px] text-foreground/70 leading-relaxed font-sans italic">
             P.S. We have met before. Summer 2025, at Malka: my sister and I came over to your table to see you and
             your husband, and to thank you for everything you do for us. You posted us in your story that night. I am
             writing this on the eve of October 7th, and it means even more today.
           </p>
-          <p className="mt-4 font-sans text-sm font-bold uppercase tracking-[0.16em] text-foreground">Shana</p>
+          <p className="mt-3 font-sans text-[11px] font-bold uppercase tracking-[0.22em] text-foreground">Shana</p>
         </div>
       </section>
 
