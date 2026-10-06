@@ -18,7 +18,7 @@ export async function fetchRequestForAction(requestId: string) {
   const { data, error } = await db
     .from("standalone_experience_requests")
     .select(
-      "id, experience_id, customer_name, customer_email, customer_phone, requested_date, adults, children, party_max, message, status, source, desired_time_period, desired_time_value, requested_duration_minutes, preferred_city, sent_to_provider_at, provider_responded_at, standalone_experiences(title, supplier_boat_name, providers(name, whatsapp))",
+      "id, experience_id, customer_name, customer_email, customer_phone, requested_date, adults, children, party_max, message, internal_notes, status, source, desired_time_period, desired_time_value, requested_duration_minutes, preferred_city, sent_to_provider_at, provider_responded_at, standalone_experiences(title, supplier_boat_name, providers(name, whatsapp))",
     )
     .eq("id", requestId)
     .single();
@@ -184,4 +184,53 @@ export async function deleteReservationRow(source: "booking" | "request", rowId:
   const { data, error } = await query.select("id");
   if (error) throw error;
   assertChanged(data, "Ligne introuvable ou non supprimable. Recharge la liste.");
+}
+
+/**
+ * « Lier un dossier payé » : marque un dossier de voyage comme payé, avec la date, le montant
+ * convenu et le montant encaissé (inférieur au total = acompte). Une seule écriture, refusée
+ * si le dossier a déjà été marqué payé entre-temps.
+ */
+export async function markDossierPaid(dossierId: string, input: { paidOn: string; total: number; collected: number }) {
+  const { data, error } = await db
+    .from("dossiers_voyage")
+    .update({
+      paye_at: new Date(`${input.paidOn}T12:00:00`).toISOString(),
+      montant_vente_final: input.total,
+      montant_encaisse: input.collected,
+      statut: "paye",
+    })
+    .eq("id", dossierId)
+    .is("paye_at", null)
+    .select("id");
+  if (error) throw error;
+  assertChanged(data, "Ce dossier est déjà marqué payé. Recharge la liste.");
+}
+
+/** Solde d'un dossier encaissé : l'encaissé rejoint le montant convenu. */
+export async function markDossierBalanceCollected(dossierId: string, total: number) {
+  const { data, error } = await db
+    .from("dossiers_voyage")
+    .update({ montant_vente_final: total, montant_encaisse: total })
+    .eq("id", dossierId)
+    .not("paye_at", "is", null)
+    .select("id");
+  if (error) throw error;
+  assertChanged(data, ALREADY_HANDLED);
+}
+
+export async function saveDossierLineCost(lineId: string, cost: number | null) {
+  const { data, error } = await db.from("dossiers_voyage_lignes").update({ cout_reel: cost }).eq("id", lineId).select("id");
+  if (error) throw error;
+  assertChanged(data, "Ligne introuvable. Recharge la liste.");
+}
+
+export async function setDossierLineSupplierPaid(lineId: string, paid: boolean) {
+  const { data, error } = await db
+    .from("dossiers_voyage_lignes")
+    .update({ paiement_fournisseur: paid ? "paye" : "a_payer" })
+    .eq("id", lineId)
+    .select("id");
+  if (error) throw error;
+  assertChanged(data, "Ligne introuvable. Recharge la liste.");
 }

@@ -9,10 +9,20 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/components/admin/BookingsGrid/columnTypes";
 import { dateHint, isRequest, nextAction, type ReservationGroups } from "@/lib/reservations/rules";
-import type { NextAction, ReservationRow } from "@/lib/reservations/types";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import type { DossierLine, NextAction, ReservationRow } from "@/lib/reservations/types";
+import { LineCostInput, NatureTag } from "./DossierLineCells";
 import { StatusPill, SupplierPaymentPill, TypeTag } from "./ReservationPills";
 
-interface Props {
+export interface DossierLinesProps {
+  linesByDossier: Map<string, DossierLine[]>;
+  expandedDossiers: Set<string>;
+  onToggleDossier: (dossierId: string) => void;
+  onLineCost: (line: DossierLine, cost: number | null) => void;
+  onLinePaid: (line: DossierLine, paid: boolean) => void;
+}
+
+interface Props extends DossierLinesProps {
   groups: ReservationGroups;
   onAction: (row: ReservationRow, action: NextAction) => void;
   onOpen: (row: ReservationRow) => void;
@@ -32,11 +42,62 @@ function MarginCell({ row }: { row: ReservationRow }) {
   return <>{formatCurrency(row.amount - row.supplierCost, row.currency)}</>;
 }
 
-function SummaryRow({ row, onAction, onOpen }: { row: ReservationRow } & Omit<Props, "groups">) {
+// Une ligne de réservation d'un dossier, sous sa ligne dossier. Son prix est inclus dans le dossier.
+function DossierLineRow({ line, onLineCost, onLinePaid }: { line: DossierLine } & Pick<DossierLinesProps, "onLineCost" | "onLinePaid">) {
+  return (
+    <TableRow className="bg-muted/20 text-sm">
+      <TableCell className="whitespace-nowrap tabular-nums text-muted-foreground">
+        {line.date ? format(parseISO(line.date), "dd/MM") : ""}
+      </TableCell>
+      <TableCell className="max-w-[320px]">
+        <div className="flex items-center gap-2 pl-5">
+          <NatureTag nature={line.nature} />
+          <span className="truncate">{line.product}</span>
+        </div>
+      </TableCell>
+      <TableCell className="tabular-nums text-muted-foreground">{line.pax || "—"}</TableCell>
+      <TableCell className="text-right text-xs text-muted-foreground">inclus</TableCell>
+      <TableCell />
+      <TableCell>
+        <SupplierPaymentPill payment={line.supplierPaid ? "paid" : "todo"} />
+      </TableCell>
+      <TableCell className="text-right">
+        <LineCostInput line={line} onCommit={(cost) => onLineCost(line, cost)} />
+      </TableCell>
+      <TableCell className="whitespace-nowrap">
+        {line.supplierPaid ? (
+          <Button size="sm" variant="ghost" className="text-muted-foreground" onClick={() => onLinePaid(line, false)}>
+            Annuler « payé »
+          </Button>
+        ) : line.cost !== null ? (
+          <Button size="sm" variant="outline" onClick={() => onLinePaid(line, true)}>
+            Fournisseur payé
+          </Button>
+        ) : (
+          <span className="text-xs text-amber-800">coût à saisir</span>
+        )}
+      </TableCell>
+    </TableRow>
+  );
+}
+
+function SummaryRow({
+  row,
+  onAction,
+  onOpen,
+  linesByDossier,
+  expandedDossiers,
+  onToggleDossier,
+  onLineCost,
+  onLinePaid,
+}: { row: ReservationRow } & Omit<Props, "groups">) {
+  const lines = row.source === "dossier" ? (linesByDossier.get(row.id) ?? []) : [];
+  const expanded = expandedDossiers.has(row.id);
   const hint = dateHint(row);
   const action = nextAction(row);
   const cancelled = row.status === "annulee";
   return (
+    <>
     <TableRow className={cn(isRequest(row) && "bg-muted/40", cancelled && "text-muted-foreground")}>
       <TableCell className="whitespace-nowrap">
         <div className="font-medium tabular-nums">{row.date ? format(parseISO(row.date), "dd/MM") : "À préciser"}</div>
@@ -47,7 +108,7 @@ function SummaryRow({ row, onAction, onOpen }: { row: ReservationRow } & Omit<Pr
       <TableCell className="max-w-[320px]">
         <div className="flex items-center gap-2">
           <TypeTag type={row.type} />
-          {row.detailPath ? (
+          {row.detailPath || row.source === "request" ? (
             <button
               type="button"
               onClick={() => onOpen(row)}
@@ -62,6 +123,17 @@ function SummaryRow({ row, onAction, onOpen }: { row: ReservationRow } & Omit<Pr
         <div className="truncate text-xs text-muted-foreground">
           {row.product} · {row.channelLabel}
         </div>
+        {row.source === "dossier" && (
+          <button
+            type="button"
+            onClick={() => onToggleDossier(row.id)}
+            aria-expanded={expanded}
+            className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-foreground hover:underline"
+          >
+            {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+            {lines.length} ligne{lines.length > 1 ? "s" : ""} de réservation
+          </button>
+        )}
       </TableCell>
       <TableCell className="tabular-nums">{row.pax || "—"}</TableCell>
       <TableCell className="whitespace-nowrap text-right">
@@ -87,6 +159,8 @@ function SummaryRow({ row, onAction, onOpen }: { row: ReservationRow } & Omit<Pr
         )}
       </TableCell>
     </TableRow>
+    {expanded && lines.map((line) => <DossierLineRow key={line.id} line={line} onLineCost={onLineCost} onLinePaid={onLinePaid} />)}
+    </>
   );
 }
 
@@ -96,7 +170,7 @@ const GROUPS: { key: keyof ReservationGroups; label: string; hint?: string }[] =
   { key: "settled", label: "Soldées" },
 ];
 
-const ReservationsSummaryTable = ({ groups, onAction, onOpen }: Props) => (
+const ReservationsSummaryTable = ({ groups, ...rowProps }: Props) => (
   <div className="space-y-6">
     {GROUPS.filter((group) => groups[group.key].length > 0).map((group) => (
       <section key={group.key} className="space-y-2">
@@ -121,7 +195,7 @@ const ReservationsSummaryTable = ({ groups, onAction, onOpen }: Props) => (
             </TableHeader>
             <TableBody>
               {groups[group.key].map((row) => (
-                <SummaryRow key={row.key} row={row} onAction={onAction} onOpen={onOpen} />
+                <SummaryRow key={row.key} row={row} {...rowProps} />
               ))}
             </TableBody>
           </Table>

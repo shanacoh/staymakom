@@ -16,6 +16,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import LinkPaidDossierDialog from "@/components/admin/ReservationsHub/LinkPaidDossierDialog";
+import EditRequestDialog from "@/components/admin/ReservationsHub/EditRequestDialog";
 import DeleteReservationDialog from "@/components/admin/ReservationsHub/DeleteReservationDialog";
 import UnfinishedPaymentsTable from "@/components/admin/ReservationsHub/UnfinishedPaymentsTable";
 import ReservationsEntryGrid from "@/components/admin/ReservationsHub/ReservationsEntryGrid";
@@ -25,11 +27,24 @@ import ReservationActionDialogs, { type PendingAction } from "@/components/admin
 import ReservationsToolbar from "@/components/admin/ReservationsHub/ReservationsToolbar";
 import ReservationsKpis from "@/components/admin/ReservationsHub/ReservationsKpis";
 import ReservationsSummaryTable from "@/components/admin/ReservationsHub/ReservationsSummaryTable";
-import { RESERVATIONS_QUERY_KEY, useReservationRows, useUnfinishedPayments } from "@/lib/reservations/queries";
-import { createBookingFromGrid, saveCellUpdate } from "@/lib/reservations/actions";
+import {
+  DOSSIER_LINES_QUERY_KEY,
+  RESERVATIONS_QUERY_KEY,
+  UNPAID_DOSSIERS_QUERY_KEY,
+  useDossierLines,
+  useReservationRows,
+  useUnfinishedPayments,
+} from "@/lib/reservations/queries";
+import {
+  createBookingFromGrid,
+  saveCellUpdate,
+  saveDossierLineCost,
+  setDossierLineSupplierPaid,
+} from "@/lib/reservations/actions";
 import { buildCellUpdate, type EntryColumnKey } from "@/lib/reservations/entryGrid";
 import { applyToolbarFilters, computeKpis, groupRows, matchesTab } from "@/lib/reservations/rules";
 import type {
+  DossierLine,
   NextAction,
   PaymentFilter,
   PeriodFilter,
@@ -89,6 +104,9 @@ const AdminReservations = () => {
   const [experienceCreateOpen, setExperienceCreateOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [unfinishedOpen, setUnfinishedOpen] = useState(false);
+  const [linkDossierOpen, setLinkDossierOpen] = useState(false);
+  const [editRequestId, setEditRequestId] = useState<string | null>(null);
+  const [expandedDossiers, setExpandedDossiers] = useState<Set<string>>(new Set());
   const [isCreatingRow, setIsCreatingRow] = useState(false);
   const [rowToDelete, setRowToDelete] = useState<ReservationRow | null>(null);
   const [savedVisible, setSavedVisible] = useState(false);
@@ -96,6 +114,12 @@ const AdminReservations = () => {
 
   const { data: rows, isLoading, error } = useReservationRows();
   const { data: unfinishedPayments } = useUnfinishedPayments();
+  const { data: dossierLines } = useDossierLines();
+  const linesByDossier = useMemo(() => {
+    const map = new Map<string, DossierLine[]>();
+    for (const line of dossierLines ?? []) map.set(line.dossierId, [...(map.get(line.dossierId) ?? []), line]);
+    return map;
+  }, [dossierLines]);
   // Le compteur de la puce ne compte que ce qui reste à relancer.
   const unfinishedToFollowUp = (unfinishedPayments ?? []).filter((p) => !p.converted).length;
 
@@ -137,8 +161,10 @@ const AdminReservations = () => {
 
   const refreshRows = () => queryClient.invalidateQueries({ queryKey: RESERVATIONS_QUERY_KEY });
 
+  // Une demande n'a pas de fiche : on ouvre sa fenêtre de modification.
   const openRow = (row: ReservationRow) => {
-    if (row.detailPath) navigate(row.detailPath);
+    if (row.source === "request") setEditRequestId(row.id);
+    else if (row.detailPath) navigate(row.detailPath);
   };
 
   const flashSaved = () => {
@@ -206,11 +232,54 @@ const AdminReservations = () => {
   // à la main. Pour le reste (hôtel, dossier, réservation payée en ligne à encaisser), le
   // bouton ouvre la fiche, où se trouvent les outils propres à ce type de réservation.
   const handleAction = (row: ReservationRow, action: NextAction) => {
+    if (row.source === "dossier") {
+      // Les coûts et paiements fournisseur d'un dossier se règlent ligne par ligne : on le déplie.
+      if (action.kind === "confirm_collection") setPendingAction({ row, action });
+      else setExpandedDossiers((current) => new Set(current).add(row.id));
+      return;
+    }
     const handledHere =
       row.source === "request" ||
       (row.source === "booking" && !(action.kind === "confirm_collection" && row.isOnline));
     if (handledHere) setPendingAction({ row, action });
     else if (row.detailPath) navigate(row.detailPath);
+  };
+
+  const toggleDossier = (dossierId: string) =>
+    setExpandedDossiers((current) => {
+      const next = new Set(current);
+      if (next.has(dossierId)) next.delete(dossierId);
+      else next.add(dossierId);
+      return next;
+    });
+
+  const refreshDossiers = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: DOSSIER_LINES_QUERY_KEY }),
+      queryClient.invalidateQueries({ queryKey: UNPAID_DOSSIERS_QUERY_KEY }),
+      refreshRows(),
+    ]);
+  };
+
+  const saveLine = async (write: () => Promise<void>) => {
+    try {
+      await write();
+    } catch (e) {
+      toast.error("Erreur de sauvegarde", { description: (e as Error).message });
+      return;
+    }
+    flashSaved();
+    await refreshDossiers();
+  };
+  const handleLineCost = (line: DossierLine, cost: number | null) => saveLine(() => saveDossierLineCost(line.id, cost));
+  const handleLinePaid = (line: DossierLine, paid: boolean) => saveLine(() => setDossierLineSupplierPaid(line.id, paid));
+
+  const dossierLinesProps = {
+    linesByDossier,
+    expandedDossiers,
+    onToggleDossier: toggleDossier,
+    onLineCost: handleLineCost,
+    onLinePaid: handleLinePaid,
   };
 
   const addButton =
@@ -225,13 +294,14 @@ const AdminReservations = () => {
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => setExperienceCreateOpen(true)}>Réservation d'expérience ou de bateau</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => setHotelCreateOpen(true)}>Réservation d'hôtel</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setLinkDossierOpen(true)}>Lier un dossier payé</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     ) : (
       <Button
-        disabled={tab === "itineraries"}
-        title={tab === "itineraries" ? "Disponible avec le lot Itinéraire" : undefined}
-        onClick={() => (tab === "hotels" ? setHotelCreateOpen(true) : setExperienceCreateOpen(true))}
+        onClick={() =>
+          tab === "hotels" ? setHotelCreateOpen(true) : tab === "itineraries" ? setLinkDossierOpen(true) : setExperienceCreateOpen(true)
+        }
       >
         <Plus className="h-4 w-4" />
         {ADD_LABELS[tab]}
@@ -322,7 +392,7 @@ const AdminReservations = () => {
         <>
           <ReservationsKpis kpis={kpis} />
           {visibleRows.length > 0 ? (
-            <ReservationsSummaryTable groups={visibleGroups} onAction={handleAction} onOpen={openRow} />
+            <ReservationsSummaryTable groups={visibleGroups} onAction={handleAction} onOpen={openRow} {...dossierLinesProps} />
           ) : (
             emptyState
           )}
@@ -353,6 +423,9 @@ const AdminReservations = () => {
               onNewRowCommit={commitNewRow}
               onOpen={openRow}
               onDelete={setRowToDelete}
+              linesByDossier={linesByDossier}
+              onLineCost={handleLineCost}
+              onLinePaid={handleLinePaid}
             />
           ) : (
             emptyState
@@ -385,6 +458,14 @@ const AdminReservations = () => {
         }}
       />
 
+      <LinkPaidDossierDialog open={linkDossierOpen} onOpenChange={setLinkDossierOpen} onLinked={refreshDossiers} />
+      <EditRequestDialog
+        requestId={editRequestId}
+        onClose={() => {
+          setEditRequestId(null);
+          refreshRows();
+        }}
+      />
       <DeleteReservationDialog row={rowToDelete} onClose={() => setRowToDelete(null)} onDeleted={refreshRows} />
       <ReservationActionDialogs pending={pendingAction} onClose={() => setPendingAction(null)} onDone={refreshRows} />
     </div>

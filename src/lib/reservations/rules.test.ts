@@ -5,7 +5,7 @@ import type { ReservationRow } from "./types";
 const TODAY = new Date("2026-10-06T10:00:00");
 
 function row(overrides: Partial<ReservationRow>): ReservationRow {
-  return {
+  const built: ReservationRow = {
     key: "booking:1",
     id: "1",
     source: "booking",
@@ -30,9 +30,15 @@ function row(overrides: Partial<ReservationRow>): ReservationRow {
     notes: null,
     sentToProviderAt: null,
     depositDue: null,
+    missingCosts: 0,
+    supplierDue: null,
     detailPath: null,
     ...overrides,
   };
+  // Comme la vue SQL : une réservation sans coût a un coût manquant, et doit son coût tant qu'il n'est pas payé.
+  if (overrides.missingCosts === undefined) built.missingCosts = built.supplierCost === null ? 1 : 0;
+  if (overrides.supplierDue === undefined) built.supplierDue = built.supplierPayment === "todo" ? built.supplierCost : null;
+  return built;
 }
 
 const request = (overrides: Partial<ReservationRow> = {}) =>
@@ -82,6 +88,24 @@ describe("nextAction", () => {
   it("tout est réglé ou annulé : rien à faire", () => {
     expect(nextAction(row({}), TODAY)).toBeNull();
     expect(nextAction(row({ status: "annulee", clientPayment: "unpaid", supplierPayment: "todo" }), TODAY)).toBeNull();
+  });
+});
+
+describe("nextAction pour un dossier de voyage", () => {
+  const dossier = (overrides: Partial<ReservationRow>) => row({ source: "dossier", type: "itinerary", ...overrides });
+
+  it("acompte encaissé : confirmer le solde", () => {
+    const action = nextAction(dossier({ amount: 9800, collected: 3000, clientPayment: "deposit" }), TODAY);
+    expect(action?.kind).toBe("confirm_collection");
+    expect(action?.label).toContain("Confirmer le solde");
+  });
+
+  it("coûts manquants sur ses lignes, puis fournisseurs à payer", () => {
+    const paid = { amount: 7200, collected: 7200, clientPayment: "paid" as const, supplierPayment: "todo" as const };
+    expect(nextAction(dossier({ ...paid, supplierCost: null, missingCosts: 2 }), TODAY)?.label).toBe("Compléter 2 coûts fournisseur");
+    const due = nextAction(dossier({ ...paid, supplierCost: 4100, missingCosts: 0, supplierDue: 1500 }), TODAY);
+    expect(due?.kind).toBe("pay_supplier");
+    expect(due?.label).toContain("1");
   });
 });
 

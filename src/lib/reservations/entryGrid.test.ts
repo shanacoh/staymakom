@@ -3,7 +3,7 @@ import { buildCellUpdate, canDeleteRow, cellMode, computeTotals } from "./entryG
 import type { ReservationRow } from "./types";
 
 function row(overrides: Partial<ReservationRow>): ReservationRow {
-  return {
+  const built: ReservationRow = {
     key: "booking:1",
     id: "1",
     source: "booking",
@@ -28,9 +28,15 @@ function row(overrides: Partial<ReservationRow>): ReservationRow {
     notes: null,
     sentToProviderAt: null,
     depositDue: null,
+    missingCosts: 0,
+    supplierDue: null,
     detailPath: null,
     ...overrides,
   };
+  // Comme la vue SQL : une réservation sans coût a un coût manquant, et doit son coût tant qu'il n'est pas payé.
+  if (overrides.missingCosts === undefined) built.missingCosts = built.supplierCost === null ? 1 : 0;
+  if (overrides.supplierDue === undefined) built.supplierDue = built.supplierPayment === "todo" ? built.supplierCost : null;
+  return built;
 }
 
 describe("cellMode", () => {

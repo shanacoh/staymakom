@@ -5,7 +5,7 @@
  * et l'encaissé sont calculés.
  */
 
-import { useRef } from "react";
+import { Fragment, useRef } from "react";
 import { format, parseISO } from "date-fns";
 import { Eye, Lock, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -26,7 +26,8 @@ import {
   type EntryColumnKey,
 } from "@/lib/reservations/entryGrid";
 import { formatMoneyByCurrency, isRequest } from "@/lib/reservations/rules";
-import type { ReservationRow } from "@/lib/reservations/types";
+import type { DossierLine, ReservationRow } from "@/lib/reservations/types";
+import { LineCostInput, NatureTag } from "./DossierLineCells";
 
 const HEAD_CLASS = "h-8 px-3 text-[10px] uppercase tracking-wider";
 const CELL_CLASS = "py-2 px-3 text-sm";
@@ -41,7 +42,16 @@ interface Props {
   onOpen: (row: ReservationRow) => void;
   // Demande de suppression d'une ligne : la confirmation est gérée par la page.
   onDelete: (row: ReservationRow) => void;
+  // Lignes de réservation des dossiers de voyage, affichées indentées sous leur dossier.
+  linesByDossier: Map<string, DossierLine[]>;
+  onLineCost: (line: DossierLine, cost: number | null) => void;
+  onLinePaid: (line: DossierLine, paid: boolean) => void;
 }
+
+const LINE_PAYMENT_OPTIONS = [
+  { value: "todo", label: "À payer" },
+  { value: "paid", label: "Payé" },
+];
 
 function displayText(row: ReservationRow, column: EntryColumn): string {
   const value = cellValue(row, column.key);
@@ -58,7 +68,7 @@ function displayText(row: ReservationRow, column: EntryColumn): string {
   return String(value);
 }
 
-const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit, onNewRowCommit, onOpen, onDelete }: Props) => {
+const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit, onNewRowCommit, onOpen, onDelete, linesByDossier, onLineCost, onLinePaid }: Props) => {
   // Cellules de texte modifiables, repérées par « ligne:colonne », pour les flèches du clavier.
   const cellRefs = useRef(new Map<string, HTMLTableCellElement>());
   const lastRowIndex = allowNewRow ? rows.length : rows.length - 1;
@@ -147,6 +157,70 @@ const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit,
     );
   };
 
+  // Ligne enfant d'un dossier : seuls son coût réel et le paiement du fournisseur se saisissent.
+  const renderLineCell = (line: DossierLine, column: EntryColumn) => {
+    const base = cn(CELL_CLASS, "text-muted-foreground", column.align === "right" && "text-right", column.widthClass);
+    switch (column.key) {
+      case "type":
+        return (
+          <TableCell key={column.key} className={base}>
+            <NatureTag nature={line.nature} />
+          </TableCell>
+        );
+      case "product":
+        return (
+          <TableCell key={column.key} className={cn(base, "text-foreground")}>
+            ↳ {line.product}
+          </TableCell>
+        );
+      case "date":
+        return (
+          <TableCell key={column.key} className={base}>
+            {line.date ? format(parseISO(line.date), "dd/MM/yyyy") : "-"}
+          </TableCell>
+        );
+      case "pax":
+        return (
+          <TableCell key={column.key} className={base}>
+            {line.pax || "-"}
+          </TableCell>
+        );
+      case "amount":
+        return (
+          <TableCell key={column.key} className={cn(base, "text-xs")}>
+            inclus
+          </TableCell>
+        );
+      case "supplierCost":
+        return (
+          <TableCell key={column.key} className={cn("px-1 py-1", column.widthClass)}>
+            <LineCostInput line={line} onCommit={(cost) => onLineCost(line, cost)} className="w-full" />
+          </TableCell>
+        );
+      case "supplierPayment":
+        return (
+          <GridSelectCell
+            key={column.key}
+            value={line.supplierPaid ? "paid" : "todo"}
+            options={LINE_PAYMENT_OPTIONS}
+            onCommit={async (value) => {
+              onLinePaid(line, value === "paid");
+              return true;
+            }}
+            className={column.widthClass}
+          />
+        );
+      case "notes":
+        return (
+          <TableCell key={column.key} className={base}>
+            {line.cost === null ? "coût à saisir" : ""}
+          </TableCell>
+        );
+      default:
+        return <TableCell key={column.key} className={base} />;
+    }
+  };
+
   const totals = computeTotals(rows);
   const totalFor: Partial<Record<EntryColumnKey, string>> = {
     amount: formatMoneyByCurrency(totals.amount),
@@ -171,17 +245,18 @@ const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit,
         </TableHeader>
         <TableBody>
           {rows.map((row, rowIndex) => (
-            <TableRow key={row.key} className={cn(isRequest(row) && "bg-muted/40", row.status === "annulee" && "opacity-60")}>
+            <Fragment key={row.key}>
+            <TableRow className={cn(isRequest(row) && "bg-muted/40", row.status === "annulee" && "opacity-60")}>
               {ENTRY_COLUMNS.map((column, colIndex) => renderCell(row, rowIndex, column, colIndex))}
               <TableCell className="whitespace-nowrap px-3 py-1 text-right">
-                {row.detailPath && (
+                {(row.detailPath || row.source === "request") && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Ouvrir la fiche" onClick={() => onOpen(row)}>
                         <Eye className="h-3.5 w-3.5" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Ouvrir la fiche (lien de paiement, email de confirmation)</TooltipContent>
+                    <TooltipContent>{row.source === "request" ? "Modifier la demande" : "Ouvrir la fiche (lien de paiement, email de confirmation)"}</TooltipContent>
                   </Tooltip>
                 )}
                 {canDeleteRow(row) && (
@@ -202,6 +277,14 @@ const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit,
                 )}
               </TableCell>
             </TableRow>
+            {row.source === "dossier" &&
+              (linesByDossier.get(row.id) ?? []).map((line) => (
+                <TableRow key={line.id} className="bg-muted/20">
+                  {ENTRY_COLUMNS.map((column) => renderLineCell(line, column))}
+                  <TableCell />
+                </TableRow>
+              ))}
+            </Fragment>
           ))}
 
           {/* Ligne vide toujours en bas : dès qu'on tape un nom, la réservation est créée. */}

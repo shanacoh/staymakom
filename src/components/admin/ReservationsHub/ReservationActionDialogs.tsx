@@ -21,6 +21,7 @@ import {
   getOrCreateBalanceLink,
   linkRequestToBooking,
   markClientPaid,
+  markDossierBalanceCollected,
   markRequestSentToProvider,
   markSupplierPaid,
   recordProviderAnswer,
@@ -414,6 +415,19 @@ const ReservationActionDialogs = ({ pending, onClose, onDone }: Props) => {
     case "send_balance_link":
       return <BalanceLinkDialog key={instance} {...common} />;
     case "confirm_collection":
+      if (row.source === "dossier") {
+        return (
+          <ConfirmDialog
+            key={instance}
+            {...common}
+            title="Confirmer le solde"
+            question={`As-tu bien reçu le solde de ${formatCurrency((row.amount ?? 0) - row.collected, row.currency)} ? Le dossier passera en « Payé ».`}
+            confirmLabel="Oui, le solde est encaissé"
+            successMessage="Solde confirmé"
+            run={() => markDossierBalanceCollected(row.id, row.amount ?? 0)}
+          />
+        );
+      }
       return (
         <ConfirmDialog
           key={instance}

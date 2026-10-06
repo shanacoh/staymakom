@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { CHANNEL_LABELS } from "@/components/admin/BookingsGrid/columnTypes";
 import type {
   ClientPayment,
+  DossierLine,
+  UnpaidDossier,
   ReservationRow,
   ReservationSource,
   ReservationStatus,
@@ -42,6 +44,8 @@ interface AdminReservationViewRow {
   notes: string | null;
   sent_to_provider_at: string | null;
   deposit_due: number | null;
+  missing_costs: number | null;
+  supplier_due: number | null;
 }
 
 const DETAIL_PATHS: Record<ReservationSource, ((id: string) => string) | null> = {
@@ -87,6 +91,8 @@ function toReservationRow(row: AdminReservationViewRow): ReservationRow {
     notes: row.notes,
     sentToProviderAt: row.sent_to_provider_at,
     depositDue: toNumber(row.deposit_due),
+    missingCosts: row.missing_costs ?? 0,
+    supplierDue: toNumber(row.supplier_due),
     detailPath: DETAIL_PATHS[row.source]?.(row.id) ?? null,
   };
 }
@@ -134,4 +140,84 @@ async function fetchUnfinishedPayments(): Promise<UnfinishedPayment[]> {
 /** Paiements en ligne non aboutis (vue SQL `admin_unfinished_payments`). */
 export function useUnfinishedPayments() {
   return useQuery({ queryKey: UNFINISHED_PAYMENTS_QUERY_KEY, queryFn: fetchUnfinishedPayments });
+}
+
+export const DOSSIER_LINES_QUERY_KEY = ["admin-reservation-dossier-lines"];
+
+async function fetchDossierLines(): Promise<DossierLine[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = supabase as any;
+  const { data: paid, error: paidError } = await db
+    .from("dossiers_voyage")
+    .select("id")
+    .not("paye_at", "is", null)
+    .eq("est_modele", false);
+  if (paidError) throw paidError;
+  const ids = (paid as { id: string }[]).map((d) => d.id);
+  if (ids.length === 0) return [];
+
+  const { data, error } = await db
+    .from("admin_reservation_dossier_lines")
+    .select("*")
+    .in("dossier_id", ids)
+    .order("jour")
+    .order("ordre");
+  if (error) throw error;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data as any[]).map((line) => ({
+    id: line.id,
+    dossierId: line.dossier_id,
+    nature: line.nature,
+    product: line.product,
+    date: line.service_date,
+    pax: line.pax ?? "",
+    currency: line.currency,
+    estimatedCost: toNumber(line.cout_estime),
+    cost: toNumber(line.cout_reel),
+    supplierPaid: line.paiement_fournisseur === "paye",
+  }));
+}
+
+/** Lignes de réservation des dossiers de voyage payés (vue SQL `admin_reservation_dossier_lines`). */
+export function useDossierLines() {
+  return useQuery({ queryKey: DOSSIER_LINES_QUERY_KEY, queryFn: fetchDossierLines });
+}
+
+export const UNPAID_DOSSIERS_QUERY_KEY = ["admin-reservation-unpaid-dossiers"];
+
+async function fetchUnpaidDossiers(): Promise<UnpaidDossier[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = supabase as any;
+  const { data, error } = await db
+    .from("dossiers_voyage")
+    .select("id, reference, nom_destinataire, devise, version_verrouillee_id, version_active_id")
+    .is("paye_at", null)
+    .eq("est_modele", false)
+    .eq("archive", false)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dossiers = data as any[];
+  const versionIds = dossiers.map((d) => d.version_verrouillee_id ?? d.version_active_id).filter(Boolean);
+  const prices = new Map<string, number | null>();
+  if (versionIds.length > 0) {
+    const { data: versions, error: versionsError } = await db
+      .from("dossiers_voyage_versions")
+      .select("id, prix_total_vente")
+      .in("id", versionIds);
+    if (versionsError) throw versionsError;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const version of versions as any[]) prices.set(version.id, toNumber(version.prix_total_vente));
+  }
+  return dossiers.map((d) => ({
+    id: d.id,
+    label: d.reference ? `${d.reference} · ${d.nom_destinataire}` : d.nom_destinataire,
+    currency: d.devise || "ILS",
+    proposedTotal: prices.get(d.version_verrouillee_id ?? d.version_active_id) ?? null,
+  }));
+}
+
+/** Dossiers de voyage pas encore payés, pour la fenêtre « Lier un dossier payé ». */
+export function useUnpaidDossiers(enabled: boolean) {
+  return useQuery({ queryKey: UNPAID_DOSSIERS_QUERY_KEY, queryFn: fetchUnpaidDossiers, enabled });
 }

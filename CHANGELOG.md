@@ -6,6 +6,30 @@
 
 ---
 
+## [2026-10-06] — Réservations, lot 5 : onglet Itinéraire et retrait des anciens écrans
+
+### Ce qui a changé côté code
+- `src/components/admin/ReservationsHub/LinkPaidDossierDialog.tsx` (nouveau) : bouton « Lier un dossier payé ». On choisit un dossier de voyage pas encore payé, la date, le montant total et le montant encaissé. Encaissé inférieur au total = acompte : la ligne propose ensuite « Confirmer le solde ».
+- `src/components/admin/ReservationsHub/ReservationsSummaryTable.tsx` : une ligne dossier se déplie (« N lignes de réservation »). Chaque ligne enfant montre son coût réel (modifiable sur place, l'estimation de départ sert d'indication) et le bouton « Fournisseur payé ». Son prix est « inclus » : le dossier n'est compté qu'une fois dans les totaux.
+- `src/components/admin/ReservationsHub/ReservationsEntryGrid.tsx` : en Saisie, les lignes d'un dossier sont affichées indentées sous lui, avec le coût réel et le paiement fournisseur modifiables.
+- `src/components/admin/ReservationsHub/DossierLineCells.tsx` (nouveau) : étiquette de nature et champ de coût, partagés par les deux affichages. `EditRequestDialog.tsx` (nouveau) : cliquer sur le nom d'une demande (ou sur l'œil en Saisie) ouvre sa fenêtre de modification.
+- `src/lib/reservations/rules.ts` : prochaine action d'un dossier (« Confirmer le solde », « Compléter N coûts fournisseur », « Payer le fournisseur »). `actions.ts` : marquer un dossier payé, confirmer son solde, enregistrer le coût et le paiement d'une ligne. `queries.ts` : lecture des lignes de dossier et des dossiers pas encore payés.
+- Sous l'onglet Itinéraire, lien « Dossiers pas encore payés » vers l'espace Dossiers.
+- Fichiers supprimés, remplacés par la nouvelle page : `ReservationsHub/ExperienceBookingsGrid.tsx`, `HotelBookingsGrid.tsx`, `ItineraryRequestsTable.tsx`, `RowActionsCell.tsx`, `FiltersPopoverButton.tsx`, `InfoPopoverButton.tsx`, `HotelPartnerCell.tsx`, `BookingsGrid/BookingsGridTable.tsx`, `experienceColumns.ts`, `hotelColumns.ts`, `StandaloneRequestsTable.tsx`.
+- Ce qui disparaît avec eux et n'a pas été repris : le bouton WhatsApp « Prévenir client » quand un prestataire n'a pas de dispo, les alertes de délai (15 min sans envoi, 1 h sans réponse), la modification en grille des réservations d'hôtel (elle reste possible dans la fiche) et la liste des demandes d'itinéraire du site (`itinerary_requests`, 3 lignes), qui ne s'affiche plus nulle part dans Réservations.
+
+### Ce qui a changé côté base de données
+- Migration `20261006130000_dossiers_voyage_paiement_et_lignes.sql` (appliquée) :
+  - `dossiers_voyage_lignes.cout_reel` (coût réellement dû au fournisseur) et `dossiers_voyage_lignes.paiement_fournisseur` (`a_payer` par défaut, ou `paye`).
+  - `dossiers_voyage.montant_vente_final` (montant convenu avec le client) et `dossiers_voyage.montant_encaisse` (montant reçu, jamais supérieur au montant convenu). Remplis par « Lier un dossier payé », qui pose aussi `paye_at` et le statut `paye`.
+  - Nouvelle vue `admin_reservation_dossier_lines` : les lignes de réservation d'un dossier (hébergement, activité, transport, ou toute ligne portant un coût).
+  - Vue `admin_reservations` mise à jour : pour un dossier, montant, encaissé, paiement client et coût fournisseur viennent de ces nouvelles colonnes ; deux colonnes ajoutées en fin de vue, `missing_costs` (coûts encore à saisir) et `supplier_due` (reste à payer aux fournisseurs).
+
+### Pourquoi ce changement
+Un voyage sur mesure payé doit apparaître une seule fois dans les réservations, avec le détail de ce qu'il reste à régler à chaque fournisseur. Les dossiers pas encore payés restent dans l'espace Dossiers.
+
+---
+
 ## [2026-10-06] — Réservations, lot 4 : puce « Paiements non aboutis »
 
 ### Ce qui a changé côté code

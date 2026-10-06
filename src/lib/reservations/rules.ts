@@ -46,6 +46,15 @@ export function nextAction(row: ReservationRow, today: Date = new Date()): NextA
   const balance = row.amount === null ? 0 : row.amount - row.collected;
   const days = daysUntil(row.date, today);
 
+  // Un dossier de voyage n'a pas de lien de paiement : son solde se confirme à la main.
+  if (row.source === "dossier" && balance > 0) {
+    return {
+      kind: "confirm_collection",
+      label: `Confirmer le solde · ${formatCurrency(balance, row.currency)}`,
+      urgent: false,
+    };
+  }
+
   if (row.clientPayment === "deposit" && balance > 0) {
     return {
       kind: "send_balance_link",
@@ -59,12 +68,16 @@ export function nextAction(row: ReservationRow, today: Date = new Date()): NextA
   }
 
   if (row.supplierPayment === "todo") {
-    if (row.supplierCost === null) {
-      return { kind: "enter_supplier_cost", label: "Saisir le coût fournisseur", urgent: false };
+    if (row.missingCosts > 0) {
+      const label =
+        row.source === "dossier"
+          ? `Compléter ${row.missingCosts} coût${row.missingCosts > 1 ? "s" : ""} fournisseur`
+          : "Saisir le coût fournisseur";
+      return { kind: "enter_supplier_cost", label, urgent: false };
     }
     return {
       kind: "pay_supplier",
-      label: `Payer le fournisseur · ${formatCurrency(row.supplierCost, row.currency)}`,
+      label: `Payer le fournisseur · ${formatCurrency(row.supplierDue, row.currency)}`,
       urgent: false,
     };
   }
@@ -178,12 +191,11 @@ export function computeKpis(rows: ReservationRow[]): ReservationKpis {
     }
     if (row.status === "annulee" || row.clientPayment === "refunded") continue;
     if (row.amount !== null) add(kpis.toCollect, row.currency, Math.max(row.amount - row.collected, 0));
-    if (row.supplierCost === null) {
-      if (row.supplierPayment === "todo") kpis.missingCost += 1;
-      continue;
+    if (row.supplierPayment === "todo") {
+      kpis.missingCost += row.missingCosts;
+      add(kpis.toPaySuppliers, row.currency, row.supplierDue ?? 0);
     }
-    if (row.supplierPayment === "todo") add(kpis.toPaySuppliers, row.currency, row.supplierCost);
-    if (row.amount !== null) add(kpis.knownMargin, row.currency, row.amount - row.supplierCost);
+    if (row.amount !== null && row.supplierCost !== null) add(kpis.knownMargin, row.currency, row.amount - row.supplierCost);
   }
   return kpis;
 }

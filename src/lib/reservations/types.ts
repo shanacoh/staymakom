@@ -38,6 +38,10 @@ export interface ReservationRow {
   sentToProviderAt: string | null;
   // Acompte à demander une fois la dispo confirmée (règle de la fiche expérience).
   depositDue: number | null;
+  // Nombre de coûts fournisseur encore à saisir (1 pour une réservation, une par ligne pour un dossier).
+  missingCosts: number;
+  // Ce qui reste à payer aux fournisseurs sur cette ligne, quand les coûts sont connus.
+  supplierDue: number | null;
   detailPath: string | null;
 }
 
@@ -95,4 +99,26 @@ export interface UnfinishedPayment {
   kind: "failed" | "unfinished";
   // Une réservation confirmée existe ensuite pour ce client (saisie à la main).
   converted: boolean;
+}
+
+// Ligne de réservation d'un dossier de voyage payé (hôtel, activité, transport...).
+export interface DossierLine {
+  id: string;
+  dossierId: string;
+  nature: string;
+  product: string;
+  date: string | null;
+  pax: string;
+  currency: string;
+  estimatedCost: number | null;
+  cost: number | null;
+  supplierPaid: boolean;
+}
+
+// Dossier de voyage pas encore payé, proposé dans « Lier un dossier payé ».
+export interface UnpaidDossier {
+  id: string;
+  label: string;
+  currency: string;
+  proposedTotal: number | null;
 }
