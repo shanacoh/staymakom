@@ -6,6 +6,21 @@
 
 ---
 
+## [2026-10-06] — Paiement d'une expérience seule : l'adresse postale n'est plus demandée
+
+### Ce qui a changé côté code
+- `src/components/experience/LeadGuestForm.tsx` : nouveau réglage `requireAddress` (vrai par défaut). Quand il est faux, le champ « Adresse » n'est pas affiché et n'est plus obligatoire. La fonction qui vérifie que le formulaire est complet (`isLeadGuestComplete`) accepte le même réglage.
+- `src/pages/StandaloneCheckout.tsx` : le paiement d'une expérience seule passe ce réglage à faux. Le client n'a plus à saisir son adresse.
+- `src/pages/Checkout.tsx` (réservation avec hôtel) : inchangé, l'adresse y reste demandée.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration. L'adresse saisie sur une expérience seule n'était enregistrée nulle part.
+
+### Pourquoi ce changement
+Shana a demandé à quoi servait l'adresse. Vérification faite : pour une expérience seule, elle n'était envoyée ni à Revolut (qui collecte lui-même l'adresse de facturation), ni dans la réservation, ni dans l'email. C'était un champ obligatoire inutile, donc un frein au paiement. Pour une réservation d'hôtel, elle est transmise au système de réservation des hôtels (HyperGuest) avec les coordonnées du voyageur : elle est donc conservée.
+
+---
+
 ## [2026-10-06] — Paiement : champs « Informations voyageur » arrondis
 
 ### Ce qui a changé côté code

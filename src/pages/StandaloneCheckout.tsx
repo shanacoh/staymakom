@@ -289,7 +289,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
   // ── Derived ─────────────────────────────────────────────────────────────
   const currencySymbol = getCurrencySymbol(state.currency);
   // L'adresse de facturation est collectée directement dans le widget Revolut.
-  const isGuestValid = isLeadGuestComplete(leadGuest);
+  const isGuestValid = isLeadGuestComplete(leadGuest, { requireAddress: false });
   const promoDiscount = appliedPromo
     ? appliedPromo.discountType === "fixed_amount"
       ? Math.min(appliedPromo.discountAmount, state.totalPrice)
@@ -823,6 +823,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                   onChange={handleLeadGuestChange}
                   lang={lang}
                   showErrors={showGuestErrors}
+                  requireAddress={false}
                 />
 
                 {/* Demandes spéciales */}
