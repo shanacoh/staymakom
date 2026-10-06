@@ -8,7 +8,7 @@ const LaunchFooter = () => {
   const isRTL = lang === "he";
 
   return (
-    <footer className="bg-[#1a1a1a] text-white border-t border-white/10" dir={isRTL ? "rtl" : "ltr"}>
+    <footer className="bg-[#1a1814] text-white border-t border-white/10" dir={isRTL ? "rtl" : "ltr"}>
       <div className="container py-6 space-y-4">
         {/* Bandeau newsletter — toujours accessible pour s'inscrire */}
         <div className="flex items-center justify-center">

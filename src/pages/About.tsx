@@ -186,7 +186,7 @@ const About = () => {
               {t(lang, 'aboutCTATitle')}
             </h2>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Button asChild size="lg" className="bg-foreground hover:bg-foreground/90 text-white px-8">
+              <Button asChild className="rounded-full bg-[#ad1414] hover:bg-[#ad1414]/90 text-white px-6">
                 <Link to="/launch">{t(lang, 'aboutCTAExplore')}</Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="border-foreground/30 text-foreground hover:bg-foreground/5 px-8">

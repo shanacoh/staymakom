@@ -6,6 +6,24 @@
 
 ---
 
+## [2026-10-06] — Session DA : boutons et champs des pages entreprises, contact, carte cadeau et à propos
+
+### Ce qui a changé côté code
+- `src/pages/Companies.tsx` : les boutons noirs à angles droits deviennent des pastilles (rouge de marque pour l'action principale, contour fin pour les secondaires), les blocs prennent l'arrondi commun (14) et les champs du formulaire l'arrondi des champs (10).
+- `src/pages/Contact.tsx` : champs arrondis, bouton d'envoi en pastille rouge.
+- `src/pages/GiftCard.tsx` : les deux boutons d'achat passent du noir au rouge de marque, en pastille, moins hauts (44 au lieu de 56).
+- `src/pages/About.tsx` : bouton final en pastille rouge.
+- `src/components/LaunchFooter.tsx` : le fond du pied de page utilise le noir unique de la marque.
+- Style uniquement. Aucun formulaire, aucun envoi, aucun paiement modifiés.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration.
+
+### Pourquoi ce changement
+Ces pages gardaient des boutons noirs et des angles droits, alors que tout le reste du site client suit maintenant la même règle : rouge pour l'action, formes arrondies.
+
+---
+
 ## [2026-10-06] — DA du back-office : noir de marque pour la structure, rouge pour l'action
 
 ### Ce qui a changé côté code

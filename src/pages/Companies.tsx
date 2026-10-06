@@ -141,7 +141,7 @@ export default function Companies() {
             <div className="pt-4">
               <button 
                 onClick={() => scrollToForm()} 
-                className="bg-foreground text-background font-sans text-[13px] uppercase tracking-[0.15em] px-12 py-4 rounded-none hover:opacity-85 transition-opacity"
+                className="bg-[#ad1414] text-white font-sans text-[13px] font-semibold uppercase tracking-wide px-6 py-2.5 rounded-full hover:bg-[#ad1414]/90 transition-colors"
               >
                 {t(lang, 'companiesSendRequest')}
               </button>
@@ -157,7 +157,7 @@ export default function Companies() {
           <h2 className="font-sans text-sm sm:text-base font-bold text-center mb-6 uppercase text-foreground tracking-[0.03em]">{t(lang, 'companiesWhatWeOffer')}</h2>
           
           <div className="grid md:grid-cols-3 gap-6">
-            <div className="border border-border rounded-none bg-transparent p-6 space-y-3">
+            <div className="border border-border rounded-lg bg-transparent p-6 space-y-3">
               <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-3">
                 <Gift className="h-5 w-5 text-[#ad1414]" />
               </div>
@@ -181,7 +181,7 @@ export default function Companies() {
               </ul>
             </div>
 
-            <div className="border border-border rounded-none bg-transparent p-6 space-y-3">
+            <div className="border border-border rounded-lg bg-transparent p-6 space-y-3">
               <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-3">
                 <Users className="h-5 w-5 text-[#ad1414]" />
               </div>
@@ -194,7 +194,7 @@ export default function Companies() {
               </p>
             </div>
 
-            <div className="border border-border rounded-none bg-transparent p-6 space-y-3">
+            <div className="border border-border rounded-lg bg-transparent p-6 space-y-3">
               <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-3">
                 <Sparkles className="h-5 w-5 text-[#ad1414]" />
               </div>
@@ -210,7 +210,7 @@ export default function Companies() {
         </section>
 
         {/* Why MAKOM Section */}
-        <section className="bg-muted rounded-none p-8">
+        <section className="bg-muted rounded-lg p-8">
           <h2 className="font-sans text-sm sm:text-base font-bold text-center mb-5 uppercase text-foreground tracking-[0.03em]">{t(lang, 'companiesWhyStaymakom')}</h2>
           
           <div className="grid md:grid-cols-3 gap-6 max-w-3xl mx-auto">
@@ -285,7 +285,7 @@ export default function Companies() {
           <div className="text-center">
             <button 
               onClick={() => scrollToForm("corporate_gift_cards")}
-              className="bg-transparent border-[1.5px] border-foreground text-foreground font-sans text-[13px] uppercase tracking-[0.15em] px-12 py-4 rounded-none hover:bg-foreground hover:text-background transition-all"
+              className="bg-transparent border border-border text-foreground font-sans text-[13px] font-semibold uppercase tracking-wide px-6 py-2.5 rounded-full hover:bg-muted transition-colors"
             >
               {t(lang, 'companiesRequestGiftCards')}
             </button>
@@ -304,7 +304,7 @@ export default function Companies() {
             </p>
 
             {showSuccess ? (
-              <div className="border border-border rounded-none bg-[#FDFCFA] p-8 text-center space-y-3">
+              <div className="border border-border rounded-lg bg-[#FDFCFA] p-8 text-center space-y-3">
                 <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto">
                   <CheckCircle2 className="h-6 w-6 text-[#ad1414]" />
                 </div>
@@ -314,24 +314,24 @@ export default function Companies() {
                 </p>
                 <button 
                   onClick={() => setShowSuccess(false)} 
-                  className="bg-transparent border-[1.5px] border-foreground text-foreground font-sans text-[13px] uppercase tracking-[0.15em] px-8 py-3 rounded-none hover:bg-foreground hover:text-background transition-all"
+                  className="bg-transparent border border-border text-foreground font-sans text-[13px] font-semibold uppercase tracking-wide px-6 py-2.5 rounded-full hover:bg-muted transition-colors"
                 >
                   {t(lang, 'companiesSendAnother')}
                 </button>
               </div>
             ) : (
-              <div className="border border-border rounded-none bg-[#FDFCFA] p-6">
+              <div className="border border-border rounded-lg bg-[#FDFCFA] p-6">
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <label htmlFor="fullName" className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{t(lang, 'companiesFullName')} *</label>
-                      <input id="fullName" {...register("fullName")} placeholder={t(lang, 'companiesFullNamePlaceholder') as string} className="w-full bg-muted border border-border rounded-none px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
+                      <input id="fullName" {...register("fullName")} placeholder={t(lang, 'companiesFullNamePlaceholder') as string} className="w-full bg-muted border border-border rounded-sm px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
                       {errors.fullName && <p className="text-xs text-destructive">{errors.fullName.message}</p>}
                     </div>
 
                     <div className="space-y-1.5">
                       <label htmlFor="companyName" className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{t(lang, 'companiesCompanyName')} *</label>
-                      <input id="companyName" {...register("companyName")} placeholder={t(lang, 'companiesCompanyNamePlaceholder') as string} className="w-full bg-muted border border-border rounded-none px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
+                      <input id="companyName" {...register("companyName")} placeholder={t(lang, 'companiesCompanyNamePlaceholder') as string} className="w-full bg-muted border border-border rounded-sm px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
                       {errors.companyName && <p className="text-xs text-destructive">{errors.companyName.message}</p>}
                     </div>
                   </div>
@@ -339,13 +339,13 @@ export default function Companies() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <label htmlFor="email" className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{t(lang, 'companiesWorkEmail')} *</label>
-                      <input id="email" type="email" {...register("email")} placeholder={t(lang, 'companiesEmailPlaceholder') as string} className="w-full bg-muted border border-border rounded-none px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
+                      <input id="email" type="email" {...register("email")} placeholder={t(lang, 'companiesEmailPlaceholder') as string} className="w-full bg-muted border border-border rounded-sm px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
                       {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
                     </div>
 
                     <div className="space-y-1.5">
                       <label htmlFor="phone" className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{t(lang, 'companiesPhone')} *</label>
-                      <input id="phone" {...register("phone")} placeholder="+972 XX XXX XXXX" className="w-full bg-muted border border-border rounded-none px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
+                      <input id="phone" {...register("phone")} placeholder="+972 XX XXX XXXX" className="w-full bg-muted border border-border rounded-sm px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
                       <p className="text-xs text-muted-foreground">{t(lang, 'companiesPhoneHelper')}</p>
                       {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
                     </div>
@@ -373,7 +373,7 @@ export default function Companies() {
                       control={control}
                       render={({ field }) => (
                         <Select onValueChange={field.onChange} value={field.value}>
-                          <SelectTrigger className="bg-muted border-border rounded-none h-12 text-sm">
+                          <SelectTrigger className="bg-muted border-border rounded-sm h-12 text-sm">
                             <SelectValue placeholder={t(lang, 'companiesMainObjectivePlaceholder') as string} />
                           </SelectTrigger>
                           <SelectContent>
@@ -395,7 +395,7 @@ export default function Companies() {
                         control={control}
                         render={({ field }) => (
                           <Select onValueChange={field.onChange} value={field.value}>
-                            <SelectTrigger className="bg-muted border-border rounded-none h-12 text-sm">
+                            <SelectTrigger className="bg-muted border-border rounded-sm h-12 text-sm">
                               <SelectValue placeholder={t(lang, 'companiesGroupSizePlaceholder') as string} />
                             </SelectTrigger>
                             <SelectContent>
@@ -411,14 +411,14 @@ export default function Companies() {
 
                     <div className="space-y-1.5">
                       <label htmlFor="preferredDates" className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{t(lang, 'companiesPreferredDates')}</label>
-                      <input id="preferredDates" {...register("preferredDates")} placeholder={t(lang, 'companiesPreferredDatesPlaceholder') as string} className="w-full bg-muted border border-border rounded-none px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
+                      <input id="preferredDates" {...register("preferredDates")} placeholder={t(lang, 'companiesPreferredDatesPlaceholder') as string} className="w-full bg-muted border border-border rounded-sm px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
                       {errors.preferredDates && <p className="text-xs text-destructive">{errors.preferredDates.message}</p>}
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
                     <label htmlFor="message" className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{t(lang, 'companiesAdditionalInfo')}</label>
-                    <textarea id="message" {...register("message")} placeholder={t(lang, 'companiesAdditionalInfoPlaceholder') as string} className="w-full min-h-[80px] bg-muted border border-border rounded-none px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
+                    <textarea id="message" {...register("message")} placeholder={t(lang, 'companiesAdditionalInfoPlaceholder') as string} className="w-full min-h-[80px] bg-muted border border-border rounded-sm px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
                     {errors.message && <p className="text-xs text-destructive">{errors.message.message}</p>}
                   </div>
 
@@ -452,7 +452,7 @@ export default function Companies() {
                   <div className="space-y-2">
                     <button 
                       type="submit" 
-                      className="w-full bg-foreground text-background font-sans text-[13px] uppercase tracking-[0.15em] py-4 rounded-none hover:opacity-85 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed" 
+                      className="w-full bg-[#ad1414] text-white font-sans text-[13px] font-semibold uppercase tracking-wide py-3 rounded-full hover:bg-[#ad1414]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
                       disabled={isSubmitting}
                     >
                       {isSubmitting ? t(lang, 'companiesSending') : t(lang, 'companiesSubmitButton')}

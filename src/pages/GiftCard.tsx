@@ -589,7 +589,7 @@ export default function GiftCard() {
             {/* ── Desktop CTA ── */}
             <div className="hidden md:block pt-8">
               <Button
-                className="w-full h-14 text-base font-semibold uppercase tracking-wide bg-foreground text-background hover:bg-foreground/90"
+                className="w-full h-11 rounded-full text-sm font-semibold uppercase tracking-wide bg-[#ad1414] text-white hover:bg-[#ad1414]/90"
                 onClick={handleSubmit}
                 disabled={isSubmitting}
               >
@@ -649,7 +649,7 @@ export default function GiftCard() {
         <div className="h-6 bg-gradient-to-t from-background to-transparent" />
         <div className="bg-background px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-2">
           <Button
-            className="w-full h-14 text-base font-semibold uppercase tracking-wide bg-foreground text-background hover:bg-foreground/90"
+            className="w-full h-11 rounded-full text-sm font-semibold uppercase tracking-wide bg-[#ad1414] text-white hover:bg-[#ad1414]/90"
             onClick={handleSubmit}
             disabled={isSubmitting}
           >

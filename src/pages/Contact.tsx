@@ -152,7 +152,7 @@ const Contact = () => {
                       <Input 
                         placeholder={lang === 'he' ? "ישראל ישראלי" : "John Doe"} 
                         {...field}
-                        className="bg-muted border-border rounded-none py-3.5 px-4 text-sm focus:border-foreground focus:ring-0"
+                        className="bg-muted border-border rounded-sm py-3.5 px-4 text-sm focus:border-foreground focus:ring-0"
                       />
                     </FormControl>
                     <FormMessage />
@@ -167,7 +167,7 @@ const Contact = () => {
                         type="email" 
                         placeholder="your@email.com" 
                         {...field}
-                        className="bg-muted border-border rounded-none py-3.5 px-4 text-sm focus:border-foreground focus:ring-0"
+                        className="bg-muted border-border rounded-sm py-3.5 px-4 text-sm focus:border-foreground focus:ring-0"
                       />
                     </FormControl>
                     <FormMessage />
@@ -179,7 +179,7 @@ const Contact = () => {
                     <FormLabel className="text-xs uppercase tracking-[0.1em] text-foreground/70 mb-1.5 block">{t(lang, 'contactSubject')} *</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger className="bg-muted border-border rounded-none py-3.5 px-4 text-sm focus:border-foreground focus:ring-0">
+                        <SelectTrigger className="bg-muted border-border rounded-sm py-3.5 px-4 text-sm focus:border-foreground focus:ring-0">
                           <SelectValue placeholder={lang === 'he' ? "בחרו נושא" : "Select a subject"} />
                         </SelectTrigger>
                       </FormControl>
@@ -201,7 +201,7 @@ const Contact = () => {
                     <FormControl>
                       <Textarea 
                         placeholder={t(lang, 'contactMessagePlaceholder')} 
-                        className="min-h-[100px] bg-muted border-border rounded-none py-3.5 px-4 text-sm focus:border-foreground focus:ring-0 resize-none"
+                        className="min-h-[100px] bg-muted border-border rounded-sm py-3.5 px-4 text-sm focus:border-foreground focus:ring-0 resize-none"
                         {...field} 
                       />
                     </FormControl>
@@ -212,7 +212,7 @@ const Contact = () => {
                 <Button 
                   type="submit" 
                   disabled={isSubmitting} 
-                  className="w-full bg-foreground hover:bg-foreground/90 text-background text-[13px] uppercase tracking-[0.15em] py-4 px-12 rounded-xl h-auto"
+                  className="w-full bg-[#ad1414] hover:bg-[#ad1414]/90 text-white text-[13px] font-semibold uppercase tracking-wide py-3 px-8 rounded-full h-auto"
                 >
                   {isSubmitting ? t(lang, 'contactSending') : t(lang, 'contactSendMessage')}
                 </Button>
