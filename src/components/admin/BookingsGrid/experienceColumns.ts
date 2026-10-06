@@ -43,12 +43,9 @@ export type ExperienceColumnKey =
   | "internal_notes"
   | "channel";
 
-// "pending" existe déjà sur des réservations créées via l'ancien flux (site
-// public / process-standalone-booking) — on le garde dans la liste pour que
-// ces lignes-là restent lisibles et modifiables dans la grille, en plus des
-// 3 statuts demandés pour la saisie rapide (draft/confirmed/cancelled).
+// La base n'accepte que ces 3 statuts (le statut "Brouillon" n'a jamais existé côté base :
+// une ligne créée avec lui était refusée). "pending" = paiement en ligne pas abouti.
 export const STATUS_OPTIONS: SelectOption[] = [
-  { value: "draft", label: "Brouillon" },
   { value: "pending", label: "En attente" },
   { value: "confirmed", label: "Confirmé" },
   { value: "cancelled", label: "Annulé" },
@@ -117,8 +114,9 @@ export const EXPERIENCE_COLUMNS: ColumnDef[] = [
 
 export const EXPERIENCE_INTERACTIVE_COLUMNS = EXPERIENCE_COLUMNS.filter((c) => c.type !== "readonly");
 
+// Une ligne saisie à la main démarre « Confirmée », paiement client « Non payé ».
 export const NEW_ROW_DEFAULTS: NewBookingDraft = {
-  status: "draft",
+  status: "confirmed",
   currency: "ILS",
   payment_status: "pending",
   supplier_payment_status: "pending",

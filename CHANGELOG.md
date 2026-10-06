@@ -21,6 +21,26 @@
 
 ---
 
+## [2026-10-06] — Réservations du back-office : page unique, lot 1 (affichage « Vue »)
+
+### Ce qui a changé côté code
+- `src/pages/admin/Reservations.tsx` : réécrite. Quatre onglets avec compteur (Tous, Hôtel, Expérience, Itinéraire), une barre d'outils commune, un bouton Vue / Saisie dont le choix est mémorisé dans le navigateur, et un bouton d'ajout dont le libellé change selon l'onglet. L'onglet ouvert par défaut est maintenant « Tous ».
+- `src/lib/reservations/types.ts` (nouveau) : le format commun d'une ligne de réservation, quelle que soit sa table d'origine.
+- `src/lib/reservations/queries.ts` (nouveau) : lit les quatre sources (`standalone_bookings`, `standalone_experience_requests`, `bookings_hg`, `dossiers_voyage` payés) et les traduit dans le format commun. Provisoire : cette traduction sera reprise par une vue SQL (migration 3 de la refonte).
+- `src/lib/reservations/rules.ts` (nouveau) + `rules.test.ts` : les règles métier, sans accès à la base. Prochaine action d'une ligne (ordre de priorité fixé par Shana), groupes Demandes / À traiter / Soldées, filtres, chiffres clés.
+- `src/components/admin/ReservationsHub/ReservationsToolbar.tsx`, `ReservationsKpis.tsx`, `ReservationsSummaryTable.tsx`, `ReservationPills.tsx` (nouveaux) : barre d'outils, chiffres clés, tableau groupé et pastilles. Composants existants réutilisés (puces du catalogue, tuiles du tableau de bord, boutons, tables). Pas de vert : neutre pour ce qui est réglé, ambre pour ce qui reste à régler, bleu clair pour Acompte et Dispo OK, rouge seulement pour les actions urgentes.
+- `src/components/admin/BookingsGrid/experienceColumns.ts` : une ligne saisie en bas de la grille démarre en « Confirmée » / « Non payé ». Le statut « Brouillon » est retiré : la base le refusait, la création de ligne échouait.
+- Ce qui n'est pas encore fait (lots suivants) : en « Vue », le bouton de prochaine action amène pour l'instant au panneau des demandes ou à la fiche de la réservation (lot 2). L'affichage « Saisie » montre encore les grilles actuelles (lot 3). Pas de puce « Paiements non aboutis » (lot 4). Pas de lignes dépliables ni de bouton « Lier un dossier payé » actif (lot 5).
+- Les paiements en ligne jamais aboutis (`standalone_bookings` au statut `pending`) ne sont plus listés dans « Vue ». Les demandes converties ou fermées non plus.
+
+### Ce qui a changé côté base de données
+- Migration `20261006100000_standalone_requests_allow_provider_statuses.sql` (appliquée) : la règle de contrôle du statut d'une demande (`standalone_experience_requests.status`) accepte maintenant `sent_to_provider` (envoyée au prestataire) et `availability_confirmed` (dispo OK). Avant, la base refusait ces deux valeurs et les boutons « Envoyer au prestataire » et « Dispo confirmée » n'enregistraient rien. Aucune donnée modifiée.
+
+### Pourquoi ce changement
+Shana veut une seule page pour suivre une réservation de la demande jusqu'au paiement du fournisseur, avec pour chaque ligne la prochaine chose à faire. Une demande n'est plus un objet à part : c'est le premier statut d'une réservation.
+
+---
+
 ## [2026-10-06] — Paiement d'une expérience seule : la nationalité devient facultative
 
 ### Ce qui a changé côté code
