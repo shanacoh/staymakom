@@ -6,6 +6,23 @@
 
 ---
 
+## [2026-10-06] — Réservations, lot 4 : puce « Paiements non aboutis »
+
+### Ce qui a changé côté code
+- `src/components/admin/ReservationsHub/UnfinishedPaymentsTable.tsx` (nouveau) : la liste de relance. Une ligne par client et par expérience, nombre de tentatives, montant, statut « Jamais payé » ou « Converti en manuel », bouton « Relancer sur WhatsApp » (message prêt, en français).
+- `src/components/admin/ReservationsHub/ReservationsToolbar.tsx` : puce rouge « Paiements non aboutis · N » en bout de barre d'outils. N compte seulement ce qui reste à relancer. Un clic remplace la liste des réservations par la liste de relance.
+- `src/components/admin/catalogue/FilterChip.tsx` : nouveau réglage `tone="alert"` pour une puce rouge. Les puces existantes ne changent pas.
+- `src/lib/reservations/queries.ts` (`useUnfinishedPayments`) : lit la vue `admin_unfinished_payments` créée à la migration 3. `whatsapp.ts` : message de relance.
+- Rappel de la règle : un paiement échoué apparaît tout de suite ; un paiement commencé et pas terminé n'apparaît qu'après 24 h. « Converti en manuel » = une réservation confirmée existe ensuite pour le même client (même email ou même téléphone).
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration (la vue existait déjà).
+
+### Pourquoi ce changement
+Un paiement en ligne raté n'est pas une réservation : il ne doit plus gonfler la liste ni les totaux, mais rester visible comme liste de clients à relancer.
+
+---
+
 ## [2026-10-06] — Réservations : supprimer une ligne depuis la grille de Saisie
 
 ### Ce qui a changé côté code

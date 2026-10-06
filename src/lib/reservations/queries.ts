@@ -12,6 +12,7 @@ import type {
   ReservationStatus,
   ReservationType,
   SupplierPayment,
+  UnfinishedPayment,
 } from "./types";
 
 export const RESERVATIONS_QUERY_KEY = ["admin-reservations-unified"];
@@ -104,4 +105,33 @@ async function fetchReservationRows(): Promise<ReservationRow[]> {
 
 export function useReservationRows() {
   return useQuery({ queryKey: RESERVATIONS_QUERY_KEY, queryFn: fetchReservationRows });
+}
+
+export const UNFINISHED_PAYMENTS_QUERY_KEY = ["admin-unfinished-payments"];
+
+async function fetchUnfinishedPayments(): Promise<UnfinishedPayment[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from("admin_unfinished_payments")
+    .select("*")
+    .order("last_attempt_at", { ascending: false });
+  if (error) throw error;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data as any[]).map((row) => ({
+    key: `${row.customer_email}:${row.experience_id ?? row.product}`,
+    client: row.client || row.customer_email || "Sans nom",
+    customerPhone: row.customer_phone,
+    product: row.product,
+    attempts: row.attempts,
+    amount: toNumber(row.amount),
+    currency: row.currency,
+    lastAttemptAt: row.last_attempt_at,
+    kind: row.kind,
+    converted: row.converted,
+  }));
+}
+
+/** Paiements en ligne non aboutis (vue SQL `admin_unfinished_payments`). */
+export function useUnfinishedPayments() {
+  return useQuery({ queryKey: UNFINISHED_PAYMENTS_QUERY_KEY, queryFn: fetchUnfinishedPayments });
 }

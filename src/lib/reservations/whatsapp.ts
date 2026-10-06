@@ -44,3 +44,8 @@ export function buildProviderMessage(request: any): string {
   const notesLine = (!isQuickRequest && request.message) ? ` Notes: ${request.message}.` : "";
   return `Hi, new request from STAYMAKOM: ${boatName}, ${dateTxt}, ${timeTxt}, ${partyTxt} people, ${durationTxt}.${notesLine} Any availability? Thanks!`;
 }
+
+// Relance d'un client dont le paiement en ligne n'a pas abouti.
+export function buildPaymentFollowUpMessage(clientName: string, product: string): string {
+  return `Bonjour ${clientName}, ici Shana de Staymakom. J'ai vu que votre paiement pour « ${product} » n'a pas abouti. Souhaitez-vous que je vous aide à finaliser votre réservation ?`;
+}

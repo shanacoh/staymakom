@@ -80,3 +80,19 @@ export interface ReservationKpis {
   knownMargin: MoneyByCurrency;
   missingCost: number;
 }
+
+// Paiement en ligne non abouti : une ligne par client et par expérience, tentatives regroupées.
+export interface UnfinishedPayment {
+  key: string;
+  client: string;
+  customerPhone: string | null;
+  product: string;
+  attempts: number;
+  amount: number | null;
+  currency: string;
+  lastAttemptAt: string;
+  // "failed" : paiement échoué. "unfinished" : commencé, pas terminé depuis plus de 24 h.
+  kind: "failed" | "unfinished";
+  // Une réservation confirmée existe ensuite pour ce client (saisie à la main).
+  converted: boolean;
+}

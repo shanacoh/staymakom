@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import DeleteReservationDialog from "@/components/admin/ReservationsHub/DeleteReservationDialog";
+import UnfinishedPaymentsTable from "@/components/admin/ReservationsHub/UnfinishedPaymentsTable";
 import ReservationsEntryGrid from "@/components/admin/ReservationsHub/ReservationsEntryGrid";
 import CreateManualHotelBookingDialog from "@/components/admin/ReservationsHub/CreateManualHotelBookingDialog";
 import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
@@ -24,7 +25,7 @@ import ReservationActionDialogs, { type PendingAction } from "@/components/admin
 import ReservationsToolbar from "@/components/admin/ReservationsHub/ReservationsToolbar";
 import ReservationsKpis from "@/components/admin/ReservationsHub/ReservationsKpis";
 import ReservationsSummaryTable from "@/components/admin/ReservationsHub/ReservationsSummaryTable";
-import { RESERVATIONS_QUERY_KEY, useReservationRows } from "@/lib/reservations/queries";
+import { RESERVATIONS_QUERY_KEY, useReservationRows, useUnfinishedPayments } from "@/lib/reservations/queries";
 import { createBookingFromGrid, saveCellUpdate } from "@/lib/reservations/actions";
 import { buildCellUpdate, type EntryColumnKey } from "@/lib/reservations/entryGrid";
 import { applyToolbarFilters, computeKpis, groupRows, matchesTab } from "@/lib/reservations/rules";
@@ -87,12 +88,16 @@ const AdminReservations = () => {
   const [hotelCreateOpen, setHotelCreateOpen] = useState(false);
   const [experienceCreateOpen, setExperienceCreateOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const [unfinishedOpen, setUnfinishedOpen] = useState(false);
   const [isCreatingRow, setIsCreatingRow] = useState(false);
   const [rowToDelete, setRowToDelete] = useState<ReservationRow | null>(null);
   const [savedVisible, setSavedVisible] = useState(false);
   const savedTimer = useRef<number>();
 
   const { data: rows, isLoading, error } = useReservationRows();
+  const { data: unfinishedPayments } = useUnfinishedPayments();
+  // Le compteur de la puce ne compte que ce qui reste à relancer.
+  const unfinishedToFollowUp = (unfinishedPayments ?? []).filter((p) => !p.converted).length;
 
   const showBoatsChip = tab === "all" || tab === "experiences";
   const effectiveBoatsOnly = showBoatsChip && boatsOnly;
@@ -300,9 +305,14 @@ const AdminReservations = () => {
         onPeriodChange={setPeriod}
         channel={channel}
         onChannelChange={setChannel}
+        unfinishedCount={unfinishedToFollowUp}
+        unfinishedOpen={unfinishedOpen}
+        onUnfinishedOpenChange={setUnfinishedOpen}
       />
 
-      {isLoading ? (
+      {unfinishedOpen ? (
+        <UnfinishedPaymentsTable payments={unfinishedPayments ?? []} />
+      ) : isLoading ? (
         <div className="py-12 text-center text-muted-foreground">Chargement...</div>
       ) : error ? (
         <div className="rounded-lg border bg-card py-12 text-center text-sm text-destructive">

@@ -53,6 +53,10 @@ interface Props {
   onPeriodChange: (value: PeriodFilter) => void;
   channel: string;
   onChannelChange: (value: string) => void;
+  // Puce rouge « Paiements non aboutis » : ouvre la liste de relance à la place des réservations.
+  unfinishedCount: number;
+  unfinishedOpen: boolean;
+  onUnfinishedOpenChange: (value: boolean) => void;
 }
 
 const ReservationsToolbar = (props: Props) => (
@@ -125,6 +129,17 @@ const ReservationsToolbar = (props: Props) => (
         ))}
       </SelectContent>
     </Select>
+
+    {(props.unfinishedCount > 0 || props.unfinishedOpen) && (
+      <FilterChip
+        tone="alert"
+        label="Paiements non aboutis"
+        count={props.unfinishedCount}
+        active={props.unfinishedOpen}
+        onClick={() => props.onUnfinishedOpenChange(!props.unfinishedOpen)}
+        title="Paiements en ligne échoués ou jamais terminés. Ce ne sont pas des réservations."
+      />
+    )}
   </div>
 );
 
