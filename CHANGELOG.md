@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-10-06] — Réservations : la corbeille reste visible en mode Saisie
+
+### Ce qui a changé côté code
+- `src/components/admin/ReservationsHub/ReservationsEntryGrid.tsx` : la colonne Actions (l'œil pour ouvrir la fiche, la corbeille pour supprimer) reste collée au bord droit de la grille. Avant, il fallait faire défiler toute la ligne vers la droite pour la voir. Aucune règle n'a changé : la corbeille s'affiche toujours uniquement sur les réservations saisies à la main et sur les demandes, et la fenêtre de confirmation est la même.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+Shana veut pouvoir supprimer une ligne facilement en mode Saisie. La corbeille existait déjà, mais elle était cachée tout au bout de la grille, plus large que l'écran.
+
+---
+
 ## [2026-10-06] — Relance WhatsApp : le nom de l'expérience suit la langue du message
 
 ### Ce qui a changé côté code

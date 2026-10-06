@@ -31,6 +31,9 @@ import { LineCostInput, NatureTag } from "./DossierLineCells";
 
 const HEAD_CLASS = "h-8 px-3 text-[10px] uppercase tracking-wider";
 const CELL_CLASS = "py-2 px-3 text-sm";
+// La colonne Actions reste collée au bord droit : la grille est plus large que l'écran, et
+// sans ça la corbeille n'apparaît qu'après avoir fait défiler toute la ligne.
+const ACTIONS_CLASS = "sticky right-0 z-10 border-l bg-card";
 
 interface Props {
   rows: ReservationRow[];
@@ -240,7 +243,7 @@ const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit,
                 {column.label}
               </TableHead>
             ))}
-            <TableHead className={cn(HEAD_CLASS, "text-right")}>Actions</TableHead>
+            <TableHead className={cn(HEAD_CLASS, ACTIONS_CLASS, "text-right")}>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -248,7 +251,7 @@ const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit,
             <Fragment key={row.key}>
             <TableRow className={cn(isRequest(row) && "bg-muted/40", row.status === "annulee" && "opacity-60")}>
               {ENTRY_COLUMNS.map((column, colIndex) => renderCell(row, rowIndex, column, colIndex))}
-              <TableCell className="whitespace-nowrap px-3 py-1 text-right">
+              <TableCell className={cn(ACTIONS_CLASS, "whitespace-nowrap px-3 py-1 text-right")}>
                 {(row.detailPath || row.source === "request") && (
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -281,7 +284,7 @@ const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit,
               (linesByDossier.get(row.id) ?? []).map((line) => (
                 <TableRow key={line.id} className="bg-muted/20">
                   {ENTRY_COLUMNS.map((column) => renderLineCell(line, column))}
-                  <TableCell />
+                  <TableCell className={ACTIONS_CLASS} />
                 </TableRow>
               ))}
             </Fragment>
@@ -308,7 +311,7 @@ const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit,
                   </TableCell>
                 ),
               )}
-              <TableCell />
+              <TableCell className={ACTIONS_CLASS} />
             </TableRow>
           )}
         </TableBody>
@@ -319,7 +322,7 @@ const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit,
                 {column.key === "client" ? "Totaux (hors demandes)" : (totalFor[column.key] ?? "")}
               </TableCell>
             ))}
-            <TableCell />
+            <TableCell className={ACTIONS_CLASS} />
           </TableRow>
         </TableFooter>
       </Table>
