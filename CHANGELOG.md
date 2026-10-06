@@ -140,6 +140,42 @@ Ces pages gardaient des boutons noirs et des angles droits, alors que tout le re
 
 ---
 
+## [2026-10-06] — Tyrolienne de Jérusalem : calendrier rouvert (données uniquement)
+
+### Ce qui a changé côté code
+- Rien. Aucun fichier de code modifié.
+
+### Ce qui a changé côté base de données
+- Aucune migration. Une seule fiche modifiée dans la table `standalone_experiences` (slug `zip-line-mitzpe-david-jerusalem`), directement en production :
+  - `availability_end_date` : passée du 15/09/2026 au 27/04/2027.
+  - `blocked_dates` : ajout des jours où le prestataire (Cité de David) ne vend pas de créneau entre le 06/10/2026 et le 27/04/2027. Les anciennes dates bloquées sont conservées.
+  - Le mode reste « calendrier » (`blacklist`), choix de Shana.
+- Résultat : 40 jours réservables, du 08/10/2026 au 27/04/2027, identiques aux dates affichées sur la page de réservation du prestataire le 06/10/2026.
+
+### Pourquoi ce changement
+Le calendrier de la fiche était fermé depuis le 15 septembre : la case « Disponible jusqu'au » était dépassée, donc plus aucun jour n'était réservable alors que la fiche restait en ligne. Le même blocage touchait 9 autres fiches publiées (voir l'entrée suivante). 17 fiches publiées se fermeront de la même façon le 25/12/2026.
+
+---
+
+## [2026-10-06] — Neuf autres fiches sans date réservable : 4 rouvertes, 5 dépubliées (données uniquement)
+
+### Ce qui a changé côté code
+- Rien. Aucun fichier de code modifié.
+
+### Ce qui a changé côté base de données
+- Aucune migration. Fiches modifiées dans `standalone_experiences`, directement en production, d'après la page de réservation enregistrée dans chaque fiche (`supplier_booking_url`), relevée le 06/10/2026.
+- Rouvertes :
+  - `pilgrimage-road-guided-tour-jerusalem` : `availability_end_date` du 02/10/2026 au 06/04/2027, et `available_days` ramené à lundi, mardi, mercredi, vendredi (avant : tous les jours sauf samedi), seuls jours vendus par le prestataire.
+  - `wine-cheese-tasting-dark-na-lagaat-jaffa` : trois dates ajoutées dans `whitelisted_dates` (12/10, 26/10, 11/11/2026).
+  - `chocolate-tasting-workshop-in-the-dark-jaffa` : trois dates ajoutées dans `whitelisted_dates` (14/10, 21/10, 18/11/2026).
+  - `cooking-class-citrus-salt-tel-aviv` : sept dates ajoutées dans `whitelisted_dates` (12, 13, 15, 16, 19/10, 12/11, 30/12/2026). Reste à faire : dans `long_copy`, `long_copy_fr` et `long_copy_he`, le texte affiche encore les anciennes dates d'août et septembre. Il doit être remplacé par les nouvelles dates avec horaires et menus (à saisir depuis le back-office).
+- Dépubliées (`status` passé de `published` à `draft`) : `animal-world-haifa`, `antarctica-exhibition-herzliya`, `wipark-inflatable-park-rishon-lezion`, `balloon-wonderland-kav-rakia` (événements d'été terminés) et `cold-enamel-epoxy-workshop-tiberias` (décision de Shana).
+
+### Pourquoi ce changement
+Même blocage que la tyrolienne : des fiches en ligne mais impossibles à réserver. Après ces changements, toutes les fiches publiées ont au moins une date réservable.
+
+---
+
 ## [2026-10-06] — DA du back-office : noir de marque pour la structure, rouge pour l'action
 
 ### Ce qui a changé côté code
