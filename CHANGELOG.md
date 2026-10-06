@@ -18,7 +18,8 @@
 
 ### Ce qui a changé côté base de données
 - Migration `20261006150000_reservations_corbeille.sql` : nouvelle table `deleted_reservations` (la corbeille : une copie complète de chaque ligne supprimée et de ce qui lui était rattaché, réservée aux admins) et deux fonctions. `delete_reservations` copie puis supprime, tout ou rien. `restore_deleted_reservation` remet la ligne à l'identique et la retire de la corbeille.
-- **À vérifier avant de mettre le code en ligne** : cette migration doit être appliquée sur la base, sinon la suppression affiche une erreur.
+- Migration appliquée à la main par Shana dans l'éditeur SQL de Supabase le 06/10/2026. Testée à blanc (suppression puis restauration, tout annulé ensuite) sur une réservation avec lien de paiement, une demande, un hôtel et deux dossiers de voyage (versions, lignes, propositions, participants, swipes) : tout revient à l'identique.
+- Limite connue : quand deux fiches client (leads) portent le même email, une réservation restaurée est rattachée à la plus récente des deux, pas forcément à celle d'origine. Le reste de la ligne est identique.
 
 ### Pourquoi ce changement
 La corbeille n'existait que sur une partie des lignes, ce qui a conduit Shana à supprimer les mauvaises. Elle veut la même logique partout sur la page, la sélection multiple, et pouvoir rattraper une erreur.
