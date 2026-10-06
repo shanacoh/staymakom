@@ -1,6 +1,18 @@
 import { useState } from "react";
 import V3Header from "@/components/V3Header";
-import { ArrowRight, MapPin, Moon } from "lucide-react";
+import {
+  ArrowRight,
+  Car,
+  Coffee,
+  Flame,
+  Landmark,
+  MapPin,
+  Palette,
+  Sunset,
+  UtensilsCrossed,
+  Wine,
+  type LucideIcon,
+} from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -25,6 +37,10 @@ type ItineraryItem = {
 
 type Step = {
   number: string;
+  // Moment de la journée : affiché comme intertitre quand il change d'une étape à l'autre
+  moment: string;
+  icon: LucideIcon;
+  tags?: string[];
   title: string;
   mapsUrl?: string;
   description?: string;
@@ -36,11 +52,17 @@ type Step = {
 const STEPS: Step[] = [
   {
     number: "01",
+    moment: "Morning",
+    icon: Coffee,
+    tags: ["Breakfast", "Galilee view"],
     title: "Slow morning",
     description: "No alarm. Breakfast at the hotel, coffee with a view over the Galilee hills.",
   },
   {
     number: "02",
+    moment: "Morning",
+    icon: Palette,
+    tags: ["Handmade", "Blue alleys"],
     title: "The Old City",
     mapsUrl: maps("Tsfat Old City Israel"),
     description:
@@ -53,6 +75,9 @@ const STEPS: Step[] = [
   },
   {
     number: "03",
+    moment: "Morning",
+    icon: Landmark,
+    tags: ["Kabbalah", "16th century"],
     title: "Three synagogues",
     description: "Small rooms, painted ceilings, five centuries of stories.",
     items: [
@@ -63,6 +88,9 @@ const STEPS: Step[] = [
   },
   {
     number: "04",
+    moment: "Midday",
+    icon: UtensilsCrossed,
+    tags: ["Yemenite", "Local table"],
     title: "Lunch at Lahuh Tzfat",
     mapsUrl: maps("Lahuh Tzfat Restaurant Safed"),
     description:
@@ -70,6 +98,9 @@ const STEPS: Step[] = [
   },
   {
     number: "05",
+    moment: "Afternoon",
+    icon: Wine,
+    tags: ["Tasting", "Made in Safed"],
     title: "Tasting at Tzfat Distillery",
     mapsUrl: maps("Tzfat Distillery Safed"),
     description:
@@ -78,6 +109,8 @@ const STEPS: Step[] = [
   },
   {
     number: "06",
+    moment: "Afternoon",
+    icon: Flame,
     title: "Tomb of Rabbi Yonatan Ben Uziel",
     mapsUrl: maps("Tomb of Rabbi Yonatan Ben Uziel Amuka"),
     description: "A short detour into the Amuka valley, for those who want it.",
@@ -85,6 +118,9 @@ const STEPS: Step[] = [
   },
   {
     number: "07",
+    moment: "Golden hour",
+    icon: Sunset,
+    tags: ["Horseback", "Valley views"],
     title: "Bat Yaar Ranch",
     mapsUrl: maps("Bat Yaar Ranch Biriya Forest"),
     description:
@@ -93,9 +129,17 @@ const STEPS: Step[] = [
   },
   {
     number: "08",
+    moment: "Evening",
+    icon: Car,
     title: "Back to Tel Aviv",
     description: "Two hours south, home by evening.",
   },
+];
+
+const GLANCE = [
+  { value: "1", label: "Night" },
+  { value: "8", label: "Stops" },
+  { value: "2h", label: "From Tel Aviv" },
 ];
 
 // ─── Les deux hôtels ──────────────────────────────────────────────────────────
@@ -103,8 +147,6 @@ const STEPS: Step[] = [
 type HotelPhoto = {
   src: string;
   alt: string;
-  // Les photos du Ruth Safed sont des bandeaux très larges : on choisit quelle partie garder au recadrage
-  position?: string;
 };
 
 type Hotel = {
@@ -158,9 +200,8 @@ const HOTELS: Hotel[] = [
         alt: "Ruth Safed, stone courtyard",
       },
       {
-        src: `${DAN}/Untitled%20design%20%2812%29_6.jpg`,
-        alt: "Ruth Safed, blue door and view over the hills",
-        position: "85% center",
+        src: "https://www.danhotels.com/sites/default/files/styles/our_rooms_gallery/public/2023-03/636x366%20RZ_0019_%D7%A1%D7%95%D7%95%D7%99%D7%98%D7%AA%20%D7%91%D7%99%D7%AA%20%D7%92%D7%A4%D7%9F%20%285%29.jpg",
+        alt: "Ruth Safed, room with a view over the Galilee hills",
       },
       {
         src: `${DAN}/Untitled%20design%20%289%29_23.jpg`,
@@ -196,7 +237,6 @@ function HotelCard({ hotel }: { hotel: Hotel }) {
                     alt={photo.alt}
                     loading={i === 0 ? undefined : "lazy"}
                     className="w-full h-full object-cover"
-                    style={{ objectPosition: photo.position }}
                   />
                 </div>
               </CarouselItem>
@@ -320,122 +360,159 @@ const CarrieSafed = () => {
         </div>
       </section>
 
-      {/* Samedi soir */}
-      <section className="pt-12 px-4">
-        <div className="max-w-3xl mx-auto">
-          <div className="rounded-2xl bg-foreground text-white px-6 py-6 flex items-start gap-3">
-            <Moon className="h-5 w-5 shrink-0 mt-0.5 text-white/80" />
-            <div>
-              <p className="text-xs uppercase tracking-[0.16em] text-white/60 font-sans mb-1">
-                Saturday, October 10 · Evening
-              </p>
-              <p className="font-sans text-sm text-white/90 leading-relaxed">
-                You arrive in Safed in the evening. The air is cooler up here and the city is quiet. Check in, drop
-                your bags, sleep. Nothing else on the agenda.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Dimanche : frise */}
-      <section className="pt-12 pb-16 px-4 scroll-mt-16">
+      <section className="pt-14 pb-16 px-4 scroll-mt-16">
         <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-10 space-y-1">
+          <div className="text-center mb-8 space-y-2">
             <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground font-sans">
               Sunday, October 11
             </p>
-            <h2 className="font-sans text-2xl sm:text-3xl font-bold uppercase tracking-[-0.02em] text-foreground">
+            <h2 className="font-sans text-3xl sm:text-4xl font-bold uppercase tracking-[-0.02em] text-foreground">
               The slow day
             </h2>
+          </div>
+
+          {/* La journée en trois chiffres */}
+          <div className="mb-12 grid grid-cols-3 divide-x divide-border rounded-2xl border border-border bg-white">
+            {GLANCE.map((item) => (
+              <div key={item.label} className="px-2 py-4 text-center">
+                <p className="font-sans text-xl sm:text-2xl font-bold text-[#ad1414] leading-none">{item.value}</p>
+                <p className="mt-1.5 text-[10px] sm:text-[11px] uppercase tracking-[0.14em] text-muted-foreground font-sans">
+                  {item.label}
+                </p>
+              </div>
+            ))}
           </div>
 
           <div className="relative">
             {/* Vertical line */}
             <div className="absolute left-5 top-2 bottom-2 w-px bg-border sm:left-6" />
 
-            <div className="space-y-6">
-              {STEPS.map((step) => (
-                <div key={step.number} className="relative flex gap-4 sm:gap-5">
-                  {/* Number badge */}
-                  <div
-                    className={
-                      "relative z-10 flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full border font-sans text-xs sm:text-sm font-bold " +
-                      (step.highlight
-                        ? "bg-[#ad1414] border-[#ad1414] text-white"
-                        : "bg-white border-border text-foreground")
-                    }
-                  >
-                    {step.number}
-                  </div>
+            <div className="space-y-5">
+              {STEPS.map((step, index) => {
+                const Icon = step.icon;
+                const startsMoment = index === 0 || STEPS[index - 1].moment !== step.moment;
+                return (
+                  <div key={step.number}>
+                    {/* Intertitre du moment de la journée */}
+                    {startsMoment && (
+                      <div className={"relative flex items-center gap-4 sm:gap-5 pb-4 " + (index === 0 ? "" : "pt-5")}>
+                        <div className="relative z-10 flex w-10 sm:w-12 shrink-0 justify-center bg-white py-1">
+                          <span className="h-2 w-2 rounded-full bg-[#ad1414]" />
+                        </div>
+                        <p className="font-sans text-[11px] font-bold uppercase tracking-[0.25em] text-[#ad1414]">
+                          {step.moment}
+                        </p>
+                      </div>
+                    )}
 
-                  {/* Content card */}
-                  <div
-                    className={
-                      "flex-1 rounded-2xl px-5 py-4 mb-1 " +
-                      (step.highlight
-                        ? "bg-[#fdf0ef] border border-[#ad1414]/20"
-                        : "bg-muted/40 border border-border")
-                    }
-                  >
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      {step.optional && (
-                        <span className="text-[10px] uppercase tracking-[0.14em] font-bold text-muted-foreground">
-                          Optional
-                        </span>
-                      )}
-                      {step.mapsUrl ? (
-                        <a
-                          href={step.mapsUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="group inline-flex items-center gap-1.5 font-sans text-base sm:text-lg font-bold uppercase tracking-[-0.01em] text-foreground hover:text-[#ad1414] transition-colors"
-                        >
-                          <MapPin className="h-4 w-4 shrink-0 text-[#ad1414] group-hover:scale-110 transition-transform" />
-                          <span className="underline decoration-transparent group-hover:decoration-[#ad1414] underline-offset-4 decoration-2 transition-colors">
-                            {step.title}
+                    <div className="relative flex gap-4 sm:gap-5">
+                      {/* Icon badge */}
+                      <div
+                        className={
+                          "relative z-10 flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full border " +
+                          (step.highlight
+                            ? "bg-[#ad1414] border-[#ad1414] text-white"
+                            : "bg-white border-border text-foreground")
+                        }
+                      >
+                        <Icon className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={1.75} />
+                      </div>
+
+                      {/* Content card */}
+                      <div
+                        className={
+                          "flex-1 rounded-2xl px-5 py-5 sm:px-6 " +
+                          (step.highlight
+                            ? "bg-[#fdf0ef] border border-[#ad1414]/20 shadow-[0_8px_24px_-12px_rgba(173,20,20,0.35)]"
+                            : "bg-muted/40 border border-border")
+                        }
+                      >
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="font-sans text-[11px] font-bold tracking-[0.2em] text-[#ad1414]">
+                            {step.number}
                           </span>
-                        </a>
-                      ) : (
-                        <h3 className="font-sans text-base sm:text-lg font-bold uppercase tracking-[-0.01em] text-foreground">
-                          {step.title}
-                        </h3>
-                      )}
-                    </div>
+                          {step.highlight && (
+                            <span className="rounded-full bg-[#ad1414] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white font-sans">
+                              Highlight
+                            </span>
+                          )}
+                          {step.optional && (
+                            <span className="rounded-full border border-border px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground font-sans">
+                              Optional
+                            </span>
+                          )}
+                        </div>
 
-                    {step.description && (
-                      <p className="mt-1.5 text-sm text-foreground/80 leading-relaxed font-sans">
-                        {step.description}
-                      </p>
-                    )}
+                        {step.mapsUrl ? (
+                          <a
+                            href={step.mapsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group inline-flex items-start gap-1.5 font-sans text-lg sm:text-xl font-bold uppercase tracking-[-0.01em] leading-tight text-foreground hover:text-[#ad1414] transition-colors"
+                          >
+                            <span className="underline decoration-transparent group-hover:decoration-[#ad1414] underline-offset-4 decoration-2 transition-colors">
+                              {step.title}
+                            </span>
+                            <MapPin className="h-4 w-4 shrink-0 mt-1 text-[#ad1414] group-hover:scale-110 transition-transform" />
+                          </a>
+                        ) : (
+                          <h3 className="font-sans text-lg sm:text-xl font-bold uppercase tracking-[-0.01em] leading-tight text-foreground">
+                            {step.title}
+                          </h3>
+                        )}
 
-                    {step.items && (
-                      <ul className="mt-2 space-y-1">
-                        {step.items.map((item) => (
-                          <li key={item.label} className="flex items-start gap-1.5 text-sm text-foreground/80 font-sans">
-                            <span className="text-[#ad1414] mt-1 leading-none">•</span>
-                            {item.mapsUrl ? (
-                              <a
-                                href={item.mapsUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="group inline-flex items-center gap-1 hover:text-[#ad1414] transition-colors"
+                        {step.description && (
+                          <p className="mt-2 text-sm sm:text-[15px] text-foreground/80 leading-relaxed font-sans">
+                            {step.description}
+                          </p>
+                        )}
+
+                        {step.items && (
+                          <ul className="mt-3 space-y-1.5">
+                            {step.items.map((item) => (
+                              <li key={item.label} className="flex items-start gap-1.5 text-sm text-foreground/80 font-sans">
+                                <span className="text-[#ad1414] mt-1 leading-none">•</span>
+                                {item.mapsUrl ? (
+                                  <a
+                                    href={item.mapsUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="group inline-flex items-center gap-1 hover:text-[#ad1414] transition-colors"
+                                  >
+                                    <MapPin className="h-3 w-3 shrink-0 text-[#ad1414]/70 group-hover:text-[#ad1414]" />
+                                    <span className="underline decoration-transparent group-hover:decoration-[#ad1414] underline-offset-2 transition-colors">
+                                      {item.label}
+                                    </span>
+                                  </a>
+                                ) : (
+                                  item.label
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+
+                        {step.tags && (
+                          <div className="mt-3.5 flex flex-wrap gap-1.5">
+                            {step.tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className={
+                                  "inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-sans font-medium " +
+                                  (step.highlight ? "bg-white text-[#ad1414]" : "bg-white border border-border text-muted-foreground")
+                                }
                               >
-                                <MapPin className="h-3 w-3 shrink-0 text-[#ad1414]/70 group-hover:text-[#ad1414]" />
-                                <span className="underline decoration-transparent group-hover:decoration-[#ad1414] underline-offset-2 transition-colors">
-                                  {item.label}
-                                </span>
-                              </a>
-                            ) : (
-                              item.label
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -512,8 +589,9 @@ const CarrieSafed = () => {
       <section className="py-12 px-4">
         <div className="max-w-xl mx-auto text-center">
           <p className="text-sm sm:text-base text-foreground/80 leading-relaxed font-sans italic">
-            P.S. We have met before. Summer 2025, at Malka: my sister and I came over to thank you and your husband for
-            everything you do, and you posted us in your story. It stayed with me.
+            P.S. We have met before. Summer 2025, at Malka: my sister and I came over to your table to see you and
+            your husband, and to thank you for everything you do for us. You posted us in your story that night. I am
+            writing this on the eve of October 7th, and it means even more today.
           </p>
           <p className="mt-4 font-sans text-sm font-bold uppercase tracking-[0.16em] text-foreground">Shana</p>
         </div>
