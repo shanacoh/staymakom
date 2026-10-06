@@ -35,7 +35,7 @@ const Journal = () => {
 
       <main className="max-w-6xl mx-auto px-6 py-12 pt-24">
         <div className="text-center mb-10">
-          <h1 className="font-sans text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4">Journal</h1>
+          <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold mb-4">Journal</h1>
           <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-xl mx-auto">
             Stories, places, and insights from extraordinary stays across Israel
           </p>

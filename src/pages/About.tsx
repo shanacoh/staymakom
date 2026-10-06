@@ -36,7 +36,7 @@ const About = () => {
           <span className="block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-white mb-4 opacity-0 animate-hero-fade-up [animation-delay:200ms]">
             {lang === 'he' ? 'אודות' : lang === 'fr' ? 'À PROPOS' : 'ABOUT'}
           </span>
-          <h1 className="font-sans text-[28px] sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-[0.02em] leading-[1.1] mb-3 opacity-0 animate-hero-fade-up [animation-delay:400ms] text-white text-center">
+          <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold uppercase tracking-[0.02em] leading-[1.15] mb-3 opacity-0 animate-hero-fade-up [animation-delay:400ms] text-white text-center">
             {t(lang, 'aboutHeroTagline')}
           </h1>
         </div>
@@ -49,7 +49,7 @@ const About = () => {
             <p className="font-sans text-xs uppercase tracking-[0.15em] text-muted-foreground mb-6">
               {t(lang, 'aboutWhyIsraelLabel')}
             </p>
-            <h2 className="font-sans text-3xl md:text-4xl lg:text-5xl font-bold uppercase tracking-[-0.02em] text-foreground mb-10">
+            <h2 className="font-sans text-sm sm:text-base font-bold uppercase text-foreground mb-6 tracking-[0.03em]">
               {t(lang, 'aboutWhyIsraelTitle')}
             </h2>
             <p className="font-sans text-base md:text-lg leading-relaxed text-muted-foreground mb-6">
@@ -100,7 +100,7 @@ const About = () => {
         {/* WHAT MAKES STAYMAKOM DIFFERENT */}
         <section className="py-20 px-6 bg-background md:py-[62px]">
           <div className="max-w-3xl mx-auto text-center">
-            <h2 className="font-sans text-2xl md:text-3xl lg:text-4xl font-bold uppercase tracking-[-0.02em] mb-12 text-foreground">
+            <h2 className="font-sans text-sm sm:text-base font-bold uppercase mb-6 text-foreground tracking-[0.03em]">
               {t(lang, 'aboutDifferentTitle')}
             </h2>
             <div className="space-y-5 mb-12 text-left max-w-xl mx-auto">
@@ -129,7 +129,7 @@ const About = () => {
             <p className="font-sans text-xs uppercase tracking-[0.15em] text-muted-foreground mb-6">
               {t(lang, 'aboutNameTitle')}
             </p>
-            <h2 className="font-sans text-3xl md:text-4xl lg:text-5xl font-bold uppercase tracking-[-0.02em] text-foreground mb-8">
+            <h2 className="font-sans text-sm sm:text-base font-bold uppercase text-foreground mb-5 tracking-[0.03em]">
               STAYMAKOM
             </h2>
             <p className="font-sans text-base md:text-lg leading-relaxed text-muted-foreground mb-6">
@@ -156,7 +156,7 @@ const About = () => {
                 <p className="font-sans text-xs uppercase tracking-[0.15em] text-muted-foreground mb-3">
                   {t(lang, 'aboutFounderLabel')}
                 </p>
-                <h3 className="font-sans text-3xl md:text-4xl font-bold uppercase tracking-[-0.02em] text-foreground mb-1">
+                <h3 className="font-sans text-sm sm:text-base font-bold uppercase text-foreground mb-1 tracking-[0.03em]">
                   {t(lang, 'aboutFounderName')}
                 </h3>
                 <p className="font-sans text-sm text-muted-foreground mb-8">
@@ -182,7 +182,7 @@ const About = () => {
         {/* FINAL CTA */}
         <section className="py-20 px-6 bg-muted/40 md:py-[52px]">
           <div className="max-w-3xl mx-auto text-center">
-            <h2 className="font-sans text-3xl md:text-4xl lg:text-5xl font-bold uppercase tracking-[-0.02em] mb-10 text-foreground">
+            <h2 className="font-sans text-sm sm:text-base font-bold uppercase mb-6 text-foreground tracking-[0.03em]">
               {t(lang, 'aboutCTATitle')}
             </h2>
             <div className="flex flex-col sm:flex-row justify-center gap-4">

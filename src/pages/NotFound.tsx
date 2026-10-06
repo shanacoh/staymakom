@@ -67,7 +67,7 @@ const NotFound = () => {
             404
           </div>
 
-          <h1 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold uppercase tracking-[-0.03em] leading-[1.2] text-white whitespace-pre-line">
+          <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold uppercase tracking-[-0.03em] leading-[1.2] text-white whitespace-pre-line">
             {copy.title}
           </h1>
 

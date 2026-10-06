@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-10-06] — Session DA : titres des autres pages client à la même échelle
+
+### Ce qui a changé côté code
+- `src/pages/About.tsx`, `Companies.tsx`, `Partners.tsx`, `Contact.tsx`, `GiftCard.tsx`, `GiftCardConfirmation.tsx`, `Experiences2.tsx`, `Category.tsx`, `Journal.tsx`, `Auth.tsx`, `NotFound.tsx`, `BookingConfirmationPage.tsx`, `StandaloneBookingConfirmation.tsx` : 28 titres ramenés à l'échelle de la home. Titre principal à 28 au maximum (au lieu de 48 à 64), titres de section en petites majuscules à 16, espaces sous les titres réduits. Le journal garde ses titres sans majuscules forcées.
+- Seules les tailles de titres changent. Les textes courants et les boutons de ces pages (dont les boutons noirs à angles droits de la page entreprises) ne sont pas encore repris.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration.
+
+### Pourquoi ce changement
+Après la home, les fiches et le paiement, les pages secondaires gardaient de très gros titres. Elles suivent maintenant la même règle.
+
+---
+
 ## [2026-10-06] — Session DA, étape 5 : fiches (expérience seule, hôtel) et page bateaux
 
 Travail fait sur la branche `session-da-visuel`, pas encore en ligne.

@@ -86,7 +86,7 @@ const Experiences2 = () => {
         {/* Hero Section */}
         <section className="bg-muted py-12 sm:py-16 md:py-20">
           <div className="container px-4 text-center">
-            <h1 className="font-sans text-3xl sm:text-4xl md:text-5xl font-bold tracking-[-0.02em] mb-4">
+            <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold tracking-[-0.02em] mb-4">
               {lang === 'he' ? 'כל החוויות' : 'All Experiences'}
             </h1>
             <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">

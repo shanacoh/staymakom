@@ -313,7 +313,7 @@ export default function BookingConfirmationPage() {
                 <Clock className="h-8 w-8 text-amber-600" />
               )}
             </div>
-            <h1 className="text-2xl md:text-3xl font-semibold">
+            <h1 className="font-semibold text-lg sm:text-2xl md:text-[28px]">
               {isCancelled ? labels.cancelledTitle : labels.title}
             </h1>
             {booking.customer_email && (

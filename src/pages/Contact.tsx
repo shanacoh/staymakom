@@ -102,7 +102,7 @@ const Contact = () => {
           <span className="block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-white mb-4 opacity-0 animate-hero-fade-up">
             CONTACT
           </span>
-          <h1 className="font-sans text-[28px] sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-[0.02em] leading-[1.1] mb-3 opacity-0 animate-hero-fade-up text-white text-center">
+          <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold uppercase tracking-[0.02em] leading-[1.15] mb-3 opacity-0 animate-hero-fade-up text-white text-center">
             {lang === 'he' ? 'בואו נדבר.' : lang === 'fr' ? 'PARLONS-EN.' : "LET'S TALK."}
           </h1>
         </div>
@@ -129,7 +129,7 @@ const Contact = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="font-sans text-2xl mb-3">{t(lang, 'contactThankYou')}</h3>
+              <h3 className="font-sans text-sm sm:text-base mb-3 uppercase tracking-[0.03em]">{t(lang, 'contactThankYou')}</h3>
               <p className="text-sm text-muted-foreground mb-6">
                 {t(lang, 'contactThankYouDesc')}
               </p>

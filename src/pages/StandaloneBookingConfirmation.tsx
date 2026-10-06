@@ -144,7 +144,7 @@ export default function StandaloneBookingConfirmation() {
         <V3Header />
         <main className="flex-1 flex flex-col items-center justify-center gap-4 px-4">
           <XCircle className="h-12 w-12 text-muted-foreground" />
-          <h1 className="text-2xl font-bold">{t.notFound}</h1>
+          <h1 className="font-bold text-lg sm:text-2xl md:text-[28px]">{t.notFound}</h1>
           <p className="text-muted-foreground text-center max-w-sm">{t.notFoundDesc}</p>
           <Button asChild variant="outline">
             <Link to="/">{t.backHome}</Link>

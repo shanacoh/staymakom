@@ -52,7 +52,7 @@ export default function GiftCardConfirmation() {
       <div className="min-h-screen bg-background">
         <V3Header />
         <div className="container max-w-2xl mx-auto px-4 py-20 text-center">
-          <h1 className="font-sans text-3xl font-bold mb-4">Gift card not found</h1>
+          <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold mb-4">Gift card not found</h1>
           <p className="text-muted-foreground mb-8">The gift card code could not be found.</p>
           <Button asChild>
             <Link to="/gift-card">Create a Gift Card</Link>
@@ -72,7 +72,7 @@ export default function GiftCardConfirmation() {
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4">
             <CheckCircle2 className="h-10 w-10 text-primary" />
           </div>
-          <h1 className="font-sans text-4xl md:text-5xl font-bold">
+          <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold">
             Your Staymakom Gift Card has been sent!
           </h1>
           <p className="text-xl text-muted-foreground">

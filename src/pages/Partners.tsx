@@ -47,7 +47,7 @@ const Partners = () => {
           <span className="block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-white mb-4 opacity-0 animate-hero-fade-up">
             {lang === 'he' ? 'שותפים' : lang === 'fr' ? 'PARTENAIRES' : 'PARTNERS'}
           </span>
-          <h1 className="font-sans text-[28px] sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-[0.02em] leading-[1.1] mb-3 opacity-0 animate-hero-fade-up text-white text-center">
+          <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold uppercase tracking-[0.02em] leading-[1.15] mb-3 opacity-0 animate-hero-fade-up text-white text-center">
             {t(lang, 'partnersHeroTitle')}
           </h1>
           <p
@@ -62,7 +62,7 @@ const Partners = () => {
       <main className="max-w-4xl mx-auto px-6 py-12" dir={isRTL ? 'rtl' : 'ltr'}>
         {/* Why Join Section */}
         <section className="mb-16">
-          <h2 className="font-sans text-2xl md:text-3xl text-center mb-10">
+          <h2 className="font-sans text-sm sm:text-base text-center mb-6 uppercase tracking-[0.03em]">
             {t(lang, 'partnersWhyJoin')}
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
@@ -89,7 +89,7 @@ const Partners = () => {
 
         {/* What We Offer Section */}
         <section className="mb-16 bg-white rounded-lg p-8">
-          <h2 className="font-sans text-2xl md:text-3xl text-center mb-6">
+          <h2 className="font-sans text-sm sm:text-base text-center mb-6 uppercase tracking-[0.03em]">
             {t(lang, 'partnersWhatWeOffer')}
           </h2>
           <p className="text-sm text-center mb-8 max-w-2xl mx-auto text-muted-foreground">
@@ -121,7 +121,7 @@ const Partners = () => {
 
         {/* Partner Form Section */}
         <section id="partner-form" className="max-w-lg mx-auto">
-          <h2 className="font-sans text-2xl md:text-3xl text-center mb-8">
+          <h2 className="font-sans text-sm sm:text-base text-center mb-5 uppercase tracking-[0.03em]">
             {t(lang, 'partnersBecomePartner')}
           </h2>
           <PartnerFormFlow lang={lang} />

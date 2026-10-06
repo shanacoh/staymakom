@@ -131,7 +131,7 @@ export default function Companies() {
         <div className="relative h-full flex items-center justify-center text-center px-6">
           <div className="max-w-3xl space-y-4" dir={isRTL ? 'rtl' : 'ltr'}>
             <p className="font-sans text-[11px] uppercase tracking-[0.15em] text-white/70">STAYMAKOM</p>
-            <h1 className="font-sans text-4xl md:text-[64px] font-bold text-white uppercase tracking-tight leading-none">
+            <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold text-white uppercase tracking-tight leading-[1.15]">
               {t(lang, 'companiesHeroTitle')}
             </h1>
             <p className="text-sm md:text-base text-white/80 font-light max-w-2xl mx-auto">
@@ -154,7 +154,7 @@ export default function Companies() {
         {/* What We Offer Section */}
         <section>
           <p className="font-sans text-[11px] uppercase tracking-[0.15em] text-muted-foreground text-center mb-3">STAYMAKOM</p>
-          <h2 className="font-sans text-2xl md:text-3xl font-bold text-center mb-10 uppercase text-foreground">{t(lang, 'companiesWhatWeOffer')}</h2>
+          <h2 className="font-sans text-sm sm:text-base font-bold text-center mb-6 uppercase text-foreground tracking-[0.03em]">{t(lang, 'companiesWhatWeOffer')}</h2>
           
           <div className="grid md:grid-cols-3 gap-6">
             <div className="border border-border rounded-none bg-transparent p-6 space-y-3">
@@ -211,7 +211,7 @@ export default function Companies() {
 
         {/* Why MAKOM Section */}
         <section className="bg-muted rounded-none p-8">
-          <h2 className="font-sans text-2xl font-bold text-center mb-8 uppercase text-foreground">{t(lang, 'companiesWhyStaymakom')}</h2>
+          <h2 className="font-sans text-sm sm:text-base font-bold text-center mb-5 uppercase text-foreground tracking-[0.03em]">{t(lang, 'companiesWhyStaymakom')}</h2>
           
           <div className="grid md:grid-cols-3 gap-6 max-w-3xl mx-auto">
             <div className="text-center space-y-2">
@@ -248,7 +248,7 @@ export default function Companies() {
 
         {/* How It Works Section */}
         <section>
-          <h2 className="font-sans text-2xl font-bold text-center mb-8 uppercase text-foreground">{t(lang, 'companiesHowItWorks')}</h2>
+          <h2 className="font-sans text-sm sm:text-base font-bold text-center mb-5 uppercase text-foreground tracking-[0.03em]">{t(lang, 'companiesHowItWorks')}</h2>
           
           <div className="grid md:grid-cols-3 gap-6 max-w-3xl mx-auto mb-8">
             <div className="text-center space-y-3">
@@ -296,7 +296,7 @@ export default function Companies() {
         <section id="contact-form" className="scroll-mt-20">
           <div className="max-w-lg mx-auto">
             <p className="font-sans text-[11px] uppercase tracking-[0.15em] text-muted-foreground text-center mb-3">STAYMAKOM</p>
-            <h2 className="font-sans text-2xl font-bold text-center mb-3 uppercase text-foreground">
+            <h2 className="font-sans text-sm sm:text-base font-bold text-center mb-3 uppercase text-foreground tracking-[0.03em]">
               {t(lang, 'companiesFormTitle')}
             </h2>
             <p className="text-center text-sm text-muted-foreground mb-8">

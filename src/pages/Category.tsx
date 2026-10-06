@@ -380,7 +380,7 @@ const Category = () => {
               }}
             />
           )}
-          <h1 className="font-sans text-2xl sm:text-3xl md:text-4xl font-bold uppercase tracking-[0.02em] text-[#ad1414]">
+          <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold uppercase tracking-[0.02em] text-[#ad1414]">
             {presentationTitle}
           </h1>
           {introText && (

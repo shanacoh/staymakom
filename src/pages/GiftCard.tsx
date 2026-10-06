@@ -293,7 +293,7 @@ export default function GiftCard() {
           <span className="block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-white mb-4 opacity-0 animate-hero-fade-up">
             {lang === "he" ? "כרטיס מתנה" : lang === "fr" ? "CARTE CADEAU" : "GIFT CARD"}
           </span>
-          <h1 className="font-sans text-[28px] sm:text-4xl md:text-5xl lg:text-6xl font-bold uppercase tracking-[0.02em] leading-[1.1] mb-3 opacity-0 animate-hero-fade-up text-white text-center">
+          <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold uppercase tracking-[0.02em] leading-[1.15] mb-3 opacity-0 animate-hero-fade-up text-white text-center">
             {t(lang, "giftCardHeroTitle")}
           </h1>
           <p
@@ -611,7 +611,7 @@ export default function GiftCard() {
             <p className="text-[10px] sm:text-xs uppercase tracking-[0.18em] text-[#a83c3c] mb-2">
               {lang === "he" ? "שאלות נפוצות" : lang === "fr" ? "Questions fréquentes" : "Questions & Answers"}
             </p>
-            <h2 className="font-sans text-xl sm:text-2xl font-bold uppercase tracking-[-0.02em] text-foreground">
+            <h2 className="font-sans text-sm sm:text-base font-bold uppercase text-foreground tracking-[0.03em]">
               {lang === "he" ? "כל מה שרציתם לדעת" : lang === "fr" ? "Tout ce que vous voulez savoir" : "Everything you need to know"}
             </h2>
           </div>
