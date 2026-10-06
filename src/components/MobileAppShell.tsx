@@ -8,6 +8,7 @@
 import { useLocation } from "react-router-dom";
 import MobileStickyHeader from "@/components/MobileStickyHeader";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import { isSitePauseActive } from "@/config/sitePause";
 
 const MobileAppShell = () => {
   const location = useLocation();
@@ -15,7 +16,9 @@ const MobileAppShell = () => {
   const isAdmin = location.pathname.startsWith("/admin") || location.pathname.startsWith("/hotel-admin");
   // Le deck de swipe est une expérience plein écran, sans chrome du site (façon appli à part entière).
   const isSwipePublic = location.pathname.startsWith("/swipe/");
-  if (isAdmin || isSwipePublic) return null;
+  // La page d'attente "offre d'hiver" est plein écran, avec son propre en-tête.
+  const isSitePause = location.pathname === "/" && isSitePauseActive();
+  if (isAdmin || isSwipePublic || isSitePause) return null;
 
   // On account sub-pages (with ?tab=), the sub-page provides its own header
   const isAccountSubPage = location.pathname === "/account" && location.search.includes("tab=");

@@ -20,6 +20,8 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 
 // ── Chemin critique : chargement immédiat ──────────────────────────────────
 import IndexV3 from "./pages/IndexV3";
+import WinterPause from "./pages/WinterPause";
+import { isSitePauseActive } from "@/config/sitePause";
 import LaunchExperiences from "./pages/LaunchExperiences";
 import Experience2 from "./pages/Experience2";
 import Checkout from "./pages/Checkout";
@@ -214,10 +216,12 @@ const AppContent = () => {
           {/* Depuis 2026-06-28 : la racine pointe sur IndexV3 (nouvelle home).
               /v3 redirige vers / pour compatibilité avec les anciens liens.
               /launch reste accessible pour l'ancienne LaunchIndex. */}
-          <Route path="/" element={<IndexV3 />} />
+          {/* Pause "offre d'hiver" : tant qu'elle est active (voir src/config/sitePause.ts),
+              la racine affiche la page d'attente et la vraie home reste visible sur /v3. */}
+          <Route path="/" element={isSitePauseActive() ? <WinterPause /> : <IndexV3 />} />
           <Route path="/coming-soon" element={<ComingSoon />} />
           <Route path="/home" element={<Index />} />
-          <Route path="/v3" element={<Navigate to="/" replace />} />
+          <Route path="/v3" element={isSitePauseActive() ? <IndexV3 /> : <Navigate to="/" replace />} />
           <Route path="/vitrine" element={<Vitrine />} />
           <Route path="/votre-itineraire" element={<ItineraireChoix />} />
           <Route path="/launch" element={<LaunchIndex />} />

@@ -7,6 +7,7 @@ import { ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "sonner";
+import { isSitePauseActive } from "@/config/sitePause";
 import { trackNewsletterPopupShown, trackNewsletterPopupClosed, trackNewsletterSubscribed, identifyLead } from "@/lib/analytics";
 
 /**
@@ -170,7 +171,9 @@ export function NewsletterPopup({
   // ni sur les pages de paiement (checkout, standalone-checkout) : la popup s'affichait par-dessus
   // la pop-up de paiement Revolut et masquait complètement le bouton "Payer" — cause probable de
   // réservations bloquées, reproduite en local le 12/08.
+  // Ni sur la page d'attente "offre d'hiver", qui contient déjà son propre formulaire newsletter.
   if (
+    (location.pathname === "/" && isSitePauseActive()) ||
     location.pathname.startsWith("/admin") ||
     location.pathname.startsWith("/hotel-admin") ||
     location.pathname.startsWith("/swipe/") ||

@@ -243,7 +243,8 @@ public/
 
 | Path | Component | Description |
 |------|-----------|-------------|
-| `/` | ComingSoon | Landing page (temporary) |
+| `/` | IndexV3 (ou WinterPause) | Home. Pendant la pause « offre d'hiver » (`src/config/sitePause.ts`, jusqu'au 13/10/2026), affiche la page d'attente WinterPause |
+| `/v3` | IndexV3 | Vraie home, visible pendant la pause. Hors pause, redirige vers `/` |
 | `/home` | Index | Full homepage |
 | `/experiences` | Experiences2 | Browse all experiences |
 | `/category/:slug` | Category | Category filter page |
