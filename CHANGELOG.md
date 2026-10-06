@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-10-06] — Paiement : champs « Informations voyageur » arrondis
+
+### Ce qui a changé côté code
+- `src/components/experience/LeadGuestForm.tsx` : les champs du bloc « Guest Information » (nationalité, nom, prénom, adresse, email, téléphone) avaient encore des angles droits. Ils prennent l'arrondi commun des champs (10), comme le reste de la page de paiement. Le titre du bloc passe du gros texte rouge aux petites majuscules noires, comme les autres blocs.
+- Style uniquement. Aucun champ, aucune validation modifiés.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration.
+
+### Pourquoi ce changement
+Repéré par Shana en testant la page de paiement en ligne : ces bordures très rectangulaires ne suivaient pas la nouvelle DA.
+
+---
+
 ## [2026-10-06] — Positions sur la carte complétées pour « Autour de moi » (données uniquement)
 
 ### Ce qui a changé côté code

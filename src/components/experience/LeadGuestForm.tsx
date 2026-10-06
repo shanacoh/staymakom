@@ -130,7 +130,7 @@ function normalizePhone(p: string): string {
 const inputStyle = {
   backgroundColor: '#faf8f6',
   border: '1px solid #e9e6e1',
-  borderRadius: '0px',
+  borderRadius: '10px',
 };
 
 export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false }: LeadGuestFormProps) {
@@ -212,7 +212,7 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
+        <CardTitle className="text-xs font-bold uppercase tracking-[0.05em] text-foreground flex items-center gap-2">
           <User className="h-4 w-4" />
           {t.title}
         </CardTitle>
