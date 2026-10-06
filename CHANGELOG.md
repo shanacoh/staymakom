@@ -6,6 +6,21 @@
 
 ---
 
+## [2026-10-06] — Page privée « A Sunday in Safed » pour Carrie Gold Nahmani (collaboration)
+
+### Ce qui a changé côté code
+- `src/pages/CarrieSafed.tsx` (nouveau fichier) : page privée en anglais, dans le style immersif de la page Itinéraire Tsfat. De haut en bas : grande photo de Safed avec le titre, arrivée le samedi 10 octobre au soir, programme du dimanche 11 octobre en frise numérotée (vieille ville et ateliers, 3 synagogues, déjeuner à Lahuh Tzfat, dégustation à la Tzfat Distillery, tombeau de Rabbi Yonatan Ben Uziel en option, balade à cheval à Bat Yaar, retour à Tel Aviv), choix entre deux hôtels (Canaan by Fattal et Ruth Safed), présentation de Staymakom avec les trois offres du site et la demande de stories, puis un mot personnel en fin de page.
+- Chaque hôtel a 3 photos qui défilent au doigt ou avec des flèches (composant de défilement déjà utilisé pour les bateaux, `src/components/ui/carousel.tsx`) et un bouton qui ouvre WhatsApp avec un message déjà rédigé (« I choose ... »). Les photos sont chargées depuis les sites officiels des hôtels (Dan Hotels pour le Ruth Safed, Fattal / Leonardo pour le Canaan), elles ne sont pas stockées dans le projet.
+- `src/App.tsx` : ajout de la route `/carrie-safed` pour rendre la page accessible.
+
+### Ce qui a changé côté base de données
+- Aucun changement. La page est statique et ne dépend pas de la base de données.
+
+### Pourquoi ce changement
+- Shana offre un séjour à Safed à Carrie Gold Nahmani en échange de visibilité (stories, si possible une vidéo). La page lui présente le programme, lui laisse choisir son hôtel et explique le projet Staymakom.
+
+---
+
 ## [2026-10-06] — Paiement d'une expérience seule : la nationalité devient facultative
 
 ### Ce qui a changé côté code

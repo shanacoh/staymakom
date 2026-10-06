@@ -89,6 +89,7 @@ const AdminErrors            = lazy(() => import("./pages/admin/Errors"));
 const Celine30                   = lazy(() => import("./pages/Celine30"));
 const ItineraireTsfat             = lazy(() => import("./pages/ItineraireTsfat"));
 const HappyBirthdayMom             = lazy(() => import("./pages/HappyBirthdayMom"));
+const CarrieSafed                = lazy(() => import("./pages/CarrieSafed"));
 const NP                         = lazy(() => import("./pages/NP"));
 const EL                         = lazy(() => import("./pages/EL"));
 const Vitrine                    = lazy(() => import("./pages/Vitrine"));
@@ -246,6 +247,7 @@ const AppContent = () => {
           <Route path="/Celine30" element={<Celine30 />} />
           <Route path="/itineraire-tsfat" element={<ItineraireTsfat />} />
           <Route path="/happy-birthday-mom" element={<HappyBirthdayMom />} />
+          <Route path="/carrie-safed" element={<CarrieSafed />} />
           <Route path="/NP" element={<NP />} />
           <Route path="/EL" element={<EL />} />
           <Route path="/partner-exp" element={<PartnerExp />} />
