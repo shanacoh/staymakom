@@ -149,8 +149,19 @@ const StandaloneRequestsTable = ({ categoryId, showWhatsAppLink }: StandaloneReq
     onError: () => toast.error("Impossible de mettre à jour la demande"),
   });
 
-  const handleBookingCreated = (requestId: string) => {
-    updateMutation.mutate({ id: requestId, updates: { status: "converted" } });
+  // Rattache la demande à sa réservation et la passe en "convertie" en une seule opération
+  // côté base (tout ou rien) : la demande disparaît de la liste, seule la réservation reste.
+  const handleBookingCreated = async (requestId: string, bookingId: string) => {
+    const { error } = await (supabase as any).rpc("link_request_to_booking", {
+      p_request_id: requestId,
+      p_booking_id: bookingId,
+    });
+    if (error) {
+      toast.error("Réservation créée, mais la demande n'a pas pu être marquée convertie", { description: error.message });
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey });
+    queryClient.invalidateQueries({ queryKey: ["admin-reservations-unified"] });
   };
 
   const sendToProvider = (request: any) => {
@@ -371,8 +382,8 @@ const StandaloneRequestsTable = ({ categoryId, showWhatsAppLink }: StandaloneReq
             convertRequest.message ? `Demande initiale : ${convertRequest.message}` : null,
           ].filter(Boolean).join(" · ") || undefined,
         } : null}
-        onBookingCreated={() => {
-          if (convertRequest) handleBookingCreated(convertRequest.id);
+        onBookingCreated={(bookingId) => {
+          if (convertRequest) handleBookingCreated(convertRequest.id, bookingId);
           setConvertRequest(null);
         }}
       />

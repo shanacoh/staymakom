@@ -6,6 +6,26 @@
 
 ---
 
+## [2026-10-06] — Réservations : type Expérience / Bateau enregistré, et lien demande → réservation
+
+### Ce qui a changé côté code
+- `src/lib/reservations/queries.ts` : le type d'une réservation (Expérience ou Bateau) est lu dans la nouvelle colonne `product_type`, plus déduit de la fiche catalogue. Une réservation saisie à la main sans fiche peut donc être un bateau.
+- `src/components/admin/BookingsGrid/experienceColumns.ts` : nouvelle colonne « Type » dans la grille de saisie, modifiable à la main (Expérience / Bateau).
+- `src/components/admin/StandaloneRequestsTable.tsx` : quand une demande est convertie, elle est rattachée à la réservation créée et passée en « convertie » en une seule opération côté base (fonction `link_request_to_booking`). Avant, seul le statut changeait, sans lien.
+- `src/components/admin/CreateManualStandaloneBookingDialog.tsx` : transmet l'identifiant de la réservation créée à l'écran qui l'a ouvert, et rafraîchit la nouvelle page Réservations.
+
+### Ce qui a changé côté base de données
+- Migration `20261006110000_standalone_bookings_product_type_and_request_link.sql` (appliquée) :
+  - `standalone_bookings.product_type` (nouvelle colonne, obligatoire, `experience` ou `boat`). Reprise de l'existant : `boat` si la fiche liée est dans la catégorie Bateaux, ou si la réservation manuelle sans fiche a un titre commençant par « Boat Day » (5 lignes validées par Shana : 74dc, 8436, 1da9, 8811, 77bd). Résultat : 8 bateaux, 49 expériences. Les dates de modification des réservations n'ont pas été touchées.
+  - Un déclencheur (`standalone_bookings_set_product_type`) remplit ce type tout seul à la création d'une réservation, d'après la fiche liée. Le paiement en ligne et la saisie manuelle n'ont rien à changer.
+  - `standalone_bookings.request_id` (nouvelle colonne, facultative) : la demande dont la réservation est issue. Une demande ne peut donner qu'une seule réservation.
+  - Fonction `link_request_to_booking(demande, réservation)` : écrit le lien et passe la demande en « convertie » ensemble, tout ou rien.
+
+### Pourquoi ce changement
+Le filtre Bateaux ne reconnaissait que les réservations rattachées à une fiche du catalogue, alors que la plupart des sorties bateau ont été saisies à la main. Et sans lien entre une demande et sa réservation, on ne pouvait pas garantir l'absence de doublon dans la liste unique.
+
+---
+
 ## [2026-10-06] — Page privée « A Sunday in Safed » pour Carrie Gold Nahmani (collaboration)
 
 ### Ce qui a changé côté code

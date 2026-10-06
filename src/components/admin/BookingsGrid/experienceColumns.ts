@@ -27,6 +27,7 @@ export type NewBookingDraft = Partial<
 
 export type ExperienceColumnKey =
   | "status"
+  | "product_type"
   | "customer_name"
   | "customer_email"
   | "customer_phone"
@@ -60,6 +61,13 @@ export const CLIENT_PAYMENT_OPTIONS: SelectOption[] = [
   { value: "paid", label: "Payé" },
 ];
 
+// Type de produit, modifiable à la main : une réservation saisie sans fiche catalogue
+// démarre en "Expérience" et se passe en "Bateau" ici.
+export const PRODUCT_TYPE_OPTIONS: SelectOption[] = [
+  { value: "experience", label: "Expérience" },
+  { value: "boat", label: "Bateau" },
+];
+
 export const SUPPLIER_PAYMENT_OPTIONS: SelectOption[] = [
   { value: "pending", label: "Impayé" },
   { value: "paid", label: "Payé" },
@@ -69,6 +77,7 @@ export { formatCurrency };
 
 export const EXPERIENCE_COLUMNS: ColumnDef[] = [
   { key: "status", label: "Statut", type: "select", options: STATUS_OPTIONS, widthClass: "w-[130px]" },
+  { key: "product_type", label: "Type", type: "select", options: PRODUCT_TYPE_OPTIONS, widthClass: "w-[120px]" },
   {
     key: "customer_name",
     label: "Client",

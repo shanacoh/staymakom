@@ -55,6 +55,7 @@ const BOOKING_LIST_QUERY_KEYS = [
   ["admin-standalone-bookings"],
   ["admin-standalone-bookings-hub"],
   ["admin-standalone-bookings-grid"],
+  ["admin-reservations-unified"],
 ];
 
 interface Props {
@@ -63,9 +64,9 @@ interface Props {
   // Réservation existante à dupliquer : pré-remplit le formulaire (client, expérience,
   // date, prix...) pour créer une nouvelle réservation avec sa propre référence.
   duplicateFrom?: any | null;
-  // Appelé après création réussie (en plus de la navigation par défaut) — utilisé
-  // par exemple pour marquer une demande de dates comme "convertie".
-  onBookingCreated?: () => void;
+  // Appelé après création réussie (en plus de la navigation par défaut), avec l'id de la
+  // réservation créée — utilisé pour rattacher une demande à la réservation qu'elle devient.
+  onBookingCreated?: (bookingId: string) => void;
 }
 
 const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom, onBookingCreated }: Props) => {
@@ -203,7 +204,7 @@ const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom
       onOpenChange(false);
       resetManualForm();
       toast.success("Réservation créée : marquez le paiement et envoyez l'email depuis la fiche");
-      onBookingCreated?.();
+      onBookingCreated?.(data.booking_id);
       navigate(`/admin/standalone-bookings/${data.booking_id}`);
     },
     onError: (e: Error) => toast.error("Erreur", { description: e.message }),

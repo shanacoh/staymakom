@@ -43,7 +43,7 @@ function bookingToRow(b: any, today: Date): ReservationRow {
     id: b.id,
     source: "booking",
     ref: shortRef(b.id),
-    type: experience?.category_id === BOATS_CATEGORY_ID ? "boat" : "experience",
+    type: b.product_type === "boat" ? "boat" : "experience",
     status,
     client: b.customer_name || "Sans nom",
     product: b.custom_experience_title || experience?.title_fr || experience?.title || "Expérience",
