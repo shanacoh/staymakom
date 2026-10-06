@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DA back-office : grandes lignes</title>
+<style>
+:root{--red:#ad1414;--redsoft:#fdf2f2;--ink:#1a1814;--muted:#6f6a63;--line:#e9e6e1;--soft:#faf8f6;--bg:#f1efec;
+  --ok:#1f7a4d;--okbg:#e9f6ef;--warn:#8a6100;--warnbg:#fff4d6;--info:#3c4a5c;--infobg:#eef2f6}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Inter",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;color:var(--ink);background:var(--bg);font-size:13px;line-height:1.5}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
+.top{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line);display:flex;gap:6px;padding:10px 16px;align-items:center;flex-wrap:wrap}
+.top b{margin-right:10px;letter-spacing:.08em;font-size:12px;text-transform:uppercase}
+.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font-size:13px}
+.tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.view{display:none;max-width:1180px;margin:0 auto;padding:22px 16px 60px}.view.on{display:block}
+.note{color:var(--muted);font-size:13px;line-height:1.55;margin-bottom:14px}
+.note b{color:var(--ink)}
+
+/* ===== Le gabarit commun ===== */
+.bo{background:#fff;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.07);overflow:hidden;display:grid;grid-template-columns:190px 1fr;position:relative}
+.side{border-right:1px solid var(--line);padding:14px 10px}
+.side .lg{font-weight:800;letter-spacing:-.03em;font-size:14px;padding:4px 10px 12px}
+.side .grp{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:10px 10px 4px}
+.side .it{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:10px;margin-bottom:1px}
+.side .it.on{background:var(--soft);font-weight:700}
+.side .it em{font-style:normal;font-size:10px;background:var(--red);color:#fff;border-radius:999px;padding:0 6px;font-weight:600}
+.main{padding:18px 22px 24px;min-width:0}
+.crumb{font-size:11.5px;color:var(--muted);margin-bottom:6px}
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.head h1{font-size:18px;font-weight:700;letter-spacing:-.01em;line-height:1.25}
+.head p{color:var(--muted);font-size:12.5px;margin-top:1px}
+.acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border-radius:999px;font-size:12.5px;font-weight:600;border:1px solid var(--line);background:#fff;white-space:nowrap}
+.btn.pri{background:var(--red);border-color:var(--red);color:#fff}
+.btn.txt{border-color:transparent;color:var(--muted);padding:0 8px}
+.btn.dng{color:var(--red);border-color:#f0d0d0}
+.btn.ico{width:34px;padding:0;justify-content:center;color:var(--muted)}
+.btn.sm{height:28px;padding:0 10px;font-size:12px}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.pt{border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12px}
+.pt.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.pt em{font-style:normal;color:var(--muted);margin-left:4px}.pt.on em{color:rgba(255,255,255,.7)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.kpi{border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.lab{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.kpi b{display:block;font-size:19px;font-family:ui-monospace,Menlo,monospace}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:7px 8px;background:var(--soft);border-bottom:1px solid var(--line)}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
+td a{color:var(--ink);font-weight:600;text-decoration:none}
+td.r,th.r{text-align:right}
+.mono{font-family:ui-monospace,Menlo,monospace}
+.none{color:var(--muted)}
+.chip{display:inline-block;font-size:11px;border-radius:999px;padding:1px 8px;font-weight:600}
+.c-ok{background:var(--okbg);color:var(--ok)}.c-warn{background:var(--warnbg);color:var(--warn)}.c-no{background:var(--redsoft);color:var(--red)}.c-info{background:var(--infobg);color:var(--info)}
+.alert{display:flex;gap:8px;align-items:center;justify-content:space-between;border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:12.5px;background:var(--redsoft);color:var(--red);border:1px solid #f3d6d6}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;color:var(--muted);font-size:12px}
+
+/* page de saisie */
+.cols{display:grid;grid-template-columns:1fr 260px;gap:16px;align-items:flex-start}
+.sec{border:1px solid var(--line);border-radius:14px;margin-bottom:12px}
+.sec>h2{font-size:13.5px;font-weight:700;padding:11px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.sec>h2 em{font-style:normal;font-weight:400;color:var(--muted);font-size:12px}
+.sec .in{padding:12px 14px;display:grid;gap:10px}
+.f{display:grid;gap:4px}
+.inp{border:1px solid var(--line);border-radius:10px;min-height:34px;padding:7px 10px;display:flex;align-items:center;background:#fff}
+.inp.ph{color:var(--muted)}
+.inp.focus{border-color:var(--ink);box-shadow:0 0 0 3px var(--soft)}
+.inp.err{border-color:var(--red)}
+.help{font-size:11.5px;color:var(--muted)}.help.err{color:var(--red)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sw{display:flex;gap:10px;align-items:center}
+.sw i{width:30px;height:17px;border-radius:999px;background:var(--ink);position:relative;display:inline-block;flex-shrink:0}
+.sw i::after{content:"";position:absolute;right:2px;top:2px;width:13px;height:13px;border-radius:50%;background:#fff}
+.sw.off i{background:var(--line)}.sw.off i::after{right:auto;left:2px}
+.card{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--soft);margin-bottom:12px}
+.card .line{display:flex;justify-content:space-between;padding:5px 0;border-top:1px solid var(--line);font-size:12.5px}
+.card .line:first-of-type{border-top:0}
+.card .line span:first-child{color:var(--muted)}
+.dlg{border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 40px rgba(26,24,20,.14);padding:16px;max-width:380px;background:#fff}
+.dlg h3{font-size:14px;margin-bottom:4px}
+.dlg p{color:var(--muted);font-size:12.5px;margin-bottom:12px}
+.dlg .row{display:flex;gap:6px;justify-content:flex-end}
+
+/* règles */
+.rb{background:#fff;border-radius:16px;padding:16px 20px;box-shadow:0 10px 40px rgba(0,0,0,.05);margin-bottom:14px}
+.rb h2{font-size:14.5px;margin-bottom:10px}
+.rb li{margin:0 0 5px 18px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ba{border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.ba .lab{display:block;margin-bottom:8px}
+.ba.no .lab{color:var(--red)}.ba.yes .lab{color:var(--ok)}
+.ex{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.old1{font-size:22px;font-weight:700;color:var(--red)}.old2{font-size:26px;font-weight:700}.old3{font-size:17px;font-weight:600;font-family:ui-monospace,Menlo,monospace}
+.oldb{display:inline-flex;align-items:center;height:36px;padding:0 14px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;border-radius:6px}
+.rtab td:nth-child(2){color:var(--muted)}.rtab td:nth-child(3){font-weight:600}
+.sws{display:flex;gap:10px;flex-wrap:wrap}
+.swt{width:112px;font-size:11.5px;color:var(--muted)}
+.swt i{display:block;height:38px;border-radius:10px;border:1px solid var(--line);margin-bottom:5px}
+.swt b{display:block;color:var(--ink);font-size:12px}
+@media (max-width:900px){.bo{grid-template-columns:1fr}.side{display:none}.kpis,.two,.cols,.row2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="top">
+  <b>DA back-office</b>
+  <button class="tab on" data-v="list">1. Page de liste</button>
+  <button class="tab" data-v="edit">2. Page de saisie</button>
+  <button class="tab" data-v="rules">3. Les règles</button>
+  <button class="tab" data-v="audit">4. Le constat d'aujourd'hui</button>
+</div>
+
+<!-- ============ LISTE ============ -->
+<div class="view on" id="list">
+<p class="note"><b>Le gabarit de toutes les pages de liste</b> (réservations, expériences, hôtels, comptes, cartes cadeaux, avis...). Toujours dans le même ordre : le titre en noir en haut à gauche avec une ligne d'explication, les actions en haut à droite, puis les onglets, les chiffres, le tableau. Écran d'exemple avec des données fictives.</p>
+<div class="bo">
+  <div class="side">
+    <div class="lg">STAYMAKOM</div>
+    <div class="grp">Activité</div>
+    <div class="it">Tableau de bord</div><div class="it on">Réservations <em>3</em></div><div class="it">Demandes sur mesure</div><div class="it">Cartes cadeaux</div>
+    <div class="grp">Catalogue</div>
+    <div class="it">Expériences</div><div class="it">Hôtels</div><div class="it">Catalogue et carte</div>
+    <div class="grp">Clients</div>
+    <div class="it">Comptes</div><div class="it">Avis</div>
+  </div>
+  <div class="main">
+    <div class="head">
+      <div><h1>Réservations</h1><p>Toutes les réservations passées sur le site.</p></div>
+      <div class="acts"><span class="btn ico" title="Aide">i</span><span class="btn">Filtres</span><span class="btn">Exporter</span><span class="btn pri">Nouvelle réservation</span></div>
+    </div>
+    <div class="tabs"><span class="pt on">Hôtels<em>24</em></span><span class="pt">Expériences<em>15</em></span><span class="pt">Itinéraires<em>3</em></span></div>
+    <div class="alert"><span>3 réservations attendent une confirmation du prestataire depuis plus de 24 h.</span><span class="btn sm dng">Voir</span></div>
+    <div class="kpis">
+      <div class="kpi"><span class="lab">Ce mois</span><b>42</b></div>
+      <div class="kpi"><span class="lab">Chiffre d'affaires</span><b>61 400 ₪</b></div>
+      <div class="kpi"><span class="lab">À confirmer</span><b>3</b></div>
+      <div class="kpi"><span class="lab">Annulées</span><b>2</b></div>
+    </div>
+    <table>
+      <tr><th>Référence</th><th>Client</th><th>Expérience</th><th>Date</th><th class="r">Montant</th><th>Statut</th><th class="r">Actions</th></tr>
+      <tr><td class="mono"><a href="#">SM-2041</a></td><td>Client A</td><td>Nuit dans le désert</td><td>12 nov.</td><td class="r mono">1 840 ₪</td><td><span class="chip c-ok">Confirmée</span></td><td class="r"><span class="btn sm">Ouvrir</span></td></tr>
+      <tr><td class="mono"><a href="#">SM-2040</a></td><td>Client B</td><td>Dégustation au Carmel</td><td>10 nov.</td><td class="r mono">640 ₪</td><td><span class="chip c-warn">À confirmer</span></td><td class="r"><span class="btn sm">Ouvrir</span></td></tr>
+      <tr><td class="mono"><a href="#">SM-2039</a></td><td>Client C</td><td>Tel Aviv à vélo</td><td class="none">Non renseignée</td><td class="r mono">404 ₪</td><td><span class="chip c-info">Brouillon</span></td><td class="r"><span class="btn sm">Ouvrir</span></td></tr>
+      <tr><td class="mono"><a href="#">SM-2038</a></td><td>Client D</td><td>Catamaran Herzliya</td><td>8 nov.</td><td class="r mono">3 240 ₪</td><td><span class="chip c-no">Annulée</span></td><td class="r"><span class="btn sm">Ouvrir</span></td></tr>
+    </table>
+    <div class="foot"><span>4 réservations sur 42</span><span><span class="btn sm">Précédent</span> <span class="btn sm">Suivant</span></span></div>
+  </div>
+</div>
+</div>
+
+<!-- ============ SAISIE ============ -->
+<div class="view" id="edit">
+<p class="note"><b>Le gabarit de toutes les pages de saisie</b> (créer ou modifier une expérience, un hôtel, une catégorie, un article, une réservation). Même en-tête que les listes, avec en plus le chemin de retour au-dessus du titre et l'état de la fiche à côté. Les actions restent en haut à droite : un seul bouton rouge, celui qui enregistre.</p>
+<div class="bo">
+  <div class="side">
+    <div class="lg">STAYMAKOM</div>
+    <div class="grp">Activité</div>
+    <div class="it">Tableau de bord</div><div class="it">Réservations <em>3</em></div><div class="it">Demandes sur mesure</div>
+    <div class="grp">Catalogue</div>
+    <div class="it on">Expériences</div><div class="it">Hôtels</div><div class="it">Catalogue et carte</div>
+    <div class="grp">Clients</div>
+    <div class="it">Comptes</div><div class="it">Avis</div>
+  </div>
+  <div class="main">
+    <div class="crumb">Expériences › Tel Aviv à vélo</div>
+    <div class="head">
+      <div><h1>Tel Aviv à vélo <span class="chip c-warn" style="vertical-align:3px;margin-left:4px">Brouillon</span></h1><p>Expérience seule. Dernière modification il y a 2 heures.</p></div>
+      <div class="acts"><span class="btn txt">Annuler</span><span class="btn">Aperçu</span><span class="btn">Enregistrer le brouillon</span><span class="btn pri">Publier</span></div>
+    </div>
+    <div class="cols">
+      <div>
+        <div class="sec">
+          <h2>Présentation <em>3 champs sur 4 remplis</em></h2>
+          <div class="in">
+            <div class="f"><span class="lab">Titre</span><div class="inp focus">Tel Aviv à vélo</div></div>
+            <div class="f"><span class="lab">Sous-titre</span><div class="inp">Trois heures à vélo entre Neve Tzedek et le boulevard Rothschild.</div><span class="help">Une phrase, 120 caractères au maximum.</span></div>
+            <div class="row2">
+              <div class="f"><span class="lab">Durée</span><div class="inp">3 heures</div></div>
+              <div class="f"><span class="lab">Ville</span><div class="inp err ph">Choisir une ville</div><span class="help err">La ville est obligatoire pour publier.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="sec">
+          <h2>Réglages</h2>
+          <div class="in">
+            <div class="sw"><i></i>Visible sur le site</div>
+            <div class="sw off"><i></i>Mettre en avant sur la home</div>
+          </div>
+        </div>
+        <div class="sec" style="border-color:#f0d0d0">
+          <h2 style="border-color:#f0d0d0">Zone sensible</h2>
+          <div class="in"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span class="help">Supprimer cette expérience. Cette action est définitive.</span><span class="btn sm dng">Supprimer</span></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <span class="lab">Résumé</span>
+          <div class="line"><span>Prix</span><span class="mono">202 ₪</span></div>
+          <div class="line"><span>Groupe</span><span>1 à 10</span></div>
+          <div class="line"><span>Position sur la carte</span><span class="none">Non renseignée</span></div>
+        </div>
+        <span class="lab" style="display:block;margin-bottom:6px">Fenêtre de confirmation</span>
+        <div class="dlg">
+          <h3>Publier cette expérience ?</h3>
+          <p>Elle sera visible tout de suite sur le site.</p>
+          <div class="row"><span class="btn">Annuler</span><span class="btn pri">Publier</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============ RÈGLES ============ -->
+<div class="view" id="rules">
+<p class="note">Les règles qui rendent toutes les pages du back-office semblables. Elles reprennent la famille visuelle du site client, en plus sobre.</p>
+
+<div class="rb">
+  <h2>1. L'en-tête de page : toujours le même</h2>
+  <div class="two">
+    <div class="ba no"><span class="lab">Aujourd'hui : 10 styles de titre différents</span>
+      <div class="ex"><span class="old1">Réservations</span></div>
+      <div class="ex"><span class="old2">Cartes cadeaux</span></div>
+      <div class="ex"><span class="old3">Diagnostic</span></div>
+      <span class="help">Rouge sur certaines pages, noir sur d'autres, trois tailles, parfois aucun titre.</span>
+    </div>
+    <div class="ba yes"><span class="lab">Proposé : un seul en-tête</span>
+      <div class="head" style="border:0;padding:0;margin:0 0 6px"><div><h1>Réservations</h1><p>Toutes les réservations passées sur le site.</p></div><div class="acts"><span class="btn">Filtres</span><span class="btn pri">Nouvelle réservation</span></div></div>
+      <span class="help">Titre noir de 18, une ligne d'explication grise, les actions à droite, un trait dessous.</span>
+    </div>
+  </div>
+</div>
+
+<div class="rb">
+  <h2>2. Les boutons d'action : cinq sortes, pas plus</h2>
+  <table class="rtab">
+    <tr><th>Bouton</th><th>Quand l'utiliser</th><th>Règle</th></tr>
+    <tr><td><span class="btn pri">Enregistrer</span></td><td>L'action principale de l'écran : créer, enregistrer, publier.</td><td>Un seul par écran, toujours le plus à droite.</td></tr>
+    <tr><td><span class="btn">Exporter</span></td><td>Les actions secondaires : filtres, export, aperçu.</td><td>Contour fin, fond blanc.</td></tr>
+    <tr><td><span class="btn txt">Annuler</span></td><td>Renoncer, fermer, revenir.</td><td>Texte gris, sans contour.</td></tr>
+    <tr><td><span class="btn dng">Supprimer</span></td><td>Les actions définitives.</td><td>Texte rouge sur fond blanc, jamais plein. Toujours suivi d'une fenêtre de confirmation.</td></tr>
+    <tr><td><span class="btn ico">i</span></td><td>Les petites aides et les actions par icône.</td><td>Rond, même hauteur que les autres.</td></tr>
+  </table>
+  <ul style="margin-top:10px">
+    <li><b>Une seule forme</b> : pastille arrondie, hauteur 34 dans l'en-tête, 28 dans les tableaux.</li>
+    <li><b>Texte en minuscules</b> avec une majuscule au début, commençant par un verbe : « Enregistrer », « Nouvelle réservation ».</li>
+    <li><b>Toujours au même endroit</b> : en haut à droite de la page, en bas à droite d'une fenêtre.</li>
+  </ul>
+  <div class="two" style="margin-top:10px">
+    <div class="ba no"><span class="lab">Aujourd'hui</span><div class="ex"><span class="oldb" style="background:#0f283e;color:#fff">Enregistrer</span><span class="oldb" style="background:#8f1010;color:#fff">Nouveau</span><span class="oldb" style="border:1px solid #ccc">Exporter</span></div><span class="help">Texte en majuscules, coins presque droits, plusieurs couleurs pleines sur un même écran.</span></div>
+    <div class="ba yes"><span class="lab">Proposé</span><div class="ex"><span class="btn txt">Annuler</span><span class="btn">Exporter</span><span class="btn pri">Enregistrer</span></div><span class="help">Du plus discret au plus important, de gauche à droite.</span></div>
+  </div>
+</div>
+
+<div class="rb">
+  <h2>3. Les textes : jamais de tiret long</h2>
+  <table class="rtab">
+    <tr><th>Cas</th><th>Aujourd'hui</th><th>Proposé</th></tr>
+    <tr><td>Une case vide dans un tableau</td><td>Un tiret long seul dans la case</td><td><span class="none">Non renseigné</span> en gris</td></tr>
+    <tr><td>Un titre et sa précision</td><td>« Réservations, tiret long, Hôtels »</td><td>Le titre seul, la précision dans la ligne d'explication</td></tr>
+    <tr><td>Deux informations à la suite</td><td>Séparées par un tiret long</td><td>Séparées par un point médian : 12 nov. · 2 personnes</td></tr>
+    <tr><td>Une période</td><td>Deux dates séparées par un tiret long</td><td>« du 12 au 14 nov. »</td></tr>
+  </table>
+  <ul style="margin-top:10px">
+    <li>Phrases courtes, à la voix « notre équipe », sans prénom.</li>
+    <li>Les petites étiquettes en majuscules sont réservées aux en-têtes de colonnes et aux noms de champs.</li>
+  </ul>
+</div>
+
+<div class="rb">
+  <h2>4. Les couleurs : le noir structure, le rouge agit</h2>
+  <div class="sws">
+    <div class="swt"><i style="background:#1a1814"></i><b>Noir</b>Titres, liens, menu et onglet actifs, interrupteurs.</div>
+    <div class="swt"><i style="background:#ad1414"></i><b>Rouge</b>Le bouton principal, les compteurs à traiter, les alertes.</div>
+    <div class="swt"><i style="background:#6f6a63"></i><b>Gris</b>Explications, valeurs absentes.</div>
+    <div class="swt"><i style="background:#e9e6e1"></i><b>Trait</b>Bordures et séparateurs.</div>
+    <div class="swt"><i style="background:#faf8f6"></i><b>Beige</b>En-têtes de tableau, blocs de résumé.</div>
+  </div>
+  <p class="note" style="margin:12px 0 6px"><b>Les statuts</b>, toujours en pastille pastel et toujours avec les mêmes mots :</p>
+  <div class="ex"><span class="chip c-ok">Confirmée</span><span class="chip c-warn">À confirmer</span><span class="chip c-info">Brouillon</span><span class="chip c-no">Annulée</span></div>
+</div>
+
+<div class="rb">
+  <h2>5. Tableaux, champs et fenêtres</h2>
+  <ul>
+    <li><b>Tableaux</b> : en-têtes en petites majuscules grises sur fond beige, lignes compactes, montants et références en chiffres à largeur fixe, montants alignés à droite, colonne « Actions » à droite.</li>
+    <li><b>Champs</b> : le nom du champ au-dessus en petites majuscules, arrondi de 10, contour noir quand on écrit dedans, message rouge sous le champ en cas d'erreur.</li>
+    <li><b>Blocs</b> : contour fin, arrondi de 14, un titre de bloc en noir de 13,5.</li>
+    <li><b>Fenêtres de confirmation</b> : une question en titre, une phrase d'explication, « Annuler » à gauche et l'action à droite.</li>
+    <li><b>Zone sensible</b> : les suppressions sont regroupées en bas de page, dans un bloc à contour rouge pâle.</li>
+  </ul>
+</div>
+</div>
+
+<!-- ============ CONSTAT ============ -->
+<div class="view" id="audit">
+<p class="note">Ce que montre la lecture des fichiers du back-office le 6 octobre 2026. Je n'ai pas pu regarder les écrans eux-mêmes, car il faut être connecté : ces chiffres viennent du code.</p>
+<div class="rb">
+  <h2>Ton impression est juste : les pages ne se ressemblent pas</h2>
+  <table class="rtab">
+    <tr><th>Point</th><th>Constat</th><th>Conséquence</th></tr>
+    <tr><td>Titres de page</td><td>10 styles différents sur 33 écrans, en trois tailles. 11 écrans ont un titre noir, une quinzaine un titre rouge.</td><td>Un seul en-tête commun à poser partout.</td></tr>
+    <tr><td>Écrans sans titre</td><td>8 écrans n'ont aucun titre de page : Bateaux, Catégories, éditeur de catégorie, les deux éditeurs d'hôtel, la liste des hôtels, l'éditeur du journal, la page « à venir ».</td><td>À équiper du même en-tête.</td></tr>
+    <tr><td>Tirets longs</td><td>Environ 150 lignes en contiennent, dans 69 fichiers. Une partie est du texte visible (cases vides, séparateurs), une partie des notes internes.</td><td>À trier, puis à remplacer selon la règle 3.</td></tr>
+    <tr><td>Boutons</td><td>Environ 270 boutons : 101 à contour, 96 discrets, 69 pleins. Leur texte est en majuscules et leurs coins presque droits. Quelques-uns ont une couleur écrite à la main.</td><td>Passer à la pastille en minuscules, et ne garder qu'un bouton plein par écran.</td></tr>
+  </table>
+</div>
+<div class="rb">
+  <h2>Comment on s'y prendrait</h2>
+  <ul>
+    <li><b>Étape 1, les règles communes</b> : la forme et le texte des boutons, appliqués d'un coup à tout le back-office sans toucher aux pages.</li>
+    <li><b>Étape 2, l'en-tête commun</b> : un seul modèle de titre, posé sur les 33 écrans, y compris les 8 qui n'en ont pas.</li>
+    <li><b>Étape 3, les tirets longs</b> dans les textes visibles.</li>
+    <li><b>Étape 4, la relecture écran par écran</b> avec toi : un seul bouton rouge par écran, statuts et tableaux alignés.</li>
+  </ul>
+  <p class="note" style="margin:10px 0 0">Aucune de ces étapes ne touche au fonctionnement : ce sont les mêmes écrans, les mêmes données et les mêmes actions, présentés de la même façon partout.</p>
+</div>
+</div>
+
+<script>
+document.querySelectorAll(".top .tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".top .tab").forEach(x=>x.classList.remove("on"));b.classList.add("on");document.querySelectorAll(".view").forEach(v=>v.classList.remove("on"));document.getElementById(b.dataset.v).classList.add("on");window.scrollTo(0,0)});
+</script>
+</body>
+</html>

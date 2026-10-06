@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-10-06] — DA du back-office : maquette des grandes lignes (aucun code modifié)
+
+### Ce qui a changé côté code
+- `docs/claude/maquettes/maquette-da-backoffice-regles.html` (créé) : maquette en 4 onglets pour que toutes les pages du back-office se ressemblent. 1. Gabarit d'une page de liste. 2. Gabarit d'une page de saisie. 3. Les règles : en-tête de page unique (titre noir, ligne d'explication, actions à droite), cinq sortes de boutons, textes sans tiret long, couleurs, tableaux, champs, fenêtres. 4. Le constat chiffré d'aujourd'hui et l'ordre de travail proposé.
+- Le back-office lui-même n'est pas modifié : la maquette attend la validation de Shana.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration.
+
+### Pourquoi ce changement
+Les écrans du back-office n'ont pas tous la même présentation : 10 styles de titre sur 33 écrans (noirs ou rouges selon les pages), 8 écrans sans titre, des tirets longs dans les textes, des boutons de formes et de couleurs variées. Shana veut une règle commune, comme pour le site client.
+
+---
+
 ## [2026-10-06] — Session DA : boutons et champs des pages entreprises, contact, carte cadeau et à propos
 
 ### Ce qui a changé côté code
