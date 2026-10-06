@@ -5,16 +5,18 @@
  * Une demande de bateau ou d'expérience est une ligne comme les autres, au statut « Demande ».
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { LayoutList, Plus, Table2 } from "lucide-react";
+import { format } from "date-fns";
+import { toast } from "sonner";
+import { Check, LayoutList, Lock, Plus, Table2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import ExperienceBookingsGrid from "@/components/admin/ReservationsHub/ExperienceBookingsGrid";
-import HotelBookingsGrid from "@/components/admin/ReservationsHub/HotelBookingsGrid";
+import ReservationsEntryGrid from "@/components/admin/ReservationsHub/ReservationsEntryGrid";
 import CreateManualHotelBookingDialog from "@/components/admin/ReservationsHub/CreateManualHotelBookingDialog";
 import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
 import ReservationActionDialogs, { type PendingAction } from "@/components/admin/ReservationsHub/ReservationActionDialogs";
@@ -22,6 +24,8 @@ import ReservationsToolbar from "@/components/admin/ReservationsHub/Reservations
 import ReservationsKpis from "@/components/admin/ReservationsHub/ReservationsKpis";
 import ReservationsSummaryTable from "@/components/admin/ReservationsHub/ReservationsSummaryTable";
 import { RESERVATIONS_QUERY_KEY, useReservationRows } from "@/lib/reservations/queries";
+import { createBookingFromGrid, saveCellUpdate } from "@/lib/reservations/actions";
+import { buildCellUpdate, type EntryColumnKey } from "@/lib/reservations/entryGrid";
 import { applyToolbarFilters, computeKpis, groupRows, matchesTab } from "@/lib/reservations/rules";
 import type {
   NextAction,
@@ -82,6 +86,9 @@ const AdminReservations = () => {
   const [hotelCreateOpen, setHotelCreateOpen] = useState(false);
   const [experienceCreateOpen, setExperienceCreateOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const [isCreatingRow, setIsCreatingRow] = useState(false);
+  const [savedVisible, setSavedVisible] = useState(false);
+  const savedTimer = useRef<number>();
 
   const { data: rows, isLoading, error } = useReservationRows();
 
@@ -111,9 +118,60 @@ const AdminReservations = () => {
     if (statusChip === "todo") return { requests: [], todo: groups.todo, settled: [] };
     return groups;
   }, [groups, statusChip]);
-  const visibleCount = visibleGroups.requests.length + visibleGroups.todo.length + visibleGroups.settled.length;
+  // Même sélection que les groupes, mais dans l'ordre des dates : en Saisie, une ligne ne doit
+  // pas changer de place parce qu'on vient de modifier une de ses cellules.
+  const visibleRows = useMemo(() => {
+    const visible = new Set([...visibleGroups.requests, ...visibleGroups.todo, ...visibleGroups.settled]);
+    return tabRows.filter((row) => visible.has(row));
+  }, [tabRows, visibleGroups]);
+
+  // Une ligne ne se crée en tapant que là où c'est une réservation d'expérience ou de bateau.
+  const allowNewRow = tab === "all" || tab === "experiences";
 
   const refreshRows = () => queryClient.invalidateQueries({ queryKey: RESERVATIONS_QUERY_KEY });
+
+  const openRow = (row: ReservationRow) => {
+    if (row.detailPath) navigate(row.detailPath);
+  };
+
+  const flashSaved = () => {
+    setSavedVisible(true);
+    window.clearTimeout(savedTimer.current);
+    savedTimer.current = window.setTimeout(() => setSavedVisible(false), 2000);
+  };
+
+  const commitCell = async (row: ReservationRow, key: EntryColumnKey, rawValue: string): Promise<boolean> => {
+    const update = buildCellUpdate(row, key, rawValue);
+    if ("message" in update) {
+      toast.error("Valeur refusée", { description: update.message });
+      return false;
+    }
+    try {
+      await saveCellUpdate(update.table, row.id, update.patch);
+    } catch (e) {
+      toast.error("Erreur de sauvegarde", { description: (e as Error).message });
+      return false;
+    }
+    flashSaved();
+    await refreshRows();
+    return true;
+  };
+
+  const commitNewRow = async (customerName: string): Promise<boolean> => {
+    if (isCreatingRow) return false;
+    setIsCreatingRow(true);
+    try {
+      await createBookingFromGrid(customerName, format(new Date(), "yyyy-MM-dd"));
+    } catch (e) {
+      toast.error("Impossible de créer la réservation", { description: (e as Error).message });
+      return false;
+    } finally {
+      setIsCreatingRow(false);
+    }
+    flashSaved();
+    await refreshRows();
+    return true;
+  };
 
   const handleTabChange = (value: string) => {
     setSearchParams(
@@ -173,6 +231,21 @@ const AdminReservations = () => {
       </Button>
     );
 
+  const emptyState = (
+    <div className="rounded-lg border bg-card py-12 text-center">
+      <p className="text-sm font-medium text-foreground">
+        {tab === "hotels" && tabCounts.hotels === 0
+          ? "Aucune réservation d'hôtel pour l'instant"
+          : tab === "itineraries" && tabCounts.itineraries === 0
+            ? "Aucun dossier de voyage payé pour l'instant"
+            : "Aucune ligne ne correspond à ces filtres"}
+      </p>
+      {tab === "hotels" && tabCounts.hotels === 0 && (
+        <p className="mt-1 text-xs text-muted-foreground">Les réservations en ligne arriveront ici automatiquement.</p>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -209,67 +282,67 @@ const AdminReservations = () => {
         </TabsList>
       </Tabs>
 
-      {displayMode === "vue" ? (
-        <>
-          <ReservationsToolbar
-            search={search}
-            onSearchChange={setSearch}
-            statusChip={statusChip}
-            onStatusChipChange={setStatusChip}
-            requestsCount={groups.requests.length}
-            todoCount={groups.todo.length}
-            showBoatsChip={showBoatsChip}
-            boatsOnly={boatsOnly}
-            onBoatsOnlyChange={setBoatsOnly}
-            payment={payment}
-            onPaymentChange={setPayment}
-            period={period}
-            onPeriodChange={setPeriod}
-            channel={channel}
-            onChannelChange={setChannel}
-          />
+      <ReservationsToolbar
+        search={search}
+        onSearchChange={setSearch}
+        statusChip={statusChip}
+        onStatusChipChange={setStatusChip}
+        requestsCount={groups.requests.length}
+        todoCount={groups.todo.length}
+        showBoatsChip={showBoatsChip}
+        boatsOnly={boatsOnly}
+        onBoatsOnlyChange={setBoatsOnly}
+        payment={payment}
+        onPaymentChange={setPayment}
+        period={period}
+        onPeriodChange={setPeriod}
+        channel={channel}
+        onChannelChange={setChannel}
+      />
 
-          {isLoading ? (
-            <div className="py-12 text-center text-muted-foreground">Chargement...</div>
-          ) : error ? (
-            <div className="rounded-lg border bg-card py-12 text-center text-sm text-destructive">
-              Impossible de charger les réservations. Recharge la page, et si le problème continue, préviens le développeur.
-            </div>
+      {isLoading ? (
+        <div className="py-12 text-center text-muted-foreground">Chargement...</div>
+      ) : error ? (
+        <div className="rounded-lg border bg-card py-12 text-center text-sm text-destructive">
+          Impossible de charger les réservations. Recharge la page, et si le problème continue, préviens le développeur.
+        </div>
+      ) : displayMode === "vue" ? (
+        <>
+          <ReservationsKpis kpis={kpis} />
+          {visibleRows.length > 0 ? (
+            <ReservationsSummaryTable groups={visibleGroups} onAction={handleAction} onOpen={openRow} />
           ) : (
-            <>
-              <ReservationsKpis kpis={kpis} />
-              {visibleCount > 0 ? (
-                <ReservationsSummaryTable groups={visibleGroups} onAction={handleAction} onOpen={(row) => row.detailPath && navigate(row.detailPath)} />
-              ) : (
-                <div className="rounded-lg border bg-card py-12 text-center">
-                  <p className="text-sm font-medium text-foreground">
-                    {tab === "hotels" && tabCounts.hotels === 0
-                      ? "Aucune réservation d'hôtel pour l'instant"
-                      : tab === "itineraries" && tabCounts.itineraries === 0
-                        ? "Aucun dossier de voyage payé pour l'instant"
-                        : "Aucune ligne ne correspond à ces filtres"}
-                  </p>
-                  {tab === "hotels" && tabCounts.hotels === 0 && (
-                    <p className="mt-1 text-xs text-muted-foreground">Les réservations en ligne arriveront ici automatiquement.</p>
-                  )}
-                </div>
-              )}
-            </>
+            emptyState
           )}
         </>
       ) : (
-        <div className="space-y-3">
-          <p className="text-xs text-muted-foreground">
-            Grille actuelle, en attendant la grille de saisie commune à tous les onglets (lot 3).
-          </p>
-          {tab === "hotels" ? (
-            <HotelBookingsGrid createOpen={false} onCreateOpenChange={() => undefined} />
-          ) : tab === "itineraries" ? (
-            <div className="rounded-lg border bg-card py-12 text-center text-sm text-muted-foreground">
-              La saisie des dossiers de voyage arrive avec le lot Itinéraire.
-            </div>
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <span>Clic = éditer · Entrée = valider · Échap = annuler · Tab / flèches = naviguer</span>
+            <span className="inline-flex items-center gap-1">
+              <Lock className="h-3 w-3" />
+              Verrouillé (vient de Revolut)
+            </span>
+            <span>Texte gris = calculé ou géré dans la fiche</span>
+            <span
+              aria-live="polite"
+              className={cn("ml-auto inline-flex items-center gap-1 text-foreground transition-opacity", savedVisible ? "opacity-100" : "opacity-0")}
+            >
+              <Check className="h-3 w-3" />
+              Enregistré
+            </span>
+          </div>
+          {visibleRows.length > 0 || allowNewRow ? (
+            <ReservationsEntryGrid
+              rows={visibleRows}
+              allowNewRow={allowNewRow}
+              isCreatingRow={isCreatingRow}
+              onCellCommit={commitCell}
+              onNewRowCommit={commitNewRow}
+              onOpen={openRow}
+            />
           ) : (
-            <ExperienceBookingsGrid createOpen={false} onCreateOpenChange={() => undefined} />
+            emptyState
           )}
         </div>
       )}

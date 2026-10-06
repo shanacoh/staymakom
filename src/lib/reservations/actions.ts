@@ -140,3 +140,33 @@ export async function markSupplierPaid(bookingId: string) {
   if (error) throw error;
   assertChanged(data, ALREADY_HANDLED);
 }
+
+/** Écrit la modification d'une cellule de la grille de Saisie (une cellule = une écriture). */
+export async function saveCellUpdate(table: string, rowId: string, patch: Record<string, unknown>) {
+  const { data, error } = await db.from(table).update(patch).eq("id", rowId).select("id");
+  if (error) throw error;
+  assertChanged(data, "Ligne introuvable. Recharge la liste.");
+}
+
+/**
+ * Ligne vide du bas de la grille : dès qu'un nom est tapé, la réservation est créée.
+ * Elle démarre « Confirmée », paiement client « Non payé », à la date du jour, et se complète
+ * ensuite cellule par cellule. Le type (Expérience / Bateau) est posé par la base.
+ */
+export async function createBookingFromGrid(customerName: string, today: string) {
+  const { error } = await db.from("standalone_bookings").insert({
+    customer_name: customerName,
+    customer_email: "",
+    // La base exige une fiche liée ou un titre : titre vide en attendant la saisie du produit.
+    custom_experience_title: "",
+    booking_date: today,
+    party_size: 1,
+    sell_price: 0,
+    currency: "ILS",
+    status: "confirmed",
+    payment_status: "pending",
+    supplier_payment_status: "pending",
+    source: "manual_admin",
+  });
+  if (error) throw error;
+}

@@ -47,7 +47,7 @@ const GridSelectCell = forwardRef<HTMLTableCellElement, GridSelectCellProps>(fun
         <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-muted-foreground animate-pulse" />
       )}
       {saveState === "saved" && (
-        <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-green-500" />
+        <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-foreground" />
       )}
       {saveState === "error" && (
         <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-destructive" />

@@ -6,6 +6,25 @@
 
 ---
 
+## [2026-10-06] — Réservations, lot 3 : grille de « Saisie » commune à tous les onglets
+
+### Ce qui a changé côté code
+- `src/components/admin/ReservationsHub/ReservationsEntryGrid.tsx` (nouveau) : la grille façon Excel de l'affichage « Saisie ». Mêmes lignes et mêmes filtres que « Vue ». Colonnes : Réf, Statut, Type, Client, Produit, Date, Pers., Montant, Encaissé, Paie. client, Coût fourn., Paie. fourn., Marge, Canal, Notes / relance, Actions. Clic pour éditer, Entrée valide, Échap annule, Tab et flèches pour naviguer, une sauvegarde par cellule, totaux en bas (hors demandes et annulations), ligne vide en bas pour créer une réservation en tapant un nom.
+- `src/lib/reservations/entryGrid.ts` (nouveau) + `entryGrid.test.ts` : les règles de la grille, sans accès à la base. Quelles cellules sont modifiables selon l'origine de la ligne, et quelle modification écrire dans quelle table. Montant, encaissé et paiement client d'une réservation en ligne sont verrouillés (ils viennent de Revolut). La marge et l'encaissé sont calculés, jamais saisis.
+- `src/lib/reservations/actions.ts` : enregistrement d'une cellule, et création d'une réservation depuis la ligne vide (statut « Confirmée », paiement client « Non payé », date du jour).
+- `src/pages/admin/Reservations.tsx` : la barre d'outils est maintenant commune aux deux affichages, avec un indicateur discret « Enregistré ». Les anciennes grilles (`ExperienceBookingsGrid`, `HotelBookingsGrid`) et `ItineraryRequestsTable` ne sont plus affichées ; leurs fichiers seront retirés à la fin de la refonte.
+- `src/components/admin/BookingsGrid/GridCell.tsx`, `GridSelectCell.tsx` : le point « enregistré » d'une cellule passe du vert au noir (pas de vert dans la DA).
+- Limites connues : l'encaissé d'une réservation manuelle ne se saisit pas, il se déduit du paiement client. Une réservation d'hôtel ne se modifie ici que pour les notes et le canal (le reste se fait dans sa fiche). La colonne Actions n'a que « Ouvrir la fiche » : il n'existe pas encore de facture.
+- `docs/claude/nettoyage-2026-10-06-ligne-test-et-liron.sql` : opération à lancer une fois à la main dans Supabase (suppression de la réservation de test « ff / rrrr », retrait de l'annulation posée par erreur sur la réservation 8811).
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration.
+
+### Pourquoi ce changement
+Shana veut pouvoir saisir et corriger toutes ses réservations dans une seule grille, comme dans son ancien Excel, sans changer d'écran selon le type de réservation.
+
+---
+
 ## [2026-10-06] — Réservations, lot 2 : les boutons « Prochaine action » agissent directement
 
 ### Ce qui a changé côté code
