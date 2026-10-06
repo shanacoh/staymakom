@@ -13,12 +13,11 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import ExperienceBookingsGrid from "@/components/admin/ReservationsHub/ExperienceBookingsGrid";
 import HotelBookingsGrid from "@/components/admin/ReservationsHub/HotelBookingsGrid";
 import CreateManualHotelBookingDialog from "@/components/admin/ReservationsHub/CreateManualHotelBookingDialog";
 import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
-import StandaloneRequestsTable from "@/components/admin/StandaloneRequestsTable";
+import ReservationActionDialogs, { type PendingAction } from "@/components/admin/ReservationsHub/ReservationActionDialogs";
 import ReservationsToolbar from "@/components/admin/ReservationsHub/ReservationsToolbar";
 import ReservationsKpis from "@/components/admin/ReservationsHub/ReservationsKpis";
 import ReservationsSummaryTable from "@/components/admin/ReservationsHub/ReservationsSummaryTable";
@@ -82,7 +81,7 @@ const AdminReservations = () => {
   const [channel, setChannel] = useState("all");
   const [hotelCreateOpen, setHotelCreateOpen] = useState(false);
   const [experienceCreateOpen, setExperienceCreateOpen] = useState(false);
-  const [requestsOpen, setRequestsOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
   const { data: rows, isLoading, error } = useReservationRows();
 
@@ -138,10 +137,14 @@ const AdminReservations = () => {
     }
   };
 
-  // Lot 1 : le bouton amène là où l'action se fait aujourd'hui (panneau des demandes ou
-  // fiche de la réservation). Les actions directes sont branchées au lot 2.
-  const handleAction = (row: ReservationRow, _action: NextAction) => {
-    if (row.source === "request") setRequestsOpen(true);
+  // Les actions directes existent pour les demandes et les réservations d'expérience saisies
+  // à la main. Pour le reste (hôtel, dossier, réservation payée en ligne à encaisser), le
+  // bouton ouvre la fiche, où se trouvent les outils propres à ce type de réservation.
+  const handleAction = (row: ReservationRow, action: NextAction) => {
+    const handledHere =
+      row.source === "request" ||
+      (row.source === "booking" && !(action.kind === "confirm_collection" && row.isOnline));
+    if (handledHere) setPendingAction({ row, action });
     else if (row.detailPath) navigate(row.detailPath);
   };
 
@@ -296,22 +299,7 @@ const AdminReservations = () => {
         }}
       />
 
-      <Sheet
-        open={requestsOpen}
-        onOpenChange={(open) => {
-          setRequestsOpen(open);
-          if (!open) refreshRows();
-        }}
-      >
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-2xl">
-          <SheetHeader>
-            <SheetTitle>Demandes à traiter</SheetTitle>
-          </SheetHeader>
-          <div className="mt-4">
-            <StandaloneRequestsTable showWhatsAppLink />
-          </div>
-        </SheetContent>
-      </Sheet>
+      <ReservationActionDialogs pending={pendingAction} onClose={() => setPendingAction(null)} onDone={refreshRows} />
     </div>
   );
 };

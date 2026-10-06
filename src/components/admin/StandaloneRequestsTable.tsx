@@ -28,6 +28,7 @@ import { Mail, Phone, MessageCircle, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
 import EditStandaloneRequestDialog from "@/components/admin/EditStandaloneRequestDialog";
+import { buildProviderMessage, buildWhatsAppLink, durationLabel } from "@/lib/reservations/whatsapp";
 
 const REQUESTS_QUERY_KEY = ["admin-standalone-experience-requests"];
 
@@ -39,46 +40,6 @@ const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secon
   converted: { label: "Convertie", variant: "outline" },
   closed: { label: "Refusée / annulée", variant: "destructive" },
 };
-
-// wa.me exige un numéro sans espaces ni "+" — construit un message pré-rempli
-// pour que l'admin n'ait qu'à cliquer "Envoyer" sur WhatsApp Web/mobile.
-function buildWhatsAppLink(phone: string, text: string): string {
-  const digits = phone.replace(/[^\d]/g, "");
-  return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
-}
-
-function durationLabel(minutes: number | null): string {
-  if (!minutes) return "";
-  return minutes % 60 === 0 ? `${minutes / 60}h` : `${Math.floor(minutes / 60)}h${minutes % 60}`;
-}
-
-// Message au prestataire, en anglais — l'hébreu mélangé avec le nom du bateau
-// (toujours en alphabet latin) et les autres infos produisait un texte bidirectionnel
-// illisible sur WhatsApp. L'anglais reste compris par tous les prestataires actuels.
-function buildProviderMessage(request: any): string {
-  // Le nom envoyé au prestataire est le sien (supplier_boat_name), pas le nom
-  // client STAYMAKOM : certains prestataires appellent leur bateau autrement.
-  const boatName = request.standalone_experiences?.supplier_boat_name
-    || request.standalone_experiences?.title
-    || request.preferred_city
-    || "a boat";
-  // Le pop-up rapide (bouton WhatsApp des cartes) ne connaît qu'une fourchette
-  // large ("aujourd'hui ou demain"...), stockée dans `message` sans date exacte :
-  // on l'utilise comme texte de date, jamais comme une note à part collée en français.
-  const isQuickRequest = request.source === "card_whatsapp";
-  const dateTxt = request.requested_date
-    ? format(parseISO(request.requested_date), "dd/MM/yyyy")
-    : (isQuickRequest && request.message) ? request.message : "flexible";
-  const timeMap: Record<string, string> = { morning: "morning", afternoon: "afternoon", sunset: "sunset", precise: request.desired_time_value || "" };
-  const timeTxt = request.desired_time_period ? (timeMap[request.desired_time_period] || request.desired_time_period) : "flexible";
-  // Une seule valeur (pas de fourchette artificielle "2-2") quand min et max sont identiques.
-  const partyTxt = request.party_max && request.party_max !== request.adults
-    ? `${request.adults}-${request.party_max}`
-    : `around ${request.adults}`;
-  const durationTxt = durationLabel(request.requested_duration_minutes) || "not specified";
-  const notesLine = (!isQuickRequest && request.message) ? ` Notes: ${request.message}.` : "";
-  return `Hi, new request from STAYMAKOM: ${boatName}, ${dateTxt}, ${timeTxt}, ${partyTxt} people, ${durationTxt}.${notesLine} Any availability? Thanks!`;
-}
 
 // Alerte de délai : pas envoyée au prestataire après 15 min, ou pas de réponse après 1h.
 function getSlaAlert(request: any): string | null {

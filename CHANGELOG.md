@@ -6,6 +6,23 @@
 
 ---
 
+## [2026-10-06] — Réservations, lot 2 : les boutons « Prochaine action » agissent directement
+
+### Ce qui a changé côté code
+- `src/components/admin/ReservationsHub/ReservationActionDialogs.tsx` (nouveau) : une petite fenêtre par action. Envoyer au prestataire (message WhatsApp prêt, la demande est marquée envoyée), réponse du prestataire (dispo confirmée ou pas disponible), conversion d'une demande « Dispo OK » en réservation, lien de solde (création, copie, envoi WhatsApp au client), confirmation d'encaissement, saisie du coût fournisseur, paiement du fournisseur.
+- `src/lib/reservations/actions.ts` (nouveau) : les écritures en base de ces actions. Chacune vérifie l'état attendu de la ligne avant d'écrire, pour ne rien écraser si la ligne a déjà été traitée ailleurs. Le lien de solde réutilise un lien déjà créé et non payé du même montant, sinon appelle la fonction existante `create-booking-payment-link` (non modifiée).
+- `src/lib/reservations/whatsapp.ts` (nouveau) : les messages WhatsApp (prestataire, client) sortis de `StandaloneRequestsTable.tsx` pour être partagés. Le texte des messages n'a pas changé.
+- `src/pages/admin/Reservations.tsx` : le bouton d'une ligne ouvre la fenêtre de son action. Le panneau latéral des demandes n'est plus utilisé en « Vue ». Pour un hôtel, un dossier ou une réservation payée en ligne, le bouton ouvre encore la fiche.
+- Limite connue : pour une demande « Dispo OK », le bouton ouvre la création de la réservation (le prix doit être fixé d'abord) ; le lien d'acompte se génère ensuite depuis la fiche de la réservation, qui s'ouvre toute seule.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration.
+
+### Pourquoi ce changement
+Shana veut traiter chaque ligne depuis la liste, sans ouvrir une fiche ou un panneau à part pour les gestes courants.
+
+---
+
 ## [2026-10-06] — Réservations : la page lit une « feuille récapitulative » de la base
 
 ### Ce qui a changé côté code
