@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCellUpdate, cellMode, computeTotals } from "./entryGrid";
+import { buildCellUpdate, canDeleteRow, cellMode, computeTotals } from "./entryGrid";
 import type { ReservationRow } from "./types";
 
 function row(overrides: Partial<ReservationRow>): ReservationRow {
@@ -101,5 +101,15 @@ describe("computeTotals", () => {
     expect(totals.collected).toEqual({ ILS: 1000 });
     expect(totals.costs).toEqual({ ILS: 600 });
     expect(totals.knownMargin).toEqual({ ILS: 400 });
+  });
+});
+
+describe("canDeleteRow", () => {
+  it("autorise la saisie manuelle et les demandes, jamais le paiement en ligne, l'hôtel ou le dossier", () => {
+    expect(canDeleteRow(row({}))).toBe(true);
+    expect(canDeleteRow(row({ source: "request", status: "demande" }))).toBe(true);
+    expect(canDeleteRow(row({ isOnline: true }))).toBe(false);
+    expect(canDeleteRow(row({ source: "hotel" }))).toBe(false);
+    expect(canDeleteRow(row({ source: "dossier" }))).toBe(false);
   });
 });

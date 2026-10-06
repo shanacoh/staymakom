@@ -170,3 +170,18 @@ export async function createBookingFromGrid(customerName: string, today: string)
   });
   if (error) throw error;
 }
+
+/**
+ * Supprime définitivement une ligne saisie à la main ou une demande. La condition sur
+ * l'origine est répétée dans la requête : une réservation payée en ligne ne peut pas être
+ * supprimée par ce chemin, même si l'écran se trompait.
+ */
+export async function deleteReservationRow(source: "booking" | "request", rowId: string) {
+  const query =
+    source === "booking"
+      ? db.from("standalone_bookings").delete().eq("id", rowId).eq("source", "manual_admin")
+      : db.from("standalone_experience_requests").delete().eq("id", rowId);
+  const { data, error } = await query.select("id");
+  if (error) throw error;
+  assertChanged(data, "Ligne introuvable ou non supprimable. Recharge la liste.");
+}

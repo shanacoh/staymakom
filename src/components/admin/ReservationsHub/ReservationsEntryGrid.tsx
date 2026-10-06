@@ -7,7 +7,7 @@
 
 import { useRef } from "react";
 import { format, parseISO } from "date-fns";
-import { Eye, Lock } from "lucide-react";
+import { Eye, Lock, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -17,6 +17,7 @@ import GridSelectCell from "@/components/admin/BookingsGrid/GridSelectCell";
 import { formatCurrency } from "@/components/admin/BookingsGrid/columnTypes";
 import {
   ENTRY_COLUMNS,
+  canDeleteRow,
   cellMode,
   cellValue,
   computeTotals,
@@ -38,6 +39,8 @@ interface Props {
   onCellCommit: (row: ReservationRow, key: EntryColumnKey, rawValue: string) => Promise<boolean>;
   onNewRowCommit: (customerName: string) => Promise<boolean>;
   onOpen: (row: ReservationRow) => void;
+  // Demande de suppression d'une ligne : la confirmation est gérée par la page.
+  onDelete: (row: ReservationRow) => void;
 }
 
 function displayText(row: ReservationRow, column: EntryColumn): string {
@@ -55,7 +58,7 @@ function displayText(row: ReservationRow, column: EntryColumn): string {
   return String(value);
 }
 
-const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit, onNewRowCommit, onOpen }: Props) => {
+const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit, onNewRowCommit, onOpen, onDelete }: Props) => {
   // Cellules de texte modifiables, repérées par « ligne:colonne », pour les flèches du clavier.
   const cellRefs = useRef(new Map<string, HTMLTableCellElement>());
   const lastRowIndex = allowNewRow ? rows.length : rows.length - 1;
@@ -170,7 +173,7 @@ const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit,
           {rows.map((row, rowIndex) => (
             <TableRow key={row.key} className={cn(isRequest(row) && "bg-muted/40", row.status === "annulee" && "opacity-60")}>
               {ENTRY_COLUMNS.map((column, colIndex) => renderCell(row, rowIndex, column, colIndex))}
-              <TableCell className="px-3 py-1 text-right">
+              <TableCell className="whitespace-nowrap px-3 py-1 text-right">
                 {row.detailPath && (
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -179,6 +182,22 @@ const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit,
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>Ouvrir la fiche (lien de paiement, email de confirmation)</TooltipContent>
+                  </Tooltip>
+                )}
+                {canDeleteRow(row) && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                        aria-label="Supprimer la ligne"
+                        onClick={() => onDelete(row)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Supprimer la ligne</TooltipContent>
                   </Tooltip>
                 )}
               </TableCell>

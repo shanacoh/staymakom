@@ -6,6 +6,22 @@
 
 ---
 
+## [2026-10-06] — Réservations : supprimer une ligne depuis la grille de Saisie
+
+### Ce qui a changé côté code
+- `src/components/admin/ReservationsHub/ReservationsEntryGrid.tsx` : une icône corbeille dans la colonne Actions des lignes supprimables.
+- `src/components/admin/ReservationsHub/DeleteReservationDialog.tsx` (nouveau) : la fenêtre de confirmation. Elle prévient si de l'argent a déjà été encaissé sur la ligne (la suppression ne rembourse rien et n'annule pas les liens de paiement déjà envoyés).
+- `src/lib/reservations/entryGrid.ts` (`canDeleteRow`) : seules les réservations d'expérience ou de bateau saisies à la main et les demandes sont supprimables. Une réservation payée en ligne, un hôtel ou un dossier ne le sont pas : on les annule.
+- `src/lib/reservations/actions.ts` (`deleteReservationRow`) : la suppression en base. Elle revérifie que la réservation a bien été saisie à la main avant de supprimer.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration. Supprimer une réservation supprime aussi ses liens de paiement enregistrés (comportement déjà en place dans la base).
+
+### Pourquoi ce changement
+Shana veut pouvoir retirer elle-même une ligne de test ou une erreur de saisie, sans passer par un script.
+
+---
+
 ## [2026-10-06] — Réservations, lot 3 : grille de « Saisie » commune à tous les onglets
 
 ### Ce qui a changé côté code

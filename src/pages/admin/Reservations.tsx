@@ -16,6 +16,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import DeleteReservationDialog from "@/components/admin/ReservationsHub/DeleteReservationDialog";
 import ReservationsEntryGrid from "@/components/admin/ReservationsHub/ReservationsEntryGrid";
 import CreateManualHotelBookingDialog from "@/components/admin/ReservationsHub/CreateManualHotelBookingDialog";
 import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
@@ -87,6 +88,7 @@ const AdminReservations = () => {
   const [experienceCreateOpen, setExperienceCreateOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [isCreatingRow, setIsCreatingRow] = useState(false);
+  const [rowToDelete, setRowToDelete] = useState<ReservationRow | null>(null);
   const [savedVisible, setSavedVisible] = useState(false);
   const savedTimer = useRef<number>();
 
@@ -340,6 +342,7 @@ const AdminReservations = () => {
               onCellCommit={commitCell}
               onNewRowCommit={commitNewRow}
               onOpen={openRow}
+              onDelete={setRowToDelete}
             />
           ) : (
             emptyState
@@ -372,6 +375,7 @@ const AdminReservations = () => {
         }}
       />
 
+      <DeleteReservationDialog row={rowToDelete} onClose={() => setRowToDelete(null)} onDeleted={refreshRows} />
       <ReservationActionDialogs pending={pendingAction} onClose={() => setPendingAction(null)} onDone={refreshRows} />
     </div>
   );
