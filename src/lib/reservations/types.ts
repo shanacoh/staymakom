@@ -90,7 +90,10 @@ export interface UnfinishedPayment {
   key: string;
   client: string;
   customerPhone: string | null;
+  // Nom affiché dans la liste (français quand il existe).
   product: string;
+  // Nom de l'expérience à citer dans le message de relance, selon la langue choisie.
+  productByLanguage: { fr: string; en: string; he: string };
   attempts: number;
   amount: number | null;
   currency: string;

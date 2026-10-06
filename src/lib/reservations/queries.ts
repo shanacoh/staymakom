@@ -128,6 +128,7 @@ async function fetchUnfinishedPayments(): Promise<UnfinishedPayment[]> {
     client: row.client || row.customer_email || "Sans nom",
     customerPhone: row.customer_phone,
     product: row.product,
+    productByLanguage: { fr: row.product, en: row.product_en ?? row.product, he: row.product_he ?? row.product_en ?? row.product },
     attempts: row.attempts,
     amount: toNumber(row.amount),
     currency: row.currency,

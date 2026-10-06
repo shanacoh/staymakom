@@ -84,7 +84,7 @@ const UnfinishedPaymentsTable = ({ payments }: { payments: UnfinishedPayment[] }
                             <a
                               href={buildWhatsAppLink(
                                 payment.customerPhone as string,
-                                buildPaymentFollowUpMessage(payment.client, payment.product, language.value),
+                                buildPaymentFollowUpMessage(payment.client, payment.productByLanguage[language.value], language.value),
                               )}
                               target="_blank"
                               rel="noopener noreferrer"

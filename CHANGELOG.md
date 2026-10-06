@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-10-06] — Relance WhatsApp : le nom de l'expérience suit la langue du message
+
+### Ce qui a changé côté code
+- `src/components/admin/ReservationsHub/UnfinishedPaymentsTable.tsx`, `src/lib/reservations/queries.ts`, `types.ts` : le message de relance cite le nom de l'expérience dans la langue choisie. Français : titre français. Anglais : titre anglais. Hébreu : titre hébreu, et s'il n'existe pas, titre anglais. La liste à l'écran continue d'afficher le titre français.
+
+### Ce qui a changé côté base de données
+- Migration `20261006140000_unfinished_payments_product_by_language.sql` (appliquée) : la vue `admin_unfinished_payments` gagne deux colonnes en fin de liste, `product_en` et `product_he` (le nom de l'expérience en anglais et en hébreu, avec repli sur l'anglais). Aucune donnée modifiée.
+
+### Pourquoi ce changement
+Un message en anglais ou en hébreu citait le nom français de l'expérience. Shana veut le nom dans la langue du message, et l'anglais à défaut.
+
+---
+
 ## [2026-10-06] — Réservations : demandes de voyage dans l'onglet Itinéraire, et trois fonctions remises
 
 ### Ce qui a changé côté code
