@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DA back-office : trois pistes</title>
+<style>
+:root{--red:#ad1414;--redsoft:#fdf2f2;--ink:#1a1814;--muted:#6f6a63;--line:#e9e6e1;--soft:#faf8f6;--navy:#0f283e;--bg:#f1efec;
+  --ok:#1f7a4d;--okbg:#e9f6ef;--warn:#8a6100;--warnbg:#fff4d6}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Inter",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;color:var(--ink);background:var(--bg);font-size:13px;line-height:1.5}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
+.top{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line);display:flex;gap:6px;padding:10px 16px;align-items:center;flex-wrap:wrap}
+.top b{margin-right:10px;letter-spacing:.08em;font-size:12px;text-transform:uppercase}
+.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font-size:13px}
+.tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.wrap{max-width:1180px;margin:0 auto;padding:22px 16px 60px}
+.note{color:var(--muted);font-size:13px;line-height:1.55;margin-bottom:14px}
+.note b{color:var(--ink)}
+.verdict{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:16px;font-size:13px}
+.verdict b{display:block;margin-bottom:2px}
+
+/* La couleur qui change d'une piste à l'autre */
+.bo{--main:var(--navy);--mainsoft:#eef2f6;--action:var(--navy);--active:var(--navy);--activebg:#eef2f6;--link:var(--navy)}
+.bo.red{--main:var(--red);--mainsoft:var(--redsoft);--action:var(--red);--active:var(--red);--activebg:var(--redsoft);--link:var(--red)}
+.bo.mix{--main:var(--ink);--mainsoft:var(--soft);--action:var(--red);--active:var(--ink);--activebg:var(--soft);--link:var(--ink)}
+
+.bo{background:#fff;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.07);overflow:hidden;display:grid;grid-template-columns:200px 1fr;position:relative}
+.side{border-right:1px solid var(--line);padding:14px 10px;background:#fff}
+.side .lg{font-weight:800;letter-spacing:-.03em;font-size:14px;padding:4px 10px 12px;color:var(--main)}
+.side .grp{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:10px 10px 4px}
+.side .it{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:10px;margin-bottom:1px;color:var(--ink)}
+.side .it.on{background:var(--activebg);color:var(--active);font-weight:700}
+.side .it em{font-style:normal;font-size:10px;background:var(--action);color:#fff;border-radius:999px;padding:0 6px;font-weight:600}
+.main{padding:16px 20px 250px;min-width:0}
+.head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.head h1{font-size:17px;color:var(--ink)}
+.head small{display:block;color:var(--muted);font-size:12px;font-weight:400}
+.btn{display:inline-flex;align-items:center;height:34px;padding:0 14px;border-radius:999px;font-size:12.5px;font-weight:600;border:1px solid var(--line);background:#fff}
+.btn.pri{background:var(--action);border-color:var(--action);color:#fff}
+.tabs{display:flex;gap:6px;margin:14px 0 12px;flex-wrap:wrap;align-items:center}
+.pt{border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12px}
+.pt.on{background:var(--active);border-color:var(--active);color:#fff}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.kpi{border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.kpi span{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.kpi b{display:block;font-size:19px;font-family:ui-monospace,Menlo,monospace;color:var(--ink)}
+.kpi i{font-style:normal;font-size:11px;color:var(--link)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:7px 8px;background:var(--soft);border-bottom:1px solid var(--line)}
+td{padding:8px;border-bottom:1px solid var(--line)}
+td a{color:var(--link);font-weight:600;text-decoration:none}
+.mono{font-family:ui-monospace,Menlo,monospace}
+.chip{display:inline-block;font-size:11px;border-radius:999px;padding:1px 8px;font-weight:600}
+.c-ok{background:var(--okbg);color:var(--ok)}.c-warn{background:var(--warnbg);color:var(--warn)}.c-no{background:var(--redsoft);color:var(--red)}
+.alert{display:flex;gap:8px;align-items:center;border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:12.5px;background:var(--redsoft);color:var(--red);border:1px solid #f3d6d6}
+.dlg{position:absolute;right:26px;bottom:22px;width:300px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 40px rgba(26,24,20,.16);padding:14px}
+.dlg h3{font-size:13.5px;margin-bottom:8px}
+.f{display:grid;gap:3px;margin-bottom:8px}
+.f span{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.inp{border:1px solid var(--line);border-radius:10px;height:34px;padding:0 10px;display:flex;align-items:center;color:var(--muted)}
+.inp.focus{border-color:var(--main);box-shadow:0 0 0 3px var(--mainsoft);color:var(--ink)}
+.dlg .row{display:flex;gap:6px;justify-content:flex-end;margin-top:4px}
+.sw{display:flex;gap:10px;align-items:center;margin-bottom:8px;font-size:12.5px}
+.sw i{width:30px;height:17px;border-radius:999px;background:var(--main);position:relative;display:inline-block}
+.sw i::after{content:"";position:absolute;right:2px;top:2px;width:13px;height:13px;border-radius:50%;background:#fff}
+.rules{background:#fff;border-radius:16px;padding:16px 20px;margin-top:16px;box-shadow:0 10px 40px rgba(0,0,0,.05)}
+.rules h2{font-size:14px;margin-bottom:8px}
+.rules li{margin:0 0 5px 18px}
+@media (max-width:900px){.main{padding-bottom:22px}.bo{grid-template-columns:1fr}.side{display:none}.kpis{grid-template-columns:1fr 1fr}.dlg{position:static;width:auto;margin-top:14px}}
+</style>
+</head>
+<body>
+<div class="top">
+  <b>DA back-office</b>
+  <button class="tab" data-v="">1. Aujourd'hui (bleu marine)</button>
+  <button class="tab" data-v="red">2. Tout en rouge</button>
+  <button class="tab on" data-v="mix">3. Noir de marque + rouge pour l'action (conseillé)</button>
+</div>
+<div class="wrap">
+<p class="note">Le même écran du back-office dans trois versions. Clique sur les boutons du haut pour comparer. L'écran est un exemple reconstitué (liste de réservations, menu, fenêtre de saisie), avec des données fictives. <b>Seules les couleurs changent</b> : la structure, les tailles et les libellés sont ceux du back-office actuel.</p>
+<div class="verdict" id="verdict"></div>
+
+<div class="bo mix" id="bo">
+  <div class="side">
+    <div class="lg">STAYMAKOM</div>
+    <div class="grp">Activité</div>
+    <div class="it">Tableau de bord</div>
+    <div class="it on">Réservations <em>3</em></div>
+    <div class="it">Demandes sur mesure</div>
+    <div class="it">Cartes cadeaux</div>
+    <div class="grp">Catalogue</div>
+    <div class="it">Expériences</div>
+    <div class="it">Hôtels</div>
+    <div class="it">Catalogue et carte</div>
+    <div class="grp">Clients</div>
+    <div class="it">Comptes</div>
+    <div class="it">Avis</div>
+  </div>
+  <div class="main">
+    <div class="head">
+      <h1>Réservations<small>Toutes les réservations du site</small></h1>
+      <div style="display:flex;gap:6px"><span class="btn">Filtres</span><span class="btn pri">Nouvelle réservation</span></div>
+    </div>
+    <div class="tabs"><span class="pt on">Hôtels</span><span class="pt">Expériences</span><span class="pt">Itinéraires</span></div>
+    <div class="alert">3 réservations attendent une confirmation du prestataire depuis plus de 24 h.</div>
+    <div class="kpis">
+      <div class="kpi"><span>Ce mois</span><b>42</b><i>Voir le détail</i></div>
+      <div class="kpi"><span>Chiffre d'affaires</span><b>61 400 ₪</b><i>Voir le détail</i></div>
+      <div class="kpi"><span>À confirmer</span><b>3</b><i>Traiter</i></div>
+      <div class="kpi"><span>Annulées</span><b>2</b><i>Voir le détail</i></div>
+    </div>
+    <table>
+      <tr><th>Référence</th><th>Client</th><th>Expérience</th><th>Date</th><th>Montant</th><th>Statut</th></tr>
+      <tr><td class="mono"><a href="#">SM-2041</a></td><td>Client A</td><td>Nuit dans le désert</td><td>12 nov.</td><td class="mono">1 840 ₪</td><td><span class="chip c-ok">Confirmée</span></td></tr>
+      <tr><td class="mono"><a href="#">SM-2040</a></td><td>Client B</td><td>Dégustation au Carmel</td><td>10 nov.</td><td class="mono">640 ₪</td><td><span class="chip c-warn">À confirmer</span></td></tr>
+      <tr><td class="mono"><a href="#">SM-2039</a></td><td>Client C</td><td>Tel Aviv à vélo</td><td>9 nov.</td><td class="mono">404 ₪</td><td><span class="chip c-ok">Confirmée</span></td></tr>
+      <tr><td class="mono"><a href="#">SM-2038</a></td><td>Client D</td><td>Catamaran Herzliya</td><td>8 nov.</td><td class="mono">3 240 ₪</td><td><span class="chip c-no">Annulée</span></td></tr>
+      <tr><td class="mono"><a href="#">SM-2037</a></td><td>Client E</td><td>Jérusalem s'illumine</td><td>7 nov.</td><td class="mono">280 ₪</td><td><span class="chip c-warn">À confirmer</span></td></tr>
+    </table>
+  </div>
+  <div class="dlg">
+    <h3>Nouvelle réservation</h3>
+    <div class="f"><span>Client</span><div class="inp focus">Nom du client</div></div>
+    <div class="f"><span>Expérience</span><div class="inp">Choisir une expérience</div></div>
+    <div class="sw"><i></i>Envoyer l'email de confirmation</div>
+    <div class="row"><span class="btn">Annuler</span><span class="btn pri">Créer</span></div>
+  </div>
+</div>
+
+<div class="rules">
+  <h2>La règle proposée (piste 3)</h2>
+  <ul>
+    <li><b>Le noir de la marque remplace le bleu marine</b> pour tout ce qui structure : logo, lien actif du menu, onglet actif, liens des tableaux, interrupteurs, contour du champ actif. C'est le même noir que sur le site client.</li>
+    <li><b>Le rouge est réservé à ce qui demande une action</b> : le bouton principal de chaque écran (un seul), les compteurs « à traiter » du menu, et les alertes.</li>
+    <li><b>Les statuts gardent leurs pastilles pastel</b> (vert, ambre, rouge pâle) : elles se lisent mieux quand le rouge n'est pas partout autour.</li>
+    <li><b>Rien d'autre ne change</b> : mêmes écrans, mêmes tailles, mêmes libellés.</li>
+  </ul>
+  <h2 style="margin-top:12px">Ce que dit le code du back-office aujourd'hui</h2>
+  <ul>
+    <li>Le bleu marine y sert surtout de couleur de texte et de lien (56 endroits), très peu de fond de bouton (5 endroits).</li>
+    <li>Le noir de la marque y est déjà écrit à la main à 50 endroits, et le rouge à 15 : la piste 3 prolonge ce qui a déjà commencé.</li>
+    <li>Passer à la piste 3 est un petit changement : une seule valeur de couleur à modifier, puis une relecture écran par écran pour les quelques boutons principaux à passer au rouge.</li>
+  </ul>
+</div>
+</div>
+<script>
+const V={
+ "":["Aujourd'hui","Le bleu marine n'existe plus nulle part côté client. Le back-office paraît appartenir à une autre marque."],
+ "red":["Tout en rouge","Cohérent avec le site, mais le rouge est partout : menu, onglets, liens, interrupteurs, champ actif. L'alerte et le statut « Annulée » ne ressortent plus, et l'œil ne sait plus où est l'action principale."],
+ "mix":["Noir de marque + rouge pour l'action (conseillé)","Même famille que le site client, calme pour travailler des heures dessus. Le rouge ne sert qu'au bouton principal, aux compteurs à traiter et aux alertes : il garde son sens."]
+};
+function show(v){document.getElementById("bo").className="bo"+(v?" "+v:"");document.getElementById("verdict").innerHTML="<b>"+V[v][0]+"</b>"+V[v][1];document.querySelectorAll(".top .tab").forEach(b=>b.classList.toggle("on",b.dataset.v===v));}
+document.querySelectorAll(".top .tab").forEach(b=>b.onclick=()=>show(b.dataset.v));
+show("mix");
+</script>
+</body>
+</html>

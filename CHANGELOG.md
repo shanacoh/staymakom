@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-10-06] — DA du back-office : maquette de proposition (aucun code modifié)
+
+### Ce qui a changé côté code
+- `docs/claude/maquettes/maquette-da-backoffice.html` (créé) : un écran type du back-office (menu, liste de réservations, fenêtre de saisie) montré en trois versions à comparer. 1. Aujourd'hui en bleu marine. 2. Tout en rouge. 3. Noir de la marque pour la structure et rouge réservé à l'action (bouton principal, compteurs à traiter, alertes), la piste conseillée.
+- Le back-office lui-même n'est pas modifié : la maquette attend la décision de Shana.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration.
+
+### Pourquoi ce changement
+Le site client est passé au rouge de marque et le back-office est resté en bleu marine. Shana veut une cohérence d'ensemble sans que tout devienne rouge : la maquette permet de choisir avant de toucher aux écrans.
+
+---
+
 ## [2026-10-06] — Session DA : titres des autres pages client à la même échelle
 
 ### Ce qui a changé côté code
@@ -17,6 +31,24 @@
 
 ### Pourquoi ce changement
 Après la home, les fiches et le paiement, les pages secondaires gardaient de très gros titres. Elles suivent maintenant la même règle.
+
+---
+
+## [2026-10-06] — Page d'attente « offre d'hiver » à la place de la home (une semaine)
+
+Travail fait sur la branche `session-da-visuel`, pas encore en ligne.
+
+### Ce qui a changé côté code
+- `src/pages/WinterPause.tsx` (nouveau) : page plein écran avec la photo du désert, un message d'excuse en anglais, français et hébreu, et un formulaire d'inscription à la newsletter.
+- `src/config/sitePause.ts` (nouveau) : l'interrupteur de la pause. `enabled` l'allume ou l'éteint, `endsAt` fixe la date de fin (13 octobre 2026, minuit heure d'Israël). Passé cette date, la vraie home revient toute seule.
+- `src/App.tsx` : tant que la pause est active, l'adresse `/` affiche la page d'attente. La vraie home reste visible sur `/v3` pour l'équipe. Toutes les autres pages (fiches, paiement, confirmations, back-office) sont inchangées.
+- `src/components/NewsletterPopup.tsx` et `src/components/MobileAppShell.tsx` : la popup newsletter et le menu mobile (barre du haut, navigation du bas) ne s'affichent pas sur la page d'attente.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration. Les inscriptions arrivent dans la table `leads` par le même circuit que la popup (source `newsletter_popup`), avec `metadata.origin = "winter_pause"` pour les reconnaître.
+
+### Pourquoi ce changement
+Shana veut une semaine de tranquillité pour retravailler le site : la home est remplacée par un message d'attente qui annonce l'offre d'hiver et récolte des inscriptions à la newsletter.
 
 ---
 
