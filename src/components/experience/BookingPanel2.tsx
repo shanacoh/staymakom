@@ -878,8 +878,8 @@ export function BookingPanel2({
             <div
               className="rounded border p-2"
               style={{
-                backgroundColor: '#FAF8F4',
-                borderColor: '#E8E0D4',
+                backgroundColor: '#faf8f6',
+                borderColor: '#e9e6e1',
               }}
             >
               <Calendar
@@ -907,7 +907,7 @@ export function BookingPanel2({
                   caption: "flex justify-center pt-1 relative items-center",
                   caption_label: "text-sm font-bold",
                   nav: "space-x-1 flex items-center",
-                  nav_button: "h-7 w-7 bg-transparent p-0 hover:bg-[#F0EBE3] rounded-full flex items-center justify-center transition-colors",
+                  nav_button: "h-7 w-7 bg-transparent p-0 hover:bg-[#e9e6e1] rounded-full flex items-center justify-center transition-colors",
                   nav_button_previous: "absolute left-1",
                   nav_button_next: "absolute right-1",
                   table: "w-full border-collapse",
@@ -917,21 +917,21 @@ export function BookingPanel2({
                   cell: cn(
                     "flex-1 h-9 text-center text-sm p-0 relative",
                     "[&:has([aria-selected].day-range-end)]:rounded-r-full",
-                    "[&:has([aria-selected])]:bg-[#F5F0E8]",
+                    "[&:has([aria-selected])]:bg-[#faf8f6]",
                     "first:[&:has([aria-selected])]:rounded-l-full last:[&:has([aria-selected])]:rounded-r-full",
                     "focus-within:relative focus-within:z-20"
                   ),
-                  day: "h-9 w-9 mx-auto p-0 font-normal text-sm rounded-full hover:bg-[#F0EBE3] transition-colors aria-selected:opacity-100",
+                  day: "h-9 w-9 mx-auto p-0 font-normal text-sm rounded-full hover:bg-[#e9e6e1] transition-colors aria-selected:opacity-100",
                   day_range_end: "day-range-end",
                   day_selected: "bg-[#1A1814] text-white hover:bg-[#1A1814] hover:text-white focus:bg-[#1A1814] focus:text-white rounded-full",
-                  day_today: "bg-[#F0EBE3] rounded-full",
-                  day_outside: "day-outside text-muted-foreground opacity-50 aria-selected:bg-[#F5F0E8]/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
+                  day_today: "bg-[#e9e6e1] rounded-full",
+                  day_outside: "day-outside text-muted-foreground opacity-50 aria-selected:bg-[#faf8f6]/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
                   day_disabled: "text-muted-foreground opacity-[0.35]",
-                  day_range_middle: "aria-selected:bg-[#F5F0E8] aria-selected:text-foreground rounded-none",
+                  day_range_middle: "aria-selected:bg-[#faf8f6] aria-selected:text-foreground rounded-none",
                   day_hidden: "invisible",
                 }}
                 styles={{
-                  head_cell: { color: '#8C7B6B' },
+                  head_cell: { color: '#6f6a63' },
                   caption_label: { color: '#1A1814', fontFamily: 'Inter, sans-serif', fontSize: '14px' },
                   day: { color: '#2C2520', fontFamily: 'Inter, sans-serif', fontSize: '14px' },
                   nav_button: { color: '#1A1814' },
@@ -975,11 +975,11 @@ export function BookingPanel2({
         {panelExtras && panelExtras.length > 0 && (
           <div className="space-y-0">
             <div className="py-2">
-              <p className="text-[10px] uppercase tracking-[0.12em] font-medium" style={{ color: '#8C7B6B' }}>
+              <p className="text-[10px] uppercase tracking-[0.12em] font-medium" style={{ color: '#6f6a63' }}>
                 {t.enhanceTitle}
               </p>
             </div>
-            <div className="border-t" style={{ borderColor: '#E8E0D4' }}>
+            <div className="border-t" style={{ borderColor: '#e9e6e1' }}>
               {panelExtras.map((extra) => {
                 const qty = panelQuantities[extra.id] || 0;
                 const maxQty = extra.pricing_type === 'per_stay' ? 1 : 10;
@@ -994,11 +994,11 @@ export function BookingPanel2({
                   <div
                     key={extra.id}
                     className="flex items-center gap-3 px-1"
-                    style={{ minHeight: '50px', borderBottom: '1px solid #F0EBE3' }}
+                    style={{ minHeight: '50px', borderBottom: '1px solid #e9e6e1' }}
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px]" style={{ color: '#2C2520' }}>{name}</p>
-                      <p className="text-[11px]" style={{ color: '#8C7B6B' }}>
+                      <p className="text-[11px]" style={{ color: '#6f6a63' }}>
                         {currencySymbol}{Math.round(convert(extra.price))} · {pricingLabel}
                       </p>
                     </div>
@@ -1083,7 +1083,7 @@ export function BookingPanel2({
               <div className="flex items-center gap-1.5">
                 <DualPrice amount={displayTotal} currency={priceBreakdown.currency} inline className="text-lg font-bold" />
                 <div className="relative group">
-                  <span className="text-xs cursor-help" style={{ color: '#8C7B6B' }}>ⓘ</span>
+                  <span className="text-xs cursor-help" style={{ color: '#6f6a63' }}>ⓘ</span>
                   <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block z-50" style={{ width: '260px' }}>
                     <div className="text-xs text-white leading-relaxed" style={{
                       background: '#1A1814',

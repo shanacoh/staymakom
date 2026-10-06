@@ -91,7 +91,7 @@ const YourStaySection = ({ hotel, lang = "en" }: YourStaySectionProps) => {
       <div className="space-y-6">
         {/* Section Header */}
         <div>
-          <h2 className="font-serif text-xl md:text-2xl font-medium text-foreground mb-1">
+          <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] text-foreground mb-1">
             {lang === "he" ? "המלון שלך" : lang === "fr" ? "Votre hébergement" : "Your stay"}
           </h2>
           <p className="text-muted-foreground text-sm">
@@ -122,7 +122,7 @@ const YourStaySection = ({ hotel, lang = "en" }: YourStaySectionProps) => {
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-4 md:p-6">
             <div className="flex items-end justify-between gap-4">
               <div className="text-white">
-                <h3 className="text-lg md:text-xl font-semibold mb-1 text-white">{name}</h3>
+                <h3 className="text-sm md:text-base font-semibold mb-1 text-white">{name}</h3>
                 <LocationPopover
                   city={city || undefined}
                   region={region || undefined}

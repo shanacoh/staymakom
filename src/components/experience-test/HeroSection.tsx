@@ -296,7 +296,7 @@ const HeroSection = ({
       {/* 2. Title — Inter bold */}
       <h1 className={cn(
         "font-sans font-bold text-foreground leading-tight",
-        isMobile ? "text-2xl pt-1" : "text-3xl xl:text-4xl"
+        isMobile ? "text-xl pt-1" : "text-2xl xl:text-[28px]"
       )}>
         {title}
       </h1>

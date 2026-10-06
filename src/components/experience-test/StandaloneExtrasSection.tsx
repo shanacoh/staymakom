@@ -89,7 +89,7 @@ const StandaloneExtrasSection = ({
   return (
     <section className="py-6 border-b border-border" dir={lang === "he" ? "rtl" : "ltr"}>
       <div className="mb-5">
-        <h2 className="font-serif text-xl md:text-2xl font-medium text-foreground mb-1">
+        <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] text-foreground mb-1">
           {t("sectionTitle")}
         </h2>
         <p className="italic text-muted-foreground text-sm">{t("sectionIntro")}</p>

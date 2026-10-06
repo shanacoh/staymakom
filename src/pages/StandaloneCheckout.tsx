@@ -381,8 +381,8 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
 
   const inputStyle = {
     backgroundColor: "#FFFFFF",
-    border: "1px solid #E8E0D4",
-    borderRadius: "0px",
+    border: "1px solid #e9e6e1",
+    borderRadius: "10px",
   };
 
   // ── Handlers ─────────────────────────────────────────────────────────────
@@ -627,7 +627,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
 
   // ── Sidebar summary (réutilisé dans step 2 et step 3) ─────────────────
   const BookingSummaryCard = () => (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div className="rounded-lg border border-border bg-card overflow-hidden">
       {state.heroImage && (
         <img
           src={state.heroImage}
@@ -800,15 +800,15 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                         variant="outline"
                         size="sm"
                         className="flex-1 text-xs"
-                        style={{ borderRadius: "10px", border: "1px solid #1A1814" }}
+                        style={{ borderRadius: "999px", border: "1px solid #e9e6e1" }}
                         onClick={() => setAuthDialog({ open: true, tab: "login", context: "account" })}
                       >
                         {lang === "fr" ? "Se connecter" : lang === "he" ? "התחבר" : "Sign in"}
                       </Button>
                       <Button
                         size="sm"
-                        className="flex-1 text-xs bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
-                        style={{ borderRadius: "10px" }}
+                        className="flex-1 text-xs bg-[#ad1414] text-white hover:bg-[#ad1414]/90"
+                        style={{ borderRadius: "999px" }}
                         onClick={() => setAuthDialog({ open: true, tab: "signup", context: "signup" })}
                       >
                         {lang === "fr" ? "Créer un compte" : lang === "he" ? "צור חשבון" : "Create account"}
@@ -866,7 +866,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                         />
                         <Button
                           variant="outline"
-                          style={{ borderRadius: "10px", border: "1px solid #1A1814" }}
+                          style={{ borderRadius: "999px", border: "1px solid #e9e6e1" }}
                           disabled={isValidatingGiftCard || !giftCardCode.trim()}
                           onClick={handleApplyGiftCard}
                         >
@@ -908,7 +908,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                         />
                         <Button
                           variant="outline"
-                          style={{ borderRadius: "10px", border: "1px solid #1A1814" }}
+                          style={{ borderRadius: "999px", border: "1px solid #e9e6e1" }}
                           disabled={isValidatingPromo || !promoCodeValue.trim()}
                           onClick={handleApplyPromo}
                         >
@@ -936,10 +936,10 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                     className={cn(
                       "flex-1 uppercase tracking-[0.12em] text-[13px] transition-all duration-200",
                       isGuestValid
-                        ? "bg-[#1A1814] text-white hover:bg-[#1A1814]/90 hover:scale-[1.01] cursor-pointer"
+                        ? "bg-[#ad1414] text-white hover:bg-[#ad1414]/90 hover:scale-[1.01] cursor-pointer"
                         : "bg-[#C8C0B4] text-white cursor-not-allowed hover:bg-[#C8C0B4]"
                     )}
-                    style={{ height: "52px", borderRadius: "10px" }}
+                    style={{ height: "44px", borderRadius: "999px" }}
                     disabled={!isGuestValid}
                     onClick={handleContinueToStep3}
                   >
@@ -963,7 +963,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
             <div className="space-y-6 max-w-2xl mx-auto">
 
               {/* Détails de la réservation */}
-              <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+              <div className="rounded-lg border border-border bg-card p-5 space-y-4">
                 <div>
                   <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">{t.bookingDetails}</p>
                   <p className="text-sm font-semibold">{expTitle}</p>
@@ -988,7 +988,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
               </div>
 
               {/* Informations client */}
-              <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+              <div className="rounded-lg border border-border bg-card p-5 space-y-3">
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{t.guestDetails}</p>
                 <div className="space-y-0.5">
                   <p className="text-sm font-semibold">{leadGuest.firstName} {leadGuest.lastName}</p>
@@ -999,7 +999,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
               </div>
 
               {/* Total */}
-              <div className="rounded-xl border border-border bg-card p-5 space-y-2">
+              <div className="rounded-lg border border-border bg-card p-5 space-y-2">
                 {(promoDiscount > 0 || giftCardApplied > 0) && (
                   <div className="space-y-1 text-xs text-muted-foreground">
                     {promoDiscount > 0 && (
@@ -1024,7 +1024,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                         {currencySymbol}{state.totalPrice.toFixed(0)}
                       </span>
                     )}
-                    <span className="font-bold text-2xl" style={{ color: "#1A1814" }}>
+                    <span className="font-bold text-xl" style={{ color: "#1A1814" }}>
                       {currencySymbol}{finalTotal.toFixed(0)}
                     </span>
                   </div>
@@ -1073,8 +1073,8 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                     {t.back}
                   </button>
                   <Button
-                    className="flex-1 uppercase tracking-[0.12em] text-[13px] bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
-                    style={{ height: "52px", borderRadius: "10px" }}
+                    className="flex-1 uppercase tracking-[0.12em] text-[13px] bg-[#ad1414] text-white hover:bg-[#ad1414]/90"
+                    style={{ height: "44px", borderRadius: "999px" }}
                     disabled={isBookingLoading || paymentStatus === "creating" || paymentStatus === "failed"}
                     onClick={handleBook}
                   >
@@ -1090,8 +1090,8 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                 {/* Navigation — mobile */}
                 <div className="md:hidden space-y-3">
                   <Button
-                    className="w-full uppercase tracking-[0.12em] text-[13px] bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
-                    style={{ height: "52px", borderRadius: "10px" }}
+                    className="w-full uppercase tracking-[0.12em] text-[13px] bg-[#ad1414] text-white hover:bg-[#ad1414]/90"
+                    style={{ height: "44px", borderRadius: "999px" }}
                     disabled={isBookingLoading || paymentStatus === "creating" || paymentStatus === "failed"}
                     onClick={handleBook}
                   >
@@ -1104,7 +1104,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                   </Button>
                   <button
                     className="w-full text-center text-[13px] py-2"
-                    style={{ color: "#8C7B6B" }}
+                    style={{ color: "#6f6a63" }}
                     onClick={() => { setStep(2); setPaymentStatus("idle"); setPaymentErrorMessage(null); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                   >
                     ← {t.back}

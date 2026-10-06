@@ -196,7 +196,7 @@ export default function StandaloneRequestPanel({
         </div>
         <Button
           type="button"
-          className="w-full rounded-full text-base font-semibold h-12 bg-[#ad1414] text-white hover:bg-[#9a1212] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_-4px_rgba(173,20,20,0.4)] transition-all duration-200 normal-case"
+          className="w-full rounded-full text-sm font-semibold h-11 bg-[#ad1414] text-white hover:bg-[#9a1212] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_-4px_rgba(173,20,20,0.4)] transition-all duration-200 normal-case"
           onClick={() => setStarted(true)}
         >
           {t.cta}
@@ -307,7 +307,7 @@ export default function StandaloneRequestPanel({
 
       <Button
         type="button"
-        className="w-full rounded-full text-base font-semibold h-12 bg-[#ad1414] text-white hover:bg-[#9a1212] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_-4px_rgba(173,20,20,0.4)] transition-all duration-200 normal-case"
+        className="w-full rounded-full text-sm font-semibold h-11 bg-[#ad1414] text-white hover:bg-[#9a1212] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_-4px_rgba(173,20,20,0.4)] transition-all duration-200 normal-case"
         onClick={handleSubmit}
         disabled={submitting}
       >

@@ -982,7 +982,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
 
   // Booking summary card component — reused in step 2 sidebar and step 3
   const BookingSummaryCard = ({ compact = false }: { compact?: boolean }) => (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div className="rounded-lg border border-border bg-card overflow-hidden">
       {experienceHeroImage && !compact && (
         <img
           src={experienceHeroImage}
@@ -1108,7 +1108,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                       }
                     }}
                     className="min-h-[60px] text-sm resize-none"
-                    style={{ backgroundColor: '#FFFFFF', border: '1px solid #E8E0D4', borderRadius: '0px' }}
+                    style={{ backgroundColor: '#FFFFFF', border: '1px solid #e9e6e1', borderRadius: '10px' }}
                     rows={2}
                   />
                 </div>
@@ -1128,13 +1128,13 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                           onChange={(e) => { setGiftCardCode(e.target.value.toUpperCase()); setGiftCardError(null); }}
                           onKeyDown={(e) => e.key === "Enter" && handleApplyGiftCard()}
                           className="font-mono tracking-wider text-sm"
-                          style={{ borderRadius: '0px', backgroundColor: '#FFFFFF', border: '1px solid #E8E0D4' }}
+                          style={{ borderRadius: '10px', backgroundColor: '#FFFFFF', border: '1px solid #e9e6e1' }}
                         />
                         <Button
                           type="button"
                           variant="outline"
                           className="shrink-0"
-                          style={{ borderRadius: '10px', border: '1px solid #1A1814' }}
+                          style={{ borderRadius: '999px', border: '1px solid #e9e6e1' }}
                           onClick={handleApplyGiftCard}
                           disabled={isValidatingGiftCard || !giftCardCode.trim()}
                         >
@@ -1144,7 +1144,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                       {giftCardError && <p className="text-sm text-destructive">{giftCardError}</p>}
                     </>
                   ) : (
-                    <div className="flex items-center justify-between rounded-none border border-emerald-200 bg-emerald-50 px-3 py-2">
+                    <div className="flex items-center justify-between rounded-sm border border-emerald-200 bg-emerald-50 px-3 py-2">
                       <div className="flex items-center gap-2 text-emerald-700 text-sm">
                         <Gift className="h-4 w-4 shrink-0" />
                         <span className="font-medium">{t.giftCardApplied}</span>
@@ -1179,13 +1179,13 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                           onChange={(e) => { setPromoCodeInput(e.target.value.toUpperCase()); setPromoError(null); }}
                           onKeyDown={(e) => e.key === "Enter" && handleApplyPromo()}
                           className="font-mono tracking-wider text-sm"
-                          style={{ borderRadius: '0px', backgroundColor: '#FFFFFF', border: '1px solid #E8E0D4' }}
+                          style={{ borderRadius: '10px', backgroundColor: '#FFFFFF', border: '1px solid #e9e6e1' }}
                         />
                         <Button
                           type="button"
                           variant="outline"
                           className="shrink-0"
-                          style={{ borderRadius: '10px', border: '1px solid #1A1814' }}
+                          style={{ borderRadius: '999px', border: '1px solid #e9e6e1' }}
                           onClick={handleApplyPromo}
                           disabled={isValidatingPromo || !promoCodeInput.trim()}
                         >
@@ -1195,7 +1195,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                       {promoError && <p className="text-sm text-destructive">{promoError}</p>}
                     </>
                   ) : (
-                    <div className="flex items-center justify-between rounded-none border border-emerald-200 bg-emerald-50 px-3 py-2">
+                    <div className="flex items-center justify-between rounded-sm border border-emerald-200 bg-emerald-50 px-3 py-2">
                       <div className="flex items-center gap-2 text-emerald-700 text-sm">
                         <Sparkles className="h-4 w-4 shrink-0" />
                         <span className="font-medium">{t.promoApplied}</span>
@@ -1231,10 +1231,10 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                     className={cn(
                       "flex-1 uppercase tracking-[0.12em] text-[13px] transition-all duration-200",
                       isGuestValid
-                        ? "bg-[#1A1814] text-white hover:bg-[#1A1814]/90 hover:scale-[1.01] cursor-pointer"
+                        ? "bg-[#ad1414] text-white hover:bg-[#ad1414]/90 hover:scale-[1.01] cursor-pointer"
                         : "bg-[#C8C0B4] text-white cursor-not-allowed hover:bg-[#C8C0B4]"
                     )}
-                    style={{ height: '52px', borderRadius: '10px' }}
+                    style={{ height: '44px', borderRadius: '999px' }}
                     disabled={!isGuestValid || isPreBooking}
                     onClick={handleContinueToStep3}
                   >
@@ -1266,7 +1266,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
           {step === 3 && (
             <div className="space-y-6 max-w-2xl mx-auto">
               {/* Stay details */}
-              <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+              <div className="rounded-lg border border-border bg-card p-5 space-y-4">
                 <div>
                   <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">{t.stayDetails}</p>
                   {state.experienceTitle && (
@@ -1300,7 +1300,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
               </div>
 
               {/* Guest details */}
-              <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+              <div className="rounded-lg border border-border bg-card p-5 space-y-3">
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{t.guestDetails}</p>
                 <div className="space-y-0.5">
                   <p className="text-sm font-semibold">{leadGuest.firstName} {leadGuest.lastName}</p>
@@ -1316,7 +1316,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
               </div>
 
               {/* Clean price breakdown — passe giftCardApplied pour barrer le total */}
-              <div className="rounded-xl border border-border bg-card p-4">
+              <div className="rounded-lg border border-border bg-card p-4">
                 <PriceBreakdownV2
                   breakdown={priceBreakdown}
                   isLoading={false}
@@ -1335,7 +1335,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
 
               {/* Gift card discount */}
               {appliedGiftCard && giftCardApplied > 0 && (
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 flex items-center justify-between">
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 flex items-center justify-between">
                   <div className="flex items-center gap-2 text-emerald-700">
                     <Gift className="h-4 w-4 shrink-0" />
                     <div>
@@ -1476,8 +1476,8 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                     {t.back}
                   </button>
                   <Button
-                    className="flex-1 uppercase tracking-[0.12em] text-[13px] bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
-                    style={{ height: '52px', borderRadius: '10px' }}
+                    className="flex-1 uppercase tracking-[0.12em] text-[13px] bg-[#ad1414] text-white hover:bg-[#ad1414]/90"
+                    style={{ height: '44px', borderRadius: '999px' }}
                     disabled={totalIsNaN || isBooking || paymentStatus === "creating" || paymentStatus === "failed"}
                     onClick={handleBook}
                   >
@@ -1500,8 +1500,8 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                 {/* Mobile: stacked */}
                 <div className="md:hidden space-y-3">
                   <Button
-                    className="w-full uppercase tracking-[0.12em] text-[13px] bg-[#1A1814] text-white hover:bg-[#1A1814]/90"
-                    style={{ height: '52px', borderRadius: '10px' }}
+                    className="w-full uppercase tracking-[0.12em] text-[13px] bg-[#ad1414] text-white hover:bg-[#ad1414]/90"
+                    style={{ height: '44px', borderRadius: '999px' }}
                     disabled={totalIsNaN || isBooking || paymentStatus === "creating" || paymentStatus === "failed"}
                     onClick={handleBook}
                   >
@@ -1521,7 +1521,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
                   </Button>
                   <button
                     className="w-full text-center text-[13px] py-2"
-                    style={{ color: '#8C7B6B' }}
+                    style={{ color: '#6f6a63' }}
                     onClick={() => { trackCheckoutBackClicked(state.experienceSlug, 'step3'); setStep(2); setPaymentStatus("idle"); setRevolutPublicId(null); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                   >
                     ← {t.back}

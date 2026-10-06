@@ -265,7 +265,7 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
               {[regionLabel, cityLabel].filter(Boolean).join(" · ")}
             </p>
           )}
-          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">{title}</h2>
+          <h2 className="font-sans text-lg sm:text-xl font-bold text-foreground">{title}</h2>
         </div>
 
         {/* Points forts */}

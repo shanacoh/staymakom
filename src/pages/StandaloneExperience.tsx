@@ -607,7 +607,7 @@ export default function StandaloneExperience() {
         <V3Header />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center space-y-4">
-            <h1 className="text-2xl font-semibold">{notFoundMsg.title}</h1>
+            <h1 className="text-base font-semibold">{notFoundMsg.title}</h1>
             <p className="text-muted-foreground">{notFoundMsg.desc}</p>
           </div>
         </div>
@@ -684,7 +684,7 @@ export default function StandaloneExperience() {
         {/* Affichage du prix */}
         <div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold">
+            <span className="text-2xl font-bold">
               {currencySymbol}{experience.base_price.toFixed(0)}
             </span>
             <span className="text-sm text-muted-foreground">{priceLabel}</span>
@@ -964,7 +964,7 @@ export default function StandaloneExperience() {
         {/* Bouton Continuer — navigue vers la page de checkout dédiée */}
         <Button
           type="button"
-          className="w-full rounded-full text-base font-semibold h-12 bg-[#ad1414] text-white hover:bg-[#9a1212] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_-4px_rgba(173,20,20,0.4)] transition-all duration-200 normal-case"
+          className="w-full rounded-full text-sm font-semibold h-11 bg-[#ad1414] text-white hover:bg-[#9a1212] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_-4px_rgba(173,20,20,0.4)] transition-all duration-200 normal-case"
           onClick={() => {
             if (isVitrineContext) {
               trackVitrineBlockedShown(experience.slug);

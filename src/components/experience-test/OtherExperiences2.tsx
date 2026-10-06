@@ -89,7 +89,7 @@ const OtherExperiences2 = ({ currentExperienceId, categoryId, lang = "en" }: Oth
   return (
     <section className="py-6 min-w-0 overflow-x-hidden w-full">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-serif text-lg md:text-2xl font-medium text-foreground">{title}</h2>
+        <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] text-foreground">{title}</h2>
         {experiences.length > 2 && (
           <div className="flex gap-2">
             <button

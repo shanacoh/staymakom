@@ -275,7 +275,7 @@ const Hotel = () => {
           
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />
           <div className="absolute bottom-0 left-0 right-0 container pb-12">
-            <h1 className="font-sans text-5xl font-bold text-white mb-3">
+            <h1 className="font-sans text-2xl md:text-[28px] font-bold uppercase tracking-[0.02em] text-white mb-2">
               {hotelName}
             </h1>
             {(city || region) &&
@@ -312,7 +312,7 @@ const Hotel = () => {
               {/* Story */}
               {story &&
               <div>
-                  <h2 className="font-sans text-3xl font-bold mb-6">{t(lang, 'ourStory')}</h2>
+                  <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">{t(lang, 'ourStory')}</h2>
                   <p className="text-lg text-muted-foreground leading-relaxed whitespace-pre-line">
                     {story}
                   </p>
@@ -322,7 +322,7 @@ const Hotel = () => {
               {/* Highlights */}
               {highlights && highlights.length > 0 &&
               <div>
-                  <h2 className="font-sans text-3xl font-bold mb-6">{t(lang, 'highlights')}</h2>
+                  <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">{t(lang, 'highlights')}</h2>
                   <ul className="space-y-3">
                     {highlights.map((highlight, index) =>
                   <li key={index} className="flex items-start gap-3">
@@ -337,7 +337,7 @@ const Hotel = () => {
               {/* About the Rooms */}
               {descriptionRoom &&
               <div>
-                  <h2 className="font-sans text-3xl font-bold mb-6">
+                  <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">
                     {lang === "he" ? "על החדרים" : lang === "fr" ? "Les chambres" : "About the Rooms"}
                   </h2>
                   <p className="text-lg text-muted-foreground leading-relaxed whitespace-pre-line">
@@ -349,7 +349,7 @@ const Hotel = () => {
               {/* Location description */}
               {descriptionLocation &&
               <div>
-                  <h2 className="font-sans text-3xl font-bold mb-6">
+                  <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">
                     {lang === "he" ? "מיקום" : lang === "fr" ? "Emplacement" : "Location"}
                   </h2>
                   <p className="text-lg text-muted-foreground leading-relaxed whitespace-pre-line">
@@ -361,7 +361,7 @@ const Hotel = () => {
               {/* Room Types & Capacities */}
               {roomCapacities && Array.isArray(roomCapacities) && roomCapacities.length > 0 &&
               <div>
-                  <h2 className="font-sans text-3xl font-bold mb-6">
+                  <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">
                     {lang === "he" ? "סוגי חדרים" : lang === "fr" ? "Types de chambres" : "Room Types"}
                   </h2>
                   <div className="grid gap-4">
@@ -405,11 +405,11 @@ const Hotel = () => {
 
                   return (
                     <div>
-                      <h2 className="font-sans text-3xl font-bold mb-6">{t(lang, 'amenities')}</h2>
+                      <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">{t(lang, 'amenities')}</h2>
                       <div className="space-y-6">
                         {Object.entries(byCategory).map(([category, facilities]) =>
                         <div key={category}>
-                            <h3 className="text-lg font-semibold mb-3 text-muted-foreground">{category}</h3>
+                            <h3 className="text-sm font-semibold mb-2 text-muted-foreground">{category}</h3>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                               {facilities.map((fac, i) =>
                             <div key={i} className="flex items-center gap-2">
@@ -428,7 +428,7 @@ const Hotel = () => {
                 if (amenities && amenities.length > 0) {
                   return (
                     <div>
-                      <h2 className="font-sans text-3xl font-bold mb-6">{t(lang, 'amenities')}</h2>
+                      <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">{t(lang, 'amenities')}</h2>
                       <div className="grid grid-cols-2 gap-4">
                         {amenities.map((amenity, index) =>
                         <div key={index} className="flex items-center gap-2">
@@ -447,7 +447,7 @@ const Hotel = () => {
               {/* Cancellation Policy */}
               {(hotel.cancellation_policy || hotel.min_stay || hotel.max_stay) &&
               <div>
-                  <h2 className="font-sans text-3xl font-bold mb-6">
+                  <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">
                     {lang === "he" ? "מדיניות ביטול" : lang === "fr" ? "Politique d'annulation" : "Cancellation Policy"}
                   </h2>
                   <div className="space-y-4">
@@ -486,7 +486,7 @@ const Hotel = () => {
               {/* General Conditions / Remarks */}
               {hotel.extra_conditions &&
               <div>
-                  <h2 className="font-sans text-3xl font-bold mb-6">
+                  <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">
                     {lang === "he" ? "תנאים כלליים / הערות" : lang === "fr" ? "Conditions générales / remarques" : "General Conditions / Remarks"}
                   </h2>
                   <div className="p-4 rounded-lg border bg-amber-50 border-amber-200">
@@ -498,7 +498,7 @@ const Hotel = () => {
               {/* Photo Gallery */}
               {displayPhotos.length > 0 &&
               <div>
-                  <h2 className="font-sans text-3xl font-bold mb-6">{t(lang, 'gallery')}</h2>
+                  <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">{t(lang, 'gallery')}</h2>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {displayPhotos.map((photo, index) =>
                   <div key={index} className="aspect-square rounded-lg overflow-hidden">
@@ -570,7 +570,7 @@ const Hotel = () => {
               {supportedCards && Array.isArray(supportedCards) && supportedCards.length > 0 &&
               <Card>
                   <CardContent className="p-6 space-y-3">
-                    <h3 className="font-sans text-xl font-bold">
+                    <h3 className="font-sans text-sm font-bold uppercase tracking-[0.03em]">
                       {lang === "he" ? "כרטיסים מקובלים" : lang === "fr" ? "Cartes acceptées" : "Accepted Cards"}
                     </h3>
                     <div className="flex flex-wrap gap-2">
@@ -588,7 +588,7 @@ const Hotel = () => {
               {!experiencesLoading && experiences && experiences.length > 0 &&
               <Card>
                   <CardContent className="p-6">
-                    <h3 className="font-sans text-xl font-bold mb-4">{t(lang, 'experiences')}</h3>
+                    <h3 className="font-sans text-sm font-bold uppercase tracking-[0.03em] mb-4">{t(lang, 'experiences')}</h3>
                     <div className="space-y-3">
                       {experiences.map((exp) => {
                       const expTitle = getLocalizedField(exp, 'title', lang) as string || exp.title;

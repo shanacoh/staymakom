@@ -113,7 +113,7 @@ const PracticalInfo = ({ experience, lang = "en" }: PracticalInfoProps) => {
 
   return (
     <section className="py-6 border-b border-border">
-      <h2 className="font-serif text-xl md:text-2xl font-medium text-foreground mb-5">
+      <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] text-foreground mb-5">
         {lang === "he" ? "חשוב לדעת" : lang === "fr" ? "Bon à savoir" : "Things to know"}
       </h2>
 

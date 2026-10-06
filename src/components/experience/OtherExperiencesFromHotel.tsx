@@ -34,7 +34,7 @@ const OtherExperiencesFromHotel = ({ hotelId, currentExperienceId, hotelName }: 
 
   return (
     <div className="space-y-3 sm:space-y-6">
-      <h2 className="font-serif text-lg md:text-2xl font-medium text-foreground">
+      <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] text-foreground">
         {lang === 'he' 
           ? `חוויות נוספות מ-${hotelName}` 
           : `Other experiences from ${hotelName}`}

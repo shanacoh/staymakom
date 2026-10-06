@@ -350,7 +350,7 @@ export default function Experience2() {
         <V3Header />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center space-y-4">
-            <h1 className="text-2xl font-semibold">{t.notFound}</h1>
+            <h1 className="text-base font-semibold">{t.notFound}</h1>
             <p className="text-muted-foreground">{t.notFoundDesc}</p>
           </div>
         </div>
@@ -441,7 +441,7 @@ export default function Experience2() {
 
     return (
       <div className="space-y-6">
-        <h2 className="text-xl sm:text-2xl font-bold">{t.yourJourney}</h2>
+        <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em]">{t.yourJourney}</h2>
         {totalNights && (
           <p className="text-muted-foreground">
             {totalNights} {totalNights === 1 ? t.night : t.nights}
@@ -475,7 +475,7 @@ export default function Experience2() {
                         />
                       )}
                       <div className="space-y-1">
-                        <h3 className="font-semibold text-lg text-foreground">{hotelName}</h3>
+                        <h3 className="font-semibold text-sm text-foreground">{hotelName}</h3>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Moon className="h-4 w-4" />
                           <span>

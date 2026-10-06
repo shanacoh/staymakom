@@ -231,7 +231,7 @@ const Boats = () => {
 
           <section className="px-4 sm:px-6 py-6">
             <div className="mb-5">
-              <h2 className="font-sans text-2xl font-bold text-foreground">{isLoading ? "…" : t.resultsCount(results.length)}</h2>
+              <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] text-foreground">{isLoading ? "…" : t.resultsCount(results.length)}</h2>
               <p className="text-xs text-muted-foreground mt-0.5">{t.resultsHint}</p>
             </div>
 

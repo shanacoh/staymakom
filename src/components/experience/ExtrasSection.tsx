@@ -144,7 +144,7 @@ const ExtrasSection = ({ extras, selectedExtras, onUpdateQuantity }: ExtrasSecti
     <div className="space-y-5" dir={lang === 'he' ? 'rtl' : 'ltr'}>
       {/* Compact header */}
       <div>
-        <h2 className="font-serif text-xl md:text-2xl font-medium text-foreground mb-1">
+        <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] text-foreground mb-1">
           {getText('sectionTitle')}
         </h2>
         <p className="text-muted-foreground text-sm">

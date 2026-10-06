@@ -128,8 +128,8 @@ function normalizePhone(p: string): string {
 }
 
 const inputStyle = {
-  backgroundColor: '#F5F0E8',
-  border: '1px solid #E8E0D4',
+  backgroundColor: '#faf8f6',
+  border: '1px solid #e9e6e1',
   borderRadius: '0px',
 };
 

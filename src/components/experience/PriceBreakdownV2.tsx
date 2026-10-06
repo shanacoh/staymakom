@@ -163,10 +163,10 @@ export function PriceBreakdownV2({
     <div className={className}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <p className="text-[11px] sm:text-[10px] uppercase tracking-[0.12em] font-medium" style={{ color: '#8C7B6B', fontFamily: 'Inter, sans-serif' }}>
+        <p className="text-[11px] sm:text-[10px] uppercase tracking-[0.12em] font-medium" style={{ color: '#6f6a63', fontFamily: 'Inter, sans-serif' }}>
           {t.title}
         </p>
-        <p className="text-xs sm:text-[11px]" style={{ color: '#8C7B6B' }}>
+        <p className="text-xs sm:text-[11px]" style={{ color: '#6f6a63' }}>
           {nightsCount} {nightsCount === 1 ? t.nights : t.nightsPlural} · {guestsCount} {guestsCount === 1 ? t.guests : t.guestsPlural}
         </p>
       </div>
@@ -176,9 +176,9 @@ export function PriceBreakdownV2({
       {/* Full breakdown details (hotel, dates, room) */}
       {showFullBreakdown && (hotelName || roomName || dateLabel) && (
         <div className="mb-3 space-y-1">
-          {hotelName && <p className="text-[12px]" style={{ color: '#8C7B6B' }}>{hotelName}</p>}
-          {dateLabel && <p className="text-[12px]" style={{ color: '#8C7B6B' }}>{dateLabel}</p>}
-          {roomName && <p className="text-[12px]" style={{ color: '#8C7B6B' }}>{roomName}</p>}
+          {hotelName && <p className="text-[12px]" style={{ color: '#6f6a63' }}>{hotelName}</p>}
+          {dateLabel && <p className="text-[12px]" style={{ color: '#6f6a63' }}>{dateLabel}</p>}
+          {roomName && <p className="text-[12px]" style={{ color: '#6f6a63' }}>{roomName}</p>}
           <Separator className="my-2" />
         </div>
       )}
@@ -193,7 +193,7 @@ export function PriceBreakdownV2({
       {includedAddonName && (
         <div className="flex items-center gap-1.5 mb-4">
           <Check className="h-3.5 w-3.5" style={{ color: '#B85C4A' }} />
-          <span className="text-[12px]" style={{ color: '#8C7B6B' }}>
+          <span className="text-[12px]" style={{ color: '#6f6a63' }}>
             {includedAddonName} {t.included}
           </span>
         </div>
@@ -203,7 +203,7 @@ export function PriceBreakdownV2({
       {hasExtras && (
         <>
           <div className="mb-2">
-            <p className="text-[12px] font-medium mb-2" style={{ color: '#8C7B6B' }}>
+            <p className="text-[12px] font-medium mb-2" style={{ color: '#6f6a63' }}>
               {t.optionalExtras}
             </p>
             {selectedExtras!.map((extra, i) => {
@@ -235,12 +235,12 @@ export function PriceBreakdownV2({
         <div className="space-y-2">
           {/* Ligne total original — barré et atténué */}
           <div className="flex justify-between items-center">
-            <span className="text-sm font-medium" style={{ color: '#8C7B6B', fontFamily: 'Inter, sans-serif' }}>
+            <span className="text-sm font-medium" style={{ color: '#6f6a63', fontFamily: 'Inter, sans-serif' }}>
               {t.total}
             </span>
             <span
               className="text-sm line-through"
-              style={{ color: '#8C7B6B', fontFamily: 'Inter, sans-serif' }}
+              style={{ color: '#6f6a63', fontFamily: 'Inter, sans-serif' }}
             >
               {fmt(totalWithExtras)}
             </span>
@@ -282,7 +282,7 @@ export function PriceBreakdownV2({
                 {fmt(Math.max(0, totalWithExtras - giftCardDiscount - promoDiscount))}
               </span>
               <div className="relative group">
-                <span className="text-xs cursor-help" style={{ color: '#8C7B6B' }}>ⓘ</span>
+                <span className="text-xs cursor-help" style={{ color: '#6f6a63' }}>ⓘ</span>
                 <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block z-50" style={{ width: '260px' }}>
                   <div className="text-xs text-white leading-relaxed whitespace-pre-line" style={{
                     background: '#1A1814',
@@ -308,7 +308,7 @@ export function PriceBreakdownV2({
               {fmt(totalWithExtras)}
             </span>
             <div className="relative group">
-              <span className="text-xs cursor-help" style={{ color: '#8C7B6B' }}>ⓘ</span>
+              <span className="text-xs cursor-help" style={{ color: '#6f6a63' }}>ⓘ</span>
               <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block z-50" style={{ width: '260px' }}>
                 <div className="text-xs text-white leading-relaxed whitespace-pre-line" style={{
                   background: '#1A1814',

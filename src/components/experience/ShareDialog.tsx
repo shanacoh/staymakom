@@ -90,7 +90,7 @@ const ShareDialog = ({ open, onOpenChange, url, title, lang }: ShareDialogProps)
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-[#ad1414]/5 via-muted/30 to-[#ad1414]/10 mb-3">
             <ShareNetwork size={24} weight="duotone" className="text-[#ad1414]/70" />
           </div>
-          <h2 className="font-sans text-xl text-foreground" aria-hidden="true">
+          <h2 className="font-sans text-base text-foreground" aria-hidden="true">
             {t.shareTitle}
           </h2>
         </div>

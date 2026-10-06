@@ -20,7 +20,7 @@ const LocationPopover = ({
   lang = "en",
   variant = "default",
 }: LocationPopoverProps) => {
-  const color = variant === "light" ? "#FFFFFF" : "#8C7B6B";
+  const color = variant === "light" ? "#FFFFFF" : "#6f6a63";
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -76,7 +76,7 @@ const LocationPopover = ({
           className="absolute z-50 mt-1.5"
           style={{
             background: "#fff",
-            border: "1px solid #E8E0D4",
+            border: "1px solid #e9e6e1",
             borderRadius: "4px",
             boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
             minWidth: "220px",

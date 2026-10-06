@@ -64,8 +64,8 @@ export default function Cart() {
         <div className="hidden md:block"><V3Header /></div>
 
         <div className="flex-1 flex flex-col items-center justify-center px-6 pb-24">
-          <ShoppingBag size={40} strokeWidth={1.3} className="text-primary mb-4" />
-          <h1 className="text-xl font-semibold text-foreground mb-2 text-center">
+          <ShoppingBag size={28} strokeWidth={1.3} className="text-primary mb-3" />
+          <h1 className="text-base font-bold uppercase tracking-[0.03em] text-foreground mb-2 text-center">
             Cart
           </h1>
           <p className="text-sm text-muted-foreground text-center mb-8">
@@ -91,12 +91,12 @@ export default function Cart() {
       <div className="hidden md:block"><V3Header /></div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-6 pb-24">
-        <ShoppingBag size={40} strokeWidth={1.3} className="text-primary mb-6" />
-        <h1 className="text-xl font-semibold text-foreground mb-6 text-center">
+        <ShoppingBag size={28} strokeWidth={1.3} className="text-primary mb-3" />
+        <h1 className="text-base font-bold uppercase tracking-[0.03em] text-foreground mb-5 text-center">
           Your saved escape
         </h1>
 
-        <div className="w-full max-w-sm border border-border rounded-xl p-5 space-y-3 bg-card">
+        <div className="w-full max-w-sm border border-border rounded-lg p-4 space-y-3 bg-card">
           {/* Experience name */}
           <div>
             <h2 className="text-base font-semibold leading-snug">{cart.experienceTitle}</h2>
@@ -159,7 +159,7 @@ export default function Cart() {
         </div>
 
         <div className="w-full max-w-sm mt-6 space-y-3">
-          <Button className="w-full" size="lg" onClick={handleContinue}>
+          <Button className="w-full rounded-full" onClick={handleContinue}>
             Continue to booking
             <ArrowRight className="h-4 w-4 ml-2" />
           </Button>

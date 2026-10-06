@@ -32,7 +32,7 @@ const WhatsIncludedPhotos2 = ({ experienceId, lang = "en", longCopy, source = "e
     if (!longCopy) return null;
     return (
       <section className="py-6 border-b border-border" dir={lang === "he" ? "rtl" : "ltr"}>
-        <h2 className="font-serif text-xl md:text-2xl font-medium text-foreground mb-3 break-words">
+        <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] text-foreground mb-3 break-words">
           {lang === "he" ? "מה בתכנית" : lang === "fr" ? "Au programme" : "What's on the program"}
         </h2>
         <div className="w-full overflow-hidden">
@@ -59,7 +59,7 @@ const WhatsIncludedPhotos2 = ({ experienceId, lang = "en", longCopy, source = "e
 
   return (
     <section className="py-6 border-b border-border" dir={lang === "he" ? "rtl" : "ltr"}>
-      <h2 className="font-serif text-xl md:text-2xl font-medium text-foreground mb-3 break-words">{heading}</h2>
+      <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] text-foreground mb-3 break-words">{heading}</h2>
       {longCopy && (
         <div className="w-full overflow-hidden mb-6">
           <div

@@ -117,7 +117,7 @@ export default function BoatSentenceFilter({ value, onChange }: Props) {
     <div className="h-full overflow-y-auto px-5 py-6 space-y-6 bg-[#FAF6EF]">
       <div className="space-y-2">
         <p className="text-[10px] font-semibold tracking-[0.18em] text-muted-foreground">{t.eyebrow}</p>
-        <h1 className="font-serif text-xl sm:text-2xl font-bold leading-tight text-foreground">{t.title}</h1>
+        <h1 className="font-sans text-base sm:text-lg font-bold leading-tight text-foreground">{t.title}</h1>
         <p className="text-xs text-muted-foreground leading-snug">{t.subtitle}</p>
       </div>
 

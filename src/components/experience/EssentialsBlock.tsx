@@ -321,7 +321,7 @@ export default function EssentialsBlock({ experience, experienceTitle, lang, com
       className={cn("rounded-2xl border border-[#e9e6e1] bg-[#faf8f6]", compact ? "p-3" : "p-4 md:p-5")}
       dir={lang === "he" ? "rtl" : "ltr"}
     >
-      <h2 className={cn("font-serif font-medium text-foreground", compact ? "text-sm mb-2" : "text-lg md:text-xl mb-4")}>
+      <h2 className={cn("font-sans font-bold uppercase tracking-[0.03em] text-foreground", compact ? "text-xs mb-2" : "text-sm sm:text-base mb-3")}>
         {lang === "he" ? "בקצרה" : lang === "fr" ? "L'essentiel" : "The essentials"}
       </h2>
       <div className={cn("grid", compact ? "grid-cols-2 gap-x-3 gap-y-2" : "grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4")}>

@@ -6,6 +6,44 @@
 
 ---
 
+## [2026-10-06] — Session DA, étape 5 : fiches (expérience seule, hôtel) et page bateaux
+
+Travail fait sur la branche `session-da-visuel`, pas encore en ligne.
+
+### Ce qui a changé côté code
+- `src/components/experience-test/HeroSection.tsx` : titre principal de la fiche réduit (28 au maximum sur ordinateur, 20 sur téléphone).
+- Titres de section des fiches (« L'essentiel », « Au programme », « Ce qui est inclus », options, infos pratiques, avis, autres expériences...) : même style que la home, petites majuscules à 16 (14 sur téléphone). Fichiers concernés dans `src/components/experience/` et `src/components/experience-test/` : `EssentialsBlock`, `ExtrasSection`, `ExtrasSection2`, `StandaloneExtrasSection`, `OtherExperiencesFromHotel`, `OtherExperiences2`, `OtherStandaloneExperiences`, `PracticalInfo`, `ProgramTimeline`, `ReviewsGrid2`, `WhatsIncludedPhotos2`, `YourStaySection`, `ShareDialog`.
+- `src/pages/Hotel.tsx` : titre de l'hôtel sur la photo réduit de 48 à 28, titres de section de 30 à 16, sous-titres réduits.
+- `src/pages/StandaloneExperience.tsx`, `src/pages/Experience2.tsx`, `src/components/experience-test/StandaloneRequestPanel.tsx` : prix et bouton de réservation un peu moins gros, titres alignés.
+- `src/pages/Boats.tsx`, `src/components/boats/BoatSentenceFilter.tsx`, `src/components/boats/BoatDetailModal.tsx` : titres réduits et passés en Inter.
+- Nuances unifiées dans le panneau de réservation, le calendrier, le détail du prix et le formulaire voyageur (`BookingPanel2`, `DateRangePicker`, `PriceBreakdownV2`, `LeadGuestForm`, `LocationPopover`) : un seul gris de texte, un seul trait, un seul beige de fond (plus un ton légèrement plus soutenu pour les jours sélectionnés du calendrier).
+- Style uniquement. Aucun calcul de prix, aucune règle de disponibilité, aucune logique de réservation modifiés.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration.
+
+### Pourquoi ce changement
+Les fiches et la page bateaux reprennent l'échelle et les couleurs de la home pour que tout le parcours client ait la même finesse.
+
+---
+
+## [2026-10-06] — Session DA, étape 4 : panier et paiement aux couleurs de la marque
+
+Travail fait sur la branche `session-da-visuel`, pas encore en ligne.
+
+### Ce qui a changé côté code
+- `src/pages/Cart.tsx` : icône plus petite, titre en petites majuscules, carte de récapitulatif à l'arrondi commun, bouton principal en pastille rouge.
+- `src/pages/Checkout.tsx` (réservation avec hôtel) et `src/pages/StandaloneCheckout.tsx` (expérience seule) : les boutons principaux passent du noir au rouge de marque, en pastille, et sont un peu moins hauts (44 au lieu de 52). Les petits boutons « Appliquer » (carte cadeau, code promo) deviennent des pastilles à contour fin. Les champs prennent l'arrondi commun (10) au lieu d'angles droits, et le même trait que le reste du site. Les étapes étaient déjà passées au rouge à l'étape 1.
+- Visuel uniquement : seules des lignes de style ont changé dans ces trois pages. Aucune étape, aucun champ, aucun calcul, aucun appel de paiement modifiés.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration.
+
+### Pourquoi ce changement
+Le client changeait d'ambiance au moment de payer (bleu marine et noir après une home rouge). Tout le parcours a maintenant la même identité.
+
+---
+
 ## [2026-10-06] — Session DA, étape 3 : filtre par région et « Autour de moi » sur la home
 
 Travail fait sur la branche `session-da-visuel`, pas encore en ligne.
