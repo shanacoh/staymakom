@@ -25,7 +25,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { trackGiftCardClicked, trackViewAllExperiencesClicked, trackHeroCtaClicked } from "@/lib/analytics";
+import { trackGiftCardClicked, trackViewAllExperiencesClicked, trackHeroCtaClicked, trackRegionFilterOpened, trackRegionFilterSelected, trackNearMeResult } from "@/lib/analytics";
+import RegionFilter from "@/components/RegionFilter";
+import { useNearMe } from "@/hooks/useNearMe";
+import { countByRegion, filterByRegion, type RegionChoice } from "@/lib/regions";
 import heroImage from "@/assets/hero-road-desert.jpg";
 import handpickedHero from "@/assets/handpicked-hero.jpg";
 import giftCardHero from "@/assets/gift-card-hero.jpg";
@@ -85,6 +88,10 @@ function primaryHotel(exp: any) {
   );
 }
 
+/* ─── Où se trouve une carte : l'hôtel principal en mode "avec hôtel", la fiche elle-même sinon ── */
+const hotelPlace = (exp: any) => primaryHotel(exp);
+const standalonePlace = (exp: any) => exp;
+
 /* ─── Composant ──────────────────────────────────────────────────────────── */
 const IndexV3 = () => {
   const navigate = useNavigate();
@@ -96,6 +103,8 @@ const IndexV3 = () => {
   const [mode, setMode] = useState<"stay" | "live">("live");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedBoatId, setSelectedBoatId] = useState<string | null>(null);
+  const [regionChoice, setRegionChoice] = useState<RegionChoice>(null);
+  const nearMe = useNearMe();
 
   /* ── Realtime ── */
   useEffect(() => {
@@ -140,6 +149,7 @@ const IndexV3 = () => {
               id, name, name_he, name_fr,
               city, city_he, city_fr,
               region, region_he, region_fr,
+              latitude, longitude,
               hero_image, hyperguest_property_id,
               practical_info
             )
@@ -165,7 +175,7 @@ const IndexV3 = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_experiences")
-        .select("id, slug, title, title_he, title_fr, hero_image, photos, base_price, base_price_type, currency, original_price, min_party, max_party, has_child_price, has_time_slots, duration, duration_fr, duration_he, skipper_included, crew_included, display_order, category_id, category_ids, city, city_he, region, region_he, practical_info, show_on_v3_only, category:categories(slug), standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he, label_fr))")
+        .select("id, slug, title, title_he, title_fr, hero_image, photos, base_price, base_price_type, currency, original_price, min_party, max_party, has_child_price, has_time_slots, duration, duration_fr, duration_he, skipper_included, crew_included, display_order, category_id, category_ids, city, city_he, region, region_he, latitude, longitude, practical_info, show_on_v3_only, category:categories(slug), standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he, label_fr))")
         .eq("status", "published")
         // Les bateaux sont marqués "show_on_v3_only" pour rester hors de la grille par défaut ;
         // on les charge quand même pour la puce Bateaux (voir filteredStandalone).
@@ -229,6 +239,64 @@ const IndexV3 = () => {
       (exp: any) => exp.categories?.slug === selectedCategory
     );
   }, [experiences2, selectedCategory]);
+
+  /* ── Filtre région / « Autour de moi » : s'applique après la catégorie, dans les deux modes ── */
+  const categoryList: any[] = mode === "live" ? filteredStandalone : ((filteredExperiences as any[]) ?? []);
+  const placeOf = mode === "live" ? standalonePlace : hotelPlace;
+  const regionCounts = useMemo(() => countByRegion(categoryList, placeOf), [categoryList, placeOf]);
+  const placedList = useMemo(
+    () => filterByRegion(categoryList, placeOf, regionChoice, nearMe.position),
+    [categoryList, placeOf, regionChoice, nearMe.position]
+  );
+  // Sans filtre région, la home reste une sélection de 12 cartes. Avec un filtre, on montre tout ce qui correspond.
+  const visibleList = regionChoice ? placedList : placedList.slice(0, 12);
+  const distanceBadge = (km?: number) =>
+    km === undefined ? undefined : isRTL ? `${Math.max(1, Math.round(km))} ק״מ` : `${lang === "fr" ? "à " : ""}${Math.max(1, Math.round(km))} km`;
+
+  const handleRegionChange = async (choice: RegionChoice) => {
+    nearMe.clearProblem();
+    if (choice !== "near") {
+      setRegionChoice(choice);
+      trackRegionFilterSelected(choice ?? "all", {
+        mode,
+        category: selectedCategory,
+        results: filterByRegion(categoryList, placeOf, choice, null).length,
+      });
+      return;
+    }
+    const result = await nearMe.locate();
+    if (typeof result === "string") {
+      trackNearMeResult(result, mode);
+      return;
+    }
+    trackNearMeResult("granted", mode);
+    setRegionChoice("near");
+    trackRegionFilterSelected("near", {
+      mode,
+      category: selectedCategory,
+      results: filterByRegion(categoryList, placeOf, "near", result).length,
+    });
+  };
+
+  const nearMeProblemText = nearMe.problem && {
+    denied: isRTL ? "לא קיבלנו גישה למיקום. אפשר לבחור אזור מהרשימה." : lang === "fr" ? "Position non autorisée. Vous pouvez choisir une région dans la liste." : "Location not allowed. You can pick a region from the list.",
+    outside: isRTL ? "נראה שאתם לא בישראל כרגע. אפשר לבחור אזור מהרשימה." : lang === "fr" ? "Vous n'êtes pas en Israël pour l'instant. Choisissez une région dans la liste." : "You don't seem to be in Israel right now. Pick a region from the list.",
+    unavailable: isRTL ? "לא הצלחנו לאתר את המיקום. אפשר לבחור אזור מהרשימה." : lang === "fr" ? "Position introuvable. Vous pouvez choisir une région dans la liste." : "We couldn't find your location. You can pick a region from the list.",
+  }[nearMe.problem];
+
+  const regionEmptyState = (
+    <div className="text-center py-10">
+      <p className="text-muted-foreground text-sm mb-3">
+        {isRTL ? "אין חוויות מתאימות כרגע." : lang === "fr" ? "Aucune expérience ne correspond pour l'instant." : "No experience matches for now."}
+      </p>
+      <button
+        onClick={() => { setSelectedCategory(null); setRegionChoice(null); }}
+        className="text-sm underline underline-offset-4 text-primary"
+      >
+        {isRTL ? "לכל החוויות" : lang === "fr" ? "Voir toutes les expériences" : "View all experiences"}
+      </button>
+    </div>
+  );
 
   /* ────────────────────────────────────────────── RENDER ── */
   return (
@@ -431,6 +499,37 @@ const IndexV3 = () => {
             </div>
           )}
 
+          {/* Ligne du filtre région : discrète, au-dessus des cartes. Les catégories restent l'entrée principale. */}
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 mb-3">
+            <div className="flex items-center justify-between gap-3 min-h-[28px]">
+              <span className="text-[12.5px] text-muted-foreground">
+                {regionChoice && (
+                  <>
+                    {placedList.length}{" "}
+                    {isRTL ? "חוויות" : lang === "fr" ? (placedList.length > 1 ? "expériences" : "expérience") : placedList.length > 1 ? "experiences" : "experience"}
+                    <button
+                      onClick={() => handleRegionChange(null)}
+                      className="mx-2 underline underline-offset-4 hover:text-foreground"
+                    >
+                      {isRTL ? "ניקוי" : lang === "fr" ? "Effacer" : "Clear"}
+                    </button>
+                  </>
+                )}
+              </span>
+              <RegionFilter
+                value={regionChoice}
+                counts={regionCounts}
+                lang={lang as "en" | "fr" | "he"}
+                isLocating={nearMe.isLocating}
+                onChange={handleRegionChange}
+                onOpen={() => trackRegionFilterOpened(mode)}
+              />
+            </div>
+            {nearMeProblemText && (
+              <p className={cn("mt-1.5 text-[12px] text-muted-foreground", isRTL ? "text-left" : "text-right")}>{nearMeProblemText}</p>
+            )}
+          </div>
+
           {/* Grille de cartes — conditionnelle selon le mode */}
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             {mode === "live" ? (
@@ -439,9 +538,11 @@ const IndexV3 = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                   {Array.from({ length: 8 }).map((_, i) => <ExperienceCardSkeleton key={i} />)}
                 </div>
+              ) : regionChoice && placedList.length === 0 ? (
+                regionEmptyState
               ) : filteredStandalone.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 transition-all duration-500">
-                  {filteredStandalone.slice(0, 12).map((exp: any, idx: number) =>
+                  {visibleList.map(({ item: exp, distanceKm }: any, idx: number) =>
                     exp.category_id === BOATS_CATEGORY_ID ? (
                       <BoatCard key={exp.id} boat={exp} index={idx} onSelect={setSelectedBoatId} />
                     ) : (
@@ -449,6 +550,7 @@ const IndexV3 = () => {
                         key={exp.id}
                         experience={exp}
                         index={idx}
+                        badge={distanceBadge(distanceKm)}
                       />
                     )
                   )}
@@ -466,10 +568,12 @@ const IndexV3 = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                   {Array.from({ length: 12 }).map((_, i) => <ExperienceCardSkeleton key={i} />)}
                 </div>
+              ) : regionChoice && placedList.length === 0 ? (
+                regionEmptyState
               ) : filteredExperiences && filteredExperiences.length > 0 ? (
                 <>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 transition-all duration-500">
-                    {(filteredExperiences as any[]).slice(0, 12).map((exp: any, idx: number) => {
+                    {visibleList.map(({ item: exp, distanceKm }: any, idx: number) => {
                       const hotel = primaryHotel(exp);
                       return (
                         <Experience2CardWithPrice
@@ -481,6 +585,7 @@ const IndexV3 = () => {
                           linkPrefix="/experience"
                           linkSuffix="context=v3"
                           index={idx}
+                          badge={distanceBadge(distanceKm)}
                         />
                       );
                     })}

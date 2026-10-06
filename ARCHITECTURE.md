@@ -457,9 +457,20 @@ public/
 ## Design System
 
 ### Typography
-- **Sans:** Inter (body text)
-- **Serif:** Playfair Display (headings)
-- **Display:** Cormorant Garamond (decorative)
+- **Inter** partout sur les pages client (les classes `font-serif` et `font-display` retombent sur Inter depuis la session DA d'octobre 2026).
+- **Cormorant Garamond** : uniquement les titres du journal, où elle est nommée explicitement.
+
+### Règles de la DA client (session d'octobre 2026)
+- Référence visuelle : `docs/claude/maquettes/maquette-da-home-panier-paiement.html`, brief dans `docs/claude/brief-session-da-visuel.md`.
+- Une seule couleur de marque : `primary` = rouge `#ad1414`. Le back-office (admin et espace hôtelier) garde l'ancien bleu marine via la classe `.backoffice` posée sur `<html>` par `useBackofficeTheme` ; son harmonisation est à faire dans un second temps.
+- Titres en majuscules mais petits (16 pour une section, 28 pour la photo d'accueil). Arrondis : complet pour les boutons, 14 pour cartes et blocs, 10 pour les champs.
+- Traits de feutre rouges : conservés là où ils existent (catégorie choisie, liens d'action soulignés), sans en ajouter.
+
+### Filtre région de la home
+- `src/lib/regions.ts` range chaque lieu dans une des 6 grandes régions, d'après sa position sur la carte, sinon d'après les mots de sa ville et de sa région (le champ région des fiches est saisi librement). Il calcule aussi les distances pour « Autour de moi » (rayon de 80 km). Aucune colonne ni migration : tout est déduit à l'affichage.
+- `src/components/RegionFilter.tsx` : le lien « Partout en Israël » et sa liste (fenêtre sur ordinateur, panneau du bas sur téléphone). `src/hooks/useNearMe.ts` : demande la position au clic uniquement, sans la stocker.
+- `src/pages/IndexV3.tsx` applique le filtre après la catégorie, dans les deux modes (expérience seule : position de la fiche ; avec hôtel : position de l'hôtel principal).
+- Suivi Amplitude : `region_filter_opened`, `region_filter_selected`, `near_me_result`.
 
 ### Color Tokens (CSS variables)
 - `primary` — Brand primary

@@ -6,6 +6,29 @@
 
 ---
 
+## [2026-10-06] — Session DA, étape 3 : filtre par région et « Autour de moi » sur la home
+
+Travail fait sur la branche `session-da-visuel`, pas encore en ligne.
+
+### Ce qui a changé côté code
+- `src/lib/regions.ts` (créé) : range chaque expérience ou hôtel dans une des 6 grandes régions (Tel Aviv et la côte, Jérusalem, Galilée et Golan, Carmel et Haïfa, Néguev et mer Morte, Eilat et Arava). Il regarde d'abord la position sur la carte, sinon les mots de la ville puis de la région. Calcule aussi les distances pour « Autour de moi » (80 km maximum, du plus proche au plus lointain).
+- `src/lib/regions.test.ts` (créé) : 10 tests automatiques sur ce rangement et sur le filtre.
+- `src/components/RegionFilter.tsx` (créé) : le lien discret « Partout en Israël » et sa liste. Petite fenêtre sur ordinateur, panneau qui monte du bas sur téléphone. Une région sans expérience n'est pas proposée. Textes en français, anglais et hébreu.
+- `src/hooks/useNearMe.ts` (créé) : demande la position du visiteur uniquement quand il clique sur « Autour de moi ». La position n'est ni enregistrée ni envoyée. Gère le refus, la position introuvable et le visiteur hors d'Israël (un message l'invite alors à choisir une région).
+- `src/pages/IndexV3.tsx` : la ligne du filtre est placée au-dessus des cartes, à droite. Le filtre se combine avec la catégorie et fonctionne dans les deux modes (expérience seule, avec hôtel). Avec un filtre actif, la home affiche le nombre de résultats, un lien « Effacer », et toutes les expériences correspondantes (au lieu des 12 de la sélection). Avec « Autour de moi », chaque carte affiche sa distance. La page lit maintenant la position des fiches et des hôtels.
+- `src/lib/analytics.ts` : trois événements Amplitude, `region_filter_opened` (ouverture de la liste), `region_filter_selected` (région choisie, avec le mode, la catégorie et le nombre de résultats) et `near_me_result` (accepté, refusé, hors d'Israël, indisponible).
+- `ARCHITECTURE.md` : règles de la nouvelle DA et fonctionnement du filtre région ajoutés.
+- Filtre d'affichage uniquement : aucune logique de réservation, de prix ou de disponibilité modifiée.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration, aucune nouvelle colonne : la grande région est déduite à l'affichage à partir des données existantes.
+- À compléter dans le back-office (saisie, pas de développement) : 15 expériences seules publiées sur 47 n'ont pas de position sur la carte et n'apparaissent donc pas dans « Autour de moi ». Elles apparaissent bien dans le filtre par région.
+
+### Pourquoi ce changement
+Les clients demandent à pouvoir chercher par région ou près d'eux. Le filtre répond à cette demande sans devenir l'entrée principale : la découverte par envie et par catégorie reste au premier plan.
+
+---
+
 ## [2026-10-06] — Session DA, étape 2 : home à la nouvelle échelle
 
 Travail fait sur la branche `session-da-visuel`, pas encore en ligne.

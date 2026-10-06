@@ -51,6 +51,21 @@ export function trackHeroCtaClicked(cta: "find" | "plan" | "see_dates", slug?: s
   safeTrack("hero_cta_clicked", slug ? { cta, slug } : { cta });
 }
 
+/** Filtre région de la home : ouverture de la liste. */
+export function trackRegionFilterOpened(mode: "stay" | "live") {
+  safeTrack("region_filter_opened", { mode });
+}
+
+/** Filtre région de la home : choix d'une région ("all" = retour à toute Israël). */
+export function trackRegionFilterSelected(region: string, properties: { mode: "stay" | "live"; category?: string | null; results: number }) {
+  safeTrack("region_filter_selected", { region, ...properties });
+}
+
+/** « Autour de moi » : accepté, refusé, visiteur hors d'Israël, ou position indisponible. */
+export function trackNearMeResult(outcome: "granted" | "denied" | "outside" | "unavailable", mode: "stay" | "live") {
+  safeTrack("near_me_result", { outcome, mode });
+}
+
 export function trackScrollDepth(page: string, depth: 25 | 50 | 75 | 100) {
   safeTrack("scroll_depth", { page, depth_percent: depth });
 }
