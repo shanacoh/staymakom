@@ -42,7 +42,7 @@ export function StickyDraftButton({
           "rounded-full shadow-lg px-6 py-3 text-base font-semibold transition-all duration-300",
           showSavedState
             ? "bg-green-600 hover:bg-green-700 text-white"
-            : "bg-primary hover:bg-primary-glow text-primary-foreground",
+            : "bg-action hover:bg-action-hover text-action-foreground",
           showPulse && !isLoading && !showSavedState && "animate-pulse"
         )}
       >

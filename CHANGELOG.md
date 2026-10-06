@@ -6,6 +6,24 @@
 
 ---
 
+## [2026-10-06] — DA du back-office : noir de marque pour la structure, rouge pour l'action
+
+### Ce qui a changé côté code
+- `src/index.css` : dans le back-office (admin Staymakom et espace hôtelier), la couleur principale passe du bleu marine au noir de la marque, le même que sur le site client. Cela concerne les liens, l'élément actif du menu, les onglets actifs, les interrupteurs, les cases cochées et le contour du champ actif. Nouvelle couleur « action » (le rouge de marque) pour les boutons pleins et les compteurs.
+- `tailwind.config.ts` : déclaration de cette couleur « action ».
+- `src/components/ui/button.tsx`, `src/components/ui/badge.tsx` : le bouton plein et la pastille par défaut utilisent la couleur « action ». Côté client rien ne change à l'œil (ils étaient déjà rouges). Dans le back-office ils deviennent rouges alors que le reste passe au noir.
+- `src/components/admin/StickyDraftButton.tsx` : le bouton d'enregistrement flottant suit la même règle.
+- `src/hooks/useBackofficeTheme.ts` : commentaire mis à jour.
+- Couleurs uniquement. Aucun écran, aucun libellé, aucune logique modifiés.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration.
+
+### Pourquoi ce changement
+Le site client est passé au rouge de marque et le back-office était resté en bleu marine. Piste retenue sur maquette (`docs/claude/maquettes/maquette-da-backoffice.html`) : même famille visuelle que le site, sans que tout devienne rouge. Reste à relire les écrans un par un, car tous les boutons pleins sont maintenant rouges et certains écrans peuvent en compter trop.
+
+---
+
 ## [2026-10-06] — DA du back-office : maquette de proposition (aucun code modifié)
 
 ### Ce qui a changé côté code

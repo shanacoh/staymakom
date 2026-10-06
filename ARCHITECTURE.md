@@ -462,7 +462,7 @@ public/
 
 ### Règles de la DA client (session d'octobre 2026)
 - Référence visuelle : `docs/claude/maquettes/maquette-da-home-panier-paiement.html`, brief dans `docs/claude/brief-session-da-visuel.md`.
-- Une seule couleur de marque : `primary` = rouge `#ad1414`. Le back-office (admin et espace hôtelier) garde l'ancien bleu marine via la classe `.backoffice` posée sur `<html>` par `useBackofficeTheme` ; son harmonisation est à faire dans un second temps.
+- Une seule couleur de marque : `primary` = rouge `#ad1414`. Dans le back-office (admin et espace hôtelier), la classe `.backoffice` posée sur `<html>` par `useBackofficeTheme` fait de `primary` le noir de marque `#1a1814` (liens, menu et onglets actifs, interrupteurs). Le rouge y reste réservé à l'action via la couleur `action` (boutons pleins, compteurs), commune au site client.
 - Titres en majuscules mais petits (16 pour une section, 28 pour la photo d'accueil). Arrondis : complet pour les boutons, 14 pour cartes et blocs, 10 pour les champs.
 - Traits de feutre rouges : conservés là où ils existent (catégorie choisie, liens d'action soulignés), sans en ajouter.
 

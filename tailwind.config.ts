@@ -47,6 +47,11 @@ export default {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
+        action: {
+          DEFAULT: "hsl(var(--action))",
+          foreground: "hsl(var(--action-foreground))",
+          hover: "hsl(var(--action-hover))",
+        },
         cta: {
           DEFAULT: "hsl(var(--cta))",
           hover: "hsl(var(--cta-hover))",

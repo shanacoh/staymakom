@@ -24,6 +24,12 @@ All colors MUST be HSL.
     --primary-foreground: 0 0% 100%;
     --primary-glow: 0 79% 33%;
 
+    /* Couleur de l'action principale (boutons pleins, compteurs) : toujours le rouge de marque,
+       y compris dans le back-office où --primary devient le noir de marque. */
+    --action: 0 79% 38%;
+    --action-foreground: 0 0% 100%;
+    --action-hover: 0 79% 33%;
+
     --secondary: 36 38% 78%;
     --secondary-foreground: 0 0% 7%;
 
@@ -82,12 +88,16 @@ All colors MUST be HSL.
     --input-hebrew-bg: 30 25% 94%;
   }
 
-  /* Back-office : apparence d'origine conservée (posée sur <html> par useBackofficeTheme) */
+  /* Back-office (classe posée sur <html> par useBackofficeTheme) : le noir de marque #1a1814 structure
+     l'écran (liens, menu et onglets actifs, interrupteurs, champ actif) et le rouge reste réservé à
+     l'action principale via --action. */
   .backoffice {
-    --primary: 207 62% 15%;
-    --primary-foreground: 40 33% 93%;
-    --primary-glow: 208 61% 20%;
-    --ring: 207 62% 15%;
+    --primary: 40 13% 9%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 40 10% 18%;
+    --ring: 40 13% 9%;
+    --sidebar-primary: 40 13% 9%;
+    --sidebar-ring: 40 13% 9%;
     --radius: 0.75rem;
   }
 
