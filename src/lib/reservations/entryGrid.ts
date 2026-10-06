@@ -79,16 +79,6 @@ export function cellMode(row: ReservationRow, key: EntryColumnKey): CellMode {
   }
 }
 
-/**
- * Suppression définitive depuis la grille : seulement ce qui a été saisi à la main (réservation
- * d'expérience ou de bateau) et les demandes. Une réservation payée en ligne, un hôtel ou un
- * dossier ne se suppriment pas ici : on les annule, pour garder la trace du paiement.
- */
-export function canDeleteRow(row: ReservationRow): boolean {
-  if (row.source === "request") return true;
-  return row.source === "booking" && !row.isOnline;
-}
-
 const BOOKING_STATUS_OPTIONS: SelectOption[] = [
   { value: "confirmee", label: "Confirmée" },
   { value: "passee", label: "Passée" },

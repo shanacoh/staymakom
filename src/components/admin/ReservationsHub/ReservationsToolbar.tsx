@@ -57,6 +57,10 @@ interface Props {
   unfinishedCount: number;
   unfinishedOpen: boolean;
   onUnfinishedOpenChange: (value: boolean) => void;
+  // Puce « Corbeille » : ouvre la liste des lignes supprimées, pour les restaurer.
+  trashCount: number;
+  trashOpen: boolean;
+  onTrashOpenChange: (value: boolean) => void;
 }
 
 const ReservationsToolbar = (props: Props) => (
@@ -138,6 +142,16 @@ const ReservationsToolbar = (props: Props) => (
         active={props.unfinishedOpen}
         onClick={() => props.onUnfinishedOpenChange(!props.unfinishedOpen)}
         title="Paiements en ligne échoués ou jamais terminés. Ce ne sont pas des réservations."
+      />
+    )}
+
+    {(props.trashCount > 0 || props.trashOpen) && (
+      <FilterChip
+        label="Corbeille"
+        count={props.trashCount}
+        active={props.trashOpen}
+        onClick={() => props.onTrashOpenChange(!props.trashOpen)}
+        title="Lignes supprimées. Elles peuvent être restaurées."
       />
     )}
   </div>

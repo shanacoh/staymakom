@@ -6,6 +6,38 @@
 
 ---
 
+## [2026-10-06] — Réservations : même suppression sur toutes les lignes, sélection multiple et corbeille
+
+### Ce qui a changé côté code
+- `src/components/admin/ReservationsHub/ReservationsEntryGrid.tsx` : en mode Saisie, chaque ligne a une case à cocher (collée au bord gauche) et une corbeille (au bord droit), quel que soit son type : réservation manuelle, réservation payée en ligne, demande, hôtel, dossier de voyage. Une case dans l'en-tête coche toutes les lignes affichées.
+- `src/pages/admin/Reservations.tsx` : barre « N lignes sélectionnées · Supprimer » au-dessus de la grille. Seules les lignes encore affichées sont supprimées : une ligne cochée puis masquée par un filtre est ignorée.
+- `src/components/admin/ReservationsHub/DeleteReservationDialog.tsx` : une seule fenêtre de confirmation pour une ou plusieurs lignes. Elle liste les lignes, et avertit s'il y a de l'argent encaissé, un hôtel encore confirmé ou un dossier de voyage.
+- `src/components/admin/ReservationsHub/DeletedReservationsTable.tsx` (nouveau) et `ReservationsToolbar.tsx` : puce « Corbeille » avec la liste des lignes supprimées et un bouton « Restaurer ».
+- `src/lib/reservations/actions.ts`, `queries.ts`, `types.ts` : `deleteReservationRows`, `restoreDeletedReservation`, `useDeletedReservations`.
+- `src/lib/reservations/entryGrid.ts` et son test : la règle `canDeleteRow` disparaît (toutes les lignes se suppriment).
+
+### Ce qui a changé côté base de données
+- Migration `20261006150000_reservations_corbeille.sql` : nouvelle table `deleted_reservations` (la corbeille : une copie complète de chaque ligne supprimée et de ce qui lui était rattaché, réservée aux admins) et deux fonctions. `delete_reservations` copie puis supprime, tout ou rien. `restore_deleted_reservation` remet la ligne à l'identique et la retire de la corbeille.
+- **À vérifier avant de mettre le code en ligne** : cette migration doit être appliquée sur la base, sinon la suppression affiche une erreur.
+
+### Pourquoi ce changement
+La corbeille n'existait que sur une partie des lignes, ce qui a conduit Shana à supprimer les mauvaises. Elle veut la même logique partout sur la page, la sélection multiple, et pouvoir rattraper une erreur.
+
+---
+
+## [2026-10-06] — Réservations : 22 réservations et 11 demandes supprimées par erreur, remises
+
+### Ce qui a changé côté code
+- `docs/claude/restauration-2026-10-06-reservations-supprimees.sql` (nouveau) : le script lancé, gardé pour trace. Aucun code de l'application n'a changé.
+
+### Ce qui a changé côté base de données
+- Pas de migration. Données remises depuis la sauvegarde `backup_20261006` : 22 lignes de `standalone_bookings` (saisies à la main), 11 lignes de `standalone_experience_requests` et 2 lignes de `standalone_booking_payments`. Le type (`product_type`) a été recalculé avec la règle de la migration `20261006110000`, et la correction du matin sur la réservation de Liron Tenoudji Cohen (annulation retirée) a été rejouée. La ligne de test « ff / rrrr », supprimée exprès, n'a pas été remise.
+
+### Pourquoi ce changement
+Ces lignes avaient été supprimées par erreur depuis la grille de Saisie, à la place de réservations d'hôtel de test.
+
+---
+
 ## [2026-10-06] — Réservations : la corbeille reste visible en mode Saisie
 
 ### Ce qui a changé côté code

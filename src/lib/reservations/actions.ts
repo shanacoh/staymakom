@@ -172,18 +172,19 @@ export async function createBookingFromGrid(customerName: string, today: string)
 }
 
 /**
- * Supprime définitivement une ligne saisie à la main ou une demande. La condition sur
- * l'origine est répétée dans la requête : une réservation payée en ligne ne peut pas être
- * supprimée par ce chemin, même si l'écran se trompait.
+ * Supprime une ou plusieurs lignes, quel que soit leur type. La base copie d'abord chaque ligne
+ * (et ce qui lui est rattaché) dans la corbeille, puis la supprime, en une seule opération :
+ * si une ligne pose problème, aucune n'est supprimée.
  */
-export async function deleteReservationRow(source: "booking" | "request", rowId: string) {
-  const query =
-    source === "booking"
-      ? db.from("standalone_bookings").delete().eq("id", rowId).eq("source", "manual_admin")
-      : db.from("standalone_experience_requests").delete().eq("id", rowId);
-  const { data, error } = await query.select("id");
+export async function deleteReservationRows(rows: { source: string; id: string }[]) {
+  const { error } = await db.rpc("delete_reservations", { p_items: rows.map((row) => ({ source: row.source, id: row.id })) });
   if (error) throw error;
-  assertChanged(data, "Ligne introuvable ou non supprimable. Recharge la liste.");
+}
+
+/** Remet à l'identique une ligne de la corbeille, avec ce qui lui était rattaché. */
+export async function restoreDeletedReservation(deletedId: string) {
+  const { error } = await db.rpc("restore_deleted_reservation", { p_id: deletedId });
+  if (error) throw error;
 }
 
 /**

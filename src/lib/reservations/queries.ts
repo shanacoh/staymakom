@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CHANNEL_LABELS } from "@/components/admin/BookingsGrid/columnTypes";
 import type {
   ClientPayment,
+  DeletedReservation,
   DossierLine,
   UnpaidDossier,
   ReservationRow,
@@ -141,6 +142,33 @@ async function fetchUnfinishedPayments(): Promise<UnfinishedPayment[]> {
 /** Paiements en ligne non aboutis (vue SQL `admin_unfinished_payments`). */
 export function useUnfinishedPayments() {
   return useQuery({ queryKey: UNFINISHED_PAYMENTS_QUERY_KEY, queryFn: fetchUnfinishedPayments });
+}
+
+export const DELETED_RESERVATIONS_QUERY_KEY = ["admin-deleted-reservations"];
+
+async function fetchDeletedReservations(): Promise<DeletedReservation[]> {
+  // La copie complète de la ligne (payload) reste en base : la liste n'a besoin que des repères.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from("deleted_reservations")
+    .select("id, source, client, product, amount, currency, deleted_at")
+    .order("deleted_at", { ascending: false });
+  if (error) throw error;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data as any[]).map((row) => ({
+    id: row.id,
+    source: row.source,
+    client: row.client || "Sans nom",
+    product: row.product || "",
+    amount: toNumber(row.amount),
+    currency: row.currency,
+    deletedAt: row.deleted_at,
+  }));
+}
+
+/** Corbeille de la page Réservations (table `deleted_reservations`). */
+export function useDeletedReservations() {
+  return useQuery({ queryKey: DELETED_RESERVATIONS_QUERY_KEY, queryFn: fetchDeletedReservations });
 }
 
 export const DOSSIER_LINES_QUERY_KEY = ["admin-reservation-dossier-lines"];

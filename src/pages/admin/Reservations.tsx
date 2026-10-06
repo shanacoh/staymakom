@@ -10,7 +10,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Check, LayoutList, Lock, Plus, Table2 } from "lucide-react";
+import { Check, LayoutList, Lock, Plus, Table2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import LinkPaidDossierDialog from "@/components/admin/ReservationsHub/LinkPaidDo
 import ItineraryRequestsSection from "@/components/admin/ReservationsHub/ItineraryRequestsSection";
 import EditRequestDialog from "@/components/admin/ReservationsHub/EditRequestDialog";
 import DeleteReservationDialog from "@/components/admin/ReservationsHub/DeleteReservationDialog";
+import DeletedReservationsTable from "@/components/admin/ReservationsHub/DeletedReservationsTable";
 import UnfinishedPaymentsTable from "@/components/admin/ReservationsHub/UnfinishedPaymentsTable";
 import ReservationsEntryGrid from "@/components/admin/ReservationsHub/ReservationsEntryGrid";
 import CreateManualHotelBookingDialog from "@/components/admin/ReservationsHub/CreateManualHotelBookingDialog";
@@ -29,9 +30,11 @@ import ReservationsToolbar from "@/components/admin/ReservationsHub/Reservations
 import ReservationsKpis from "@/components/admin/ReservationsHub/ReservationsKpis";
 import ReservationsSummaryTable from "@/components/admin/ReservationsHub/ReservationsSummaryTable";
 import {
+  DELETED_RESERVATIONS_QUERY_KEY,
   DOSSIER_LINES_QUERY_KEY,
   RESERVATIONS_QUERY_KEY,
   UNPAID_DOSSIERS_QUERY_KEY,
+  useDeletedReservations,
   useDossierLines,
   useReservationRows,
   useUnfinishedPayments,
@@ -109,12 +112,17 @@ const AdminReservations = () => {
   const [editRequestId, setEditRequestId] = useState<string | null>(null);
   const [expandedDossiers, setExpandedDossiers] = useState<Set<string>>(new Set());
   const [isCreatingRow, setIsCreatingRow] = useState(false);
-  const [rowToDelete, setRowToDelete] = useState<ReservationRow | null>(null);
+  // Lignes en attente de confirmation de suppression (une seule, ou toute la sélection).
+  const [rowsToDelete, setRowsToDelete] = useState<ReservationRow[]>([]);
+  // Lignes cochées dans la grille de Saisie, par leur clé.
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [trashOpen, setTrashOpen] = useState(false);
   const [savedVisible, setSavedVisible] = useState(false);
   const savedTimer = useRef<number>();
 
   const { data: rows, isLoading, error } = useReservationRows();
   const { data: unfinishedPayments } = useUnfinishedPayments();
+  const { data: deletedReservations } = useDeletedReservations();
   const { data: dossierLines } = useDossierLines();
   const linesByDossier = useMemo(() => {
     const map = new Map<string, DossierLine[]>();
@@ -157,10 +165,34 @@ const AdminReservations = () => {
     return tabRows.filter((row) => visible.has(row));
   }, [tabRows, visibleGroups]);
 
+  // Seules les lignes encore affichées comptent : une ligne cochée puis masquée par un filtre
+  // ne doit pas être supprimée sans être vue.
+  const selectedRows = useMemo(() => visibleRows.filter((row) => selectedKeys.has(row.key)), [visibleRows, selectedKeys]);
+
   // Une ligne ne se crée en tapant que là où c'est une réservation d'expérience ou de bateau.
   const allowNewRow = tab === "all" || tab === "experiences";
 
   const refreshRows = () => queryClient.invalidateQueries({ queryKey: RESERVATIONS_QUERY_KEY });
+
+  // Une suppression ou une restauration peut toucher un dossier : tout ce que la page lit est relu.
+  const refreshAfterTrashChange = async () => {
+    setSelectedKeys(new Set());
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: DELETED_RESERVATIONS_QUERY_KEY }),
+      queryClient.invalidateQueries({ queryKey: DOSSIER_LINES_QUERY_KEY }),
+      queryClient.invalidateQueries({ queryKey: UNPAID_DOSSIERS_QUERY_KEY }),
+      refreshRows(),
+    ]);
+  };
+
+  const toggleRowSelection = (row: ReservationRow, selected: boolean) =>
+    setSelectedKeys((current) => {
+      const next = new Set(current);
+      if (selected) next.add(row.key);
+      else next.delete(row.key);
+      return next;
+    });
+  const toggleAllSelection = (selected: boolean) => setSelectedKeys(selected ? new Set(visibleRows.map((row) => row.key)) : new Set());
 
   // Une demande n'a pas de fiche : on ouvre sa fenêtre de modification.
   const openRow = (row: ReservationRow) => {
@@ -378,12 +410,23 @@ const AdminReservations = () => {
         onChannelChange={setChannel}
         unfinishedCount={unfinishedToFollowUp}
         unfinishedOpen={unfinishedOpen}
-        onUnfinishedOpenChange={setUnfinishedOpen}
+        onUnfinishedOpenChange={(open) => {
+          setUnfinishedOpen(open);
+          if (open) setTrashOpen(false);
+        }}
+        trashCount={deletedReservations?.length ?? 0}
+        trashOpen={trashOpen}
+        onTrashOpenChange={(open) => {
+          setTrashOpen(open);
+          if (open) setUnfinishedOpen(false);
+        }}
       />
 
-      {tab === "itineraries" && !unfinishedOpen && <ItineraryRequestsSection />}
+      {tab === "itineraries" && !unfinishedOpen && !trashOpen && <ItineraryRequestsSection />}
 
-      {unfinishedOpen ? (
+      {trashOpen ? (
+        <DeletedReservationsTable items={deletedReservations ?? []} onRestored={refreshAfterTrashChange} />
+      ) : unfinishedOpen ? (
         <UnfinishedPaymentsTable payments={unfinishedPayments ?? []} />
       ) : isLoading ? (
         <div className="py-12 text-center text-muted-foreground">Chargement...</div>
@@ -417,6 +460,20 @@ const AdminReservations = () => {
               Enregistré
             </span>
           </div>
+          {selectedRows.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm">
+              <span className="font-medium tabular-nums text-foreground">
+                {selectedRows.length} ligne{selectedRows.length > 1 ? "s" : ""} sélectionnée{selectedRows.length > 1 ? "s" : ""}
+              </span>
+              <Button size="sm" variant="destructive" onClick={() => setRowsToDelete(selectedRows)}>
+                <Trash2 className="h-3.5 w-3.5" />
+                Supprimer
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelectedKeys(new Set())}>
+                Tout décocher
+              </Button>
+            </div>
+          )}
           {visibleRows.length > 0 || allowNewRow ? (
             <ReservationsEntryGrid
               rows={visibleRows}
@@ -425,7 +482,10 @@ const AdminReservations = () => {
               onCellCommit={commitCell}
               onNewRowCommit={commitNewRow}
               onOpen={openRow}
-              onDelete={setRowToDelete}
+              onDelete={(row) => setRowsToDelete([row])}
+              selectedKeys={selectedKeys}
+              onToggleRow={toggleRowSelection}
+              onToggleAll={toggleAllSelection}
               linesByDossier={linesByDossier}
               onLineCost={handleLineCost}
               onLinePaid={handleLinePaid}
@@ -469,7 +529,7 @@ const AdminReservations = () => {
           refreshRows();
         }}
       />
-      <DeleteReservationDialog row={rowToDelete} onClose={() => setRowToDelete(null)} onDeleted={refreshRows} />
+      <DeleteReservationDialog rows={rowsToDelete} onClose={() => setRowsToDelete([])} onDeleted={refreshAfterTrashChange} />
       <ReservationActionDialogs pending={pendingAction} onClose={() => setPendingAction(null)} onDone={refreshRows} />
     </div>
   );

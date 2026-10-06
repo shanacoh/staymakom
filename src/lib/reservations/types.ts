@@ -104,6 +104,17 @@ export interface UnfinishedPayment {
   converted: boolean;
 }
 
+// Ligne supprimée, gardée dans la corbeille pour pouvoir être restaurée.
+export interface DeletedReservation {
+  id: string;
+  source: ReservationSource;
+  client: string;
+  product: string;
+  amount: number | null;
+  currency: string | null;
+  deletedAt: string;
+}
+
 // Ligne de réservation d'un dossier de voyage payé (hôtel, activité, transport...).
 export interface DossierLine {
   id: string;
