@@ -6,6 +6,23 @@
 
 ---
 
+## [2026-10-06] — Positions sur la carte complétées pour « Autour de moi » (données uniquement)
+
+### Ce qui a changé côté code
+- Rien.
+
+### Ce qui a changé côté base de données
+- Aucune migration. Mise à jour de données, uniquement sur des fiches dont la position était vide (`latitude` et `longitude`), avec des positions relevées sur OpenStreetMap :
+  - Table `standalone_experiences`, 11 fiches : `tel-aviv-easy-bike-tour` (The Spot Hostel, port de Tel Aviv, 32.09804 / 34.77551), `private-surf-lesson-tel-aviv` (Beach Club TLV, 32.06877 / 34.76263), `archaeological-sifting-emek-tzurim-jerusalem` (parc national Emek Tzurim, 31.78785 / 35.24188), `skydiving-habonim-beach` (centre de parachutisme de Habonim, 32.64662 / 34.93367), cinq bateaux de Herzliya placés à la marina de Herzliya (32.16214 / 34.79500) : `chaser-speed-boat`, `seamona-private-yacht-13-guests`, `platinum-yacht-package`, `diamond-yacht-luxury-package`, `catamaran-38-herzliya`, et deux bateaux de Tel Aviv placés à la marina de Tel Aviv (32.08677 / 34.76731) : `sailing-boat-skipper-tel-aviv`, `catamaran-tel-aviv`.
+  - Table `hotels2`, 2 hôtels : Moa Living (centre du village de Tzofar, 30.55862 / 35.18014) et Oasis Spa Club Dead Sea Hotel (Ein Bokek, 31.19597 / 35.36131).
+- Aucun autre champ modifié (ni adresse, ni ville, ni texte).
+- À confirmer par Shana : les deux bateaux de Tel Aviv partent-ils bien de la marina de Tel Aviv et non du port de Jaffa.
+
+### Pourquoi ce changement
+Le filtre « Autour de moi » de la home calcule une distance et ne peut donc afficher que les fiches qui ont une position. Toutes les expériences seules publiées et tous les hôtels en ont maintenant une.
+
+---
+
 ## [2026-10-06] — DA du back-office : un seul rouge d'action et plus de bleu marine sur la page Expériences
 
 ### Ce qui a changé côté code
