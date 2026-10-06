@@ -59,6 +59,8 @@ interface LeadGuestFormProps {
   onSaveProfile?: boolean;
   /** Demander l'adresse postale. Vrai par défaut (réservation d'hôtel) ; faux pour une expérience seule. */
   requireAddress?: boolean;
+  /** Rendre la nationalité obligatoire. Vrai par défaut (réservation d'hôtel) ; faux pour une expérience seule. */
+  requireCountry?: boolean;
 }
 
 const translations = {
@@ -135,7 +137,7 @@ const inputStyle = {
   borderRadius: '10px',
 };
 
-export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false, requireAddress = true }: LeadGuestFormProps) {
+export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false, requireAddress = true, requireCountry = true }: LeadGuestFormProps) {
   const t = translations[lang];
   const { user } = useAuth();
   const [profileLoaded, setProfileLoaded] = useState(false);
@@ -147,7 +149,7 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
   const errors = useMemo(() => {
     const show = showErrors;
     return {
-      country: (show || touched.country) && !value.country.trim() ? t.required : null,
+      country: requireCountry && (show || touched.country) && !value.country.trim() ? t.required : null,
       firstName: (show || touched.firstName) && !value.firstName.trim() ? t.required : null,
       lastName: (show || touched.lastName) && !value.lastName.trim() ? t.required : null,
       address: requireAddress && (show || touched.address) && !value.address.trim() ? t.required : null,
@@ -155,7 +157,7 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
            : (show || touched.email) && !isValidEmail(value.email) ? t.invalidEmail : null,
       phone: (show || touched.phone) && value.phone.trim() && !isValidPhone(value.phone) ? t.invalidPhone : null,
     };
-  }, [value, touched, showErrors, t, requireAddress]);
+  }, [value, touched, showErrors, t, requireAddress, requireCountry]);
 
   // Auto-fill from user profile on mount
   useEffect(() => {
@@ -224,7 +226,7 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="space-y-1">
-          <Label className="text-xs">{t.nationality} *</Label>
+          <Label className="text-xs">{t.nationality} {requireCountry ? "*" : <span className="text-muted-foreground">({t.optional})</span>}</Label>
           <Select
             value={value.country || undefined}
             onValueChange={(v) => { update("country", v); markTouched("country"); }}
@@ -339,10 +341,14 @@ export const EMPTY_LEAD_GUEST: LeadGuestData = {
 /** Source unique de vérité pour savoir si le voyageur a rempli les infos client.
  *  L'adresse de facturation reste collectée par le widget Revolut.
  *  L'adresse postale n'est exigée que pour une réservation d'hôtel (transmise au système de réservation
- *  des hôtels) : passer `requireAddress: false` pour une expérience seule, où elle ne sert à rien. */
-export function isLeadGuestComplete(g: LeadGuestData, { requireAddress = true }: { requireAddress?: boolean } = {}): boolean {
+ *  des hôtels) : passer `requireAddress: false` pour une expérience seule, où elle ne sert à rien.
+ *  Même logique pour la nationalité avec `requireCountry: false` : utile à connaître, jamais bloquante. */
+export function isLeadGuestComplete(
+  g: LeadGuestData,
+  { requireAddress = true, requireCountry = true }: { requireAddress?: boolean; requireCountry?: boolean } = {}
+): boolean {
   return (
-    g.country.trim() !== "" &&
+    (!requireCountry || g.country.trim() !== "") &&
     g.firstName.trim() !== "" &&
     g.lastName.trim() !== "" &&
     (!requireAddress || g.address.trim() !== "") &&

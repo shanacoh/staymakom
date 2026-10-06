@@ -6,6 +6,21 @@
 
 ---
 
+## [2026-10-06] — Paiement d'une expérience seule : la nationalité devient facultative
+
+### Ce qui a changé côté code
+- `src/components/experience/LeadGuestForm.tsx` : nouveau réglage `requireCountry` (vrai par défaut). Quand il est faux, la nationalité reste proposée, avec la mention « facultatif », mais ne bloque plus le passage à l'étape suivante.
+- `src/pages/StandaloneCheckout.tsx` : le paiement d'une expérience seule passe ce réglage à faux.
+- `src/pages/Checkout.tsx` (réservation avec hôtel) : inchangé, la nationalité y reste obligatoire car elle est transmise au système de réservation des hôtels.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration. Quand le client est connecté et renseigne sa nationalité, elle continue d'être mémorisée dans son compte.
+
+### Pourquoi ce changement
+Pour une expérience seule, la nationalité n'est envoyée ni à Revolut ni dans la réservation. Elle reste utile pour connaître la provenance des clients, mais ne doit pas empêcher de payer.
+
+---
+
 ## [2026-10-06] — Paiement d'une expérience seule : l'adresse postale n'est plus demandée
 
 ### Ce qui a changé côté code
