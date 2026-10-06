@@ -6,6 +6,21 @@
 
 ---
 
+## [2026-10-06] — Réservations : la page lit une « feuille récapitulative » de la base
+
+### Ce qui a changé côté code
+- `src/lib/reservations/queries.ts` : simplifié. Au lieu d'aller lire quatre tables et de calculer le statut, le type et l'encaissé dans le navigateur, la page lit la vue `admin_reservations`, qui fait ce calcul côté base. Les règles de statut vivent donc à un seul endroit.
+
+### Ce qui a changé côté base de données
+- Migration `20261006120000_admin_reservations_views.sql` (appliquée). Deux vues en lecture seule, qui ne copient aucune donnée et respectent les droits de la personne connectée :
+  - `admin_reservations` : une ligne par réservation, dans un format commun. Elle réunit `standalone_bookings` (hors paiements en ligne jamais aboutis), les demandes en cours de `standalone_experience_requests`, `bookings_hg` et les `dossiers_voyage` payés. Elle calcule le statut (Demande, Dispo OK, Confirmée, Passée, Annulée, à l'heure d'Israël), le paiement client, le montant encaissé et l'acompte à demander.
+  - `admin_unfinished_payments` : les paiements en ligne non aboutis, une ligne par client et par expérience, avec le nombre de tentatives. « failed » = échoué, « unfinished » = commencé et pas terminé depuis plus de 24 h. La colonne `converted` dit si une réservation confirmée existe ensuite pour le même client (même email ou même téléphone). Cette vue servira à la puce « Paiements non aboutis » (lot 4).
+
+### Pourquoi ce changement
+Avec quatre lectures assemblées dans l'écran, les compteurs et les totaux pouvaient se contredire. Une seule vue garantit que tous les écrans comptent de la même façon.
+
+---
+
 ## [2026-10-06] — Réservations : type Expérience / Bateau enregistré, et lien demande → réservation
 
 ### Ce qui a changé côté code
