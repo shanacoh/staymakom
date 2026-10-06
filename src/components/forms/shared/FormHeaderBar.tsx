@@ -109,7 +109,7 @@ export function FormHeaderBar({
           type="submit"
           size="sm"
           disabled={!canPublish || busy}
-          className="h-8 text-[13px] bg-[#ad1414] text-white hover:bg-[#ad1414]/90"
+          className="h-8 text-[13px] bg-action text-white hover:bg-action-hover"
         >
           <Rocket className="h-3.5 w-3.5 mr-1.5" />
           Publier
@@ -140,7 +140,7 @@ export function FormMobileSaveBar({
       </Button>
       <Button
         type="button"
-        className="flex-1 bg-[#ad1414] text-white hover:bg-[#ad1414]/90"
+        className="flex-1 bg-action text-white hover:bg-action-hover"
         onClick={onPublish}
         disabled={!canPublish || busy}
       >

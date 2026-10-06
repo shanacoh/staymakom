@@ -6,6 +6,23 @@
 
 ---
 
+## [2026-10-06] — DA du back-office : un seul rouge d'action et plus de bleu marine sur la page Expériences
+
+### Ce qui a changé côté code
+- `src/index.css` : dans le back-office, le rouge d'action devient le rouge clair (celui du bouton « Nouvelle réservation »), choisi par Shana. Tous les boutons pleins et les compteurs le suivent. Le site client garde son rouge de marque `#ad1414`.
+- `src/pages/admin/Experiences2.tsx` : le sélecteur « With Hotel / Experience Only / Bateaux » et les pastilles de catégories étaient écrits en bleu marine à la main. Ils passent au noir de la marque.
+- `src/pages/admin/Journal.tsx`, `src/components/admin/dossiers/DossierVoyageDetail.tsx`, `DossierListSidebar.tsx`, `DossierStepper.tsx`, `src/components/admin/catalogue/LocateList.tsx`, `src/components/forms/styled/FormHeaderBar.tsx` : les rouges foncés écrits à la main (boutons, contours, repères) utilisent maintenant la couleur d'action commune. Le bouton « Coller une demande » des dossiers a donc le même rouge que « Nouvelle réservation ».
+- `src/pages/admin/Reservations.tsx` : le bouton « Nouvelle réservation » utilise le bouton standard au lieu d'une couleur forcée (même rendu).
+- Couleurs uniquement. Le menu de gauche n'est pas modifié.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration.
+
+### Pourquoi ce changement
+À la relecture, Shana a repéré deux rouges d'action différents selon les écrans (foncé sur Dossiers, clair sur Réservations) et des sélecteurs encore bleu marine sur la page Expériences. Elle préfère le rouge clair.
+
+---
+
 ## [2026-10-06] — DA du back-office : titres, boutons et textes alignés sur une règle commune
 
 ### Ce qui a changé côté code

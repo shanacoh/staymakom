@@ -473,13 +473,13 @@ const AdminExperiences2 = () => {
         </div>
 
         {/* Toggle With Hotel / Experience Only */}
-        <div className="inline-flex items-center border border-[#1B2A4A]/20 rounded-full p-1 gap-0.5">
+        <div className="inline-flex items-center border border-border rounded-full p-1 gap-0.5">
           <button
             onClick={() => setMode("hotel")}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
               mode === "hotel"
-                ? "bg-[#1B2A4A] text-white"
-                : "text-[#1B2A4A]/60 hover:bg-muted/50"
+                ? "bg-foreground text-white"
+                : "text-muted-foreground hover:bg-muted/50"
             }`}
           >
             <Building2 className="h-3.5 w-3.5" />
@@ -489,8 +489,8 @@ const AdminExperiences2 = () => {
             onClick={() => setMode("standalone")}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
               mode === "standalone"
-                ? "bg-[#1B2A4A] text-white"
-                : "text-[#1B2A4A]/60 hover:bg-muted/50"
+                ? "bg-foreground text-white"
+                : "text-muted-foreground hover:bg-muted/50"
             }`}
           >
             <Zap className="h-3.5 w-3.5" />
@@ -500,8 +500,8 @@ const AdminExperiences2 = () => {
             onClick={() => setMode("boats")}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
               mode === "boats"
-                ? "bg-[#1B2A4A] text-white"
-                : "text-[#1B2A4A]/60 hover:bg-muted/50"
+                ? "bg-foreground text-white"
+                : "text-muted-foreground hover:bg-muted/50"
             }`}
           >
             <Sailboat className="h-3.5 w-3.5" />
@@ -521,7 +521,7 @@ const AdminExperiences2 = () => {
               onClick={() => setSelectedCategory(null)}
               className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                 !selectedCategory
-                  ? "bg-[#1B2A4A] text-white border-[#1B2A4A]"
+                  ? "bg-foreground text-white border-foreground"
                   : "border-border text-muted-foreground hover:border-foreground/40"
               }`}
             >
@@ -533,7 +533,7 @@ const AdminExperiences2 = () => {
                 onClick={() => setSelectedCategory(cat.slug === selectedCategory ? null : cat.slug)}
                 className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                   selectedCategory === cat.slug
-                    ? "bg-[#1B2A4A] text-white border-[#1B2A4A]"
+                    ? "bg-foreground text-white border-foreground"
                     : "border-border text-muted-foreground hover:border-foreground/40"
                 }`}
               >

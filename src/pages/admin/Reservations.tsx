@@ -62,7 +62,6 @@ const AdminReservations = () => {
 
           {tab !== "itineraries" && (
             <Button
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => (tab === "hotels" ? setHotelCreateOpen(true) : setExperienceCreateOpen(true))}
             >
               <Plus className="h-4 w-4 mr-2" />

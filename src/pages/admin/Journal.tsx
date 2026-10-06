@@ -98,7 +98,7 @@ const AdminJournal = () => {
 
   const getCategoryColor = (category: string) => {
     const colors = {
-      Stories: "bg-[#D72638]",
+      Stories: "bg-action",
       Places: "bg-amber-500",
       Guides: "bg-blue-500",
       People: "bg-green-500",

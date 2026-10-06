@@ -210,7 +210,7 @@ export default function DossierVoyageDetail() {
           )}
           {dossier.contenu_brut_recu && (
             <div>
-              <Button onClick={genererBrief} disabled={generateBrief.isPending} className="bg-[#ad1414] hover:bg-[#8f1010]">
+              <Button onClick={genererBrief} disabled={generateBrief.isPending} className="bg-action hover:bg-action-hover">
                 {generateBrief.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1.5 h-4 w-4" />}
                 {aUnBrief ? "Régénérer avec l'IA" : "Analyser avec l'IA"}
               </Button>
@@ -317,7 +317,7 @@ export default function DossierVoyageDetail() {
               <Button variant="outline" onClick={enregistrerBrief} disabled={updateDossier.isPending}>
                 Enregistrer mes modifications
               </Button>
-              <Button onClick={validerBrief} disabled={updateDossier.isPending || dossier.brief_valide_par_shana} className="bg-[#ad1414] hover:bg-[#8f1010]">
+              <Button onClick={validerBrief} disabled={updateDossier.isPending || dossier.brief_valide_par_shana} className="bg-action hover:bg-action-hover">
                 {dossier.brief_valide_par_shana ? "Brief validé" : "Valider le brief"}
               </Button>
             </div>
@@ -339,7 +339,7 @@ export default function DossierVoyageDetail() {
               <button
                 type="button"
                 onClick={() => changerPointDepart("explorer")}
-                className={`rounded-md border p-3 text-left text-sm ${dossier.point_depart === "explorer" ? "border-[#ad1414] ring-1 ring-[#ad1414]" : "border-border"}`}
+                className={`rounded-md border p-3 text-left text-sm ${dossier.point_depart === "explorer" ? "border-action ring-1 ring-action" : "border-border"}`}
               >
                 <p className="font-semibold">Explorer → Proposition → Carnet</p>
                 <p className="text-xs text-muted-foreground">Le brouillon sert de base à une sélection élargie à swiper.</p>
@@ -347,7 +347,7 @@ export default function DossierVoyageDetail() {
               <button
                 type="button"
                 onClick={() => changerPointDepart("proposition")}
-                className={`rounded-md border p-3 text-left text-sm ${dossier.point_depart === "proposition" ? "border-[#ad1414] ring-1 ring-[#ad1414]" : "border-border"}`}
+                className={`rounded-md border p-3 text-left text-sm ${dossier.point_depart === "proposition" ? "border-action ring-1 ring-action" : "border-border"}`}
               >
                 <p className="font-semibold">Proposition → Carnet</p>
                 <p className="text-xs text-muted-foreground">Le brouillon devient directement la proposition.</p>
@@ -378,7 +378,7 @@ export default function DossierVoyageDetail() {
                   Prévisualiser
                 </a>
               </Button>
-              <Button onClick={envoyerAuClient} disabled={updateDossier.isPending} className="bg-[#ad1414] hover:bg-[#8f1010]">
+              <Button onClick={envoyerAuClient} disabled={updateDossier.isPending} className="bg-action hover:bg-action-hover">
                 {dossier.statut === "envoye" || dossier.statut === "retours" ? "Renvoyer le lien" : "Créer le lien et envoyer"}
               </Button>
             </div>

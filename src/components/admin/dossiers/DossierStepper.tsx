@@ -18,7 +18,7 @@ export function DossierStepper({ etapeActive }: { etapeActive: EtapeDossier }) {
             className={cn(
               "rounded-full border px-3 py-1",
               i === indexActif
-                ? "border-[#ad1414] bg-[#ad1414] text-white"
+                ? "border-action bg-action text-white"
                 : i < indexActif
                   ? "border-border bg-muted text-muted-foreground"
                   : "border-border text-muted-foreground"

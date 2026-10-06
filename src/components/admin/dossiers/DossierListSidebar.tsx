@@ -113,7 +113,7 @@ export function DossierListSidebar({ selectedId }: { selectedId: string | undefi
       <div className="space-y-3 border-b p-4">
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-semibold">Dossiers</h1>
-          <Button size="sm" className="bg-[#ad1414] hover:bg-[#8f1010]" onClick={() => setOpen(true)}>
+          <Button size="sm" className="bg-action hover:bg-action-hover" onClick={() => setOpen(true)}>
             <Plus className="mr-1.5 h-4 w-4" />
             Coller une demande
           </Button>
@@ -176,7 +176,7 @@ export function DossierListSidebar({ selectedId }: { selectedId: string | undefi
               to={`/admin/dossiers/${d.id}`}
               className={cn(
                 "block border-b border-l-2 px-4 py-3 text-sm hover:bg-muted/40",
-                selectionne ? "border-l-[#ad1414] bg-muted/40" : "border-l-transparent"
+                selectionne ? "border-l-action bg-muted/40" : "border-l-transparent"
               )}
             >
               <div className="flex items-center justify-between gap-2">

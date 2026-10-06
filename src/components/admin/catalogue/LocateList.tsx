@@ -125,7 +125,7 @@ function LocateRow({
   const fromSite = !!current && !!siteValue && current.lat === siteValue.lat && current.lng === siteValue.lng;
 
   return (
-    <li className={cn("space-y-2 rounded-lg border border-border bg-card p-3", placing && "border-[#ad1414] ring-1 ring-[#ad1414]/30")}>
+    <li className={cn("space-y-2 rounded-lg border border-border bg-card p-3", placing && "border-action ring-1 ring-action/30")}>
       <div className="flex items-start justify-between gap-2">
         <button type="button" className="min-w-0 text-left" onClick={() => onOpen(entry.id)}>
           <div className="truncate text-sm font-medium hover:underline">{entry.display_name}</div>
@@ -163,7 +163,7 @@ function LocateRow({
         </Button>
       </div>
 
-      {placing && <p className="text-[11px] text-[#ad1414]">Clique sur la carte à l'endroit exact du lieu.</p>}
+      {placing && <p className="text-[11px] text-action">Clique sur la carte à l'endroit exact du lieu.</p>}
 
       {mode === "link" && (
         <div className="flex gap-1.5">

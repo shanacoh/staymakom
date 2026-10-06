@@ -98,6 +98,10 @@ All colors MUST be HSL.
     --ring: 40 13% 9%;
     --sidebar-primary: 40 13% 9%;
     --sidebar-ring: 40 13% 9%;
+    /* Rouge d'action du back-office : le rouge clair choisi par Shana (le même que --destructive),
+       pour qu'il n'y ait qu'un seul rouge plein sur tous les écrans. */
+    --action: 0 84.2% 60.2%;
+    --action-hover: 0 84% 54%;
     --radius: 0.75rem;
   }
 
