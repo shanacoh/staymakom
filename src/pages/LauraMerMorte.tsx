@@ -9,7 +9,7 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
-import heroImg from "@/assets/hero-road-desert.jpg";
+import heroImg from "@/assets/masada-dead-sea-vintage.jpg";
 
 const WHATSAPP = "972555009910";
 
@@ -120,7 +120,7 @@ const DAYS: Day[] = [
         mapsUrl: maps("Masada Snake Path East Entrance"),
         description:
           "Départ de l'hôtel de nuit. Environ 45 minutes de montée à la fraîche par le chemin du Serpent, puis le soleil qui se lève sur la mer Morte et les montagnes de Jordanie, depuis la forteresse d'Hérode.",
-        items: [{ label: "Lampe frontale, eau et bonnes chaussures" }],
+        items: [{ label: "Eau et bonnes chaussures" }],
         highlight: true,
       },
       {
@@ -267,7 +267,7 @@ const TIPS = [
   {
     number: "01",
     title: "Dans la valise",
-    description: "Maillot, chaussures d'eau, chapeau, crème solaire et une lampe frontale pour Massada.",
+    description: "Maillot, chaussures d'eau, chapeau, crème solaire et bonnes chaussures de marche.",
   },
   {
     number: "02",
@@ -293,7 +293,7 @@ const LauraMerMorte = () => {
       <V3Header />
 
       {/* Hero */}
-      <section className="relative h-[56vh] md:h-[60vh] min-h-[360px] flex items-center justify-center">
+      <section className="relative h-[72vh] md:h-[80vh] min-h-[420px] flex items-center justify-center">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${heroImg})` }}
@@ -311,7 +311,7 @@ const LauraMerMorte = () => {
             className="font-sans text-[34px] sm:text-5xl md:text-6xl font-bold uppercase tracking-[0.02em] leading-[1.05] opacity-0 animate-hero-fade-up text-white text-center drop-shadow-lg"
             style={{ animationDelay: "150ms" }}
           >
-            Trois jours à la mer Morte
+            Dead Sea & Masada
           </h1>
           <p
             className="mt-4 text-sm sm:text-base text-white/85 font-sans uppercase tracking-[0.14em] opacity-0 animate-hero-fade-up"
@@ -508,6 +508,9 @@ const LauraMerMorte = () => {
       <footer className="bg-white border-t border-border py-6 text-center">
         <p className="font-sans text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
           © STAYMAKOM · Expériences sur mesure en Israël
+        </p>
+        <p className="mt-1.5 font-sans text-[9px] text-muted-foreground/60">
+          Photo de Massada : Andrew Shiva / Wikimedia Commons / CC BY-SA 4.0
         </p>
       </footer>
     </div>

@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-10-07] — Page de Laura : nouveau titre, photo de Massada en haut de page
+
+### Ce qui a changé côté code
+- `src/pages/LauraMerMorte.tsx` : le titre devient « Dead Sea & Masada », la mention de la lampe frontale est retirée (étape Massada et bloc « Bon à savoir »), le haut de page est plus grand et affiche une vue aérienne de Massada avec la mer Morte derrière. Crédit photo ajouté en tout petit en bas de page.
+- `src/assets/masada-dead-sea-vintage.jpg` (nouveau) : la photo, retravaillée en rendu vintage (couleurs adoucies, grain, bords assombris). Source : Andrew Shiva, Wikimedia Commons, licence CC BY-SA 4.0, qui oblige à citer l'auteur.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+Retouches demandées par Shana après la première version de la page.
+
+---
+
 ## [2026-10-07] — Page privée « Trois jours à la mer Morte » pour Laura
 
 ### Ce qui a changé côté code
