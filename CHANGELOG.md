@@ -6,6 +6,21 @@
 
 ---
 
+## [2026-10-07] — La vraie page d'accueil est de retour (fin de la pause d'hiver)
+
+### Ce qui a changé côté code
+- `src/config/sitePause.ts` : l'interrupteur de la pause (`enabled`) passe à « éteint ». L'adresse `/` affiche de nouveau la vraie page d'accueil au lieu du message d'attente. La date de fin prévue (13 octobre) n'a plus d'effet.
+- Effets automatiques, sans autre modification : la popup newsletter et la barre de navigation mobile reviennent sur la page d'accueil, et l'adresse `/v3` redirige vers `/`.
+- `src/pages/WinterPause.tsx` (la page d'attente) est conservée telle quelle : il suffit de rallumer l'interrupteur pour la réafficher.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+Shana veut retrouver la page d'accueil normale dès maintenant, sans attendre la fin de la pause prévue le 13 octobre.
+
+---
+
 ## [2026-10-07] — Back-office : la page Catégories affichait « 0 expérience » partout
 
 ### Ce qui a changé côté code
