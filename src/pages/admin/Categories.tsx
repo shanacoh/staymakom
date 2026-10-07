@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -72,6 +72,34 @@ const AdminCategories = () => {
       return data;
     },
   });
+
+  // Les expériences sans hôtel vivent dans une autre table et peuvent appartenir à
+  // plusieurs catégories (category_ids), avec category_id comme catégorie principale.
+  const { data: standaloneLinks } = useQuery({
+    queryKey: ["admin-categories-standalone-links"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("standalone_experiences")
+        .select("id, category_id, category_ids");
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { standaloneCountByCategory, totalExperiences } = useMemo(() => {
+    const counts = new Map<string, number>();
+    let attachedStandalone = 0;
+    for (const exp of standaloneLinks || []) {
+      const ids = new Set<string>(Array.isArray(exp.category_ids) ? (exp.category_ids as string[]) : []);
+      if (exp.category_id) ids.add(exp.category_id);
+      if (ids.size > 0) attachedStandalone++;
+      ids.forEach((id) => counts.set(id, (counts.get(id) || 0) + 1));
+    }
+    const hotelExperiences = (categories || []).reduce((acc, c) => acc + (c.experiences2?.length || 0), 0);
+    // Une expérience rangée dans deux catégories ne compte qu'une fois dans le total.
+    return { standaloneCountByCategory: counts, totalExperiences: hotelExperiences + attachedStandalone };
+  }, [standaloneLinks, categories]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -199,7 +227,7 @@ const AdminCategories = () => {
             <div className="bg-card border rounded-lg p-4">
               <div className="text-sm text-muted-foreground">Total Experiences</div>
               <div className="text-2xl font-bold text-primary">
-                {categories.reduce((acc, c) => acc + (c.experiences2?.length || 0), 0)}
+                {totalExperiences}
               </div>
             </div>
           </div>
@@ -213,7 +241,8 @@ const AdminCategories = () => {
         ) : categories && categories.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {categories.map((category, idx) => {
-              const expCount = category.experiences2?.length || 0;
+              const expCount =
+                (category.experiences2?.length || 0) + (standaloneCountByCategory.get(category.id) || 0);
               const isEmptyPublished = category.status === "published" && expCount === 0;
               const iconImage = category.icon_image || getCategoryIconImage(category.slug);
               const CategoryIcon = getCategoryIcon(category.icon);

@@ -282,7 +282,7 @@ const AdminFavorites = () => {
 
   // Fetch categories, to label the "tendances produit" breakdown
   const { data: categories } = useQuery({
-    queryKey: ["admin-categories"],
+    queryKey: ["admin-categories-names"],
     queryFn: async () => {
       const { data, error } = await supabase.from("categories").select("id, name").order("name");
       if (error) throw error;

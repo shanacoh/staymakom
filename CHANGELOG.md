@@ -6,6 +6,22 @@
 
 ---
 
+## [2026-10-07] — Back-office : la page Catégories affichait « 0 expérience » partout
+
+### Ce qui a changé côté code
+- `src/pages/admin/Experiences2.tsx` et `src/pages/admin/Favorites.tsx` : ces deux pages chargent une liste allégée des catégories (juste le nom) et la rangeaient en mémoire sous la même étiquette que la liste complète de la page Catégories. Chacune a maintenant sa propre étiquette (`admin-categories-filter-options` et `admin-categories-names`).
+- Conséquence du bug : en arrivant sur Catégories après être passée par Expériences ou Favoris, la page réutilisait la liste allégée pendant 5 minutes, donc sans statut ni expériences rattachées. D'où « 0 publiée » et « 0 expérience » sur toutes les cartes.
+
+- `src/pages/admin/Categories.tsx` : le compteur de chaque carte additionne maintenant les expériences avec hôtel et les expériences sans hôtel (standalone). Avant, seules les expériences avec hôtel étaient comptées, donc « On the Water » affichait 0 alors qu'elle contient 12 bateaux. Une expérience sans hôtel rangée dans plusieurs catégories compte dans chacune d'elles, mais une seule fois dans le « Total Experiences » du haut de page. Tous les statuts sont comptés (brouillons compris), comme avant.
+
+### Ce qui a changé côté base de données
+- Rien. Les données étaient correctes, seul l'affichage était faux.
+
+### Pourquoi ce changement
+Shana voyait toutes ses catégories vides et non publiées dans le back-office alors que les expériences y sont bien rattachées.
+
+---
+
 ## [2026-10-07] — Page de Laura : nouveau titre, photo de Massada en haut de page
 
 ### Ce qui a changé côté code

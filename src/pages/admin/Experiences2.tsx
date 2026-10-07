@@ -82,7 +82,7 @@ const AdminExperiences2 = () => {
   });
 
   const { data: categories } = useQuery({
-    queryKey: ["admin-categories"],
+    queryKey: ["admin-categories-filter-options"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("categories")
