@@ -105,7 +105,7 @@ const DAYS: Day[] = [
         number: "03",
         moment: "Soir",
         title: "Soirée calme",
-        description: "Dîner tôt. Demain, le réveil sonne avant l'aube.",
+        description: "Coucher tôt. Demain, le réveil sonne avant l'aube.",
       },
     ],
   },

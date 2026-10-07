@@ -10,7 +10,7 @@
 
 ### Ce qui a changé côté code
 - `src/pages/LauraMerMorte.tsx` : le titre devient « Dead Sea & Masada », la mention de la lampe frontale est retirée (étape Massada et bloc « Bon à savoir »), le haut de page est plus grand et affiche une vue aérienne de Massada avec la mer Morte derrière. Crédit photo ajouté en tout petit en bas de page.
-- Même fichier : le samedi soir, « Dîner à l'hôtel et coucher tôt » devient simplement « Dîner tôt ».
+- Même fichier : le samedi soir, « Dîner à l'hôtel et coucher tôt » devient simplement « Coucher tôt » (plus aucune mention du dîner).
 - `src/assets/masada-dead-sea-vintage.jpg` (nouveau) : la photo, retravaillée en rendu vintage (couleurs adoucies, grain, bords assombris). Source : Andrew Shiva, Wikimedia Commons, licence CC BY-SA 4.0, qui oblige à citer l'auteur.
 
 ### Ce qui a changé côté base de données
