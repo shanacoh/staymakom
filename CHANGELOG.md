@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-10-07] — Page privée « Trois jours à la mer Morte » pour Laura
+
+### Ce qui a changé côté code
+- `src/pages/LauraMerMorte.tsx` (nouveau) : page-itinéraire en français, sur le modèle de la page de Carrie (`CarrieSafed.tsx`). Haut de page avec la photo de route dans le désert, programme sur trois jours (vendredi 9, samedi 10, dimanche 11 octobre) avec un lien Google Maps par lieu, carte de l'hôtel Nevo by Isrotel avec 3 photos défilantes (photos officielles du site Isrotel), bloc « Bon à savoir » et bouton WhatsApp vers Shana.
+- `src/App.tsx` : nouvelle adresse `/laura-mer-morte`.
+
+### Ce qui a changé côté base de données
+- Rien. La page est écrite en dur, sans lien avec la base.
+
+### Pourquoi ce changement
+Shana veut envoyer à Laura le programme de son séjour à la mer Morte par un simple lien, avec la même présentation que la page de Carrie. L'hôtel Nevo est provisoire et pourra être remplacé.
+
+---
+
 ## [2026-10-06] — Réservations : même suppression sur toutes les lignes, sélection multiple et corbeille
 
 ### Ce qui a changé côté code
