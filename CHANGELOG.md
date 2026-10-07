@@ -8,7 +8,7 @@
 
 ## [2026-10-07] — Nouveau formulaire « Tailor-made request » en 3 étapes, branché sur les réservations
 
-> Statut : code prêt, pas encore en ligne. La migration 1, la fonction serveur et la migration 2 restent à appliquer (voir « Mise en ligne » ci-dessous).
+> Statut : en ligne depuis le 07/10/2026. Les deux migrations sont appliquées et la fonction serveur est déployée, dans l'ordre décrit sous « Mise en ligne ».
 
 ### Ce qui a changé côté code
 - `src/components/tailorMade/TailorMadeDialog.tsx` (créé) : la fenêtre du formulaire en 3 étapes (Le séjour, Vos envies, Vous) avec barre de progression, en FR/EN/HE, puis l'écran de confirmation avec le bouton WhatsApp qui cite la référence de la demande.
@@ -33,7 +33,7 @@
 - La table `itinerary_requests` n'est pas supprimée, elle n'est plus lue ni écrite.
 - Même migration : sur `leads`, l'email n'est plus obligatoire. Chaque demande crée une fiche dans les Leads, même sans email ; la page Leads affiche alors « Email manquant ». L'accord aux nouvelles de Staymakom (`marketing_opt_in`) n'est coché que si un email est donné.
 
-### Mise en ligne (ordre à respecter)
+### Mise en ligne (faite le 07/10/2026, dans cet ordre)
 1. Appliquer la migration `20261007000000`.
 2. Déployer la fonction `submit-tailor-made-request` (sans vérification de jeton, comme `collect-lead`).
 3. Mettre le site en ligne, puis appliquer aussitôt la migration `20261007000100`.
