@@ -618,7 +618,6 @@ const IndexV3 = () => {
 
         {/* ──── 5. YOUR TRIP, YOUR RULES ──── */}
         <TailoredRequestSection
-          categories={categories || []}
           ctaClassName="bg-transparent text-white hover:bg-transparent hover:text-white border-0 shadow-none"
           ctaUnderlineClassName="bg-[#ad1414]/40"
           heroImage={tailoredRequestHeroV3}

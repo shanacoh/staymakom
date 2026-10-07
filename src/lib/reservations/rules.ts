@@ -17,7 +17,10 @@ const BALANCE_URGENT_DAYS = 2;
 // Une date est signalée comme proche jusqu'à 3 jours avant.
 const SOON_DAYS = 3;
 
-export const isRequest = (row: ReservationRow) => row.status === "demande" || row.status === "dispo_ok";
+export const isTailorMadeRequest = (row: ReservationRow) => row.status === "demande_sur_mesure";
+
+export const isRequest = (row: ReservationRow) =>
+  row.status === "demande" || row.status === "dispo_ok" || isTailorMadeRequest(row);
 
 function daysUntil(date: string | null, today: Date): number | null {
   return date ? differenceInCalendarDays(parseISO(date), today) : null;
@@ -26,6 +29,9 @@ function daysUntil(date: string | null, today: Date): number | null {
 /** Le bouton « Prochaine action » d'une ligne, dans l'ordre de priorité fixé par Shana. Rien = ligne soldée. */
 export function nextAction(row: ReservationRow, today: Date = new Date()): NextAction | null {
   if (row.status === "annulee") return null;
+
+  // Demande de voyage sur mesure : tout se passe sur sa fiche (réponses du client, création du dossier).
+  if (isTailorMadeRequest(row)) return { kind: "open_request", label: "Traiter la demande", urgent: true };
 
   if (row.status === "demande") {
     return row.sentToProviderAt
@@ -91,6 +97,8 @@ const elapsed = (minutes: number) =>
 // Délais d'alerte d'une demande : à envoyer au prestataire sous 15 minutes, réponse attendue sous 1 heure.
 const SEND_ALERT_MINUTES = 15;
 const ANSWER_ALERT_MINUTES = 60;
+// Promesse faite au client du formulaire sur mesure : une réponse WhatsApp sous 24 h.
+const TAILOR_MADE_ANSWER_MINUTES = 24 * 60;
 
 function requestHint(row: ReservationRow, today: Date): { text: string; soon: boolean } {
   if (row.status === "demande" && row.sentToProviderAt) {
@@ -101,6 +109,7 @@ function requestHint(row: ReservationRow, today: Date): { text: string; soon: bo
   }
   if (!row.receivedAt) return { text: "", soon: false };
   const age = differenceInMinutes(today, parseISO(row.receivedAt));
+  if (isTailorMadeRequest(row)) return { text: `reçue il y a ${elapsed(age)}`, soon: age > TAILOR_MADE_ANSWER_MINUTES };
   if (row.status === "demande") {
     return age > SEND_ALERT_MINUTES
       ? { text: `pas encore envoyée, reçue il y a ${elapsed(age)}`, soon: true }

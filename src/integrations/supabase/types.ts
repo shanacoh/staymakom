@@ -1129,6 +1129,8 @@ export type Database = {
           afficher_prix: boolean
           archive: boolean
           autoreply_envoye_at: string | null
+          budget_fourchette: string | null
+          demande_formulaire: Json | null
           autoreply_envoyer_apres: string | null
           brief_data: Json
           brief_valide_par_shana: boolean
@@ -1178,6 +1180,8 @@ export type Database = {
           afficher_prix?: boolean
           archive?: boolean
           autoreply_envoye_at?: string | null
+          budget_fourchette?: string | null
+          demande_formulaire?: Json | null
           autoreply_envoyer_apres?: string | null
           brief_data?: Json
           brief_valide_par_shana?: boolean
@@ -1227,6 +1231,8 @@ export type Database = {
           afficher_prix?: boolean
           archive?: boolean
           autoreply_envoye_at?: string | null
+          budget_fourchette?: string | null
+          demande_formulaire?: Json | null
           autoreply_envoyer_apres?: string | null
           brief_data?: Json
           brief_valide_par_shana?: boolean
@@ -3797,7 +3803,7 @@ export type Database = {
           country: string | null
           created_at: string
           cta_id: string | null
-          email: string
+          email: string | null
           email_normalized: string | null
           first_name: string | null
           group_size: string | null

@@ -686,3 +686,17 @@ export function trackReviewPublished(scope: string) {
 export function trackReviewsBlockScrolled(scope: string, entityId?: string) {
   safeTrack("reviews_block_scrolled", { scope, entity_id: entityId });
 }
+
+// ── Formulaire « Tailor-made request » ──
+
+export function trackTailorMadeStarted() {
+  safeTrack("tailor_made_started");
+}
+
+export function trackTailorMadeStepCompleted(step: 1 | 2 | 3) {
+  safeTrack("tailor_made_step_completed", { step });
+}
+
+export function trackTailorMadeSubmitted(props: { stayType: string; budget: string; source: string }) {
+  safeTrack("tailor_made_submitted", { stay_type: props.stayType, budget: props.budget, source: props.source });
+}

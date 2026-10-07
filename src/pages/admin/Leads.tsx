@@ -37,7 +37,7 @@ interface Lead {
   created_at: string;
   updated_at: string;
   source: string;
-  email: string;
+  email: string | null;
   name: string | null;
   first_name: string | null;
   last_name: string | null;
@@ -164,7 +164,6 @@ const AdminLeads = () => {
   const [editPhone, setEditPhone] = useState("");
   const [editStatus, setEditStatus] = useState("");
   const [newNote, setNewNote] = useState("");
-  const [sendingQuestionnaire, setSendingQuestionnaire] = useState(false);
 
   const { data: leads, isLoading, refetch } = useQuery({
     queryKey: ["admin-leads", sourceFilter, statusFilter, limit],
@@ -423,7 +422,7 @@ const AdminLeads = () => {
         if (lead.converted_user_id) {
           const result = await deleteLinkedAccount(lead.converted_user_id);
           if (!result.ok) {
-            blocked.push(lead.email);
+            blocked.push(lead.email ?? lead.name ?? lead.id);
             continue;
           }
         }
@@ -532,22 +531,6 @@ const AdminLeads = () => {
     toast.success("Lead converted");
   };
 
-  const sendQuestionnaire = async () => {
-    if (!selectedLead || sendingQuestionnaire) return;
-    setSendingQuestionnaire(true);
-    try {
-      const { error } = await supabase.functions.invoke("send-tailor-questionnaire", {
-        body: { leadId: selectedLead.id },
-      });
-      if (error) throw error;
-      await refetch();
-      toast.success("Questionnaire envoyé !");
-    } catch {
-      toast.error("Erreur lors de l'envoi du questionnaire");
-    } finally {
-      setSendingQuestionnaire(false);
-    }
-  };
 
   // ─── Bulk selection ───
   const toggleSelect = (id: string) => {
@@ -827,7 +810,9 @@ const AdminLeads = () => {
                     <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                       {format(new Date(lead.created_at), "dd/MM/yy")}
                     </TableCell>
-                    <TableCell className="text-sm max-w-[200px] truncate">{lead.email}</TableCell>
+                    <TableCell className="text-sm max-w-[200px] truncate">
+                      {lead.email || <span className="text-amber-700">Email manquant</span>}
+                    </TableCell>
                     <TableCell>
                       {name ? (
                         <div className="flex items-center gap-2">
@@ -917,7 +902,10 @@ const AdminLeads = () => {
             <div className="space-y-6 mt-2">
               {/* Header */}
               <div>
-                <h3 className="text-lg font-bold">{selectedLead.email}</h3>
+                <h3 className="text-lg font-bold">{selectedLead.email || selectedLead.name || "Sans nom"}</h3>
+                {!selectedLead.email && (
+                  <p className="mt-1 text-sm text-amber-700">Email manquant : ce contact n'a laissé que son WhatsApp.</p>
+                )}
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <Badge variant="secondary" className={sourceColors[selectedLead.source] || "bg-gray-100"}>
                     {selectedLead.source.replace(/_/g, " ")}
@@ -1176,27 +1164,21 @@ const AdminLeads = () => {
               <div className="border rounded-lg p-4 space-y-3">
                 <h4 className="font-semibold text-sm">Actions</h4>
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" asChild>
-                    <a href={`mailto:${selectedLead.email}`}><Mail className="w-4 h-4 mr-1.5" />Send email</a>
-                  </Button>
+                  {selectedLead.email && (
+                    <Button size="sm" variant="outline" asChild>
+                      <a href={`mailto:${selectedLead.email}`}><Mail className="w-4 h-4 mr-1.5" />Send email</a>
+                    </Button>
+                  )}
                   <Button size="sm" variant="outline" onClick={markConverted} disabled={editStatus === "converted"}>
                     Mark as converted
                   </Button>
-                  {selectedLead.source === "tailored_request" && (
-                    selectedLead.metadata?.questionnaire_sent_at ? (
-                      <span className="inline-flex items-center text-xs text-muted-foreground px-2">
-                        {selectedLead.metadata?.questionnaire_filled_at
-                          ? `✅ Questionnaire rempli le ${format(new Date(selectedLead.metadata.questionnaire_filled_at), "dd/MM/yy")}`
-                          : `Questionnaire envoyé le ${format(new Date(selectedLead.metadata.questionnaire_sent_at), "dd/MM/yy")}`}
-                      </span>
-                    ) : (
-                      <Button size="sm" variant="outline" onClick={sendQuestionnaire} disabled={sendingQuestionnaire}>
-                        {sendingQuestionnaire
-                          ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
-                          : <Send className="w-4 h-4 mr-1.5" />}
-                        Send questionnaire
-                      </Button>
-                    )
+                  {/* L'ancien questionnaire par email n'est plus envoyé : le formulaire du site pose déjà ces questions. */}
+                  {selectedLead.source === "tailored_request" && selectedLead.metadata?.questionnaire_sent_at && (
+                    <span className="inline-flex items-center text-xs text-muted-foreground px-2">
+                      {selectedLead.metadata?.questionnaire_filled_at
+                        ? `✅ Questionnaire rempli le ${format(new Date(selectedLead.metadata.questionnaire_filled_at), "dd/MM/yy")}`
+                        : `Questionnaire envoyé le ${format(new Date(selectedLead.metadata.questionnaire_sent_at), "dd/MM/yy")}`}
+                    </span>
                   )}
                 </div>
                 <button className="text-sm text-destructive hover:underline mt-2" onClick={() => setDeleteConfirmOpen(true)}>

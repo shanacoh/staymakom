@@ -633,7 +633,7 @@ const LaunchIndex = () => {
         </section>
 
         {/* ─── 7. TAILORED REQUEST ─── */}
-        <TailoredRequestSection categories={categories || []} />
+        <TailoredRequestSection />
 
         {/* ─── 8. GIFT CARD ─── */}
         <section className="container py-8 md:py-14 px-4">

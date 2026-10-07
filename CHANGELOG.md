@@ -6,6 +6,43 @@
 
 ---
 
+## [2026-10-07] — Nouveau formulaire « Tailor-made request » en 3 étapes, branché sur les réservations
+
+> Statut : code prêt, pas encore en ligne. La migration 1, la fonction serveur et la migration 2 restent à appliquer (voir « Mise en ligne » ci-dessous).
+
+### Ce qui a changé côté code
+- `src/components/tailorMade/TailorMadeDialog.tsx` (créé) : la fenêtre du formulaire en 3 étapes (Le séjour, Vos envies, Vous) avec barre de progression, en FR/EN/HE, puis l'écran de confirmation avec le bouton WhatsApp qui cite la référence de la demande.
+- `src/lib/tailorMade/form.ts` (créé) : les choix proposés (types de séjour, paliers de budget, régions, contraintes, indicatifs), les règles de validation de chaque étape et la mise en forme de l'envoi. `form.test.ts` : ses tests.
+- `src/lib/tailorMade/visitSource.ts` (créé) : mémorise la source de la visite (campagne, site d'origine, première page) à l'arrivée sur le site, pour la joindre à la demande. Appelé depuis `src/App.tsx`.
+- `src/components/TailoredRequestSection.tsx` : ne garde que le bandeau « Design my stay » ; l'ancien formulaire en 2 étapes est remplacé par la nouvelle fenêtre.
+- `supabase/functions/submit-tailor-made-request/index.ts` (créé) + `supabase/config.toml` : vérifie les réponses, enregistre la demande, puis envoie un email interne à shana@staymakom.com (habillage simple des notifications de demande, ce n'est pas un email client).
+- `src/lib/analytics.ts` : trois événements Amplitude, `tailor_made_started`, `tailor_made_step_completed` (numéro d'étape) et `tailor_made_submitted` (type de séjour, budget, source).
+- Page Réservations (`src/lib/reservations/*`, `ReservationPills.tsx`, `ReservationsSummaryTable.tsx`, `src/pages/admin/Reservations.tsx`) : nouveau statut « Demande sur-mesure », rangé avec les demandes, action « Traiter la demande » qui ouvre la fiche, alerte rouge au-delà de 24 h.
+- `src/components/admin/ReservationsHub/ItineraryRequestsSection.tsx` (supprimé) : l'ancien bloc « Demandes de voyage » de l'onglet Itinéraire n'existe plus, ces demandes sont des lignes de réservation comme les autres.
+- `src/components/admin/dossiers/DemandeFormulaireSection.tsx` et `src/lib/dossiersVoyage/demandeFormulaire.ts` (créés), `DossierVoyageDetail.tsx` : bloc « Réponses du formulaire » sur la fiche, bouton WhatsApp, et boutons « Dossier swipe » / « Itinéraire (proposition directe) » qui ouvrent le dossier déjà rempli. La fourchette de budget du client est rappelée sous le champ Budget.
+- `src/lib/dossiersVoyage/queries.ts` et `types.ts` : une demande pas encore ouverte n'apparaît pas dans l'espace Dossiers.
+- `src/components/admin/AdminSidebar.tsx` : pastille rouge sur « Réservations » avec le nombre de demandes sur mesure à traiter.
+- `src/pages/admin/Leads.tsx` : mention « Email manquant » sur les contacts qui n'ont laissé que leur WhatsApp (liste et fiche), bouton « Send email » masqué dans ce cas.
+- Envies du formulaire : cinq choix (Romantique, Famille, Amis, Entreprise, Autre avec champ libre), et non les catégories du site. La phrase sous le formulaire mentionne l'envoi occasionnel d'idées de séjours.
+- `src/pages/admin/Leads.tsx` et `src/config/automations.ts` : le bouton « Send questionnaire » est retiré, l'ancien questionnaire et la réponse automatique par email sont marqués désactivés.
+- Non modifié volontairement : `collect-lead` garde son ancien traitement des demandes (seules d'anciennes versions du site en cache peuvent encore l'appeler). À nettoyer une fois la nouvelle version en ligne depuis quelques jours.
+
+### Ce qui a changé côté base de données
+- Migration `20261007000000_tailor_made_request_fields.sql` : sur `dossiers_voyage`, colonnes `demande_formulaire` (les réponses telles que saisies) et `budget_fourchette` ; nouveau statut `demande_sur_mesure` ; compteur de références `TM-1001`, `TM-1002`... ; fonction `create_tailor_made_request` qui crée le contact et le dossier ensemble ou pas du tout. Sans effet visible tant que le nouveau site n'est pas en ligne.
+- Migration `20261007000100_tailor_made_requests_in_reservations.sql` : la vue `admin_reservations` affiche les dossiers au statut `demande_sur_mesure` ; reprise des 3 lignes de `itinerary_requests` et du dossier créé par l'ancien formulaire. **À appliquer uniquement au moment de la mise en ligne du nouveau back-office** : l'ancien ne connaît pas ce statut et la page Réservations planterait.
+- La table `itinerary_requests` n'est pas supprimée, elle n'est plus lue ni écrite.
+- Même migration : sur `leads`, l'email n'est plus obligatoire. Chaque demande crée une fiche dans les Leads, même sans email ; la page Leads affiche alors « Email manquant ». L'accord aux nouvelles de Staymakom (`marketing_opt_in`) n'est coché que si un email est donné.
+
+### Mise en ligne (ordre à respecter)
+1. Appliquer la migration `20261007000000`.
+2. Déployer la fonction `submit-tailor-made-request` (sans vérification de jeton, comme `collect-lead`).
+3. Mettre le site en ligne, puis appliquer aussitôt la migration `20261007000100`.
+
+### Pourquoi ce changement
+Shana veut un formulaire sur mesure plus complet (dates, voyageurs, budget, envies, régions, contraintes, WhatsApp obligatoire) et que chaque demande soit une réservation au statut « Demande sur-mesure », sans onglet ni table à part, avec une notification à chaque arrivée.
+
+---
+
 ## [2026-10-07] — La vraie page d'accueil est de retour (fin de la pause d'hiver)
 
 ### Ce qui a changé côté code

@@ -88,6 +88,7 @@ const REQUEST_STATUS_OPTIONS: SelectOption[] = [
   { value: "demande", label: "Demande" },
   { value: "dispo_ok", label: "Dispo OK" },
 ];
+const TAILOR_MADE_STATUS_OPTIONS: SelectOption[] = [{ value: "demande_sur_mesure", label: "Demande sur-mesure" }];
 const TYPE_OPTIONS: SelectOption[] = [
   { value: "experience", label: "Expérience" },
   { value: "boat", label: "Bateau" },
@@ -107,6 +108,7 @@ const CHANNEL_SELECT_OPTIONS: SelectOption[] = [{ value: "manual", label: "Sans 
 export function selectOptions(row: ReservationRow, key: EntryColumnKey): SelectOption[] {
   switch (key) {
     case "status":
+      if (row.status === "demande_sur_mesure") return TAILOR_MADE_STATUS_OPTIONS;
       return row.source === "request" ? REQUEST_STATUS_OPTIONS : BOOKING_STATUS_OPTIONS;
     case "type":
       return TYPE_OPTIONS;

@@ -49,6 +49,7 @@ export type Objectif = "vente" | "collab";
 export type PointDepart = "explorer" | "proposition";
 export type CanalOrigine = "whatsapp" | "email" | "formulaire_site" | "saisie_manuelle";
 export type StatutDossierVoyage =
+  | "demande_sur_mesure"
   | "nouvelle_demande"
   | "brief"
   | "en_preparation"
@@ -85,6 +86,7 @@ export const CANAL_ORIGINE_OPTIONS: { value: CanalOrigine; label: string }[] = [
 
 // Pastilles douces, même esprit que le reste du back-office (ex. Catalogue)
 export const STATUT_OPTIONS: { value: StatutDossierVoyage; label: string; className: string }[] = [
+  { value: "demande_sur_mesure", label: "Demande sur-mesure", className: "bg-amber-50 text-amber-700 border-amber-200" },
   { value: "nouvelle_demande", label: "Nouvelle demande", className: "bg-amber-50 text-amber-700 border-amber-200" },
   { value: "brief", label: "Brief", className: "bg-sky-50 text-sky-700 border-sky-200" },
   { value: "en_preparation", label: "En préparation", className: "bg-indigo-50 text-indigo-700 border-indigo-200" },
@@ -143,7 +145,7 @@ export function parseBriefData(value: unknown): BriefData {
 export type EtapeDossier = "demande_recue" | "brief" | "composer" | "lien_client";
 
 export function etapeDuStatut(statut: string): EtapeDossier {
-  if (statut === "nouvelle_demande") return "demande_recue";
+  if (statut === "demande_sur_mesure" || statut === "nouvelle_demande") return "demande_recue";
   if (statut === "brief") return "brief";
   if (statut === "en_preparation") return "composer";
   return "lien_client"; // envoye, retours, paye, collab_confirme, confirme, en_voyage, termine, perdu

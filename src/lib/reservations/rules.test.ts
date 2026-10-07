@@ -157,3 +157,36 @@ describe("alertes de délai d'une demande", () => {
     expect(dateHint(sent("2026-10-06T07:00:00"), TODAY)).toEqual({ text: "prestataire sans réponse depuis 3 h", soon: true });
   });
 });
+
+describe("demande de voyage sur mesure", () => {
+  const tailorMade = (overrides: Partial<ReservationRow> = {}) =>
+    row({
+      source: "dossier",
+      type: "itinerary",
+      status: "demande_sur_mesure",
+      amount: null,
+      collected: 0,
+      clientPayment: "unpaid",
+      supplierCost: null,
+      supplierPayment: "none",
+      missingCosts: 0,
+      receivedAt: "2026-10-06T08:00:00",
+      detailPath: "/admin/dossiers/1",
+      ...overrides,
+    });
+
+  it("prochaine action : traiter la demande, urgent", () => {
+    expect(nextAction(tailorMade(), TODAY)).toMatchObject({ kind: "open_request", urgent: true });
+  });
+
+  it("rangée avec les demandes et comptée comme telle, sans entrer dans les totaux d'argent", () => {
+    const rows = [tailorMade()];
+    expect(groupRows(rows, TODAY).requests).toHaveLength(1);
+    expect(computeKpis(rows)).toMatchObject({ requests: 1, toCollect: {}, missingCost: 0 });
+  });
+
+  it("signalée en rouge une fois la promesse des 24 h dépassée", () => {
+    expect(dateHint(tailorMade(), TODAY).soon).toBe(false);
+    expect(dateHint(tailorMade({ receivedAt: "2026-10-04T08:00:00" }), TODAY)).toMatchObject({ soon: true });
+  });
+});

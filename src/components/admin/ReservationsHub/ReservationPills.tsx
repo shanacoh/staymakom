@@ -42,6 +42,7 @@ export const TypeTag = ({ type }: { type: ReservationType }) => (
 const STATUS: Record<ReservationStatus, { label: string; tone: Tone }> = {
   demande: { label: "Demande", tone: "amber" },
   dispo_ok: { label: "Dispo OK", tone: "blue" },
+  demande_sur_mesure: { label: "Demande sur-mesure", tone: "amber" },
   confirmee: { label: "Confirmée", tone: "neutral" },
   passee: { label: "Passée", tone: "muted" },
   annulee: { label: "Annulée", tone: "muted" },

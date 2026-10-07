@@ -3,6 +3,7 @@
  * Itinéraire) partagent la même barre d'outils et deux affichages des mêmes données :
  * « Vue » (résumé avec la prochaine action de chaque ligne) et « Saisie » (grille façon Excel).
  * Une demande de bateau ou d'expérience est une ligne comme les autres, au statut « Demande ».
+ * Une demande de voyage sur mesure aussi, au statut « Demande sur-mesure » (onglet Itinéraire).
  */
 
 import { useMemo, useRef, useState } from "react";
@@ -17,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import LinkPaidDossierDialog from "@/components/admin/ReservationsHub/LinkPaidDossierDialog";
-import ItineraryRequestsSection from "@/components/admin/ReservationsHub/ItineraryRequestsSection";
 import EditRequestDialog from "@/components/admin/ReservationsHub/EditRequestDialog";
 import DeleteReservationDialog from "@/components/admin/ReservationsHub/DeleteReservationDialog";
 import DeletedReservationsTable from "@/components/admin/ReservationsHub/DeletedReservationsTable";
@@ -265,6 +265,10 @@ const AdminReservations = () => {
   // à la main. Pour le reste (hôtel, dossier, réservation payée en ligne à encaisser), le
   // bouton ouvre la fiche, où se trouvent les outils propres à ce type de réservation.
   const handleAction = (row: ReservationRow, action: NextAction) => {
+    if (action.kind === "open_request") {
+      if (row.detailPath) navigate(row.detailPath);
+      return;
+    }
     if (row.source === "dossier") {
       // Les coûts et paiements fournisseur d'un dossier se règlent ligne par ligne : on le déplie.
       if (action.kind === "confirm_collection") setPendingAction({ row, action });
@@ -421,8 +425,6 @@ const AdminReservations = () => {
           if (open) setUnfinishedOpen(false);
         }}
       />
-
-      {tab === "itineraries" && !unfinishedOpen && !trashOpen && <ItineraryRequestsSection />}
 
       {trashOpen ? (
         <DeletedReservationsTable items={deletedReservations ?? []} onRestored={refreshAfterTrashChange} />

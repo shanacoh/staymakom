@@ -66,6 +66,27 @@ function useNewErrorsCount() {
   return data || 0;
 }
 
+// Compte les demandes de voyage sur mesure qui attendent d'être traitées, pour la pastille rouge
+// sur "Réservations". Une demande sort du compte dès que son dossier est ouvert.
+function usePendingTailorMadeCount() {
+  const { data } = useQuery({
+    queryKey: ["admin-pending-tailor-made-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("dossiers_voyage")
+        .select("id", { count: "exact", head: true })
+        .eq("statut", "demande_sur_mesure")
+        .eq("archive", false);
+      if (error) return 0;
+      return count || 0;
+    },
+    refetchInterval: 60000,
+  });
+  return data || 0;
+}
+
+const BOOKINGS_URL = "/admin/bookings";
+
 type NavItem = {
   title: string;
   url: string;
@@ -93,7 +114,7 @@ const apercuItems: NavItem[] = [
 const operationsItems: NavItem[] = [
   { title: "Experiences", url: "/admin/experiences2", icon: Sparkles },
   { title: "Dossiers", url: "/admin/dossiers", icon: FolderOpen, colorClass: "text-orange-500" },
-  { title: "Réservations", url: "/admin/bookings", icon: Calendar, inProgress: true },
+  { title: "Réservations", url: BOOKINGS_URL, icon: Calendar, inProgress: true },
   { title: "Avis", url: "/admin/avis", icon: Star, done: true },
   { title: "Partenaires · Hôtels", url: "/admin/hotels2", icon: Building2 },
   { title: "Partenaires · Expériences", url: "/admin/partenaires/experiences", icon: Handshake },
@@ -142,12 +163,15 @@ function NavGroup({
   collapsed,
   isActive,
   onNavClick,
+  badges,
 }: {
   label: string;
   items: NavItem[];
   collapsed: boolean;
   isActive: (path: string, exact?: boolean) => boolean;
   onNavClick: () => void;
+  // Pastilles rouges à afficher, par adresse de page.
+  badges?: Record<string, number>;
 }) {
   return (
     <SidebarGroup>
@@ -164,7 +188,7 @@ function NavGroup({
                 asChild
                 className={isActive(item.url, item.exact) ? ACTIVE_CLASS : INACTIVE_CLASS}
               >
-                <Link to={item.url} onClick={onNavClick}>
+                <Link to={item.url} onClick={onNavClick} className="flex items-center gap-2">
                   {collapsed ? (
                     <item.icon className="h-5 w-5" />
                   ) : (
@@ -178,6 +202,14 @@ function NavGroup({
                     >
                       {item.title}
                     </span>
+                  )}
+                  {!!badges?.[item.url] && (
+                    <Badge
+                      variant="destructive"
+                      className="ml-auto h-4 min-w-4 shrink-0 items-center justify-center rounded-full p-0 px-1 text-[10px] leading-none"
+                    >
+                      {badges[item.url]}
+                    </Badge>
                   )}
                 </Link>
               </SidebarMenuButton>
@@ -323,6 +355,7 @@ function TechniqueGroup({
 }
 
 export function AdminSidebar() {
+  const pendingTailorMadeCount = usePendingTailorMadeCount();
   const { state, isMobile, setOpenMobile } = useSidebar();
   const location = useLocation();
   const collapsed = state === "collapsed";
@@ -367,6 +400,7 @@ export function AdminSidebar() {
         <NavGroup
           label="Opérations"
           items={operationsItems}
+          badges={{ [BOOKINGS_URL]: pendingTailorMadeCount }}
           collapsed={collapsed}
           isActive={isActive}
           onNavClick={handleNavClick}

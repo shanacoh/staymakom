@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ComposerSection } from "@/components/admin/dossiers/ComposerSection";
+import { DemandeFormulaireSection } from "@/components/admin/dossiers/DemandeFormulaireSection";
 import { DossierStepper } from "@/components/admin/dossiers/DossierStepper";
 import { ExclusionsSection } from "@/components/admin/dossiers/ExclusionsSection";
 import { LieuxImposesSection } from "@/components/admin/dossiers/LieuxImposesSection";
@@ -24,6 +25,7 @@ import {
   useLienClientChecklist,
   useUpdateDossierVoyage,
 } from "@/lib/dossiersVoyage/queries";
+import { budgetFourchetteLabel } from "@/lib/dossiersVoyage/demandeFormulaire";
 import {
   CANAL_ORIGINE_OPTIONS,
   etapeDuStatut,
@@ -79,7 +81,9 @@ export default function DossierVoyageDetail() {
   if (!dossier) return <div className="text-sm text-muted-foreground">Dossier introuvable.</div>;
 
   const brief = parseBriefData(dossier.brief_data);
-  const aUnBrief = dossier.statut !== "nouvelle_demande";
+  // Demande sur mesure pas encore ouverte : seules les réponses du client et le bouton de création s'affichent.
+  const demandeATraiter = dossier.statut === "demande_sur_mesure";
+  const aUnBrief = dossier.statut !== "nouvelle_demande" && !demandeATraiter;
   const etape = etapeDuStatut(dossier.statut);
   const statutOption = STATUT_OPTIONS.find((o) => o.value === dossier.statut);
 
@@ -183,8 +187,10 @@ export default function DossierVoyageDetail() {
         <DossierStepper etapeActive={etape} />
       </div>
 
+      <DemandeFormulaireSection dossier={dossier} />
+
       {/* Demande reçue */}
-      <Card>
+      {!demandeATraiter && <Card>
         <CardHeader>
           <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Demande reçue</CardTitle>
         </CardHeader>
@@ -220,7 +226,7 @@ export default function DossierVoyageDetail() {
             </div>
           )}
         </CardContent>
-      </Card>
+      </Card>}
 
       {/* Brief */}
       {aUnBrief && (
@@ -256,6 +262,9 @@ export default function DossierVoyageDetail() {
                   <Input id="brief-budget" inputMode="decimal" value={draft.budget_estime} onChange={(e) => setDraft((d) => (d ? { ...d, budget_estime: e.target.value } : d))} />
                   <Input className="w-16" value={draft.devise} onChange={(e) => setDraft((d) => (d ? { ...d, devise: e.target.value } : d))} />
                 </div>
+                {dossier.budget_fourchette && (
+                  <p className="text-xs text-muted-foreground">Fourchette du client : {budgetFourchetteLabel(dossier.budget_fourchette)}</p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="brief-contraintes" className="text-[10px] uppercase text-muted-foreground">

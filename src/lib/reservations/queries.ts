@@ -58,7 +58,7 @@ const DETAIL_PATHS: Record<ReservationSource, ((id: string) => string) | null> =
 
 function channelLabel(row: AdminReservationViewRow): string {
   if (row.source === "request") return row.origin === "card_whatsapp" ? "Bouton WhatsApp" : "Demande site";
-  if (row.source === "dossier") return "Dossier";
+  if (row.source === "dossier") return row.origin === "formulaire_site" ? "Formulaire site" : "Dossier";
   if (row.is_online) return "En ligne";
   const channel = CHANNEL_LABELS[row.channel_key];
   return channel ? `Manuel · ${channel}` : "Manuel";

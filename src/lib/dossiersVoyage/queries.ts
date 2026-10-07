@@ -26,6 +26,10 @@ export function errorMessage(error: unknown): string {
   return "Une erreur est survenue";
 }
 
+// Une demande sur mesure pas encore ouverte vit dans la page Réservations : elle n'entre dans
+// l'espace Dossiers qu'une fois le dossier créé depuis sa fiche.
+const STATUT_DEMANDE_SUR_MESURE = "demande_sur_mesure";
+
 /** Tous les dossiers de voyage, du plus récent au plus ancien (modèles et archivés inclus : le filtrage se fait à l'affichage). */
 export function useDossiersVoyage() {
   return useQuery({
@@ -34,6 +38,7 @@ export function useDossiersVoyage() {
       const { data, error } = await supabase
         .from("dossiers_voyage")
         .select("*")
+        .neq("statut", STATUT_DEMANDE_SUR_MESURE)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -384,6 +389,7 @@ export function useDossiersVoyageActionnables() {
         .select("*")
         .eq("archive", false)
         .eq("est_modele", false)
+        .neq("statut", STATUT_DEMANDE_SUR_MESURE)
         .order("updated_at", { ascending: true });
       if (error) throw error;
       return data ?? [];

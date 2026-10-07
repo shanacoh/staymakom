@@ -14,6 +14,7 @@ import CookieConsent from "@/components/CookieConsent";
 import { useCookieConsent } from "@/hooks/useCookieConsent";
 import { CurrentProductProvider } from "@/contexts/CurrentProductContext";
 import { trackPageViewed, trackUtmCaptured, trackSessionLanded, identifySessionLanded, computeEntrySource } from "@/lib/analytics";
+import { rememberVisitSource } from "@/lib/tailorMade/visitSource";
 import { Loader2 } from "lucide-react";
 import { NewsletterPopup } from "@/components/NewsletterPopup";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -165,6 +166,7 @@ const AppContent = () => {
   }, [location.pathname]);
 
   useEffect(() => {
+    rememberVisitSource();
     if (sessionStorage.getItem("staymakom_session_landed")) return;
     const params = new URLSearchParams(window.location.search);
     const utmSource = params.get("utm_source") || undefined;

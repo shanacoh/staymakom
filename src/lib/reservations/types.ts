@@ -3,7 +3,8 @@
 
 export type ReservationSource = "booking" | "request" | "hotel" | "dossier";
 export type ReservationType = "experience" | "boat" | "hotel" | "itinerary";
-export type ReservationStatus = "demande" | "dispo_ok" | "confirmee" | "passee" | "annulee";
+// "demande_sur_mesure" : demande de voyage sur mesure reçue par le formulaire du site, pas encore de dossier ouvert.
+export type ReservationStatus = "demande" | "dispo_ok" | "demande_sur_mesure" | "confirmee" | "passee" | "annulee";
 export type ClientPayment = "unpaid" | "deposit" | "paid" | "refunded";
 // "none" : pas de fournisseur à payer suivi sur cette ligne (demande, hôtel synchronisé).
 export type SupplierPayment = "todo" | "paid" | "none";
@@ -46,6 +47,7 @@ export interface ReservationRow {
 }
 
 export type NextActionKind =
+  | "open_request"
   | "send_to_provider"
   | "confirm_availability"
   | "send_deposit_link"

@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/components/admin/BookingsGrid/columnTypes";
-import { dateHint, isRequest, nextAction, type ReservationGroups } from "@/lib/reservations/rules";
+import { dateHint, isRequest, isTailorMadeRequest, nextAction, type ReservationGroups } from "@/lib/reservations/rules";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import type { DossierLine, NextAction, ReservationRow } from "@/lib/reservations/types";
 import { LineCostInput, NatureTag } from "./DossierLineCells";
@@ -123,7 +123,7 @@ function SummaryRow({
         <div className="truncate text-xs text-muted-foreground">
           {row.product} · {row.channelLabel}
         </div>
-        {row.source === "dossier" && (
+        {row.source === "dossier" && !isTailorMadeRequest(row) && (
           <button
             type="button"
             onClick={() => onToggleDossier(row.id)}
