@@ -6,6 +6,46 @@
 
 ---
 
+## [2026-10-08] — Chantier Offre, prompt 4 : les infos pratiques arrivent chez le client
+
+> Statut : migration `20261008160000_practical_info_reminder.sql` appliquée en base le 08/10/2026. Fonctions serveur `send-standalone-booking-confirmation` et `send-standalone-day-before-reminder` déployées le 08/10/2026. `npm run build` passe. 10 nouveaux tests passent (les 9 tests en échec sur `imageUrl` et `catalogue/draft` l'étaient déjà avant, sans rapport). Aperçus validés par Shana, code commité et poussé sur `main` le 08/10/2026.
+
+### Ce qui a changé côté code
+- `supabase/functions/_shared/practical-info/content.ts` (créé) : le seul endroit qui décide ce que le client reçoit comme infos pratiques et comment c'est écrit (EN / FR / HE), en email et en message WhatsApp. Un champ vide n'apparaît pas ; une fiche sans aucune info pratique ne produit aucun bloc.
+- `supabase/functions/_shared/practical-info/content.test.ts` (créé) : 10 tests (pas de bloc si tout est vide, langue du client, liens Waze et Google Maps, seuls les champs remplis, contact jour J, hébreu de droite à gauche, message WhatsApp).
+- `supabase/functions/_shared/practical-info/load.ts` (créé) : lit la fiche et le contact jour J côté serveur, avec la clé de service.
+- `supabase/functions/_shared/internal-auth.ts` (créé) : reconnaît un admin connecté ou la tâche planifiée de la base.
+- `supabase/functions/send-standalone-booking-confirmation/index.ts` : ajoute le bloc « Infos pratiques » dans la langue de la réservation, seulement pour une expérience (pas un bateau) confirmée et non annulée. Sans info pratique, l'email est identique à avant, au caractère près (vérifié en comparant l'ancienne et la nouvelle version). Un envoi automatique ne part plus qu'une seule fois par réservation ; le bouton « Renvoyer » du back-office continue de renvoyer. Nouvelle action d'aperçu d'une fiche avec une réservation fictive, réservée aux admins.
+- `supabase/functions/send-standalone-day-before-reminder/` (créé, `index.ts` + `template.ts`) : email de rappel la veille, dans la langue du client, même habillage que la confirmation.
+- `supabase/config.toml` : déclaration de la nouvelle fonction.
+- `src/lib/practicalInfo/index.ts` (créé) : relais vers le fichier partagé, pour le back-office.
+- `src/components/admin/PracticalInfoWhatsAppCard.tsx` (créé) et `src/pages/admin/StandaloneBookingDetails.tsx` : sur le détail d'une réservation d'expérience, le message WhatsApp prêt à envoyer (choix de la langue, « Copier le message WhatsApp », « Ouvrir WhatsApp avec ce message ») et la date d'envoi du rappel. Rien ne part tout seul.
+- `src/lib/reservations/practicalInfoAlerts.ts` (créé), `src/components/admin/ReservationsHub/ReservationsSummaryTable.tsx`, `src/pages/admin/Reservations.tsx` : signal « Infos pratiques incomplètes » sur les réservations d'expérience confirmées des 7 prochains jours dont la fiche n'a ni point de rendez-vous ni contact jour J.
+- `src/components/forms/standalone/AfterBookingSection.tsx`, `src/components/forms/StandaloneExperienceForm.tsx` : bouton « M'envoyer un aperçu » dans la section Après la réservation (pas sur les fiches bateau).
+- `src/config/automations.ts` : le rappel de la veille est ajouté à la liste des automatisations.
+- `ARCHITECTURE.md` : section du formulaire expérience seule complétée.
+- Non touchés : paiement, webhook Revolut, checkout, logique de confirmation d'une réservation, réservations hôtel, bateaux.
+
+### Ce qui a changé côté base de données
+- Migration `20261008160000_practical_info_reminder.sql`, uniquement des ajouts :
+  - `standalone_bookings.reminder_email_sent_at` : date d'envoi du rappel de la veille. C'est elle qui empêche tout doublon.
+  - Extensions `pg_cron` (l'horloge de la base) et `pg_net` (permet à la base d'appeler une fonction serveur), activées pour la première fois.
+  - Un secret tiré au hasard, rangé dans le coffre de la base (Vault) sous le nom `internal_cron_secret`, et la fonction `check_internal_cron_secret` qui permet au serveur de le vérifier sans le lire.
+  - `is_admin_email` : vérifie qu'un aperçu ne part que vers l'adresse d'un admin.
+  - Trois tâches planifiées `standalone-day-before-reminder-7h-utc`, `-8h-utc`, `-9h-utc`. La fonction n'agit qu'à 10 h (envoi) et 11 h (rattrapage) heure d'Israël, été comme hiver.
+
+### Pourquoi ce changement
+- Les infos « après la réservation » saisies sur les fiches n'arrivaient nulle part. Shana veut que le client les reçoive au bon moment (à la confirmation, puis la veille) sans avoir à les retaper, et pouvoir les envoyer en un clic sur WhatsApp.
+
+### Limites connues
+- Le squelette de l'email de confirmation reste en anglais (c'était déjà le cas, et la règle était de ne pas changer le message quand il n'y a pas d'info pratique). Seul le bloc Infos pratiques est dans la langue du client. Le rappel de la veille, lui, est entièrement dans la langue du client. Traduire toute la confirmation serait une suite logique.
+- Si la page de paiement n'arrive pas à confirmer la réservation tout de suite (cas rare, rattrapé ensuite par le webhook), la confirmation part sans le bloc. Le client le reçoit alors dans le rappel de la veille.
+- Il n'existe pas de champ « parking » sur les fiches : « Comment y aller » reprend le champ Accès sans voiture de L'essentiel.
+- Aujourd'hui aucune fiche n'a d'info pratique remplie : tant que la section Après la réservation est vide, les emails restent ceux d'avant.
+- Le rappel ne part pas pour une réservation faite la veille ou le jour même (un peu plus large que « moins de 24 h avant », pour ne pas envoyer un rappel une heure après la confirmation).
+
+---
+
 ## [2026-10-08] — Chantier Offre, prompt 3 : l'IA remplit aussi les moods, la région et l'après-réservation
 
 > Statut : fonction serveur `generate-experience-draft` déployée le 08/10/2026. Code commité et poussé sur `main` le 08/10/2026 après validation de Shana. `npm run build` passe. Les 9 nouveaux tests automatiques passent. Test réel fait par Shana le 08/10/2026 avec les notes « balade à cheval… » : moods Nature & Outdoor (principal), Romantic Escape et Family Fun, région Sharon, trois titres différents. Deux défauts relevés et corrigés dans les consignes (voir « Retouches après le test »). Le test avec un PDF contenant des prix reste à faire.

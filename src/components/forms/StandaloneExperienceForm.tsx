@@ -569,6 +569,30 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
 
   const currentExperienceId = experienceId || createdExperienceId;
 
+  // « M'envoyer un aperçu » : l'email de confirmation tel que le client le recevrait, avec une
+  // réservation fictive, envoyé à l'admin connecté. Le serveur lit la fiche enregistrée.
+  const [previewSending, setPreviewSending] = useState(false);
+  const sendConfirmationPreview = async () => {
+    if (!currentExperienceId) return;
+    setPreviewSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-standalone-booking-confirmation", {
+        body: { preview_experience_id: currentExperienceId, lang: activeLanguage },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Aperçu envoyé à ${data?.sent_to ?? "ton adresse"}`, {
+        description: data?.has_practical_info
+          ? "Avec le bloc Infos pratiques, dans la langue affichée."
+          : "Aucune info pratique enregistrée sur cette fiche : l'email est celui d'avant, sans le bloc.",
+      });
+    } catch (err) {
+      toast.error("Impossible d'envoyer l'aperçu", { description: err instanceof Error ? err.message : undefined });
+    } finally {
+      setPreviewSending(false);
+    }
+  };
+
   // -------------------------------------------------------------------------
   // Queries
   // -------------------------------------------------------------------------
@@ -4782,6 +4806,9 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                   contactLanguage={watch("day_contact_language") ?? null}
                   onContactLanguageChange={(code) => setValue("day_contact_language", code, { shouldDirty: true })}
                   disabled={isSaving}
+                  onSendPreview={isBoatsExperience ? undefined : sendConfirmationPreview}
+                  previewSending={previewSending}
+                  previewUnavailableReason={currentExperienceId ? "" : "Enregistre d'abord la fiche pour recevoir un aperçu."}
                 />
               </FormSection>
 

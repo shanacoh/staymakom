@@ -3,8 +3,21 @@
 // Reprend le même pattern que send-booking-confirmation mais sans les sections hôtel.
 // Ne reçoit qu'un confirmation_token : va chercher les données en base elle-même,
 // pour ne jamais dépendre de ce que le navigateur du client a pu envoyer/altérer.
+//
+// Bloc « Infos pratiques » (point de rendez-vous, accès, contact jour J...) : ajouté dans la langue
+// de la réservation, uniquement pour une réservation d'expérience déjà confirmée et non annulée.
+// Si la fiche n'a aucune info pratique, l'email est exactement celui d'avant.
+//
+// Pas d'envoi en double : un envoi automatique ne part que si l'email n'a jamais été envoyé.
+// Seul un admin connecté (bouton « Renvoyer » du back-office) peut le renvoyer.
+//
+// Aperçu d'une fiche (`preview_experience_id`) : envoie l'email tel que le client le recevrait,
+// avec une réservation fictive, à l'adresse de l'admin connecté. Rien n'est écrit en base.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { hasLocation, normalizeLang, renderPracticalInfoHtml, buildPracticalInfo, type PracticalInfo } from '../_shared/practical-info/content.ts';
+import { loadPracticalInfo, SAMPLE_DAY_CONTACT, SAMPLE_PRACTICAL_SOURCE } from '../_shared/practical-info/load.ts';
+import { getAdminEmail, isAdminEmail, isInternalCron } from '../_shared/internal-auth.ts';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 
@@ -25,7 +38,7 @@ function getCorsHeaders(req: Request) {
   );
   return {
     'Access-Control-Allow-Origin': isAllowed ? origin : 'https://staymakom.com',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Vary': 'Origin',
   };
@@ -56,11 +69,15 @@ function buildEmailHtml(params: {
   address?: string;
   regulations?: string;
   bookingRef: string;
+  practicalInfo?: PracticalInfo | null;
 }): string {
   const {
     guestName, experienceTitle, bookingDate, timeSlot,
-    partySize, totalPrice, currency, confirmationToken, address, regulations, bookingRef,
+    partySize, totalPrice, currency, confirmationToken, regulations, bookingRef,
   } = params;
+  const practicalInfoHtml = renderPracticalInfoHtml(params.practicalInfo ?? null);
+  // Quand le bloc Infos pratiques dit déjà où aller, la ligne « Meeting Point » de la carte ferait doublon.
+  const address = hasLocation(params.practicalInfo ?? null) ? undefined : params.address;
 
   const confirmationUrl = `https://staymakom.com/standalone-booking/confirmation/${confirmationToken}`;
   const heroImageUrl = 'https://uqeipzfdhyjkjzvqbkeu.supabase.co/storage/v1/object/public/NL/email/confirmation-hero-desert-road.jpg';
@@ -162,7 +179,7 @@ function buildEmailHtml(params: {
 
                   </td>
                 </tr>
-              </table>
+              </table>${practicalInfoHtml}
 
               ${regulations ? `
               <!-- Good to know -->
@@ -211,6 +228,27 @@ function buildEmailHtml(params: {
 </html>`;
 }
 
+async function sendEmail(to: string, subject: string, html: string): Promise<{ ok: boolean; details?: string }> {
+  const emailResponse = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'StayMakom <hello@staymakom.com>',
+      reply_to: 'shana@staymakom.com',
+      to: [to],
+      subject,
+      html,
+    }),
+  });
+  if (emailResponse.ok) return { ok: true };
+  const details = await emailResponse.text();
+  console.error('Resend error:', details);
+  return { ok: false, details };
+}
+
 Deno.serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req);
 
@@ -225,46 +263,99 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  const json = (payload: unknown, status = 200) =>
+    new Response(JSON.stringify(payload), {
+      status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
   try {
     const body = await req.json();
-    const { confirmation_token, preview } = body;
+    const { confirmation_token, preview, preview_experience_id } = body;
 
-    if (!confirmation_token && !preview) {
-      return new Response(JSON.stringify({ error: 'confirmation_token manquant' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (!confirmation_token && !preview && !preview_experience_id) {
+      return json({ error: 'confirmation_token manquant' }, 400);
     }
 
     if (!RESEND_API_KEY) {
       console.error('RESEND_API_KEY not configured');
-      return new Response(JSON.stringify({ error: 'Email service not configured' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return json({ error: 'Email service not configured' }, 500);
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const adminEmail = await getAdminEmail(req, supabase);
+
+    // ── Aperçu d'une fiche : réservation fictive, envoyée à l'admin qui la demande ──────────────
+    if (preview_experience_id) {
+      // Destinataire : l'admin connecté. La base peut aussi demander un aperçu (secret du coffre),
+      // mais seulement vers l'adresse d'un admin.
+      let recipient = adminEmail;
+      if (!recipient && typeof body.to === 'string' && await isInternalCron(req, supabase) && await isAdminEmail(supabase, body.to)) {
+        recipient = body.to;
+      }
+      if (!recipient) return json({ error: 'Action réservée aux administrateurs' }, 403);
+
+      const { data: previewExperience, error: previewError } = await supabase
+        .from('standalone_experiences')
+        .select('id, title, address')
+        .eq('id', preview_experience_id)
+        .maybeSingle();
+      if (previewError || !previewExperience) return json({ error: 'Fiche introuvable' }, 404);
+
+      const lang = normalizeLang(body.lang);
+      // `sample_info` : montre le rendu d'une fiche complète avec des infos de démonstration.
+      const practicalInfo = body.sample_info === true
+        ? buildPracticalInfo(SAMPLE_PRACTICAL_SOURCE, SAMPLE_DAY_CONTACT, lang)
+        : await loadPracticalInfo(supabase, previewExperience.id, lang);
+
+      const inOneWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const html = buildEmailHtml({
+        guestName: 'Client Test',
+        experienceTitle: previewExperience.title || '',
+        bookingDate: inOneWeek,
+        timeSlot: '10:00',
+        partySize: 2,
+        totalPrice: 480,
+        currency: 'ILS',
+        confirmationToken: 'apercu',
+        address: previewExperience.address || undefined,
+        bookingRef: 'SM-APERCU',
+        practicalInfo,
+      });
+      const sent = await sendEmail(recipient, `[Aperçu] ✓ Your experience is confirmed — ${previewExperience.title || ''}`, html);
+      if (!sent.ok) return json({ error: 'Email send failed', details: sent.details }, 500);
+      return json({ success: true, sent_to: recipient, has_practical_info: !!practicalInfo });
+    }
 
     // En mode aperçu sans token, on prend la réservation la plus récente pour montrer un rendu réel.
     const bookingQuery = supabase
       .from('standalone_bookings')
-      .select('id, customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, confirmation_token, custom_experience_title, custom_address, custom_regulations, standalone_experiences(title, address, address_he)');
+      .select('id, customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, confirmation_token, custom_experience_title, custom_address, custom_regulations, status, is_cancelled, product_type, preferred_lang, standalone_experience_id, standalone_experiences(title, address, address_he)');
     const { data: booking, error: bookingError } = confirmation_token
       ? await bookingQuery.eq('confirmation_token', confirmation_token).single()
       : await bookingQuery.order('created_at', { ascending: false }).limit(1).single();
 
     if (bookingError || !booking) {
-      return new Response(JSON.stringify({ error: 'Réservation introuvable' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return json({ error: 'Réservation introuvable' }, 404);
     }
 
     const experience = booking.standalone_experiences as unknown as { title: string; address?: string; address_he?: string } | null;
     const experienceTitle = experience?.title || booking.custom_experience_title || '';
+
+    // Infos pratiques : seulement pour une expérience (pas un bateau) confirmée et non annulée.
+    // L'aperçu sans token est public : il ne les montre qu'à un admin connecté.
+    const eligible = booking.status === 'confirmed' && !booking.is_cancelled && booking.product_type !== 'boat';
+    let practicalInfo: PracticalInfo | null = null;
+    if (eligible && (confirmation_token || adminEmail)) {
+      try {
+        practicalInfo = await loadPracticalInfo(supabase, booking.standalone_experience_id, booking.preferred_lang);
+      } catch (infoError) {
+        // Les infos pratiques ne doivent jamais empêcher la confirmation de partir.
+        console.error('Infos pratiques illisibles, email envoyé sans le bloc:', infoError);
+      }
+    }
 
     const html = buildEmailHtml({
       guestName: booking.customer_name,
@@ -278,50 +369,53 @@ Deno.serve(async (req: Request) => {
       address: booking.custom_address || experience?.address,
       regulations: booking.custom_regulations || undefined,
       bookingRef: `SM-${booking.id.slice(0, 8).toUpperCase()}`,
+      practicalInfo,
     });
 
     const subject = `✓ Your experience is confirmed — ${experienceTitle}`;
 
     if (preview) {
-      return new Response(JSON.stringify({ html, subject }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return json({ html, subject });
     }
 
-    const emailResponse = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: 'StayMakom <hello@staymakom.com>',
-        reply_to: 'shana@staymakom.com',
-        to: [booking.customer_email],
-        subject,
-        html,
-      }),
-    });
-
-    if (!emailResponse.ok) {
-      const errText = await emailResponse.text();
-      console.error('Resend error:', errText);
-      return new Response(JSON.stringify({ error: 'Email send failed', details: errText }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    // Pas d'envoi en double : un envoi automatique « prend » d'abord la réservation (date d'envoi
+    // posée seulement si elle était vide). S'il n'obtient rien, l'email est déjà parti.
+    // Un admin connecté, lui, renvoie volontairement.
+    const isAdminResend = !!adminEmail;
+    if (!isAdminResend) {
+      const { data: claimed, error: claimError } = await supabase
+        .from('standalone_bookings')
+        .update({ confirmation_email_sent_at: new Date().toISOString() } as any)
+        .eq('id', booking.id)
+        .is('confirmation_email_sent_at', null)
+        .select('id');
+      if (claimError) throw claimError;
+      if (!claimed || claimed.length === 0) {
+        return json({ success: true, already_sent: true });
+      }
     }
 
-    await supabase
-      .from('standalone_bookings')
-      .update({ confirmation_email_sent_at: new Date().toISOString() } as any)
-      .eq('id', booking.id);
+    const sent = await sendEmail(booking.customer_email, subject, html);
 
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    if (!sent.ok) {
+      // L'email n'est pas parti : on libère la réservation pour qu'un nouvel essai soit possible.
+      if (!isAdminResend) {
+        await supabase
+          .from('standalone_bookings')
+          .update({ confirmation_email_sent_at: null } as any)
+          .eq('id', booking.id);
+      }
+      return json({ error: 'Email send failed', details: sent.details }, 500);
+    }
+
+    if (isAdminResend) {
+      await supabase
+        .from('standalone_bookings')
+        .update({ confirmation_email_sent_at: new Date().toISOString() } as any)
+        .eq('id', booking.id);
+    }
+
+    return json({ success: true });
 
   } catch (err: any) {
     console.error('send-standalone-booking-confirmation error:', err);

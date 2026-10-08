@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
 import EditStandaloneBookingDialog from "@/components/admin/EditStandaloneBookingDialog";
+import PracticalInfoWhatsAppCard from "@/components/admin/PracticalInfoWhatsAppCard";
 import { trackReviewRequestSent } from "@/lib/analytics";
 
 export default function AdminStandaloneBookingDetails() {
@@ -388,6 +389,9 @@ export default function AdminStandaloneBookingDetails() {
           </p>
         </div>
       )}
+
+      {/* Bateaux : parcours à part, pas d'infos pratiques ici */}
+      {!booking.is_cancelled && booking.product_type !== "boat" && <PracticalInfoWhatsAppCard booking={booking} />}
 
       {/* Alerte remboursement à effectuer */}
       {booking.payment_status === "refund_pending" && (

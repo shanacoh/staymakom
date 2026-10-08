@@ -46,6 +46,7 @@ import {
   setDossierLineSupplierPaid,
 } from "@/lib/reservations/actions";
 import { buildCellUpdate, type EntryColumnKey } from "@/lib/reservations/entryGrid";
+import { useIncompletePracticalInfo } from "@/lib/reservations/practicalInfoAlerts";
 import { applyToolbarFilters, computeKpis, groupRows, matchesTab } from "@/lib/reservations/rules";
 import type {
   DossierLine,
@@ -121,6 +122,7 @@ const AdminReservations = () => {
   const savedTimer = useRef<number>();
 
   const { data: rows, isLoading, error } = useReservationRows();
+  const { data: incompletePracticalInfo } = useIncompletePracticalInfo();
   const { data: unfinishedPayments } = useUnfinishedPayments();
   const { data: deletedReservations } = useDeletedReservations();
   const { data: dossierLines } = useDossierLines();
@@ -440,7 +442,13 @@ const AdminReservations = () => {
         <>
           <ReservationsKpis kpis={kpis} />
           {visibleRows.length > 0 ? (
-            <ReservationsSummaryTable groups={visibleGroups} onAction={handleAction} onOpen={openRow} {...dossierLinesProps} />
+            <ReservationsSummaryTable
+              groups={visibleGroups}
+              onAction={handleAction}
+              onOpen={openRow}
+              incompletePracticalInfo={incompletePracticalInfo}
+              {...dossierLinesProps}
+            />
           ) : (
             emptyState
           )}

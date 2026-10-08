@@ -41,10 +41,26 @@ interface Props {
   /** Vrai si l'IA vient de remplir ce champ et que Shana ne l'a pas encore modifié ni validé. */
   aiMarked?: (name: AfterBookingFieldName) => boolean;
   disabled?: boolean;
+  /** Envoie à l'admin connecté l'email de confirmation tel que le client le recevrait (réservation fictive). */
+  onSendPreview?: () => void;
+  previewSending?: boolean;
+  /** Pourquoi l'aperçu n'est pas disponible (fiche jamais enregistrée...). Vide = disponible. */
+  previewUnavailableReason?: string;
 }
 
 // Section « Après la réservation » : les infos pratiques envoyées au client une fois qu'il a réservé.
-export function AfterBookingSection({ registerField, langHidden, recap, contactLanguage, onContactLanguageChange, aiMarked, disabled }: Props) {
+export function AfterBookingSection({
+  registerField,
+  langHidden,
+  recap,
+  contactLanguage,
+  onContactLanguageChange,
+  aiMarked,
+  disabled,
+  onSendPreview,
+  previewSending,
+  previewUnavailableReason,
+}: Props) {
   // Un champ multilingue : un seul des trois est visible, celui de la langue sélectionnée.
   const multilingual = (
     base: "meeting_point" | "know_before_you_go" | "contingency_note",
@@ -137,6 +153,23 @@ export function AfterBookingSection({ registerField, langHidden, recap, contactL
       </div>
 
       {multilingual("contingency_note", "Météo ou imprévu", "Ex : en cas de pluie, la visite est reportée ou remboursée", true)}
+
+      {onSendPreview && (
+        <div className="flex flex-wrap items-center gap-2 border-t border-[#e9e6e1] pt-3">
+          <button
+            type="button"
+            onClick={onSendPreview}
+            disabled={disabled || previewSending || !!previewUnavailableReason}
+            className="h-[29px] rounded-[7px] border border-[#e9e6e1] bg-white px-3 text-[11px] font-medium text-[#1a1a1a] hover:bg-[#f5f3f0] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {previewSending ? "Envoi en cours…" : "M'envoyer un aperçu"}
+          </button>
+          <span className="text-[11px] text-[#8a857d]">
+            {previewUnavailableReason ||
+              "Tu reçois l'email de confirmation tel que le client le recevrait, avec une réservation fictive. L'aperçu montre la dernière version enregistrée de la fiche."}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

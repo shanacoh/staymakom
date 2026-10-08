@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/components/admin/BookingsGrid/columnTypes";
 import { dateHint, isRequest, isTailorMadeRequest, nextAction, type ReservationGroups } from "@/lib/reservations/rules";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronRight } from "lucide-react";
 import type { DossierLine, NextAction, ReservationRow } from "@/lib/reservations/types";
 import { LineCostInput, NatureTag } from "./DossierLineCells";
 import { StatusPill, SupplierPaymentPill, TypeTag } from "./ReservationPills";
@@ -26,6 +26,8 @@ interface Props extends DossierLinesProps {
   groups: ReservationGroups;
   onAction: (row: ReservationRow, action: NextAction) => void;
   onOpen: (row: ReservationRow) => void;
+  /** Réservations des 7 prochains jours dont la fiche n'a ni point de rendez-vous ni contact jour J. */
+  incompletePracticalInfo?: Set<string>;
 }
 
 function collectedLabel(row: ReservationRow): string {
@@ -90,6 +92,7 @@ function SummaryRow({
   onToggleDossier,
   onLineCost,
   onLinePaid,
+  incompletePracticalInfo,
 }: { row: ReservationRow } & Omit<Props, "groups">) {
   const lines = row.source === "dossier" ? (linesByDossier.get(row.id) ?? []) : [];
   const expanded = expandedDossiers.has(row.id);
@@ -123,6 +126,15 @@ function SummaryRow({
         <div className="truncate text-xs text-muted-foreground">
           {row.product} · {row.channelLabel}
         </div>
+        {row.source === "booking" && incompletePracticalInfo?.has(row.id) && (
+          <div
+            className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-destructive"
+            title="La fiche n'a ni point de rendez-vous ni contact jour J (section « Après la réservation »)"
+          >
+            <AlertTriangle className="h-3 w-3" />
+            Infos pratiques incomplètes
+          </div>
+        )}
         {row.source === "dossier" && !isTailorMadeRequest(row) && (
           <button
             type="button"
