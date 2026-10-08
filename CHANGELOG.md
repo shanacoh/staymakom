@@ -6,6 +6,37 @@
 
 ---
 
+## [2026-10-08] — Chantier Offre, étape 2 : formulaire expérience réorganisé, présentation par mood
+
+> Statut : migration `20261008100000_mood_presentations_and_after_booking.sql` appliquée en base le 08/10/2026 (outil Supabase) et vérifiée : 83 fiches, aucune donnée existante modifiée, dates de modification inchangées. Code prêt, pas encore commité ni publié. Le site public n'est pas modifié.
+
+### Ce qui a changé côté code
+- `src/components/forms/StandaloneExperienceForm.tsx` (mode standard uniquement) : la page passe à 8 sections repliables : 0. Démarrer avec l'IA, 1. Rangement (moods en pastilles, région, badges), 2. Présentation par mood, 3. Ce qui est commun, 4. Galerie, 5. Après la réservation, 6. Prix, canal & dispos, 7. Conditions & publication (repliée). Sommaire et aperçu visibles à partir de 1280 px, checklist en haut en dessous.
+- `src/components/forms/standalone/MoodPresentationSection.tsx` (créé) : un onglet par mood coché, ★ sur le principal ; photo de couverture choisie parmi les photos de la fiche, titre, accroche, description. Un mood sans version propre montre celle du principal en gris, avec « Personnaliser pour ce mood ». « En faire le mood principal » échange les contenus. Emplacement « Réécrire pour ce mood (bientôt) » désactivé.
+- `src/components/forms/standalone/AfterBookingSection.tsx` (créé) : point de rendez-vous, minutes d'avance, à savoir, contact jour J, météo ou imprévu, avec le rappel en gris de l'adresse et de l'accès saisis plus haut.
+- `src/components/forms/standalone/BookingChannelPills.tsx` et `src/constants/bookingChannels.ts` (créés) : les 3 pastilles du canal de réservation (« Portail prestataire » grisé, « bientôt »).
+- `src/components/forms/standalone/MoodPreviewCard.tsx` (créé) : aperçu de la carte dans le mood choisi (photo, titre, accroche, badges, ville, prix).
+- `src/lib/standaloneExperienceForm/` (créé) : `moodPresentations.ts` (règles des présentations par mood), `moodPresentationQueries.ts` (lecture et écriture), `payloadDiff.ts` (n'enregistrer que ce qui a changé), et leurs 22 tests.
+- Enregistrement : une fiche existante n'envoie plus que les champs modifiés depuis son ouverture. Ouvrir puis enregistrer sans rien toucher n'écrit plus rien. Avant, cela réécrivait toute la fiche (et réarrondissait le prix de 21 fiches, par exemple 94,8 devenait 95). Un bandeau jaune dans le bloc prix signale quand le prix en ligne diffère du prix affiché.
+- Le mood principal ne peut plus être décoché tant que d'autres moods sont cochés (il faut d'abord en désigner un autre).
+- Message de publication bloquée : il dit ce qui manque (mood, titre EN, description EN) et affiche l'onglet EN du mood principal.
+- `src/components/forms/shared/FormSummaryNav.tsx` et `FormHeaderBar.tsx` : options facultatives `mono` (pastilles noir / contour rouge / gris, sans vert), `wide` (colonnes à partir de 1280 px), `verboseMissing` (« N à compléter »). Sans ces options le rendu est inchangé : le formulaire hôtel n'est pas touché.
+- `src/integrations/supabase/types.ts` : déclaration de la nouvelle table et des nouvelles colonnes (ajout manuel).
+- Non modifié volontairement : le mode Bateaux (deux onglets, mêmes champs), le formulaire hôtel, le site public, la réservation, le checkout, le paiement, le calcul fournisseur / marge / prix client. « Générer avec l'IA » et « Traduire tout » existaient déjà et fonctionnent (sprints 5A et 5B) : ils sont laissés actifs plutôt que désactivés.
+- Champs hérités (`includes`, `not_includes`, `good_to_know` et leurs versions HE, `region_type`, textes `region` / `region_fr` / `region_he`) : ils n'avaient déjà plus de champ dans le formulaire ; leurs valeurs ne sont jamais réécrites. `thumbnail_image` est encore lu par le site (cartes d'expérience, favoris, journal) : il continue de suivre la photo de couverture.
+
+### Ce qui a changé côté base de données
+- Migration `20261008100000_mood_presentations_and_after_booking.sql` (appliquée), uniquement des ajouts :
+  - Table `standalone_experience_mood_presentations` : la version d'une expérience pour un mood non principal (titre, accroche, description en EN / FR / HE, photo de couverture). Une seule ligne par couple expérience + mood. Lecture pour les fiches que le visiteur peut déjà lire, modification réservée aux admins.
+  - Colonnes facultatives sur `standalone_experiences` : `meeting_point`, `meeting_point_fr`, `meeting_point_he`, `arrive_minutes_before`, `know_before_you_go` (+ `_fr`, `_he`), `day_contact_name`, `day_contact_phone`, `day_contact_language`, `contingency_note` (+ `_fr`, `_he`).
+  - Colonne `booking_channel` (3 valeurs possibles), pré-remplie : « site du prestataire » pour les 49 fiches qui ont un lien de réservation, « demande au prestataire » pour les 34 autres.
+- Aucune colonne existante modifiée, renommée ou supprimée. Le mood principal reste `category_id` : aucune fiche à migrer.
+
+### Pourquoi ce changement
+- Une même expérience peut se vendre dans plusieurs moods, avec une photo et un texte adaptés à chacun, sans dupliquer la fiche. Les infos pratiques d'après réservation et le canal de réservation avaient besoin d'un endroit où être saisis. Étapes suivantes du chantier : l'IA par mood (étape 3) et la lecture des présentations par le site (étape 5).
+
+---
+
 ## [2026-10-08] — Chantier Offre, étape 1 : une vraie liste de régions
 
 > Statut : migration `20261008000000_regions_reference_list.sql` appliquée en base le 08/10/2026 (à la main, dans l'éditeur SQL de Supabase) et vérifiée. Code prêt, pas encore commité ni publié.

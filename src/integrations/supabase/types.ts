@@ -5056,8 +5056,91 @@ export type Database = {
           },
         ]
       }
+      standalone_experience_mood_presentations: {
+        Row: {
+          category_id: string
+          experience_id: string
+          created_at: string
+          id: string
+          updated_at: string
+          title: string | null
+          title_fr: string | null
+          title_he: string | null
+          subtitle: string | null
+          subtitle_fr: string | null
+          subtitle_he: string | null
+          long_copy: string | null
+          long_copy_fr: string | null
+          long_copy_he: string | null
+          cover_image: string | null
+        }
+        Insert: {
+          category_id: string
+          experience_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          title?: string | null
+          title_fr?: string | null
+          title_he?: string | null
+          subtitle?: string | null
+          subtitle_fr?: string | null
+          subtitle_he?: string | null
+          long_copy?: string | null
+          long_copy_fr?: string | null
+          long_copy_he?: string | null
+          cover_image?: string | null
+        }
+        Update: {
+          category_id?: string
+          experience_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          title?: string | null
+          title_fr?: string | null
+          title_he?: string | null
+          subtitle?: string | null
+          subtitle_fr?: string | null
+          subtitle_he?: string | null
+          long_copy?: string | null
+          long_copy_fr?: string | null
+          long_copy_he?: string | null
+          cover_image?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "standalone_experience_mood_presentations_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "standalone_experience_mood_presentations_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "standalone_experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       standalone_experiences: {
         Row: {
+          meeting_point: string | null
+          meeting_point_fr: string | null
+          meeting_point_he: string | null
+          know_before_you_go: string | null
+          know_before_you_go_fr: string | null
+          know_before_you_go_he: string | null
+          day_contact_name: string | null
+          day_contact_phone: string | null
+          day_contact_language: string | null
+          contingency_note: string | null
+          contingency_note_fr: string | null
+          contingency_note_he: string | null
+          booking_channel: string | null
+          arrive_minutes_before: number | null
           accessibility_info: string | null
           accessibility_info_he: string | null
           address: string | null
@@ -5159,6 +5242,20 @@ export type Database = {
           whitelisted_dates: Json | null
         }
         Insert: {
+          meeting_point?: string | null
+          meeting_point_fr?: string | null
+          meeting_point_he?: string | null
+          know_before_you_go?: string | null
+          know_before_you_go_fr?: string | null
+          know_before_you_go_he?: string | null
+          day_contact_name?: string | null
+          day_contact_phone?: string | null
+          day_contact_language?: string | null
+          contingency_note?: string | null
+          contingency_note_fr?: string | null
+          contingency_note_he?: string | null
+          booking_channel?: string | null
+          arrive_minutes_before?: number | null
           accessibility_info?: string | null
           accessibility_info_he?: string | null
           address?: string | null
@@ -5260,6 +5357,20 @@ export type Database = {
           whitelisted_dates?: Json | null
         }
         Update: {
+          meeting_point?: string | null
+          meeting_point_fr?: string | null
+          meeting_point_he?: string | null
+          know_before_you_go?: string | null
+          know_before_you_go_fr?: string | null
+          know_before_you_go_he?: string | null
+          day_contact_name?: string | null
+          day_contact_phone?: string | null
+          day_contact_language?: string | null
+          contingency_note?: string | null
+          contingency_note_fr?: string | null
+          contingency_note_he?: string | null
+          booking_channel?: string | null
+          arrive_minutes_before?: number | null
           accessibility_info?: string | null
           accessibility_info_he?: string | null
           address?: string | null

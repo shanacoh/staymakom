@@ -482,6 +482,16 @@ public/
 - `src/pages/IndexV3.tsx` applique le filtre après la catégorie, dans les deux modes (expérience seule : position de la fiche ; avec hôtel : position de l'hôtel principal).
 - Suivi Amplitude : `region_filter_opened`, `region_filter_selected`, `near_me_result`.
 
+### Formulaire expérience seule : présentation par mood, après la réservation, canal (chantier Offre, étape 2)
+- **Mood principal** = `standalone_experiences.category_id` (toujours le premier de `category_ids`). Sa présentation, ce sont les colonnes de la fiche : `title*`, `subtitle*`, `long_copy*`, `hero_image`. Aucune fiche n'a été migrée.
+- **Autres moods** : table `standalone_experience_mood_presentations` (une ligne par couple expérience + mood : titre, accroche, description en EN / FR / HE, `cover_image` choisie parmi les photos de la fiche). Pas de ligne = le mood affiche la présentation principale. Le site public ne lit pas encore cette table (prévu à l'étape 5).
+- Règles sans affichage dans `src/lib/standaloneExperienceForm/moodPresentations.ts` (personnaliser, échanger le mood principal, calcul de ce qu'il faut écrire) ; lecture / écriture dans `moodPresentationQueries.ts`. Ordre d'écriture : versions de mood nouvelles ou modifiées, puis la fiche, puis retrait des versions inutiles (un incident en route ne fait perdre aucun texte).
+- **Enregistrement par écarts** (`payloadDiff.ts`) : à l'ouverture d'une fiche, le formulaire photographie ce qu'il enverrait ; à l'enregistrement, seuls les champs qui diffèrent de cette photo partent en base. Ouvrir puis enregistrer sans rien toucher n'écrit donc rien (ni reformatage, ni prix réarrondi). Conséquence : le prix en ligne n'est réécrit que si un champ de prix a été modifié.
+- **Après la réservation** : colonnes `meeting_point*`, `arrive_minutes_before`, `know_before_you_go*`, `day_contact_name / _phone / _language`, `contingency_note*` sur `standalone_experiences`. Pas encore envoyées au client (aucun email ne les lit).
+- **Canal de réservation** : `booking_channel` (`provider_request`, `provider_website`, `provider_portal` à venir), liste dans `src/constants/bookingChannels.ts`. Interne.
+- Page en 8 sections (`StandaloneExperienceForm.tsx`, mode standard) : IA, Rangement, Présentation par mood, Ce qui est commun, Galerie, Après la réservation, Prix canal & dispos, Conditions & publication. Composants propres à ce formulaire dans `src/components/forms/standalone/`. Les briques partagées avec le formulaire hôtel (`forms/shared/`) ont reçu des options facultatives (`mono`, `wide`, `verboseMissing`) : sans elles, le rendu du formulaire hôtel est inchangé. Le mode Bateaux garde ses deux onglets.
+- Attention : comme tout `standalone_experiences`, ces nouvelles colonnes sont lisibles par l'API publique pour une fiche publiée (c'est déjà le cas des champs fournisseur). À traiter si le téléphone du contact jour J doit rester strictement privé.
+
 ### Color Tokens (CSS variables)
 - `primary` — Brand primary
 - `secondary` — Brand secondary

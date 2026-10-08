@@ -65,13 +65,36 @@ import { CANCELLATION_TEMPLATES, matchCancellationTemplate, type CancellationTem
 import EssentialsBlock from "@/components/experience/EssentialsBlock";
 import { FormSection } from "@/components/forms/shared/FormSection";
 import { FormHeaderBar, FormMobileSaveBar } from "@/components/forms/shared/FormHeaderBar";
-import { FormSummaryNav, FormPreviewAside, PublishChecklist, type SummarySection } from "@/components/forms/shared/FormSummaryNav";
+import { FormSummaryNav, PublishChecklist, type SummarySection } from "@/components/forms/shared/FormSummaryNav";
 import { InternalOnlyBox } from "@/components/forms/shared/InternalOnlyBox";
 import { CancellationPolicyFields } from "@/components/forms/shared/CancellationPolicyFields";
 import { SeoFields } from "@/components/forms/shared/SeoFields";
 import { RegionSelect } from "@/components/forms/shared/RegionSelect";
 import { PublicationFields } from "@/components/forms/shared/PublicationFields";
 import { useGenerateSeo } from "@/components/forms/shared/useGenerateSeo";
+import { MoodPresentationSection, type MoodOption } from "@/components/forms/standalone/MoodPresentationSection";
+import { MoodPreviewCard } from "@/components/forms/standalone/MoodPreviewCard";
+import { AfterBookingSection } from "@/components/forms/standalone/AfterBookingSection";
+import { BookingChannelPills } from "@/components/forms/standalone/BookingChannelPills";
+import { defaultBookingChannel } from "@/constants/bookingChannels";
+import {
+  copyPresentation,
+  isPresentationFilled,
+  makeMoodPrimary,
+  presentationPlainText,
+  PRESENTATION_TEXT_FIELDS,
+  type MoodPresentation,
+  type MoodPresentationMap,
+  type PresentationTextField,
+} from "@/lib/standaloneExperienceForm/moodPresentations";
+import {
+  fetchMoodPresentations,
+  hasPresentationChanges,
+  moodPresentationsQueryKey,
+  removeObsoletePresentations,
+  writeChangedPresentations,
+} from "@/lib/standaloneExperienceForm/moodPresentationQueries";
+import { diffPayload } from "@/lib/standaloneExperienceForm/payloadDiff";
 
 // Les bateaux n'ont pas de limite de nombre de photos dans la galerie,
 // contrairement aux autres expériences standalone (limitées à 8).
@@ -183,6 +206,22 @@ const standaloneExperienceSchema = z.object({
   access_note_he: z.string().optional(),
   hide_exact_address: z.boolean().default(false),
   essentials_private_on_request: z.boolean().default(false),
+  // Après la réservation (chantier Offre, étape 2) : infos envoyées au client une fois réservé.
+  meeting_point: z.string().optional(),
+  meeting_point_fr: z.string().optional(),
+  meeting_point_he: z.string().optional(),
+  arrive_minutes_before: optNum(0),
+  know_before_you_go: z.string().optional(),
+  know_before_you_go_fr: z.string().optional(),
+  know_before_you_go_he: z.string().optional(),
+  day_contact_name: z.string().optional(),
+  day_contact_phone: z.string().optional(),
+  day_contact_language: z.string().nullable().optional(),
+  contingency_note: z.string().optional(),
+  contingency_note_fr: z.string().optional(),
+  contingency_note_he: z.string().optional(),
+  // Canal de réservation, interne, jamais affiché au client.
+  booking_channel: z.enum(["provider_request", "provider_website", "provider_portal"]).default("provider_request"),
   // SEO
   seo_title_en: z.string().optional(),
   seo_title_he: z.string().optional(),
@@ -371,6 +410,18 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   // texte libre ; les autres valeurs remplissent les 3 langues d'un coup.
   const [cancellationTemplate, setCancellationTemplate] = useState<CancellationTemplateId>("custom");
 
+  // Présentation par mood : versions propres des moods non principaux (le principal, ce sont
+  // les champs de la fiche). `loaded...Ref` garde ce qui est en base, pour n'écrire que les écarts.
+  const [moodPresentations, setMoodPresentations] = useState<MoodPresentationMap>({});
+  const loadedMoodPresentationsRef = useRef<MoodPresentationMap>({});
+  const [activeMoodId, setActiveMoodId] = useState<string | null>(null);
+
+  // « Enregistrer sans rien toucher ne modifie rien » : photo de ce que le formulaire enverrait
+  // juste après l'ouverture de la fiche ; seuls les écarts avec cette photo sont enregistrés.
+  const baselineRef = useRef<{ experienceId: string; payload: Record<string, unknown> } | null>(null);
+  const [hydrationTick, setHydrationTick] = useState(0);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+
   // Auto-save
   const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
   const autoSaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -496,7 +547,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       // exclues de ce sélecteur admin.
       const { data, error } = await supabase
         .from("categories")
-        .select("id, name")
+        .select("id, name, status")
         .neq("status", "archived")
         .order("name");
       if (error) throw error;
@@ -517,6 +568,20 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     },
     enabled: !!experienceId,
   });
+
+  // Versions propres des moods non principaux, chargées à l'ouverture d'une fiche existante.
+  // (Pour une fiche créée dans cette session, le formulaire reste la référence.)
+  const { data: loadedMoodPresentations } = useQuery({
+    queryKey: moodPresentationsQueryKey(experienceId),
+    queryFn: () => fetchMoodPresentations(experienceId!),
+    enabled: !!experienceId,
+  });
+
+  useEffect(() => {
+    if (!loadedMoodPresentations) return;
+    loadedMoodPresentationsRef.current = loadedMoodPresentations;
+    setMoodPresentations(loadedMoodPresentations);
+  }, [loadedMoodPresentations]);
 
   // Prestataires du bateau (même clé de cache que StandaloneSuppliersManager,
   // pour lire ici lequel est marqué principal sans dupliquer la requête).
@@ -629,6 +694,20 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       access_note_he: "",
       hide_exact_address: false,
       essentials_private_on_request: false,
+      meeting_point: "",
+      meeting_point_fr: "",
+      meeting_point_he: "",
+      arrive_minutes_before: undefined,
+      know_before_you_go: "",
+      know_before_you_go_fr: "",
+      know_before_you_go_he: "",
+      day_contact_name: "",
+      day_contact_phone: "",
+      day_contact_language: null,
+      contingency_note: "",
+      contingency_note_fr: "",
+      contingency_note_he: "",
+      booking_channel: "provider_request",
       seo_title_en: "",
       seo_title_he: "",
       seo_title_fr: "",
@@ -824,6 +903,20 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     if (exp.session_labels && typeof exp.session_labels === "object") {
       setSessionLabels(exp.session_labels);
     }
+    setValue("meeting_point", exp.meeting_point || "");
+    setValue("meeting_point_fr", exp.meeting_point_fr || "");
+    setValue("meeting_point_he", exp.meeting_point_he || "");
+    setValue("arrive_minutes_before", exp.arrive_minutes_before ?? undefined);
+    setValue("know_before_you_go", exp.know_before_you_go || "");
+    setValue("know_before_you_go_fr", exp.know_before_you_go_fr || "");
+    setValue("know_before_you_go_he", exp.know_before_you_go_he || "");
+    setValue("day_contact_name", exp.day_contact_name || "");
+    setValue("day_contact_phone", exp.day_contact_phone || "");
+    setValue("day_contact_language", exp.day_contact_language || null);
+    setValue("contingency_note", exp.contingency_note || "");
+    setValue("contingency_note_fr", exp.contingency_note_fr || "");
+    setValue("contingency_note_he", exp.contingency_note_he || "");
+    setValue("booking_channel", exp.booking_channel || defaultBookingChannel(exp.supplier_booking_url));
     setValue("seo_title_en", exp.seo_title_en || "");
     setValue("seo_title_he", exp.seo_title_he || "");
     setValue("seo_title_fr", exp.seo_title_fr || "");
@@ -880,6 +973,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     if (Array.isArray(exp.whitelisted_dates)) {
       setWhitelistedDates(exp.whitelisted_dates.map((s: string) => new Date(s + "T12:00:00")));
     }
+    setHydrationTick((t) => t + 1);
   }, [existingExperience, setValue]);
 
   // La catégorie (donc isBoatsExperience) n'est connue avec certitude qu'après
@@ -1033,6 +1127,12 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   // -------------------------------------------------------------------------
 
   const toggleCategory = (catId: string) => {
+    // Le mood principal porte la présentation de la fiche : on ne le décoche pas tant que
+    // d'autres moods sont cochés, sinon un autre deviendrait principal sans qu'on l'ait choisi.
+    if (!isBoatsExperience && selectedCategoryIds[0] === catId && selectedCategoryIds.length > 1) {
+      toast.error("C'est le mood principal : choisis d'abord un autre mood principal (★) avant de le décocher.");
+      return;
+    }
     setSelectedCategoryIds((prev) => {
       const updated = prev.includes(catId)
         ? prev.filter((id) => id !== catId)
@@ -1049,8 +1149,11 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   // -------------------------------------------------------------------------
 
   const applyAiCategoryIds = (ids: string[]) => {
-    setSelectedCategoryIds(ids);
-    setValue("category_id", ids[0] || "", { shouldValidate: true });
+    // Le mood principal déjà choisi reste en tête : l'IA peut ajouter des moods, pas changer le principal.
+    const primary = selectedCategoryIds[0];
+    const ordered = primary && ids.includes(primary) ? [primary, ...ids.filter((id) => id !== primary)] : ids;
+    setSelectedCategoryIds(ordered);
+    setValue("category_id", ordered[0] || "", { shouldValidate: true });
   };
 
   const isPracticalInfoEmpty = () =>
@@ -1248,8 +1351,6 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   // -------------------------------------------------------------------------
 
   const buildExperienceData = async (data: StandaloneFormData, status: "draft" | "published") => {
-    const heroImageUrl = heroImagePreview || (existingExperience as any)?.hero_image || "";
-
     const galleryImagesSnapshot = [...galleryImages];
     const galleryPreviewsSnapshot = [...galleryPreviews];
 
@@ -1272,6 +1373,14 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
           : `${failedUploads} images n'ont pas pu être uploadées`
       );
     }
+
+    return buildExperiencePayload(data, status, photoUrls);
+  };
+
+  // Partie sans attente de buildExperienceData : transforme l'état du formulaire en ligne de base.
+  // Sert aussi à prendre la photo de référence à l'ouverture d'une fiche (voir baselineRef).
+  const buildExperiencePayload = (data: StandaloneFormData, status: string, photoUrls: string[]) => {
+    const heroImageUrl = heroImagePreview || (existingExperience as any)?.hero_image || "";
 
     // base_price = prix client calculé depuis fournisseur + markup, sauf si
     // Shana a fixé un prix de vente à la main (bateaux) — celui-ci est alors
@@ -1352,6 +1461,20 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       hide_exact_address: data.hide_exact_address,
       essentials_private_on_request: data.essentials_private_on_request,
       session_labels: Object.keys(sessionLabels).length > 0 ? sessionLabels : null,
+      meeting_point: data.meeting_point || null,
+      meeting_point_fr: data.meeting_point_fr || null,
+      meeting_point_he: data.meeting_point_he || null,
+      arrive_minutes_before: data.arrive_minutes_before ?? null,
+      know_before_you_go: data.know_before_you_go || null,
+      know_before_you_go_fr: data.know_before_you_go_fr || null,
+      know_before_you_go_he: data.know_before_you_go_he || null,
+      day_contact_name: data.day_contact_name || null,
+      day_contact_phone: data.day_contact_phone || null,
+      day_contact_language: data.day_contact_language || null,
+      contingency_note: data.contingency_note || null,
+      contingency_note_fr: data.contingency_note_fr || null,
+      contingency_note_he: data.contingency_note_he || null,
+      booking_channel: data.booking_channel,
       hero_image: heroImageUrl || null,
       thumbnail_image: heroImageUrl || null,
       photos: photoUrls,
@@ -1389,36 +1512,105 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   // Save Draft
   // -------------------------------------------------------------------------
 
+  // Photo de référence, prise juste après l'ouverture d'une fiche existante (une fois les
+  // recalculs automatiques terminés). Toujours la dernière version de la fonction, via une ref.
+  const buildExperiencePayloadRef = useRef(buildExperiencePayload);
+  buildExperiencePayloadRef.current = buildExperiencePayload;
+  const galleryPreviewsRef = useRef(galleryPreviews);
+  galleryPreviewsRef.current = galleryPreviews;
+
+  useEffect(() => {
+    if (hydrationTick === 0 || !experienceId || !existingExperience) return;
+    const timer = setTimeout(() => {
+      baselineRef.current = {
+        experienceId,
+        payload: buildExperiencePayloadRef.current(
+          getValues(),
+          (existingExperience as any).status,
+          galleryPreviewsRef.current.filter((url) => url.startsWith("http")),
+        ),
+      };
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [hydrationTick, experienceId, existingExperience, getValues]);
+
+  /**
+   * Enregistre la fiche et ses présentations par mood.
+   * - Fiche existante : seuls les champs modifiés depuis l'ouverture sont envoyés ; si rien n'a
+   *   changé, rien n'est écrit en base.
+   * - Ordre des écritures : versions de mood nouvelles ou modifiées, puis la fiche, puis retrait des
+   *   versions devenues inutiles. Un incident en cours de route ne fait donc perdre aucun texte.
+   */
+  const persistExperience = async (data: StandaloneFormData, status: "draft" | "published"): Promise<"created" | "saved" | "unchanged"> => {
+    const experienceData = await buildExperienceData(data, status);
+    const primaryId = (experienceData.category_id as string | null) ?? null;
+    let targetId = currentExperienceId;
+    let outcome: "created" | "saved" | "unchanged" = "saved";
+
+    if (targetId) {
+      const syncInput = {
+        experienceId: targetId,
+        loaded: loadedMoodPresentationsRef.current,
+        current: moodPresentations,
+        primaryId,
+      };
+      const baseline = baselineRef.current?.experienceId === targetId ? baselineRef.current.payload : null;
+      const patch = diffPayload(baseline, experienceData);
+      const hasFieldChanges = Object.keys(patch).length > 0;
+      if (!hasFieldChanges && !hasPresentationChanges(syncInput)) {
+        outcome = "unchanged";
+      } else {
+        await writeChangedPresentations(syncInput);
+        if (hasFieldChanges) {
+          const { error } = await (supabase as any).from("standalone_experiences").update(patch).eq("id", targetId);
+          if (error) throw error;
+        }
+        await removeObsoletePresentations(syncInput);
+      }
+    } else {
+      const { data: insertedData, error } = await (supabase as any)
+        .from("standalone_experiences")
+        .insert([experienceData])
+        .select("id")
+        .single();
+      if (error) throw error;
+      targetId = insertedData.id as string;
+      // Dès que la fiche existe, on retient son identifiant : un nouvel essai ne la recréera pas.
+      setCreatedExperienceId(targetId);
+      outcome = "created";
+      if (localTags.length > 0) {
+        await (supabase as any)
+          .from("standalone_experience_highlight_tags")
+          .insert(localTags.map((t, i) => ({ experience_id: targetId, tag_id: t.tag_id, position: i })));
+      }
+      await writeChangedPresentations({ experienceId: targetId, loaded: {}, current: moodPresentations, primaryId });
+    }
+
+    // Ce qui vient d'être enregistré devient la nouvelle référence.
+    baselineRef.current = { experienceId: targetId, payload: experienceData };
+    const savedPresentations = { ...moodPresentations };
+    if (primaryId) delete savedPresentations[primaryId];
+    loadedMoodPresentationsRef.current = savedPresentations;
+    setMoodPresentations(savedPresentations);
+    setLastSavedAt(new Date());
+
+    setGalleryImages([]);
+    localStorage.removeItem(autoSaveKey);
+    queryClient.invalidateQueries({ queryKey: ["admin-standalone-experiences"] });
+    if (experienceId) {
+      queryClient.invalidateQueries({ queryKey: ["standalone-experience", experienceId] });
+      queryClient.invalidateQueries({ queryKey: moodPresentationsQueryKey(experienceId) });
+    }
+    return outcome;
+  };
+
   const handleSaveDraft = async (data: StandaloneFormData) => {
     setIsSaving(true);
     try {
-      const experienceData = await buildExperienceData(data, "draft");
-      if (currentExperienceId) {
-        const { error } = await (supabase as any)
-          .from("standalone_experiences")
-          .update(experienceData)
-          .eq("id", currentExperienceId);
-        if (error) throw error;
-        toast.success("Brouillon sauvegardé");
-      } else {
-        const { data: insertedData, error } = await (supabase as any)
-          .from("standalone_experiences")
-          .insert([experienceData])
-          .select("id")
-          .single();
-        if (error) throw error;
-        if (localTags.length > 0) {
-          await (supabase as any)
-            .from("standalone_experience_highlight_tags")
-            .insert(localTags.map((t, i) => ({ experience_id: insertedData.id, tag_id: t.tag_id, position: i })));
-        }
-        setCreatedExperienceId(insertedData.id);
-        toast.success("Brouillon créé !");
-      }
-      setGalleryImages([]);
-      localStorage.removeItem(autoSaveKey);
-      queryClient.invalidateQueries({ queryKey: ["admin-standalone-experiences"] });
-      if (currentExperienceId) queryClient.invalidateQueries({ queryKey: ["standalone-experience", currentExperienceId] });
+      const outcome = await persistExperience(data, "draft");
+      toast.success(
+        outcome === "created" ? "Brouillon créé !" : outcome === "unchanged" ? "Aucune modification à enregistrer" : "Brouillon sauvegardé"
+      );
     } catch (error: any) {
       toast.error(error.message || "Impossible de sauvegarder");
     } finally {
@@ -1432,8 +1624,9 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   const handleSaveDraftClick = async () => {
     const result = standaloneExperienceDraftSchema.safeParse(getValues());
     if (!result.success) {
-      toast.error("Le titre (EN) est requis pour enregistrer un brouillon");
+      toast.error("Le titre en anglais (EN) est requis pour enregistrer un brouillon");
       setActiveTab(isBoatsExperience ? "bateau_champs" : "contenu");
+      if (!isBoatsExperience) showMainPresentationInEnglish();
       return;
     }
     await handleSaveDraft(result.data as StandaloneFormData);
@@ -1469,33 +1662,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
         }
       }
 
-      const experienceData = await buildExperienceData(data, "published");
-      if (currentExperienceId) {
-        const { error } = await (supabase as any)
-          .from("standalone_experiences")
-          .update(experienceData)
-          .eq("id", currentExperienceId);
-        if (error) throw error;
-        toast.success("Expérience publiée !");
-      } else {
-        const { data: insertedData, error } = await (supabase as any)
-          .from("standalone_experiences")
-          .insert([experienceData])
-          .select("id")
-          .single();
-        if (error) throw error;
-        if (localTags.length > 0) {
-          await (supabase as any)
-            .from("standalone_experience_highlight_tags")
-            .insert(localTags.map((t, i) => ({ experience_id: insertedData.id, tag_id: t.tag_id, position: i })));
-        }
-        setCreatedExperienceId(insertedData.id);
-        toast.success("Expérience publiée !");
-      }
-      setGalleryImages([]);
-      localStorage.removeItem(autoSaveKey);
-      queryClient.invalidateQueries({ queryKey: ["admin-standalone-experiences"] });
-      if (currentExperienceId) queryClient.invalidateQueries({ queryKey: ["standalone-experience", currentExperienceId] });
+      await persistExperience(data, "published");
+      toast.success("Expérience publiée !");
       onClose?.();
     } catch (error: any) {
       toast.error(error.message || "Impossible de publier");
@@ -1539,6 +1707,13 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   // Validation helper
   // -------------------------------------------------------------------------
 
+  // La validation porte sur la version anglaise du mood principal : on l'affiche.
+  const showMainPresentationInEnglish = () => {
+    setActiveLanguage("en");
+    setActiveMoodId(selectedCategoryIds[0] ?? null);
+    document.getElementById("sec-presentation")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const onInvalidSubmit = (errs: Record<string, any>) => {
     const fieldNames: Record<string, string> = {
       title: "Title (EN)",
@@ -1549,9 +1724,15 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       supplier_price_adult: "Prix adulte",
     };
 
-    if (!isBoatsExperience && (errs.title || errs.long_copy)) {
-      toast.error("Il manque la version anglaise : clique sur Traduire tout");
-      setActiveLanguage("en");
+    if (!isBoatsExperience && (errs.title || errs.long_copy || errs.category_id)) {
+      const missing: string[] = [];
+      if (errs.category_id) missing.push("au moins un mood (section Rangement)");
+      if (errs.title) missing.push("le titre en anglais");
+      if (errs.long_copy) missing.push("la description en anglais (100 caractères minimum)");
+      toast.error(
+        `Pour publier, il manque : ${missing.join(", ")}.${errs.title || errs.long_copy ? " Complète l'onglet EN ou clique sur Traduire tout." : ""}`
+      );
+      if (errs.title || errs.long_copy) showMainPresentationInEnglish();
     } else {
       const errorFields = Object.keys(errs).map((field) => fieldNames[field] || field);
       if (errorFields.length > 0) toast.error(`Champs requis manquants : ${errorFields.join(", ")}`);
@@ -1661,6 +1842,66 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   };
 
   const totalPhotosCount = (heroImagePreview ? 1 : 0) + galleryPreviews.length;
+
+  // ── Présentation par mood ────────────────────────────────────────────────
+  // Le mood principal est le premier coché (c'est lui qui est enregistré dans category_id) ;
+  // sa présentation, ce sont les champs titre / accroche / description / couverture de la fiche.
+  const primaryMoodId = selectedCategoryIds[0] ?? null;
+  const selectedMoods: MoodOption[] = selectedCategoryIds
+    .map((id) => (categories as MoodOption[] | undefined)?.find((c) => c.id === id))
+    .filter((c): c is MoodOption => !!c);
+  const mainPresentation: MoodPresentation = {
+    title: title || "",
+    title_fr: titleFrWatch || "",
+    title_he: titleHeWatch || "",
+    subtitle: subtitleEn || "",
+    subtitle_fr: subtitleFr || "",
+    subtitle_he: subtitleHe || "",
+    long_copy: longCopyEn || "",
+    long_copy_fr: longCopyFr || "",
+    long_copy_he: longCopyHe || "",
+    cover_image: heroImagePreview,
+  };
+  // Photos déjà en ligne (les photos ajoutées mais pas encore enregistrées n'ont pas d'adresse).
+  const coverChoices = Array.from(
+    new Set([heroImagePreview, ...galleryPreviews].filter((url): url is string => !!url && url.startsWith("http")))
+  );
+
+  const setMainPresentationField = (field: PresentationTextField, value: string) =>
+    setValue(field, value, { shouldDirty: true, shouldValidate: !!errors[field] });
+
+  const updateMoodPresentation = (moodId: string, patch: Partial<MoodPresentation>) =>
+    setMoodPresentations((prev) => (prev[moodId] ? { ...prev, [moodId]: { ...prev[moodId], ...patch } } : prev));
+
+  const customizeMood = (moodId: string) =>
+    setMoodPresentations((prev) => ({ ...prev, [moodId]: copyPresentation(mainPresentation) }));
+
+  const resetMoodToMain = (moodId: string) => {
+    if (!window.confirm("Supprimer la version propre de ce mood ? Il reprendra la présentation du mood principal.")) return;
+    setMoodPresentations((prev) => {
+      const next = { ...prev };
+      delete next[moodId];
+      return next;
+    });
+  };
+
+  // « En faire le mood principal » : le mood passe en tête et les contenus sont échangés.
+  const promoteMoodToPrimary = (moodId: string) => {
+    const result = makeMoodPrimary({
+      selectedCategoryIds,
+      main: mainPresentation,
+      presentations: moodPresentations,
+      newPrimaryId: moodId,
+    });
+    setSelectedCategoryIds(result.selectedCategoryIds);
+    setValue("category_id", result.selectedCategoryIds[0] || "", { shouldValidate: true });
+    for (const field of PRESENTATION_TEXT_FIELDS) setValue(field, result.main[field], { shouldDirty: true });
+    setHeroImagePreview(result.main.cover_image);
+    setMoodPresentations(result.presentations);
+    setActiveMoodId(moodId);
+    const moodName = selectedMoods.find((m) => m.id === moodId)?.name ?? "Ce mood";
+    toast.success(`« ${moodName} » est maintenant le mood principal. Enregistre pour valider.`);
+  };
 
   // Champs communs à la carte Photos — identiques pour une expérience
   // standard et pour un bateau, seul l'emplacement dans la page change.
@@ -1879,7 +2120,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   // des expériences standard, et (groupés avec les catégories) pour les bateaux.
   const publicationExtras = (
     <PublicationFields
-      slug={generateSlug(watch("title") || "")}
+      slug={(existingExperience as any)?.slug || generateSlug(watch("title") || "")}
       featuredOnHome={featuredOnHome}
       onFeaturedOnHomeChange={setFeaturedOnHome}
       homeDisplayOrder={homeDisplayOrder}
@@ -1889,16 +2130,16 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
 
   // Badges éditoriaux + informations clés (kosher/enfants/parking/fitness/spa)
   // — identiques pour une expérience standard et pour un bateau.
-  const badgesContent = (
+  const tagsSelector = (
+    <HighlightTagsSelectorStandalone
+      experienceId={currentExperienceId}
+      localTags={localTags}
+      onLocalTagsChange={setLocalTags}
+    />
+  );
+
+  const keyInfoContent = (
     <>
-      <HighlightTagsSelectorStandalone
-        experienceId={currentExperienceId}
-        localTags={localTags}
-        onLocalTagsChange={setLocalTags}
-      />
-
-      <Separator />
-
       <div className="space-y-3">
         <p className="text-sm font-medium text-foreground">Informations clés</p>
 
@@ -2054,6 +2295,30 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     </>
   );
 
+  // Mode Bateaux : badges + informations clés dans la même carte, comme avant.
+  const badgesContent = (
+    <>
+      {tagsSelector}
+      <Separator />
+      {keyInfoContent}
+    </>
+  );
+
+  // Sélecteur de région (liste de référence). Bateaux : dans la carte Localisation ;
+  // expérience standard : dans la section Rangement.
+  const regionField = (
+    <div className="space-y-2">
+      <Label htmlFor="region_id">Région</Label>
+      <RegionSelect
+        id="region_id"
+        value={watch("region_id") ?? null}
+        onChange={(regionId) => setValue("region_id", regionId, { shouldDirty: true })}
+        legacyText={watch("region")}
+        disabled={isSaving}
+      />
+    </div>
+  );
+
   // Localisation — identique pour une expérience standard et pour un bateau.
   const locationFields = (
     <>
@@ -2078,16 +2343,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
         </div>
       </div>
       {/* Une seule région, choisie dans la liste de référence : son nom s'affiche ensuite dans les 3 langues. */}
-      <div className="space-y-2">
-        <Label htmlFor="region_id">Région</Label>
-        <RegionSelect
-          id="region_id"
-          value={watch("region_id") ?? null}
-          onChange={(regionId) => setValue("region_id", regionId, { shouldDirty: true })}
-          legacyText={watch("region")}
-          disabled={isSaving}
-        />
-      </div>
+      {isBoatsExperience && regionField}
       <div className={cn(isBoatsExperience ? "grid grid-cols-3 gap-4" : "space-y-4")}>
         <div className={cn("space-y-2", langHidden("en") && "hidden")}>
           <Label htmlFor="address" className="flex items-center gap-1.5">
@@ -2345,6 +2601,44 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     </Card>
   );
 
+  // Lien de réservation fournisseur — usage interne uniquement.
+  const supplierBookingUrlField = (
+    <div>
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+        Lien de réservation fournisseur (usage interne, jamais visible des clients)
+      </p>
+      <div className="space-y-2">
+        <Label htmlFor="supplier_booking_url">URL de réservation chez le prestataire</Label>
+        <Input
+          id="supplier_booking_url"
+          type="url"
+          {...register("supplier_booking_url")}
+          placeholder="https://..."
+          disabled={isSaving}
+        />
+        <p className="text-xs text-muted-foreground">
+          Pour les expériences que vous réservez vous-même chez le fournisseur : ce lien apparaîtra
+          uniquement dans le récapitulatif de vos réservations, jamais sur le site public.
+        </p>
+      </div>
+    </div>
+  );
+
+  // Prix déjà en ligne différent de celui affiché ici (arrondi, ancien prix fixé à la main) :
+  // on le dit, car le prix en ligne n'est réécrit que si un champ de prix est modifié.
+  const storedBasePrice = (existingExperience as any)?.base_price;
+  const onlinePriceNotice =
+    !isBoatsExperience && storedBasePrice != null && sellPriceAdult != null && Number(storedBasePrice) !== Number(sellPriceAdult) ? (
+      <div className="flex items-start gap-2 p-3 rounded-lg bg-[#fff4d6] text-[#8a6100] text-[11px]">
+        <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+        <span>
+          Prix actuellement en ligne : {Number(storedBasePrice)} {currencySymbol}. Le prix affiché ci-dessous
+          ({sellPriceAdult} {currencySymbol}) ne le remplacera à l'enregistrement que si tu modifies le prix fournisseur,
+          la marge ou le prix de vente.
+        </span>
+      </div>
+    ) : null;
+
   // Prix de l'expérience — mêmes champs et même calcul qu'avant (règle
   // stricte du sprint 5B), seule la partie fournisseur est maintenant
   // regroupée dans un encadré "Interne, jamais visible du client".
@@ -2530,32 +2824,17 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                 </div>
               </div>
             </div>
+            <Separator />
+
+            {supplierBookingUrlField}
           </InternalOnlyBox>
 
           <Separator />
         </>
       )}
 
-      {/* Lien de réservation fournisseur — usage interne uniquement */}
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-          Lien de réservation fournisseur (usage interne, jamais visible des clients)
-        </p>
-        <div className="space-y-2">
-          <Label htmlFor="supplier_booking_url">URL de réservation chez le prestataire</Label>
-          <Input
-            id="supplier_booking_url"
-            type="url"
-            {...register("supplier_booking_url")}
-            placeholder="https://..."
-            disabled={isSaving}
-          />
-          <p className="text-xs text-muted-foreground">
-            Pour les expériences que vous réservez vous-même chez le fournisseur : ce lien apparaîtra
-            uniquement dans le récapitulatif de vos réservations, jamais sur le site public.
-          </p>
-        </div>
-      </div>
+      {/* Bateaux : le lien reste à sa place d'origine, hors encadré. */}
+      {isBoatsExperience && supplierBookingUrlField}
 
       {/* Prix de vente réellement enregistré (celui lu par le site public).
           Éditable : le curseur de marge ci-dessus ne fait que proposer une
@@ -3188,41 +3467,61 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   // vérifier" pas encore cochée) : approximatif, pas un suivi champ par champ.
   // -------------------------------------------------------------------------
 
-  const unreviewedAi = aiDraftPanelRef.current?.getUnreviewedAiCount() ?? 0;
-  const includesWithPhotoCount = currentExperienceId
-    ? ((includesForChecklist as any[] | undefined)?.filter((i) => i.icon_url).length ?? 0)
-    : localStandaloneIncludes.filter((i) => i.icon_url).length;
+  const includesCount = currentExperienceId
+    ? ((includesForChecklist as any[] | undefined)?.length ?? 0)
+    : localStandaloneIncludes.length;
+  const regionIdWatch = watch("region_id");
+  const meetingPointFilled = [watch("meeting_point"), watch("meeting_point_fr"), watch("meeting_point_he")].some((v) => v?.trim());
+  const dayContactFilled = !!watch("day_contact_name")?.trim() && !!watch("day_contact_phone")?.trim();
+  const afterBookingStarted =
+    meetingPointFilled ||
+    !!watch("day_contact_name")?.trim() ||
+    !!watch("day_contact_phone")?.trim() ||
+    watch("arrive_minutes_before") != null ||
+    [watch("know_before_you_go"), watch("know_before_you_go_fr"), watch("know_before_you_go_he")].some((v) => v?.trim()) ||
+    [watch("contingency_note"), watch("contingency_note_fr"), watch("contingency_note_he")].some((v) => v?.trim());
+  const descriptionLength = Math.max(
+    presentationPlainText(longCopyEn || "").length,
+    presentationPlainText(longCopyFr || "").length,
+  );
+  // Présentation du mood principal complète : titre, accroche, description (FR ou EN) et une photo.
+  const mainPresentationComplete =
+    !!heroImagePreview && (isPresentationFilled(mainPresentation, "fr") || isPresentationFilled(mainPresentation, "en"));
+  const mainPresentationStarted =
+    !!heroImagePreview || PRESENTATION_TEXT_FIELDS.some((f) => presentationPlainText(mainPresentation[f]).length > 0);
+  const commonFilled = [watch("duration") || watch("duration_fr"), watch("city") || watch("city_fr"), includesCount >= 4];
+  const cancellationFilled = cancellationTemplate !== "custom" || !!watch("cancellation_policy") || !!watch("cancellation_policy_fr");
+
+  const sectionStatus = (complete: boolean, started: boolean): SummarySection["status"] =>
+    complete ? "ok" : started ? "warning" : "empty";
 
   const SUMMARY_SECTIONS: SummarySection[] = [
-    { id: "sec-demarrer", label: "Démarrer", status: selectedCategoryIds.length === 0 ? "empty" : "ok" },
+    { id: "sec-ia", label: "0. Démarrer avec l'IA", status: "empty" },
     {
-      id: "sec-essentiel",
-      label: "1. L'essentiel",
-      status: unreviewedAi > 0 ? "ai" : !title ? "empty" : title && subtitleEn ? "ok" : "warning",
+      id: "sec-rangement",
+      label: "1. Rangement",
+      status: sectionStatus(selectedCategoryIds.length > 0 && !!regionIdWatch, selectedCategoryIds.length > 0 || !!regionIdWatch),
     },
-    {
-      id: "sec-recit",
-      label: "2. Le récit",
-      status: (longCopyEn?.length ?? 0) === 0 ? "empty" : (longCopyEn?.length ?? 0) >= 100 ? "ok" : "warning",
-    },
-    { id: "sec-photos", label: "3. Photos", status: totalPhotosCount === 0 ? "empty" : totalPhotosCount >= 5 ? "ok" : "warning" },
-    {
-      id: "sec-prix",
-      label: "4. Prix & dispo",
-      status: supplierPriceAdult === 0 ? "empty" : remainingDatesCount > 0 ? "ok" : "warning",
-    },
+    { id: "sec-presentation", label: "2. Présentation par mood", status: sectionStatus(mainPresentationComplete, mainPresentationStarted) },
+    { id: "sec-commun", label: "3. Ce qui est commun", status: sectionStatus(commonFilled.every(Boolean), commonFilled.some(Boolean)) },
+    { id: "sec-galerie", label: "4. Galerie", status: sectionStatus(totalPhotosCount >= 5, totalPhotosCount > 0) },
+    { id: "sec-apres", label: "5. Après la réservation", status: sectionStatus(meetingPointFilled && dayContactFilled, afterBookingStarted) },
+    { id: "sec-prix", label: "6. Prix, canal & dispos", status: sectionStatus(supplierPriceAdult > 0 && remainingDatesCount > 0, supplierPriceAdult > 0) },
     {
       id: "sec-conditions",
-      label: "5. Conditions",
-      status: cancellationTemplate !== "custom" || getValues("cancellation_policy") ? "ok" : "empty",
+      label: "7. Conditions & publication",
+      status: sectionStatus(cancellationFilled && !!seoTitleEnWatch, cancellationFilled || !!seoTitleEnWatch),
     },
-    { id: "sec-publication", label: "6. Publication", status: seoTitleEnWatch ? "ok" : "empty" },
   ];
 
+  // Checklist « Avant de publier » : indicative, elle ne bloque jamais (seules les validations
+  // existantes, titre et description en anglais, bloquent la publication).
   const checklistItems = [
-    { id: "titre", label: "Titre et accroche", done: !!title && !!subtitleEn },
-    { id: "description", label: "Description", done: (longCopyEn?.length ?? 0) >= 100 },
-    { id: "inclus", label: "4 inclus avec photo", done: includesWithPhotoCount >= 4 },
+    { id: "region", label: "Région renseignée", done: !!regionIdWatch },
+    { id: "mood", label: "Au moins un mood", done: selectedCategoryIds.length > 0 },
+    { id: "presentation", label: "Présentation du mood principal complète", done: mainPresentationComplete },
+    { id: "description", label: "Description (100 caractères min.)", done: descriptionLength >= 100 },
+    { id: "inclus", label: "4 inclus", done: includesCount >= 4 },
     { id: "photos", label: "Au moins 5 photos", done: totalPhotosCount >= 5 },
     { id: "dates", label: "Au moins une date à venir", done: remainingDatesCount > 0 },
     {
@@ -3230,8 +3529,37 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       label: "Versions EN et HE remplies",
       done: getLanguageMissingCount("en") === 0 && getLanguageMissingCount("he") === 0,
     },
-    { id: "ia", label: "Aucun champ IA non relu", done: unreviewedAi === 0 },
+    { id: "contact", label: "Contact jour J renseigné", done: dayContactFilled },
   ];
+
+  // Aperçu : la carte telle qu'elle apparaîtra dans le mood choisi.
+  const previewSellPrice = sellPriceAdult ?? computedAdultPrice;
+  const previewPrice = isFixed && maxPartyWatch > 0 ? Math.ceil(previewSellPrice / maxPartyWatch) : previewSellPrice;
+  const previewPriceLabel = previewPrice > 0 ? `Dès ${previewPrice} ${currencySymbol}` : "";
+  const previewCity =
+    (activeLanguage === "fr" ? watch("city_fr") : activeLanguage === "he" ? watch("city_he") : watch("city")) || watch("city") || "";
+  const existingUpdatedAt = (existingExperience as any)?.updated_at as string | undefined;
+  const savedAtLabel = lastSavedAt
+    ? `Enregistrée à ${lastSavedAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`
+    : existingUpdatedAt
+    ? `Dernière sauvegarde le ${new Date(existingUpdatedAt).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`
+    : null;
+
+  // Bateaux : panneau IA tout en haut, comme avant. Expérience standard : section 0 de la page.
+  const aiPanel = (
+    <AiDraftPanel
+      ref={aiDraftPanelRef}
+      getValues={(name) => getValues(name as keyof StandaloneFormData)}
+      setValue={(name, value, options) => setValue(name as keyof StandaloneFormData, value as never, options)}
+      selectedCategoryIds={selectedCategoryIds}
+      onApplyCategoryIds={applyAiCategoryIds}
+      onApplyPracticalInfo={applyAiPracticalInfo}
+      isPracticalInfoEmpty={isPracticalInfoEmpty}
+      isEditMode={!!experienceId}
+      onAddIncludes={handleAiIncludes}
+      onAddExtras={handleAiExtras}
+    />
+  );
 
   // Aperçu en direct : objet au format attendu par EssentialsBlock, alimenté
   // par les valeurs en cours de saisie (jamais enregistré, affichage seul).
@@ -3283,10 +3611,11 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
         <FormHeaderBar
           onClose={onClose}
           heading={title || (experienceId ? "Modifier l'expérience" : "Nouvelle expérience standalone")}
-          meta={<>Expérience seule · {currentStatus}{lastAutoSave && <> · {getAutoSaveLabel()}</>}</>}
+          meta={<>Expérience seule · {currentStatus}{savedAtLabel ? <> · {savedAtLabel}</> : lastAutoSave && <> · {getAutoSaveLabel()}</>}</>}
           activeLanguage={activeLanguage}
           onLanguageChange={setActiveLanguage}
           getLanguageMissingCount={isBoatsExperience ? undefined : getLanguageMissingCount}
+          verboseMissing={!isBoatsExperience}
           onTranslateAll={handleTranslateAll}
           isTranslating={isTranslating}
           onSaveDraft={handleSaveDraftClick}
@@ -3294,19 +3623,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
           busy={isSaving || heroImageUploading}
         />
 
-        {/* Générer avec l'IA */}
-        <AiDraftPanel
-          ref={aiDraftPanelRef}
-          getValues={(name) => getValues(name as keyof StandaloneFormData)}
-          setValue={(name, value, options) => setValue(name as keyof StandaloneFormData, value as never, options)}
-          selectedCategoryIds={selectedCategoryIds}
-          onApplyCategoryIds={applyAiCategoryIds}
-          onApplyPracticalInfo={applyAiPracticalInfo}
-          isPracticalInfoEmpty={isPracticalInfoEmpty}
-          isEditMode={!!experienceId}
-          onAddIncludes={handleAiIncludes}
-          onAddExtras={handleAiExtras}
-        />
+        {/* Générer avec l'IA (bateaux : en haut ; expérience standard : section 0 de la page) */}
+        {isBoatsExperience && aiPanel}
 
         {/* Onglets — conservés uniquement pour le mode Bateaux, qui n'est pas
             touché dans ce sprint (refonte prévue séparément). */}
@@ -3982,41 +4300,92 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
         {/* Expérience standard : une seule page qui défile (sprint 5B)        */}
         {/* ═══════════════════════════════════════════════════════════════════ */}
         {!isBoatsExperience && (
-          <div className="min-[1100px]:grid min-[1100px]:grid-cols-[170px_1fr_230px] min-[1100px]:gap-4 min-[1100px]:items-start">
-            {/* Sommaire (sprint 5B, étape 5) */}
-            <FormSummaryNav sections={SUMMARY_SECTIONS} checklistItems={checklistItems} />
+          <div className="min-[1280px]:grid min-[1280px]:grid-cols-[190px_1fr_250px] min-[1280px]:gap-4 min-[1280px]:items-start">
+            {/* Sommaire des 8 sections + « Prête à publier » (à partir de 1280 px) */}
+            <FormSummaryNav sections={SUMMARY_SECTIONS} checklistItems={checklistItems} mono wide />
 
             <div className="space-y-2.5 min-w-0">
-              <FormSection id="sec-demarrer" title="Démarrer" description="Type et catégories">
+              {/* Checklist « Avant de publier » : reste en haut quand le sommaire et l'aperçu sont masqués */}
+              <PublishChecklist items={checklistItems} variant="top" mono wide />
+
+              {/* 0. Démarrer avec l'IA */}
+              <div id="sec-ia">{aiPanel}</div>
+
+              <FormSection id="sec-rangement" title="1. Rangement" description="Moods, région et badges">
                 <div>
-                  <Label className="mb-3 block">
-                    Catégories <span className="text-destructive">*</span>
+                  <Label className="mb-2 block">
+                    Moods <span className="text-destructive">*</span>
                   </Label>
                   <div className="flex flex-wrap gap-2">
-                    {categories?.map((cat) => (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => toggleCategory(cat.id)}
-                        className={cn(
-                          "px-2 py-0.5 rounded-full text-[10px] border transition-colors",
-                          selectedCategoryIds.includes(cat.id)
-                            ? "bg-[#1a1814] text-white border-[#1a1814]"
-                            : "bg-white text-[#1a1814] border-[#e9e6e1] hover:border-[#1a1814]/40"
-                        )}
-                      >
-                        {cat.name}
-                      </button>
-                    ))}
+                    {(categories as MoodOption[] | undefined)?.map((cat) => {
+                      const selected = selectedCategoryIds.includes(cat.id);
+                      const isDraft = cat.status === "draft";
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => toggleCategory(cat.id)}
+                          aria-pressed={selected}
+                          title={isDraft ? "Mood en brouillon : pas encore visible sur le site" : undefined}
+                          className={cn(
+                            "px-2 py-0.5 rounded-full text-[10px] border transition-colors",
+                            selected
+                              ? "bg-[#1a1814] text-white border-[#1a1814]"
+                              : "bg-white text-[#1a1814] border-[#e9e6e1] hover:border-[#1a1814]/40",
+                            isDraft && (selected ? "opacity-60" : "text-[#b3aea6] border-dashed")
+                          )}
+                        >
+                          {cat.id === primaryMoodId && "★ "}
+                          {cat.name}
+                          {isDraft && " · brouillon"}
+                        </button>
+                      );
+                    })}
                   </div>
+                  <p className="text-[10px] text-[#6f6a63] mt-1.5">
+                    Le premier mood coché est le mood principal (★). Pour en changer, utilise « En faire le mood principal » dans la section suivante.
+                  </p>
                   {errors.category_id && (
                     <p className="text-destructive text-xs mt-2">{errors.category_id.message}</p>
                   )}
                 </div>
+
+                {regionField}
+
+                {tagsSelector}
               </FormSection>
 
-              <FormSection id="sec-essentiel" title="1. L'essentiel" description="Ce qui s'affiche en haut de la fiche">
-                {titleAndSubtitleFields}
+              <FormSection
+                id="sec-presentation"
+                title="2. Présentation par mood"
+                description="Photo de couverture, titre, accroche et description : une version par mood si tu veux"
+              >
+                {/* Tant qu'aucun mood n'est coché, la présentation principale reste saisissable. */}
+                <MoodPresentationSection
+                  moods={selectedMoods.length > 0 ? selectedMoods : [{ id: "", name: "Présentation principale" }]}
+                  primaryId={selectedMoods.length > 0 ? primaryMoodId : ""}
+                  activeMoodId={activeMoodId}
+                  onActiveMoodChange={setActiveMoodId}
+                  lang={activeLanguage}
+                  main={mainPresentation}
+                  presentations={moodPresentations}
+                  coverChoices={coverChoices}
+                  onMainFieldChange={setMainPresentationField}
+                  onMainCoverChange={setHeroImagePreview}
+                  onPresentationChange={updateMoodPresentation}
+                  onCustomize={customizeMood}
+                  onResetToMain={resetMoodToMain}
+                  onMakePrimary={promoteMoodToPrimary}
+                  errors={{ title: errors.title?.message, long_copy: errors.long_copy?.message }}
+                  disabled={isSaving}
+                />
+              </FormSection>
+
+              <FormSection id="sec-commun" title="3. Ce qui est commun" description="L'essentiel, ce qui est inclus et les extras : identiques pour tous les moods">
+                <div>
+                  <Label className="text-sm font-medium mb-3 block">Durée de l'expérience</Label>
+                  {durationFields}
+                </div>
 
                 <Separator />
 
@@ -4033,7 +4402,12 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
 
                 <Separator />
 
-                {badgesContent}
+                <div>
+                  <Label className="flex items-center gap-2 mb-3 text-sm font-medium">
+                    <MapPin className="h-4 w-4" /> Ville et adresse
+                  </Label>
+                  {locationFields}
+                </div>
 
                 <Separator />
 
@@ -4041,19 +4415,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
 
                 <Separator />
 
-                <div>
-                  <Label className="flex items-center gap-2 mb-3 text-sm font-medium">
-                    <MapPin className="h-4 w-4" /> Localisation
-                  </Label>
-                  {locationFields}
-                </div>
-
-                <Separator />
-
-                <div>
-                  <Label className="text-sm font-medium mb-3 block">Durée de l'expérience</Label>
-                  {durationFields}
-                </div>
+                {keyInfoContent}
 
                 <Separator />
 
@@ -4061,10 +4423,10 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                   <Label className="text-sm font-medium mb-3 block">Accessibilité</Label>
                   {accessibilityFields}
                 </div>
-              </FormSection>
 
-              <FormSection id="sec-recit" title="2. Le récit" description="Description, inclus, extras">
-                {descriptionFields}
+                <p className="text-[10px] text-[#6f6a63]">
+                  Les libellés par date se règlent avec les dates, dans la section « Prix, canal & dispos ».
+                </p>
 
                 <Separator />
 
@@ -4089,9 +4451,15 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                     onLocalExtrasChange={setLocalStandaloneExtras}
                   />
                 </div>
+
+                {/* Aperçu du bloc L'essentiel quand la colonne de droite est masquée */}
+                <div className="min-[1280px]:hidden rounded-lg border border-[#e9e6e1] p-3">
+                  <p className="text-[9px] uppercase tracking-[0.04em] text-[#6f6a63] mb-2">Aperçu du bloc L'essentiel</p>
+                  <EssentialsBlock experience={previewExperience} experienceTitle={title || ""} lang={activeLanguage} compact />
+                </div>
               </FormSection>
 
-              <FormSection id="sec-photos" title="3. Photos" description={`${totalPhotosCount} photo${totalPhotosCount > 1 ? "s" : ""}${totalPhotosCount < 5 ? " · il en faut au moins 5" : ""}`}>
+              <FormSection id="sec-galerie" title="4. Galerie" description={`${totalPhotosCount} photo${totalPhotosCount > 1 ? "s" : ""}${totalPhotosCount < 5 ? " · il en faut au moins 5" : ""}`}>
                 {totalPhotosCount < 5 && (
                   <div className="flex items-center gap-2 p-3 rounded-lg bg-[#fff4d6] text-[#8a6100] text-sm">
                     <AlertTriangle className="h-4 w-4 shrink-0" />
@@ -4101,7 +4469,33 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                 {photosFields}
               </FormSection>
 
-              <FormSection id="sec-prix" title="4. Prix & dispo" description="Prix, marge et disponibilités">
+              <FormSection id="sec-apres" title="5. Après la réservation" description="Infos pratiques envoyées au client une fois qu'il a réservé">
+                <AfterBookingSection
+                  registerField={register}
+                  langHidden={langHidden}
+                  recap={{
+                    address:
+                      (activeLanguage === "fr" ? watch("address_fr") : activeLanguage === "he" ? watch("address_he") : watch("address")) ||
+                      watch("address") ||
+                      "",
+                    accessNote:
+                      (activeLanguage === "fr" ? watch("access_note_fr") : activeLanguage === "he" ? watch("access_note_he") : watch("access_note")) ||
+                      watch("access_note") ||
+                      "",
+                    hideExactAddress: !!watch("hide_exact_address"),
+                  }}
+                  contactLanguage={watch("day_contact_language") ?? null}
+                  onContactLanguageChange={(code) => setValue("day_contact_language", code, { shouldDirty: true })}
+                  disabled={isSaving}
+                />
+              </FormSection>
+
+              <FormSection id="sec-prix" title="6. Prix, canal & dispos" description="Canal de réservation, prix, marge et disponibilités">
+                <BookingChannelPills
+                  value={watch("booking_channel") ?? "provider_request"}
+                  onChange={(id) => setValue("booking_channel", id, { shouldDirty: true })}
+                  disabled={isSaving}
+                />
                 {bookingModeCard}
                 <Card>
                   <CardHeader>
@@ -4109,6 +4503,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                     <CardDescription>Tarif fournisseur, markup STAYMAKOM, prix client affiché</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
+                    {onlinePriceNotice}
                     {priceCardContent}
                   </CardContent>
                 </Card>
@@ -4127,15 +4522,17 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                 </Card>
               </FormSection>
 
-              <FormSection id="sec-conditions" title="5. Conditions" description="Politique d'annulation de l'expérience (3 langues)">
-                {cancellationFields}
-              </FormSection>
-
-              <FormSection id="sec-publication"
-                title="6. Publication"
-                description="Slug, mise en avant, SEO"
+              <FormSection
+                id="sec-conditions"
+                title="7. Conditions & publication"
+                description="Annulation, slug, mise en avant, SEO"
                 defaultOpen={false}
               >
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium block">Politique d'annulation</Label>
+                  {cancellationFields}
+                </div>
+                <Separator />
                 {publicationExtras}
                 <Separator />
                 {seoCardContent}
@@ -4155,15 +4552,27 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
               </FormSection>
             </div>
 
-            {/* Aperçu en direct (sprint 5B, étape 5) */}
-            <FormPreviewAside heroImage={heroImagePreview} title={title || ""} subtitle={subtitleEn || ""} checklistItems={checklistItems}>
-              <EssentialsBlock experience={previewExperience} experienceTitle={title || ""} lang={activeLanguage} compact />
-            </FormPreviewAside>
+            {/* Aperçu en direct (à partir de 1280 px) : la carte dans le mood choisi, puis L'essentiel */}
+            <aside className="hidden min-[1280px]:block sticky top-16 self-start space-y-3">
+              <MoodPreviewCard
+                moods={selectedMoods}
+                primaryId={primaryMoodId}
+                activeMoodId={activeMoodId}
+                onActiveMoodChange={setActiveMoodId}
+                lang={activeLanguage}
+                main={mainPresentation}
+                presentations={moodPresentations}
+                experienceId={currentExperienceId}
+                autoBadges={autoBadgesPreview.map((b) => b.label)}
+                city={previewCity}
+                priceLabel={previewPriceLabel}
+              />
+              <div className="rounded-2xl border border-[#e9e6e1] bg-white p-3">
+                <EssentialsBlock experience={previewExperience} experienceTitle={title || ""} lang={activeLanguage} compact />
+              </div>
+            </aside>
           </div>
         )}
-
-        {/* Checklist "Avant de publier" — visible en haut en dessous de 1280px (sprint 5B) */}
-        {!isBoatsExperience && <PublishChecklist items={checklistItems} variant="top" />}
       </form>
 
       {/* Sticky bottom save bar (mobile) */}

@@ -19,6 +19,8 @@ interface FormHeaderBarProps {
   onLanguageChange: (lang: FormLanguage) => void;
   /** Nombre de champs principaux manquants par langue ; omis = pas d'indicateur. */
   getLanguageMissingCount?: (lang: FormLanguage) => number;
+  /** Écrit « N à compléter » en toutes lettres et un « ✓ » neutre (sans vert). Omis = rendu d'origine. */
+  verboseMissing?: boolean;
   onTranslateAll: () => void;
   isTranslating: boolean;
   onSaveDraft: () => void;
@@ -37,6 +39,7 @@ export function FormHeaderBar({
   activeLanguage,
   onLanguageChange,
   getLanguageMissingCount,
+  verboseMissing,
   onTranslateAll,
   isTranslating,
   onSaveDraft,
@@ -74,9 +77,9 @@ export function FormHeaderBar({
                 {lng.label}
                 {getLanguageMissingCount && (
                   missing === 0 ? (
-                    <Check className="h-3 w-3 text-emerald-500" />
+                    <Check className={cn("h-3 w-3", !verboseMissing && "text-emerald-500")} />
                   ) : (
-                    <span className="text-[10px] opacity-80">{missing}</span>
+                    <span className="text-[10px] opacity-80">{verboseMissing ? `${missing} à compléter` : missing}</span>
                   )
                 )}
               </button>

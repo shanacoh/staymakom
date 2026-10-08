@@ -21,6 +21,25 @@ const STATUS_DOT: Record<SectionStatus, string> = {
   empty: "bg-muted-foreground/30",
 };
 
+// Variante sobre (formulaire expérience seule) : noir = complète, contour rouge = à compléter,
+// gris = vide. Pas de vert.
+const STATUS_DOT_MONO: Record<SectionStatus, string> = {
+  ok: "bg-[#1a1814]",
+  warning: "bg-transparent ring-[1.5px] ring-inset ring-action",
+  ai: "bg-transparent ring-[1.5px] ring-inset ring-action",
+  empty: "bg-muted-foreground/30",
+};
+
+/**
+ * Options d'affichage facultatives. Sans elles, le rendu est celui d'origine (formulaire hôtel).
+ * - `mono` : pastilles noir / contour rouge / gris au lieu des couleurs.
+ * - `wide` : colonnes latérales visibles à partir de 1280 px au lieu de 1100 px.
+ */
+interface DisplayOptions {
+  mono?: boolean;
+  wide?: boolean;
+}
+
 export const scrollToSection = (id: string) => {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 };
@@ -30,11 +49,17 @@ export const getReadinessPercent = (items: ChecklistItem[]) =>
 
 // Sommaire à gauche : une ligne par section avec sa pastille d'état, puis
 // l'encadré « Prête à publier ».
-export function FormSummaryNav({ sections, checklistItems }: { sections: SummarySection[]; checklistItems: ChecklistItem[] }) {
+export function FormSummaryNav({
+  sections,
+  checklistItems,
+  mono,
+  wide,
+}: { sections: SummarySection[]; checklistItems: ChecklistItem[] } & DisplayOptions) {
+  const dots = mono ? STATUS_DOT_MONO : STATUS_DOT;
   const readinessPercent = getReadinessPercent(checklistItems);
   const missing = checklistItems.filter((c) => !c.done);
   return (
-    <aside className="hidden min-[1100px]:block sticky top-16 self-start space-y-3">
+    <aside className={cn("hidden sticky top-16 self-start space-y-3", wide ? "min-[1280px]:block" : "min-[1100px]:block")}>
       <nav className="space-y-0.5">
         {sections.map((s) => (
           <button
@@ -44,7 +69,7 @@ export function FormSummaryNav({ sections, checklistItems }: { sections: Summary
             className="w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded-md text-sm hover:bg-muted text-left"
           >
             <span>{s.label}</span>
-            <span className={cn("h-2 w-2 rounded-full shrink-0", STATUS_DOT[s.status])} />
+            <span className={cn("h-2 w-2 rounded-full shrink-0", dots[s.status])} />
           </button>
         ))}
       </nav>
@@ -54,7 +79,7 @@ export function FormSummaryNav({ sections, checklistItems }: { sections: Summary
           <span className="font-semibold">{readinessPercent} %</span>
         </div>
         <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-          <div className="h-full bg-[#1f7a4d]" style={{ width: `${readinessPercent}%` }} />
+          <div className={cn("h-full", mono ? "bg-[#1a1814]" : "bg-[#1f7a4d]")} style={{ width: `${readinessPercent}%` }} />
         </div>
         {missing.length > 0 && (
           <ul className="text-muted-foreground space-y-0.5 pt-1">
@@ -63,11 +88,19 @@ export function FormSummaryNav({ sections, checklistItems }: { sections: Summary
             ))}
           </ul>
         )}
-        <p className="text-muted-foreground pt-1">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#5b3fc4] mr-1" /> IA à relire ·{" "}
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#1f7a4d] mr-1" /> OK ·{" "}
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#e0a400] mr-1" /> à compléter
-        </p>
+        {mono ? (
+          <p className="text-muted-foreground pt-1">
+            <span className={cn("inline-block h-1.5 w-1.5 rounded-full mr-1", STATUS_DOT_MONO.ok)} /> complète ·{" "}
+            <span className={cn("inline-block h-1.5 w-1.5 rounded-full mr-1", STATUS_DOT_MONO.warning)} /> à compléter ·{" "}
+            <span className={cn("inline-block h-1.5 w-1.5 rounded-full mr-1", STATUS_DOT_MONO.empty)} /> vide
+          </p>
+        ) : (
+          <p className="text-muted-foreground pt-1">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#5b3fc4] mr-1" /> IA à relire ·{" "}
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#1f7a4d] mr-1" /> OK ·{" "}
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#e0a400] mr-1" /> à compléter
+          </p>
+        )}
       </div>
     </aside>
   );
@@ -75,14 +108,24 @@ export function FormSummaryNav({ sections, checklistItems }: { sections: Summary
 
 // Checklist « Avant de publier ». "side" : dans la colonne de droite ;
 // "top" : version affichée sous le formulaire quand l'écran est étroit.
-export function PublishChecklist({ items, variant }: { items: ChecklistItem[]; variant: "side" | "top" }) {
+export function PublishChecklist({
+  items,
+  variant,
+  mono,
+  wide,
+}: { items: ChecklistItem[]; variant: "side" | "top" } & DisplayOptions) {
   const side = variant === "side";
   return (
-    <div className={cn("rounded-lg border border-[#e9e6e1] bg-[#faf8f6] p-3", !side && "min-[1100px]:hidden")}>
+    <div
+      className={cn(
+        "rounded-lg border border-[#e9e6e1] bg-[#faf8f6] p-3",
+        !side && (wide ? "min-[1280px]:hidden" : "min-[1100px]:hidden"),
+      )}
+    >
       <p className={cn("font-semibold mb-2", side ? "text-xs" : "text-sm")}>Avant de publier</p>
       <ul className={cn("space-y-1", side ? "text-xs" : "text-sm")}>
         {items.map((c) => (
-          <li key={c.id} className={cn("flex items-center gap-1.5", c.done ? "text-emerald-600" : "text-muted-foreground")}>
+          <li key={c.id} className={cn("flex items-center gap-1.5", c.done ? (mono ? "text-[#1a1814]" : "text-emerald-600") : "text-muted-foreground")}>
             <span>{c.done ? "✓" : "✗"}</span> {c.label}
           </li>
         ))}

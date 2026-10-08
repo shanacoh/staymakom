@@ -43,3 +43,6 @@ scripts/
 # Supabase CLI temp files & scratch
 supabase/.temp/
 supabase/Untitled
+
+# Sauvegardes locales de la base (jamais dans git)
+backups/
