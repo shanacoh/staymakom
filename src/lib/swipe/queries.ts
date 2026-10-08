@@ -201,7 +201,7 @@ export function useHotelsPourLiaison(actif: boolean) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("hotels2")
-        .select("id, name, name_fr, name_he, city, city_fr, city_he, region, hero_image, address, status")
+        .select("id, name, name_fr, name_he, city, city_fr, city_he, region, region_id, hero_image, address, status")
         .order("name");
       if (error) throw error;
       return data;
@@ -217,7 +217,7 @@ export function useExperiencesPourLiaison(actif: boolean) {
       const { data, error } = await supabase
         .from("experiences2")
         .select(
-          "id, title, title_fr, title_he, hero_image, address, hotel_id, status, hotels2(name, name_fr, name_he, city, city_fr, city_he, region)"
+          "id, title, title_fr, title_he, hero_image, address, hotel_id, status, hotels2(name, name_fr, name_he, city, city_fr, city_he, region, region_id)"
         )
         .order("title");
       if (error) throw error;
@@ -233,7 +233,7 @@ export function useStandaloneExperiencesPourLiaison(actif: boolean) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_experiences")
-        .select("id, title, title_fr, title_he, hero_image, address, city, city_fr, city_he, region, status")
+        .select("id, title, title_fr, title_he, hero_image, address, city, city_fr, city_he, region, region_id, status")
         .order("title");
       if (error) throw error;
       return data;

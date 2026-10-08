@@ -6,6 +6,36 @@
 
 ---
 
+## [2026-10-08] — Chantier Offre, étape 1 : une vraie liste de régions
+
+> Statut : migration `20261008000000_regions_reference_list.sql` appliquée en base le 08/10/2026 (à la main, dans l'éditeur SQL de Supabase) et vérifiée. Code prêt, pas encore commité ni publié.
+
+### Ce qui a changé côté code
+- `src/lib/regionList/` (créé) : le « dictionnaire des régions ». `types.ts` (formes), `labels.ts` (nom d'une région dans la langue du site, avec retour à l'ancien texte si la fiche n'est pas reliée), `queries.ts` (chargement de la liste, gardée en mémoire une heure), `filter.ts` (filtre par zone ou par région, compteurs). `regionList.test.ts` : ses tests.
+- `src/components/forms/shared/RegionSelect.tsx` (créé) : le sélecteur de région du back-office, groupé par zone, avec le rappel « Ancienne valeur : … » tant qu'aucune région n'est reliée.
+- `src/components/forms/StandaloneExperienceForm.tsx` (expériences seules et bateaux), `src/pages/admin/HotelEditor2.tsx` (hôtels), `src/components/admin/swipe/PropositionForm.tsx` (bibliothèque du swipe) : les champs texte de région sont remplacés par ce sélecteur. Les anciens textes ne sont plus modifiables à la main mais restent enregistrés tels quels.
+- `src/components/RegionFilter.tsx`, `src/pages/IndexV3.tsx` : le filtre « Anywhere in Israel » propose les 4 zones puis leurs régions, uniquement celles qui ont au moins une expérience publiée. Une fiche pas encore reliée reste trouvable par zone (estimée d'après sa position, comme avant).
+- `src/lib/regions.ts` : ne garde que les 6 grandes régions du formulaire sur mesure et le calcul de position ; le filtrage est parti dans `regionList/filter.ts`.
+- `src/pages/StandaloneExperience.tsx`, `src/pages/Experience2.tsx`, `src/components/experience-test/YourStaySection.tsx`, `src/pages/Hotel.tsx`, `src/pages/LaunchExperiences.tsx` : le nom de région affiché vient de la liste, dans la langue du site, sinon de l'ancien texte.
+- `src/pages/admin/Hotels2.tsx`, `src/lib/catalogue/queries.ts` et `types.ts` : la liste des hôtels, le Catalogue et la Carte du back-office affichent et filtrent sur le nom de la liste (en français).
+- Suivi d'audience (`toProductLike` des pages fiche) : la propriété `region` envoie le nom anglais de la liste. Le filtre de la home envoie désormais `zone:north` ou `region:tel-aviv` au lieu des anciens codes (`tlv`, `gal`…).
+- `src/integrations/supabase/types.ts` : déclaration des nouvelles tables et colonnes (ajout manuel, à régénérer depuis la base à l'occasion).
+- Non modifié volontairement : `src/components/boats/BoatDetailModal.tsx` (il se sert de l'ancien texte de région comme libellé « Sortie en mer » / « Sport nautique », ce n'est pas une région), les fonctions IA (`generate-experience-draft`, `catalogue-lookup`, `recommend-experiences` : elles continuent d'écrire ou de lire l'ancien texte), le formulaire sur mesure et ses 6 grandes régions, les anciennes tables `hotels` / `experiences`, les fiches prospects du Catalogue (`catalogue_items.region` reste un texte libre).
+
+### Ce qui a changé côté base de données
+- Migration `20261008000000_regions_reference_list.sql` (appliquée) :
+  - Table `region_zones` : les 4 zones (Nord, Côte & Centre, Jérusalem, Sud) avec leur nom FR / EN / HE.
+  - Table `regions` : les 21 régions (identifiant stable `slug`, nom FR / EN / HE, zone, ordre d'affichage, actif ou non). Lecture ouverte à tous, modification réservée aux admins.
+  - Colonne `region_id` (facultative) sur `standalone_experiences`, `hotels2` et `propositions`. Une expérience hôtel prend la région de son hôtel. Aucune colonne existante n'est touchée : `region`, `region_fr`, `region_he` gardent leurs valeurs.
+  - Rattachement des fiches existantes, cas sûrs uniquement (d'après la ville, puis l'ancien texte si la ville est vide).
+  - Vue `catalogue_overview` : nouvelle colonne `display_region_id`, et remise en place de `security_invoker` (voir ci-dessous).
+- Correctif de confidentialité inclus : depuis la migration `20261001020200`, la vue `catalogue_overview` avait perdu son option `security_invoker` et se lisait sans connexion (147 lieux, prix d'achat et commissions compris). Règle à retenir : cette option doit être répétée à chaque `create or replace view`.
+
+### Pourquoi ce changement
+- La région était un texte libre et incohérent (29 écritures pour 83 expériences, « Tel Aviv » écrit de 6 façons, « Sea outing » saisi comme région). Une liste fermée de 21 régions en 4 zones sert de base aux prochaines étapes du chantier Offre (formulaire réorganisé, plan de l'offre). Tout est réversible : vider `region_id` ramène l'affichage d'avant.
+
+---
+
 ## [2026-10-07] — Nouveau formulaire « Tailor-made request » en 3 étapes, branché sur les réservations
 
 > Statut : en ligne depuis le 07/10/2026. Les deux migrations sont appliquées et la fonction serveur est déployée, dans l'ordre décrit sous « Mise en ligne ».

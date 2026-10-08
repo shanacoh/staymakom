@@ -69,6 +69,7 @@ import { FormSummaryNav, FormPreviewAside, PublishChecklist, type SummarySection
 import { InternalOnlyBox } from "@/components/forms/shared/InternalOnlyBox";
 import { CancellationPolicyFields } from "@/components/forms/shared/CancellationPolicyFields";
 import { SeoFields } from "@/components/forms/shared/SeoFields";
+import { RegionSelect } from "@/components/forms/shared/RegionSelect";
 import { PublicationFields } from "@/components/forms/shared/PublicationFields";
 import { useGenerateSeo } from "@/components/forms/shared/useGenerateSeo";
 
@@ -160,6 +161,7 @@ const standaloneExperienceSchema = z.object({
   region: z.string().optional(),
   region_he: z.string().optional(),
   region_fr: z.string().optional(),
+  region_id: z.string().nullable().optional(),
   latitude: optNum(-90),
   longitude: optNum(-180),
   // Durée
@@ -609,6 +611,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       region: "",
       region_he: "",
       region_fr: "",
+      region_id: null,
       latitude: undefined,
       longitude: undefined,
       duration: "",
@@ -800,6 +803,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     setValue("region", exp.region || exp.region_type || "");
     setValue("region_he", exp.region_he || "");
     setValue("region_fr", exp.region_fr || "");
+    setValue("region_id", exp.region_id ?? null);
     setValue("latitude", exp.latitude ?? undefined);
     setValue("longitude", exp.longitude ?? undefined);
     setValue("duration", exp.duration || "");
@@ -1329,6 +1333,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       region: data.region || null,
       region_he: data.region_he || null,
       region_fr: data.region_fr || null,
+      region_id: data.region_id || null,
       latitude: data.latitude ?? null,
       longitude: data.longitude ?? null,
       duration: data.duration || null,
@@ -2072,25 +2077,16 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
           <Input id="city_he" {...register("city_he")} placeholder="תל אביב" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
         </div>
       </div>
-      <div className={cn(isBoatsExperience ? "grid grid-cols-3 gap-4" : "space-y-4")}>
-        <div className={cn("space-y-2", langHidden("en") && "hidden")}>
-          <Label htmlFor="region" className="flex items-center gap-1.5">
-            <span>🇬🇧</span> Région (EN)
-          </Label>
-          <Input id="region" {...register("region")} placeholder="Ex: Tel Aviv, Galilee, Dead Sea..." disabled={isSaving} />
-        </div>
-        <div className={cn("space-y-2", langHidden("fr") && "hidden")}>
-          <Label htmlFor="region_fr" className="flex items-center gap-1.5">
-            <span>🇫🇷</span> Région (FR)
-          </Label>
-          <Input id="region_fr" {...register("region_fr")} placeholder="Ex: Galilée, Mer Morte..." disabled={isSaving} />
-        </div>
-        <div className={cn("space-y-2", langHidden("he") && "hidden")}>
-          <Label htmlFor="region_he" className="flex items-center gap-1.5">
-            <span>🇮🇱</span> אזור (HE)
-          </Label>
-          <Input id="region_he" {...register("region_he")} placeholder="אזור" dir="rtl" className="bg-hebrew-input" disabled={isSaving} />
-        </div>
+      {/* Une seule région, choisie dans la liste de référence : son nom s'affiche ensuite dans les 3 langues. */}
+      <div className="space-y-2">
+        <Label htmlFor="region_id">Région</Label>
+        <RegionSelect
+          id="region_id"
+          value={watch("region_id") ?? null}
+          onChange={(regionId) => setValue("region_id", regionId, { shouldDirty: true })}
+          legacyText={watch("region")}
+          disabled={isSaving}
+        />
       </div>
       <div className={cn(isBoatsExperience ? "grid grid-cols-3 gap-4" : "space-y-4")}>
         <div className={cn("space-y-2", langHidden("en") && "hidden")}>

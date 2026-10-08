@@ -70,6 +70,8 @@ export interface CatalogueEntry {
   display_name: string;
   display_city: string | null;
   display_region: string | null;
+  /** La région reliée de la fiche en ligne (liste de référence), si elle en a une. */
+  display_region_id?: string | null;
   display_address: string | null;
   display_image: string | null;
   display_latitude: number | null;

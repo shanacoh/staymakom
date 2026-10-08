@@ -13,6 +13,7 @@ import { SEOHead } from "@/components/SEOHead";
 import { resizedImageUrl } from "@/lib/imageUrl";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumbJsonLd";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
+import { trackedRegionName, useRegionLabel } from "@/lib/regionList/queries";
 import { t } from "@/lib/translations";
 import LocationMap from "@/components/experience-test/LocationMap";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,7 +31,7 @@ function toProductLike(hotel: any): ProductLike {
     slug: hotel?.slug ?? null,
     name: hotel?.name ?? null,
     city: hotel?.city ?? null,
-    region: hotel?.region ?? null,
+    region: trackedRegionName(hotel),
     base_price: null,
     base_price_type: null,
     currency: null,
@@ -41,6 +42,7 @@ function toProductLike(hotel: any): ProductLike {
 const Hotel = () => {
   const { slug } = useParams<{slug: string;}>();
   const { lang } = useLanguage();
+  const regionLabelOf = useRegionLabel(lang);
 
   const { data: hotel, isLoading: hotelLoading } = useQuery({
     queryKey: ["hotel2", slug],
@@ -160,7 +162,7 @@ const Hotel = () => {
   const h = hotel as Record<string, unknown>;
   const hotelName = getLocalizedField(hotel, 'name', lang) as string || hotel.name;
   const city = getLocalizedField(hotel, 'city', lang) as string || hotel.city;
-  const region = getLocalizedField(hotel, 'region', lang) as string || hotel.region;
+  const region = regionLabelOf(hotel);
   const story = getLocalizedField(hotel, 'story', lang) as string || hotel.story;
   const highlights = getLocalizedField(hotel, 'highlights', lang) as string[] || hotel.highlights;
   const amenities = getLocalizedField(hotel, 'amenities', lang) as string[] || hotel.amenities;

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MapPin, Star, Wifi, Car, Coffee, UtensilsCrossed, Waves, TreePine, Clock, DoorOpen, Hotel as HotelIcon } from "lucide-react";
 import { getLocalizedField, type Language } from "@/hooks/useLanguage";
+import { useRegionLabel } from "@/lib/regionList/queries";
 import LocationPopover from "@/components/experience/LocationPopover";
 
 interface Hotel {
@@ -17,6 +18,8 @@ interface Hotel {
   city_he?: string;
   region?: string;
   region_he?: string;
+  region_fr?: string;
+  region_id?: string;
   amenities?: string[];
   highlights?: string[];
   highlights_he?: string[];
@@ -44,11 +47,12 @@ const AMENITY_ICONS: Record<string, React.ReactNode> = {
 };
 
 const YourStaySection = ({ hotel, lang = "en" }: YourStaySectionProps) => {
+  const regionLabelOf = useRegionLabel(lang);
   if (!hotel) return null;
 
   const name = getLocalizedField(hotel, "name", lang) as string || hotel.name;
   const city = getLocalizedField(hotel, "city", lang) as string || hotel.city;
-  const region = getLocalizedField(hotel, "region", lang) as string || hotel.region;
+  const region = regionLabelOf(hotel);
   const story = getLocalizedField(hotel, "story", lang) as string || hotel.story;
   const highlights = (lang === 'he' ? hotel.highlights_he : hotel.highlights) || hotel.highlights || [];
 

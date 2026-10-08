@@ -1,11 +1,11 @@
 import { isInIsrael, positionOf } from "@/lib/catalogue/geo";
 
 /**
- * Les 6 grandes régions proposées aux clients dans le filtre de la home.
+ * Les 6 grandes régions proposées aux clients dans le formulaire de voyage sur mesure.
  *
- * Le champ "région" des fiches est saisi librement ("Tel Aviv", "Tel Aviv area", "Tsafon"...) : on ne peut
- * pas filtrer dessus tel quel. Chaque lieu est donc rangé ici dans une grande région, d'abord d'après sa
- * position sur la carte (fiable), sinon d'après les mots de sa région et de sa ville.
+ * Elles servent aussi de filet de sécurité au filtre de la home (voir regionList/filter.ts) : une fiche
+ * qui n'a pas encore de région reliée à la liste de référence est située ici, d'abord d'après sa
+ * position sur la carte (fiable), sinon d'après les mots de son ancien texte de région et de sa ville.
  */
 export type MacroRegion = "tlv" | "jlm" | "gal" | "car" | "neg" | "eil";
 
@@ -85,51 +85,4 @@ export function distanceKm(a: Position, b: Position): number {
   const dLng = rad(b.lng - a.lng);
   const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
   return 6371 * 2 * Math.asin(Math.sqrt(h));
-}
-
-/** Le choix du client : toute Israël (null), une grande région, ou « Autour de moi ». */
-export type RegionChoice = MacroRegion | "near" | null;
-
-export interface PlacedItem<T> {
-  item: T;
-  /** Renseignée uniquement avec « Autour de moi ». */
-  distanceKm?: number;
-}
-
-/**
- * Applique le choix de région à une liste. Avec « Autour de moi », ne garde que les lieux qui ont une
- * position, à moins de NEAR_ME_RADIUS_KM, du plus proche au plus lointain.
- */
-export function filterByRegion<T>(
-  items: readonly T[],
-  getPlace: (item: T) => Place | null | undefined,
-  choice: RegionChoice,
-  userPosition: Position | null
-): PlacedItem<T>[] {
-  if (choice === null) return items.map((item) => ({ item }));
-  if (choice !== "near") {
-    return items.filter((item) => macroRegionOf(getPlace(item)) === choice).map((item) => ({ item }));
-  }
-  if (!userPosition) return [];
-  return items
-    .flatMap((item) => {
-      const position = placePosition(getPlace(item));
-      if (!position) return [];
-      const km = distanceKm(userPosition, position);
-      return km <= NEAR_ME_RADIUS_KM ? [{ item, distanceKm: km }] : [];
-    })
-    .sort((a, b) => a.distanceKm - b.distanceKm);
-}
-
-/** Nombre de lieux par grande région (les régions vides ne sont pas dans le résultat). */
-export function countByRegion<T>(
-  items: readonly T[],
-  getPlace: (item: T) => Place | null | undefined
-): Partial<Record<MacroRegion, number>> {
-  const counts: Partial<Record<MacroRegion, number>> = {};
-  for (const item of items) {
-    const region = macroRegionOf(getPlace(item));
-    if (region) counts[region] = (counts[region] ?? 0) + 1;
-  }
-  return counts;
 }

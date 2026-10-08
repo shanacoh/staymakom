@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useRegionLabel } from "@/lib/regionList/queries";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,8 @@ const AdminHotels2 = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [regionFilter, setRegionFilter] = useState<string>("all");
+  // Le back-office est en français : on affiche le nom français de la région.
+  const regionLabelOf = useRegionLabel("fr");
   const queryClient = useQueryClient();
   
   const isFormView = window.location.pathname.includes("/new") || window.location.pathname.includes("/edit");
@@ -85,22 +88,23 @@ const AdminHotels2 = () => {
     
     return hotels.filter((hotel) => {
       const matchesStatus = statusFilter === "all" || hotel.status === statusFilter;
-      const matchesRegion = regionFilter === "all" || hotel.region === regionFilter;
+      const matchesRegion = regionFilter === "all" || regionLabelOf(hotel) === regionFilter;
 
       // Special filter for missing HyperGuest ID
       if (statusFilter === "missing_hg") {
-        return !hotel.hyperguest_property_id && (regionFilter === "all" || hotel.region === regionFilter);
+        return !hotel.hyperguest_property_id && matchesRegion;
       }
 
       return matchesStatus && matchesRegion;
     });
-  }, [hotels, statusFilter, regionFilter]);
+  }, [hotels, statusFilter, regionFilter, regionLabelOf]);
 
   const regions = useMemo(() => {
     if (!hotels) return [];
-    const uniqueRegions = [...new Set(hotels.map((h) => h.region).filter(Boolean))];
-    return uniqueRegions;
-  }, [hotels]);
+    // Nom de la liste de référence si l'hôtel est relié, ancien texte sinon.
+    const uniqueRegions = [...new Set(hotels.map((h) => regionLabelOf(h)).filter((r): r is string => !!r))];
+    return uniqueRegions.sort((a, b) => a.localeCompare(b, "fr"));
+  }, [hotels, regionLabelOf]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -238,7 +242,7 @@ const AdminHotels2 = () => {
                           <div>
                             <p className="font-medium">{hotel.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {hotel.region && hotel.city ? `${hotel.city}, ${hotel.region}` : hotel.region || hotel.city || "-"}
+                              {[hotel.city, regionLabelOf(hotel)].filter(Boolean).join(", ") || "-"}
                             </p>
                           </div>
                         </div>

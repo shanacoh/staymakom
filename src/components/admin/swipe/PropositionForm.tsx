@@ -33,6 +33,7 @@ import {
   useUpdateProposition,
 } from "@/lib/swipe/queries";
 import type { PropositionAvecRelations } from "@/lib/swipe/types";
+import { RegionSelect } from "@/components/forms/shared/RegionSelect";
 
 const schema = z.object({
   titre: z.string().min(1, "Le titre est obligatoire"),
@@ -44,6 +45,7 @@ const schema = z.object({
   photo_url: z.string().optional(),
   categorie_id: z.string().optional(),
   region: z.string().optional(),
+  region_id: z.string().nullable().optional(),
   nom_hotel: z.string().optional(),
   nom_hotel_en: z.string().optional(),
   nom_hotel_he: z.string().optional(),
@@ -103,6 +105,7 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
       photo_url: "",
       categorie_id: "",
       region: "",
+      region_id: null,
       nom_hotel: "",
       nom_hotel_en: "",
       nom_hotel_he: "",
@@ -144,6 +147,7 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
         photo_url: proposition.photo_url ?? "",
         categorie_id: proposition.categorie_id ?? "",
         region: proposition.region ?? "",
+        region_id: proposition.region_id ?? null,
         nom_hotel: proposition.nom_hotel ?? "",
         nom_hotel_en: proposition.nom_hotel_en ?? "",
         nom_hotel_he: proposition.nom_hotel_he ?? "",
@@ -174,6 +178,7 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
         photo_url: "",
         categorie_id: "",
         region: "",
+      region_id: null,
         nom_hotel: "",
         nom_hotel_en: "",
         nom_hotel_he: "",
@@ -210,6 +215,7 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
     form.setValue("ville_en", hotel.city ?? "");
     form.setValue("ville_he", hotel.city_he ?? "");
     form.setValue("region", hotel.region ?? "");
+    form.setValue("region_id", hotel.region_id ?? null);
     form.setValue("adresse", hotel.address ?? "");
   };
 
@@ -231,6 +237,7 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
     form.setValue("ville_en", experience.hotels2?.city ?? "");
     form.setValue("ville_he", experience.hotels2?.city_he ?? "");
     form.setValue("region", experience.hotels2?.region ?? "");
+    form.setValue("region_id", experience.hotels2?.region_id ?? null);
   };
 
   const selectionnerStandalone = (id: string) => {
@@ -251,6 +258,7 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
     form.setValue("ville_en", experience.city ?? "");
     form.setValue("ville_he", experience.city_he ?? "");
     form.setValue("region", experience.region ?? "");
+    form.setValue("region_id", experience.region_id ?? null);
   };
 
   const retirerLiaison = () => {
@@ -296,6 +304,7 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
       experience_id: source === "experience" ? experienceId : null,
       standalone_experience_id: source === "standalone" ? standaloneExperienceId : null,
       region: values.region || null,
+      region_id: values.region_id || null,
       nom_hotel: values.nom_hotel || null,
       nom_hotel_en: values.nom_hotel_en || null,
       nom_hotel_he: values.nom_hotel_he || null,
@@ -467,7 +476,11 @@ export const PropositionForm = ({ open, onOpenChange, proposition, onSaved }: Pr
 
             <div className="space-y-2">
               <Label>Région</Label>
-              <Input {...form.register("region")} />
+              <RegionSelect
+                value={form.watch("region_id") ?? null}
+                onChange={(regionId) => form.setValue("region_id", regionId, { shouldDirty: true })}
+                legacyText={form.watch("region")}
+              />
             </div>
 
             <div className="col-span-2 grid grid-cols-3 gap-4">

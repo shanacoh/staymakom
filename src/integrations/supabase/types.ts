@@ -3418,6 +3418,7 @@ export type Database = {
           region: string | null
           region_fr: string | null
           region_he: string | null
+          region_id: string | null
           room_capacities: Json | null
           seo_title_en: string | null
           seo_title_fr: string | null
@@ -3500,6 +3501,7 @@ export type Database = {
           region?: string | null
           region_fr?: string | null
           region_he?: string | null
+          region_id?: string | null
           room_capacities?: Json | null
           seo_title_en?: string | null
           seo_title_fr?: string | null
@@ -3582,6 +3584,7 @@ export type Database = {
           region?: string | null
           region_fr?: string | null
           region_he?: string | null
+          region_id?: string | null
           room_capacities?: Json | null
           seo_title_en?: string | null
           seo_title_fr?: string | null
@@ -4116,6 +4119,7 @@ export type Database = {
           prix_achat: number | null
           prix_client: number | null
           region: string | null
+          region_id: string | null
           standalone_experience_id: string | null
           statut: string
           tags: string[] | null
@@ -4147,6 +4151,7 @@ export type Database = {
           prix_achat?: number | null
           prix_client?: number | null
           region?: string | null
+          region_id?: string | null
           standalone_experience_id?: string | null
           statut?: string
           tags?: string[] | null
@@ -4178,6 +4183,7 @@ export type Database = {
           prix_achat?: number | null
           prix_client?: number | null
           region?: string | null
+          region_id?: string | null
           standalone_experience_id?: string | null
           statut?: string
           tags?: string[] | null
@@ -4264,6 +4270,77 @@ export type Database = {
           whatsapp?: string | null
         }
         Relationships: []
+      }
+      region_zones: {
+        Row: {
+          display_order: number
+          name: string
+          name_fr: string
+          name_he: string
+          slug: string
+        }
+        Insert: {
+          display_order?: number
+          name: string
+          name_fr: string
+          name_he: string
+          slug: string
+        }
+        Update: {
+          display_order?: number
+          name?: string
+          name_fr?: string
+          name_he?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      regions: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          name: string
+          name_fr: string
+          name_he: string
+          slug: string
+          updated_at: string
+          zone_slug: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          name_fr: string
+          name_he: string
+          slug: string
+          updated_at?: string
+          zone_slug: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          name_fr?: string
+          name_he?: string
+          slug?: string
+          updated_at?: string
+          zone_slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regions_zone_slug_fkey"
+            columns: ["zone_slug"]
+            isOneToOne: false
+            referencedRelation: "region_zones"
+            referencedColumns: ["slug"]
+          },
+        ]
       }
       review_requests: {
         Row: {
@@ -5054,6 +5131,7 @@ export type Database = {
           region: string | null
           region_fr: string | null
           region_he: string | null
+          region_id: string | null
           region_type: string | null
           seo_title_en: string | null
           seo_title_fr: string | null
@@ -5154,6 +5232,7 @@ export type Database = {
           region?: string | null
           region_fr?: string | null
           region_he?: string | null
+          region_id?: string | null
           region_type?: string | null
           seo_title_en?: string | null
           seo_title_fr?: string | null
@@ -5254,6 +5333,7 @@ export type Database = {
           region?: string | null
           region_fr?: string | null
           region_he?: string | null
+          region_id?: string | null
           region_type?: string | null
           seo_title_en?: string | null
           seo_title_fr?: string | null
@@ -5699,6 +5779,7 @@ export type Database = {
           display_maps_link: string | null
           display_name: string | null
           display_region: string | null
+          display_region_id: string | null
           experience_id: string | null
           first_thumbnail: string | null
           google_maps_link: string | null

@@ -4,7 +4,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Drawer, DrawerContent, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { MACRO_REGIONS, NEAR_ME_RADIUS_KM, type Lang, type MacroRegion, type RegionChoice } from "@/lib/regions";
+import { NEAR_ME_RADIUS_KM, type Lang } from "@/lib/regions";
+import { regionChoice, zoneChoice, type RegionChoice, type RegionCounts } from "@/lib/regionList/filter";
+import { groupByZone, localizedName } from "@/lib/regionList/labels";
+import type { RegionList } from "@/lib/regionList/types";
 
 const COPY: Record<Lang, { everywhere: string; nearMe: string; nearHint: string; locating: string }> = {
   fr: { everywhere: "Partout en Israël", nearMe: "Autour de moi", nearHint: `Utilise votre position, à moins de ${NEAR_ME_RADIUS_KM} km`, locating: "Localisation en cours..." },
@@ -12,16 +15,20 @@ const COPY: Record<Lang, { everywhere: string; nearMe: string; nearHint: string;
   he: { everywhere: "בכל הארץ", nearMe: "קרוב אליי", nearHint: `לפי המיקום שלכם, עד ${NEAR_ME_RADIUS_KM} ק״מ`, locating: "מאתר מיקום..." },
 };
 
-export function regionChoiceLabel(choice: RegionChoice, lang: Lang): string {
+export function regionChoiceLabel(choice: RegionChoice, lang: Lang, list: RegionList): string {
   if (choice === null) return COPY[lang].everywhere;
   if (choice === "near") return COPY[lang].nearMe;
-  return MACRO_REGIONS.find((r) => r.code === choice)?.label[lang] ?? COPY[lang].everywhere;
+  const [kind, slug] = choice.split(":");
+  const entry = kind === "zone" ? list.zones.find((z) => z.slug === slug) : list.regions.find((r) => r.slug === slug);
+  return entry ? localizedName(entry, lang) : COPY[lang].everywhere;
 }
 
 interface RegionFilterProps {
   value: RegionChoice;
-  /** Nombre de résultats par région : une région absente ou à 0 n'est pas proposée. */
-  counts: Partial<Record<MacroRegion, number>>;
+  /** Nombre de résultats par zone et par région : celles qui n'ont rien ne sont pas proposées. */
+  counts: RegionCounts;
+  /** La liste de référence des zones et régions. */
+  regionList: RegionList;
   lang: Lang;
   isLocating?: boolean;
   onChange: (choice: RegionChoice) => void;
@@ -29,11 +36,11 @@ interface RegionFilterProps {
 }
 
 /**
- * Lien discret « Partout en Israël » qui ouvre la liste des régions et « Autour de moi » : une petite
+ * Lien discret « Partout en Israël » qui ouvre « Autour de moi » et les 4 zones avec leurs régions : une petite
  * fenêtre sur ordinateur, un panneau qui monte du bas sur téléphone. Ne fait qu'afficher et remonter le
  * choix ; le filtrage lui-même est fait par la page.
  */
-export default function RegionFilter({ value, counts, lang, isLocating = false, onChange, onOpen }: RegionFilterProps) {
+export default function RegionFilter({ value, counts, regionList, lang, isLocating = false, onChange, onOpen }: RegionFilterProps) {
   const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
   const copy = COPY[lang];
@@ -57,10 +64,15 @@ export default function RegionFilter({ value, counts, lang, isLocating = false, 
       )}
     >
       <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[#ad1414]" />
-      {isLocating ? copy.locating : regionChoiceLabel(value, lang)}
+      {isLocating ? copy.locating : regionChoiceLabel(value, lang, regionList)}
       <ChevronDown className="h-3 w-3 text-muted-foreground" />
     </button>
   );
+
+  // Seules les zones et régions qui ont au moins une expérience sont proposées.
+  const zoneGroups = groupByZone(regionList)
+    .map(({ zone, regions }) => ({ zone, regions: regions.filter((r) => (counts.regions[r.slug] ?? 0) > 0) }))
+    .filter(({ zone }) => (counts.zones[zone.slug] ?? 0) > 0);
 
   const optionClass = (selected: boolean) =>
     cn(
@@ -85,11 +97,28 @@ export default function RegionFilter({ value, counts, lang, isLocating = false, 
         </span>
       </button>
       <div className="mx-1 my-1.5 border-t border-border" />
-      {MACRO_REGIONS.filter((r) => (counts[r.code] ?? 0) > 0).map((r) => (
-        <button key={r.code} type="button" className={optionClass(value === r.code)} onClick={() => choose(r.code)}>
-          {r.label[lang]}
-          <span className="text-[11.5px] font-normal text-muted-foreground">{counts[r.code]}</span>
-        </button>
+      {zoneGroups.map(({ zone, regions }) => (
+        <div key={zone.slug}>
+          <button
+            type="button"
+            className={cn(optionClass(value === zoneChoice(zone.slug)), "font-semibold")}
+            onClick={() => choose(zoneChoice(zone.slug))}
+          >
+            {localizedName(zone, lang)}
+            <span className="text-[11.5px] font-normal text-muted-foreground">{counts.zones[zone.slug]}</span>
+          </button>
+          {regions.map((r) => (
+            <button
+              key={r.slug}
+              type="button"
+              className={cn(optionClass(value === regionChoice(r.slug)), "ps-6")}
+              onClick={() => choose(regionChoice(r.slug))}
+            >
+              {localizedName(r, lang)}
+              <span className="text-[11.5px] font-normal text-muted-foreground">{counts.regions[r.slug]}</span>
+            </button>
+          ))}
+        </div>
       ))}
     </div>
   );
@@ -98,9 +127,9 @@ export default function RegionFilter({ value, counts, lang, isLocating = false, 
     return (
       <Drawer open={open} onOpenChange={handleOpenChange}>
         <DrawerTrigger asChild>{trigger}</DrawerTrigger>
-        <DrawerContent className="px-2.5 pb-6">
+        <DrawerContent className="max-h-[85vh] px-2.5 pb-6">
           <DrawerTitle className="sr-only">{copy.everywhere}</DrawerTitle>
-          <div className="pt-3">{list}</div>
+          <div className="overflow-y-auto pt-3">{list}</div>
         </DrawerContent>
       </Drawer>
     );
@@ -109,7 +138,7 @@ export default function RegionFilter({ value, counts, lang, isLocating = false, 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      <PopoverContent align="end" sideOffset={6} className="w-64 rounded-lg p-1.5">
+      <PopoverContent align="end" sideOffset={6} className="max-h-[70vh] w-72 overflow-y-auto rounded-lg p-1.5">
         {list}
       </PopoverContent>
     </Popover>

@@ -9,6 +9,9 @@ import type {
   LinkPlatform,
   LiveKind,
 } from "./types";
+import { linkedRegion } from "@/lib/regionList/labels";
+import { fetchRegionList } from "@/lib/regionList/queries";
+import { EMPTY_REGION_LIST } from "@/lib/regionList/types";
 
 const ENTRIES_KEY = ["catalogue", "entries"] as const;
 const PAGE_SIZE = 1000; // limite d'une lecture côté base : on lit par paquets pour ne jamais tronquer
@@ -57,6 +60,8 @@ export function useCatalogueSync() {
 
 async function fetchAllEntries(): Promise<CatalogueEntry[]> {
   const entries: CatalogueEntry[] = [];
+  // Liste de référence des régions : si elle est indisponible, les fiches gardent leur ancien texte.
+  const regionList = await fetchRegionList().catch(() => EMPTY_REGION_LIST);
   for (let from = 0; ; from += PAGE_SIZE) {
     const { data, error } = await supabase
       .from("catalogue_overview")
@@ -69,7 +74,11 @@ async function fetchAllEntries(): Promise<CatalogueEntry[]> {
     entries.push(...((data ?? []) as unknown as CatalogueEntry[]));
     if (!data || data.length < PAGE_SIZE) break;
   }
-  return entries;
+  // Une fiche en ligne reliée à une région affiche le nom de la liste (en français, langue du back-office).
+  return entries.map((entry) => {
+    const region = linkedRegion({ region_id: entry.display_region_id }, regionList);
+    return region ? { ...entry, display_region: region.name_fr } : entry;
+  });
 }
 
 export function useCatalogueEntries() {

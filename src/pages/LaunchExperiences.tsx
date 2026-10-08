@@ -3,6 +3,7 @@ import { useSearchParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useRegionLabel } from "@/lib/regionList/queries";
 import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import { SEOHead } from "@/components/SEOHead";
@@ -41,6 +42,7 @@ const FEATURED_AFTER = 4;
 const LaunchExperiences = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { lang } = useLanguage();
+  const regionLabelOf = useRegionLabel(lang);
   const isRTL = lang === "he";
   const queryClient = useQueryClient();
 
@@ -107,7 +109,7 @@ const LaunchExperiences = () => {
             position,
             nights,
             hotel:hotels2(
-              id, name, name_he, city, city_he, region, region_he, hero_image,
+              id, name, name_he, city, city_he, region, region_he, region_fr, region_id, hero_image,
               hyperguest_property_id, latitude, longitude,
               practical_info
             )
@@ -172,7 +174,7 @@ const LaunchExperiences = () => {
           hero_image, photos,
           base_price, base_price_type, currency,
           min_party, max_party, has_child_price, has_time_slots,
-          city, city_he, region, region_he, practical_info,
+          city, city_he, region, region_he, region_fr, region_id, practical_info,
           latitude, longitude,
           category_id, category_ids,
           display_order,
@@ -220,11 +222,11 @@ const LaunchExperiences = () => {
     categoryExperiences?.forEach((exp: any) => {
       const hotel = exp.experience2_hotels
         ?.sort((a: any, b: any) => (a.position || 0) - (b.position || 0))?.[0]?.hotel;
-      const region = isRTL ? hotel?.region_he : hotel?.region;
+      const region = regionLabelOf(hotel);
       if (region) set.add(region);
     });
     return Array.from(set).sort();
-  }, [categoryExperiences, isRTL]);
+  }, [categoryExperiences, regionLabelOf]);
 
   /* ── Tags disponibles ── */
   const allTags = useMemo(() => {
@@ -248,7 +250,7 @@ const LaunchExperiences = () => {
     return categoryExperiences?.filter((exp: any) => {
       const hotel = exp.experience2_hotels
         ?.sort((a: any, b: any) => (a.position || 0) - (b.position || 0))?.[0]?.hotel;
-      const region = isRTL ? hotel?.region_he : hotel?.region;
+      const region = regionLabelOf(hotel);
       if (selectedRegion && region !== selectedRegion) return false;
       if (selectedTags.length > 0) {
         const expTags = exp.experience2_highlight_tags?.map((t: any) => t.highlight_tags?.slug) ?? [];
@@ -256,7 +258,7 @@ const LaunchExperiences = () => {
       }
       return true;
     });
-  }, [categoryExperiences, selectedRegion, selectedTags, isRTL]);
+  }, [categoryExperiences, selectedRegion, selectedTags, regionLabelOf]);
 
   /* ── Featured ── */
   const featuredExp = useMemo(() => {
@@ -310,11 +312,11 @@ const LaunchExperiences = () => {
   const standaloneRegions = useMemo(() => {
     const set = new Set<string>();
     categoryStandalone?.forEach((exp: any) => {
-      const region = isRTL ? exp.region_he : exp.region;
+      const region = regionLabelOf(exp);
       if (region) set.add(region);
     });
     return Array.from(set).sort();
-  }, [categoryStandalone, isRTL]);
+  }, [categoryStandalone, regionLabelOf]);
 
   /* ── Tags disponibles (standalone) ── */
   const standaloneTags = useMemo(() => {
@@ -336,7 +338,7 @@ const LaunchExperiences = () => {
   /* ── Filtres région + tags (standalone) ── */
   const filteredStandalone = useMemo(() => {
     return categoryStandalone?.filter((exp: any) => {
-      const region = isRTL ? exp.region_he : exp.region;
+      const region = regionLabelOf(exp);
       if (selectedRegion && region !== selectedRegion) return false;
       if (selectedTags.length > 0) {
         const expTags = exp.standalone_experience_highlight_tags?.map((t: any) => t.highlight_tags?.slug) ?? [];
@@ -344,7 +346,7 @@ const LaunchExperiences = () => {
       }
       return true;
     });
-  }, [categoryStandalone, selectedRegion, selectedTags, isRTL]);
+  }, [categoryStandalone, selectedRegion, selectedTags, regionLabelOf]);
 
   /* ── Map pins (standalone) ── */
   const standaloneMapPins = useMemo(() => {
@@ -683,7 +685,7 @@ const LaunchExperiences = () => {
                       const image = featuredExp.hero_image || hotel?.hero_image;
                       const title = isRTL ? featuredExp.title_he || featuredExp.title : featuredExp.title;
                       const hotelName = isRTL ? hotel?.name_he || hotel?.name : hotel?.name;
-                      const region = isRTL ? hotel?.region_he || hotel?.region : hotel?.region;
+                      const region = regionLabelOf(hotel);
                       const desc = isRTL
                         ? featuredExp.short_description_he || featuredExp.short_description
                         : featuredExp.short_description;

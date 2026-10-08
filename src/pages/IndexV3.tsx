@@ -28,7 +28,8 @@ import { cn } from "@/lib/utils";
 import { trackGiftCardClicked, trackViewAllExperiencesClicked, trackHeroCtaClicked, trackRegionFilterOpened, trackRegionFilterSelected, trackNearMeResult } from "@/lib/analytics";
 import RegionFilter from "@/components/RegionFilter";
 import { useNearMe } from "@/hooks/useNearMe";
-import { countByRegion, filterByRegion, type RegionChoice } from "@/lib/regions";
+import { countByRegion, filterByRegion, type RegionChoice } from "@/lib/regionList/filter";
+import { useRegionList } from "@/lib/regionList/queries";
 import heroImage from "@/assets/hero-road-desert.jpg";
 import handpickedHero from "@/assets/handpicked-hero.jpg";
 import giftCardHero from "@/assets/gift-card-hero.jpg";
@@ -105,6 +106,7 @@ const IndexV3 = () => {
   const [selectedBoatId, setSelectedBoatId] = useState<string | null>(null);
   const [regionChoice, setRegionChoice] = useState<RegionChoice>(null);
   const nearMe = useNearMe();
+  const regionList = useRegionList();
 
   /* ── Realtime ── */
   useEffect(() => {
@@ -148,7 +150,7 @@ const IndexV3 = () => {
             hotel:hotels2(
               id, name, name_he, name_fr,
               city, city_he, city_fr,
-              region, region_he, region_fr,
+              region, region_he, region_fr, region_id,
               latitude, longitude,
               hero_image, hyperguest_property_id,
               practical_info
@@ -175,7 +177,7 @@ const IndexV3 = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_experiences")
-        .select("id, slug, title, title_he, title_fr, hero_image, photos, base_price, base_price_type, currency, original_price, min_party, max_party, has_child_price, has_time_slots, duration, duration_fr, duration_he, skipper_included, crew_included, display_order, category_id, category_ids, city, city_he, region, region_he, latitude, longitude, practical_info, show_on_v3_only, category:categories(slug), standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he, label_fr))")
+        .select("id, slug, title, title_he, title_fr, hero_image, photos, base_price, base_price_type, currency, original_price, min_party, max_party, has_child_price, has_time_slots, duration, duration_fr, duration_he, skipper_included, crew_included, display_order, category_id, category_ids, city, city_he, region, region_he, region_id, latitude, longitude, practical_info, show_on_v3_only, category:categories(slug), standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he, label_fr))")
         .eq("status", "published")
         // Les bateaux sont marqués "show_on_v3_only" pour rester hors de la grille par défaut ;
         // on les charge quand même pour la puce Bateaux (voir filteredStandalone).
@@ -243,10 +245,10 @@ const IndexV3 = () => {
   /* ── Filtre région / « Autour de moi » : s'applique après la catégorie, dans les deux modes ── */
   const categoryList: any[] = mode === "live" ? filteredStandalone : ((filteredExperiences as any[]) ?? []);
   const placeOf = mode === "live" ? standalonePlace : hotelPlace;
-  const regionCounts = useMemo(() => countByRegion(categoryList, placeOf), [categoryList, placeOf]);
+  const regionCounts = useMemo(() => countByRegion(categoryList, placeOf, regionList), [categoryList, placeOf, regionList]);
   const placedList = useMemo(
-    () => filterByRegion(categoryList, placeOf, regionChoice, nearMe.position),
-    [categoryList, placeOf, regionChoice, nearMe.position]
+    () => filterByRegion(categoryList, placeOf, regionChoice, nearMe.position, regionList),
+    [categoryList, placeOf, regionChoice, nearMe.position, regionList]
   );
   // Sans filtre région, la home reste une sélection de 12 cartes. Avec un filtre, on montre tout ce qui correspond.
   const visibleList = regionChoice ? placedList : placedList.slice(0, 12);
@@ -260,7 +262,7 @@ const IndexV3 = () => {
       trackRegionFilterSelected(choice ?? "all", {
         mode,
         category: selectedCategory,
-        results: filterByRegion(categoryList, placeOf, choice, null).length,
+        results: filterByRegion(categoryList, placeOf, choice, null, regionList).length,
       });
       return;
     }
@@ -274,7 +276,7 @@ const IndexV3 = () => {
     trackRegionFilterSelected("near", {
       mode,
       category: selectedCategory,
-      results: filterByRegion(categoryList, placeOf, "near", result).length,
+      results: filterByRegion(categoryList, placeOf, "near", result, regionList).length,
     });
   };
 
@@ -519,6 +521,7 @@ const IndexV3 = () => {
               <RegionFilter
                 value={regionChoice}
                 counts={regionCounts}
+                regionList={regionList}
                 lang={lang as "en" | "fr" | "he"}
                 isLocating={nearMe.isLocating}
                 onChange={handleRegionChange}

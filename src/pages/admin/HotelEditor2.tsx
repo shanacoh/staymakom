@@ -25,6 +25,7 @@ import {
 } from "@/lib/standaloneBadges";
 import { Link } from "react-router-dom";
 import HyperGuestHotelSearch from "@/components/admin/HyperGuestHotelSearch";
+import { RegionSelect } from "@/components/forms/shared/RegionSelect";
 import type {
   HyperGuestHotelWithDetails,
   RoomCapacitySummary,
@@ -155,6 +156,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
     region: "",
     region_he: "",
     region_fr: "",
+    region_id: null as string | null,
     city: "",
     city_he: "",
     city_fr: "",
@@ -401,6 +403,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
         region: (h.region as string) || "",
         region_he: (h.region_he as string) || "",
         region_fr: (h.region_fr as string) || "",
+        region_id: (h.region_id as string | null) ?? null,
         city: (h.city as string) || "",
         city_he: (h.city_he as string) || "",
         city_fr: (h.city_fr as string) || "",
@@ -740,11 +743,13 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="region">Region</Label>
-                  <Input
-                    id="region"
-                    value={formData.region}
-                    onChange={(e) => setFormData({ ...formData, region: e.target.value })}
+                  {/* Une seule région, choisie dans la liste de référence : son nom s'affiche ensuite dans les 3 langues. */}
+                  <Label htmlFor="region_id">Région</Label>
+                  <RegionSelect
+                    id="region_id"
+                    value={formData.region_id}
+                    onChange={(regionId) => setFormData({ ...formData, region_id: regionId })}
+                    legacyText={formData.region}
                   />
                 </div>
                 <div className="space-y-2">
@@ -778,15 +783,6 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
                     value={formData.name_fr}
                     onChange={(e) => setFormData({ ...formData, name_fr: e.target.value })}
                     placeholder="Nom en français"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="region_fr">Région</Label>
-                  <Input
-                    id="region_fr"
-                    value={formData.region_fr}
-                    onChange={(e) => setFormData({ ...formData, region_fr: e.target.value })}
-                    placeholder="ex. Galilée, Néguev…"
                   />
                 </div>
                 <div className="space-y-2">
@@ -832,17 +828,6 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
                       </div>
                     )}
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="region_he">אזור</Label>
-                  <Input
-                    id="region_he"
-                    value={formData.region_he}
-                    onChange={(e) => setFormData({ ...formData, region_he: e.target.value })}
-                    dir="rtl"
-                    className="bg-hebrew-input"
-                    disabled={isTranslating}
-                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="city_he">עיר</Label>

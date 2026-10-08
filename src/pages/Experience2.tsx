@@ -31,6 +31,7 @@ import LaunchFooter from "@/components/LaunchFooter";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/hooks/useLanguage";
+import { trackedRegionName, useRegionLabel } from "@/lib/regionList/queries";
 import { SEOHead } from "@/components/SEOHead";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumbJsonLd";
 import {
@@ -54,7 +55,7 @@ function toProductLike(experience: any, primaryHotel: any): ProductLike {
       ? { slug: experience.categories.slug, name: experience.categories.name }
       : null,
     city: primaryHotel?.city ?? null,
-    region: primaryHotel?.region ?? null,
+    region: trackedRegionName(primaryHotel),
     base_price: experience?.base_price ?? null,
     base_price_type: experience?.base_price_type ?? null,
     currency: experience?.currency ?? "ILS",
@@ -67,6 +68,7 @@ export default function Experience2() {
   const [searchParams] = useSearchParams();
   const isLaunch = searchParams.get("context") === "launch";
   const { lang } = useLanguage();
+  const regionLabelOf = useRegionLabel(lang);
   const { data: experience, isLoading, error } = useExperience2(slug || null);
   const footerRef = useRef<HTMLElement>(null);
   const reviewsRef = useRef<HTMLDivElement>(null);
@@ -394,7 +396,7 @@ export default function Experience2() {
   const subtitle = lang === "he" ? experience.subtitle_he || experience.subtitle : lang === "fr" ? (experience as any).subtitle_fr || experience.subtitle : experience.subtitle;
   const primaryHotelName = lang === "he" ? primaryHotel?.name_he || primaryHotel?.name : primaryHotel?.name;
   const city = lang === "he" ? primaryHotel?.city_he || primaryHotel?.city : primaryHotel?.city;
-  const region = lang === "he" ? primaryHotel?.region_he || primaryHotel?.region : primaryHotel?.region;
+  const region = regionLabelOf(primaryHotel);
   const categoryName = lang === "he" ? category?.name_he || category?.name : lang === "fr" ? (category as any)?.name_fr || category?.name : category?.name;
   const longCopy = lang === "he" ? experience.long_copy_he || experience.long_copy : lang === "fr" ? (experience as any).long_copy_fr || experience.long_copy : experience.long_copy;
 
@@ -415,6 +417,8 @@ export default function Experience2() {
       city_he: hotel.city_he || undefined,
       region: hotel.region || undefined,
       region_he: hotel.region_he || undefined,
+      region_fr: hotel.region_fr || undefined,
+      region_id: hotel.region_id || undefined,
       star_rating: hotel.star_rating ?? undefined,
       check_in_time: hotel.check_in_time || undefined,
       check_out_time: hotel.check_out_time || undefined,

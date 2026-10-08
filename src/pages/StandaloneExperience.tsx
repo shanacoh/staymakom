@@ -33,6 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
+import { trackedRegionName, useRegionLabel } from "@/lib/regionList/queries";
 import { SEOHead } from "@/components/SEOHead";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumbJsonLd";
 import {
@@ -105,6 +106,7 @@ interface StandaloneExperienceData {
   region?: string | null;
   region_he?: string | null;
   region_fr?: string | null;
+  region_id?: string | null;
   latitude?: number | null;
   longitude?: number | null;
   accessibility_info?: string | null;
@@ -181,7 +183,7 @@ function toProductLike(experience: StandaloneExperienceData): ProductLike {
       ? { slug: experience.categories.slug, name: experience.categories.name }
       : null,
     city: experience.city,
-    region: experience.region,
+    region: trackedRegionName(experience),
     base_price: experience.base_price,
     base_price_type: experience.base_price_type,
     currency: experience.currency,
@@ -214,6 +216,7 @@ export default function StandaloneExperience() {
   const isVitrineContext = searchParams.get("context") === "vitrine";
   const [showVitrineDialog, setShowVitrineDialog] = useState(false);
   const { lang } = useLanguage();
+  const regionLabelOf = useRegionLabel(lang);
   const footerRef = useRef<HTMLElement>(null);
   const reviewsRef = useRef<HTMLDivElement>(null);
   const includedRef = useRef<HTMLDivElement>(null);
@@ -274,7 +277,7 @@ export default function StandaloneExperience() {
         "duration", "duration_fr", "duration_he",
         "address", "address_he", "address_fr",
         "city", "city_he", "city_fr",
-        "region", "region_he", "region_fr",
+        "region", "region_he", "region_fr", "region_id",
         "latitude", "longitude",
         "accessibility_info", "accessibility_info_fr", "accessibility_info_he", "category_id", "status",
         "available_days", "blocked_dates", "availability_end_date",
@@ -440,7 +443,7 @@ export default function StandaloneExperience() {
   // -------------------------------------------------------------------------
 
   const locCity = lang === "he" ? experience?.city_he || experience?.city : lang === "fr" ? experience?.city_fr || experience?.city : experience?.city;
-  const locRegion = lang === "he" ? experience?.region_he || experience?.region : lang === "fr" ? experience?.region_fr || experience?.region : experience?.region;
+  const locRegion = regionLabelOf(experience);
 
   const categoryName = experience?.categories
     ? (lang === "fr" ? experience.categories.name_fr || experience.categories.name : lang === "he" ? experience.categories.name_he || experience.categories.name : experience.categories.name)
