@@ -8,7 +8,7 @@
 
 ## [2026-10-08] — Chantier Offre, étape 2 : formulaire expérience réorganisé, présentation par mood
 
-> Statut : migration `20261008100000_mood_presentations_and_after_booking.sql` appliquée en base le 08/10/2026 (outil Supabase) et vérifiée : 83 fiches, aucune donnée existante modifiée, dates de modification inchangées. Code prêt, pas encore commité ni publié. Le site public n'est pas modifié.
+> Statut : migration `20261008100000_mood_presentations_and_after_booking.sql` appliquée en base le 08/10/2026 (outil Supabase) et vérifiée : 83 fiches, aucune donnée existante modifiée, dates de modification inchangées. Code commité et poussé sur `main` le 08/10/2026, sans essai à l'écran au préalable (choix de Shana) : le formulaire reste à vérifier en conditions réelles. Sauvegarde des deux tables faite juste avant, dans `backups/` (dossier local, hors git). Le site public n'est pas modifié.
 
 ### Ce qui a changé côté code
 - `src/components/forms/StandaloneExperienceForm.tsx` (mode standard uniquement) : la page passe à 8 sections repliables : 0. Démarrer avec l'IA, 1. Rangement (moods en pastilles, région, badges), 2. Présentation par mood, 3. Ce qui est commun, 4. Galerie, 5. Après la réservation, 6. Prix, canal & dispos, 7. Conditions & publication (repliée). Sommaire et aperçu visibles à partir de 1280 px, checklist en haut en dessous.
