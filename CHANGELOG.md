@@ -6,6 +6,37 @@
 
 ---
 
+## [2026-10-08] — Chantier Offre, étape 2 bis : protéger les informations internes
+
+> Statut : migration `20261008140000_protect_internal_fields.sql` appliquée en base le 08/10/2026 par Shana (éditeur SQL de Supabase), puis vérifiée : les 5 tables internes existent, plus aucune des 22 colonnes internes ne reste dans les tables publiques. Code commité et poussé sur `main` dans la foulée. La migration et le code vont ensemble : l'un sans l'autre casse l'enregistrement des fiches dans le back-office.
+
+### Ce qui a changé côté code
+- `src/lib/internalFields.ts` (créé) : le seul endroit qui sait où sont rangés les champs internes. Il les lit, les sépare du reste d'un enregistrement et les sauvegarde dans leur table réservée aux admins.
+- `src/components/forms/StandaloneExperienceForm.tsx` : à l'ouverture, la fiche est complétée par ses champs internes ; à l'enregistrement, la fiche publique est écrite d'abord, les champs internes ensuite. Aucun changement à l'écran.
+- `src/components/admin/StandaloneRateOptionsManager.tsx`, `src/components/admin/BoatPriceVariantsManager.tsx` : le prix fournisseur d'une option et le prix d'achat d'une variante sont lus et écrits dans leur table interne.
+- `src/pages/admin/BoatExperiences.tsx`, `src/pages/admin/BoatsProfitability.tsx` : la colonne « Marge » et la page rentabilité lisent le coût dans les tables internes.
+- `src/pages/admin/StandaloneBookingDetails.tsx`, `src/lib/reservations/actions.ts` : le lien de réservation fournisseur, le nom du bateau côté prestataire et le prestataire lié viennent de la table interne.
+- `src/components/forms/UnifiedExperience2Form.tsx`, `src/pages/admin/Experiences2.tsx` : les coûts de l'activité d'une expérience hôtel sont lus et écrits à part ; « Dupliquer » les recopie aussi.
+- `src/pages/admin/HotelEditor2.tsx` : l'email et le téléphone de contact de l'hôtel sont lus et écrits à part.
+- Aucune fonction serveur (réservation, paiement, emails) n'est modifiée : aucune ne lisait ces champs.
+- Limite connue : la fiche et ses champs internes sont enregistrés en deux écritures successives, pas en une seule. Si la seconde échoue, un message d'erreur s'affiche et le prochain enregistrement renvoie tout. Une fonction de base qui fait les deux d'un coup serait plus propre, à prévoir si le cas se présente.
+
+### Ce qui a changé côté base de données
+- Migration `20261008140000_protect_internal_fields.sql`. Elle crée cinq tables lisibles par les admins et le serveur uniquement, y recopie les valeurs, compare ligne par ligne (au moindre écart tout est annulé), puis retire les colonnes des tables publiques :
+  - `standalone_experience_internal` : prix fournisseur adulte et enfant, marge, nom du fournisseur, nom du bateau, contact, moyen de paiement, lien de réservation, prestataire lié, canal de réservation, contact jour J (nom, téléphone, langue).
+  - `standalone_rate_option_internal` : prix fournisseur adulte et enfant d'une option tarifaire.
+  - `standalone_price_variant_internal` : prix d'achat d'une variante de prix.
+  - `experience2_internal` : coût net, coût fixe et coût par personne de l'activité.
+  - `hotel2_internal` : email et téléphone de contact, taux de commission.
+- La vue `admin_reservations` est reprise à l'identique, sauf le nom du fournisseur et le prestataire, lus dans `standalone_experience_internal`.
+- Lecture publique de `standalone_experience_mood_presentations` limitée aux expériences publiées.
+- Non traité, volontairement : sur les expériences hôtel, `room_net_rate`, `bar_rate_markup_value`, `commission_room_pct` et `commission_addons_pct` restent lisibles, parce que le prix affiché au client est calculé dans le navigateur à partir de ces valeurs. Les cacher demande de déplacer ce calcul côté serveur (chantier à part). Restent aussi lisibles : `global_settings.default_commission_rate` et les anciennes tables `hotels` / `experiences`.
+
+### Pourquoi ce changement
+- Quelqu'un qui interroge la base avec la clé publique du site peut lire nos prix fournisseur, nos marges et les contacts des prestataires. Ces informations ne doivent être lisibles que par les admins et par le serveur.
+
+---
+
 ## [2026-10-08] — Chantier Offre, étape 2 : formulaire expérience réorganisé, présentation par mood
 
 > Statut : migration `20261008100000_mood_presentations_and_after_booking.sql` appliquée en base le 08/10/2026 (outil Supabase) et vérifiée : 83 fiches, aucune donnée existante modifiée, dates de modification inchangées. Code commité et poussé sur `main` le 08/10/2026, sans essai à l'écran au préalable (choix de Shana) : le formulaire reste à vérifier en conditions réelles. Sauvegarde des deux tables faite juste avant, dans `backups/` (dossier local, hors git). Le site public n'est pas modifié.

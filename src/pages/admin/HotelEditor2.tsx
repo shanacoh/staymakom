@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { HOTEL2_INTERNAL, fetchInternalFields, saveInternalFields, splitInternalFields } from "@/lib/internalFields";
 import type { Json } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -388,7 +389,8 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
       if (!hotelId) return null;
       const { data, error } = await supabase.from("hotels2").select("*").eq("id", hotelId).single();
       if (error) throw error;
-      return data;
+      // Le contact direct de l'hôtel est rangé à part, réservé aux admins.
+      return { ...data, ...(await fetchInternalFields(HOTEL2_INTERNAL, hotelId)) };
     },
     enabled: !!hotelId,
   });
@@ -581,22 +583,29 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
       });
       // ======== DEBUG END ========
 
+      // Le contact direct de l'hôtel part dans sa table réservée aux admins, le reste dans la fiche.
+      const split = splitInternalFields(HOTEL2_INTERNAL, dataWithSlug);
+      const publicFields = split.publicFields as typeof dataWithSlug;
+      const internalFields = split.internalFields;
+
       if (hotelId) {
         console.log("[DEBUG SAVE] Calling supabase.from('hotels2').update()...");
-        const { error } = await supabase.from("hotels2").update(dataWithSlug).eq("id", hotelId);
+        const { error } = await supabase.from("hotels2").update(publicFields).eq("id", hotelId);
         if (error) {
           console.error("[DEBUG SAVE] UPDATE error:", JSON.stringify(error, null, 2));
           throw error;
         }
         console.log("[DEBUG SAVE] UPDATE success!");
+        await saveInternalFields(HOTEL2_INTERNAL, hotelId, internalFields);
       } else {
         console.log("[DEBUG SAVE] Calling supabase.from('hotels2').insert()...");
-        const { data: inserted, error } = await supabase.from("hotels2").insert([dataWithSlug]).select("id").single();
+        const { data: inserted, error } = await supabase.from("hotels2").insert([publicFields]).select("id").single();
         if (error) {
           console.error("[DEBUG SAVE] INSERT error:", JSON.stringify(error, null, 2));
           throw error;
         }
         console.log("[DEBUG SAVE] INSERT success!");
+        await saveInternalFields(HOTEL2_INTERNAL, inserted.id, internalFields);
         // Seed default extras for new hotel
         if (inserted?.id) {
           await supabase.from("hotel2_extras").insert(DEFAULT_HOTEL_EXTRAS.map((e, i) => ({ ...e, hotel_id: inserted.id, sort_order: i })));

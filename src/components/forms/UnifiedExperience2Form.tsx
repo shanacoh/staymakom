@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { EXPERIENCE2_INTERNAL, fetchInternalFields, saveInternalFields, splitInternalFields } from "@/lib/internalFields";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -264,7 +265,8 @@ export function UnifiedExperience2Form({
     queryFn: async () => {
       const { data, error } = await supabase.from("experiences2").select("*").eq("id", experienceId).single();
       if (error) throw error;
-      return data;
+      // Les coûts de l'activité sont rangés à part, réservés aux admins.
+      return { ...data, ...(await fetchInternalFields(EXPERIENCE2_INTERNAL, experienceId!)) };
     },
     enabled: !!experienceId,
   });
@@ -871,10 +873,12 @@ export function UnifiedExperience2Form({
   const handleSaveDraft = async (data: Experience2FormData) => {
     setIsSaving(true);
     try {
-      const experienceData = await buildExperienceData(data, "draft");
+      const { publicFields, internalFields } = splitInternalFields(EXPERIENCE2_INTERNAL, await buildExperienceData(data, "draft"));
+      const experienceData = publicFields as Awaited<ReturnType<typeof buildExperienceData>>;
       if (currentExperienceId) {
         const { error } = await supabase.from("experiences2").update(experienceData).eq("id", currentExperienceId);
         if (error) throw error;
+        await saveInternalFields(EXPERIENCE2_INTERNAL, currentExperienceId, internalFields);
         await saveExperienceHotels(currentExperienceId);
         toast.success("Draft saved successfully");
       } else {
@@ -885,6 +889,7 @@ export function UnifiedExperience2Form({
           .single();
         if (error) throw error;
         setCreatedExperienceId(insertedData.id);
+        await saveInternalFields(EXPERIENCE2_INTERNAL, insertedData.id, internalFields);
         await saveExperienceHotels(insertedData.id);
         await saveLocalAddons(insertedData.id);
         await saveLocalIncludes(insertedData.id);
@@ -916,10 +921,12 @@ export function UnifiedExperience2Form({
     }
     setIsSaving(true);
     try {
-      const experienceData = await buildExperienceData(data, "published");
+      const { publicFields, internalFields } = splitInternalFields(EXPERIENCE2_INTERNAL, await buildExperienceData(data, "published"));
+      const experienceData = publicFields as Awaited<ReturnType<typeof buildExperienceData>>;
       if (currentExperienceId) {
         const { error } = await supabase.from("experiences2").update(experienceData).eq("id", currentExperienceId);
         if (error) throw error;
+        await saveInternalFields(EXPERIENCE2_INTERNAL, currentExperienceId, internalFields);
         await saveExperienceHotels(currentExperienceId);
         toast.success("Published successfully");
       } else {
@@ -930,6 +937,7 @@ export function UnifiedExperience2Form({
           .single();
         if (error) throw error;
         setCreatedExperienceId(insertedData.id);
+        await saveInternalFields(EXPERIENCE2_INTERNAL, insertedData.id, internalFields);
         await saveExperienceHotels(insertedData.id);
         await saveLocalAddons(insertedData.id);
         await saveLocalIncludes(insertedData.id);

@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Trash2, Edit2, Save, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { STANDALONE_PRICE_VARIANT_INTERNAL, saveInternalFields, withInternalFields } from "@/lib/internalFields";
 
 interface Props {
   experienceId?: string;
@@ -75,7 +76,8 @@ export default function BoatPriceVariantsManager({ experienceId, currencySymbol 
         .eq("experience_id", experienceId as string)
         .order("duration_minutes", { ascending: true, nullsFirst: false });
       if (error) throw error;
-      return data as PriceVariant[];
+      // Le prix d'achat de chaque variante est rangé à part, réservé aux admins.
+      return withInternalFields(STANDALONE_PRICE_VARIANT_INTERNAL, (data ?? []) as unknown as PriceVariant[]);
     },
     enabled: !!experienceId,
   });
@@ -86,15 +88,17 @@ export default function BoatPriceVariantsManager({ experienceId, currencySymbol 
     mutationFn: async () => {
       if (!form.max_capacity || form.max_capacity <= 0) throw new Error("Capacité max requise");
       if (!form.sale_price || form.sale_price <= 0) throw new Error("Prix de vente requis");
-      const { error } = await supabase.from("standalone_experience_price_variants").insert({
+      const { data: inserted, error } = await supabase.from("standalone_experience_price_variants").insert({
         experience_id: experienceId as string,
         duration_label: form.duration_label,
         duration_minutes: form.duration_minutes,
         max_capacity: form.max_capacity,
-        purchase_price: form.purchase_price === "" ? null : Number(form.purchase_price),
         sale_price: form.sale_price,
-      });
+      }).select("id").single();
       if (error) throw error;
+      await saveInternalFields(STANDALONE_PRICE_VARIANT_INTERNAL, inserted.id, {
+        purchase_price: form.purchase_price === "" ? null : Number(form.purchase_price),
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
@@ -112,11 +116,13 @@ export default function BoatPriceVariantsManager({ experienceId, currencySymbol 
           duration_label: editData.duration_label,
           duration_minutes: editData.duration_minutes,
           max_capacity: editData.max_capacity,
-          purchase_price: editData.purchase_price === "" ? null : Number(editData.purchase_price),
           sale_price: editData.sale_price,
         })
         .eq("id", id);
       if (error) throw error;
+      await saveInternalFields(STANDALONE_PRICE_VARIANT_INTERNAL, id, {
+        purchase_price: editData.purchase_price === "" ? null : Number(editData.purchase_price),
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });

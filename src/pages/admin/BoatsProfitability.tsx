@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { STANDALONE_PRICE_VARIANT_INTERNAL, withInternalFields } from "@/lib/internalFields";
 
 type VariantRow = {
   id: string;
@@ -48,11 +49,13 @@ export default function AdminBoatsProfitability() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_experience_price_variants")
-        .select("id, duration_minutes, max_capacity, purchase_price, sale_price, currency, experience_id, standalone_experiences!inner(title, city, status, category_id)")
+        .select("id, duration_minutes, max_capacity, sale_price, currency, experience_id, standalone_experiences!inner(title, city, status, category_id)")
         .eq("standalone_experiences.category_id", BOATS_CATEGORY_ID)
         .order("experience_id");
       if (error) throw error;
-      return (data as unknown as VariantRow[]).filter(
+      // Le prix d'achat de chaque variante est rangé à part, réservé aux admins.
+      const withCosts = await withInternalFields(STANDALONE_PRICE_VARIANT_INTERNAL, (data ?? []) as unknown as VariantRow[]);
+      return withCosts.filter(
         (v) => v.standalone_experiences // ignore les variantes orphelines
       );
     },

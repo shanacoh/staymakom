@@ -32,6 +32,7 @@ import { format } from "date-fns";
 import { StandaloneExperienceForm } from "@/components/forms/StandaloneExperienceForm";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { BOATS_CATEGORY_ID } from "@/lib/boatsCategory";
+import { STANDALONE_EXPERIENCE_INTERNAL, withInternalFields } from "@/lib/internalFields";
 
 const BOATS_QUERY_KEY = ["admin-boat-experiences"];
 
@@ -122,11 +123,12 @@ export default function BoatExperiences() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_experiences")
-        .select("id, title, status, is_bookable, base_price, base_price_type, currency, supplier_price_adult, updated_at, display_order")
+        .select("id, title, status, is_bookable, base_price, base_price_type, currency, updated_at, display_order")
         .eq("category_id", BOATS_CATEGORY_ID)
         .order("display_order", { ascending: true, nullsFirst: false });
       if (error) throw error;
-      return data as any[];
+      // Le prix fournisseur (colonne "Marge") est rangé à part, réservé aux admins.
+      return withInternalFields(STANDALONE_EXPERIENCE_INTERNAL, (data ?? []) as any[]);
     },
     enabled: !isFormView,
   });

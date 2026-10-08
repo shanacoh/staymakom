@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { EXPERIENCE2_INTERNAL, fetchInternalFields, saveInternalFields } from "@/lib/internalFields";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit, Eye, EyeOff, Copy, Trash2, ExternalLink, MoreHorizontal, GripVertical, Building2, Zap, Sailboat } from "lucide-react";
 import BoatExperiences from "@/pages/admin/BoatExperiences";
@@ -102,7 +103,7 @@ const AdminExperiences2 = () => {
           `
           id, title, status, slug, hero_image, photos, thumbnail_image, hotel_id, display_order,
           pricing_model, room_net_rate, bar_rate_markup_value, bar_rate, created_at, updated_at,
-          experience_net_cost, commission_room_pct, commission_addons_pct, show_on_v3_only,
+          commission_room_pct, commission_addons_pct, show_on_v3_only,
           hotels2 (id, name, hyperguest_property_id),
           categories (id, name, slug),
           experience2_addons (id, type, name, value, is_percentage, is_active),
@@ -277,6 +278,9 @@ const AdminExperiences2 = () => {
         .select("id")
         .single();
       if (insertError) throw insertError;
+
+      // Les coûts de l'activité sont rangés à part (réservés aux admins) : la copie les reprend aussi.
+      await saveInternalFields(EXPERIENCE2_INTERNAL, inserted.id, await fetchInternalFields(EXPERIENCE2_INTERNAL, expId));
 
       const { data: junctionRows, error: jError } = await supabase
         .from("experience2_hotels")

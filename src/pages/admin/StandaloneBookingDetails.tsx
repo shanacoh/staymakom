@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { STANDALONE_EXPERIENCE_INTERNAL, fetchInternalFields } from "@/lib/internalFields";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ArrowLeft, CheckCircle, Mail, AlertTriangle, CreditCard, Calendar, Users, Clock, MapPin, ExternalLink, Send, ScrollText, Copy, Trash2, Pencil } from "lucide-react";
@@ -42,11 +43,17 @@ export default function AdminStandaloneBookingDetails() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_bookings")
-        .select("*, standalone_experiences(title, slug, address, has_time_slots, supplier_booking_url, deposit_type, deposit_amount)")
+        .select("*, standalone_experiences(title, slug, address, has_time_slots, deposit_type, deposit_amount)")
         .eq("id", bookingId!)
         .single();
       if (error) throw error;
-      return data as any;
+      const booking = data as any;
+      // Le lien de réservation fournisseur est rangé à part, réservé aux admins.
+      if (booking.standalone_experiences && booking.standalone_experience_id) {
+        const { supplier_booking_url } = await fetchInternalFields(STANDALONE_EXPERIENCE_INTERNAL, booking.standalone_experience_id);
+        booking.standalone_experiences = { ...booking.standalone_experiences, supplier_booking_url };
+      }
+      return booking;
     },
     enabled: !!bookingId,
   });

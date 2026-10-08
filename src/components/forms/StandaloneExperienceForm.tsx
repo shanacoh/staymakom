@@ -95,6 +95,7 @@ import {
   writeChangedPresentations,
 } from "@/lib/standaloneExperienceForm/moodPresentationQueries";
 import { diffPayload } from "@/lib/standaloneExperienceForm/payloadDiff";
+import { STANDALONE_EXPERIENCE_INTERNAL, fetchInternalFields, saveInternalFields, splitInternalFields } from "@/lib/internalFields";
 
 // Les bateaux n'ont pas de limite de nombre de photos dans la galerie,
 // contrairement aux autres expériences standalone (limitées à 8).
@@ -564,7 +565,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
         .eq("id", experienceId!)
         .single();
       if (error) throw error;
-      return data;
+      // Prix fournisseur, marge, prestataire, contact du jour J : rangés à part, réservés aux admins.
+      return { ...data, ...(await fetchInternalFields(STANDALONE_EXPERIENCE_INTERNAL, experienceId!)) };
     },
     enabled: !!experienceId,
   });
@@ -1562,21 +1564,29 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       } else {
         await writeChangedPresentations(syncInput);
         if (hasFieldChanges) {
-          const { error } = await (supabase as any).from("standalone_experiences").update(patch).eq("id", targetId);
-          if (error) throw error;
+          // La fiche publique d'abord, les champs internes ensuite. Si la seconde écriture échoue,
+          // la référence n'est pas mise à jour : le prochain enregistrement renvoie tout.
+          const { publicFields, internalFields } = splitInternalFields(STANDALONE_EXPERIENCE_INTERNAL, patch);
+          if (Object.keys(publicFields).length > 0) {
+            const { error } = await (supabase as any).from("standalone_experiences").update(publicFields).eq("id", targetId);
+            if (error) throw error;
+          }
+          await saveInternalFields(STANDALONE_EXPERIENCE_INTERNAL, targetId, internalFields);
         }
         await removeObsoletePresentations(syncInput);
       }
     } else {
+      const { publicFields, internalFields } = splitInternalFields(STANDALONE_EXPERIENCE_INTERNAL, experienceData);
       const { data: insertedData, error } = await (supabase as any)
         .from("standalone_experiences")
-        .insert([experienceData])
+        .insert([publicFields])
         .select("id")
         .single();
       if (error) throw error;
       targetId = insertedData.id as string;
       // Dès que la fiche existe, on retient son identifiant : un nouvel essai ne la recréera pas.
       setCreatedExperienceId(targetId);
+      await saveInternalFields(STANDALONE_EXPERIENCE_INTERNAL, targetId, internalFields);
       outcome = "created";
       if (localTags.length > 0) {
         await (supabase as any)

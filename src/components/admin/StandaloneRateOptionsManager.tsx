@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2, ChevronUp, ChevronDown, Edit2, Save, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { STANDALONE_RATE_OPTION_INTERNAL, saveInternalFields, withInternalFields } from "@/lib/internalFields";
 
 import { Label, Input, Button } from "@/components/forms/styled/managers";
 interface Props {
@@ -44,7 +45,8 @@ const StandaloneRateOptionsManager = ({ experienceId, hasChildPrice, markupPerce
         .eq("experience_id", experienceId)
         .order("sort_order");
       if (error) throw error;
-      return data;
+      // Le prix fournisseur de chaque option est rangé à part, réservé aux admins.
+      return withInternalFields(STANDALONE_RATE_OPTION_INTERNAL, data ?? []);
     },
     enabled: !!experienceId,
   });
@@ -55,19 +57,21 @@ const StandaloneRateOptionsManager = ({ experienceId, hasChildPrice, markupPerce
     mutationFn: async () => {
       if (!form.label.trim()) throw new Error("Le libellé est requis");
       const maxOrder = displayItems.length ? Math.max(...displayItems.map((o) => o.sort_order)) : -1;
-      const { error } = await (supabase as any).from("standalone_rate_options").insert([{
+      const { data: inserted, error } = await (supabase as any).from("standalone_rate_options").insert([{
         experience_id: experienceId,
         label: form.label,
         label_fr: form.label_fr || null,
         label_he: form.label_he || null,
-        supplier_price_adult: form.supplier_price_adult,
-        supplier_price_child: hasChildPrice ? form.supplier_price_child : null,
         price_adult: computeSellPrice(form.supplier_price_adult, markupPercent),
         price_child: hasChildPrice ? computeSellPrice(form.supplier_price_child, markupPercent) : null,
         is_available: true,
         sort_order: maxOrder + 1,
-      }]);
+      }]).select("id").single();
       if (error) throw error;
+      await saveInternalFields(STANDALONE_RATE_OPTION_INTERNAL, inserted.id, {
+        supplier_price_adult: form.supplier_price_adult,
+        supplier_price_child: hasChildPrice ? form.supplier_price_child : null,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["standalone-rate-options", experienceId] });
@@ -83,12 +87,14 @@ const StandaloneRateOptionsManager = ({ experienceId, hasChildPrice, markupPerce
         label: editData.label,
         label_fr: editData.label_fr || null,
         label_he: editData.label_he || null,
-        supplier_price_adult: editData.supplier_price_adult,
-        supplier_price_child: hasChildPrice ? editData.supplier_price_child : null,
         price_adult: computeSellPrice(editData.supplier_price_adult, markupPercent),
         price_child: hasChildPrice ? computeSellPrice(editData.supplier_price_child, markupPercent) : null,
       }).eq("id", id);
       if (error) throw error;
+      await saveInternalFields(STANDALONE_RATE_OPTION_INTERNAL, id, {
+        supplier_price_adult: editData.supplier_price_adult,
+        supplier_price_child: hasChildPrice ? editData.supplier_price_child : null,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["standalone-rate-options", experienceId] });

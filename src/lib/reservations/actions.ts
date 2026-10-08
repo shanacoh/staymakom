@@ -3,6 +3,7 @@
 // ligne : si quelqu'un d'autre l'a déjà traitée entre-temps, rien n'est écrasé.
 
 import { supabase } from "@/integrations/supabase/client";
+import { STANDALONE_EXPERIENCE_INTERNAL } from "@/lib/internalFields";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const db = supabase as any;
@@ -18,12 +19,27 @@ export async function fetchRequestForAction(requestId: string) {
   const { data, error } = await db
     .from("standalone_experience_requests")
     .select(
-      "id, experience_id, customer_name, customer_email, customer_phone, requested_date, adults, children, party_max, message, internal_notes, status, source, desired_time_period, desired_time_value, requested_duration_minutes, preferred_city, sent_to_provider_at, provider_responded_at, standalone_experiences(title, supplier_boat_name, providers(name, whatsapp))",
+      "id, experience_id, customer_name, customer_email, customer_phone, requested_date, adults, children, party_max, message, internal_notes, status, source, desired_time_period, desired_time_value, requested_duration_minutes, preferred_city, sent_to_provider_at, provider_responded_at, standalone_experiences(title)",
     )
     .eq("id", requestId)
     .single();
   if (error) throw error;
-  return data as any;
+  const request = data as any;
+  // Le nom du bateau côté prestataire et le prestataire lié sont rangés à part, réservés aux admins.
+  if (request.standalone_experiences && request.experience_id) {
+    const { data: internal, error: internalError } = await db
+      .from(STANDALONE_EXPERIENCE_INTERNAL.table)
+      .select("supplier_boat_name, providers(name, whatsapp)")
+      .eq(STANDALONE_EXPERIENCE_INTERNAL.key, request.experience_id)
+      .maybeSingle();
+    if (internalError) throw internalError;
+    request.standalone_experiences = {
+      ...request.standalone_experiences,
+      supplier_boat_name: internal?.supplier_boat_name ?? null,
+      providers: internal?.providers ?? null,
+    };
+  }
+  return request;
 }
 
 export async function markRequestSentToProvider(requestId: string) {
