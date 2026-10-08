@@ -5,6 +5,7 @@
 // même logique que send-standalone-booking-confirmation.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getAdminEmail } from '../_shared/internal-auth.ts';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 const NOTIFY_EMAIL = 'shana@staymakom.com';
@@ -73,6 +74,14 @@ Deno.serve(async (req: Request) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // L'aperçu montre de vraies données : il est réservé aux admins connectés.
+    if (preview && !(await getAdminEmail(req, supabase))) {
+      return new Response(JSON.stringify({ error: 'Action réservée aux administrateurs' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // En mode aperçu sans id, on prend la demande la plus récente pour montrer un rendu réel.
     const requestQuery = supabase

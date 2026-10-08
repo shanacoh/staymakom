@@ -81,7 +81,7 @@ Deno.serve(async (req: Request) => {
       const email = buildReminderEmail({
         lang,
         guestName: 'Client Test',
-        experienceTitle: 'Expérience test',
+        experienceTitle: lang === 'fr' ? 'Expérience test' : lang === 'he' ? 'חוויה לדוגמה' : 'Sample experience',
         bookingDate: nextDay(inIsrael(new Date()).date),
         timeSlot: '10:00',
         partySize: 2,

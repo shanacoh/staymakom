@@ -45,7 +45,7 @@ export const AUTOMATIONS: Automation[] = [
     nom: "Confirmation de réservation (expérience seule / bateau)",
     categorie: "email",
     declencheur: "Réservation d'une expérience standalone ou d'un bateau confirmée",
-    action: "Email de confirmation au client",
+    action: "Email de confirmation au client, en fr/en/he",
     destinataire: "Client",
     fonctionEdge: "send-standalone-booking-confirmation",
     previewable: true,

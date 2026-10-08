@@ -9,6 +9,7 @@
 // cette info sera transmise par le formulaire).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
+import { getAdminEmail } from "../_shared/internal-auth.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
@@ -142,6 +143,8 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const preview = body?.preview === true;
+    // L'aperçu montre de vraies données : il est réservé aux admins connectés.
+    if (preview && !(await getAdminEmail(req, supabase))) return json(req, { error: "Action réservée aux administrateurs" }, 403);
 
     const { data: banque, error: banqueError } = await supabase
       .from("autoreply_question_bank")

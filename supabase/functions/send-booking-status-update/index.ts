@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getAdminEmail } from "../_shared/internal-auth.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
@@ -142,6 +143,14 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // L'aperçu montre de vraies données : il est réservé aux admins connectés.
+    if (preview && !(await getAdminEmail(req, supabase))) {
+      return new Response(
+        JSON.stringify({ error: "Action réservée aux administrateurs" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     // En mode aperçu sans id, on prend la réservation la plus récente pour montrer un rendu réel.
     const bookingQuery = supabase

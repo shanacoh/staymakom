@@ -6,6 +6,43 @@
 
 ---
 
+## [2026-10-08] — Email de confirmation d'une expérience traduit en entier (FR, EN, HE)
+
+> Statut : fonctions `send-standalone-booking-confirmation` et `send-standalone-day-before-reminder` déployées le 08/10/2026. Aperçus FR et HE (confirmation et rappel) envoyés à Shana. Code commité et poussé sur `main`.
+
+### Ce qui a changé côté code
+- `supabase/functions/send-standalone-booking-confirmation/index.ts` : tous les textes de l'email (objet, bannière, libellés, bouton, phrase de contact) existent maintenant en anglais, français et hébreu. L'email part dans la langue de la réservation ; sans langue connue, en anglais. En hébreu, il se lit de droite à gauche. Le titre de l'expérience et l'adresse sont pris dans la langue du client quand ils existent. La version anglaise est identique à l'originale, au caractère près (vérifié par comparaison automatique).
+- `supabase/functions/send-standalone-day-before-reminder/index.ts` : le rappel était déjà entièrement dans la langue du client ; seul le titre de l'aperçu de démonstration suit maintenant la langue demandée.
+- `ARCHITECTURE.md` : mis à jour.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Un client français ou israélien recevait un email en anglais avec un bloc Infos pratiques dans sa langue. Shana veut un email entièrement dans la langue de la réservation.
+
+### Limites connues
+- Le slogan du pied de page (« The Israel most people never find. ») reste en anglais dans toutes les langues : c'est la signature de la marque.
+- Le texte « à savoir » d'une réservation saisie à la main reste dans la langue où il a été tapé.
+
+---
+
+## [2026-10-08] — Aperçus d'emails réservés aux admins
+
+> Statut : quatre fonctions déployées le 08/10/2026 et vérifiées : avec la clé publique du site, chacune répond « Action réservée aux administrateurs ». Code commité et poussé sur `main`.
+
+### Ce qui a changé côté code
+- `supabase/functions/send-standalone-booking-confirmation/index.ts`, `notify-standalone-experience-request/index.ts`, `send-booking-status-update/index.ts`, `send-dossier-voyage-autoreplies/index.ts` : le mode aperçu (utilisé par la page Automatisations du back-office) n'est plus accessible qu'à un admin connecté. Rien d'autre n'est modifié dans ces fonctions : les envois réels fonctionnent comme avant.
+- Les autres aperçus de la page Automatisations n'étaient pas concernés : soit ils exigeaient déjà un admin (lien de paiement), soit ils n'affichent que des données de test.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Ces aperçus montrent une vraie réservation ou une vraie demande (nom du client, date, montant, parfois email et téléphone). Sans connexion, n'importe qui pouvait les demander. Ils ne montrent plus rien à un visiteur.
+
+---
+
 ## [2026-10-08] — Chantier Offre, prompt 4 : les infos pratiques arrivent chez le client
 
 > Statut : migration `20261008160000_practical_info_reminder.sql` appliquée en base le 08/10/2026. Fonctions serveur `send-standalone-booking-confirmation` et `send-standalone-day-before-reminder` déployées le 08/10/2026. `npm run build` passe. 10 nouveaux tests passent (les 9 tests en échec sur `imageUrl` et `catalogue/draft` l'étaient déjà avant, sans rapport). Aperçus validés par Shana, code commité et poussé sur `main` le 08/10/2026.
@@ -38,7 +75,7 @@
 - Les infos « après la réservation » saisies sur les fiches n'arrivaient nulle part. Shana veut que le client les reçoive au bon moment (à la confirmation, puis la veille) sans avoir à les retaper, et pouvoir les envoyer en un clic sur WhatsApp.
 
 ### Limites connues
-- Le squelette de l'email de confirmation reste en anglais (c'était déjà le cas, et la règle était de ne pas changer le message quand il n'y a pas d'info pratique). Seul le bloc Infos pratiques est dans la langue du client. Le rappel de la veille, lui, est entièrement dans la langue du client. Traduire toute la confirmation serait une suite logique.
+- (Corrigé le même jour, voir l'entrée « Email de confirmation traduit en entier ».) Le squelette de l'email de confirmation était resté en anglais.
 - Si la page de paiement n'arrive pas à confirmer la réservation tout de suite (cas rare, rattrapé ensuite par le webhook), la confirmation part sans le bloc. Le client le reçoit alors dans le rappel de la veille.
 - Il n'existe pas de champ « parking » sur les fiches : « Comment y aller » reprend le champ Accès sans voiture de L'essentiel.
 - Aujourd'hui aucune fiche n'a d'info pratique remplie : tant que la section Après la réservation est vide, les emails restent ceux d'avant.
