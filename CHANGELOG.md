@@ -8,7 +8,7 @@
 
 ## [2026-10-08] — Chantier Offre, étape 2 bis : protéger les informations internes
 
-> Statut : migration `20261008140000_protect_internal_fields.sql` appliquée en base le 08/10/2026 par Shana (éditeur SQL de Supabase), puis vérifiée : les 5 tables internes existent, plus aucune des 22 colonnes internes ne reste dans les tables publiques. Code commité et poussé sur `main` dans la foulée. La migration et le code vont ensemble : l'un sans l'autre casse l'enregistrement des fiches dans le back-office.
+> Statut : migration `20261008140000_protect_internal_fields.sql` appliquée en base le 08/10/2026 par Shana (éditeur SQL de Supabase), puis vérifiée : les 5 tables internes existent, plus aucune des 22 colonnes internes ne reste dans les tables publiques. Code commité et poussé sur `main` dans la foulée. Test après mise en place : avec la clé publique, les 5 tables internes répondent « accès refusé » et plus aucun champ interne ne sort des tables publiques ; le reste de chaque ligne visible est identique à avant (57 fiches, 11 options, 7 variantes, 19 expériences hôtel, 30 hôtels). Un admin retrouve tout (83 fiches, dont 70 prix fournisseur, 76 marges, 49 liens, 12 prestataires ; 12 prix d'achat ; 21 coûts par personne ; 55 emails d'hôtel), mêmes totaux qu'avant. Un client connecté non admin ne lit aucune ligne. La migration et le code vont ensemble : l'un sans l'autre casse l'enregistrement des fiches dans le back-office.
 
 ### Ce qui a changé côté code
 - `src/lib/internalFields.ts` (créé) : le seul endroit qui sait où sont rangés les champs internes. Il les lit, les sépare du reste d'un enregistrement et les sauvegarde dans leur table réservée aux admins.
