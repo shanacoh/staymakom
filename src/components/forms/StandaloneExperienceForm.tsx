@@ -60,7 +60,19 @@ import BoatPriceVariantsManager from "@/components/admin/BoatPriceVariantsManage
 import FeaturedBadgeToggle from "@/components/admin/FeaturedBadgeToggle";
 import DepositRuleEditor from "@/components/admin/DepositRuleEditor";
 import { BOATS_CATEGORY_ID } from "@/lib/boatsCategory";
-import AiDraftPanel, { type AiIncludeDraft, type AiExtraDraft, type AiPracticalInfoDraft, type AiDraftPanelHandle } from "@/components/forms/ai/AiDraftPanel";
+import AiDraftPanel, {
+  AI_TEXT_FIELDS_WITHOUT_AFTER_BOOKING,
+  type AiBadgeDraft,
+  type AiDraftPanelHandle,
+  type AiExperienceDraft,
+  type AiExtraDraft,
+  type AiIncludeDraft,
+  type AiMoodVersionsRequest,
+  type AiPracticalInfoDraft,
+  type AiTranslationItem,
+  type AiTranslationResult,
+} from "@/components/forms/ai/AiDraftPanel";
+import { AiMark } from "@/components/forms/ai/AiMark";
 import { CANCELLATION_TEMPLATES, matchCancellationTemplate, type CancellationTemplateId } from "@/constants/cancellationTemplates";
 import EssentialsBlock from "@/components/experience/EssentialsBlock";
 import { FormSection } from "@/components/forms/shared/FormSection";
@@ -79,6 +91,7 @@ import { BookingChannelPills } from "@/components/forms/standalone/BookingChanne
 import { defaultBookingChannel } from "@/constants/bookingChannels";
 import {
   copyPresentation,
+  emptyPresentation,
   isPresentationFilled,
   makeMoodPrimary,
   presentationPlainText,
@@ -94,6 +107,13 @@ import {
   removeObsoletePresentations,
   writeChangedPresentations,
 } from "@/lib/standaloneExperienceForm/moodPresentationQueries";
+import {
+  buildMoodFacts,
+  hasPresentationText,
+  mergeAiPresentation,
+  requestMoodPresentations,
+  takenTitles,
+} from "@/lib/standaloneExperienceForm/moodAi";
 import { diffPayload } from "@/lib/standaloneExperienceForm/payloadDiff";
 import { STANDALONE_EXPERIENCE_INTERNAL, fetchInternalFields, saveInternalFields, splitInternalFields } from "@/lib/internalFields";
 
@@ -416,6 +436,18 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   const [moodPresentations, setMoodPresentations] = useState<MoodPresentationMap>({});
   const loadedMoodPresentationsRef = useRef<MoodPresentationMap>({});
   const [activeMoodId, setActiveMoodId] = useState<string | null>(null);
+  // Marqueurs violets « IA » : les champs que l'IA vient de remplir et que Shana n'a pas encore
+  // modifiés ni validés. Purement visuel, jamais enregistré.
+  const [aiMarks, setAiMarks] = useState<Set<string>>(new Set());
+  const addAiMarks = useCallback((keys: string[]) => {
+    if (keys.length > 0) setAiMarks((prev) => new Set([...prev, ...keys]));
+  }, []);
+  const clearAiMarks = useCallback((...keys: string[]) => {
+    setAiMarks((prev) => (keys.some((k) => prev.has(k)) ? new Set([...prev].filter((k) => !keys.includes(k))) : prev));
+  }, []);
+  const [rewritingMoodId, setRewritingMoodId] = useState<string | null>(null);
+  // « Traduire tout » : à quel onglet de mood correspond chaque texte envoyé à la traduction.
+  const moodTranslationKeysRef = useRef<Record<string, { moodId: string; part: "title" | "subtitle" | "long_copy" }>>({});
 
   // « Enregistrer sans rien toucher ne modifie rien » : photo de ce que le formulaire enverrait
   // juste après l'ouverture de la fiche ; seuls les écarts avec cette photo sont enregistrés.
@@ -457,7 +489,9 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(
     defaultCategoryId ? [defaultCategoryId] : []
   );
-  const isBoatsExperience = selectedCategoryIds.includes(BOATS_CATEGORY_ID);
+  // Fiche bateau = « On the Water » est le mood principal (même règle que le site : page /boat,
+  // carte bateau, rentabilité). En mood secondaire, c'est un mood comme un autre.
+  const isBoatsExperience = selectedCategoryIds[0] === BOATS_CATEGORY_ID;
   const galleryMax = isBoatsExperience ? Infinity : GALLERY_MAX_DEFAULT;
   const visibleTabs = isBoatsExperience ? TABS_BOATS : TABS_DEFAULT;
 
@@ -1135,6 +1169,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       toast.error("C'est le mood principal : choisis d'abord un autre mood principal (★) avant de le décocher.");
       return;
     }
+    clearAiMarks("moods");
     setSelectedCategoryIds((prev) => {
       const updated = prev.includes(catId)
         ? prev.filter((id) => id !== catId)
@@ -1150,12 +1185,46 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   // directement par AiDraftPanel via getValues/setValue).
   // -------------------------------------------------------------------------
 
-  const applyAiCategoryIds = (ids: string[]) => {
+  const applyAiCategoryIds = (ids: string[]): string[] => {
+    // Fiche bateau : son mood ne se change pas par l'IA (le retirer basculerait sur l'autre formulaire).
+    if (isBoatsExperience) return selectedCategoryIds;
     // Le mood principal déjà choisi reste en tête : l'IA peut ajouter des moods, pas changer le principal.
     const primary = selectedCategoryIds[0];
     const ordered = primary && ids.includes(primary) ? [primary, ...ids.filter((id) => id !== primary)] : ids;
     setSelectedCategoryIds(ordered);
     setValue("category_id", ordered[0] || "", { shouldValidate: true });
+    return ordered;
+  };
+
+  // Badges proposés par l'IA : uniquement des badges existants. Tant que la fiche n'existe pas en
+  // base, ils sont cochés à l'écran ; ensuite ils ne sont ajoutés qu'après confirmation de Shana.
+  const applyAiBadges = async (badges: AiBadgeDraft[], mode: "replace" | "add") => {
+    if (!currentExperienceId) {
+      setLocalTags((prev) =>
+        mode === "replace"
+          ? badges.map((b) => ({ tag_id: b.id }))
+          : [...prev, ...badges.filter((b) => !prev.some((t) => t.tag_id === b.id)).map((b) => ({ tag_id: b.id }))]
+      );
+      return;
+    }
+    const table = () => (supabase as any).from("standalone_experience_highlight_tags");
+    const { data: links, error: readError } = await table().select("tag_id, position").eq("experience_id", currentExperienceId);
+    const existing = (links || []) as { tag_id: string; position: number }[];
+    const missing = badges.filter((b) => !existing.some((l) => l.tag_id === b.id));
+    if (readError) {
+      toast.error("Les badges proposés par l'IA n'ont pas pu être ajoutés.");
+      return;
+    }
+    if (missing.length === 0) return;
+    const firstPosition = existing.length ? Math.max(...existing.map((l) => l.position)) + 1 : 0;
+    const { error } = await table().insert(
+      missing.map((b, idx) => ({ experience_id: currentExperienceId, tag_id: b.id, position: firstPosition + idx }))
+    );
+    if (error) {
+      toast.error("Les badges proposés par l'IA n'ont pas pu être ajoutés.");
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["standalone-highlight-tags", currentExperienceId] });
   };
 
   const isPracticalInfoEmpty = () =>
@@ -1877,11 +1946,20 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     new Set([heroImagePreview, ...galleryPreviews].filter((url): url is string => !!url && url.startsWith("http")))
   );
 
-  const setMainPresentationField = (field: PresentationTextField, value: string) =>
+  const setMainPresentationField = (field: PresentationTextField, value: string) => {
+    clearAiMarks(field);
     setValue(field, value, { shouldDirty: true, shouldValidate: !!errors[field] });
+  };
 
-  const updateMoodPresentation = (moodId: string, patch: Partial<MoodPresentation>) =>
+  const setMainCover = (url: string) => {
+    clearAiMarks("cover_image");
+    setHeroImagePreview(url);
+  };
+
+  const updateMoodPresentation = (moodId: string, patch: Partial<MoodPresentation>) => {
+    clearAiMarks(...Object.keys(patch).map((field) => `mood:${moodId}:${field}`));
     setMoodPresentations((prev) => (prev[moodId] ? { ...prev, [moodId]: { ...prev[moodId], ...patch } } : prev));
+  };
 
   const customizeMood = (moodId: string) =>
     setMoodPresentations((prev) => ({ ...prev, [moodId]: copyPresentation(mainPresentation) }));
@@ -1897,6 +1975,12 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
 
   // « En faire le mood principal » : le mood passe en tête et les contenus sont échangés.
   const promoteMoodToPrimary = (moodId: string) => {
+    if (
+      moodId === BOATS_CATEGORY_ID &&
+      !window.confirm("Mettre « On the Water » en mood principal transforme cette fiche en fiche bateau (formulaire bateau, page Bateaux du site). Continuer ?")
+    ) {
+      return;
+    }
     const result = makeMoodPrimary({
       selectedCategoryIds,
       main: mainPresentation,
@@ -1909,8 +1993,169 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     setHeroImagePreview(result.main.cover_image);
     setMoodPresentations(result.presentations);
     setActiveMoodId(moodId);
+    // Les contenus ont changé d'onglet : les marqueurs « IA » de présentation ne désignent plus les bons champs.
+    clearAiMarks(...[...aiMarks].filter((k) => k.startsWith("mood:") || k === "cover_image" || (PRESENTATION_TEXT_FIELDS as readonly string[]).includes(k)));
     const moodName = selectedMoods.find((m) => m.id === moodId)?.name ?? "Ce mood";
     toast.success(`« ${moodName} » est maintenant le mood principal. Enregistre pour valider.`);
+  };
+
+  // ── L'IA et les moods (chantier Offre, prompt 3) ─────────────────────────
+  // L'IA écrit titre, accroche et description d'un mood à partir de ce qui est déjà dans la fiche.
+  // Elle remplit l'écran, rien n'est enregistré tant que Shana n'enregistre pas.
+
+  const isMoodFieldAiMarked = (moodId: string, field: PresentationTextField | "cover_image") =>
+    aiMarks.has(!moodId || moodId === primaryMoodId ? field : `mood:${moodId}:${field}`);
+
+  // La présentation principale telle qu'elle est dans le formulaire à l'instant (un brouillon IA
+  // vient peut-être de la remplir : les valeurs suivies par l'affichage ne sont pas encore à jour).
+  const readMainPresentation = (): MoodPresentation => {
+    const presentation = emptyPresentation();
+    for (const field of PRESENTATION_TEXT_FIELDS) presentation[field] = getValues(field) || "";
+    presentation.cover_image = heroImagePreview;
+    return presentation;
+  };
+
+  // Les faits communs montrés à l'IA : L'essentiel, inclus, extras, après-réservation. Jamais de
+  // prix, de dates, de prestataire, de canal ni de contact.
+  const collectMoodFacts = async (draft?: AiExperienceDraft) => {
+    type Titled = { title?: string | null; title_fr?: string | null };
+    const titleOf = (item: Titled) => (item.title_fr || item.title || "").trim();
+    let includeItems: Titled[] = localStandaloneIncludes;
+    let extraItems: Titled[] = localStandaloneExtras;
+    if (currentExperienceId) {
+      const [{ data: includesData }, { data: extrasData }] = await Promise.all([
+        (supabase as any).from("standalone_experience_includes").select("title, title_fr").eq("experience_id", currentExperienceId).order("order_index"),
+        (supabase as any).from("standalone_extras").select("title, title_fr").eq("experience_id", currentExperienceId).order("sort_order"),
+      ]);
+      includeItems = includesData || [];
+      extraItems = extrasData || [];
+    }
+    // Un brouillon tout juste appliqué : ses inclus, extras et infos pratiques ne sont pas encore dans la fiche.
+    const practical = draft?.practical_info;
+    return buildMoodFacts({
+      text: getValues() as Record<string, unknown>,
+      minParty: getValues("min_party"),
+      maxParty: getValues("max_party"),
+      arriveMinutesBefore: getValues("arrive_minutes_before"),
+      kids: practical?.kids.status ? practical.kids : practicalInfo.kids,
+      kosher: practical?.kosher ?? practicalInfo.kosher,
+      parking: practical?.parking.status ?? practicalInfo.parking.status,
+      includes: [...includeItems, ...(draft?.includes ?? [])].map(titleOf),
+      extras: [...extraItems, ...(draft?.extras ?? [])].map(titleOf),
+    });
+  };
+
+  const applyAiMoodPresentations = (aiPresentations: MoodPresentationMap, primaryId: string | null) => {
+    const marks: string[] = [];
+    for (const [moodId, ai] of Object.entries(aiPresentations)) {
+      const fields = PRESENTATION_TEXT_FIELDS.filter((f) => ai[f]?.trim());
+      if (moodId === primaryId) {
+        for (const field of fields) setValue(field, ai[field], { shouldDirty: true, shouldValidate: !!errors[field] });
+        marks.push(...fields);
+        if (ai.cover_image && !heroImagePreview) {
+          setHeroImagePreview(ai.cover_image);
+          marks.push("cover_image");
+        }
+      } else {
+        setMoodPresentations((prev) => ({ ...prev, [moodId]: mergeAiPresentation(prev[moodId], ai) }));
+        marks.push(...fields.map((f) => `mood:${moodId}:${f}`));
+        if (ai.cover_image) marks.push(`mood:${moodId}:cover_image`);
+      }
+    }
+    addAiMarks(marks);
+  };
+
+  // Brouillon complet : chaque autre mood proposé reçoit sa présentation (mêmes faits, autre angle).
+  const writeAiMoodVersions = async ({ selectedIds, proposedIds, draft }: AiMoodVersionsRequest): Promise<string[]> => {
+    const main = readMainPresentation();
+    const result = await requestMoodPresentations({
+      moodIds: proposedIds,
+      presentation: main,
+      facts: await collectMoodFacts(draft),
+      takenTitles: takenTitles({ main, presentations: moodPresentations, selectedIds, targetIds: proposedIds }),
+      photoUrls: [],
+      needsCoverIds: [],
+    });
+    applyAiMoodPresentations(result.presentations, selectedIds[0] ?? null);
+    result.warnings.forEach((w) => toast.warning(w));
+    return result.toVerify;
+  };
+
+  // « ✦ Réécrire pour ce mood » : un seul onglet, à partir du contenu déjà dans la fiche.
+  const rewriteForMood = async (moodId: string) => {
+    if (!moodId || rewritingMoodId) return;
+    const isPrimary = moodId === primaryMoodId;
+    const main = readMainPresentation();
+    const own = isPrimary ? main : moodPresentations[moodId];
+    const moodName = selectedMoods.find((m) => m.id === moodId)?.name ?? "ce mood";
+    if (
+      hasPresentationText(own) &&
+      !window.confirm(`Remplacer le titre, l'accroche et la description de « ${moodName} » par une version écrite par l'IA ? La photo déjà choisie ne change pas.`)
+    ) {
+      return;
+    }
+    setRewritingMoodId(moodId);
+    try {
+      const result = await requestMoodPresentations({
+        moodIds: [moodId],
+        presentation: main,
+        facts: await collectMoodFacts(),
+        takenTitles: takenTitles({ main, presentations: moodPresentations, selectedIds: selectedCategoryIds, targetIds: [moodId] }),
+        photoUrls: coverChoices,
+        needsCoverIds: !own?.cover_image ? [moodId] : [],
+      });
+      if (!result.presentations[moodId]) throw new Error("l'IA n'a rien renvoyé pour ce mood.");
+      applyAiMoodPresentations(result.presentations, primaryMoodId);
+      result.warnings.forEach((w) => toast.warning(w));
+      aiDraftPanelRef.current?.notifyAiFilled(result.toVerify);
+      toast.success(`« ${moodName} » réécrit par l'IA. Relis avant d'enregistrer.`);
+    } catch (err) {
+      toast.error(`Réécriture impossible : ${err instanceof Error ? err.message : "erreur inconnue"}`);
+    } finally {
+      setRewritingMoodId(null);
+    }
+  };
+
+  // « Traduire tout » : les onglets de mood qui ont leur propre version (le principal est déjà
+  // traduit avec les champs de la fiche).
+  const getMoodTranslationItems = (): AiTranslationItem[] => {
+    const keys: typeof moodTranslationKeysRef.current = {};
+    const items: AiTranslationItem[] = [];
+    selectedCategoryIds.slice(1).forEach((moodId, moodIndex) => {
+      const presentation = moodPresentations[moodId];
+      if (!presentation) return;
+      for (const part of ["title", "subtitle", "long_copy"] as const) {
+        const key = `mood${moodIndex + 1}_${part}`;
+        keys[key] = { moodId, part };
+        items.push({ key, fr: presentation[`${part}_fr`], en: presentation[part], he: presentation[`${part}_he`] });
+      }
+    });
+    moodTranslationKeysRef.current = keys;
+    return items;
+  };
+
+  const applyMoodTranslations = (translations: AiTranslationResult) => {
+    const patches: Record<string, Partial<MoodPresentation>> = {};
+    const marks: string[] = [];
+    for (const [key, translation] of Object.entries(translations)) {
+      const target = moodTranslationKeysRef.current[key];
+      if (!target) continue;
+      const patch = (patches[target.moodId] ??= {});
+      if (translation.en) {
+        patch[target.part] = translation.en;
+        marks.push(`mood:${target.moodId}:${target.part}`);
+      }
+      if (translation.he) {
+        patch[`${target.part}_he`] = translation.he;
+        marks.push(`mood:${target.moodId}:${target.part}_he`);
+      }
+    }
+    setMoodPresentations((prev) => {
+      const next = { ...prev };
+      for (const [moodId, patch] of Object.entries(patches)) if (next[moodId]) next[moodId] = { ...next[moodId], ...patch };
+      return next;
+    });
+    addAiMarks(marks);
   };
 
   // Champs communs à la carte Photos — identiques pour une expérience
@@ -2141,11 +2386,22 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   // Badges éditoriaux + informations clés (kosher/enfants/parking/fitness/spa)
   // — identiques pour une expérience standard et pour un bateau.
   const tagsSelector = (
-    <HighlightTagsSelectorStandalone
-      experienceId={currentExperienceId}
-      localTags={localTags}
-      onLocalTagsChange={setLocalTags}
-    />
+    <div className="space-y-1.5">
+      {aiMarks.has("badges") && (
+        <p className="text-[10px] text-[#5b3fc4]">
+          Badges proposés par l'IA
+          <AiMark />
+        </p>
+      )}
+      <HighlightTagsSelectorStandalone
+        experienceId={currentExperienceId}
+        localTags={localTags}
+        onLocalTagsChange={(tags) => {
+          clearAiMarks("badges");
+          setLocalTags(tags);
+        }}
+      />
+    </div>
   );
 
   const keyInfoContent = (
@@ -2318,11 +2574,17 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   // expérience standard : dans la section Rangement.
   const regionField = (
     <div className="space-y-2">
-      <Label htmlFor="region_id">Région</Label>
+      <Label htmlFor="region_id">
+        Région
+        <AiMark show={aiMarks.has("region_id")} />
+      </Label>
       <RegionSelect
         id="region_id"
         value={watch("region_id") ?? null}
-        onChange={(regionId) => setValue("region_id", regionId, { shouldDirty: true })}
+        onChange={(regionId) => {
+          clearAiMarks("region_id");
+          setValue("region_id", regionId, { shouldDirty: true });
+        }}
         legacyText={watch("region")}
         disabled={isSaving}
       />
@@ -3568,6 +3830,24 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       isEditMode={!!experienceId}
       onAddIncludes={handleAiIncludes}
       onAddExtras={handleAiExtras}
+      onAiFilled={addAiMarks}
+      onValidateAll={() => setAiMarks(new Set())}
+      // Fiche bateau : formulaire inchangé, l'IA n'y remplit ni rangement, ni moods, ni après-réservation.
+      {...(isBoatsExperience
+        ? { allowedFields: AI_TEXT_FIELDS_WITHOUT_AFTER_BOOKING }
+        : {
+            getCoverCandidates: () => (heroImagePreview ? [] : coverChoices),
+            onApplyCoverImage: setHeroImagePreview,
+            regionId: watch("region_id") ?? null,
+            onApplyRegionId: (regionId: string) => setValue("region_id", regionId, { shouldDirty: true }),
+            hasBadges: localTags.length > 0,
+            confirmBadges: !!currentExperienceId,
+            onApplyBadges: applyAiBadges,
+            customizedMoodIds: selectedCategoryIds.slice(1).filter((id) => !!moodPresentations[id]),
+            onWriteMoodVersions: writeAiMoodVersions,
+            getExtraTranslationItems: getMoodTranslationItems,
+            onApplyExtraTranslations: applyMoodTranslations,
+          })}
     />
   );
 
@@ -4325,6 +4605,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                 <div>
                   <Label className="mb-2 block">
                     Moods <span className="text-destructive">*</span>
+                    <AiMark show={aiMarks.has("moods")} />
                   </Label>
                   <div className="flex flex-wrap gap-2">
                     {(categories as MoodOption[] | undefined)?.map((cat) => {
@@ -4381,11 +4662,14 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                   presentations={moodPresentations}
                   coverChoices={coverChoices}
                   onMainFieldChange={setMainPresentationField}
-                  onMainCoverChange={setHeroImagePreview}
+                  onMainCoverChange={setMainCover}
                   onPresentationChange={updateMoodPresentation}
                   onCustomize={customizeMood}
                   onResetToMain={resetMoodToMain}
                   onMakePrimary={promoteMoodToPrimary}
+                  onRewrite={rewriteForMood}
+                  rewritingMoodId={rewritingMoodId}
+                  isAiMarked={isMoodFieldAiMarked}
                   errors={{ title: errors.title?.message, long_copy: errors.long_copy?.message }}
                   disabled={isSaving}
                 />
@@ -4481,7 +4765,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
 
               <FormSection id="sec-apres" title="5. Après la réservation" description="Infos pratiques envoyées au client une fois qu'il a réservé">
                 <AfterBookingSection
-                  registerField={register}
+                  registerField={(name, options) => register(name, { ...options, onChange: () => clearAiMarks(name) })}
+                  aiMarked={(name) => aiMarks.has(name)}
                   langHidden={langHidden}
                   recap={{
                     address:

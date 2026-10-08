@@ -2,6 +2,7 @@ import type { UseFormRegisterReturn } from "react-hook-form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input, Label, Textarea } from "@/components/forms/styled";
 import { cn } from "@/lib/utils";
+import { AiMark } from "@/components/forms/ai/AiMark";
 import type { FormLanguage } from "@/components/forms/shared/FormHeaderBar";
 
 type Suffix = "" | "_fr" | "_he";
@@ -37,11 +38,13 @@ interface Props {
   recap: { address: string; accessNote: string; hideExactAddress: boolean };
   contactLanguage: string | null;
   onContactLanguageChange: (code: string | null) => void;
+  /** Vrai si l'IA vient de remplir ce champ et que Shana ne l'a pas encore modifié ni validé. */
+  aiMarked?: (name: AfterBookingFieldName) => boolean;
   disabled?: boolean;
 }
 
 // Section « Après la réservation » : les infos pratiques envoyées au client une fois qu'il a réservé.
-export function AfterBookingSection({ registerField, langHidden, recap, contactLanguage, onContactLanguageChange, disabled }: Props) {
+export function AfterBookingSection({ registerField, langHidden, recap, contactLanguage, onContactLanguageChange, aiMarked, disabled }: Props) {
   // Un champ multilingue : un seul des trois est visible, celui de la langue sélectionnée.
   const multilingual = (
     base: "meeting_point" | "know_before_you_go" | "contingency_note",
@@ -63,6 +66,7 @@ export function AfterBookingSection({ registerField, langHidden, recap, contactL
         <div key={name} className={cn("space-y-1.5", langHidden(lang) && "hidden")}>
           <Label htmlFor={name}>
             {label} ({langLabel})
+            <AiMark show={!!aiMarked?.(name)} />
           </Label>
           {multiline ? <Textarea rows={3} {...shared} {...registerField(name)} /> : <Input {...shared} {...registerField(name)} />}
         </div>
@@ -86,7 +90,10 @@ export function AfterBookingSection({ registerField, langHidden, recap, contactL
       {multilingual("meeting_point", "Point de rendez-vous", "Ex : devant l'entrée principale, côté parking", false)}
 
       <div className="space-y-1.5">
-        <Label htmlFor="arrive_minutes_before">Arriver combien de minutes avant</Label>
+        <Label htmlFor="arrive_minutes_before">
+          Arriver combien de minutes avant
+          <AiMark show={!!aiMarked?.("arrive_minutes_before")} />
+        </Label>
         <div className="flex items-center gap-2">
           <Input
             id="arrive_minutes_before"

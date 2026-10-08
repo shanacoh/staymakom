@@ -1,4 +1,5 @@
-import { Star } from "lucide-react";
+import { Loader2, Star } from "lucide-react";
+import { AiMark } from "@/components/forms/ai/AiMark";
 import RichTextEditor from "@/components/ui/rich-text-editor";
 import { Button, Input, Label } from "@/components/forms/styled";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,12 @@ interface Props {
   onCustomize: (moodId: string) => void;
   onResetToMain: (moodId: string) => void;
   onMakePrimary: (moodId: string) => void;
+  /** « Réécrire pour ce mood » : l'IA réécrit titre, accroche et description de cet onglet. */
+  onRewrite?: (moodId: string) => void;
+  /** Le mood en cours de réécriture par l'IA, ou null. */
+  rewritingMoodId?: string | null;
+  /** Vrai si l'IA vient de remplir ce champ de ce mood et que Shana ne l'a pas encore relu. */
+  isAiMarked?: (moodId: string, field: PresentationTextField | "cover_image") => boolean;
   /** Messages de validation du mood principal (titre EN, description EN). */
   errors?: { title?: string; long_copy?: string };
   disabled?: boolean;
@@ -66,6 +73,9 @@ export function MoodPresentationSection({
   onCustomize,
   onResetToMain,
   onMakePrimary,
+  onRewrite,
+  rewritingMoodId = null,
+  isAiMarked,
   errors,
   disabled,
 }: Props) {
@@ -94,6 +104,32 @@ export function MoodPresentationSection({
     else onPresentationChange(activeId, { cover_image: url });
   };
 
+  const marked = (field: PresentationTextField | "cover_image", moodId = activeId) => !!isAiMarked?.(moodId, field);
+  const moodMarked = (moodId: string) =>
+    marked("cover_image", moodId) || (["title", "subtitle", "long_copy"] as const).some((part) =>
+      (["en", "fr", "he"] as const).some((l) => marked(presentationField(part, l), moodId)),
+    );
+
+  const rewriting = rewritingMoodId === activeId;
+  // Sans mood coché (onglet « Présentation principale »), il n'y a pas d'angle à donner à l'IA.
+  const rewriteButton = (
+    <button
+      type="button"
+      onClick={() => onRewrite?.(activeId)}
+      disabled={disabled || !onRewrite || !activeId || rewritingMoodId !== null}
+      title={!activeId ? "Coche d'abord un mood dans la section Rangement" : "L'IA réécrit titre, accroche et description pour ce mood, à partir de la fiche"}
+      className={cn(
+        "px-2 py-1 rounded-[8px] border border-dashed text-[11px] inline-flex items-center gap-1 transition-colors",
+        disabled || !onRewrite || !activeId || rewritingMoodId !== null
+          ? "border-[#e9e6e1] text-[#b3aea6] cursor-not-allowed"
+          : "border-[#5b3fc4] text-[#5b3fc4] hover:bg-[#f3efff]",
+      )}
+    >
+      {rewriting ? <Loader2 className="h-3 w-3 animate-spin" /> : "✦"}
+      {rewriting ? "Réécriture en cours, environ 30 secondes" : "Réécrire pour ce mood"}
+    </button>
+  );
+
   return (
     <div className="space-y-3">
       {/* Onglets : un par mood coché */}
@@ -114,6 +150,7 @@ export function MoodPresentationSection({
               {mood.id === primaryId && <span aria-label="Mood principal">★</span>}
               {mood.name}
               {customized && <span className="text-[9px] text-[#6f6a63] font-normal">· version propre</span>}
+              <AiMark show={moodMarked(mood.id)} />
             </button>
           );
         })}
@@ -146,6 +183,7 @@ export function MoodPresentationSection({
             <Button type="button" variant="outline" size="sm" onClick={() => onMakePrimary(activeId)} disabled={disabled}>
               <Star className="h-3 w-3 mr-1" /> En faire le mood principal
             </Button>
+            {rewriteButton}
           </div>
           <p className="text-[10px] text-[#6f6a63]">
             Tant que tu ne personnalises pas, « {activeMood.name} » affiche exactement la présentation du mood principal.
@@ -155,7 +193,10 @@ export function MoodPresentationSection({
         <div className="space-y-3">
           {/* Photo de couverture, choisie parmi les photos de la fiche */}
           <div className="space-y-1.5">
-            <Label>Photo de couverture pour ce mood</Label>
+            <Label>
+              Photo de couverture pour ce mood
+              <AiMark show={marked("cover_image")} />
+            </Label>
             {coverChoices.length === 0 ? (
               <p className="text-[11px] text-[#6f6a63]">
                 Ajoute d'abord des photos dans la section Galerie, puis enregistre : elles seront proposées ici.
@@ -192,6 +233,7 @@ export function MoodPresentationSection({
           <div className="space-y-1.5">
             <Label htmlFor={`mood-title-${activeId}`}>
               Titre ({LANG_LABEL[lang]}){isPrimary && lang === "en" && <span className="text-destructive"> *</span>}
+              <AiMark show={marked(titleField)} />
             </Label>
             <Input
               id={`mood-title-${activeId}`}
@@ -206,7 +248,10 @@ export function MoodPresentationSection({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor={`mood-subtitle-${activeId}`}>Accroche ({LANG_LABEL[lang]})</Label>
+            <Label htmlFor={`mood-subtitle-${activeId}`}>
+              Accroche ({LANG_LABEL[lang]})
+              <AiMark show={marked(subtitleField)} />
+            </Label>
             <Input
               id={`mood-subtitle-${activeId}`}
               value={presentation[subtitleField]}
@@ -221,6 +266,7 @@ export function MoodPresentationSection({
           <div className="space-y-1.5">
             <Label>
               Description ({LANG_LABEL[lang]}){isPrimary && lang === "en" && <span className="text-destructive"> *</span>}
+              <AiMark show={marked(longCopyField)} />
             </Label>
             {/* La clé recrée l'éditeur quand on change de mood ou de langue : chaque texte a le sien. */}
             <RichTextEditor
@@ -239,14 +285,7 @@ export function MoodPresentationSection({
                 <Star className="h-3 w-3 mr-1" /> En faire le mood principal
               </Button>
             )}
-            <button
-              type="button"
-              disabled
-              title="Arrive bientôt"
-              className="px-2 py-1 rounded-[8px] border border-dashed border-[#e9e6e1] text-[11px] text-[#b3aea6] cursor-not-allowed"
-            >
-              ✦ Réécrire pour ce mood (bientôt)
-            </button>
+            {rewriteButton}
             {!isPrimary && (
               <button
                 type="button"

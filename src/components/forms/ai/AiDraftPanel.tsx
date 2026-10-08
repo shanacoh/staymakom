@@ -46,14 +46,33 @@ export interface AiPracticalInfoDraft {
 }
 
 interface AiDraftFields {
-  [key: string]: string | number | null | undefined;
+  [key: string]: unknown;
 }
+
+export interface AiBadgeDraft {
+  id: string;
+  label: string;
+}
+
+/** Un texte hors des champs simples (ex. un onglet de mood) que « Traduire tout » doit aussi traduire. */
+export interface AiTranslationItem {
+  key: string;
+  fr: string;
+  en: string;
+  he: string;
+}
+
+export type AiTranslationResult = Record<string, { en?: string; he?: string }>;
 
 export interface AiExperienceDraft extends AiDraftFields {
   title: string;
   category_id: string | null;
   category_ids: string[];
   category_slugs: string[];
+  /** Expérience seule : région de la liste, badges existants et photo de couverture proposés par l'IA. */
+  region_id?: string | null;
+  badges?: AiBadgeDraft[];
+  cover_image?: string | null;
   includes: AiIncludeDraft[];
   extras: AiExtraDraft[];
   practical_info: AiPracticalInfoDraft;
@@ -72,11 +91,26 @@ const SIMPLE_FIELDS = [
   "google_maps_link",
   "accessibility_info", "accessibility_info_fr", "accessibility_info_he",
   "cancellation_policy", "cancellation_policy_fr", "cancellation_policy_he",
+  "meeting_point", "meeting_point_fr", "meeting_point_he",
+  "know_before_you_go", "know_before_you_go_fr", "know_before_you_go_he",
+  "contingency_note", "contingency_note_fr", "contingency_note_he",
   "seo_title_en", "seo_title_fr", "seo_title_he",
   "meta_description_en", "meta_description_fr", "meta_description_he",
   "og_title_en", "og_title_fr", "og_title_he",
   "og_description_en", "og_description_fr", "og_description_he",
 ] as const;
+
+// Champs d'après-réservation, ajoutés pour l'expérience seule. Un formulaire qui n'a pas cette section
+// (bateaux) passe AI_TEXT_FIELDS_WITHOUT_AFTER_BOOKING dans allowedFields.
+const AFTER_BOOKING_FIELDS: readonly string[] = [
+  "meeting_point", "meeting_point_fr", "meeting_point_he",
+  "know_before_you_go", "know_before_you_go_fr", "know_before_you_go_he",
+  "contingency_note", "contingency_note_fr", "contingency_note_he",
+];
+export const AI_TEXT_FIELDS_WITHOUT_AFTER_BOOKING: readonly string[] = SIMPLE_FIELDS.filter((f) => !AFTER_BOOKING_FIELDS.includes(f));
+
+// Champs numériques sans valeur par défaut : remplis s'ils sont vides, comme un champ texte.
+const EMPTYABLE_NUMERIC_FIELDS = ["arrive_minutes_before"] as const;
 
 // Champs numériques que certains formulaires acceptent (voir la prop numericFields).
 const isValidNumber = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
@@ -94,6 +128,9 @@ const TRANSLATE_FIELD_MAP = [
   { fr: "address_fr", en: "address", he: "address_he" },
   { fr: "cancellation_policy_fr", en: "cancellation_policy", he: "cancellation_policy_he" },
   { fr: "accessibility_info_fr", en: "accessibility_info", he: "accessibility_info_he" },
+  { fr: "meeting_point_fr", en: "meeting_point", he: "meeting_point_he" },
+  { fr: "know_before_you_go_fr", en: "know_before_you_go", he: "know_before_you_go_he" },
+  { fr: "contingency_note_fr", en: "contingency_note", he: "contingency_note_he" },
 ] as const;
 
 const emptyDraft = (overrides: Partial<AiExperienceDraft>): AiExperienceDraft => ({
@@ -112,6 +149,19 @@ export interface AiDraftPanelHandle {
   translateAll: () => Promise<void>;
   /** Nombre d'éléments "À vérifier" renvoyés par la dernière génération IA, pas encore cochés (sprint 5B, checklist). */
   getUnreviewedAiCount: () => number;
+  /** Une autre action IA du formulaire (ex. « Réécrire pour ce mood ») vient de remplir des champs : affiche le bandeau et ajoute ses lignes « À vérifier ». */
+  notifyAiFilled: (toVerifyLines?: string[]) => void;
+}
+
+/** Ce que le panneau transmet pour faire écrire la version des autres moods proposés. */
+export interface AiMoodVersionsRequest {
+  /** Les moods cochés après application du brouillon, le principal en premier. */
+  selectedIds: string[];
+  /** Les moods proposés par l'IA. */
+  proposedIds: string[];
+  /** true = « Remplacer » : une version déjà personnalisée est réécrite. */
+  replace: boolean;
+  draft: AiExperienceDraft;
 }
 
 interface Props {
@@ -129,13 +179,44 @@ interface Props {
   getValues: (name: string) => unknown;
   setValue: (name: string, value: unknown, options?: { shouldDirty?: boolean; shouldValidate?: boolean }) => void;
   selectedCategoryIds: string[];
-  onApplyCategoryIds: (ids: string[]) => void;
+  /** Coche les moods proposés. Peut renvoyer la liste finale (principal en premier) si elle diffère de celle reçue. */
+  onApplyCategoryIds: (ids: string[]) => string[] | void;
   onApplyPracticalInfo: (info: AiPracticalInfoDraft) => void;
   isPracticalInfoEmpty: () => boolean;
   /** Mode création : les inclus/extras sont ajoutés tout de suite (listes locales, rien en base). */
   isEditMode: boolean;
   onAddIncludes: (items: AiIncludeDraft[]) => void;
   onAddExtras: (items: AiExtraDraft[]) => void;
+
+  // ── Expérience seule (chantier Offre, prompt 3). Sans ces props, le panneau se comporte comme avant. ──
+  /** Photos de la fiche à montrer à l'IA pour proposer une couverture. Vide si la fiche en a déjà une. */
+  getCoverCandidates?: () => string[];
+  onApplyCoverImage?: (url: string) => void;
+  /** Région déjà reliée à la fiche, ou null. */
+  regionId?: string | null;
+  onApplyRegionId?: (regionId: string) => void;
+  /** En création : la fiche a déjà des badges cochés. */
+  hasBadges?: boolean;
+  /** Les badges sont enregistrés dès qu'ils sont cochés : demander confirmation avant de les ajouter (défaut : en édition). */
+  confirmBadges?: boolean;
+  /** "replace" = les badges proposés remplacent ceux cochés, "add" = ils s'y ajoutent. */
+  onApplyBadges?: (badges: AiBadgeDraft[], mode: "replace" | "add") => void | Promise<void>;
+  /** Moods non principaux qui ont déjà leur propre présentation. */
+  customizedMoodIds?: string[];
+  /** Fait écrire la présentation des autres moods proposés. Renvoie les lignes « À vérifier ». */
+  onWriteMoodVersions?: (request: AiMoodVersionsRequest) => Promise<string[]>;
+  /** Textes supplémentaires à traduire avec « Traduire tout » (onglets de mood). */
+  getExtraTranslationItems?: () => AiTranslationItem[];
+  onApplyExtraTranslations?: (translations: AiTranslationResult) => void;
+  /** Noms des champs que l'IA vient de remplir, pour le marqueur violet « IA ». */
+  onAiFilled?: (keys: string[]) => void;
+  /** « Tout valider » : retirer tous les marqueurs « IA ». */
+  onValidateAll?: () => void;
+}
+
+interface PendingTranslations {
+  items: AiTranslationItem[];
+  translations: AiTranslationResult;
 }
 
 type MergeChoice = "replace" | "empty_only" | "cancel";
@@ -155,11 +236,26 @@ function AiDraftPanelImpl(
     isEditMode,
     onAddIncludes,
     onAddExtras,
+    getCoverCandidates,
+    onApplyCoverImage,
+    regionId = null,
+    onApplyRegionId,
+    hasBadges = false,
+    confirmBadges,
+    onApplyBadges,
+    customizedMoodIds = [],
+    onWriteMoodVersions,
+    getExtraTranslationItems,
+    onApplyExtraTranslations,
+    onAiFilled,
+    onValidateAll,
   }: Props,
   ref: Ref<AiDraftPanelHandle>
 ) {
   const simpleFields = allowedFields ? SIMPLE_FIELDS.filter((f) => allowedFields.includes(f)) : SIMPLE_FIELDS;
   const translateFieldMap = allowedFields ? TRANSLATE_FIELD_MAP.filter((m) => allowedFields.includes(m.fr)) : TRANSLATE_FIELD_MAP;
+  const badgesNeedConfirm = confirmBadges ?? isEditMode;
+  const emptyableNumericFields = EMPTYABLE_NUMERIC_FIELDS.filter((f) => !allowedFields || allowedFields.includes(f));
 
   const [expanded, setExpanded] = useState(false);
   const [notes, setNotes] = useState("");
@@ -175,6 +271,9 @@ function AiDraftPanelImpl(
   // enregistrés en base (en création, ils vont directement dans les listes locales du formulaire).
   const [pendingIncludes, setPendingIncludes] = useState<AiIncludeDraft[]>([]);
   const [pendingExtras, setPendingExtras] = useState<AiExtraDraft[]>([]);
+  const [pendingBadges, setPendingBadges] = useState<AiBadgeDraft[]>([]);
+  const [pendingTranslations, setPendingTranslations] = useState<PendingTranslations | null>(null);
+  const [writingMoods, setWritingMoods] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetSources = () => {
@@ -194,16 +293,43 @@ function AiDraftPanelImpl(
       reader.readAsDataURL(file);
     });
 
-  const applyDraft = (draft: AiExperienceDraft, choice: MergeChoice) => {
+  // Traductions hors champs simples (onglets de mood) : même règle, on ne remplace un texte déjà
+  // rempli que sur « Remplacer ».
+  const applyExtraTranslations = (extra: PendingTranslations, choice: MergeChoice): number => {
+    const accepted: AiTranslationResult = {};
+    for (const item of extra.items) {
+      const t = extra.translations[item.key];
+      if (!t) continue;
+      const entry: { en?: string; he?: string } = {};
+      if (isFilled(t.en) && (choice === "replace" || !isFilled(item.en))) entry.en = t.en;
+      if (isFilled(t.he) && (choice === "replace" || !isFilled(item.he))) entry.he = t.he;
+      if (entry.en || entry.he) accepted[item.key] = entry;
+    }
+    if (Object.keys(accepted).length > 0) onApplyExtraTranslations?.(accepted);
+    return Object.keys(accepted).length;
+  };
+
+  const applyDraft = (draft: AiExperienceDraft, choice: MergeChoice, extraTranslations?: PendingTranslations | null) => {
     if (choice === "cancel") return;
 
     let appliedCount = 0;
+    const filledKeys: string[] = [];
     for (const field of simpleFields) {
       const value = draft[field];
       if (!isFilled(value)) continue;
       const current = getValues(field);
       if (choice === "empty_only" && isFilled(current)) continue;
       setValue(field, value, { shouldDirty: true });
+      filledKeys.push(field);
+      appliedCount++;
+    }
+
+    for (const field of emptyableNumericFields) {
+      const value = draft[field];
+      if (!isValidNumber(value)) continue;
+      if (choice === "empty_only" && isValidNumber(getValues(field))) continue;
+      setValue(field, value, { shouldDirty: true, shouldValidate: true });
+      filledKeys.push(field);
       appliedCount++;
     }
 
@@ -218,9 +344,36 @@ function AiDraftPanelImpl(
       }
     }
 
+    let finalCategoryIds = selectedCategoryIds;
     if (draft.category_ids.length > 0 && (choice === "replace" || selectedCategoryIds.length === 0)) {
-      onApplyCategoryIds(draft.category_ids);
+      finalCategoryIds = (onApplyCategoryIds(draft.category_ids) as string[] | undefined) ?? draft.category_ids;
+      filledKeys.push("moods");
       appliedCount++;
+    }
+
+    if (draft.region_id && onApplyRegionId && (choice === "replace" || !regionId)) {
+      onApplyRegionId(draft.region_id);
+      filledKeys.push("region_id");
+      appliedCount++;
+    }
+
+    // La couverture n'est proposée que si la fiche n'en a pas : rien à écraser.
+    if (draft.cover_image && onApplyCoverImage) {
+      onApplyCoverImage(draft.cover_image);
+      filledKeys.push("cover_image");
+      appliedCount++;
+    }
+
+    const badges = draft.badges ?? [];
+    if (badges.length > 0 && onApplyBadges) {
+      if (badgesNeedConfirm) {
+        // Sur une fiche déjà en base, un badge coché est enregistré tout de suite : Shana confirme depuis « À vérifier ».
+        setPendingBadges(badges);
+      } else if (choice === "replace" || !hasBadges) {
+        void onApplyBadges(badges, "replace");
+        filledKeys.push("badges");
+        appliedCount++;
+      }
     }
 
     const practicalProvided =
@@ -239,16 +392,37 @@ function AiDraftPanelImpl(
       if (draft.extras.length > 0) onAddExtras(draft.extras);
     }
 
+    if (extraTranslations) appliedCount += applyExtraTranslations(extraTranslations, choice);
+
+    if (filledKeys.length > 0) onAiFilled?.(filledKeys);
     setAiActive(appliedCount > 0 || draft.includes.length > 0 || draft.extras.length > 0);
     toast.success("Brouillon appliqué. Relis avant d'enregistrer.");
+
+    // Les autres moods proposés reçoivent leur propre présentation : mêmes faits, autre angle.
+    if (onWriteMoodVersions && draft.category_ids.length > 1) {
+      const targets = finalCategoryIds
+        .slice(1)
+        .filter((id) => draft.category_ids.includes(id) && (choice === "replace" || !customizedMoodIds.includes(id)));
+      if (targets.length > 0) {
+        setWritingMoods(true);
+        onWriteMoodVersions({ selectedIds: finalCategoryIds, proposedIds: targets, replace: choice === "replace", draft })
+          .then((lines) => {
+            if (lines.length > 0) setToVerify((prev) => [...prev, ...lines]);
+          })
+          .catch(() => toast.error("Les présentations des autres moods n'ont pas pu être écrites. Utilise « Réécrire pour ce mood » dans leur onglet."))
+          .finally(() => setWritingMoods(false));
+      }
+    }
   };
 
-  const handleAddPendingIncludesExtras = () => {
+  const handleAddPendingItems = () => {
     if (pendingIncludes.length > 0) onAddIncludes(pendingIncludes);
     if (pendingExtras.length > 0) onAddExtras(pendingExtras);
+    if (pendingBadges.length > 0) void onApplyBadges?.(pendingBadges, "add");
     setPendingIncludes([]);
     setPendingExtras([]);
-    toast.success("Inclus et extras ajoutés.");
+    setPendingBadges([]);
+    toast.success("Propositions de l'IA ajoutées.");
   };
 
   const translateAll = async () => {
@@ -257,6 +431,8 @@ function AiDraftPanelImpl(
       const value = getValues(fr);
       if (isFilled(value)) texts[fr] = value as string;
     }
+    const extraItems = (getExtraTranslationItems?.() ?? []).filter((item) => isFilled(item.fr));
+    for (const item of extraItems) texts[item.key] = item.fr;
     if (Object.keys(texts).length === 0) {
       toast.error("Remplis au moins un champ en français avant de traduire.");
       return;
@@ -281,17 +457,23 @@ function AiDraftPanelImpl(
         if (isFilled(t.en)) overrides[en] = t.en;
         if (isFilled(t.he)) overrides[he] = t.he;
       }
-      if (Object.keys(overrides).length === 0) {
+      const extra: PendingTranslations = { items: extraItems.filter((item) => translations[item.key]), translations };
+      if (Object.keys(overrides).length === 0 && extra.items.length === 0) {
         toast.error("L'IA n'a renvoyé aucune traduction exploitable.");
         return;
       }
 
       const translatedDraft = emptyDraft(overrides);
-      const conflicts = countConflicts(translatedDraft);
+      const extraConflicts = extra.items.reduce((count, item) => {
+        const t = translations[item.key];
+        return count + (isFilled(t.en) && isFilled(item.en) ? 1 : 0) + (isFilled(t.he) && isFilled(item.he) ? 1 : 0);
+      }, 0);
+      const conflicts = countConflicts(translatedDraft) + extraConflicts;
       if (conflicts === 0) {
-        applyDraft(translatedDraft, "replace");
+        applyDraft(translatedDraft, "replace", extra);
       } else {
         setConflictCount(conflicts);
+        setPendingTranslations(extra);
         setPendingDraft(translatedDraft);
       }
     } catch (err) {
@@ -303,6 +485,10 @@ function AiDraftPanelImpl(
   useImperativeHandle(ref, () => ({
     translateAll,
     getUnreviewedAiCount: () => toVerify.length - checkedVerify.size,
+    notifyAiFilled: (toVerifyLines = []) => {
+      setAiActive(true);
+      if (toVerifyLines.length > 0) setToVerify((prev) => [...prev, ...toVerifyLines]);
+    },
   }));
 
   const countConflicts = (draft: AiExperienceDraft): number => {
@@ -310,7 +496,13 @@ function AiDraftPanelImpl(
     for (const field of simpleFields) {
       if (isFilled(draft[field]) && isFilled(getValues(field))) count++;
     }
+    for (const field of emptyableNumericFields) {
+      if (isValidNumber(draft[field]) && isValidNumber(getValues(field))) count++;
+    }
     if (draft.category_ids.length > 0 && selectedCategoryIds.length > 0) count++;
+    if (draft.region_id && onApplyRegionId && regionId && regionId !== draft.region_id) count++;
+    if (!badgesNeedConfirm && onApplyBadges && hasBadges && (draft.badges?.length ?? 0) > 0) count++;
+    if (onWriteMoodVersions) count += draft.category_ids.filter((id) => customizedMoodIds.includes(id)).length;
     return count;
   };
 
@@ -322,6 +514,8 @@ function AiDraftPanelImpl(
     setLoading(true);
     setPendingIncludes([]);
     setPendingExtras([]);
+    setPendingBadges([]);
+    setPendingTranslations(null);
     const startedAt = Date.now();
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -338,6 +532,7 @@ function AiDraftPanelImpl(
           url: url.trim() || undefined,
           pdf_base64,
           pdf_name: pdfFile?.name,
+          photo_urls: getCoverCandidates?.(),
         },
       });
 
@@ -484,14 +679,29 @@ function AiDraftPanelImpl(
 
       {aiActive && (
         <div className="flex items-center justify-between rounded-lg border border-[#d9cffd] bg-[#f3efff] px-4 py-2.5 text-[13px] text-[#5b3fc4]">
-          <span>✦ Brouillon généré par l'IA. Relis avant d'enregistrer.</span>
-          <Button type="button" size="sm" variant="outline" onClick={() => setAiActive(false)}>
+          <span>
+            ✦ Brouillon généré par l'IA. Relis avant d'enregistrer.
+            {writingMoods && (
+              <span className="ml-2 inline-flex items-center gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" /> Rédaction des autres moods en cours
+              </span>
+            )}
+          </span>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setAiActive(false);
+              onValidateAll?.();
+            }}
+          >
             Tout valider
           </Button>
         </div>
       )}
 
-      {(toVerify.length > 0 || pendingIncludes.length > 0 || pendingExtras.length > 0) && (
+      {(toVerify.length > 0 || pendingIncludes.length > 0 || pendingExtras.length > 0 || pendingBadges.length > 0) && (
         <div className="rounded-lg border border-[#f0dca0] bg-[#fff4d6] px-4 py-3 space-y-3">
           {toVerify.length > 0 && (
             <div className="space-y-2">
@@ -517,9 +727,9 @@ function AiDraftPanelImpl(
             </div>
           )}
 
-          {(pendingIncludes.length > 0 || pendingExtras.length > 0) && (
+          {(pendingIncludes.length > 0 || pendingExtras.length > 0 || pendingBadges.length > 0) && (
             <div className="space-y-2 border-t border-amber-200 pt-3">
-              <p className="text-sm font-medium text-[#8a6100]">Inclus et extras proposés par l'IA</p>
+              <p className="text-sm font-medium text-[#8a6100]">Inclus, extras et badges proposés par l'IA</p>
               <ul className="space-y-1 text-sm text-[#8a6100]">
                 {pendingIncludes.map((item, idx) => (
                   <li key={`inc-${idx}`}>Inclus : {item.title}</li>
@@ -527,16 +737,19 @@ function AiDraftPanelImpl(
                 {pendingExtras.map((item, idx) => (
                   <li key={`ext-${idx}`}>Extra : {item.title}</li>
                 ))}
+                {pendingBadges.map((badge) => (
+                  <li key={`badge-${badge.id}`}>Badge : {badge.label}</li>
+                ))}
               </ul>
-              <Button type="button" size="sm" onClick={handleAddPendingIncludesExtras}>
-                Ajouter ces inclus et extras
+              <Button type="button" size="sm" onClick={handleAddPendingItems}>
+                Ajouter à la fiche
               </Button>
             </div>
           )}
         </div>
       )}
 
-      <AlertDialog open={pendingDraft !== null} onOpenChange={(open) => { if (!open) setPendingDraft(null); }}>
+      <AlertDialog open={pendingDraft !== null} onOpenChange={(open) => { if (!open) { setPendingDraft(null); setPendingTranslations(null); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{conflictCount} champ{conflictCount > 1 ? "s sont" : " est"} déjà rempli{conflictCount > 1 ? "s" : ""}</AlertDialogTitle>
@@ -548,8 +761,9 @@ function AiDraftPanelImpl(
             <AlertDialogAction
               className="w-full"
               onClick={() => {
-                if (pendingDraft) applyDraft(pendingDraft, "empty_only");
+                if (pendingDraft) applyDraft(pendingDraft, "empty_only", pendingTranslations);
                 setPendingDraft(null);
+                setPendingTranslations(null);
               }}
             >
               Ne remplir que les champs vides
@@ -558,8 +772,9 @@ function AiDraftPanelImpl(
               variant="secondary"
               className="w-full"
               onClick={() => {
-                if (pendingDraft) applyDraft(pendingDraft, "replace");
+                if (pendingDraft) applyDraft(pendingDraft, "replace", pendingTranslations);
                 setPendingDraft(null);
+                setPendingTranslations(null);
               }}
             >
               Remplacer

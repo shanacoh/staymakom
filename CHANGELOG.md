@@ -6,6 +6,45 @@
 
 ---
 
+## [2026-10-08] — Chantier Offre, prompt 3 : l'IA remplit aussi les moods, la région et l'après-réservation
+
+> Statut : fonction serveur `generate-experience-draft` déployée le 08/10/2026. Code du formulaire PAS encore commité ni poussé (en attente de la validation de Shana). `npm run build` passe. Les 9 nouveaux tests automatiques passent. Test réel fait par Shana le 08/10/2026 avec les notes « balade à cheval… » : moods Nature & Outdoor (principal), Romantic Escape et Family Fun, région Sharon, trois titres différents. Deux défauts relevés et corrigés dans les consignes (voir « Retouches après le test »). Le test avec un PDF contenant des prix reste à faire.
+
+### Ce qui a changé côté code
+- `supabase/functions/generate-experience-draft/index.ts` : pour une expérience seule, le brouillon propose en plus 1 à 3 moods (le plus évident en premier), une région de la liste des 21, des badges existants, le point de rendez-vous, « arriver X min avant », « à savoir », « météo ou imprévu » et, si la fiche n'a pas de couverture, une photo de la galerie. Nouvelle action `mode: "mood"` : écrit titre, accroche et description pour un ou plusieurs moods à partir du contenu déjà dans la fiche (même modèle d'IA, mêmes consignes de marque). Le formulaire hôtel garde son comportement.
+- `supabase/functions/_shared/experience-draft/parse.ts` (créé, sorti de `index.ts`) : le seul endroit qui décide ce qui sort de l'IA. Liste fermée de champs éditoriaux ; un mood, une région ou un badge absent des listes n'est jamais relié, il part dans « À vérifier ».
+- `supabase/functions/_shared/experience-draft/parse.test.ts` (créé) : 10 tests, dont un qui envoie 23 champs interdits (prix, marge, dates, créneaux, prestataire, canal, contact jour J, statut, mise en avant) et vérifie qu'aucun ne ressort.
+- `supabase/functions/_shared/prompts/mood-writing.ts` (créé) : bloc « Écrire pour un mood » (mêmes faits, angle différent ; l'angle de chaque mood ; règles de titre ; jamais deux fois le même titre). Ajouté à la suite des consignes existantes, sans toucher `standalone-experience.ts` qui reste la copie exacte de la skill.
+- `src/components/forms/ai/AiDraftPanel.tsx` : applique région, badges, couverture et après-réservation avec la même règle qu'avant (Remplacer / Ne remplir que les vides / Annuler). Après un brouillon, fait écrire la version des autres moods proposés. « Traduire tout » couvre maintenant l'après-réservation et les onglets de mood. Toutes ces nouveautés passent par des options facultatives : le formulaire hôtel et la fiche bateau ne les reçoivent pas.
+- `src/components/forms/ai/AiMark.tsx` (créé) : le petit marqueur violet « IA ».
+- `src/lib/standaloneExperienceForm/moodAi.ts` (créé) : prépare ce qui est montré à l'IA pour réécrire un mood (L'essentiel, inclus, extras, après-réservation ; jamais de prix, dates, prestataire, canal ni contact) et range sa réponse.
+- `src/components/forms/standalone/MoodPresentationSection.tsx` : le bouton « ✦ Réécrire pour ce mood » est actif dans chaque onglet, y compris le principal et les onglets encore « repris du mood principal ». Marqueur « IA » par champ et sur l'onglet.
+- `src/components/forms/standalone/AfterBookingSection.tsx` : marqueur « IA » sur les champs remplis par l'IA.
+- `src/components/forms/StandaloneExperienceForm.tsx` : branche le tout. Garde en mémoire (jamais en base) les champs remplis par l'IA ; le marqueur d'un champ disparaît quand on le modifie, tous disparaissent sur « Tout valider ». Sur une fiche bateau, l'IA ne peut plus changer le mood.
+- `ARCHITECTURE.md` : section du formulaire expérience seule complétée.
+
+### Ce qui a changé côté base de données
+- Rien. Aucune migration, aucune table ni colonne ajoutée. L'IA lit les listes `categories`, `regions` et `highlight_tags`, et n'écrit rien.
+
+### Pourquoi ce changement
+- Depuis l'étape 2, le formulaire a trois nouvelles sections (Rangement, Présentation par mood, Après la réservation) que l'IA laissait vides. Shana veut qu'un brouillon les remplisse aussi, et pouvoir réécrire une fiche pour un mood précis en un clic, sans que l'IA touche jamais aux prix, aux dates, au prestataire ou à la publication.
+
+### Retouches après le test de Shana (08/10/2026)
+- « On the Water » redevient un mood comme un autre. Avant, le simple fait de le cocher basculait le formulaire sur la fiche bateau. Maintenant, une fiche n'est une fiche bateau que si « On the Water » est son mood **principal**, ce qui est déjà la règle partout ailleurs sur le site (page Bateaux, carte bateau, rentabilité). Vérifié en base : les 12 fiches bateau l'ont toutes en principal, aucune fiche ne l'a en secondaire, donc aucune fiche existante ne change de formulaire. L'IA peut le proposer, jamais en premier. « En faire le mood principal » demande confirmation pour ce mood. Fichiers : `StandaloneExperienceForm.tsx`, `parse.ts`, `index.ts`.
+- Badges : l'IA avait coché « Apéro coucher de soleil » pour une balade au coucher du soleil sans boisson. Consigne durcie : un badge n'est coché que si ce qu'il nomme fait littéralement partie de l'expérience ; zéro badge est une bonne réponse.
+- Faits inventés : l'IA avait ajouté des détails de décor absents des notes (vergers d'agrumes, eucalyptus, terre rouge, un guide, « galop » dans le titre). Consigne ajoutée : paysage, végétation, allure et personnes sont des faits, à ne jamais ajouter ; avec peu de notes, écrire court.
+- Tutoiement et vouvoiement mélangés dans un même texte : interdit. Règle fixée par Shana : en français on tutoie ; « vous » seulement pour un vrai pluriel (vous deux, vous en famille, un groupe) ; un texte choisit et s'y tient.
+- `supabase/functions/_shared/prompts/shana-preferences.ts` (créé) : carnet de préférences de Shana, lu par l'IA après les consignes de marque (brouillon, réécriture par mood, traduction d'une expérience seule) et prioritaire sur elles. C'est ici qu'on ajoute une ligne quand Shana dit aimer ou ne pas aimer une façon d'écrire, puis on redéploie la fonction. Choix de Shana : pas de page de réglages ni de boutons de vote pour l'instant.
+- Participants : l'IA ne propose plus 1 à 10 par défaut quand les notes ne disent rien.
+- « À vérifier » : plus de noms techniques ni de lignes inutiles (prix non fourni, lien de réservation, GPS).
+
+### Limites connues
+- Les marqueurs « IA » existent dans les trois nouvelles sections. Les autres sections gardent le bandeau violet général, comme avant.
+- Le brouillon se fait en deux temps : la fiche d'abord (environ 30 secondes), puis les autres moods (environ 30 secondes de plus, indiqué dans le bandeau violet). Si ce second temps échoue, un message invite à utiliser « Réécrire pour ce mood » dans l'onglet.
+- L'IA ne propose une photo de couverture que parmi les photos déjà enregistrées (une photo ajoutée mais pas encore enregistrée n'a pas d'adresse).
+
+---
+
 ## [2026-10-08] — Chantier Offre, étape 2 bis : protéger les informations internes
 
 > Statut : migration `20261008140000_protect_internal_fields.sql` appliquée en base le 08/10/2026 par Shana (éditeur SQL de Supabase), puis vérifiée : les 5 tables internes existent, plus aucune des 22 colonnes internes ne reste dans les tables publiques. Code commité et poussé sur `main` dans la foulée. Test après mise en place : avec la clé publique, les 5 tables internes répondent « accès refusé » et plus aucun champ interne ne sort des tables publiques ; le reste de chaque ligne visible est identique à avant (57 fiches, 11 options, 7 variantes, 19 expériences hôtel, 30 hôtels). Un admin retrouve tout (83 fiches, dont 70 prix fournisseur, 76 marges, 49 liens, 12 prestataires ; 12 prix d'achat ; 21 coûts par personne ; 55 emails d'hôtel), mêmes totaux qu'avant. Un client connecté non admin ne lit aucune ligne. La migration et le code vont ensemble : l'un sans l'autre casse l'enregistrement des fiches dans le back-office.
