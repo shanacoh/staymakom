@@ -14,6 +14,8 @@
 - Même fichier : le dimanche est présenté comme des propositions et non comme un planning. Mention « Our suggestions », phrase d'introduction (« Nothing here is booked or timed... »), et lien WhatsApp en fin de liste pour demander un changement ou une dégustation.
 - Retirés de la page : le « slow morning », la balade à cheval à Bat Yaar et le retour à Tel Aviv, qui n'étaient pas dans le nouveau texte.
 
+- Retouches du même jour, à la demande de Shana : à Amuka, le texte parle de prier pour l'âme sœur d'un proche (Carrie est mariée) ; la phrase d'introduction du dimanche est raccourcie (« nothing is timed ») ; les synagogues passent juste avant Canaan Gallery ; le lien WhatsApp de fin de liste est retiré ; le bloc Staymakom s'ouvre sur un mot de Shana (ravie d'avoir préparé ce séjour) et la demande de stories, vidéo et/ou post pour faire connaître le projet.
+
 ### Ce qui a changé côté base de données
 - Rien. La page est écrite en dur, sans lien avec la base.
 

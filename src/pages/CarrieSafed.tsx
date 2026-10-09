@@ -1,6 +1,6 @@
 import { useState } from "react";
 import V3Header from "@/components/V3Header";
-import { ArrowRight, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -10,11 +10,6 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 import heroImg from "@/assets/safed.webp";
-
-const WHATSAPP = "972555009910";
-const WHATSAPP_LINK = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(
-  "Hi Shana! About our Sunday in Safed:"
-)}`;
 
 const maps = (query: string) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
@@ -54,7 +49,7 @@ const STEPS: Step[] = [
     tagline: "A spiritual pilgrimage",
     mapsUrl: maps("Tomb of Rabbi Yonatan Ben Uziel Amuka"),
     paragraphs: [
-      "You could begin the morning at the tomb of Rabbi Yonatan ben Uziel, a revered Jewish sage and a beloved pilgrimage site, particularly known for prayers for finding a soulmate.",
+      "You could begin the morning at the tomb of Rabbi Yonatan ben Uziel, a revered Jewish sage and a beloved pilgrimage site. People come here to pray for a soulmate, often for someone they love who is still looking for theirs.",
       "Deep within the Biriya Forest, it is a peaceful, spiritual setting and a rare way to connect with centuries of Jewish tradition.",
     ],
   },
@@ -68,18 +63,6 @@ const STEPS: Step[] = [
       "Wander through the cobblestone alleys of Safed, one of Judaism's most important spiritual centers and the birthplace of a rich Kabbalistic tradition. A few doors worth pushing along the way:",
     ],
     places: [
-      {
-        name: "Ancient synagogues",
-        tagline: "Five centuries of prayer",
-        description:
-          "Each has its own story, its own architecture and a deep spiritual significance. Step inside one, or all three.",
-        mapsUrl: maps("Ancient synagogues Old City Safed"),
-        links: [
-          { label: "Abuhav Synagogue", mapsUrl: maps("Abuhav Synagogue Safed") },
-          { label: "Rabbi Yosef Caro Synagogue", mapsUrl: maps("Rabbi Yosef Caro Synagogue Safed") },
-          { label: "Ari Synagogue", mapsUrl: maps("Ari Ashkenazi Synagogue Safed") },
-        ],
-      },
       {
         name: "Safed Candles",
         tagline: "Handmade wax art",
@@ -95,6 +78,18 @@ const STEPS: Step[] = [
         description:
           "Watch artist Sheva Chaya turn molten glass into extraordinary pieces during a live glassblowing demonstration.",
         mapsUrl: maps("Sheva Chaya Glassblowing Gallery Safed"),
+      },
+      {
+        name: "Ancient synagogues",
+        tagline: "Five centuries of prayer",
+        description:
+          "Each has its own story, its own architecture and a deep spiritual significance. Step inside one, or all three.",
+        mapsUrl: maps("Ancient synagogues Old City Safed"),
+        links: [
+          { label: "Abuhav Synagogue", mapsUrl: maps("Abuhav Synagogue Safed") },
+          { label: "Rabbi Yosef Caro Synagogue", mapsUrl: maps("Rabbi Yosef Caro Synagogue Safed") },
+          { label: "Ari Synagogue", mapsUrl: maps("Ari Ashkenazi Synagogue Safed") },
+        ],
       },
       {
         name: "Canaan Gallery",
@@ -316,8 +311,8 @@ const CarrieSafed = () => {
             </h2>
             <div className="mx-auto mt-4 h-px w-8 bg-[#ad1414]" />
             <p className="mt-4 text-[13px] text-foreground/70 font-sans max-w-sm mx-auto leading-relaxed">
-              Nothing here is booked or timed. These are the places we love, in an order that flows well. Pick the
-              ones that speak to you and skip the rest. Tap any name to open it on the map.
+              These are the places we love, in an order that flows well. Pick the ones that speak to you and skip
+              the rest, nothing is timed. Tap any name to open it on the map.
             </p>
           </div>
 
@@ -408,20 +403,6 @@ const CarrieSafed = () => {
             ))}
           </div>
 
-          <div className="mt-8 text-center">
-            <p className="text-[13px] text-foreground/70 font-sans leading-relaxed">
-              Something you would rather swap, or a tasting you want me to arrange?
-            </p>
-            <a
-              href={WHATSAPP_LINK}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group mt-3 inline-flex items-center gap-2 font-sans text-[11px] font-bold uppercase tracking-[0.16em] text-[#ad1414] hover:text-[#8f1010] transition-colors"
-            >
-              Tell me on WhatsApp
-              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-            </a>
-          </div>
         </div>
       </section>
 
@@ -434,6 +415,11 @@ const CarrieSafed = () => {
           <h2 className="font-sans text-xl sm:text-2xl font-bold uppercase tracking-[0.02em] text-foreground leading-tight">
             Staymakom, in a few words
           </h2>
+          <p className="mt-3 text-[13px] sm:text-sm text-foreground/75 leading-relaxed font-sans">
+            I am so happy to have put this stay together for the two of you. In return, I have one simple ask: help
+            me make my project known. Stories, a video and/or a post about your weekend, so that people discover
+            there is another Israel waiting for them.
+          </p>
           <p className="mt-3 text-[13px] sm:text-sm text-foreground/75 leading-relaxed font-sans">
             Israelis and visitors alike, we all end up doing the same Israel: the same cities, the same sites, the
             same weekend. Staymakom exists to open up the rest. The places beyond the headlines, and the people who
@@ -459,8 +445,8 @@ const CarrieSafed = () => {
 
           <div className="mt-7 space-y-3 text-[13px] sm:text-sm text-foreground/75 leading-relaxed font-sans">
             <p>
-              What would help me most: a few stories from your day, so people see there is still so much to discover
-              here. A video on your profile would be exceptional. And if you enjoyed it, tell the people around you.
+              Show it the way you lived it: the places, the people, the moments you liked best. That is what makes
+              others want to go. And if you enjoyed it, tell the people around you.
             </p>
             <p>
               From my side, the offer stays open. Whenever you come, whatever you feel like doing, I will organise it.
