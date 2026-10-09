@@ -416,9 +416,7 @@ const CarrieSafed = () => {
             Staymakom, in a few words
           </h2>
           <p className="mt-3 text-[13px] sm:text-sm text-foreground/75 leading-relaxed font-sans">
-            I am so happy to have put this stay together for the two of you. In return, I have one simple ask: help
-            me make my project known. Stories, a video and/or a post about your weekend, so that people discover
-            there is another Israel waiting for them.
+            I am so happy to have put this stay together for the two of you.
           </p>
           <p className="mt-3 text-[13px] sm:text-sm text-foreground/75 leading-relaxed font-sans">
             Israelis and visitors alike, we all end up doing the same Israel: the same cities, the same sites, the
@@ -445,8 +443,17 @@ const CarrieSafed = () => {
 
           <div className="mt-7 space-y-3 text-[13px] sm:text-sm text-foreground/75 leading-relaxed font-sans">
             <p>
-              Show it the way you lived it: the places, the people, the moments you liked best. That is what makes
-              others want to go. And if you enjoyed it, tell the people around you.
+              What would help me most: a few stories from your day, tagging{" "}
+              <a
+                href="https://www.instagram.com/staymakom"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-foreground hover:text-[#ad1414] transition-colors"
+              >
+                @staymakom
+              </a>
+              , so people see there is still so much to discover here. A video on your profile would be exceptional.
+              And if you enjoyed it, tell the people around you.
             </p>
             <p>
               From my side, the offer stays open. Whenever you come, whatever you feel like doing, I will organise it.
