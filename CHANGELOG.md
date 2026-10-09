@@ -6,6 +6,22 @@
 
 ---
 
+## [2026-10-09] — Page de Carrie : nuit au Canaan et dimanche présenté comme des suggestions
+
+### Ce qui a changé côté code
+- `src/pages/CarrieSafed.tsx` : l'hôtel est fixé. Le bloc « choisis ton hôtel » (Canaan ou Ruth Safed, avec bouton WhatsApp « I choose ») est remplacé par un bloc « Saturday night · A night at Canaan Hotel », placé avant le dimanche, avec les 3 photos défilantes du Canaan.
+- Même fichier : le programme du dimanche est réécrit à partir du texte fourni par Shana. Quatre temps : Amuka (tombeau de Rabbi Yonatan ben Uziel), la vieille ville de Safed avec ses adresses détaillées (synagogues anciennes, Safed Candles, Sheva Chaya Glassblowing Gallery, Canaan Gallery), le déjeuner à Lahuh Tzfat (conservé), puis la Safed Boutique Distillery. Chaque lieu, sans exception, ouvre Google Maps quand on clique sur son nom.
+- Même fichier : le dimanche est présenté comme des propositions et non comme un planning. Mention « Our suggestions », phrase d'introduction (« Nothing here is booked or timed... »), et lien WhatsApp en fin de liste pour demander un changement ou une dégustation.
+- Retirés de la page : le « slow morning », la balade à cheval à Bat Yaar et le retour à Tel Aviv, qui n'étaient pas dans le nouveau texte.
+
+### Ce qui a changé côté base de données
+- Rien. La page est écrite en dur, sans lien avec la base.
+
+### Pourquoi ce changement
+- Carrie dort au Canaan le samedi soir : il n'y a plus de choix d'hôtel à lui proposer. Shana veut un dimanche plus riche, où chaque adresse est cliquable, et où Carrie comprend qu'elle pioche ce qui lui plaît.
+
+---
+
 ## [2026-10-08] — Email de confirmation d'une expérience traduit en entier (FR, EN, HE)
 
 > Statut : fonctions `send-standalone-booking-confirmation` et `send-standalone-day-before-reminder` déployées le 08/10/2026. Aperçus FR et HE (confirmation et rappel) envoyés à Shana. Code commité et poussé sur `main`.

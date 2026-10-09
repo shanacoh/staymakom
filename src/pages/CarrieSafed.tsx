@@ -12,179 +12,153 @@ import {
 import heroImg from "@/assets/safed.webp";
 
 const WHATSAPP = "972555009910";
+const WHATSAPP_LINK = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(
+  "Hi Shana! About our Sunday in Safed:"
+)}`;
 
 const maps = (query: string) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 
-// ─── Dimanche : la frise ──────────────────────────────────────────────────────
+// ─── Dimanche : les suggestions ───────────────────────────────────────────────
 
-type ItineraryItem = {
+type PlaceLink = {
   label: string;
-  mapsUrl?: string;
+  mapsUrl: string;
+};
+
+// Une adresse précise à l'intérieur d'une étape (atelier, galerie, synagogues)
+type Place = {
+  name: string;
+  tagline: string;
+  address?: string;
+  description: string;
+  mapsUrl: string;
+  links?: PlaceLink[];
 };
 
 type Step = {
   number: string;
-  // Moment de la journée : affiché comme intertitre quand il change d'une étape à l'autre
   moment: string;
   title: string;
-  mapsUrl?: string;
-  description?: string;
-  items?: ItineraryItem[];
-  highlight?: boolean;
-  optional?: boolean;
+  tagline: string;
+  mapsUrl: string;
+  paragraphs: string[];
+  places?: Place[];
 };
 
 const STEPS: Step[] = [
   {
     number: "01",
     moment: "Morning",
-    title: "Slow morning",
-    description: "No alarm. Breakfast at the hotel, coffee with a view over the Galilee hills.",
+    title: "Amuka",
+    tagline: "A spiritual pilgrimage",
+    mapsUrl: maps("Tomb of Rabbi Yonatan Ben Uziel Amuka"),
+    paragraphs: [
+      "You could begin the morning at the tomb of Rabbi Yonatan ben Uziel, a revered Jewish sage and a beloved pilgrimage site, particularly known for prayers for finding a soulmate.",
+      "Deep within the Biriya Forest, it is a peaceful, spiritual setting and a rare way to connect with centuries of Jewish tradition.",
+    ],
   },
   {
     number: "02",
-    moment: "Morning",
-    title: "The Old City",
+    moment: "Late morning",
+    title: "The Old City of Safed",
+    tagline: "A journey through Jewish heritage",
     mapsUrl: maps("Tsfat Old City Israel"),
-    description:
-      "We get lost on purpose. Blue doors, stone stairways, and workshops where people still make things by hand.",
-    items: [
-      { label: "Handmade candle shop" },
-      { label: "Weaving workshop, where tallitot are made" },
-      { label: "Glassblowing studio (subject to availability)" },
+    paragraphs: [
+      "Wander through the cobblestone alleys of Safed, one of Judaism's most important spiritual centers and the birthplace of a rich Kabbalistic tradition. A few doors worth pushing along the way:",
+    ],
+    places: [
+      {
+        name: "Ancient synagogues",
+        tagline: "Five centuries of prayer",
+        description:
+          "Each has its own story, its own architecture and a deep spiritual significance. Step inside one, or all three.",
+        mapsUrl: maps("Ancient synagogues Old City Safed"),
+        links: [
+          { label: "Abuhav Synagogue", mapsUrl: maps("Abuhav Synagogue Safed") },
+          { label: "Rabbi Yosef Caro Synagogue", mapsUrl: maps("Rabbi Yosef Caro Synagogue Safed") },
+          { label: "Ari Synagogue", mapsUrl: maps("Ari Ashkenazi Synagogue Safed") },
+        ],
+      },
+      {
+        name: "Safed Candles",
+        tagline: "Handmade wax art",
+        address: "62 Israel Najara Street",
+        description:
+          "Safed's iconic candle shop, known for its handcrafted Shabbat, Havdalah and Hanukkah candles, alongside intricate wax sculptures inspired by biblical stories.",
+        mapsUrl: maps("Safed Candles, Najara Street, Safed"),
+      },
+      {
+        name: "Sheva Chaya Glassblowing Gallery",
+        tagline: "The art of glass",
+        address: "7 Tet Vav Street",
+        description:
+          "Watch artist Sheva Chaya turn molten glass into extraordinary pieces during a live glassblowing demonstration.",
+        mapsUrl: maps("Sheva Chaya Glassblowing Gallery Safed"),
+      },
+      {
+        name: "Canaan Gallery",
+        tagline: "Handwoven talitot",
+        address: "28 Alkabets Street, Old City",
+        description:
+          "An artisanal weaving workshop where you can watch handmade Jewish prayer shawls take shape, a craft deeply rooted in tradition.",
+        mapsUrl: maps("Canaan Gallery Safed"),
+      },
     ],
   },
   {
     number: "03",
-    moment: "Morning",
-    title: "Three synagogues",
-    description: "Small rooms, painted ceilings, five centuries of stories.",
-    items: [
-      { label: "Abuhav Synagogue", mapsUrl: maps("Abuhav Synagogue Safed") },
-      { label: "Rabbi Yosef Caro Synagogue", mapsUrl: maps("Rabbi Yosef Caro Synagogue Safed") },
-      { label: "Ari Synagogue", mapsUrl: maps("Ari Ashkenazi Synagogue Safed") },
+    moment: "Midday",
+    title: "Lunch at Lahuh Tzfat",
+    tagline: "Our lunch pick",
+    mapsUrl: maps("Lahuh Tzfat Restaurant Safed"),
+    paragraphs: [
+      "A local Yemenite spot in the heart of town. Lahuh straight off the pan, eaten with your hands.",
     ],
   },
   {
     number: "04",
-    moment: "Midday",
-    title: "Lunch at Lahuh Tzfat",
-    mapsUrl: maps("Lahuh Tzfat Restaurant Safed"),
-    description:
-      "A local Yemenite spot in the heart of town. Lahuh straight off the pan, eaten with your hands.",
-  },
-  {
-    number: "05",
     moment: "Afternoon",
-    title: "Tasting at Tzfat Distillery",
+    title: "Safed Boutique Distillery",
+    tagline: "Exceptional spirits",
     mapsUrl: maps("Tzfat Distillery Safed"),
-    description:
-      "A beautiful space and a host you will not forget. Unusual spirits, made right here, and genuinely excellent.",
-    highlight: true,
-  },
-  {
-    number: "06",
-    moment: "Afternoon",
-    title: "Tomb of Rabbi Yonatan Ben Uziel",
-    mapsUrl: maps("Tomb of Rabbi Yonatan Ben Uziel Amuka"),
-    description: "A short detour into the Amuka valley, for those who want it.",
-    optional: true,
-  },
-  {
-    number: "07",
-    moment: "Golden hour",
-    title: "Bat Yaar Ranch",
-    mapsUrl: maps("Bat Yaar Ranch Biriya Forest"),
-    description:
-      "A Wild West ranch in the Biriya forest. One hour on horseback with the whole valley below you, in the last light of the day. It feels more like Texas than Israel.",
-    highlight: true,
-  },
-  {
-    number: "08",
-    moment: "Evening",
-    title: "Back to Tel Aviv",
-    description: "Two hours south, home by evening.",
+    paragraphs: [
+      "A world of distinctive, carefully crafted spirits, made right here. Learn about the art of distillation and, subject to availability, enjoy a tasting.",
+    ],
   },
 ];
 
-// ─── Les deux hôtels ──────────────────────────────────────────────────────────
-
-type HotelPhoto = {
-  src: string;
-  alt: string;
-};
-
-type Hotel = {
-  name: string;
-  shortName: string;
-  mood: string;
-  description: string;
-  tags: string[];
-  mapsUrl: string;
-  photos: HotelPhoto[];
-};
+// ─── Samedi soir : le Canaan ──────────────────────────────────────────────────
 
 const LEONARDO = "https://media.leonardo-hotels.com/static.leonardo-hotels.com/image";
-const DAN = "https://www.danhotels.com/sites/default/files/2025-08";
 
-const HOTELS: Hotel[] = [
-  {
-    name: "Canaan by Fattal",
-    shortName: "Canaan",
-    mood: "The cocoon",
-    description:
-      "Just outside the city, up on the hill. Quiet, soft and restful, for switching off completely.",
-    tags: ["Outside the city", "Cocooning", "Calm"],
-    mapsUrl: maps("Canaan Hotel Limited Edition by Fattal Safed"),
-    photos: [
-      {
-        src: `${LEONARDO}/canaan-hotel_lobby-terrace_01_1dca0d53dabb1216c7cffcd9282ad4f2.jpg`,
-        alt: "Canaan by Fattal, terrace with a fire pit",
-      },
-      {
-        src: `${LEONARDO}/canaan-hotel_pool_01_38a2927f72f542644e423710ff067ae7.jpg`,
-        alt: "Canaan by Fattal, indoor pool",
-      },
-      {
-        src: `${LEONARDO}/canaan-hotel_deluxe-room_02_e74865dc81acafafe8c6d0e6af5f350c.jpg`,
-        alt: "Canaan by Fattal, room",
-      },
-    ],
-  },
-  {
-    name: "Ruth Safed",
-    shortName: "Ruth Safed",
-    mood: "The old soul",
-    description:
-      "Inside the old city itself. Stone walls, arches and real character. Step out the door and you are in the alleys.",
-    tags: ["Heart of the old city", "Authentic", "Walk everywhere"],
-    mapsUrl: maps("Ruth Safed Hotel"),
-    photos: [
-      {
-        src: `${DAN}/Untitled%20design%20%285%29_35.jpg`,
-        alt: "Ruth Safed, stone courtyard",
-      },
-      {
-        src: "https://www.danhotels.com/sites/default/files/styles/our_rooms_gallery/public/2023-03/636x366%20RZ_0019_%D7%A1%D7%95%D7%95%D7%99%D7%98%D7%AA%20%D7%91%D7%99%D7%AA%20%D7%92%D7%A4%D7%9F%20%285%29.jpg",
-        alt: "Ruth Safed, room with a view over the Galilee hills",
-      },
-      {
-        src: `${DAN}/Untitled%20design%20%289%29_23.jpg`,
-        alt: "Ruth Safed, arched dining room with a view",
-      },
-    ],
-  },
-];
+const CANAAN = {
+  name: "Canaan Hotel",
+  description:
+    "Spend the night at Canaan Hotel, nestled in the hills above Safed, surrounded by the peaceful landscapes of the Galilee. Quiet, soft and restful, for switching off completely.",
+  tags: ["Above the city", "Cocooning", "Calm"],
+  mapsUrl: maps("Canaan Hotel Limited Edition by Fattal Safed"),
+  photos: [
+    {
+      src: `${LEONARDO}/canaan-hotel_lobby-terrace_01_1dca0d53dabb1216c7cffcd9282ad4f2.jpg`,
+      alt: "Canaan Hotel, terrace with a fire pit",
+    },
+    {
+      src: `${LEONARDO}/canaan-hotel_pool_01_38a2927f72f542644e423710ff067ae7.jpg`,
+      alt: "Canaan Hotel, indoor pool",
+    },
+    {
+      src: `${LEONARDO}/canaan-hotel_deluxe-room_02_e74865dc81acafafe8c6d0e6af5f350c.jpg`,
+      alt: "Canaan Hotel, room",
+    },
+  ],
+};
 
-function HotelCard({ hotel }: { hotel: Hotel }) {
+function CanaanCard() {
   const [photoIndex, setPhotoIndex] = useState(0);
-  const waLink = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(
-    `Hi Shana! I choose ${hotel.name} for our night in Safed.`
-  )}`;
 
   return (
-    <div className="flex flex-col rounded-xl border border-border bg-white overflow-hidden">
+    <div className="grid sm:grid-cols-2 rounded-xl border border-border bg-white overflow-hidden">
       {/* Photos, défilent au doigt ou avec les flèches */}
       <div className="relative">
         <Carousel
@@ -195,7 +169,7 @@ function HotelCard({ hotel }: { hotel: Hotel }) {
           }}
         >
           <CarouselContent className="ml-0">
-            {hotel.photos.map((photo, i) => (
+            {CANAAN.photos.map((photo, i) => (
               <CarouselItem key={photo.src} className="pl-0">
                 <div className="aspect-[3/2] w-full overflow-hidden">
                   <img
@@ -213,7 +187,7 @@ function HotelCard({ hotel }: { hotel: Hotel }) {
         </Carousel>
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/45 to-transparent" />
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-          {hotel.photos.map((photo, i) => (
+          {CANAAN.photos.map((photo, i) => (
             <div
               key={photo.src}
               className={
@@ -225,22 +199,19 @@ function HotelCard({ hotel }: { hotel: Hotel }) {
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col px-5 pt-4 pb-5">
-        <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-[#ad1414] font-sans mb-1.5">
-          {hotel.mood}
-        </p>
+      <div className="flex flex-col justify-center px-5 py-5">
         <a
-          href={hotel.mapsUrl}
+          href={CANAAN.mapsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="group inline-flex items-center gap-1.5 font-sans text-base font-bold uppercase tracking-[0.04em] text-foreground hover:text-[#ad1414] transition-colors"
+          className="group inline-flex w-fit items-center gap-1.5 font-sans text-base font-bold uppercase tracking-[0.04em] text-foreground hover:text-[#ad1414] transition-colors"
         >
-          {hotel.name}
+          {CANAAN.name}
           <MapPin className="h-3 w-3 shrink-0 text-[#ad1414]/70 group-hover:text-[#ad1414]" />
         </a>
-        <p className="mt-1.5 text-[13px] text-foreground/70 leading-relaxed font-sans">{hotel.description}</p>
-        <div className="mt-3 mb-5 flex flex-wrap gap-1.5">
-          {hotel.tags.map((tag) => (
+        <p className="mt-1.5 text-[13px] text-foreground/70 leading-relaxed font-sans">{CANAAN.description}</p>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {CANAAN.tags.map((tag) => (
             <span
               key={tag}
               className="inline-flex items-center rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground font-sans"
@@ -249,15 +220,6 @@ function HotelCard({ hotel }: { hotel: Hotel }) {
             </span>
           ))}
         </div>
-        <a
-          href={waLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#ad1414] px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-white font-sans hover:bg-[#8f1010] transition-colors"
-        >
-          I choose {hotel.shortName}
-          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-        </a>
       </div>
     </div>
   );
@@ -321,134 +283,144 @@ const CarrieSafed = () => {
             className="mt-4 text-[15px] sm:text-lg text-white/85 font-sans max-w-md mx-auto leading-relaxed opacity-0 animate-hero-fade-up"
             style={{ animationDelay: "450ms" }}
           >
-            One night and one slow day in the Galilee, on us. Everything is arranged. You just show up.
+            One night at Canaan Hotel and a Sunday of spirituality, art and ancient traditions, on us. Take the ideas you like, leave the rest.
           </p>
         </div>
       </section>
 
-      {/* Dimanche : programme, une ligne par étape */}
-      <section className="pt-14 pb-14 px-5 scroll-mt-16">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-10">
-            <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-sans">
-              Sunday, October 11
-            </p>
-            <h2 className="mt-2 font-sans text-xl sm:text-2xl font-bold uppercase tracking-[0.02em] text-foreground">
-              The slow day
-            </h2>
-            <div className="mx-auto mt-4 h-px w-8 bg-[#ad1414]" />
-          </div>
-
-          <div className="border-t border-border">
-            {STEPS.map((step, index) => {
-              const startsMoment = index === 0 || STEPS[index - 1].moment !== step.moment;
-              return (
-                <div
-                  key={step.number}
-                  className="grid grid-cols-[2rem_1fr] sm:grid-cols-[6.5rem_2rem_1fr] gap-x-4 border-b border-border py-5"
-                >
-                  {/* Moment de la journée : à gauche sur ordinateur, au-dessus sur téléphone */}
-                  <p
-                    className={
-                      "col-span-2 sm:col-span-1 font-sans text-[10px] uppercase tracking-[0.25em] text-muted-foreground sm:pt-[3px] " +
-                      (startsMoment ? "mb-3 sm:mb-0" : "hidden sm:block sm:invisible")
-                    }
-                  >
-                    {step.moment}
-                  </p>
-
-                  <span
-                    className={
-                      "font-sans text-[11px] tracking-[0.1em] pt-[2px] " +
-                      (step.highlight ? "text-[#ad1414] font-bold" : "text-muted-foreground")
-                    }
-                  >
-                    {step.number}
-                  </span>
-
-                  <div className="min-w-0">
-                    {(step.highlight || step.optional) && (
-                      <p
-                        className={
-                          "mb-1 font-sans text-[9px] font-bold uppercase tracking-[0.22em] " +
-                          (step.highlight ? "text-[#ad1414]" : "text-muted-foreground")
-                        }
-                      >
-                        {step.highlight ? "Staymakom favourite" : "Optional"}
-                      </p>
-                    )}
-
-                    {step.mapsUrl ? (
-                      <a
-                        href={step.mapsUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group flex w-fit items-start gap-1.5 font-sans text-sm font-bold uppercase tracking-[0.06em] leading-snug text-foreground hover:text-[#ad1414] transition-colors"
-                      >
-                        {step.title}
-                        <MapPin className="h-3 w-3 shrink-0 mt-[3px] text-[#ad1414]/70 group-hover:text-[#ad1414]" />
-                      </a>
-                    ) : (
-                      <h3 className="font-sans text-sm font-bold uppercase tracking-[0.06em] leading-snug text-foreground">
-                        {step.title}
-                      </h3>
-                    )}
-
-                    {step.description && (
-                      <p className="mt-1.5 text-[13px] text-foreground/70 leading-relaxed font-sans">
-                        {step.description}
-                      </p>
-                    )}
-
-                    {step.items && (
-                      <ul className="mt-2.5 space-y-1">
-                        {step.items.map((item) => (
-                          <li key={item.label} className="flex items-center gap-2.5 text-[13px] text-foreground/70 font-sans">
-                            <span className="h-px w-3 shrink-0 bg-foreground/30" />
-                            {item.mapsUrl ? (
-                              <a
-                                href={item.mapsUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="group inline-flex items-center gap-1 hover:text-[#ad1414] transition-colors"
-                              >
-                                {item.label}
-                                <MapPin className="h-2.5 w-2.5 shrink-0 text-[#ad1414]/60 group-hover:text-[#ad1414]" />
-                              </a>
-                            ) : (
-                              item.label
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Choix de l'hôtel */}
+      {/* Samedi soir : l'hôtel */}
       <section className="py-12 px-5 bg-muted/40">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-8 space-y-2">
             <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-sans">
-              Where you sleep
+              Saturday night, October 10
             </p>
             <h2 className="font-sans text-xl sm:text-2xl font-bold uppercase tracking-[0.02em] text-foreground">
-              Your stay, your call
+              A night at Canaan Hotel
             </h2>
-            <p className="text-[13px] text-foreground/70 font-sans max-w-sm mx-auto leading-relaxed">
-              Two hotels, two very different moods. Pick the one that feels like you and I will take care of the rest.
+          </div>
+
+          <CanaanCard />
+        </div>
+      </section>
+
+      {/* Dimanche : suggestions, une ligne par étape */}
+      <section className="pt-14 pb-14 px-5 scroll-mt-16">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-10">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-sans">
+              Sunday, October 11 · Our suggestions
+            </p>
+            <h2 className="mt-2 font-sans text-xl sm:text-2xl font-bold uppercase tracking-[0.02em] text-foreground">
+              Discover the magic of Safed
+            </h2>
+            <div className="mx-auto mt-4 h-px w-8 bg-[#ad1414]" />
+            <p className="mt-4 text-[13px] text-foreground/70 font-sans max-w-sm mx-auto leading-relaxed">
+              Nothing here is booked or timed. These are the places we love, in an order that flows well. Pick the
+              ones that speak to you and skip the rest. Tap any name to open it on the map.
             </p>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2">
-            {HOTELS.map((hotel) => (
-              <HotelCard key={hotel.name} hotel={hotel} />
+          <div className="border-t border-border">
+            {STEPS.map((step) => (
+              <div
+                key={step.number}
+                className="grid grid-cols-[2rem_1fr] sm:grid-cols-[6.5rem_2rem_1fr] gap-x-4 border-b border-border py-5"
+              >
+                {/* Moment de la journée : à gauche sur ordinateur, au-dessus sur téléphone */}
+                <p className="col-span-2 sm:col-span-1 mb-3 sm:mb-0 font-sans text-[10px] uppercase tracking-[0.25em] text-muted-foreground sm:pt-[3px]">
+                  {step.moment}
+                </p>
+
+                <span className="font-sans text-[11px] tracking-[0.1em] pt-[2px] text-muted-foreground">
+                  {step.number}
+                </span>
+
+                <div className="min-w-0">
+                  <p className="mb-1 font-sans text-[9px] font-bold uppercase tracking-[0.22em] text-[#ad1414]">
+                    {step.tagline}
+                  </p>
+
+                  <a
+                    href={step.mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex w-fit items-start gap-1.5 font-sans text-sm font-bold uppercase tracking-[0.06em] leading-snug text-foreground hover:text-[#ad1414] transition-colors"
+                  >
+                    {step.title}
+                    <MapPin className="h-3 w-3 shrink-0 mt-[3px] text-[#ad1414]/70 group-hover:text-[#ad1414]" />
+                  </a>
+
+                  {step.paragraphs.map((paragraph) => (
+                    <p key={paragraph} className="mt-1.5 text-[13px] text-foreground/70 leading-relaxed font-sans">
+                      {paragraph}
+                    </p>
+                  ))}
+
+                  {step.places && (
+                    <div className="mt-4 divide-y divide-border border-t border-border">
+                      {step.places.map((place) => (
+                        <div key={place.name} className="py-3.5">
+                          <a
+                            href={place.mapsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group flex w-fit items-start gap-1.5 font-sans text-[13px] font-bold leading-snug text-foreground hover:text-[#ad1414] transition-colors"
+                          >
+                            {place.name}
+                            <MapPin className="h-2.5 w-2.5 shrink-0 mt-[4px] text-[#ad1414]/70 group-hover:text-[#ad1414]" />
+                          </a>
+                          <p className="mt-0.5 font-sans text-[11px] text-muted-foreground">
+                            {place.tagline}
+                            {place.address && ` · ${place.address}`}
+                          </p>
+                          <p className="mt-1.5 text-[13px] text-foreground/70 leading-relaxed font-sans">
+                            {place.description}
+                          </p>
+
+                          {place.links && (
+                            <ul className="mt-2 space-y-1">
+                              {place.links.map((link) => (
+                                <li
+                                  key={link.label}
+                                  className="flex items-center gap-2.5 text-[13px] text-foreground/70 font-sans"
+                                >
+                                  <span className="h-px w-3 shrink-0 bg-foreground/30" />
+                                  <a
+                                    href={link.mapsUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="group inline-flex items-center gap-1 hover:text-[#ad1414] transition-colors"
+                                  >
+                                    {link.label}
+                                    <MapPin className="h-2.5 w-2.5 shrink-0 text-[#ad1414]/60 group-hover:text-[#ad1414]" />
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             ))}
+          </div>
+
+          <div className="mt-8 text-center">
+            <p className="text-[13px] text-foreground/70 font-sans leading-relaxed">
+              Something you would rather swap, or a tasting you want me to arrange?
+            </p>
+            <a
+              href={WHATSAPP_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group mt-3 inline-flex items-center gap-2 font-sans text-[11px] font-bold uppercase tracking-[0.16em] text-[#ad1414] hover:text-[#8f1010] transition-colors"
+            >
+              Tell me on WhatsApp
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+            </a>
           </div>
         </div>
       </section>
