@@ -272,7 +272,7 @@ const CarrieSafed = () => {
             className="mt-4 text-sm sm:text-base text-white/85 font-sans uppercase tracking-[0.14em] opacity-0 animate-hero-fade-up"
             style={{ animationDelay: "300ms" }}
           >
-            For Carrie · October 10-11
+            Carrie &amp; Oded · October 10-11
           </p>
           <p
             className="mt-4 text-[15px] sm:text-lg text-white/85 font-sans max-w-md mx-auto leading-relaxed opacity-0 animate-hero-fade-up"
