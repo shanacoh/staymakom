@@ -101,10 +101,10 @@ const STEPS: Step[] = [
       },
       {
         name: "Ari Mikvah",
-        tagline: "A sacred spring",
+        tagline: "A centuries-old ritual bath",
         address: "Foot of the Old City, by the old cemetery",
         description:
-          "A natural spring where the Ari, Safed's great 16th-century Kabbalist, used to immerse. The water runs ice-cold all year round, and people still come from all over to dip in it. Men only.",
+          "The ritual bath where the Ari, Safed's great 16th-century Kabbalist, used to immerse. Its water stays ice-cold all year round, and people still come from all over to dip in it.",
         mapsUrl: maps("Ari Mikveh Safed"),
       },
     ],
