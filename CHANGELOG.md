@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-10-11] — Page de Carrie : ajout du Ari Mikvah
+
+### Ce qui a changé côté code
+- `src/pages/CarrieSafed.tsx` : une adresse de plus dans l'étape « The Old City of Safed », en fin de liste (après Canaan Gallery) : le Ari Mikvah, avec une courte description en anglais, sa situation (au pied de la vieille ville, près du vieux cimetière) et son lien Google Maps. La description précise que le bain est réservé aux hommes.
+
+### Ce qui a changé côté base de données
+- Rien. La page est écrite en dur, sans lien avec la base.
+
+### Pourquoi ce changement
+- Shana veut proposer cet arrêt à Carrie et Oded pendant leur dimanche à Safed.
+
+---
+
 ## [2026-10-09] — Page de Carrie : nuit au Canaan et dimanche présenté comme des suggestions
 
 ### Ce qui a changé côté code

@@ -99,6 +99,14 @@ const STEPS: Step[] = [
           "An artisanal weaving workshop where you can watch handmade Jewish prayer shawls take shape, a craft deeply rooted in tradition.",
         mapsUrl: maps("Canaan Gallery Safed"),
       },
+      {
+        name: "Ari Mikvah",
+        tagline: "A sacred spring",
+        address: "Foot of the Old City, by the old cemetery",
+        description:
+          "A natural spring where the Ari, Safed's great 16th-century Kabbalist, used to immerse. The water runs ice-cold all year round, and people still come from all over to dip in it. Men only.",
+        mapsUrl: maps("Ari Mikveh Safed"),
+      },
     ],
   },
   {
