@@ -8,7 +8,7 @@
 
 ## [2026-10-12] — Chantier Offre, étape 7 : le Plan de l'offre
 
-> Statut : migration `20261012120000_offer_plan.sql` appliquée en base le 12/10/2026 par Shana depuis l'éditeur SQL de Supabase (vérifié : 3 tables, verrous admin actifs, 5 déclencheurs, 4 fonctions, aucun droit pour les visiteurs non connectés). `npm run build` passe, 16 nouveaux tests passent. Le statut automatique « en ligne » n'a pas été testé en conditions réelles (test refusé par les permissions de la session) : à vérifier à la première expérience liée. Aucune ligne d'exemple n'a été créée. Pas encore commité ni poussé.
+> Statut : migration `20261012120000_offer_plan.sql` appliquée en base le 12/10/2026 par Shana depuis l'éditeur SQL de Supabase (vérifié : 3 tables, verrous admin actifs, 5 déclencheurs, 4 fonctions, aucun droit pour les visiteurs non connectés). `npm run build` passe, 16 nouveaux tests passent. Le statut automatique « en ligne » n'a pas été testé en conditions réelles (test refusé par les permissions de la session) : à vérifier à la première expérience liée. Aucune ligne d'exemple n'a été créée. Code commité et poussé sur `main` le 12/10/2026.
 
 ### Ce qui a changé côté code
 - `src/pages/admin/OfferPlan.tsx` (nouveau) : l'écran « Plan de l'offre » (`/admin/offre`) : 5 compteurs, onglets Grille / Liste, bouton « Exporter la liste à prospecter ».
