@@ -9,6 +9,7 @@ import LaunchFooter from "@/components/LaunchFooter";
 import { SEOHead } from "@/components/SEOHead";
 import Experience2CardWithPrice from "@/components/Experience2CardWithPrice";
 import StandaloneExperienceCard from "@/components/StandaloneExperienceCard";
+import { useMoodCards } from "@/lib/moodDisplay/queries";
 import ExperienceCardSkeleton from "@/components/ExperienceCardSkeleton";
 // Chargée à la demande : embarque Leaflet (carte interactive).
 const MultiPinMap = lazy(() => import("@/components/experience/MultiPinMap"));
@@ -348,6 +349,13 @@ const LaunchExperiences = () => {
     });
   }, [categoryStandalone, selectedRegion, selectedTags, regionLabelOf]);
 
+  // Dans un mood, chaque carte prend la version écrite pour ce mood (jamais les bateaux).
+  // La carte géographique, elle, garde la présentation principale.
+  const { cards: standaloneCards, linkSuffix: moodLinkSuffix } = useMoodCards<any>(
+    filteredStandalone as any[] | undefined,
+    mode === "live" && selectedDbCat && selectedDbCat.slug !== "bateaux" ? selectedDbCat : null,
+  );
+
   /* ── Map pins (standalone) ── */
   const standaloneMapPins = useMemo(() => {
     const seen = new Set<string>();
@@ -613,11 +621,12 @@ const LaunchExperiences = () => {
               <div>
                 {filteredStandalone && filteredStandalone.length > 0 ? (
                   <div className="grid grid-cols-2 gap-3">
-                    {filteredStandalone.map((experience: any, idx: number) => (
+                    {standaloneCards.map((experience: any, idx: number) => (
                       <StandaloneExperienceCard
                         key={experience.id}
                         experience={experience}
                         index={idx}
+                        linkSuffix={moodLinkSuffix}
                       />
                     ))}
                   </div>

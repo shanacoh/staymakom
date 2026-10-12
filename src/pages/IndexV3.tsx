@@ -27,6 +27,7 @@ import {
 import { cn } from "@/lib/utils";
 import { trackGiftCardClicked, trackViewAllExperiencesClicked, trackHeroCtaClicked, trackRegionFilterOpened, trackRegionFilterSelected, trackNearMeResult } from "@/lib/analytics";
 import RegionFilter from "@/components/RegionFilter";
+import { useMoodCards } from "@/lib/moodDisplay/queries";
 import { useNearMe } from "@/hooks/useNearMe";
 import { countByRegion, filterByRegion, type RegionChoice } from "@/lib/regionList/filter";
 import { useRegionList } from "@/lib/regionList/queries";
@@ -204,6 +205,14 @@ const IndexV3 = () => {
     });
   }, [standaloneExperiences, selectedCategory, categories]);
 
+  /* ── Dans un onglet de mood, chaque carte prend la version écrite pour ce mood (jamais les bateaux) ── */
+  const selectedMood = useMemo(() => {
+    if (mode !== "live" || !selectedCategory) return null;
+    const category = (categories as any[])?.find((c) => c.slug === selectedCategory);
+    return category && category.id !== BOATS_CATEGORY_ID ? { id: category.id as string, slug: category.slug as string } : null;
+  }, [mode, selectedCategory, categories]);
+  const { cards: standaloneCards, linkSuffix: moodLinkSuffix } = useMoodCards<any>(filteredStandalone, selectedMood);
+
   /* ── Availability rules ── */
   const experienceIds = useMemo(
     () => (experiences2 ?? []).map((e: any) => e.id as string),
@@ -243,7 +252,7 @@ const IndexV3 = () => {
   }, [experiences2, selectedCategory]);
 
   /* ── Filtre région / « Autour de moi » : s'applique après la catégorie, dans les deux modes ── */
-  const categoryList: any[] = mode === "live" ? filteredStandalone : ((filteredExperiences as any[]) ?? []);
+  const categoryList: any[] = mode === "live" ? standaloneCards : ((filteredExperiences as any[]) ?? []);
   const placeOf = mode === "live" ? standalonePlace : hotelPlace;
   const regionCounts = useMemo(() => countByRegion(categoryList, placeOf, regionList), [categoryList, placeOf, regionList]);
   const placedList = useMemo(
@@ -554,6 +563,7 @@ const IndexV3 = () => {
                         experience={exp}
                         index={idx}
                         badge={distanceBadge(distanceKm)}
+                        linkSuffix={moodLinkSuffix}
                       />
                     )
                   )}

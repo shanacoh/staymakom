@@ -15,7 +15,7 @@ interface RegionSelectProps {
 }
 
 /**
- * Sélecteur de région du back-office : les 21 régions de la liste de référence, groupées par zone.
+ * Sélecteur de région du back-office : les régions de la liste de référence, groupées par zone.
  * Ne fait que proposer et remonter le choix ; l'enregistrement est fait par le formulaire.
  */
 export function RegionSelect({ id, value, onChange, legacyText, disabled }: RegionSelectProps) {

@@ -469,8 +469,9 @@ export function trackSessionLanded(props: {
   });
 }
 
-export function trackExperienceViewed(product: ProductLike, productType: ProductType) {
-  safeTrack("experience_viewed", productProps(product, productType));
+/** `mood` : le mood par lequel le client est arrivé sur la fiche (slug), s'il y en a un. */
+export function trackExperienceViewed(product: ProductLike, productType: ProductType, mood?: string | null) {
+  safeTrack("experience_viewed", { ...productProps(product, productType), mood: mood ?? undefined });
 }
 
 export function trackExperienceEngaged(
@@ -538,12 +539,12 @@ export function trackExtraToggled(slug: string, extraName: string, enabled: bool
   safeTrack("extra_toggled", { slug, extra_name: extraName, enabled, price });
 }
 
-export function trackBookClicked(product: ProductLike, productType: ProductType, placement: string) {
-  safeTrack("book_clicked", { ...productProps(product, productType), placement });
+export function trackBookClicked(product: ProductLike, productType: ProductType, placement: string, mood?: string | null) {
+  safeTrack("book_clicked", { ...productProps(product, productType), placement, mood: mood ?? undefined });
 }
 
-export function trackRequestClicked(product: ProductLike, productType: ProductType, placement: string) {
-  safeTrack("request_clicked", { ...productProps(product, productType), placement });
+export function trackRequestClicked(product: ProductLike, productType: ProductType, placement: string, mood?: string | null) {
+  safeTrack("request_clicked", { ...productProps(product, productType), placement, mood: mood ?? undefined });
 }
 
 export function trackBookingPanelOpened(slug?: string) {

@@ -2,7 +2,7 @@ import type { Lang } from "@/lib/regions";
 
 export type { Lang };
 
-/** Une des 4 grandes zones (Nord, Côte & Centre, Jérusalem, Sud). */
+/** Une des 5 grandes zones (Tel Aviv-Jaffa, Jérusalem, Nord, Côte & Centre, Sud). */
 export interface RegionZone {
   slug: string;
   name: string;

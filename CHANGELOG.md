@@ -6,6 +6,36 @@
 
 ---
 
+## [2026-10-12] — Chantier Offre, étape 5 : le site affiche la version du mood
+
+> Statut : migration `20261012100000_five_zones_and_creative_mood.sql` appliquée en base le 12/10/2026 (vérifié : 5 zones, région `tel-aviv` déplacée, mood `creative` en brouillon). Tests et `npm run build` passent. Code commité et poussé sur `main`.
+
+### Ce qui a changé côté code
+- `src/lib/moodDisplay/moodDisplay.ts` (nouveau) : les règles qui décident ce qu'une expérience affiche dans un mood (photo de couverture, titre, accroche, description), avec repli sur l'anglais du mood puis sur la présentation principale.
+- `src/lib/moodDisplay/queries.ts` (nouveau) : lecture des versions par mood, pour une liste de cartes et pour une fiche.
+- `src/lib/moodDisplay/moodDisplay.test.ts` (nouveau) : 12 tests, dont le cas « une expérience à 2 moods, dont un personnalisé ».
+- `src/pages/IndexV3.tsx`, `src/pages/Category.tsx`, `src/pages/LaunchExperiences.tsx` : dans un mood, les cartes prennent la version de ce mood et leur lien porte le mood (`?mood=family`). Hors mood, rien ne change.
+- `src/pages/Category.tsx` : la page d'un mood liste aussi les expériences dont ce mood est secondaire (avant : seulement le mood principal). Aujourd'hui cela ajoute « Dinner in the Dark » dans Foody Discovery et la balade en chameau dans Land of Stories.
+- `src/pages/StandaloneExperience.tsx` : le haut de la fiche suit le mood d'arrivée. Le SEO, le partage, le panneau de réservation et le prix ne changent pas.
+- `src/lib/analytics.ts` : propriété `mood` ajoutée aux événements de vue de fiche et de clic sur réserver (et sur « demander »).
+- `src/lib/regionList/filter.ts`, `src/components/RegionFilter.tsx` : prise en compte de la zone Tel Aviv-Jaffa (une fiche non reliée y est rangée seulement si elle s'y trouve ; la zone n'est pas répétée en sous-ligne dans le filtre).
+- `src/lib/regionList/regionList.test.ts` : 4 tests de plus pour les 5 zones.
+- `ARCHITECTURE.md` : mis à jour.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261012100000_five_zones_and_creative_mood.sql` (appliquée le 12/10/2026) : uniquement des données. Ajoute la zone « Tel Aviv-Jaffa », y déplace la région `tel-aviv`, remet les zones dans l'ordre Tel Aviv-Jaffa, Jérusalem, Nord, Côte & Centre, Sud, et crée le mood `creative` (« Creative Spirit ») en brouillon, sans nom FR / HE, sans intro et sans image.
+- Aucune table ni colonne créée ou modifiée.
+
+### Pourquoi ce changement
+- Une expérience peut être rangée dans plusieurs moods, chacun avec sa propre présentation. Shana veut que le client voie, dans chaque mood, la version écrite pour ce mood, sans créer plusieurs pages pour les moteurs de recherche.
+
+### Limites connues
+- Le mood d'arrivée n'est pas enregistré sur la réservation et les emails gardent le titre principal : il aurait fallu modifier la page de checkout et la fonction de paiement, ce qui était interdit.
+- Les cartes n'affichent pas d'accroche aujourd'hui (ni avant, ni après) : seuls la photo et le titre changent sur une carte.
+- Aucune version par mood n'existe encore en base : le comportement est vérifié par des tests automatiques, pas encore sur une vraie fiche.
+
+---
+
 ## [2026-10-11] — Page de Carrie : ajout du Ari Mikvah
 
 ### Ce qui a changé côté code

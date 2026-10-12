@@ -4,7 +4,7 @@
  * Étape 1 uniquement : sélection des participants et de la date.
  * Le checkout (infos client + paiement) est délégué à StandaloneCheckout.tsx.
  */
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback, useEffect, useMemo } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +35,8 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
 import { trackedRegionName, useRegionLabel } from "@/lib/regionList/queries";
 import { SEOHead } from "@/components/SEOHead";
+import { MOOD_PARAM, inMood, orderedPhotos } from "@/lib/moodDisplay/moodDisplay";
+import { useArrivalMood } from "@/lib/moodDisplay/queries";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumbJsonLd";
 import {
   trackExperiencePageViewed,
@@ -111,6 +113,7 @@ interface StandaloneExperienceData {
   longitude?: number | null;
   accessibility_info?: string | null;
   category_id?: string | null;
+  category_ids?: string[] | null;
   categories?: { id: string; slug: string; name: string; name_fr?: string | null; name_he?: string | null; icon?: string | null } | null;
   status: string;
   available_days?: number[] | null;
@@ -279,7 +282,7 @@ export default function StandaloneExperience() {
         "city", "city_he", "city_fr",
         "region", "region_he", "region_fr", "region_id",
         "latitude", "longitude",
-        "accessibility_info", "accessibility_info_fr", "accessibility_info_he", "category_id", "status",
+        "accessibility_info", "accessibility_info_fr", "accessibility_info_he", "category_id", "category_ids", "status",
         "available_days", "blocked_dates", "availability_end_date",
         "availability_mode", "whitelisted_dates", "practical_info",
         "languages", "schedule_note", "schedule_note_fr", "schedule_note_he",
@@ -306,6 +309,15 @@ export default function StandaloneExperience() {
     },
     enabled: !!slug,
   });
+
+  // Le mood par lequel le client est arrivé (`?mood=family`) : la fiche affiche en haut la version
+  // écrite pour ce mood. Sans paramètre, ou si ce mood n'est pas un mood publié de cette expérience,
+  // c'est la présentation principale.
+  const arrivalMood = useArrivalMood(experience, searchParams.get(MOOD_PARAM));
+  const shown = useMemo(
+    () => (experience ? inMood(experience, arrivalMood.version) : undefined),
+    [experience, arrivalMood.version],
+  );
 
   const { data: rateOptions } = useQuery({
     queryKey: ["standalone-rate-options-public", experience?.id],
@@ -342,9 +354,10 @@ export default function StandaloneExperience() {
   useScrollDepth(`standalone/${slug}`);
 
   useEffect(() => {
-    if (!experience?.slug) return;
+    // On attend de savoir par quel mood le client est arrivé, pour l'envoyer avec la vue de fiche.
+    if (!experience?.slug || !arrivalMood.isReady) return;
     trackExperiencePageViewed(experience.slug, experience.title, experience.base_price);
-    trackExperienceViewed(toProductLike(experience), "standalone");
+    trackExperienceViewed(toProductLike(experience), "standalone", arrivalMood.slug);
     const start = Date.now();
     const handleVisChange = () => {
       if (document.visibilityState === "hidden") {
@@ -356,7 +369,7 @@ export default function StandaloneExperience() {
       document.removeEventListener("visibilitychange", handleVisChange);
       trackTimeOnExperiencePage(experience.slug, (Date.now() - start) / 1000);
     };
-  }, [experience?.slug]);
+  }, [experience?.slug, arrivalMood.isReady]);
 
   // experience_engaged : à 15/30/60/120s si l'onglet est visible, avec le scroll max atteint
   useEffect(() => {
@@ -528,17 +541,20 @@ export default function StandaloneExperience() {
       ? experience?.subtitle_fr || experience?.subtitle || undefined
       : experience?.subtitle || undefined;
 
-  const longCopy =
-    lang === "he"
-      ? experience?.long_copy_he || experience?.long_copy || undefined
-      : lang === "fr"
-      ? experience?.long_copy_fr || experience?.long_copy || undefined
-      : experience?.long_copy || undefined;
+  // Haut de la fiche : titre, accroche, description et photo de couverture du mood d'arrivée.
+  // `title` et `subtitle` ci-dessus restent ceux de la présentation principale (SEO, partage, messages).
+  const shownText = (part: "title" | "subtitle" | "long_copy") =>
+    (lang === "en" ? undefined : shown?.[`${part}_${lang}` as const]) || shown?.[part] || undefined;
+  const shownTitle = shownText("title") || title;
+  const shownSubtitle = shownText("subtitle");
+  const shownLongCopy = shownText("long_copy");
 
   const photos: string[] = (() => {
     if (!experience) return [];
     const hero = experience.hero_image;
     const gallery = experience.photos ?? [];
+    // Mêmes photos, avec la photo du mood passée en premier.
+    if (shown?.hero_image && shown.hero_image !== hero) return orderedPhotos(shown.hero_image, hero, gallery);
     if (hero) return [hero, ...gallery.filter((p) => p !== hero)];
     return gallery;
   })();
@@ -547,7 +563,7 @@ export default function StandaloneExperience() {
   // Loading state
   // -------------------------------------------------------------------------
 
-  if (isLoading) {
+  if (isLoading || (experience && !arrivalMood.isReady)) {
     return (
       <div className="min-h-screen bg-background">
         <V3Header />
@@ -974,7 +990,7 @@ export default function StandaloneExperience() {
               setShowVitrineDialog(true);
               return;
             }
-            trackBookClicked(toProductLike(experience), "standalone", "panel");
+            trackBookClicked(toProductLike(experience), "standalone", "panel", arrivalMood.slug);
             const checkoutState = {
               experienceId: experience.id,
               experienceSlug: experience.slug,
@@ -1118,8 +1134,8 @@ export default function StandaloneExperience() {
         <section>
           <HeroSection
             photos={photos.filter(Boolean)}
-            title={title}
-            subtitle={subtitle}
+            title={shownTitle}
+            subtitle={shownSubtitle}
             hotelName={undefined}
             hotelImage={undefined}
             city={locCity || undefined}
@@ -1198,7 +1214,7 @@ export default function StandaloneExperience() {
                 <WhatsIncludedPhotos2
                   experienceId={experience.id}
                   lang={lang}
-                  longCopy={longCopy}
+                  longCopy={shownLongCopy}
                   source="standalone"
                 />
               </div>
@@ -1284,9 +1300,9 @@ export default function StandaloneExperience() {
               onClick={() => {
                 trackBookingPanelOpened(experience.slug);
                 if (experience.is_bookable === false) {
-                  trackRequestClicked(toProductLike(experience), "standalone", "mobile_bar");
+                  trackRequestClicked(toProductLike(experience), "standalone", "mobile_bar", arrivalMood.slug);
                 } else {
-                  trackBookClicked(toProductLike(experience), "standalone", "mobile_bar");
+                  trackBookClicked(toProductLike(experience), "standalone", "mobile_bar", arrivalMood.slug);
                 }
                 setIsSheetOpen(true);
               }}

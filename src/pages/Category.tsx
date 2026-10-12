@@ -8,6 +8,7 @@ import { Loader2, Heart, Users, Wine, Compass, Leaf, Sparkles, type LucideIcon }
 import { Link } from "react-router-dom";
 import ExperienceCard from "@/components/ExperienceCard";
 import StandaloneExperienceCard from "@/components/StandaloneExperienceCard";
+import { useMoodCards } from "@/lib/moodDisplay/queries";
 import BoatCard from "@/components/boats/BoatCard";
 import BoatDetailModal from "@/components/boats/BoatDetailModal";
 import { useCurrency } from "@/contexts/CurrencyContext";
@@ -165,7 +166,7 @@ const Category = () => {
   const { data: standaloneExperiences, isLoading: standaloneLoading } = useQuery({
     queryKey: ["category-standalone-experiences", category?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const query = supabase
         .from("standalone_experiences")
         .select(`
           id, slug, title, title_he, title_fr,
@@ -175,14 +176,19 @@ const Category = () => {
           city, city_he, region, region_he, practical_info,
           original_price, duration, duration_fr, duration_he,
           skipper_included, crew_included,
+          category_id, category_ids,
           standalone_experience_highlight_tags(
             tag_id, position,
             highlight_tags(id, slug, label_en, label_he, label_fr)
           )
         `)
-        .eq("category_id", category?.id)
         .eq("status", "published")
         .order("display_order", { ascending: true, nullsFirst: false });
+      // Une expérience apparaît dans son mood principal et dans ses autres moods cochés, comme dans
+      // les onglets de l'accueil. Les bateaux restent ceux dont c'est le mood principal.
+      const { data, error } = await (isBoatsCategory
+        ? query.eq("category_id", category!.id)
+        : query.or(`category_id.eq.${category!.id},category_ids.cs.["${category!.id}"]`));
       if (error) throw error;
       return data || [];
     },
@@ -244,6 +250,13 @@ const Category = () => {
     }
     return filtered;
   }, [standaloneExperiences, filters]);
+
+  // Sur la page d'un mood, chaque carte prend la version écrite pour ce mood (jamais les bateaux).
+  // La carte géographique, elle, garde la présentation principale.
+  const { cards: standaloneCards, linkSuffix: moodLinkSuffix } = useMoodCards<any>(
+    filteredStandalone,
+    category && !isBoatsCategory && mode === "live" ? category : null,
+  );
 
   /* ── Matching catégorie active avec V3_CATEGORIES ── */
   const currentV3Cat = V3_CATEGORIES.find(v3cat =>
@@ -544,7 +557,7 @@ const Category = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredStandalone.map((experience, idx) =>
+                  {standaloneCards.map((experience, idx) =>
                     isBoatsCategory ? (
                       <BoatCard key={experience.id} boat={experience} index={idx} onSelect={setSelectedBoatId} />
                     ) : (
@@ -552,6 +565,7 @@ const Category = () => {
                         key={experience.id}
                         experience={experience}
                         index={idx}
+                        linkSuffix={moodLinkSuffix}
                       />
                     )
                   )}

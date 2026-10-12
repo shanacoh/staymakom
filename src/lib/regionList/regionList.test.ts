@@ -112,3 +112,39 @@ describe("filterByRegion et countByRegion", () => {
     });
   });
 });
+
+describe("5 zones : Tel Aviv-Jaffa à part", () => {
+  const FIVE: RegionList = {
+    zones: [zone("north", 3), zone("south", 5), zone("tel-aviv-jaffa", 1), zone("coast-center", 4), zone("jerusalem", 2)],
+    regions: [
+      region("tel-aviv", "tel-aviv-jaffa", 12),
+      region("around-tel-aviv", "coast-center", 13),
+      region("sharon", "coast-center", 11),
+      region("jerusalem", "jerusalem", 15),
+      region("kinneret", "north", 4),
+      region("eilat", "south", 21),
+    ],
+  };
+
+  it("affiche les zones dans l'ordre Tel Aviv-Jaffa, Jérusalem, Nord, Côte & Centre, Sud", () => {
+    expect(groupByZone(FIVE).map((g) => g.zone.slug)).toEqual(["tel-aviv-jaffa", "jerusalem", "north", "coast-center", "south"]);
+  });
+
+  it("la région Tel Aviv-Jaffa est dans sa zone, « Autour de Tel Aviv » reste en Côte & Centre", () => {
+    expect(zoneSlugOf({ region_id: "id-tel-aviv" }, FIVE)).toBe("tel-aviv-jaffa");
+    expect(zoneSlugOf({ region_id: "id-around-tel-aviv" }, FIVE)).toBe("coast-center");
+  });
+
+  it("une fiche non reliée est rangée à Tel Aviv-Jaffa seulement si elle s'y trouve vraiment", () => {
+    expect(zoneSlugOf({ latitude: 32.05, longitude: 34.75 }, FIVE)).toBe("tel-aviv-jaffa"); // Jaffa
+    expect(zoneSlugOf({ latitude: 32.07, longitude: 34.82 }, FIVE)).toBe("coast-center"); // Ramat Gan
+    expect(zoneSlugOf({ latitude: 32.16, longitude: 34.84 }, FIVE)).toBe("coast-center"); // Herzliya
+    expect(zoneSlugOf({ region: "Tel Aviv" }, FIVE)).toBe("tel-aviv-jaffa");
+    expect(zoneSlugOf({ region: "Around Tel Aviv" }, FIVE)).toBe("coast-center");
+    expect(zoneSlugOf({ region: "Tel Aviv", city: "Herzliya" }, FIVE)).toBe("coast-center");
+  });
+
+  it("tant que la zone n'existe pas dans la liste, rien ne change", () => {
+    expect(zoneSlugOf({ region: "Tel Aviv" }, LIST)).toBe("coast-center");
+  });
+});

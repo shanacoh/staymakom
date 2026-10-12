@@ -21,6 +21,12 @@ const ZONE_OF_MACRO: Record<Exclude<MacroRegion, "car">, string> = {
   eil: "south",
 };
 
+// Tel Aviv-Jaffa est une zone à part. Le reste de la plaine côtière reste en « Côte & Centre ».
+const TEL_AVIV_ZONE = "tel-aviv-jaffa";
+const TEL_AVIV_BOX = { minLat: 32.03, maxLat: 32.13, minLng: 34.74, maxLng: 34.805 };
+const TEL_AVIV_WORDS = /tel.?aviv|jaffa|yafo/;
+const AROUND_WORDS = /around|autour/;
+
 // Le sud du Carmel (Zichron, Binyamina, Césarée, Habonim) est rangé en « Côte & Centre », Haïfa au Nord.
 const SOUTH_CARMEL_MAX_LAT = 32.68;
 const SOUTH_CARMEL_WORDS = /zichron|zikhron|binyamina|caesarea|habonim|bat shlomo/;
@@ -29,11 +35,20 @@ const SOUTH_CARMEL_WORDS = /zichron|zikhron|binyamina|caesarea|habonim|bat shlom
  * La zone d'une fiche qui n'a pas encore de région reliée, estimée d'après sa position sur la carte
  * ou, à défaut, d'après son ancien texte. Évite qu'une fiche disparaisse du filtre en attendant.
  */
-function fallbackZoneOf(place: RegionPlace): string | null {
+function fallbackZoneOf(place: RegionPlace, list: RegionList): string | null {
   const macro = macroRegionOf(place);
   if (!macro) return null;
-  if (macro !== "car") return ZONE_OF_MACRO[macro];
   const position = placePosition(place);
+  if (macro === "tlv") {
+    // Tant que la zone n'existe pas dans la liste de référence, tout reste en « Côte & Centre ».
+    if (!list.zones.some((zone) => zone.slug === TEL_AVIV_ZONE)) return ZONE_OF_MACRO.tlv;
+    const text = (place.city?.trim() || place.region || "").toLowerCase();
+    const isTelAviv = position
+      ? position.lat >= TEL_AVIV_BOX.minLat && position.lat <= TEL_AVIV_BOX.maxLat && position.lng >= TEL_AVIV_BOX.minLng && position.lng <= TEL_AVIV_BOX.maxLng
+      : TEL_AVIV_WORDS.test(text) && !AROUND_WORDS.test(text);
+    return isTelAviv ? TEL_AVIV_ZONE : ZONE_OF_MACRO.tlv;
+  }
+  if (macro !== "car") return ZONE_OF_MACRO[macro];
   const isSouthCarmel = position
     ? position.lat < SOUTH_CARMEL_MAX_LAT
     : SOUTH_CARMEL_WORDS.test(`${place.city ?? ""} ${place.region ?? ""}`.toLowerCase());
@@ -48,7 +63,7 @@ export function regionSlugOf(place: RegionPlace | null | undefined, list: Region
 /** Le slug de la zone d'un lieu : celle de sa région reliée, sinon une estimation. */
 export function zoneSlugOf(place: RegionPlace | null | undefined, list: RegionList): string | null {
   if (!place) return null;
-  return linkedRegion(place, list)?.zone_slug ?? fallbackZoneOf(place);
+  return linkedRegion(place, list)?.zone_slug ?? fallbackZoneOf(place, list);
 }
 
 export interface PlacedItem<T> {

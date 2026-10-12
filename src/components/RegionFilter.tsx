@@ -36,7 +36,7 @@ interface RegionFilterProps {
 }
 
 /**
- * Lien discret « Partout en Israël » qui ouvre « Autour de moi » et les 4 zones avec leurs régions : une petite
+ * Lien discret « Partout en Israël » qui ouvre « Autour de moi » et les zones avec leurs régions : une petite
  * fenêtre sur ordinateur, un panneau qui monte du bas sur téléphone. Ne fait qu'afficher et remonter le
  * choix ; le filtrage lui-même est fait par la page.
  */
@@ -107,7 +107,8 @@ export default function RegionFilter({ value, counts, regionList, lang, isLocati
             {localizedName(zone, lang)}
             <span className="text-[11.5px] font-normal text-muted-foreground">{counts.zones[zone.slug]}</span>
           </button>
-          {regions.map((r) => (
+          {/* Une zone qui ne contient qu'une région du même nom (Tel Aviv-Jaffa) n'est pas répétée en dessous. */}
+          {(regions.length === 1 && regions[0].name === zone.name ? [] : regions).map((r) => (
             <button
               key={r.slug}
               type="button"
