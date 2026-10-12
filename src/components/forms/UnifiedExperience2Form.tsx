@@ -62,6 +62,8 @@ import {
   type ChecklistItem,
 } from "@/components/forms/shared/FormSummaryNav";
 import { InternalOnlyBox } from "@/components/forms/shared/InternalOnlyBox";
+import { HotelExperienceProviderField } from "@/components/admin/providers/HotelExperienceProviderField";
+import { PROVIDER_LINKS_QUERY_KEY } from "@/lib/providers/queries";
 import { CancellationPolicyFields } from "@/components/forms/shared/CancellationPolicyFields";
 import { SeoFields } from "@/components/forms/shared/SeoFields";
 import { PublicationFields } from "@/components/forms/shared/PublicationFields";
@@ -163,6 +165,8 @@ const experience2Schema = z.object({
   bar_rate_markup_value: optNum(),
   bar_rate_markup_is_pct: z.boolean().default(true),
   experience_net_cost: optNum(),
+  // Prestataire de l'activité quand ce n'est pas l'hôtel (vide = celui de l'hôtel)
+  provider_id: z.string().nullable().optional(),
   room_net_rate: optNum(),
   // Tarification expérience (nouveaux champs)
   experience_cost_fixed: optNum(),
@@ -360,6 +364,7 @@ export function UnifiedExperience2Form({
       bar_rate_markup_value: undefined,
       bar_rate_markup_is_pct: true,
       experience_net_cost: undefined,
+      provider_id: null,
       room_net_rate: undefined,
       // Par défaut, les nouvelles expériences sont en BB (validé par Shana 2026-05-07)
       preferred_board_type: "BB",
@@ -559,6 +564,7 @@ export function UnifiedExperience2Form({
       setValue("bar_rate_markup_value", (existingExperience as any).bar_rate_markup_value ?? undefined);
       setValue("bar_rate_markup_is_pct", (existingExperience as any).bar_rate_markup_is_pct ?? true);
       setValue("experience_net_cost", (existingExperience as any).experience_net_cost ?? undefined);
+      setValue("provider_id", (existingExperience as any).provider_id ?? null);
       const existingRoomNetRate = (existingExperience as any).room_net_rate;
       if (existingRoomNetRate != null) setValue("room_net_rate", existingRoomNetRate);
       setValue("experience_cost_fixed", (existingExperience as any).experience_cost_fixed ?? undefined);
@@ -804,6 +810,7 @@ export function UnifiedExperience2Form({
       bar_rate_markup_value: data.bar_rate_markup_value ?? null,
       bar_rate_markup_is_pct: data.bar_rate_markup_is_pct ?? true,
       experience_net_cost: data.experience_net_cost ?? null,
+      provider_id: data.provider_id || null,
       room_net_rate: data.room_net_rate ?? null,
       experience_cost_fixed: data.experience_cost_fixed ?? null,
       experience_cost_per_person: data.experience_cost_per_person ?? null,
@@ -908,6 +915,7 @@ export function UnifiedExperience2Form({
       localStorage.removeItem(autoSaveKey);
       queryClient.invalidateQueries({ queryKey: ["admin-experiences2"] });
       if (currentExperienceId) queryClient.invalidateQueries({ queryKey: ["experience2", currentExperienceId] });
+      queryClient.invalidateQueries({ queryKey: PROVIDER_LINKS_QUERY_KEY });
     } catch (error: any) {
 
       toast.error(error.message || "Failed to save draft");
@@ -957,6 +965,7 @@ export function UnifiedExperience2Form({
       localStorage.removeItem(autoSaveKey);
       queryClient.invalidateQueries({ queryKey: ["admin-experiences2"] });
       if (currentExperienceId) queryClient.invalidateQueries({ queryKey: ["experience2", currentExperienceId] });
+      queryClient.invalidateQueries({ queryKey: PROVIDER_LINKS_QUERY_KEY });
       onClose?.();
     } catch (error: any) {
       
@@ -1531,6 +1540,13 @@ export function UnifiedExperience2Form({
                   <p className="text-sm text-destructive">Au moins un hôtel est requis dans le parcours.</p>
                 )}
               </div>
+
+              <HotelExperienceProviderField
+                value={watch("provider_id") ?? null}
+                onChange={(id) => setValue("provider_id", id, { shouldDirty: true })}
+                hotelId={experienceHotels.length > 0 ? experienceHotels[0].hotel_id : null}
+                disabled={isSaving}
+              />
 
               <Separator />
 

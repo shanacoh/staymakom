@@ -40,6 +40,7 @@ import {
 } from "@/lib/catalogue/types";
 import { SiteBadge } from "./CatalogueBadges";
 import { ItemLinksSection } from "./ItemLinksSection";
+import { ItemProviderSection } from "./ItemProviderSection";
 import { SiteLinkSection } from "./SiteLinkSection";
 import { TeaserSection } from "./TeaserSection";
 
@@ -441,6 +442,10 @@ export function CatalogueItemPanel({ entry, allEntries, categories, onClose }: C
                   </Button>
                 )}
               </div>
+            </Section>
+
+            <Section title="Prestataire">
+              <ItemProviderSection itemId={entry.id} placeType={entry.place_type} />
             </Section>
 
             <Section title="Contact">

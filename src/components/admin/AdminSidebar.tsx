@@ -119,7 +119,7 @@ const operationsItems: NavItem[] = [
   { title: "Réservations", url: BOOKINGS_URL, icon: Calendar, inProgress: true },
   { title: "Avis", url: "/admin/avis", icon: Star, done: true },
   { title: "Partenaires · Hôtels", url: "/admin/hotels2", icon: Building2 },
-  { title: "Partenaires · Expériences", url: "/admin/partenaires/experiences", icon: Handshake },
+  { title: "Partenaires", url: "/admin/partenaires", icon: Handshake },
   { title: "Rentabilité bateaux", url: "/admin/rentabilite/bateaux", icon: Percent },
 ];
 

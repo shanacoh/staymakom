@@ -36,6 +36,7 @@ const mustHave = (over: Partial<MustHave>): MustHave => ({
   is_core: false,
   status: "a_trouver",
   partner: null,
+  provider_id: null,
   notes: null,
   standalone_experience_id: null,
   experience2_id: null,

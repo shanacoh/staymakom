@@ -74,6 +74,8 @@ export interface MustHave {
   is_core: boolean;
   status: MustHaveStatus;
   partner: string | null;
+  /** Prestataire envisagé ou retenu (page Partenaires). Le texte libre `partner` reste à côté. */
+  provider_id: string | null;
   notes: string | null;
   standalone_experience_id: string | null;
   experience2_id: string | null;
@@ -82,7 +84,7 @@ export interface MustHave {
 }
 
 /** Ce qu'on peut modifier sur un must-have depuis la liste. */
-export type MustHavePatch = Partial<Pick<MustHave, "status" | "partner" | "notes">>;
+export type MustHavePatch = Partial<Pick<MustHave, "status" | "partner" | "provider_id" | "notes">>;
 
 /** Ce qu'il faut pour créer un must-have. */
 export type MustHaveDraft = Omit<MustHave, "id" | "standalone_experience_id" | "experience2_id">;

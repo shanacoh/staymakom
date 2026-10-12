@@ -5,6 +5,7 @@ import {
   hasLocation,
   renderPracticalInfoHtml,
   renderPracticalInfoLines,
+  resolveDayContact,
 } from "./content";
 
 const fullFiche = {
@@ -95,5 +96,28 @@ describe("buildClientWhatsAppMessage", () => {
     const message = buildClientWhatsAppMessage(booking, null, "en");
     expect(message.split("\n")).toHaveLength(3);
     expect(message).toContain("Hi Dana, a quick reminder of your booking");
+  });
+});
+
+describe("resolveDayContact", () => {
+  const provider = { day_contact_name: "Dana", day_contact_whatsapp: "+972 54 111 1111", day_contact_language: "en" };
+
+  it("garde le contact de l'expérience quand elle en a un", () => {
+    expect(resolveDayContact(contact, provider)).toEqual(contact);
+    expect(resolveDayContact({ day_contact_phone: "+972 50 000 0000" }, provider)).toEqual({ day_contact_phone: "+972 50 000 0000" });
+  });
+
+  it("prend celui du prestataire quand l'expérience n'en a pas", () => {
+    expect(resolveDayContact({ day_contact_name: " ", day_contact_language: "he" }, provider)).toEqual({
+      day_contact_name: "Dana",
+      day_contact_phone: "+972 54 111 1111",
+      day_contact_language: "en",
+    });
+    expect(resolveDayContact(null, provider)?.day_contact_name).toBe("Dana");
+  });
+
+  it("ne crée aucun contact quand ni l'un ni l'autre n'en a", () => {
+    expect(resolveDayContact(null, null)).toBeNull();
+    expect(buildPracticalInfo({}, resolveDayContact({}, { day_contact_language: "fr" }), "fr")).toBeNull();
   });
 });

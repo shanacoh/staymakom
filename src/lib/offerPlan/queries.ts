@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { PROVIDER_LINKS_QUERY_KEY } from "@/lib/providers/queries";
 import {
   EMPTY_OFFER_PLAN,
   type ExperienceKind,
@@ -19,7 +20,7 @@ const db = supabase as unknown as SupabaseClient;
 export const OFFER_PLAN_QUERY_KEY = ["admin-offer-plan"] as const;
 
 const MUST_HAVE_COLUMNS =
-  "id, category_id, pillar, name, format, season, car_free, is_core, status, partner, notes, standalone_experience_id, experience2_id, offer_must_have_regions(region_id)";
+  "id, category_id, pillar, name, format, season, car_free, is_core, status, partner, provider_id, notes, standalone_experience_id, experience2_id, offer_must_have_regions(region_id)";
 
 type MustHaveRow = Omit<MustHave, "region_ids"> & { offer_must_have_regions: { region_id: string }[] | null };
 
@@ -146,6 +147,10 @@ export function useOfferPlanMutation<TArgs>(write: (args: TArgs) => Promise<void
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: write,
-    onSettled: () => queryClient.invalidateQueries({ queryKey: OFFER_PLAN_QUERY_KEY }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: OFFER_PLAN_QUERY_KEY });
+      // Les must-haves reliés à un prestataire apparaissent aussi sur sa fiche.
+      queryClient.invalidateQueries({ queryKey: PROVIDER_LINKS_QUERY_KEY });
+    },
   });
 }

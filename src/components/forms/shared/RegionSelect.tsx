@@ -12,13 +12,27 @@ interface RegionSelectProps {
   /** L'ancien texte libre de la fiche : rappelé sous le sélecteur tant qu'aucune région n'est reliée. */
   legacyText?: string | null;
   disabled?: boolean;
+  /** Libellé du choix « aucune région » (ex. « Toutes les régions » dans un filtre). */
+  emptyLabel?: string;
+  /** Style du champ, pour une version serrée dans une barre de filtres. */
+  triggerClassName?: string;
+  "aria-label"?: string;
 }
 
 /**
  * Sélecteur de région du back-office : les régions de la liste de référence, groupées par zone.
  * Ne fait que proposer et remonter le choix ; l'enregistrement est fait par le formulaire.
  */
-export function RegionSelect({ id, value, onChange, legacyText, disabled }: RegionSelectProps) {
+export function RegionSelect({
+  id,
+  value,
+  onChange,
+  legacyText,
+  disabled,
+  emptyLabel = "Aucune région",
+  triggerClassName,
+  "aria-label": ariaLabel,
+}: RegionSelectProps) {
   const list = useRegionList();
   // Une région désactivée reste visible sur la fiche qui la porte encore, pour ne pas la perdre à l'enregistrement.
   const groups = groupByZone(list, { includeInactive: true })
@@ -28,11 +42,11 @@ export function RegionSelect({ id, value, onChange, legacyText, disabled }: Regi
   return (
     <div className="space-y-1">
       <Select value={value ?? NONE} onValueChange={(next) => onChange(next === NONE ? null : next)} disabled={disabled}>
-        <SelectTrigger id={id}>
+        <SelectTrigger id={id} aria-label={ariaLabel} className={triggerClassName}>
           <SelectValue placeholder="Choisir une région" />
         </SelectTrigger>
         <SelectContent className="max-h-80">
-          <SelectItem value={NONE}>Aucune région</SelectItem>
+          <SelectItem value={NONE}>{emptyLabel}</SelectItem>
           {groups.map(({ zone, regions }) => (
             <SelectGroup key={zone.slug}>
               <SelectLabel>{zone.name_fr}</SelectLabel>

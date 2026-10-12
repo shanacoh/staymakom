@@ -54,7 +54,12 @@ import {
 import { HighlightTagsSelectorStandalone, type LocalTagEntry } from "@/components/admin/HighlightTagsSelectorStandalone";
 import IncludesManagerStandalone, { type LocalIncludeEntry } from "@/components/admin/IncludesManagerStandalone";
 import StandaloneExtrasManager, { type LocalExtraEntry } from "@/components/admin/StandaloneExtrasManager";
+import { Link } from "react-router-dom";
 import StandaloneSuppliersManager from "@/components/admin/StandaloneSuppliersManager";
+import { MissingProviderBadge } from "@/components/admin/providers/ProviderBadges";
+import { ProviderPicker } from "@/components/admin/providers/ProviderPicker";
+import { PROVIDER_LINKS_QUERY_KEY } from "@/lib/providers/queries";
+import { providerUrl } from "@/lib/providers/types";
 import StandaloneRateOptionsManager from "@/components/admin/StandaloneRateOptionsManager";
 import BoatPriceVariantsManager from "@/components/admin/BoatPriceVariantsManager";
 import FeaturedBadgeToggle from "@/components/admin/FeaturedBadgeToggle";
@@ -170,6 +175,8 @@ const standaloneExperienceSchema = z.object({
   cancellation_policy_he: z.string().optional(),
   // Fournisseur — jamais affiché côté client
   supplier_name: z.string().optional(),
+  // Prestataire principal (page Partenaires). Pour un bateau, c'est la liste des prestataires qui le fixe.
+  provider_id: z.string().nullable().optional(),
   supplier_boat_name: z.string().optional(),
   // Tarification
   supplier_price_adult: z.number().min(0).default(0),
@@ -711,6 +718,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       cancellation_policy_fr: "",
       cancellation_policy_he: "",
       supplier_name: "",
+      provider_id: null,
       supplier_boat_name: "",
       supplier_price_adult: 0,
       supplier_price_child: 0,
@@ -908,6 +916,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       matchCancellationTemplate(exp.cancellation_policy, exp.cancellation_policy_fr, exp.cancellation_policy_he)
     );
     setValue("supplier_name", exp.supplier_name || "");
+    setValue("provider_id", exp.provider_id || null);
     setValue("supplier_boat_name", exp.supplier_boat_name || "");
     // Pricing — fallback to base_price for existing records without supplier_price_adult
     setValue("supplier_price_adult", exp.supplier_price_adult ?? exp.base_price ?? 0);
@@ -1508,6 +1517,9 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       cancellation_policy_fr: data.cancellation_policy_fr || null,
       cancellation_policy_he: data.cancellation_policy_he || null,
       supplier_name: data.supplier_name || null,
+      // Bateaux : le prestataire principal est fixé par la liste des prestataires (étoile), la base
+      // le recopie elle-même sur la fiche. On ne l'écrit donc pas ici.
+      ...(isBoatsExperience ? {} : { provider_id: data.provider_id || null }),
       supplier_boat_name: data.supplier_boat_name || null,
       // Pour les bateaux, on garde cette colonne alignée sur le prestataire
       // marqué principal (⭐) dans la liste, pour que la colonne "Marge" de
@@ -1704,6 +1716,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     setGalleryImages([]);
     localStorage.removeItem(autoSaveKey);
     queryClient.invalidateQueries({ queryKey: ["admin-standalone-experiences"] });
+    queryClient.invalidateQueries({ queryKey: PROVIDER_LINKS_QUERY_KEY });
     if (experienceId) {
       queryClient.invalidateQueries({ queryKey: ["standalone-experience", experienceId] });
       queryClient.invalidateQueries({ queryKey: moodPresentationsQueryKey(experienceId) });
@@ -3004,13 +3017,23 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
               </p>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="supplier_name">Société / prestataire</Label>
-                  <Input
-                    id="supplier_name"
-                    {...register("supplier_name")}
-                    placeholder="ex. BALAGUNA, MARK"
+                  <Label className="flex flex-wrap items-center gap-2">
+                    Prestataire
+                    {!watch("provider_id") && <MissingProviderBadge />}
+                  </Label>
+                  <ProviderPicker
+                    value={watch("provider_id") ?? null}
+                    onChange={(id, provider) => {
+                      setValue("provider_id", id, { shouldDirty: true });
+                      // L'ancien champ texte suit le nom du prestataire choisi.
+                      setValue("supplier_name", provider?.name ?? "", { shouldDirty: true });
+                    }}
+                    createType="experience"
                     disabled={isSaving}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Celui qui réalise vraiment l'expérience. Jamais affiché au client.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="supplier_boat_name">Nom d'origine chez le fournisseur</Label>
@@ -4010,13 +4033,25 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="supplier_name">Société / prestataire</Label>
-                  <Input
-                    id="supplier_name"
-                    {...register("supplier_name")}
-                    placeholder="ex. BALAGUNA, MARK"
-                    disabled={isSaving}
-                  />
+                  <Label className="flex flex-wrap items-center gap-2">
+                    Prestataire principal
+                    {!primarySupplier?.provider_id && <MissingProviderBadge />}
+                  </Label>
+                  {primarySupplier?.provider_id ? (
+                    <Link
+                      to={providerUrl(primarySupplier.provider_id)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm underline underline-offset-2 hover:text-red-600"
+                    >
+                      {primarySupplier.supplier_name}
+                    </Link>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Aucun pour l'instant.</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    C'est le prestataire marqué d'une étoile dans la liste « Prestataires » ci-dessous.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="supplier_contact">Contact prestataire</Label>

@@ -17,6 +17,7 @@ import type { ZoneGroup } from "@/lib/regionList/labels";
 import { cn } from "@/lib/utils";
 import { STATUS_CLASS, findLinkedExperience } from "./display";
 import { CommitInput, CoreBadge, ExperienceLink } from "./MustHaveBits";
+import { ProviderPicker } from "@/components/admin/providers/ProviderPicker";
 import { RegionMultiSelect } from "./RegionMultiSelect";
 
 interface MustHaveListProps {
@@ -136,7 +137,7 @@ export function MustHaveList({ mustHaves, moods, zones, experiences, onUpdate, o
                 <TableHead>Mood</TableHead>
                 <TableHead>Format</TableHead>
                 <TableHead className="w-40">Statut</TableHead>
-                <TableHead className="w-44">Partenaire</TableHead>
+                <TableHead className="w-52">Partenaire</TableHead>
                 <TableHead className="w-52">Régions</TableHead>
                 <TableHead className="w-56">Notes</TableHead>
               </TableRow>
@@ -186,11 +187,18 @@ export function MustHaveList({ mustHaves, moods, zones, experiences, onUpdate, o
                         </SelectContent>
                       </Select>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="space-y-1">
+                      <ProviderPicker
+                        aria-label={`Prestataire de ${m.name}`}
+                        value={m.provider_id}
+                        onChange={(id) => onUpdate(m.id, { provider_id: id })}
+                        placeholder="Prestataire"
+                        compact
+                      />
                       <CommitInput
                         aria-label={`Partenaire envisagé pour ${m.name}`}
                         className="h-8 text-xs"
-                        placeholder="Partenaire envisagé"
+                        placeholder="Partenaire envisagé (texte libre)"
                         value={m.partner ?? ""}
                         onCommit={(v) => onUpdate(m.id, { partner: v || null })}
                       />

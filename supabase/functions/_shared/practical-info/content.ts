@@ -40,6 +40,33 @@ export interface DayContactSource {
   day_contact_language?: string | null;
 }
 
+/** Contact du jour J par défaut d'un prestataire (table `providers`, réservée aux admins et au serveur). */
+export interface ProviderDayContactSource {
+  day_contact_name?: string | null;
+  day_contact_whatsapp?: string | null;
+  day_contact_language?: string | null;
+}
+
+/**
+ * Le contact du jour J à envoyer au client : celui de l'expérience s'il existe (nom ou téléphone),
+ * sinon celui de son prestataire. Jamais un mélange des deux.
+ */
+export function resolveDayContact(
+  experience: DayContactSource | null | undefined,
+  provider: ProviderDayContactSource | null | undefined,
+): DayContactSource | null {
+  const filled = (value: unknown) => typeof value === "string" && value.trim() !== "";
+  if (filled(experience?.day_contact_name) || filled(experience?.day_contact_phone)) return experience ?? null;
+  if (filled(provider?.day_contact_name) || filled(provider?.day_contact_whatsapp)) {
+    return {
+      day_contact_name: provider?.day_contact_name,
+      day_contact_phone: provider?.day_contact_whatsapp,
+      day_contact_language: provider?.day_contact_language,
+    };
+  }
+  return experience ?? null;
+}
+
 /** Colonnes à lire sur `standalone_experiences` pour construire les infos pratiques. */
 export const PRACTICAL_INFO_COLUMNS =
   "meeting_point, meeting_point_fr, meeting_point_he, address, address_fr, address_he, " +

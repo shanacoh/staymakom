@@ -104,6 +104,7 @@ const TailorMadeQuestionnaire    = lazy(() => import("./pages/TailorMadeQuestion
 const AdminStandaloneBookingDetails = lazy(() => import("./pages/admin/StandaloneBookingDetails"));
 const AdminBoatExperiences       = lazy(() => import("./pages/admin/BoatExperiences"));
 const AdminProviders             = lazy(() => import("./pages/admin/Providers"));
+const AdminProviderDetails      = lazy(() => import("./pages/admin/ProviderDetails"));
 const AdminBoatsProfitability    = lazy(() => import("./pages/admin/BoatsProfitability"));
 const AdminReviews               = lazy(() => import("./pages/admin/Reviews"));
 const AdminCatalogue             = lazy(() => import("./pages/admin/Catalogue"));
@@ -369,7 +370,10 @@ const AppContent = () => {
             {/* Charpente de navigation : écrans pas encore construits, en attendant leur tour */}
             <Route path="carte" element={<AdminCarte />} />
             <Route path="catalogue" element={<AdminCatalogue />} />
-            <Route path="partenaires/experiences" element={<AdminProviders />} />
+            <Route path="partenaires" element={<AdminProviders />} />
+            {/* Ancienne adresse de la liste des prestataires */}
+            <Route path="partenaires/experiences" element={<Navigate to="/admin/partenaires" replace />} />
+            <Route path="partenaires/:providerId" element={<AdminProviderDetails />} />
             <Route path="rentabilite/bateaux" element={<AdminBoatsProfitability />} />
             <Route path="avis" element={<AdminReviews />} />
             <Route path="promo" element={<AdminPromoCodes />} />

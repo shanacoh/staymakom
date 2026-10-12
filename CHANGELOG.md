@@ -6,6 +6,51 @@
 
 ---
 
+## [2026-10-12] — Chantier Partenaires, étape 1 : une seule entité Prestataire
+
+> Statut : base modifiée le 12/10/2026 avec l'outil Supabase (ajouts uniquement, aucune colonne supprimée, renommée ou modifiée). Sauvegarde faite juste avant dans le schéma `backup_20261012` (copies de 9 tables). Fonctions serveur `send-standalone-booking-confirmation` et `send-standalone-day-before-reminder` redéployées le 12/10/2026 (elles répondent toujours « Action réservée aux administrateurs » à un visiteur). `npm run build` passe. 18 nouveaux tests passent (les 9 tests en échec sur `imageUrl` et `catalogue/draft` l'étaient déjà avant, sans rapport). Test visiteur fait avec la clé publique : aucune lecture ni écriture possible sur les prestataires et les tables internes. Les écrans n'ont pas été essayés avec un compte admin dans cette session : à vérifier à l'usage. HyperGuest, prix, checkout, paiement et webhook Revolut : aucun fichier touché.
+
+### Ce qui a changé côté code
+- `src/lib/providers/types.ts` (nouveau) : ce qu'est un prestataire, et les listes de valeurs (type, statut, langue, canal de réservation).
+- `src/lib/providers/compute.ts` (nouveau) : les règles, sans accès à la base. Qui est relié à qui, quel prestataire pour une réservation, quelles réservations comptent dans les chiffres, ce que touche le prestataire, chiffres par mois.
+- `src/lib/providers/queries.ts` (nouveau) : lectures et écritures (prestataires, liaisons, réservations d'un prestataire, lien prestataire d'une fiche du Catalogue).
+- `src/lib/providers/providers.test.ts` (nouveau) : 15 tests.
+- `src/pages/admin/Providers.tsx` (réécrit) : la page « Partenaires » (`/admin/partenaires`). Liste filtrable par type, statut et région, recherche, colonne « Expériences liées », clic sur une ligne pour ouvrir la fiche.
+- `src/pages/admin/ProviderDetails.tsx` (nouveau) : la fiche d'un prestataire (`/admin/partenaires/:id`). Toutes ses infos, ses expériences, hôtels et must-haves reliés, ses réservations à venir et passées, ses chiffres par mois. Bouton « Inviter » affiché mais inactif (prévu à l'étape suivante).
+- `src/components/admin/providers/` (nouveau dossier) : `ProviderPicker` (le champ « choisir un prestataire » avec recherche, « Créer un prestataire » et lien vers la fiche, réutilisé partout), `QuickProviderDialog` (création rapide), `ProviderForm` (les champs de la fiche), `ProviderLinkedSection` (liaisons), `ProviderBookingsSection` (réservations et chiffres), `ProviderBadges` (pastilles de statut et signal « Prestataire à renseigner »), `HotelExperienceProviderField` (prestataire d'une expérience hôtel, par défaut celui de l'hôtel).
+- `src/components/forms/StandaloneExperienceForm.tsx` : le champ texte « Société / prestataire » devient le champ « Prestataire » relié à la page Partenaires (l'ancien texte `supplier_name` suit le nom choisi). Pour un bateau, le prestataire principal est affiché en lecture : c'est celui marqué d'une étoile dans la liste.
+- `src/components/admin/StandaloneSuppliersManager.tsx` : chaque ligne de la liste des prestataires d'un bateau se choisit maintenant dans la page Partenaires. Une ancienne ligne sans lien est signalée « à relier à un prestataire ».
+- `src/components/forms/UnifiedExperience2Form.tsx` : champ « Prestataire » sous la liste des hôtels (vide = celui de l'hôtel). La partie prix n'est pas touchée.
+- `src/pages/admin/HotelEditor2.tsx` : champ « Prestataire » sous les contacts de l'hôtel.
+- `src/lib/internalFields.ts` : `provider_id` ajouté aux champs internes des hôtels et des expériences hôtel, pour qu'il parte dans leur table réservée aux admins et jamais dans la table publique.
+- `src/components/admin/catalogue/ItemProviderSection.tsx` (nouveau) et `CatalogueItemPanel.tsx` : section « Prestataire » sur une fiche du Catalogue, enregistrée dès qu'on choisit.
+- `src/components/admin/offerPlan/MustHaveList.tsx`, `MustHaveDialog.tsx`, `src/lib/offerPlan/types.ts`, `queries.ts` : champ prestataire facultatif sur un must-have (un prospect peut être choisi). Le texte libre « Partenaire envisagé » reste à côté.
+- `src/pages/admin/Experiences2.tsx` : signal « Prestataire à renseigner » sur les expériences sans prestataire, et filtre correspondant.
+- `src/lib/reservations/practicalInfoAlerts.ts` : l'alerte « infos pratiques incomplètes » tient compte du contact du jour J du prestataire.
+- `supabase/functions/_shared/practical-info/content.ts`, `load.ts` : contact du jour J envoyé au client (confirmation et rappel de la veille) = celui de l'expérience, sinon celui de son prestataire. 3 tests de plus.
+- `src/components/forms/shared/RegionSelect.tsx` : deux réglages facultatifs de plus (libellé du choix vide, style), pour servir aussi de filtre.
+- `src/components/admin/AdminSidebar.tsx`, `src/App.tsx` : l'entrée « Partenaires · Expériences » devient « Partenaires » (`/admin/partenaires`). L'ancienne adresse redirige.
+- `ARCHITECTURE.md` : nouvelle section « Prestataires : une seule entité ».
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261012140000_providers_single_entity.sql` (appliquée le 12/10/2026 avec l'outil Supabase, en quatre morceaux : colonnes, déclencheurs, données, droits).
+- Table `providers`, colonnes ajoutées : `provider_type` (experience, hotel, boat, other), `status` (prospect, en_discussion, signe, actif, en_pause, arrete), `region_id`, `address`, `contact_name`, `day_contact_name`, `day_contact_whatsapp`, `day_contact_language` (he, en, fr), `commission_percent`, `booking_channel` (hyperguest, provider_website, whatsapp, email, partner_portal), `booking_url`, `legal_name`, `tax_id`, `terms_accepted_at`, `terms_version`, `crm_contact_id`. Les colonnes existantes sont réutilisées telles quelles (`language`, `email`, `whatsapp`, `conditions`, `cancellation_weather_policy`, `policy_validated`, `internal_notes`, `is_active`).
+- Nouvelle colonne `provider_id` sur `hotel2_internal`, `experience2_internal`, `catalogue_items` et `offer_must_haves`.
+- Deux automatismes : `providers_sync_is_active` (un prestataire « en pause » ou « arrêté » n'est plus actif) et `standalone_suppliers_sync_primary_provider` (le prestataire marqué principal dans la liste d'un bateau est recopié sur la fiche).
+- Reprise des données : les 5 prestataires bateaux passent au type « bateau » et au statut « actif ». Création du seul prestataire « Citrus & Salt » (expérience, Tel Aviv-Jaffa, actif), relié à « A Morning in a Tel Aviv Kitchen ». Aucun autre rattachement automatique n'était possible sans deviner.
+- Droits : le visiteur non connecté n'a plus aucun droit de base sur `providers` et `standalone_experience_suppliers` (elles étaient déjà protégées par leur règle admin).
+- Sauvegarde : schéma `backup_20261012` (`providers`, `standalone_experience_suppliers`, `standalone_experience_internal`, `hotel2_internal`, `experience2_internal`, `catalogue_items`, `offer_must_haves`, `standalone_bookings`, `reviews`).
+
+### Pourquoi ce changement
+- Le prestataire existait en plusieurs morceaux qui ne se parlaient pas : impossible de savoir qui réalise une expérience, combien de réservations un prestataire a eues, ni combien d'expériences lui sont liées. Il n'y a maintenant qu'une seule fiche Prestataire, utilisée partout dans le back-office et jamais visible côté client. Elle servira de base à l'espace partenaire (étape suivante).
+
+### À savoir
+- Restent « Prestataire à renseigner » : 70 expériences seules (33 publiées), les 68 hôtels et donc les 64 expériences hôtel. À relier à la main.
+- Incohérence trouvée et laissée telle quelle (ambiguë) : sur « CATAMARAN HERZLIYA », la fiche dit MARK alors que l'étoile de la liste est sur BALAGUNA. Elle se corrige toute seule dès qu'on reclique sur l'étoile voulue.
+- Les réservations saisies à la main sans coût fournisseur affichent « à compléter » pour le revenu net et la marge : le coût se saisit depuis la page Réservations.
+
+---
+
 ## [2026-10-12] — Chantier Offre, étape 7 : le Plan de l'offre
 
 > Statut : migration `20261012120000_offer_plan.sql` appliquée en base le 12/10/2026 par Shana depuis l'éditeur SQL de Supabase (vérifié : 3 tables, verrous admin actifs, 5 déclencheurs, 4 fonctions, aucun droit pour les visiteurs non connectés). `npm run build` passe, 16 nouveaux tests passent. Le statut automatique « en ligne » n'a pas été testé en conditions réelles (test refusé par les permissions de la session) : à vérifier à la première expérience liée. Aucune ligne d'exemple n'a été créée. Code commité et poussé sur `main` le 12/10/2026.

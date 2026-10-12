@@ -307,7 +307,8 @@ public/
 | `/admin/standalone-bookings/grid` | AdminStandaloneBookingsGrid |
 | `/admin/boats/new`, `/admin/boats/edit/:experienceId` | AdminBoatExperiences (formulaire bateau). `/admin/boats` et `/admin/boats/requests` sont redirigées vers Expériences (onglet Bateaux) et Réservations (filtre Bateaux). |
 | `/admin/swipe/dossiers`, `/admin/swipe/bibliotheque`, `/admin/swipe/categories` | Module Swipe Itinéraire |
-| `/admin/partenaires/experiences` | AdminProviders — fiche prestataire unique (contact, langue, conditions, politique annulation/météo, badge rouge si non validée). Voir note Bateaux v2 (2026-10-01). |
+| `/admin/partenaires` | AdminProviders : liste des prestataires, filtrable par type, statut et région (voir « Prestataires : une seule entité »). L'ancienne adresse `/admin/partenaires/experiences` y redirige. |
+| `/admin/partenaires/:providerId` | AdminProviderDetails : fiche d'un prestataire (infos, liaisons, réservations, chiffres par mois). Origine : fiche prestataire unique (contact, langue, conditions, politique annulation/météo, badge rouge si non validée). Voir note Bateaux v2 (2026-10-01). |
 | `/admin/rentabilite/bateaux` | AdminBoatsProfitability — tableau bateaux × durées, prix/marge/marge-par-heure par case, filtrable capacité et port. |
 | `/admin/catalogue` | AdminCatalogue (carnet unique de tous les lieux, voir la note Catalogue ci-dessous) |
 | `/admin/carte` | AdminCarte (carte de tous les lieux du catalogue, voir la note Catalogue) |
@@ -525,6 +526,21 @@ public/
 - **Côté code** : `src/lib/internalFields.ts` est le seul module qui connaît ces tables (lire, séparer un enregistrement en partie publique et partie interne, sauvegarder). Tout nouveau champ interne s'ajoute dans la table interne et dans la liste de ce module, jamais dans la table publique.
 - **Règle** : ne jamais ajouter un champ fournisseur, marge ou contact dans `standalone_experiences`, `standalone_rate_options`, `standalone_experience_price_variants`, `experiences2` ou `hotels2`.
 - **Reste lisible publiquement (connu)** : sur `experiences2`, `room_net_rate`, `bar_rate_markup_value`, `commission_room_pct` et `commission_addons_pct`, parce que le prix client est calculé dans le navigateur. À traiter en déplaçant ce calcul côté serveur. Aussi `global_settings.default_commission_rate` et les anciennes tables `hotels` / `experiences`.
+
+### Prestataires : une seule entité (chantier Partenaires, étape 1)
+- **Principe** : le prestataire est celui qui réalise vraiment l'expérience, l'hôtel ou la sortie bateau. Il n'existe qu'à un endroit, la table `providers` (réservée aux admins, jamais lue par le site public), et tout le back-office pointe vers elle avec un `provider_id`. Aucune colonne prestataire sur `standalone_experiences`, `experiences2` ou `hotels2`.
+- **Ce que contient `providers`** : `provider_type` (experience, hotel, boat, other), `status` (prospect, en_discussion, signe, actif, en_pause, arrete), `region_id`, `address`, `language` (he, en, fr), contact principal (`contact_name`, `email`, `whatsapp`), contact du jour J par défaut (`day_contact_name`, `day_contact_whatsapp`, `day_contact_language`), `commission_percent`, canal par défaut (`booking_channel` : hyperguest, provider_website, whatsapp, email, partner_portal ; `booking_url`), conditions (`conditions`, `cancellation_weather_policy`, `policy_validated`), facturation (`legal_name`, `tax_id`, pas de coordonnées bancaires), acceptation des conditions partenaires (`terms_accepted_at`, `terms_version`, remplies plus tard par l'espace partenaire), `crm_contact_id`, `internal_notes`. `is_active` suit le statut par un déclencheur (faux pour en_pause et arrete).
+- **Où se pose le lien** :
+  - expérience seule : `standalone_experience_internal.provider_id` = prestataire principal ;
+  - bateaux, plusieurs prestataires : `standalone_experience_suppliers.provider_id`. Celui marqué `is_primary` fait foi : le déclencheur `standalone_suppliers_sync_primary_provider` le recopie sur la fiche à chaque écriture de la liste ;
+  - hôtel : `hotel2_internal.provider_id` ;
+  - expérience hôtel : `experience2_internal.provider_id` si elle a son propre prestataire, sinon celui de son hôtel (règle dans `hotelExperienceProviderId`) ;
+  - fiche du Catalogue : `catalogue_items.provider_id` ; must-have du plan de l'offre : `offer_must_haves.provider_id` (le texte libre `partner` reste) ;
+  - réservation : `standalone_bookings.provider_id` s'il est renseigné, sinon le prestataire principal de l'expérience, déduit à l'affichage (`bookingProviderId`) sans réécrire la réservation.
+- **Priorités** : le contact du jour J et le canal de réservation de l'expérience passent avant ceux du prestataire. Pour les emails (confirmation, rappel de la veille), la règle est dans `resolveDayContact` (`supabase/functions/_shared/practical-info/content.ts`) : contact de l'expérience, sinon celui du prestataire, jamais un mélange.
+- **Chiffres d'un prestataire** (`src/lib/providers/compute.ts`) : seules comptent les réservations au statut de paiement `paid` ou `deposit_paid`, non annulées, rangées par mois de prestation. Le statut est lu tel quel, rien ne le modifie ici. Revenu net du prestataire = coût fournisseur saisi sur la réservation (`supplier_cost`) ; à défaut, pour une réservation en ligne simple, prix fournisseur de la fiche, gardé seulement s'il retombe sur le montant payé avec la marge de la fiche ; sinon « à compléter ». Pour un hôtel : `bookings_hg.net_price`, en lecture seule.
+- **Côté code** : `src/lib/providers/` (`types.ts`, `queries.ts`, `compute.ts`, tests), `src/components/admin/providers/` (`ProviderPicker` = champ de choix avec recherche et création, réutilisé dans tous les formulaires ; `ProviderForm` ; sections de la fiche), pages `Providers.tsx` et `ProviderDetails.tsx`.
+- **À venir (étape suivante)** : l'espace partenaire. Le bouton « Inviter » de la fiche et le canal « Espace partenaire » sont affichés mais inactifs.
 
 ### Color Tokens (CSS variables)
 - `primary` — Brand primary

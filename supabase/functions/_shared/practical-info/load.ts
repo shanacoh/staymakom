@@ -1,13 +1,16 @@
 // Lecture côté serveur des infos pratiques d'une fiche expérience.
 // Le contact du jour J vit dans la table interne `standalone_experience_internal` : il n'est lisible
 // qu'avec la clé de service (fonctions serveur), jamais par le navigateur d'un visiteur.
+// Si l'expérience n'a pas le sien, on prend celui de son prestataire (table `providers`, interne aussi).
 
 import {
   buildPracticalInfo,
   PRACTICAL_INFO_COLUMNS,
+  resolveDayContact,
   type DayContactSource,
   type PracticalInfo,
   type PracticalInfoSource,
+  type ProviderDayContactSource,
 } from "./content.ts";
 
 // deno-lint-ignore no-explicit-any
@@ -25,19 +28,45 @@ export async function loadPracticalInfo(
     serviceClient.from("standalone_experiences").select(PRACTICAL_INFO_COLUMNS).eq("id", experienceId).maybeSingle(),
     serviceClient
       .from("standalone_experience_internal")
-      .select("day_contact_name, day_contact_phone, day_contact_language")
+      .select("day_contact_name, day_contact_phone, day_contact_language, provider_id")
       .eq("experience_id", experienceId)
       .maybeSingle(),
   ]);
   if (experience.error) throw experience.error;
   if (internal.error) throw internal.error;
 
-  return buildPracticalInfo(
-    experience.data as PracticalInfoSource | null,
-    internal.data as DayContactSource | null,
-    lang,
-  );
+  const experienceContact = internal.data as (DayContactSource & { provider_id?: string | null }) | null;
+  const dayContact = resolveDayContact(experienceContact, await loadProviderDayContact(serviceClient, experienceContact));
+
+  return buildPracticalInfo(experience.data as PracticalInfoSource | null, dayContact, lang);
 }
+
+/**
+ * Contact du jour J par défaut du prestataire de l'expérience. Lu seulement si l'expérience n'a pas
+ * le sien. Une lecture qui échoue ne bloque rien : on envoie alors les infos sans ce contact.
+ */
+async function loadProviderDayContact(
+  serviceClient: ServiceClient,
+  experienceContact: (DayContactSource & { provider_id?: string | null }) | null,
+): Promise<ProviderDayContactSource | null> {
+  const providerId = experienceContact?.provider_id;
+  if (!providerId) return null;
+  if (hasOwnContact(experienceContact)) return null;
+
+  const { data, error } = await serviceClient
+    .from("providers")
+    .select("day_contact_name, day_contact_whatsapp, day_contact_language")
+    .eq("id", providerId)
+    .maybeSingle();
+  if (error) {
+    console.error("Contact jour J du prestataire illisible:", error);
+    return null;
+  }
+  return data as ProviderDayContactSource | null;
+}
+
+const hasOwnContact = (contact: DayContactSource | null) =>
+  !!(contact?.day_contact_name?.trim() || contact?.day_contact_phone?.trim());
 
 /** Infos pratiques de démonstration, pour montrer le rendu d'une fiche complète sans rien écrire en base. */
 export const SAMPLE_PRACTICAL_SOURCE: PracticalInfoSource = {

@@ -7,6 +7,9 @@
  * (voir StandaloneExperienceForm). Le prix de vente reste fixé manuellement
  * sur la fiche (base_price) ; chaque ligne affiche l'écart en % et en
  * montant entre ce prix de vente et le prix du prestataire.
+ * Chaque ligne est reliée à un prestataire de la page Partenaires. Le
+ * prestataire marqué principal devient tout seul le prestataire principal de
+ * la fiche (la base le recopie à chaque changement de la liste).
  * Table : standalone_experience_suppliers
  */
 
@@ -20,6 +23,10 @@ import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2, ChevronUp, ChevronDown, Edit2, Save, X, Star } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { ProviderPicker } from "@/components/admin/providers/ProviderPicker";
+import { PROVIDER_LINKS_QUERY_KEY } from "@/lib/providers/queries";
+import { providerUrl, type Provider } from "@/lib/providers/types";
+import { Link } from "react-router-dom";
 
 interface Props {
   experienceId?: string;
@@ -27,7 +34,16 @@ interface Props {
   currencySymbol?: string;
 }
 
-const EMPTY_FORM = { supplier_name: "", whatsapp: "", price: 0 };
+const EMPTY_FORM = { provider_id: null as string | null, supplier_name: "", whatsapp: "", price: 0 };
+type SupplierForm = typeof EMPTY_FORM;
+
+/** Le prestataire choisi donne son nom à la ligne, et son WhatsApp si la ligne n'en a pas encore. */
+const withProvider = (form: SupplierForm, provider: Provider | null): SupplierForm => ({
+  ...form,
+  provider_id: provider?.id ?? null,
+  supplier_name: provider?.name ?? "",
+  whatsapp: form.whatsapp || provider?.whatsapp || "",
+});
 
 function computeGap(sellPrice: number, price: number): { percent: number | null; amount: number } {
   const amount = Math.round((sellPrice - price) * 100) / 100;
@@ -58,12 +74,19 @@ const StandaloneSuppliersManager = ({ experienceId, sellPrice, currencySymbol = 
 
   const displayItems: any[] = suppliers || [];
 
+  // La liste des prestataires change aussi ce que la page Partenaires affiche.
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["standalone-experience-suppliers", experienceId] });
+    queryClient.invalidateQueries({ queryKey: PROVIDER_LINKS_QUERY_KEY });
+  };
+
   const createMutation = useMutation({
     mutationFn: async () => {
-      if (!form.supplier_name.trim()) throw new Error("Le nom du prestataire est requis");
+      if (!form.provider_id) throw new Error("Choisis un prestataire");
       const maxOrder = displayItems.length ? Math.max(...displayItems.map((s) => s.sort_order)) : -1;
       const { error } = await (supabase as any).from("standalone_experience_suppliers").insert([{
         experience_id: experienceId,
+        provider_id: form.provider_id,
         supplier_name: form.supplier_name,
         whatsapp: form.whatsapp || null,
         price: form.price,
@@ -75,7 +98,7 @@ const StandaloneSuppliersManager = ({ experienceId, sellPrice, currencySymbol = 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["standalone-experience-suppliers", experienceId] });
+      refresh();
       setForm(EMPTY_FORM);
       toast.success("Prestataire ajouté");
     },
@@ -85,6 +108,7 @@ const StandaloneSuppliersManager = ({ experienceId, sellPrice, currencySymbol = 
   const updateMutation = useMutation({
     mutationFn: async ({ id }: { id: string }) => {
       const { error } = await (supabase as any).from("standalone_experience_suppliers").update({
+        provider_id: editData.provider_id,
         supplier_name: editData.supplier_name,
         whatsapp: editData.whatsapp || null,
         price: editData.price,
@@ -92,7 +116,7 @@ const StandaloneSuppliersManager = ({ experienceId, sellPrice, currencySymbol = 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["standalone-experience-suppliers", experienceId] });
+      refresh();
       setEditingId(null);
       setEditData(EMPTY_FORM);
       toast.success("Prestataire mis à jour");
@@ -113,7 +137,7 @@ const StandaloneSuppliersManager = ({ experienceId, sellPrice, currencySymbol = 
         }
       }
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["standalone-experience-suppliers", experienceId] }); toast.success("Prestataire supprimé"); },
+    onSuccess: () => { refresh(); toast.success("Prestataire supprimé"); },
     onError: () => toast.error("Impossible de supprimer"),
   });
 
@@ -155,7 +179,7 @@ const StandaloneSuppliersManager = ({ experienceId, sellPrice, currencySymbol = 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["standalone-experience-suppliers", experienceId] });
+      refresh();
       toast.success("Prestataire principal mis à jour");
     },
     onError: () => toast.error("Impossible de définir le prestataire principal"),
@@ -164,6 +188,7 @@ const StandaloneSuppliersManager = ({ experienceId, sellPrice, currencySymbol = 
   const startEditing = (item: any) => {
     setEditingId(item.id);
     setEditData({
+      provider_id: item.provider_id ?? null,
       supplier_name: item.supplier_name || "",
       whatsapp: item.whatsapp || "",
       price: item.price ?? 0,
@@ -187,8 +212,13 @@ const StandaloneSuppliersManager = ({ experienceId, sellPrice, currencySymbol = 
         <h4 className="font-medium text-sm">Ajouter un prestataire</h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="space-y-1">
-            <Label className="text-sm">Société / prestataire *</Label>
-            <Input placeholder="ex: BALAGUNA" value={form.supplier_name} onChange={(e) => setForm({ ...form, supplier_name: e.target.value })} />
+            <Label className="text-sm">Prestataire *</Label>
+            <ProviderPicker
+              value={form.provider_id}
+              onChange={(_id, provider) => setForm(withProvider(form, provider))}
+              createType="boat"
+              showLink={false}
+            />
           </div>
           <div className="space-y-1">
             <Label className="text-sm">WhatsApp</Label>
@@ -199,7 +229,7 @@ const StandaloneSuppliersManager = ({ experienceId, sellPrice, currencySymbol = 
             <Input type="number" min={0} value={form.price} onChange={(e) => setForm({ ...form, price: parseFloat(e.target.value) || 0 })} />
           </div>
         </div>
-        <Button type="button" onClick={() => createMutation.mutate()} disabled={createMutation.isPending || !form.supplier_name.trim()}>
+        <Button type="button" onClick={() => createMutation.mutate()} disabled={createMutation.isPending || !form.provider_id}>
           <Plus className="w-4 h-4 mr-2" />
           Ajouter le prestataire
         </Button>
@@ -231,11 +261,17 @@ const StandaloneSuppliersManager = ({ experienceId, sellPrice, currencySymbol = 
 
                 {editingId === item.id ? (
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
-                    <Input value={editData.supplier_name} onChange={(e) => setEditData({ ...editData, supplier_name: e.target.value })} placeholder="Société / prestataire" />
+                    <ProviderPicker
+                      value={editData.provider_id}
+                      onChange={(_id, provider) => setEditData(withProvider(editData, provider))}
+                      createType="boat"
+                      placeholder={editData.supplier_name || "Choisir un prestataire"}
+                      showLink={false}
+                    />
                     <Input value={editData.whatsapp} onChange={(e) => setEditData({ ...editData, whatsapp: e.target.value })} placeholder="WhatsApp" />
                     <Input type="number" min={0} value={editData.price} onChange={(e) => setEditData({ ...editData, price: parseFloat(e.target.value) || 0 })} placeholder="Prix" />
                     <div className="md:col-span-3 flex gap-2 justify-end">
-                      <Button type="button" size="sm" onClick={() => { if (!editData.supplier_name.trim()) { toast.error("Nom requis"); return; } updateMutation.mutate({ id: item.id }); }} disabled={updateMutation.isPending}><Save className="w-4 h-4" /></Button>
+                      <Button type="button" size="sm" onClick={() => { if (!editData.provider_id) { toast.error("Choisis un prestataire"); return; } updateMutation.mutate({ id: item.id }); }} disabled={updateMutation.isPending}><Save className="w-4 h-4" /></Button>
                       <Button type="button" size="sm" variant="ghost" onClick={() => { setEditingId(null); setEditData(EMPTY_FORM); }}><X className="w-4 h-4" /></Button>
                     </div>
                   </div>
@@ -249,7 +285,18 @@ const StandaloneSuppliersManager = ({ experienceId, sellPrice, currencySymbol = 
                     />
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm flex items-center gap-1.5">
-                        {item.supplier_name}
+                        {item.provider_id ? (
+                          <Link to={providerUrl(item.provider_id)} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-red-600">
+                            {item.supplier_name}
+                          </Link>
+                        ) : (
+                          <>
+                            {item.supplier_name}
+                            <span className="text-[11px] font-normal text-red-600 border border-dashed border-red-500 px-1.5 py-0.5 rounded-full">
+                              à relier à un prestataire
+                            </span>
+                          </>
+                        )}
                         {item.is_primary && (
                           <span className="inline-flex items-center gap-1 text-[11px] font-normal text-amber-600 bg-amber-100 dark:bg-amber-950 dark:text-amber-400 px-1.5 py-0.5 rounded">
                             <Star className="w-3 h-3 fill-current" /> Principal

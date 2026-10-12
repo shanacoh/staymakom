@@ -50,13 +50,13 @@ export const STANDALONE_PRICE_VARIANT_INTERNAL: InternalStore = {
 export const EXPERIENCE2_INTERNAL: InternalStore = {
   table: "experience2_internal",
   key: "experience_id",
-  fields: ["experience_net_cost", "experience_cost_fixed", "experience_cost_per_person"],
+  fields: ["experience_net_cost", "experience_cost_fixed", "experience_cost_per_person", "provider_id"],
 };
 
 export const HOTEL2_INTERNAL: InternalStore = {
   table: "hotel2_internal",
   key: "hotel_id",
-  fields: ["contact_email", "contact_phone", "commission_rate"],
+  fields: ["contact_email", "contact_phone", "commission_rate", "provider_id"],
 };
 
 type Row = Record<string, unknown>;

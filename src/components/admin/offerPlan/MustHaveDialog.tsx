@@ -16,6 +16,7 @@ import {
   type MustHaveStatus,
   type OfferMood,
 } from "@/lib/offerPlan/types";
+import { ProviderPicker } from "@/components/admin/providers/ProviderPicker";
 import { RegionMultiSelect } from "./RegionMultiSelect";
 
 interface MustHaveDialogProps {
@@ -43,6 +44,7 @@ export function MustHaveDialog({ moods, defaultMoodId, saving, onCreate, onClose
     is_core: false,
     status: "a_trouver",
     partner: null,
+    provider_id: null,
     notes: null,
     region_ids: [],
   });
@@ -160,9 +162,16 @@ export function MustHaveDialog({ moods, defaultMoodId, saving, onCreate, onClose
             <p className="text-xs text-muted-foreground">Aucune région cochée = « à chercher ».</p>
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="mh-partner">Partenaire envisagé</Label>
-            <Input id="mh-partner" onChange={(e) => set("partner", text(e.target.value))} />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Prestataire</Label>
+              <ProviderPicker value={draft.provider_id} onChange={(id) => set("provider_id", id)} showLink={false} />
+              <p className="text-xs text-muted-foreground">Facultatif. Un prospect peut être choisi.</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="mh-partner">Partenaire envisagé (texte libre)</Label>
+              <Input id="mh-partner" onChange={(e) => set("partner", text(e.target.value))} />
+            </div>
           </div>
 
           <div className="space-y-1.5">

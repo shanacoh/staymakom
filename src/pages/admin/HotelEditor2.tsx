@@ -27,6 +27,10 @@ import {
 import { Link } from "react-router-dom";
 import HyperGuestHotelSearch from "@/components/admin/HyperGuestHotelSearch";
 import { RegionSelect } from "@/components/forms/shared/RegionSelect";
+import { InternalOnlyBox } from "@/components/forms/shared/InternalOnlyBox";
+import { MissingProviderBadge } from "@/components/admin/providers/ProviderBadges";
+import { ProviderPicker } from "@/components/admin/providers/ProviderPicker";
+import { PROVIDER_LINKS_QUERY_KEY } from "@/lib/providers/queries";
 import type {
   HyperGuestHotelWithDetails,
   RoomCapacitySummary,
@@ -168,6 +172,8 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
     photos: [] as string[],
     contact_email: "",
     contact_phone: "",
+    // Le prestataire (page Partenaires) qui tient cet hôtel. Rangé dans la table interne.
+    provider_id: null as string | null,
     status: "draft" as "draft" | "published" | "pending" | "archived",
     address: "",
     address_he: "",
@@ -416,6 +422,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
         photos: (h.photos as string[]) || [],
         contact_email: (h.contact_email as string) || "",
         contact_phone: (h.contact_phone as string) || "",
+        provider_id: (h.provider_id as string | null) ?? null,
         status: (h.status as "draft" | "published") || "draft",
         address: (h.address as string) || "",
         address_he: (h.address_he as string) || "",
@@ -614,6 +621,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-hotels2"] });
+      queryClient.invalidateQueries({ queryKey: PROVIDER_LINKS_QUERY_KEY });
       toast.success(hotelId ? "Hotel mis à jour" : "Hotel créé");
       onClose();
     },
@@ -1205,6 +1213,23 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
                 />
               </div>
             </div>
+
+            <InternalOnlyBox>
+              <div className="max-w-md space-y-2">
+                <Label className="flex flex-wrap items-center gap-2">
+                  Prestataire
+                  {!formData.provider_id && <MissingProviderBadge />}
+                </Label>
+                <ProviderPicker
+                  value={formData.provider_id}
+                  onChange={(provider_id) => setFormData((prev) => ({ ...prev, provider_id }))}
+                  createType="hotel"
+                />
+                <p className="text-xs text-muted-foreground">
+                  La société qui tient cet hôtel. Ses expériences prennent ce prestataire par défaut.
+                </p>
+              </div>
+            </InternalOnlyBox>
           </CardContent>
         </Card>
 

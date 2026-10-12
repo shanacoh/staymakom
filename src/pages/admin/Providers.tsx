@@ -1,109 +1,35 @@
-import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { AlertTriangle, Plus, Search, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, Star, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ProviderPolicyBadge } from "@/components/admin/ProviderPolicyBadge";
+import { ProviderStatusBadge } from "@/components/admin/providers/ProviderBadges";
+import { QuickProviderDialog } from "@/components/admin/providers/QuickProviderDialog";
+import { RegionSelect } from "@/components/forms/shared/RegionSelect";
+import { errorMessage } from "@/lib/catalogue/queries";
+import { experienceCountByProvider } from "@/lib/providers/compute";
+import { useProviderLinks, useProviders } from "@/lib/providers/queries";
+import {
+  PROVIDER_STATUS_OPTIONS,
+  PROVIDER_TYPE_OPTIONS,
+  providerTypeLabel,
+  providerUrl,
+  type ProviderStatus,
+  type ProviderType,
+} from "@/lib/providers/types";
+import { useRegionList } from "@/lib/regionList/queries";
 
-type Provider = {
-  id: string;
-  name: string;
-  whatsapp: string | null;
-  email: string | null;
-  language: string | null;
-  conditions: string | null;
-  cancellation_weather_policy: string | null;
-  policy_validated: boolean;
-  internal_notes: string | null;
-  is_active: boolean;
-};
+const ALL = "all";
 
-type ProviderFormState = {
-  name: string;
-  whatsapp: string;
-  email: string;
-  language: string;
-  conditions: string;
-  cancellation_weather_policy: string;
-  policy_validated: boolean;
-  internal_notes: string;
-};
-
-const emptyForm: ProviderFormState = {
-  name: "",
-  whatsapp: "",
-  email: "",
-  language: "",
-  conditions: "",
-  cancellation_weather_policy: "",
-  policy_validated: false,
-  internal_notes: "",
-};
-
-function toFormState(provider: Provider): ProviderFormState {
-  return {
-    name: provider.name,
-    whatsapp: provider.whatsapp ?? "",
-    email: provider.email ?? "",
-    language: provider.language ?? "",
-    conditions: provider.conditions ?? "",
-    cancellation_weather_policy: provider.cancellation_weather_policy ?? "",
-    policy_validated: provider.policy_validated,
-    internal_notes: provider.internal_notes ?? "",
-  };
-}
-
-export default function AdminProviders() {
-  const queryClient = useQueryClient();
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
-  const [form, setForm] = useState<ProviderFormState>(emptyForm);
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
-
-  const { data: providers, isLoading } = useQuery({
-    queryKey: ["admin-providers"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("providers")
-        .select("*")
-        .order("name");
-      if (error) throw error;
-      return data as Provider[];
-    },
-  });
-
-  // Note moyenne et nombre d'avis publiés par prestataire, pour repérer une note qui baisse.
-  const { data: reviewStatsByProvider } = useQuery({
+// Note moyenne et nombre d'avis publiés par prestataire, pour repérer une note qui baisse.
+function useReviewStats() {
+  return useQuery({
     queryKey: ["admin-providers-review-stats"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -122,279 +48,213 @@ export default function AdminProviders() {
       return stats;
     },
   });
+}
 
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      const payload = {
-        name: form.name.trim(),
-        whatsapp: form.whatsapp.trim() || null,
-        email: form.email.trim() || null,
-        language: form.language.trim() || null,
-        conditions: form.conditions.trim() || null,
-        cancellation_weather_policy: form.cancellation_weather_policy.trim() || null,
-        policy_validated: form.policy_validated,
-        internal_notes: form.internal_notes.trim() || null,
-      };
-      if (editingId) {
-        const { error } = await supabase.from("providers").update(payload).eq("id", editingId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("providers").insert(payload);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-providers"] });
-      toast.success(editingId ? "Prestataire mis à jour" : "Prestataire créé");
-      setFormOpen(false);
-    },
-    onError: () => {
-      toast.error("Erreur lors de l'enregistrement");
-    },
-  });
+const normalize = (text: string) =>
+  text
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("providers").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-providers"] });
-      toast.success("Prestataire supprimé");
-      setPendingDeleteId(null);
-    },
-    onError: () => {
-      toast.error("Impossible de supprimer : ce prestataire est probablement lié à une fiche expérience ou une réservation.");
-      setPendingDeleteId(null);
-    },
-  });
+export default function AdminProviders() {
+  const navigate = useNavigate();
+  const { providers, isLoading, error } = useProviders();
+  const { links } = useProviderLinks();
+  const { data: reviewStats } = useReviewStats();
+  const regionList = useRegionList();
 
-  const openCreate = () => {
-    setEditingId(null);
-    setForm(emptyForm);
-    setFormOpen(true);
+  const [search, setSearch] = useState("");
+  const [type, setType] = useState<ProviderType | null>(null);
+  const [status, setStatus] = useState<ProviderStatus | null>(null);
+  const [regionId, setRegionId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  const experienceCounts = useMemo(() => experienceCountByProvider(links), [links]);
+  const regionName = useMemo(() => new Map(regionList.regions.map((r) => [r.id, r.name_fr])), [regionList]);
+
+  const visible = useMemo(() => {
+    const needle = normalize(search.trim());
+    return providers.filter(
+      (p) =>
+        (!type || p.provider_type === type) &&
+        (!status || p.status === status) &&
+        (!regionId || p.region_id === regionId) &&
+        (!needle || normalize([p.name, p.contact_name, p.email, p.whatsapp, p.legal_name].filter(Boolean).join(" ")).includes(needle)),
+    );
+  }, [providers, search, type, status, regionId]);
+
+  const hasFilters = !!search.trim() || !!type || !!status || !!regionId;
+  const clearFilters = () => {
+    setSearch("");
+    setType(null);
+    setStatus(null);
+    setRegionId(null);
   };
-
-  const openEdit = (provider: Provider) => {
-    setEditingId(provider.id);
-    setForm(toFormState(provider));
-    setFormOpen(true);
-  };
-
-  const list = providers ?? [];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto max-w-7xl space-y-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-foreground">Prestataires</h1>
-          <p className="text-muted-foreground text-xs mt-0.5">
-            Contact, langue, conditions et politique annulation/météo. Tant que la politique n'est pas
-            validée, le badge rouge apparaît partout où le prestataire est utilisé.
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Partenaires</h1>
+          <p className="text-sm text-muted-foreground">
+            Les prestataires : ceux qui réalisent vraiment l'expérience, l'hôtel ou la sortie bateau. Jamais visibles côté client.
           </p>
         </div>
-        <Button className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={openCreate}>
-          <Plus className="h-4 w-4 mr-2" />
-          Ajouter un prestataire
+        <Button type="button" onClick={() => setCreating(true)}>
+          <Plus className="mr-1.5 h-4 w-4" />
+          Prestataire
         </Button>
       </div>
 
-      <div className="border rounded-lg overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Nom</TableHead>
-              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">WhatsApp</TableHead>
-              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Email</TableHead>
-              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Langue</TableHead>
-              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Politique</TableHead>
-              <TableHead className="h-8 px-3 text-[10px] uppercase tracking-wider">Avis</TableHead>
-              <TableHead className="h-8 w-[90px] px-3 text-[10px] uppercase tracking-wider">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-6 text-sm">
-                  Chargement...
-                </TableCell>
-              </TableRow>
-            ) : list.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-6 text-sm text-muted-foreground">
-                  Aucun prestataire pour l'instant
-                </TableCell>
-              </TableRow>
-            ) : (
-              list.map((provider) => (
-                <TableRow key={provider.id}>
-                  <TableCell className="py-2 px-3 text-sm font-medium">{provider.name}</TableCell>
-                  <TableCell className="py-2 px-3 text-xs">{provider.whatsapp || "-"}</TableCell>
-                  <TableCell className="py-2 px-3 text-xs">{provider.email || "-"}</TableCell>
-                  <TableCell className="py-2 px-3 text-xs">{provider.language || "-"}</TableCell>
-                  <TableCell className="py-2 px-3">
-                    {provider.policy_validated ? (
-                      <span className="text-xs text-muted-foreground">Validée</span>
-                    ) : (
-                      <ProviderPolicyBadge policyValidated={false} />
-                    )}
-                  </TableCell>
-                  <TableCell className="py-2 px-3 text-xs">
-                    {(() => {
-                      const stats = reviewStatsByProvider?.[provider.id];
-                      if (!stats || stats.count === 0) return <span className="text-muted-foreground">-</span>;
-                      const avg = stats.sum / stats.count;
-                      return (
-                        <span className={`flex items-center gap-1 ${avg < 4 ? "text-destructive" : ""}`}>
-                          {avg < 4 && <AlertTriangle className="h-3 w-3" />}
-                          <Star className="h-3 w-3 fill-current" /> {avg.toFixed(1)} ({stats.count})
-                        </span>
-                      );
-                    })()}
-                  </TableCell>
-                  <TableCell className="py-2 px-3">
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(provider)}>
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive hover:text-destructive"
-                        onClick={() => setPendingDeleteId(provider.id)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            aria-label="Rechercher un prestataire"
+            placeholder="Rechercher (nom, contact, email…)"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-8 w-64 pl-8 text-xs"
+          />
+        </div>
+        <Select value={type ?? ALL} onValueChange={(v) => setType(v === ALL ? null : (v as ProviderType))}>
+          <SelectTrigger aria-label="Filtrer par type" className="h-8 w-auto min-w-32 gap-2 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>Tous les types</SelectItem>
+            {PROVIDER_TYPE_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={status ?? ALL} onValueChange={(v) => setStatus(v === ALL ? null : (v as ProviderStatus))}>
+          <SelectTrigger aria-label="Filtrer par statut" className="h-8 w-auto min-w-36 gap-2 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>Tous les statuts</SelectItem>
+            {PROVIDER_STATUS_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <RegionSelect
+          aria-label="Filtrer par région"
+          value={regionId}
+          onChange={setRegionId}
+          emptyLabel="Toutes les régions"
+          triggerClassName="h-8 w-auto min-w-40 gap-2 text-xs"
+        />
+        <span className="text-xs text-muted-foreground">
+          {visible.length} prestataire{visible.length > 1 ? "s" : ""}
+        </span>
       </div>
 
-      <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingId ? "Modifier le prestataire" : "Nouveau prestataire"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="provider-name">Nom</Label>
-              <Input
-                id="provider-name"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Ex : Seamona"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="provider-whatsapp">WhatsApp</Label>
-                <Input
-                  id="provider-whatsapp"
-                  value={form.whatsapp}
-                  onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
-                  placeholder="+972..."
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="provider-email">Email</Label>
-                <Input
-                  id="provider-email"
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="provider-language">Langue de communication</Label>
-              <Input
-                id="provider-language"
-                value={form.language}
-                onChange={(e) => setForm({ ...form, language: e.target.value })}
-                placeholder="Hébreu, anglais..."
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="provider-conditions">Conditions</Label>
-              <Textarea
-                id="provider-conditions"
-                value={form.conditions}
-                onChange={(e) => setForm({ ...form, conditions: e.target.value })}
-                rows={3}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="provider-policy">Politique annulation / météo</Label>
-              <Textarea
-                id="provider-policy"
-                value={form.cancellation_weather_policy}
-                onChange={(e) => setForm({ ...form, cancellation_weather_policy: e.target.value })}
-                rows={3}
-                placeholder="Annulation gratuite jusqu'à 72h avant, ensuite non remboursable. Mer agitée : le skipper décide, client choisit report ou remboursement intégral."
-              />
-            </div>
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <div>
-                <Label htmlFor="provider-policy-validated">Politique validée par le prestataire</Label>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Tant que ce n'est pas coché, le badge rouge s'affiche partout où ce prestataire apparaît.
-                </p>
-              </div>
-              <Switch
-                id="provider-policy-validated"
-                checked={form.policy_validated}
-                onCheckedChange={(checked) => setForm({ ...form, policy_validated: checked })}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="provider-notes">Notes internes</Label>
-              <Textarea
-                id="provider-notes"
-                value={form.internal_notes}
-                onChange={(e) => setForm({ ...form, internal_notes: e.target.value })}
-                rows={2}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setFormOpen(false)}>
-              Annuler
+      {isLoading ? (
+        <div className="space-y-2" aria-busy="true">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-60 w-full" />
+        </div>
+      ) : error ? (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-sm text-destructive">
+          Impossible de charger les prestataires : {errorMessage(error)}
+        </div>
+      ) : providers.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+          Aucun prestataire pour l'instant. Ajoute le premier avec « + Prestataire ».
+        </div>
+      ) : visible.length === 0 ? (
+        <div className="space-y-3 rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+          <p>Aucun prestataire ne correspond à ces filtres.</p>
+          {hasFilters && (
+            <Button type="button" variant="outline" size="sm" onClick={clearFilters}>
+              Tout effacer
             </Button>
-            <Button
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={!form.name.trim() || saveMutation.isPending}
-              onClick={() => saveMutation.mutate()}
-            >
-              Enregistrer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          )}
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-border bg-card">
+          <Table className="min-w-[980px]">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Prestataire</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Statut</TableHead>
+                <TableHead>Région</TableHead>
+                <TableHead>Contact</TableHead>
+                <TableHead className="text-right">Expériences liées</TableHead>
+                <TableHead>Politique</TableHead>
+                <TableHead>Avis</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {visible.map((p) => {
+                const stats = reviewStats?.[p.id];
+                const average = stats && stats.count > 0 ? stats.sum / stats.count : null;
+                return (
+                  <TableRow
+                    key={p.id}
+                    tabIndex={0}
+                    className="cursor-pointer"
+                    onClick={() => navigate(providerUrl(p.id))}
+                    onKeyDown={(e) => e.key === "Enter" && navigate(providerUrl(p.id))}
+                  >
+                    <TableCell className="font-medium">{p.name}</TableCell>
+                    <TableCell className="text-xs">{providerTypeLabel(p.provider_type)}</TableCell>
+                    <TableCell>
+                      <ProviderStatusBadge status={p.status} />
+                    </TableCell>
+                    <TableCell className="text-xs">{(p.region_id && regionName.get(p.region_id)) || "–"}</TableCell>
+                    <TableCell className="text-xs">
+                      {p.contact_name || p.whatsapp || p.email ? (
+                        <>
+                          {p.contact_name && <div>{p.contact_name}</div>}
+                          <div className="text-muted-foreground">{p.whatsapp || p.email}</div>
+                        </>
+                      ) : (
+                        "–"
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right text-sm tabular-nums">{experienceCounts.get(p.id) ?? 0}</TableCell>
+                    <TableCell>
+                      {p.policy_validated ? (
+                        <span className="text-xs text-muted-foreground">Validée</span>
+                      ) : (
+                        <ProviderPolicyBadge policyValidated={false} />
+                      )}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {average === null ? (
+                        <span className="text-muted-foreground">–</span>
+                      ) : (
+                        <span className={`flex items-center gap-1 ${average < 4 ? "text-destructive" : ""}`}>
+                          {average < 4 && <AlertTriangle className="h-3 w-3" />}
+                          <Star className="h-3 w-3 fill-current" /> {average.toFixed(1)} ({stats!.count})
+                        </span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
-      <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer ce prestataire ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action est irréversible. Si ce prestataire est encore lié à une fiche expérience ou
-              une réservation, la suppression sera refusée : il faut d'abord le détacher.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => pendingDeleteId && deleteMutation.mutate(pendingDeleteId)}
-            >
-              Supprimer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {creating && (
+        <QuickProviderDialog
+          onClose={() => setCreating(false)}
+          onCreated={(provider) => {
+            setCreating(false);
+            navigate(providerUrl(provider.id));
+          }}
+        />
+      )}
     </div>
   );
 }

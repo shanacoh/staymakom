@@ -27,6 +27,9 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { MissingProviderBadge } from "@/components/admin/providers/ProviderBadges";
+import { hotelExperienceProviderId } from "@/lib/providers/compute";
+import { useProviderLinks } from "@/lib/providers/queries";
 import { OpsSlidePanel } from "@/components/admin/OpsSlidePanel";
 
 function computeAvailabilityAlert(exp: any): { daysToEnd: number; remainingDates: number } | null {
@@ -61,6 +64,7 @@ const AdminExperiences2 = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [hotelFilter, setHotelFilter] = useState<string>("all");
+  const [providerFilter, setProviderFilter] = useState<"all" | "missing">("all");
   const [sortBy, setSortBy] = useState<"updated_desc" | "manual" | "created_desc" | "status">("updated_desc");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [experienceToDelete, setExperienceToDelete] = useState<string | null>(null);
@@ -151,6 +155,20 @@ const AdminExperiences2 = () => {
     return sorted;
   }, [sortBy]);
 
+  // Fiches sans prestataire (page Partenaires). Vide tant que les liaisons ne sont pas chargées,
+  // pour ne pas signaler à tort toutes les fiches.
+  const { links: providerLinks } = useProviderLinks();
+  const missingProviderIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const e of providerLinks.standalone) if (!e.providerId) ids.add(e.id);
+    for (const e of providerLinks.hotelExperiences) if (!hotelExperienceProviderId(e, providerLinks.hotels)) ids.add(e.id);
+    return ids;
+  }, [providerLinks]);
+  const matchesProviderFilter = useCallback(
+    (id: string) => providerFilter === "all" || missingProviderIds.has(id),
+    [providerFilter, missingProviderIds],
+  );
+
   // Expériences avec hôtel filtrées puis triées
   const displayedExperiences = useMemo(() => {
     const filtered = (experiences || []).filter((exp) => {
@@ -162,10 +180,10 @@ const AdminExperiences2 = () => {
         const ids = ((exp as any).experience2_hotels || []).map((eh: any) => eh.hotels2?.id);
         matchesHotel = exp.hotel_id === hotelFilter || ids.includes(hotelFilter);
       }
-      return matchesCategory && matchesSearch && matchesStatus && matchesHotel;
+      return matchesCategory && matchesSearch && matchesStatus && matchesHotel && matchesProviderFilter(exp.id);
     });
     return sortExperiences(filtered);
-  }, [experiences, selectedCategory, searchQuery, statusFilter, hotelFilter, sortExperiences]);
+  }, [experiences, selectedCategory, searchQuery, statusFilter, hotelFilter, sortExperiences, matchesProviderFilter]);
 
   // Expériences standalone filtrées puis triées
   const displayedStandalone = useMemo(() => {
@@ -173,10 +191,10 @@ const AdminExperiences2 = () => {
       const matchesCategory = !selectedCategory || exp.categories?.slug === selectedCategory;
       const matchesSearch = exp.title.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === "all" || exp.status === statusFilter;
-      return matchesCategory && matchesSearch && matchesStatus;
+      return matchesCategory && matchesSearch && matchesStatus && matchesProviderFilter(exp.id);
     });
     return sortExperiences(filtered);
-  }, [standaloneExps, selectedCategory, searchQuery, statusFilter, sortExperiences]);
+  }, [standaloneExps, selectedCategory, searchQuery, statusFilter, sortExperiences, matchesProviderFilter]);
 
   const handleCreateNew = () => {
     if (mode === "hotel") {
@@ -387,8 +405,8 @@ const AdminExperiences2 = () => {
     onError: () => toast.error("Erreur lors de la sauvegarde de l'ordre"),
   });
 
-  const hasActiveFilters = searchQuery !== "" || statusFilter !== "all" || hotelFilter !== "all";
-  const hasActiveFiltersStandalone = searchQuery !== "" || statusFilter !== "all";
+  const hasActiveFilters = searchQuery !== "" || statusFilter !== "all" || hotelFilter !== "all" || providerFilter !== "all";
+  const hasActiveFiltersStandalone = searchQuery !== "" || statusFilter !== "all" || providerFilter !== "all";
   const isManualSort = sortBy === "manual";
   const dragDisabled = hasActiveFilters || !isManualSort;
   const dragDisabledStandalone = hasActiveFiltersStandalone || !isManualSort;
@@ -550,7 +568,7 @@ const AdminExperiences2 = () => {
         {/* Filtres */}
         <Card>
           <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-4">
               <Input
                 placeholder="Search experiences..."
                 value={searchQuery}
@@ -565,6 +583,15 @@ const AdminExperiences2 = () => {
                   <SelectItem value="draft">Draft</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="published">Published</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={providerFilter} onValueChange={(v) => setProviderFilter(v as typeof providerFilter)}>
+                <SelectTrigger aria-label="Filtrer par prestataire">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les prestataires</SelectItem>
+                  <SelectItem value="missing">Prestataire à renseigner</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
@@ -690,6 +717,7 @@ const AdminExperiences2 = () => {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-semibold text-sm text-foreground truncate">{experience.title}</span>
                           <StatusBadge status={experience.status || "draft"} />
+                          {missingProviderIds.has(experience.id) && <MissingProviderBadge />}
                         </div>
                         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                           <span className="text-xs text-muted-foreground">
@@ -872,6 +900,7 @@ const AdminExperiences2 = () => {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-semibold text-sm text-foreground truncate">{exp.title}</span>
                           <StatusBadge status={exp.status || "draft"} />
+                          {missingProviderIds.has(exp.id) && <MissingProviderBadge />}
                         </div>
                         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                           <span className="text-xs text-muted-foreground">
