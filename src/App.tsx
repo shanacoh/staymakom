@@ -109,6 +109,7 @@ const AdminReviews               = lazy(() => import("./pages/admin/Reviews"));
 const AdminCatalogue             = lazy(() => import("./pages/admin/Catalogue"));
 const AdminCarte                 = lazy(() => import("./pages/admin/Carte"));
 const AdminAutomations           = lazy(() => import("./pages/admin/Automations"));
+const AdminOfferPlan             = lazy(() => import("./pages/admin/OfferPlan"));
 
 // ── Module Swipe Itinéraire ────────────────────────────────────────────────
 const SwipePublic                = lazy(() => import("./pages/swipe/SwipePublic"));
@@ -313,6 +314,7 @@ const AppContent = () => {
             <Route path="hotels2" element={<AdminHotels2 />} />
             <Route path="hotels2/new" element={<AdminHotels2 key="new" />} />
             <Route path="hotels2/edit/:hotelId" element={<AdminHotels2 key="edit" />} />
+            <Route path="offre" element={<AdminOfferPlan />} />
             <Route path="experiences2" element={<AdminExperiences2 />} />
             <Route path="experiences2/new" element={<AdminExperiences2 key="new" />} />
             <Route path="experiences2/edit/:experienceId" element={<AdminExperiences2 key="edit" />} />

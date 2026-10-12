@@ -6,6 +6,44 @@
 
 ---
 
+## [2026-10-12] — Chantier Offre, étape 7 : le Plan de l'offre
+
+> Statut : migration `20261012120000_offer_plan.sql` appliquée en base le 12/10/2026 par Shana depuis l'éditeur SQL de Supabase (vérifié : 3 tables, verrous admin actifs, 5 déclencheurs, 4 fonctions, aucun droit pour les visiteurs non connectés). `npm run build` passe, 16 nouveaux tests passent. Le statut automatique « en ligne » n'a pas été testé en conditions réelles (test refusé par les permissions de la session) : à vérifier à la première expérience liée. Aucune ligne d'exemple n'a été créée. Pas encore commité ni poussé.
+
+### Ce qui a changé côté code
+- `src/pages/admin/OfferPlan.tsx` (nouveau) : l'écran « Plan de l'offre » (`/admin/offre`) : 5 compteurs, onglets Grille / Liste, bouton « Exporter la liste à prospecter ».
+- `src/components/admin/offerPlan/` (nouveau dossier) : `OfferCounters` (compteurs), `OfferGrid` (grille mood x région, régions groupées par zone, colonne Total, légende), `OfferCellPanel` (détail d'une case : objectif modifiable, must-haves, expériences hors plan), `MustHaveList` (liste filtrable et modifiable sur place), `MustHaveDialog` (fenêtre « + Must-have »), `RegionMultiSelect` (choix de plusieurs régions), `MustHaveBits` et `display.ts` (pastilles et repères partagés).
+- `src/lib/offerPlan/types.ts` (nouveau) : les types et les listes de valeurs (statuts, formats, « sans voiture »).
+- `src/lib/offerPlan/compute.ts` (nouveau) : les règles, sans accès à la base : comptage par case, couleur d'une case, compteurs, « hors plan », filtres, export CSV.
+- `src/lib/offerPlan/queries.ts` (nouveau) : lectures et écritures du plan.
+- `src/lib/offerPlan/useMustHaveLink.ts` (nouveau) : retient le must-have choisi dans un formulaire et pose le lien une fois la fiche enregistrée.
+- `src/lib/offerPlan/offerPlan.test.ts` (nouveau) : 16 tests.
+- `src/components/forms/shared/MustHaveCoveredField.tsx` (nouveau) : le champ « Must-have couvert » (recherche parmi les must-haves des moods cochés, vide = opportunité hors plan).
+- `src/components/forms/StandaloneExperienceForm.tsx` : champ « Must-have couvert » dans la section « 1. Rangement », lien posé à l'enregistrement.
+- `src/components/forms/UnifiedExperience2Form.tsx` : même champ dans la section « Démarrer » (là où se choisit la catégorie : ce formulaire n'a pas de section nommée Rangement), lien posé à l'enregistrement du brouillon et à la publication.
+- `src/components/admin/AdminSidebar.tsx`, `src/App.tsx` : entrée « Plan de l'offre » en tête du groupe Opérations (au-dessus de « Experiences ») et adresse `/admin/offre`, réservée aux admins comme tout le back-office.
+- `ARCHITECTURE.md` : mis à jour.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261012120000_offer_plan.sql` (appliquée le 12/10/2026). Aucune table existante n'est modifiée.
+- Nouvelle table `offer_targets` : l'objectif d'une case (un mood dans une région). Pas de ligne = objectif 0.
+- Nouvelle table `offer_must_haves` : la liste des must-haves (mood, pilier, nom, format, saison, sans voiture, socle, statut, partenaire, notes, expérience liée).
+- Nouvelle table `offer_must_have_regions` : les régions candidates de chaque must-have (aucune ligne = « à chercher »).
+- Les trois tables sont lisibles et modifiables par les admins uniquement ; les visiteurs non connectés n'y ont aucun droit.
+- Statut automatique : un déclencheur sur `offer_must_haves`, plus un déclencheur sur `standalone_experiences` et un sur `experiences2` (uniquement quand leur statut change), passent le must-have à « en ligne » quand l'expérience liée est publiée, et le redescendent à « signé » si elle est dépubliée ou si le lien est retiré.
+- Deux fonctions d'écriture « en un seul geste » : `set_experience_must_have` (relier ou détacher une expérience) et `set_must_have_regions` (remplacer les régions candidates).
+- Une expérience ne peut couvrir qu'un seul must-have (le formulaire n'a qu'un champ).
+
+### Pourquoi ce changement
+- Shana construit l'offre en partant de ce qu'il faut avoir, mood par mood et région par région, avant de chercher les partenaires. Elle a besoin de voir d'un coup d'œil où elle en est et quoi prospecter.
+
+### Limites connues
+- Une expérience hôtel est rangée dans la région de son hôtel principal. Une expérience dont la fiche (ou l'hôtel) n'a pas de région choisie dans la liste n'entre dans aucune case : la grille le signale par une phrase (7 expériences aujourd'hui).
+- Pas de suppression d'un must-have depuis l'écran : on le passe en « abandonné ».
+- 9 tests sans rapport échouaient déjà avant ce chantier (`src/lib/imageUrl.test.ts`, `src/lib/catalogue/draft.test.ts`) : non traités ici.
+
+---
+
 ## [2026-10-12] — Chantier Offre, étape 5 : le site affiche la version du mood
 
 > Statut : migration `20261012100000_five_zones_and_creative_mood.sql` appliquée en base le 12/10/2026 (vérifié : 5 zones, région `tel-aviv` déplacée, mood `creative` en brouillon). Tests et `npm run build` passent. Code commité et poussé sur `main`.

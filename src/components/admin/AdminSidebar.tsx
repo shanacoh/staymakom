@@ -28,6 +28,7 @@ import {
   AlertTriangle,
   Star,
   Zap,
+  Target,
 } from "lucide-react";
 import {
   Sidebar,
@@ -112,6 +113,7 @@ const apercuItems: NavItem[] = [
 
 // Opérations : la surface de travail au quotidien
 const operationsItems: NavItem[] = [
+  { title: "Plan de l'offre", url: "/admin/offre", icon: Target },
   { title: "Experiences", url: "/admin/experiences2", icon: Sparkles },
   { title: "Dossiers", url: "/admin/dossiers", icon: FolderOpen, colorClass: "text-orange-500" },
   { title: "Réservations", url: BOOKINGS_URL, icon: Calendar, inProgress: true },

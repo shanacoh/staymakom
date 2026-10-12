@@ -115,6 +115,8 @@ import {
   takenTitles,
 } from "@/lib/standaloneExperienceForm/moodAi";
 import { diffPayload } from "@/lib/standaloneExperienceForm/payloadDiff";
+import { useMustHaveLink } from "@/lib/offerPlan/useMustHaveLink";
+import { MustHaveCoveredField } from "@/components/forms/shared/MustHaveCoveredField";
 import { STANDALONE_EXPERIENCE_INTERNAL, fetchInternalFields, saveInternalFields, splitInternalFields } from "@/lib/internalFields";
 
 // Les bateaux n'ont pas de limite de nombre de photos dans la galerie,
@@ -568,6 +570,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   const [localStandaloneExtras, setLocalStandaloneExtras] = useState<LocalExtraEntry[]>([]);
 
   const currentExperienceId = experienceId || createdExperienceId;
+  // Plan de l'offre : le must-have que cette expérience couvre (vide = opportunité hors plan).
+  const mustHaveLink = useMustHaveLink("standalone", currentExperienceId);
 
   // « M'envoyer un aperçu » : l'email de confirmation tel que le client le recevrait, avec une
   // réservation fictive, envoyé à l'admin connecté. Le serveur lit la fiche enregistrée.
@@ -1704,6 +1708,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       queryClient.invalidateQueries({ queryKey: ["standalone-experience", experienceId] });
       queryClient.invalidateQueries({ queryKey: moodPresentationsQueryKey(experienceId) });
     }
+    // Le lien vers le Plan de l'offre se pose une fois la fiche enregistrée.
+    if ((await mustHaveLink.save(targetId)) && outcome === "unchanged") outcome = "saved";
     return outcome;
   };
 
@@ -4666,6 +4672,13 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                 </div>
 
                 {regionField}
+
+                <MustHaveCoveredField
+                  link={mustHaveLink}
+                  moodIds={selectedCategoryIds}
+                  moods={categories as MoodOption[] | undefined}
+                  disabled={isSaving}
+                />
 
                 {tagsSelector}
               </FormSection>

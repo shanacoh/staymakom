@@ -285,6 +285,7 @@ public/
 | `/admin/categories/edit/:id` | CategoryEditor |
 | `/admin/hotels2` | AdminHotels2 (V2) |
 | `/admin/hotels2/edit/:hotelId` | AdminHotels2 |
+| `/admin/offre` | AdminOfferPlan (Plan de l'offre) |
 | `/admin/experiences2` | AdminExperiences2 (V2) |
 | `/admin/experiences2/edit/:experienceId` | AdminExperiences2 |
 | `/admin/bookings` | AdminBookings |
@@ -491,6 +492,13 @@ public/
 - **Fiche** (`StandaloneExperience.tsx`) : avec `?mood=<slug>`, le haut de la fiche (photo de couverture en premier, titre, accroche, description) prend la version du mood. Sans paramètre, mood inconnu, mood en brouillon ou mood qui n'est pas celui de l'expérience : présentation principale. Tout le reste est inchangé, et l'adresse canonique, le titre SEO, le partage et les données structurées restent ceux de la présentation principale.
 - **Suivi** : les événements Amplitude `experience_viewed`, `book_clicked` et `request_clicked` portent la propriété `mood` (slug du mood d'arrivée, absente sans mood valide).
 - **Non fait** : le mood d'arrivée n'est pas enregistré sur la réservation (il faudrait modifier la page de checkout et la fonction de paiement). Les emails gardent donc le titre principal.
+
+### Plan de l'offre (chantier Offre, étape 7)
+- Écran `/admin/offre` (`src/pages/admin/OfferPlan.tsx`, composants dans `src/components/admin/offerPlan/`), réservé aux admins. Il compare ce qu'il faut avoir (les must-haves) à ce qui est en ligne, mood par mood et région par région.
+- Trois tables, admins uniquement : `offer_targets` (objectif d'une case, pas de ligne = 0), `offer_must_haves` (la liste et son avancement), `offer_must_have_regions` (régions candidates, aucune = « à chercher »).
+- Règles dans `src/lib/offerPlan/compute.ts` (aucun accès à la base, testées) : une expérience publiée compte dans chaque mood où elle apparaît (`category_id` + `category_ids` pour une expérience seule, `category_id` pour une expérience hôtel), dans la case de sa région (`region_id` de la fiche, ou de l'hôtel `experiences2.hotel_id`). « Hors plan » = publiée et liée à aucun must-have.
+- Le statut « en ligne » n'est jamais saisi : la base le pose quand l'expérience liée est publiée (déclencheurs de la migration `20261012120000_offer_plan.sql`).
+- Lien depuis les formulaires : `MustHaveCoveredField` (`src/components/forms/shared/`) + `useMustHaveLink` (`src/lib/offerPlan/`). Le lien est posé après l'enregistrement de la fiche, par la fonction de base `set_experience_must_have`, en une seule opération.
 
 ### Formulaire expérience seule : présentation par mood, après la réservation, canal (chantier Offre, étape 2)
 - **Mood principal** = `standalone_experiences.category_id` (toujours le premier de `category_ids`). Sa présentation, ce sont les colonnes de la fiche : `title*`, `subtitle*`, `long_copy*`, `hero_image`. Aucune fiche n'a été migrée.

@@ -66,6 +66,8 @@ import { CancellationPolicyFields } from "@/components/forms/shared/Cancellation
 import { SeoFields } from "@/components/forms/shared/SeoFields";
 import { PublicationFields } from "@/components/forms/shared/PublicationFields";
 import { useGenerateSeo } from "@/components/forms/shared/useGenerateSeo";
+import { MustHaveCoveredField } from "@/components/forms/shared/MustHaveCoveredField";
+import { useMustHaveLink } from "@/lib/offerPlan/useMustHaveLink";
 import { Moon, Utensils, Users } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -230,6 +232,8 @@ export function UnifiedExperience2Form({
   const [taxesOpen, setTaxesOpen] = useState(false);
 
   const currentExperienceId = experienceId || createdExperienceId;
+  // Plan de l'offre : le must-have que cette expérience couvre (vide = opportunité hors plan).
+  const mustHaveLink = useMustHaveLink("experience2", currentExperienceId);
 
   // -------------------------------------------------------------------------
   // Queries
@@ -880,6 +884,7 @@ export function UnifiedExperience2Form({
         if (error) throw error;
         await saveInternalFields(EXPERIENCE2_INTERNAL, currentExperienceId, internalFields);
         await saveExperienceHotels(currentExperienceId);
+        await mustHaveLink.save(currentExperienceId);
         toast.success("Draft saved successfully");
       } else {
         const { data: insertedData, error } = await supabase
@@ -895,6 +900,7 @@ export function UnifiedExperience2Form({
         await saveLocalIncludes(insertedData.id);
         await saveLocalTags(insertedData.id);
         await saveLocalReviews(insertedData.id);
+        await mustHaveLink.save(insertedData.id);
         toast.success("Draft saved!");
       }
       // Clear auto-save and reset local image state (already uploaded)
@@ -928,6 +934,7 @@ export function UnifiedExperience2Form({
         if (error) throw error;
         await saveInternalFields(EXPERIENCE2_INTERNAL, currentExperienceId, internalFields);
         await saveExperienceHotels(currentExperienceId);
+        await mustHaveLink.save(currentExperienceId);
         toast.success("Published successfully");
       } else {
         const { data: insertedData, error } = await supabase
@@ -943,6 +950,7 @@ export function UnifiedExperience2Form({
         await saveLocalIncludes(insertedData.id);
         await saveLocalTags(insertedData.id);
         await saveLocalReviews(insertedData.id);
+        await mustHaveLink.save(insertedData.id);
         toast.success("Published successfully");
       }
       setGalleryImages([]);
@@ -1373,6 +1381,13 @@ export function UnifiedExperience2Form({
                 </div>
                 {errors.category_id && <p className="text-destructive text-xs mt-2">{errors.category_id.message}</p>}
               </div>
+
+              <MustHaveCoveredField
+                link={mustHaveLink}
+                moodIds={categoryId ? [categoryId] : []}
+                moods={categories ?? undefined}
+                disabled={isSaving}
+              />
             </FormSection>
 
             {/* ═══════════════ 1. L'essentiel ═══════════════ */}
