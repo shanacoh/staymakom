@@ -309,6 +309,7 @@ public/
 | `/admin/swipe/dossiers`, `/admin/swipe/bibliotheque`, `/admin/swipe/categories` | Module Swipe Itinéraire |
 | `/admin/partenaires` | AdminProviders : liste des prestataires, filtrable par type, statut et région (voir « Prestataires : une seule entité »). L'ancienne adresse `/admin/partenaires/experiences` y redirige. |
 | `/admin/partenaires/:providerId` | AdminProviderDetails : fiche d'un prestataire (infos, liaisons, réservations, chiffres par mois). Origine : fiche prestataire unique (contact, langue, conditions, politique annulation/météo, badge rouge si non validée). Voir note Bateaux v2 (2026-10-01). |
+| `/admin/partenaires/propositions` | AdminPartnerProposals : propositions des prestataires à valider (avant / après, Accepter / Refuser avec commentaire) et édition des conditions partenaires. Voir « Espace partenaire ». |
 | `/admin/rentabilite/bateaux` | AdminBoatsProfitability — tableau bateaux × durées, prix/marge/marge-par-heure par case, filtrable capacité et port. |
 | `/admin/catalogue` | AdminCatalogue (carnet unique de tous les lieux, voir la note Catalogue ci-dessous) |
 | `/admin/carte` | AdminCarte (carte de tous les lieux du catalogue, voir la note Catalogue) |
@@ -356,6 +357,18 @@ public/
 > - **À localiser** (`LocateList.tsx`) : les lieux affichés sans position. Trois façons de les placer : « Chercher » (fonction `catalogue-lookup`, adresse puis nom avec ville puis nom, le plus précis d'abord), « Cliquer sur la carte », ou « Lien Maps » (position exacte lue dans un lien Google Maps, court ou long). La position n'est enregistrée qu'après confirmation sur la carte (repère provisoire rouge), dans `catalogue_items.latitude/longitude` : pour une fiche du site sans position, elle sert de secours dans la vue et ne modifie pas la fiche du site.
 > - **À venir** : lot 4 (sélecteur dans les itinéraires). La Bibliothèque swipe reste séparée en attendant la réflexion sur les itinéraires.
 
+### Espace partenaire (`/partner/*` — rôle : partner)
+
+| Path | Écran |
+|------|-------|
+| `/partner/login` | Connexion par lien reçu par email (pas de mot de passe) |
+| `/partner` | Accueil : prochaines réservations, actions en attente, état des propositions |
+| `/partner/experiences`, `/partner/experiences/:id` | Ses expériences ; pour chacune : questionnaire pratique, disponibilités, proposer une modification |
+| `/partner/new` | Proposer une nouvelle expérience |
+| `/partner/bookings`, `/partner/revenue`, `/partner/reviews`, `/partner/profile` | Réservations payées, revenus et règlements, avis publiés, profil et conditions acceptées |
+
+Tant que les conditions en vigueur ne sont pas acceptées, toutes ces adresses n'affichent que l'écran des conditions. Voir la section « Espace partenaire ».
+
 ### Hotel Admin Routes (`/hotel-admin/*` — role: hotel_admin)
 
 | Path | Component |
@@ -379,7 +392,7 @@ public/
 ### Auth Flow
 1. User signs in via Supabase Auth (email/password or OAuth via Lovable)
 2. `AuthContext` provisions user: creates `user_profiles` + `customers` records
-3. Role fetched from `user_roles` table (admin, hotel_admin, customer)
+3. Role fetched from `user_roles` table (admin, hotel_admin, customer, partner)
 4. `ProtectedRoute` component checks role before rendering
 
 ### RBAC Matrix
@@ -540,7 +553,21 @@ public/
 - **Priorités** : le contact du jour J et le canal de réservation de l'expérience passent avant ceux du prestataire. Pour les emails (confirmation, rappel de la veille), la règle est dans `resolveDayContact` (`supabase/functions/_shared/practical-info/content.ts`) : contact de l'expérience, sinon celui du prestataire, jamais un mélange.
 - **Chiffres d'un prestataire** (`src/lib/providers/compute.ts`) : seules comptent les réservations au statut de paiement `paid` ou `deposit_paid`, non annulées, rangées par mois de prestation. Le statut est lu tel quel, rien ne le modifie ici. Revenu net du prestataire = coût fournisseur saisi sur la réservation (`supplier_cost`) ; à défaut, pour une réservation en ligne simple, prix fournisseur de la fiche, gardé seulement s'il retombe sur le montant payé avec la marge de la fiche ; sinon « à compléter ». Pour un hôtel : `bookings_hg.net_price`, en lecture seule.
 - **Côté code** : `src/lib/providers/` (`types.ts`, `queries.ts`, `compute.ts`, tests), `src/components/admin/providers/` (`ProviderPicker` = champ de choix avec recherche et création, réutilisé dans tous les formulaires ; `ProviderForm` ; sections de la fiche), pages `Providers.tsx` et `ProviderDetails.tsx`.
-- **À venir (étape suivante)** : l'espace partenaire. Le bouton « Inviter » de la fiche et le canal « Espace partenaire » sont affichés mais inactifs.
+- **Espace partenaire** : voir la section suivante. Le canal de réservation « Espace partenaire » reste affiché mais inactif.
+
+### Espace partenaire (chantier Partenaires, étape 2, V0 : expériences seules et bateaux)
+- **Ce que c'est** : un espace web sur `/partner`, pensé pour le téléphone, en hébreu (de droite à gauche), anglais et français, où un prestataire gère sa relation avec STAYMAKOM. Principe : il voit beaucoup, il propose tout, il décide seul de peu. Hôtels et expériences hôtel : pas encore branchés.
+- **Le principe de sécurité, à ne jamais contourner** : un partenaire n'a AUCUN accès direct aux tables. Les cinq nouvelles tables (`provider_users`, `partner_terms_versions`, `partner_terms_acceptances`, `partner_proposals`, `partner_activity_log`) sont réservées aux admins, comme `providers` et les tables `*_internal`. Tout ce qu'il lit ou écrit passe par des fonctions de la base `partner_*` (un « guichet » : la fonction vérifie qui il est, ne renvoie que les colonnes permises et uniquement ce qui appartient à son prestataire). Marge, majoration, prix client, email et téléphone des clients ne sortent d'aucune de ces fonctions. Côté écran, `src/lib/partner/api.ts` est le seul fichier qui parle à la base, et il n'appelle que ces fonctions. Toute nouvelle donnée à montrer à un partenaire s'ajoute dans une fonction `partner_*`, jamais par une règle d'accès directe sur une table.
+- **Rôle et comptes** : rôle `partner` dans `app_role` (un utilisateur a un seul rôle). `provider_users` relie un utilisateur à un prestataire (plusieurs utilisateurs possibles par prestataire). `partner_require()` est la porte d'entrée de toutes les fonctions : elle renvoie le prestataire de l'utilisateur connecté ou refuse (`not_partner`), et refuse aussi tant que la version en vigueur des conditions n'est pas acceptée (`terms_required`). Un prestataire au statut « arrêté » perd l'accès.
+- **Connexion sans mot de passe** : `partner-invite` (admin connecté) crée le compte si besoin, appelle `admin_link_partner_user` (rôle + lien en une opération) et envoie le lien. `partner-login-link` (page de connexion, sans être connecté) renvoie un lien à une adresse déjà invitée, un par minute au plus, même réponse que l'adresse soit connue ou non. Le lien mène à `/partner/login?token_hash=…` ; la session n'est ouverte qu'au clic sur « Entrer dans mon espace » (`signInWithPartnerToken`), pour qu'un aperçu de lien ne consomme pas le jeton. Le message WhatsApp de la fiche pointe vers la page de connexion (lien qui n'expire pas), jamais envoyé automatiquement.
+- **Conditions partenaires** : `partner_terms_versions` (texte he / en / fr). Version en vigueur = la plus haute publiée. `partner_accept_terms` enregistre la preuve dans `partner_terms_acceptances` (version, date et heure, nom saisi, utilisateur, adresse IP et navigateur lus dans la requête) et remplit `providers.terms_accepted_at` / `terms_version`. Une version déjà acceptée ne se corrige plus (déclencheur) : on publie la suivante avec `admin_publish_partner_terms`, et chacun doit l'accepter de nouveau.
+- **Appliqué directement, et tracé dans `partner_activity_log`** : son profil (`partner_update_profile` : contact, WhatsApp, raison sociale, numéro fiscal, adresse, langue, contact jour J par défaut), le contact du jour J d'une expérience (`partner_set_day_contact`) et ses disponibilités (`partner_set_availability` : mêmes colonnes que le back-office, `availability_mode`, `available_days`, `blocked_dates`, `whitelisted_dates`, `has_time_slots`, `time_slots`). Les deux derniers sont réservés au prestataire principal de l'expérience.
+- **Tout le reste est une proposition** (`partner_submit_proposal` → `partner_proposals`) : textes, infos pratiques, photos, prix fournisseur, nouvelle expérience. La fonction ne garde que les champs autorisés pour le type, relit elle-même la valeur actuelle, et n'accepte que des photos du dossier du prestataire (`experience-images/partner-proposals/<id du prestataire>/`, seul endroit où la règle de stockage le laisse écrire). Les textes sont proposés dans la langue du prestataire et appliqués dans cette langue seulement.
+- **Validation** (`admin_review_partner_proposal`, écran `/admin/partenaires/propositions`) : accepter applique la modification dans la même opération. Un prix accepté ne change que le prix fournisseur et pose `standalone_experience_internal.supplier_price_changed_at` ; le formulaire de la fiche affiche alors « Prix fournisseur modifié, vérifier le prix client » (`SupplierPriceChangedNotice`). Une nouvelle expérience acceptée crée une fiche en brouillon reliée au prestataire, jamais publiée.
+- **Réservations et revenus** (`partner_bookings`) : uniquement `payment_status` `paid` ou `deposit_paid`, non annulées, du prestataire (noté sur la réservation, sinon prestataire principal de l'expérience). Du client : prénom, initiale du nom, langue, demandes particulières (`standalone_bookings.special_requests`, pas encore remplie par le checkout). Montant = `supplier_cost` de la réservation s'il existe, sinon prix fournisseur de la fiche × participants. Le back-office lit la même liste avec `admin_provider_settlements` et y saisit le règlement (`supplier_payment_status`, `supplier_paid_at`, `supplier_payment_reference`).
+- **Emails** (`supabase/functions/_shared/partner/` : `email.ts` habillage commun repris de la confirmation, `access.ts` liens de connexion, `booking-notice.ts` réservation payée ou annulée). L'email « nouvelle réservation » part de `send-standalone-booking-confirmation`, juste après la confirmation au client, une seule fois (`provider_notified_at`), seulement vers un prestataire déjà invité. Annulation, conditions acceptées et proposition envoyée : la base appelle `partner-notify` (déclencheurs `partner_notify_*`, secret du coffre, erreurs avalées pour ne jamais bloquer une écriture).
+- **Côté code** : `src/pages/partner/` (`PartnerApp` décide de l'écran : connexion, pas partenaire, conditions, ou espace), `src/components/partner/`, `src/lib/partner/` (`api.ts`, `types.ts`, `i18n.ts` textes en trois langues, `logic.ts` règles testées). Back-office : `src/lib/partnerAdmin/`, `src/components/admin/partners/`, `ProviderPartnerAccess` et `ProviderSettlementsSection` sur la fiche prestataire. `ProtectedRoute` attend de connaître le rôle avant d'afficher une page réservée et renvoie un partenaire vers `/partner`.
+- **Limites connues** : si la confirmation au client part avant que le paiement soit marqué payé (cas du filet de sécurité par le webhook), l'email au prestataire n'est pas envoyé à ce moment-là ; le bouton « Renvoyer » de la réservation le fait partir. Le champ « demandes particulières » du checkout n'est enregistré nulle part aujourd'hui. Les avis publiés restent lisibles par tous avec leurs colonnes `customer_email` / `customer_phone` (règle publique antérieure à ce chantier) : à traiter à part.
 
 ### Color Tokens (CSS variables)
 - `primary` — Brand primary

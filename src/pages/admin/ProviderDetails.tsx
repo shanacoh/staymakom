@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -20,6 +20,8 @@ import { ProviderStatusBadge } from "@/components/admin/providers/ProviderBadges
 import { ProviderBookingsSection } from "@/components/admin/providers/ProviderBookingsSection";
 import { ProviderForm } from "@/components/admin/providers/ProviderForm";
 import { ProviderLinkedSection } from "@/components/admin/providers/ProviderLinkedSection";
+import { ProviderPartnerAccess } from "@/components/admin/providers/ProviderPartnerAccess";
+import { ProviderSettlementsSection } from "@/components/admin/providers/ProviderSettlementsSection";
 import { errorMessage } from "@/lib/catalogue/queries";
 import { linkedTo } from "@/lib/providers/compute";
 import {
@@ -120,10 +122,6 @@ export default function AdminProviderDetails() {
             <ProviderPolicyBadge policyValidated={provider.policy_validated} />
           </div>
           <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" disabled title="Bientôt : invitation à l'espace partenaire">
-              <Send className="mr-1.5 h-4 w-4" />
-              Inviter
-            </Button>
             <Button type="button" disabled={!canSave} onClick={save}>
               {saveMutation.isPending ? "Enregistrement…" : dirty ? "Enregistrer" : "Enregistré"}
             </Button>
@@ -139,9 +137,14 @@ export default function AdminProviderDetails() {
         onChange={(patch) => setEdited((current) => ({ ...(current ?? toDraft(provider)), ...patch }))}
       />
 
+      {/* L'espace partenaire ne couvre pour l'instant que les expériences et les bateaux. */}
+      {provider.provider_type !== "hotel" && <ProviderPartnerAccess provider={provider} />}
+
       <ProviderLinkedSection providerId={provider.id} linked={linked} />
 
       <ProviderBookingsSection bookings={bookings.data} isLoading={bookings.isLoading} error={bookings.error} />
+
+      {provider.provider_type !== "hotel" && <ProviderSettlementsSection providerId={provider.id} />}
 
       <div className="flex justify-end border-t border-border pt-4">
         <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setConfirmingDelete(true)}>

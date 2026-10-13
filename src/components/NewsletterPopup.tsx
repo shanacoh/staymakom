@@ -9,7 +9,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "sonner";
 import { isSitePauseActive } from "@/config/sitePause";
 import { trackNewsletterPopupShown, trackNewsletterPopupClosed, trackNewsletterSubscribed, identifyLead } from "@/lib/analytics";
-
+import { isPartnerSpacePath } from "@/lib/partner/logic";
 /**
  * Popup d'inscription newsletter (plus de code promo — retiré le 2026-08-13).
  *
@@ -176,6 +176,7 @@ export function NewsletterPopup({
     (location.pathname === "/" && isSitePauseActive()) ||
     location.pathname.startsWith("/admin") ||
     location.pathname.startsWith("/hotel-admin") ||
+    isPartnerSpacePath(location.pathname) ||
     location.pathname.startsWith("/swipe/") ||
     location.pathname.startsWith("/checkout") ||
     location.pathname.startsWith("/standalone-checkout") ||

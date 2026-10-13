@@ -15,6 +15,10 @@
 // Pas d'envoi en double : un envoi automatique ne part que si l'email n'a jamais été envoyé.
 // Seul un admin connecté (bouton « Renvoyer » du back-office) peut le renvoyer.
 //
+// Prestataire : au même moment, le prestataire de l'expérience reçoit son propre email (dans sa langue,
+// sans le prix payé ni les coordonnées du client), une seule fois, si la réservation est payée et
+// s'il a été invité dans l'espace partenaire. Cet envoi ne peut jamais empêcher celui du client.
+//
 // Aperçu d'une fiche (`preview_experience_id`) : envoie l'email tel que le client le recevrait,
 // avec une réservation fictive, à l'adresse de l'admin connecté. Rien n'est écrit en base.
 
@@ -22,6 +26,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { formatBookingDate, hasLocation, normalizeLang, renderPracticalInfoHtml, buildPracticalInfo, type PracticalInfo, type PracticalLang } from '../_shared/practical-info/content.ts';
 import { loadPracticalInfo, SAMPLE_DAY_CONTACT, SAMPLE_PRACTICAL_SOURCE } from '../_shared/practical-info/load.ts';
 import { getAdminEmail, isAdminEmail, isInternalCron } from '../_shared/internal-auth.ts';
+import { notifyProviderOfBooking } from '../_shared/partner/booking-notice.ts';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 
@@ -486,6 +491,16 @@ Deno.serve(async (req: Request) => {
       return json({ html, subject });
     }
 
+    // Email au prestataire : lit le statut de paiement, ne le modifie pas. Sans effet sur la suite.
+    const notifyProvider = async () => {
+      try {
+        const outcome = await notifyProviderOfBooking(supabase, booking.id, 'paid');
+        if (!outcome.sent) console.log('Email prestataire non envoyé:', outcome.reason);
+      } catch (providerError) {
+        console.error('Email prestataire impossible:', providerError);
+      }
+    };
+
     // Pas d'envoi en double : un envoi automatique « prend » d'abord la réservation (date d'envoi
     // posée seulement si elle était vide). S'il n'obtient rien, l'email est déjà parti.
     // Un admin connecté, lui, renvoie volontairement.
@@ -499,6 +514,7 @@ Deno.serve(async (req: Request) => {
         .select('id');
       if (claimError) throw claimError;
       if (!claimed || claimed.length === 0) {
+        await notifyProvider();
         return json({ success: true, already_sent: true });
       }
     }
@@ -522,6 +538,8 @@ Deno.serve(async (req: Request) => {
         .update({ confirmation_email_sent_at: new Date().toISOString() } as any)
         .eq('id', booking.id);
     }
+
+    await notifyProvider();
 
     return json({ success: true });
 

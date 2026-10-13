@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { identifyUser } from "@/lib/analytics";
 import { useNavigate } from "react-router-dom";
 
-type AppRole = "admin" | "hotel_admin" | "customer";
+type AppRole = "admin" | "hotel_admin" | "customer" | "partner";
 
 interface AuthContextType {
   user: User | null;

@@ -123,6 +123,7 @@ import { diffPayload } from "@/lib/standaloneExperienceForm/payloadDiff";
 import { useMustHaveLink } from "@/lib/offerPlan/useMustHaveLink";
 import { MustHaveCoveredField } from "@/components/forms/shared/MustHaveCoveredField";
 import { STANDALONE_EXPERIENCE_INTERNAL, fetchInternalFields, saveInternalFields, splitInternalFields } from "@/lib/internalFields";
+import { SupplierPriceChangedNotice } from "@/components/admin/partners/SupplierPriceChangedNotice";
 
 // Les bateaux n'ont pas de limite de nombre de photos dans la galerie,
 // contrairement aux autres expériences standalone (limitées à 8).
@@ -3965,6 +3966,9 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
           canPublish={canPublish}
           busy={isSaving || heroImageUploading}
         />
+
+        {/* Une proposition de prix d'un prestataire a été acceptée : le prix client reste à vérifier. */}
+        {currentExperienceId && <SupplierPriceChangedNotice experienceId={currentExperienceId} />}
 
         {/* Générer avec l'IA (bateaux : en haut ; expérience standard : section 0 de la page) */}
         {isBoatsExperience && aiPanel}

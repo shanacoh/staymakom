@@ -101,3 +101,14 @@ verify_jwt = false
 
 [functions.send-standalone-day-before-reminder]
 verify_jwt = false
+
+# Espace partenaire : chaque fonction vérifie elle-même qui l'appelle (admin connecté, secret de la
+# base, ou personne pour la demande de lien de connexion).
+[functions.partner-invite]
+verify_jwt = false
+
+[functions.partner-login-link]
+verify_jwt = false
+
+[functions.partner-notify]
+verify_jwt = false

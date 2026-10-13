@@ -6,6 +6,64 @@
 
 ---
 
+## [2026-10-13] — Chantier Partenaires, étape 2 : l'espace partenaire (V0)
+
+> Statut : base modifiée le 13/10/2026 (ajouts uniquement : 5 tables, 6 colonnes, des fonctions, 3 déclencheurs, 1 règle de stockage ; aucune colonne supprimée, renommée ou modifiée, donc pas de sauvegarde préalable nécessaire). Quatre fonctions serveur déployées : `partner-invite`, `partner-login-link`, `partner-notify` (nouvelles) et `send-standalone-booking-confirmation` (redéployée). `npm run build` passe. 16 nouveaux tests passent (les 9 tests en échec sur `imageUrl` et `catalogue/draft` l'étaient déjà avant, sans rapport). HyperGuest, calcul des prix, checkout, paiement et webhook Revolut : aucun fichier touché.
+>
+> Ce qui a été testé pour de vrai : (1) le parcours complet et la sécurité, joués en base sur Citrus & Salt dans une opération annulée à la fin (rien n'est resté) ; (2) un essai réel avec un prestataire de test jetable : vrai lien de connexion, vraie session, une quarantaine de requêtes par la même porte que le navigateur (visiteur, partenaire avant et après les conditions, accès direct aux tables, envoi de photos), puis une réservation payée et son annulation pour les emails. Toutes les données de test ont été supprimées et le compte de test aussi. Des emails d'essai sont arrivés sur shana@staymakom.com (aperçus et alertes « ZZ TEST »).
+>
+> Ce qui n'a PAS été testé : les écrans eux-mêmes dans un navigateur (ni l'espace partenaire sur téléphone, ni les nouveaux écrans du back-office avec un compte admin), et le bouton « Inviter » de bout en bout (il exige un admin connecté). À vérifier à la première invitation.
+
+### Ce qui a changé côté code
+- `src/pages/partner/` (nouveau dossier) : l'espace partenaire, sur `/partner`. `PartnerApp.tsx` décide de l'écran à montrer (connexion, « pas partenaire », conditions à accepter, ou l'espace). Puis un fichier par onglet : `PartnerHome` (accueil), `PartnerExperiences` et `PartnerExperienceDetail` (ses expériences), `PartnerNewExperience` (proposer une nouvelle expérience), `PartnerBookings`, `PartnerRevenue`, `PartnerReviews`, `PartnerProfile`, plus `PartnerLogin` (connexion par lien) et `PartnerOnboarding` (profil puis conditions).
+- `src/components/partner/` (nouveau dossier) : le gabarit (`PartnerShell` : en-tête, langue, onglets), les briques d'affichage sobres (`ui.tsx`), l'éditeur de disponibilités (`AvailabilityEditor`), l'envoi de photos (`PhotoPicker`), la carte de réservation, la liste des propositions, et les trois parties d'une expérience (`experience/QuestionnaireSection`, `AvailabilitySection`, `ProposalSection`).
+- `src/lib/partner/` (nouveau dossier) : `api.ts` (le seul fichier qui parle à la base, uniquement par les fonctions `partner_*`), `types.ts`, `i18n.ts` (tous les textes en français, anglais et hébreu), `logic.ts` (règles sans accès à la base : calendrier, disponibilités, totaux par mois, champs modifiés), `context.tsx`, `logic.test.ts` (13 tests).
+- `src/lib/partnerAdmin/` (nouveau dossier) : `queries.ts` (accès et invitation, propositions, conditions, règlements, signal de prix) et `whatsapp.ts` (message d'invitation dans la langue du prestataire, 3 tests).
+- `src/pages/admin/PartnerProposals.tsx` (nouveau) : écran « Propositions partenaires » (`/admin/partenaires/propositions`), onglets À valider / Traitées / Conditions partenaires.
+- `src/components/admin/partners/` (nouveau dossier) : `ProposalCard` (comparaison aujourd'hui / proposé, Accepter / Refuser avec commentaire), `PartnerTermsEditor` (texte des conditions en trois langues, corriger ou publier une nouvelle version), `SupplierPriceChangedNotice` (signal « Prix fournisseur modifié, vérifier le prix client »).
+- `src/components/admin/providers/ProviderPartnerAccess.tsx` (nouveau) : sur la fiche prestataire, l'état (pas invité / invité le… / conditions acceptées le… / dernière connexion), le bouton « Inviter », « Copier le message WhatsApp », « Ouvrir WhatsApp », le compteur de propositions, les utilisateurs.
+- `src/components/admin/providers/ProviderSettlementsSection.tsx` (nouveau) : sur la fiche prestataire, les règlements (montant qui lui revient, « Marquer réglé » avec date et référence).
+- `src/pages/admin/ProviderDetails.tsx` : affiche ces deux sections (sauf pour un hôtel). L'ancien bouton « Inviter » inactif est retiré.
+- `src/components/forms/StandaloneExperienceForm.tsx` : affiche le signal de prix en haut de la fiche. Rien d'autre n'est modifié.
+- `src/components/admin/AdminSidebar.tsx` : entrée « Propositions partenaires » avec pastille du nombre en attente.
+- `src/App.tsx` : routes `/partner/*` et `/admin/partenaires/propositions`. Le bandeau cookies ne s'affiche pas dans l'espace partenaire.
+- `src/contexts/AuthContext.tsx`, `src/components/ProtectedRoute.tsx` : nouveau rôle « partner ». Une page réservée attend maintenant de connaître le rôle avant de s'afficher, et un partenaire est toujours renvoyé vers `/partner` (il ne peut ouvrir ni le back-office ni le compte client).
+- `src/components/NewsletterPopup.tsx`, `WhatsAppButton.tsx`, `MobileAppShell.tsx` : masqués dans l'espace partenaire.
+- `src/config/automations.ts` : 5 nouvelles lignes (invitation, lien de connexion, réservation payée au prestataire, annulation au prestataire, alertes à l'équipe).
+- `supabase/functions/_shared/partner/` (nouveau dossier) : `email.ts` (habillage commun, repris de l'email de confirmation), `access.ts` (lien de connexion et ses emails), `booking-notice.ts` (email de réservation payée ou annulée au prestataire).
+- `supabase/functions/partner-invite/`, `partner-login-link/`, `partner-notify/` (nouvelles fonctions serveur) et `supabase/config.toml`.
+- `supabase/functions/send-standalone-booking-confirmation/index.ts` : après l'email au client, prévient le prestataire (18 lignes ajoutées). La confirmation au client et le paiement ne sont pas modifiés.
+- `ARCHITECTURE.md` : nouvelle section « Espace partenaire » et tableau de ses adresses.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261013100000_partner_role.sql` : nouveau rôle `partner` (à côté de admin, hotel_admin, customer).
+- Migration `supabase/migrations/20261013100100_partner_space.sql` (appliquée le 13/10/2026 avec `supabase db query --linked -f`, en une seule opération ; non enregistrée dans l'historique des migrations, déjà décalé).
+- Nouvelle table `provider_users` : quel utilisateur représente quel prestataire (plusieurs utilisateurs possibles), date d'invitation, dernière connexion.
+- Nouvelle table `partner_terms_versions` : les versions des conditions partenaires, texte en hébreu, anglais et français. Version 1 créée avec le texte « À rédiger ».
+- Nouvelle table `partner_terms_acceptances` : la preuve de chaque acceptation (version, date et heure, nom saisi, utilisateur, adresse IP, navigateur).
+- Nouvelle table `partner_proposals` : les propositions (prestataire, expérience ou nouvelle expérience, type, contenu proposé, valeur actuelle, statut, commentaire, auteur, dates).
+- Nouvelle table `partner_activity_log` : trace de ce qu'un prestataire applique directement (disponibilités, contact jour J, profil) : qui, quand, avant, après.
+- Les cinq tables sont réservées aux admins. Un partenaire n'y accède jamais directement.
+- `standalone_bookings`, colonnes ajoutées : `provider_notified_at` et `provider_cancel_notified_at` (anti-doublon des emails au prestataire), `supplier_paid_at` et `supplier_payment_reference` (règlement saisi par l'admin), `special_requests` (demandes particulières montrées au prestataire ; pas encore remplie par le checkout).
+- `standalone_experience_internal`, colonne ajoutée : `supplier_price_changed_at` (signal « prix fournisseur modifié »).
+- Fonctions pour le partenaire (`partner_session`, `partner_update_profile`, `partner_accept_terms`, `partner_experiences`, `partner_experience`, `partner_set_day_contact`, `partner_set_availability`, `partner_submit_proposal`, `partner_proposals`, `partner_bookings`, `partner_reviews`, `partner_users`) : chacune vérifie qui appelle et ne renvoie que ce qui appartient à son prestataire.
+- Fonctions pour l'admin : `admin_review_partner_proposal` (accepter applique la modification dans la même opération), `admin_publish_partner_terms`, `admin_provider_settlements`, et pour la fonction serveur d'invitation `admin_link_partner_user` et `admin_find_user_id_by_email`.
+- Trois déclencheurs `partner_notify_*` : préviennent la fonction serveur d'emails quand une proposition est créée, quand des conditions sont acceptées, quand une réservation annoncée à un prestataire est annulée. Ils ne modifient rien et ne peuvent pas bloquer une écriture.
+- Un déclencheur qui interdit de corriger le texte d'une version de conditions déjà acceptée.
+- Stockage : un partenaire peut envoyer des photos uniquement dans `experience-images/partner-proposals/<son prestataire>/`.
+
+### Pourquoi ce changement
+- Shana veut que chaque prestataire gère lui-même sa relation avec STAYMAKOM, sur son téléphone et dans sa langue : il voit ses réservations et ses revenus, il gère seul ses disponibilités et son contact du jour J, et tout le reste (textes, photos, prix, nouvelles expériences) passe par une proposition qu'elle valide avant toute mise en ligne.
+- La règle absolue : un prestataire ne voit jamais la marge, le prix payé par le client, les autres prestataires, ni l'email ou le téléphone des clients. C'est garanti par la base, pas seulement par l'écran.
+
+### Reste à faire (hors de cette session)
+- Rédiger le texte des conditions partenaires dans les trois langues (Propositions partenaires, onglet « Conditions partenaires ») avant d'inviter un prestataire.
+- Renseigner l'email, le WhatsApp et la langue des prestataires (17 sur 18 n'ont pas d'email, aucun n'a de langue).
+- Brancher le champ « demandes particulières » du checkout sur `standalone_bookings.special_requests` (le checkout était hors périmètre).
+- Les avis publiés restent lisibles par tous avec leurs colonnes email et téléphone du client (règle publique antérieure à ce chantier ; aucun avis publié n'en contient au 13/10/2026) : à corriger à part.
+
+---
+
 ## [2026-10-12] — Chantier Partenaires, étape 1 : une seule entité Prestataire
 
 > Statut : base modifiée le 12/10/2026 avec l'outil Supabase (ajouts uniquement, aucune colonne supprimée, renommée ou modifiée). Sauvegarde faite juste avant dans le schéma `backup_20261012` (copies de 9 tables). Fonctions serveur `send-standalone-booking-confirmation` et `send-standalone-day-before-reminder` redéployées le 12/10/2026 (elles répondent toujours « Action réservée aux administrateurs » à un visiteur). `npm run build` passe. 18 nouveaux tests passent (les 9 tests en échec sur `imageUrl` et `catalogue/draft` l'étaient déjà avant, sans rapport). Test visiteur fait avec la clé publique : aucune lecture ni écriture possible sur les prestataires et les tables internes. Les écrans n'ont pas été essayés avec un compte admin dans cette session : à vérifier à l'usage. HyperGuest, prix, checkout, paiement et webhook Revolut : aucun fichier touché.

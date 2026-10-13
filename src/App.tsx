@@ -18,6 +18,7 @@ import { rememberVisitSource } from "@/lib/tailorMade/visitSource";
 import { Loader2 } from "lucide-react";
 import { NewsletterPopup } from "@/components/NewsletterPopup";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import { isPartnerSpacePath } from "@/lib/partner/logic";
 
 // ── Chemin critique : chargement immédiat ──────────────────────────────────
 import IndexV3 from "./pages/IndexV3";
@@ -111,6 +112,10 @@ const AdminCatalogue             = lazy(() => import("./pages/admin/Catalogue"))
 const AdminCarte                 = lazy(() => import("./pages/admin/Carte"));
 const AdminAutomations           = lazy(() => import("./pages/admin/Automations"));
 const AdminOfferPlan             = lazy(() => import("./pages/admin/OfferPlan"));
+const AdminPartnerProposals      = lazy(() => import("./pages/admin/PartnerProposals"));
+
+// ── Espace partenaire (/partner) : chargé uniquement pour un prestataire ──
+const PartnerApp                 = lazy(() => import("./pages/partner/PartnerApp"));
 
 // ── Module Swipe Itinéraire ────────────────────────────────────────────────
 const SwipePublic                = lazy(() => import("./pages/swipe/SwipePublic"));
@@ -373,6 +378,7 @@ const AppContent = () => {
             <Route path="partenaires" element={<AdminProviders />} />
             {/* Ancienne adresse de la liste des prestataires */}
             <Route path="partenaires/experiences" element={<Navigate to="/admin/partenaires" replace />} />
+            <Route path="partenaires/propositions" element={<AdminPartnerProposals />} />
             <Route path="partenaires/:providerId" element={<AdminProviderDetails />} />
             <Route path="rentabilite/bateaux" element={<AdminBoatsProfitability />} />
             <Route path="avis" element={<AdminReviews />} />
@@ -403,12 +409,15 @@ const AppContent = () => {
             <Route path="payment-info" element={<HotelPaymentInfo />} />
             <Route path="contact" element={<HotelContact />} />
           </Route>
+          {/* Espace partenaire : il gère lui-même la connexion par lien et vérifie qui est là.
+              Aucune de ses données ne passe par les pages du site ni par le back-office. */}
+          <Route path="/partner/*" element={<PartnerApp />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
 
-      {showBanner && (
+      {showBanner && !isPartnerSpacePath(location.pathname) && (
         <CookieConsent onAccept={acceptCookies} onDecline={declineCookies} />
       )}
       <NewsletterPopup />

@@ -3,6 +3,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { WHATSAPP_NUMBER, buildWhatsappMessage, getWhatsappMessageVariant } from '@/constants/whatsapp';
 import { useCurrentProduct } from '@/contexts/CurrentProductContext';
 import { trackWhatsappClicked, identifyWhatsappClicked } from '@/lib/analytics';
+import { isPartnerSpacePath } from "@/lib/partner/logic";
 
 const WhatsAppButton = () => {
   const { lang } = useLanguage();
@@ -12,6 +13,7 @@ const WhatsAppButton = () => {
   if (
     location.pathname.startsWith('/admin') ||
     location.pathname.startsWith('/hotel-admin') ||
+    isPartnerSpacePath(location.pathname) ||
     location.pathname.startsWith('/swipe/')
   ) {
     return null;

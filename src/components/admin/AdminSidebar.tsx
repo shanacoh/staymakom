@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { usePendingProposalCount } from "@/lib/partnerAdmin/queries";
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
@@ -23,6 +24,7 @@ import {
   Map,
   Library,
   Handshake,
+  Inbox,
   Percent,
   ChevronDown,
   AlertTriangle,
@@ -87,6 +89,7 @@ function usePendingTailorMadeCount() {
 }
 
 const BOOKINGS_URL = "/admin/bookings";
+const PARTNER_PROPOSALS_URL = "/admin/partenaires/propositions";
 
 type NavItem = {
   title: string;
@@ -120,6 +123,7 @@ const operationsItems: NavItem[] = [
   { title: "Avis", url: "/admin/avis", icon: Star, done: true },
   { title: "Partenaires · Hôtels", url: "/admin/hotels2", icon: Building2 },
   { title: "Partenaires", url: "/admin/partenaires", icon: Handshake },
+  { title: "Propositions partenaires", url: PARTNER_PROPOSALS_URL, icon: Inbox },
   { title: "Rentabilité bateaux", url: "/admin/rentabilite/bateaux", icon: Percent },
 ];
 
@@ -358,6 +362,7 @@ function TechniqueGroup({
 
 export function AdminSidebar() {
   const pendingTailorMadeCount = usePendingTailorMadeCount();
+  const pendingProposalCount = usePendingProposalCount();
   const { state, isMobile, setOpenMobile } = useSidebar();
   const location = useLocation();
   const collapsed = state === "collapsed";
@@ -365,6 +370,10 @@ export function AdminSidebar() {
   const isActive = (path: string, exact?: boolean) => {
     if (exact) {
       return location.pathname === path;
+    }
+    // « Propositions partenaires » est rangée sous /admin/partenaires : seule sa propre entrée s'allume.
+    if (path !== PARTNER_PROPOSALS_URL && location.pathname.startsWith(PARTNER_PROPOSALS_URL)) {
+      return false;
     }
     return location.pathname.startsWith(path);
   };
@@ -402,7 +411,7 @@ export function AdminSidebar() {
         <NavGroup
           label="Opérations"
           items={operationsItems}
-          badges={{ [BOOKINGS_URL]: pendingTailorMadeCount }}
+          badges={{ [BOOKINGS_URL]: pendingTailorMadeCount, [PARTNER_PROPOSALS_URL]: pendingProposalCount }}
           collapsed={collapsed}
           isActive={isActive}
           onNavClick={handleNavClick}

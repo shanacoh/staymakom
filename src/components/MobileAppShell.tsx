@@ -9,11 +9,15 @@ import { useLocation } from "react-router-dom";
 import MobileStickyHeader from "@/components/MobileStickyHeader";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { isSitePauseActive } from "@/config/sitePause";
+import { isPartnerSpacePath } from "@/lib/partner/logic";
 
 const MobileAppShell = () => {
   const location = useLocation();
 
-  const isAdmin = location.pathname.startsWith("/admin") || location.pathname.startsWith("/hotel-admin");
+  const isAdmin =
+    location.pathname.startsWith("/admin") ||
+    location.pathname.startsWith("/hotel-admin") ||
+    isPartnerSpacePath(location.pathname);
   // Le deck de swipe est une expérience plein écran, sans chrome du site (façon appli à part entière).
   const isSwipePublic = location.pathname.startsWith("/swipe/");
   // La page d'attente "offre d'hiver" est plein écran, avec son propre en-tête.
