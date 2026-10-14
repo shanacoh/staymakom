@@ -6,6 +6,24 @@
 
 ---
 
+## [2026-10-14] — Itinéraire de Rebeca, version 2 : nouveau programme, sans Swipe
+
+> Statut : page modifiée et vérifiée en local sur ordinateur (captures d'écran de toute la page). Base de données non modifiée. Pas encore commité ni mis en ligne. Non testé sur un vrai téléphone, et l'envoi WhatsApp des cases cochées n'a pas été essayé.
+
+### Ce qui a changé côté code
+- `src/data/itineraireRebeca.ts` : nouveau programme jour par jour donné par Shana. Plus de cartes « Your choice » ni de lien vers le Swipe : quand il y a plusieurs possibilités, une petite liste non cliquable dans la carte. Le jour 9 montre 4 excursions au choix, chacune avec sa photo. Nouvelles photos des trois intercalaires (Jérusalem, cratère de Ramon, plage de Tel Aviv) et de quelques moments, prises sur Unsplash (photos libres de droits) en attendant les nôtres. Ajout des questions de fin et du texte de prix.
+- `src/pages/ItineraireRebeca.tsx` : un seul modèle de carte (avec ou sans photo, avec ou sans liste), une phrase sous le titre du jour quand il faut choisir, puis deux blocs en fin de page : « A few things to decide together » (cases à cocher) et « We handle the rest » (150 $ par personne, 250 $ de plus pour le groupe avec les hébergements, sans total).
+- `src/components/itinerary/OptionsChecklist.tsx` (nouveau) : les questions à cases à cocher, réutilisables sur d'autres itinéraires. Chaque question a en plus « I don't know yet, let's discuss ». Le bouton ouvre WhatsApp avec les réponses déjà écrites ; rien n'est enregistré sur le site.
+- `docs/itineraires/TM-1006-rebeca.md` : notes internes remises à jour pour le nouveau programme.
+
+### Ce qui a changé côté base de données
+- Rien. Les 53 cartes Swipe du dossier TM-1006 restent dans la bibliothèque, simplement plus montrées sur la page.
+
+### Pourquoi ce changement
+- Shana a retravaillé le programme et préfère, pour l'instant, une page qui se lit simplement, sans renvoyer vers le Swipe. Les choix qui restent ouverts (transport, guides, journée Nova et kibboutz du 7 octobre) se règlent en fin de page avec des cases à cocher.
+
+---
+
 ## [2026-10-13] — Page itinéraire de Rebeca (dossier TM-1006) et ses cartes Swipe
 
 > Statut : page créée et vérifiée en local (`npm run build` passe, captures d'écran ordinateur faites). Base modifiée le 13/10/2026 (ajouts uniquement : 8 catégories, 53 propositions, 53 liaisons au dossier ; deux réglages d'affichage changés sur le dossier TM-1006). Vérifié : le lien Swipe du dossier renvoie bien 53 cartes rangées en 8 catégories. Pas encore commité ni mis en ligne. Non testé sur un vrai téléphone.

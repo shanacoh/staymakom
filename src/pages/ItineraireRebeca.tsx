@@ -1,95 +1,67 @@
-import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
 import V3Header from "@/components/V3Header";
-import { WHATSAPP_NUMBER } from "@/constants/whatsapp";
+import { OptionsChecklist } from "@/components/itinerary/OptionsChecklist";
 import {
   ARRIVAL,
   CHAPTERS,
-  DEPARTURE,
   HERO_IMAGE,
-  SWIPE_URL,
-  type ChoiceSlot,
+  LETS_DISCUSS,
+  OPTION_QUESTIONS,
+  PRICING,
   type Day,
-  type FixedSlot,
   type Slot,
 } from "@/data/itineraireRebeca";
 
-const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-  "Hi Shana! I have a question about our Israel itinerary."
-)}`;
-
-// Toutes les cartes d'une journée ont la même taille, avec ou sans photo :
+// Toutes les cartes d'une journée ont au moins la même hauteur, avec ou sans photo :
 // sur téléphone elles défilent au doigt, sur ordinateur elles se rangent en grille.
-const CARD = "relative h-64 w-[76%] shrink-0 snap-start overflow-hidden rounded-xl sm:w-[46%] md:w-auto";
+const CARD = "relative min-h-[17rem] w-[78%] shrink-0 snap-start overflow-hidden rounded-xl sm:w-[46%] md:w-auto";
 
 const MOMENT = "font-sans text-[10px] uppercase tracking-[0.25em]";
 
-function FixedCard({ slot }: { slot: FixedSlot }) {
-  if (slot.photo) {
-    return (
-      <div className={CARD}>
-        <img src={slot.photo} alt={slot.title} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/10" />
-        <div className="absolute inset-x-0 bottom-0 p-4 text-white">
-          <p className={`${MOMENT} text-white/75`}>{slot.moment}</p>
-          <p className="mt-1.5 font-sans text-[15px] font-bold uppercase leading-snug tracking-[0.04em]">{slot.title}</p>
-          {slot.description && (
-            <p className="mt-1.5 font-sans text-[12px] leading-relaxed text-white/85">{slot.description}</p>
-          )}
-        </div>
-      </div>
-    );
-  }
-
+function OptionList({ options, light }: { options: string[]; light: boolean }) {
   return (
-    <div className={`${CARD} flex flex-col justify-end border border-border bg-muted/40 p-4`}>
-      <p className={`${MOMENT} text-muted-foreground`}>{slot.moment}</p>
-      <p className="mt-1.5 font-sans text-[15px] font-bold uppercase leading-snug tracking-[0.04em] text-foreground">
-        {slot.title}
-      </p>
-      {slot.description && (
-        <p className="mt-1.5 font-sans text-[12px] leading-relaxed text-foreground/70">{slot.description}</p>
-      )}
-    </div>
-  );
-}
-
-function ChoiceCard({ slot }: { slot: ChoiceSlot }) {
-  const others = slot.count - slot.ideas.length;
-
-  return (
-    <Link
-      to={SWIPE_URL}
-      className={`${CARD} group flex flex-col border border-[#ad1414]/20 bg-[#fdf0ef] p-4 transition-colors hover:border-[#ad1414]/50`}
-    >
-      <p className={`${MOMENT} text-[#ad1414]`}>{slot.moment} · Your choice</p>
-      <p className="mt-1.5 font-sans text-[15px] font-bold uppercase leading-snug tracking-[0.04em] text-foreground">
-        {slot.title}
-      </p>
-      {slot.description && (
-        <p className="mt-1 font-sans text-[12px] leading-relaxed text-foreground/70">{slot.description}</p>
-      )}
-
-      <ul className="mt-3 space-y-1">
-        {slot.ideas.map((idea) => (
-          <li key={idea} className="flex items-center gap-2 font-sans text-[12px] text-foreground/70">
-            <span className="h-px w-3 shrink-0 bg-[#ad1414]/50" />
-            {idea}
-          </li>
-        ))}
-        {others > 0 && <li className="pl-5 font-sans text-[12px] text-foreground/45">and {others} more</li>}
-      </ul>
-
-      <span className="mt-auto inline-flex items-center gap-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.16em] text-[#ad1414]">
-        Swipe to choose
-        <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-      </span>
-    </Link>
+    <ul className="mt-2.5 space-y-1">
+      {options.map((option) => (
+        <li
+          key={option}
+          className={`flex items-start gap-2 font-sans text-[12px] leading-snug ${
+            light ? "text-white/85" : "text-foreground/70"
+          }`}
+        >
+          <span className={`mt-[7px] h-px w-3 shrink-0 ${light ? "bg-white/60" : "bg-[#ad1414]/50"}`} />
+          {option}
+        </li>
+      ))}
+    </ul>
   );
 }
 
 function SlotCard({ slot }: { slot: Slot }) {
-  return slot.kind === "choice" ? <ChoiceCard slot={slot} /> : <FixedCard slot={slot} />;
+  const light = !!slot.photo;
+
+  return (
+    <div
+      className={`${CARD} flex flex-col justify-end p-4 ${
+        light ? "text-white" : "border border-border bg-muted/40 text-foreground"
+      }`}
+    >
+      {slot.photo && (
+        <>
+          <img src={slot.photo} alt={slot.title} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10" />
+        </>
+      )}
+      <div className="relative">
+        <p className={`${MOMENT} ${light ? "text-white/75" : "text-muted-foreground"}`}>{slot.moment}</p>
+        <p className="mt-1.5 font-sans text-[15px] font-bold uppercase leading-snug tracking-[0.04em]">{slot.title}</p>
+        {slot.description && (
+          <p className={`mt-1.5 font-sans text-[12px] leading-relaxed ${light ? "text-white/85" : "text-foreground/70"}`}>
+            {slot.description}
+          </p>
+        )}
+        {slot.options && <OptionList options={slot.options} light={light} />}
+      </div>
+    </div>
+  );
 }
 
 function DayBlock({ day }: { day: Day }) {
@@ -100,6 +72,7 @@ function DayBlock({ day }: { day: Day }) {
         <h3 className="mt-1 font-sans text-lg font-bold uppercase tracking-[0.02em] text-foreground sm:text-xl">
           {day.title}
         </h3>
+        {day.intro && <p className="mt-1 font-sans text-[13px] text-foreground/70">{day.intro}</p>}
       </div>
 
       <div className="mx-auto mt-4 max-w-5xl">
@@ -109,16 +82,6 @@ function DayBlock({ day }: { day: Day }) {
           ))}
         </div>
       </div>
-    </div>
-  );
-}
-
-function TransferStrip({ label, title, description }: { label: string; title: string; description: string }) {
-  return (
-    <div className="mx-auto max-w-5xl px-5 py-8 text-center">
-      <p className="font-sans text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{label}</p>
-      <p className="mt-1.5 font-sans text-sm font-bold uppercase tracking-[0.06em] text-foreground">{title}</p>
-      {description && <p className="mt-1 font-sans text-[13px] text-foreground/70">{description}</p>}
     </div>
   );
 }
@@ -156,7 +119,7 @@ const ItineraireRebeca = () => {
             className="mx-auto mt-4 max-w-md font-sans text-[15px] leading-relaxed text-white/85 opacity-0 animate-hero-fade-up sm:text-lg"
             style={{ animationDelay: "450ms" }}
           >
-            Your trip, day by day. Some moments are set, others are yours to choose.
+            Your trip, day by day. A first draft we'll shape together.
           </p>
         </div>
       </section>
@@ -177,15 +140,19 @@ const ItineraireRebeca = () => {
         </div>
       </nav>
 
-      <TransferStrip {...ARRIVAL} />
+      <div className="mx-auto max-w-5xl px-5 py-8 text-center">
+        <p className="font-sans text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{ARRIVAL.label}</p>
+        <p className="mt-1.5 font-sans text-sm font-bold uppercase tracking-[0.06em] text-foreground">{ARRIVAL.title}</p>
+        <p className="mt-1 font-sans text-[13px] text-foreground/70">{ARRIVAL.description}</p>
+      </div>
 
       {CHAPTERS.map((chapter) => (
         <section key={chapter.id} id={chapter.id} className="scroll-mt-16">
-          <div className="relative flex h-44 items-center justify-center sm:h-56">
+          <div className="relative flex h-48 items-center justify-center sm:h-64">
             <img src={chapter.photo} alt={chapter.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
-            <div className="absolute inset-0 bg-black/45" />
+            <div className="absolute inset-0 bg-black/40" />
             <div className="relative text-center text-white">
-              <p className="font-sans text-[10px] uppercase tracking-[0.25em] text-white/75">{chapter.days}</p>
+              <p className="font-sans text-[10px] uppercase tracking-[0.25em] text-white/80">{chapter.days}</p>
               <h2 className="mt-1.5 font-sans text-2xl font-bold uppercase tracking-[0.04em] text-white sm:text-4xl">
                 {chapter.name}
               </h2>
@@ -198,38 +165,38 @@ const ItineraireRebeca = () => {
         </section>
       ))}
 
-      <div className="border-t border-border">
-        <TransferStrip {...DEPARTURE} />
-      </div>
-
-      {/* Appel à l'action : faire ses choix */}
-      <section className="bg-muted/40 px-5 py-14">
+      {/* Les options à décider ensemble */}
+      <section className="border-t border-border bg-muted/40 px-5 py-14">
         <div className="mx-auto max-w-md text-center">
           <h2 className="font-sans text-xl font-bold uppercase tracking-[0.02em] text-foreground sm:text-2xl">
-            Now make it yours
+            A few things to decide together
           </h2>
           <div className="mx-auto mt-4 h-px w-8 bg-[#ad1414]" />
-          <p className="mt-4 font-sans text-[13px] leading-relaxed text-foreground/70">
-            Swipe through the ideas, keep the ones you love. Everyone in the group can play, and we build the final
-            trip around your picks.
+          <p className="mb-6 mt-4 font-sans text-[13px] leading-relaxed text-foreground/70">
+            Tick what feels right, as many boxes as you like, and send it to us. We'll take it from there.
           </p>
-          <Link
-            to={SWIPE_URL}
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#ad1414] px-7 py-3 font-sans text-xs font-bold uppercase tracking-[0.16em] text-white transition-opacity hover:opacity-90"
-          >
-            Start swiping
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-          <p className="mt-5 font-sans text-[12px] text-muted-foreground">
-            A question?{" "}
-            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="underline hover:text-[#ad1414]">
-              Write to us on WhatsApp
-            </a>
-          </p>
+          <OptionsChecklist
+            questions={OPTION_QUESTIONS}
+            undecidedChoice={LETS_DISCUSS}
+            whatsappIntro="Hi Shana! Here are our answers for the Israel itinerary (Rebeca, TM-1006):"
+          />
         </div>
       </section>
 
-      <footer className="py-8 text-center">
+      {/* Ce que fait STAYMAKOM, et le prix */}
+      <section className="px-5 py-14">
+        <div className="mx-auto max-w-md text-center">
+          <h2 className="font-sans text-xl font-bold uppercase tracking-[0.02em] text-foreground sm:text-2xl">
+            We handle the rest
+          </h2>
+          <div className="mx-auto mt-4 h-px w-8 bg-[#ad1414]" />
+          <p className="mt-4 font-sans text-[13px] leading-relaxed text-foreground/70">{PRICING.main}</p>
+          <p className="mt-4 font-sans text-lg font-bold uppercase tracking-[0.06em] text-foreground">{PRICING.price}</p>
+          <p className="mt-3 font-sans text-[13px] leading-relaxed text-foreground/70">{PRICING.extra}</p>
+        </div>
+      </section>
+
+      <footer className="border-t border-border py-8 text-center">
         <p className="font-sans text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
           STAYMAKOM · The Israel most people never find
         </p>
