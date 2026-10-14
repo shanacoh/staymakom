@@ -6,6 +6,32 @@
 
 ---
 
+## [2026-10-13] — Page itinéraire de Rebeca (dossier TM-1006) et ses cartes Swipe
+
+> Statut : page créée et vérifiée en local (`npm run build` passe, captures d'écran ordinateur faites). Base modifiée le 13/10/2026 (ajouts uniquement : 8 catégories, 53 propositions, 53 liaisons au dossier ; deux réglages d'affichage changés sur le dossier TM-1006). Vérifié : le lien Swipe du dossier renvoie bien 53 cartes rangées en 8 catégories. Pas encore commité ni mis en ligne. Non testé sur un vrai téléphone.
+
+### Ce qui a changé côté code
+- `src/pages/ItineraireRebeca.tsx` (nouveau) : la page cliente, en anglais, sur `/rebeca`. Photo d'en-tête, sommaire des 3 étapes (Jerusalem, Arava & Negev, Tel Aviv), puis une rangée de cartes par jour, qui défile au doigt sur téléphone. Une carte « fixe » affiche le moment, le titre et une phrase, avec une photo quand on en a une. Une carte « Your choice » (fond rouge clair) donne 3 idées et renvoie vers le Swipe du dossier. Aucun prix.
+- `src/data/itineraireRebeca.ts` (nouveau) : tout le contenu de la page (jours, moments, photos, lien Swipe). Il ne contient aucune note interne, car tout ce qui est dans ce fichier part sur le site public.
+- `docs/itineraires/TM-1006-rebeca.md` (nouveau) : les notes internes du dossier (prestataires, contraintes, points à compléter). Jamais affiché.
+- `src/App.tsx` : adresse `/rebeca`.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261013150000_swipe_propositions_rebeca_tm1006.sql` (appliquée le 13/10/2026 avec `supabase db query --linked -f`, en une seule opération ; non enregistrée dans l'historique des migrations, déjà décalé).
+- `swipe_categories` : 8 nouvelles catégories (Jerusalem Dinner, Jerusalem Afternoon, Dead Sea Stop, Negev Adventure, Desert Extras, A Day Beyond Tel Aviv, Tel Aviv à la carte, Tel Aviv Nights).
+- `propositions` : 53 nouvelles propositions en anglais, étiquetées `TM-1006` et du nom de leur catégorie. La note interne est dans le champ « Adresse », qui n'est jamais envoyé au client. Photo vide, sauf 3 cartes pour lesquelles une photo existait déjà (rappel dans le cratère, route des vins, vin et fromage dans le noir).
+- `dossier_propositions` : les 53 propositions sont rattachées au dossier TM-1006.
+- `dossiers_voyage` (TM-1006 seulement) : tri par catégorie activé et ordre des catégories renseigné. Le statut du dossier n'est pas modifié.
+
+### Pourquoi ce changement
+- Shana veut envoyer à Rebeca un itinéraire de 12 jours très visuel, qui se comprend d'un coup d'œil, où une partie du programme est déjà décidée et où le reste se choisit en swipant.
+
+### Reste à faire
+- Photos : 14 moments de la page (sur 24) et 50 cartes Swipe n'ont pas encore de photo.
+- Hébergements, dates, taille du groupe : voir `docs/itineraires/TM-1006-rebeca.md`.
+
+---
+
 ## [2026-10-13] — Chantier Partenaires, étape 2 : l'espace partenaire (V0)
 
 > Statut : base modifiée le 13/10/2026 (ajouts uniquement : 5 tables, 6 colonnes, des fonctions, 3 déclencheurs, 1 règle de stockage ; aucune colonne supprimée, renommée ou modifiée, donc pas de sauvegarde préalable nécessaire). Quatre fonctions serveur déployées : `partner-invite`, `partner-login-link`, `partner-notify` (nouvelles) et `send-standalone-booking-confirmation` (redéployée). `npm run build` passe. 16 nouveaux tests passent (les 9 tests en échec sur `imageUrl` et `catalogue/draft` l'étaient déjà avant, sans rapport). HyperGuest, calcul des prix, checkout, paiement et webhook Revolut : aucun fichier touché.
