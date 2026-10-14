@@ -434,7 +434,11 @@ export const OPTION_QUESTIONS: OptionQuestion[] = [
 ];
 
 export const PRICING = {
-  main: "We don't book hotels, but we do everything else: we detail and adapt each day with you and book all the experiences.",
-  price: "$150 per person",
-  extra: "Want us to suggest the places to stay too? $250 more, for the whole group.",
+  hotels:
+    "Since you're a travel agency, we'll leave the hotel bookings to you, and we're happy to point you to the right places for each stop, depending on what your group is looking for.",
+  service:
+    "What you see here is the big picture, a first sketch of what your trip could look like. From here we go much further: we dig out the hidden spots and exclusive experiences most visitors never hear of, shape every day around your group and book it all for you.",
+  price: "$250 per person",
+  priceNote:
+    "For designing and organizing the whole trip. The experiences themselves come on top, and we'll share every price with you before booking anything.",
 };

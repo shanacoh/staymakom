@@ -28,11 +28,11 @@
 ## Fin de page
 
 - Questions à cocher (transport, guides, journée Nova et kibboutz du 7 octobre), réponses envoyées par WhatsApp. Rien n'est enregistré sur le site.
-- Prix affiché : 150 $ par personne pour détailler, adapter et réserver les expériences ; 250 $ de plus pour le groupe si on propose les hébergements. Pas de total.
+- Prix affiché (14/10/2026) : 250 $ par personne pour détailler, adapter l'itinéraire et réserver les expériences. Rebeca est agence de voyage : elle réserve les hôtels elle-même, on la conseille sur les lieux. Les expériences sont payées en plus (dit sous le prix). Pas de total. Le bloc prix est placé avant les cases à cocher.
 
 ## À compléter
 
 - Hébergement mer Morte (J2), Timna (J3) et Mitzpe Ramon (J4, J5) : partenaires STAYMAKOM à ajouter en fiches.
-- Hôtels Jérusalem et Tel Aviv : non inclus (la cliente utilise ses propres tarifs), sauf demande.
+- Hôtels : réservés par Rebeca (agence de voyage, ses propres tarifs) ; on lui conseille les lieux.
 - Dates, taille du groupe, voiture ou transferts, casher/Shabbat, langue du guide (espagnol ?) : à recevoir de la cliente.
 - Photos : 21 moments de la page sur 39 sans photo. Les photos Unsplash sont provisoires.

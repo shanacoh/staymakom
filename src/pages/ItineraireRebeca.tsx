@@ -165,8 +165,22 @@ const ItineraireRebeca = () => {
         </section>
       ))}
 
+      {/* Comment on travaille ensemble, et le prix */}
+      <section className="border-t border-border px-5 py-14">
+        <div className="mx-auto max-w-md text-center">
+          <h2 className="font-sans text-xl font-bold uppercase tracking-[0.02em] text-foreground sm:text-2xl">
+            How we work together
+          </h2>
+          <div className="mx-auto mt-4 h-px w-8 bg-[#ad1414]" />
+          <p className="mt-4 font-sans text-[13px] leading-relaxed text-foreground/70">{PRICING.hotels}</p>
+          <p className="mt-3 font-sans text-[13px] leading-relaxed text-foreground/70">{PRICING.service}</p>
+          <p className="mt-4 font-sans text-lg font-bold uppercase tracking-[0.06em] text-foreground">{PRICING.price}</p>
+          <p className="mt-1 font-sans text-[12px] leading-relaxed text-muted-foreground">{PRICING.priceNote}</p>
+        </div>
+      </section>
+
       {/* Les options à décider ensemble */}
-      <section className="border-t border-border bg-muted/40 px-5 py-14">
+      <section className="bg-muted/40 px-5 py-14">
         <div className="mx-auto max-w-md text-center">
           <h2 className="font-sans text-xl font-bold uppercase tracking-[0.02em] text-foreground sm:text-2xl">
             A few things to decide together
@@ -180,19 +194,6 @@ const ItineraireRebeca = () => {
             undecidedChoice={LETS_DISCUSS}
             whatsappIntro="Hi Shana! Here are our answers for the Israel itinerary (Rebeca, TM-1006):"
           />
-        </div>
-      </section>
-
-      {/* Ce que fait STAYMAKOM, et le prix */}
-      <section className="px-5 py-14">
-        <div className="mx-auto max-w-md text-center">
-          <h2 className="font-sans text-xl font-bold uppercase tracking-[0.02em] text-foreground sm:text-2xl">
-            We handle the rest
-          </h2>
-          <div className="mx-auto mt-4 h-px w-8 bg-[#ad1414]" />
-          <p className="mt-4 font-sans text-[13px] leading-relaxed text-foreground/70">{PRICING.main}</p>
-          <p className="mt-4 font-sans text-lg font-bold uppercase tracking-[0.06em] text-foreground">{PRICING.price}</p>
-          <p className="mt-3 font-sans text-[13px] leading-relaxed text-foreground/70">{PRICING.extra}</p>
         </div>
       </section>
 

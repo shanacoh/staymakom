@@ -6,19 +6,20 @@
 
 ---
 
-## [2026-10-14] — Itinéraire de Rebeca : retouches des photos
+## [2026-10-14] — Itinéraire de Rebeca : retouches des photos et du prix
 
 > Statut : vérifié en local sur ordinateur (capture d'écran des jours 1 à 4). Base de données non modifiée.
 
 ### Ce qui a changé côté code
 - `src/data/itineraireRebeca.ts` : photo retirée sur « The Old City » et « Drive to Mitzpe Ramon ». Photo ajoutée sur « Machane Yehuda market » (Unsplash), « A winery in the Jerusalem hills » et « Neot Smadar ».
 - `src/assets/itineraires/psagot-winery.webp` et `neot-smadar.webp` (nouveaux) : photos prises sur les sites officiels du domaine Psagot et de Neot Semadar, enregistrées dans le projet pour ne pas dépendre de leurs sites.
+- `src/data/itineraireRebeca.ts` et `src/pages/ItineraireRebeca.tsx` : nouveau texte de prix, placé avant les cases à cocher (bloc « How we work together ») : Rebeca, agence de voyage, réserve les hôtels elle-même et on la conseille sur les lieux ; l'organisation complète coûte 250 $ par personne (au lieu de 150 $). Le texte précise que la page n'est qu'un premier aperçu et qu'on ira chercher ensuite des lieux et expériences plus exclusifs, et, sous le prix, que les expériences elles-mêmes sont payées en plus, avec chaque prix annoncé avant toute réservation. La ligne « 250 $ de plus pour les hébergements » est retirée.
 
 ### Ce qui a changé côté base de données
 - Rien.
 
 ### Pourquoi ce changement
-- Retouches visuelles demandées par Shana sur la page de Rebeca.
+- Retouches demandées par Shana sur la page de Rebeca : photos, et prix adapté au fait que Rebeca est agence de voyage.
 
 ---
 
