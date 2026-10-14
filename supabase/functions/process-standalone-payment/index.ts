@@ -137,9 +137,14 @@ Deno.serve(async (req: Request) => {
       promo_code: promoCodePayload,
       gift_card: giftCardPayload,
       lang,
+      special_requests: specialRequestsRaw,
     } = body;
 
     const preferredLang = ['fr', 'en', 'he'].includes(lang) ? lang : null;
+    // « Demandes particulières » saisies au checkout : texte libre, transmis tel quel au prestataire.
+    const specialRequests = typeof specialRequestsRaw === 'string' && specialRequestsRaw.trim()
+      ? specialRequestsRaw.trim().slice(0, 2000)
+      : null;
 
     const adults: number = typeof adultsRaw === 'number' ? adultsRaw : (legacyPartySize ?? 1);
     const children: number = typeof childrenRaw === 'number' ? childrenRaw : 0;
@@ -318,6 +323,7 @@ Deno.serve(async (req: Request) => {
           extras: extrasSnapshot.length > 0 ? extrasSnapshot : null,
           rate_option: selectedRateOption,
           preferred_lang: preferredLang,
+          special_requests: specialRequests,
         }])
         .select('id, confirmation_token')
         .single();
@@ -399,6 +405,7 @@ Deno.serve(async (req: Request) => {
         extras: extrasSnapshot.length > 0 ? extrasSnapshot : null,
         rate_option: selectedRateOption,
         preferred_lang: preferredLang,
+        special_requests: specialRequests,
       }])
       .select('id, confirmation_token')
       .single();

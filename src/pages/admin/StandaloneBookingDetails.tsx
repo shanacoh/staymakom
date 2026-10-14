@@ -473,6 +473,12 @@ export default function AdminStandaloneBookingDetails() {
               <p className="text-xs text-muted-foreground">Personnes</p>
               <p className="font-medium">{booking.party_size} personne{booking.party_size > 1 ? "s" : ""}</p>
             </div>
+            {booking.special_requests?.trim() && (
+              <div>
+                <p className="text-xs text-muted-foreground">Demandes particulières</p>
+                <p className="text-sm whitespace-pre-line">{booking.special_requests.trim()}</p>
+              </div>
+            )}
             <div>
               <p className="text-xs text-muted-foreground">Réservé le</p>
               <p className="text-sm">{format(parseISO(booking.created_at), "dd MMM yyyy à HH:mm")}</p>

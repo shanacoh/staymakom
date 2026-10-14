@@ -5776,6 +5776,29 @@ export type Database = {
       }
     }
     Views: {
+      reviews_public: {
+        Row: {
+          booking_id: string | null
+          comment: string | null
+          created_at: string | null
+          customer_first_name: string | null
+          customer_last_initial: string | null
+          experience2_id: string | null
+          id: string | null
+          is_pinned: boolean | null
+          lang: string | null
+          moderation_status: string | null
+          photo_url: string | null
+          provider_id: string | null
+          rating: number | null
+          review_date: string | null
+          scope: string | null
+          staff_reply: string | null
+          staff_reply_at: string | null
+          standalone_experience_id: string | null
+        }
+        Relationships: []
+      }
       bookings_safe: {
         Row: {
           checkin: string | null

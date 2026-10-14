@@ -6,6 +6,30 @@
 
 ---
 
+## [2026-10-14] — Espace partenaire, 3 correctifs : avis sans coordonnées, demandes particulières, emails des paiements confirmés en retard
+
+> Statut : code prêt et construit (`npm run build` passe, 16 tests partenaires OK). **Pas encore en ligne** : migration à appliquer et fonctions `partner-notify` et `process-standalone-payment` à déployer (voir l'ordre ci-dessous).
+
+### Ce qui a changé côté code
+- `src/hooks/useReviewsSummary.ts` : le site public lit les avis dans la vue `reviews_public` au lieu de la table `reviews`. Mêmes colonnes demandées qu'avant, affichage identique.
+- `src/integrations/supabase/types.ts` : ajout de la description de la vue `reviews_public`.
+- `src/pages/StandaloneCheckout.tsx` : le texte « Demandes spéciales » saisi par le client est maintenant envoyé avec la réservation (avant, il restait dans la page et était perdu).
+- `supabase/functions/process-standalone-payment/index.ts` : enregistre ce texte dans `standalone_bookings.special_requests` à la création de la réservation (2 000 caractères max, vide = rien). Aucun autre changement : prix, montant, Revolut intacts.
+- `src/pages/admin/StandaloneBookingDetails.tsx` : bloc « Demandes particulières » dans la carte Client du détail de réservation (masqué si vide).
+- `supabase/functions/partner-notify/index.ts` : nouvel événement `booking_paid` qui envoie l'email au prestataire via la fonction existante (`notifyProviderOfBooking`, qui garde son anti-doublon).
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261014100000_partner_fixes_reviews_paid_emails.sql` :
+  - nouvelle vue `reviews_public` : les avis publiés, sans `customer_email`, `customer_phone`, `customer_user_id` ; lisible par les visiteurs et les clients connectés ;
+  - suppression de la règle `reviews_public_read_published` sur `reviews` : la table complète n'est plus lisible que par l'admin (règle `reviews_admin_all` inchangée) ;
+  - nouveau déclencheur sur `standalone_bookings` (`standalone_booking_paid_notify_on_update` / `_on_insert`) : quand une réservation devient `paid` ou `deposit_paid`, la base demande la confirmation client (réservations du site dont `confirmation_email_sent_at` est vide, elle prévient aussi le prestataire) ou, sinon, l'email prestataire si `provider_notified_at` est vide. Les marqueurs existants empêchent tout double envoi. Aucune colonne modifiée.
+- Ordre de mise en ligne : 1) déployer `partner-notify` et `process-standalone-payment` ; 2) appliquer la vue et le déclencheur ; 3) mettre en ligne le site ; 4) seulement ensuite supprimer la règle `reviews_public_read_published` (sinon les avis disparaissent du site pendant quelques minutes).
+
+### Pourquoi ce changement
+- Le rapport de l'espace partenaire V0 laissait trois trous : n'importe qui pouvait lire l'email et le téléphone des clients ayant laissé un avis ; les demandes particulières du client n'arrivaient jamais au prestataire ; quand un paiement n'était confirmé qu'après coup par le rattrapage automatique, ni le prestataire ni parfois le client ne recevaient d'email.
+
+---
+
 ## [2026-10-14] — Itinéraire de Rebeca : retouches des photos et du prix
 
 > Statut : vérifié en local sur ordinateur (capture d'écran des jours 1 à 4). Base de données non modifiée.

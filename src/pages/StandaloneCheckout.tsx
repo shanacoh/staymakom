@@ -514,6 +514,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
           customer_email: leadGuest.email.trim(),
           customer_phone: leadGuest.phone.trim() || null,
           lang,
+          special_requests: guestSpecialRequests.trim() || null,
           selected_extras_ids: state.selectedExtras?.map((e) => e.id) ?? [],
           promo_code: appliedPromo ? {
             id: appliedPromo.id,
@@ -560,7 +561,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
     } finally {
       setIsBookingLoading(false);
     }
-  }, [state, leadGuest, user, appliedPromo, promoDiscount, appliedGiftCard, giftCardApplied]);
+  }, [state, leadGuest, guestSpecialRequests, user, appliedPromo, promoDiscount, appliedGiftCard, giftCardApplied]);
 
   const handlePaymentSuccess = useCallback(async () => {
     setPaymentDialogOpen(false);

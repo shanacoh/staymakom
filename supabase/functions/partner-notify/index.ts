@@ -1,11 +1,13 @@
 // partner-notify — les emails déclenchés par la base pour l'espace partenaire.
 //
 // Appelée uniquement par la base (elle présente le secret rangé dans son coffre), jamais par un
-// navigateur. Trois événements :
+// navigateur. Quatre événements :
 //  - proposal_created : un prestataire a envoyé une proposition → email à l'équipe ;
 //  - terms_accepted   : un prestataire a accepté les conditions → email à l'équipe ;
+//  - booking_paid     : une réservation vient de passer payée et le prestataire n'a pas encore été
+//                       prévenu → email au prestataire (filet pour les paiements confirmés en retard ;
+//                       d'habitude il part avec la confirmation du client) ;
 //  - booking_cancelled : une réservation annoncée à un prestataire est annulée → email au prestataire.
-// (L'email « nouvelle réservation payée » part, lui, au même endroit que la confirmation du client.)
 //
 // Les deux emails à l'équipe sont internes : ils reprennent quand même l'habillage commun.
 // `preview` : envoie un exemple de chaque email prestataire à l'adresse d'un admin, sans rien lire ni écrire.
@@ -133,6 +135,8 @@ Deno.serve(async (req: Request) => {
         return json(await notifyProposalCreated(supabase, body.id));
       case "terms_accepted":
         return json(await notifyTermsAccepted(supabase, body.id));
+      case "booking_paid":
+        return json(await notifyProviderOfBooking(supabase, body.id, "paid"));
       case "booking_cancelled":
         return json(await notifyProviderOfBooking(supabase, body.id, "cancelled"));
       default:

@@ -32,6 +32,7 @@ interface ReviewsSummary {
   usedFallback: boolean;
 }
 
+// Lecture via la vue `reviews_public` : elle ne contient jamais l'email, le téléphone ni le compte du client.
 const REVIEW_COLUMNS =
   "id, customer_first_name, customer_last_initial, rating, comment, lang, review_date, created_at, is_pinned, booking_id, staff_reply";
 
@@ -40,7 +41,7 @@ export function useReviewsSummary({ scope, entityId, fallbackExperienceIds }: Us
     queryKey: ["reviews-summary", scope, entityId, fallbackExperienceIds],
     queryFn: async () => {
       let query = supabase
-        .from("reviews")
+        .from("reviews_public")
         .select(REVIEW_COLUMNS)
         .eq("moderation_status", "published")
         .order("is_pinned", { ascending: false })
@@ -62,7 +63,7 @@ export function useReviewsSummary({ scope, entityId, fallbackExperienceIds }: Us
 
       if (scope === "standalone_experience" && reviews.length === 0 && fallbackExperienceIds && fallbackExperienceIds.length > 0) {
         const { data: fallbackData, error: fallbackError } = await supabase
-          .from("reviews")
+          .from("reviews_public")
           .select(REVIEW_COLUMNS)
           .eq("moderation_status", "published")
           .eq("scope", "standalone_experience")
