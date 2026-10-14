@@ -6,6 +6,22 @@
 
 ---
 
+## [2026-10-14] — Itinéraire de Rebeca : retouches des photos
+
+> Statut : vérifié en local sur ordinateur (capture d'écran des jours 1 à 4). Base de données non modifiée.
+
+### Ce qui a changé côté code
+- `src/data/itineraireRebeca.ts` : photo retirée sur « The Old City » et « Drive to Mitzpe Ramon ». Photo ajoutée sur « Machane Yehuda market » (Unsplash), « A winery in the Jerusalem hills » et « Neot Smadar ».
+- `src/assets/itineraires/psagot-winery.webp` et `neot-smadar.webp` (nouveaux) : photos prises sur les sites officiels du domaine Psagot et de Neot Semadar, enregistrées dans le projet pour ne pas dépendre de leurs sites.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Retouches visuelles demandées par Shana sur la page de Rebeca.
+
+---
+
 ## [2026-10-14] — Itinéraire de Rebeca, version 2 : nouveau programme, sans Swipe
 
 > Statut : page modifiée et vérifiée en local sur ordinateur (captures d'écran de toute la page). Base de données non modifiée. Pas encore commité ni mis en ligne. Non testé sur un vrai téléphone, et l'envoi WhatsApp des cases cochées n'a pas été essayé.

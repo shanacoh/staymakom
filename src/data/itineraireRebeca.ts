@@ -12,6 +12,8 @@ import masadaSunrise from "@/assets/masada-sunrise.jpg";
 import camel from "@/assets/chameau-dans-le-désert-du-néguev-51448703.webp";
 import bedouinTents from "@/assets/bedouin-tents-comfortably.jpg";
 import safed from "@/assets/safed.webp";
+import psagotWinery from "@/assets/itineraires/psagot-winery.webp";
+import neotSmadar from "@/assets/itineraires/neot-smadar.webp";
 
 const STORAGE = "https://uqeipzfdhyjkjzvqbkeu.supabase.co/storage/v1/object/public";
 const stored = (path: string, width = 900) => resizedImageUrl(`${STORAGE}/${path}`, width) as string;
@@ -69,7 +71,6 @@ export const CHAPTERS: Chapter[] = [
             title: "The Old City",
             description:
               "The Western Wall, the Jewish Quarter and the hidden alleys of the souks. With or without a private guide, your call.",
-            photo: unsplash("1574513828579-0c1b434d66df"),
           },
           {
             moment: "Afternoon",
@@ -96,6 +97,7 @@ export const CHAPTERS: Chapter[] = [
             title: "Machane Yehuda market",
             description:
               "Wander on your own, or go deeper with a food tour: spices, halva, fresh pastries and the stalls locals swear by.",
+            photo: unsplash("1645028845965-d42def5e1e0f"),
           },
           {
             moment: "Late morning",
@@ -112,6 +114,7 @@ export const CHAPTERS: Chapter[] = [
             moment: "Afternoon",
             title: "A winery in the Jerusalem hills",
             description: "A tasting overlooking the Judean Desert.",
+            photo: psagotWinery,
           },
           {
             moment: "Evening",
@@ -144,6 +147,7 @@ export const CHAPTERS: Chapter[] = [
             moment: "Midday",
             title: "Neot Smadar",
             description: "An organic farm and art center rising out of the desert, unlike anywhere else.",
+            photo: neotSmadar,
           },
           {
             moment: "Afternoon & night",
@@ -168,7 +172,6 @@ export const CHAPTERS: Chapter[] = [
             moment: "Morning",
             title: "Drive to Mitzpe Ramon",
             description: "Up through the Arava to the edge of the largest erosion crater in the world.",
-            photo: stored("hotel-images/hyperguest-1782405005661-0.jpg"),
           },
           {
             moment: "Afternoon",
