@@ -8,7 +8,7 @@
 
 ## [2026-10-14] — Espace partenaire, 3 correctifs : avis sans coordonnées, demandes particulières, emails des paiements confirmés en retard
 
-> Statut : code prêt et construit (`npm run build` passe, 16 tests partenaires OK). **Pas encore en ligne** : migration à appliquer et fonctions `partner-notify` et `process-standalone-payment` à déployer (voir l'ordre ci-dessous).
+> Statut : en ligne le 15/10/2026 (fonctions déployées, migration appliquée, site poussé). `npm run build` passe, 16 tests partenaires OK. Pas de message WhatsApp prestataire : décision de Shana, l'email et l'espace partenaire suffisent.
 
 ### Ce qui a changé côté code
 - `src/hooks/useReviewsSummary.ts` : le site public lit les avis dans la vue `reviews_public` au lieu de la table `reviews`. Mêmes colonnes demandées qu'avant, affichage identique.
@@ -22,7 +22,7 @@
 - Migration `supabase/migrations/20261014100000_partner_fixes_reviews_paid_emails.sql` :
   - nouvelle vue `reviews_public` : les avis publiés, sans `customer_email`, `customer_phone`, `customer_user_id` ; lisible par les visiteurs et les clients connectés ;
   - suppression de la règle `reviews_public_read_published` sur `reviews` : la table complète n'est plus lisible que par l'admin (règle `reviews_admin_all` inchangée) ;
-  - nouveau déclencheur sur `standalone_bookings` (`standalone_booking_paid_notify_on_update` / `_on_insert`) : quand une réservation devient `paid` ou `deposit_paid`, la base demande la confirmation client (réservations du site dont `confirmation_email_sent_at` est vide, elle prévient aussi le prestataire) ou, sinon, l'email prestataire si `provider_notified_at` est vide. Les marqueurs existants empêchent tout double envoi. Aucune colonne modifiée.
+  - nouveau déclencheur sur `standalone_bookings` (`standalone_booking_paid_notify_on_update` / `_on_insert`) : quand une réservation devient `paid` ou `deposit_paid`, la base demande la confirmation client (réservations du site dont `confirmation_email_sent_at` est vide, elle prévient aussi le prestataire) ou, sinon, l'email prestataire si `provider_notified_at` est vide. Les marqueurs existants empêchent tout double envoi. Rien ne part si la date de l'expérience est déjà passée (heure d'Israël) : repasser une vieille réservation en « payée » ne réveille aucun email. Aucune colonne modifiée.
 - Ordre de mise en ligne : 1) déployer `partner-notify` et `process-standalone-payment` ; 2) appliquer la vue et le déclencheur ; 3) mettre en ligne le site ; 4) seulement ensuite supprimer la règle `reviews_public_read_published` (sinon les avis disparaissent du site pendant quelques minutes).
 
 ### Pourquoi ce changement

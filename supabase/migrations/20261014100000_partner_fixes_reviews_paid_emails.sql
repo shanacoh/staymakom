@@ -13,6 +13,8 @@
 --      - de la confirmation au client, si `confirmation_email_sent_at` est vide et que la
 --        réservation vient du site (une réservation saisie par l'admin garde son bouton d'envoi).
 --    Les fonctions d'envoi « prennent » la réservation avant d'envoyer : jamais d'email en double.
+--    Rien ne part pour une expérience déjà passée (date antérieure à aujourd'hui, heure d'Israël) :
+--    repasser une vieille réservation en « payée » ne réveille aucun email.
 
 -- 1. Avis -------------------------------------------------------------------------------------------
 create view public.reviews_public
@@ -59,7 +61,9 @@ declare
   v_secret text;
 begin
   if new.payment_status not in ('paid', 'deposit_paid')
-     or new.status = 'cancelled' or coalesce(new.is_cancelled, false) then
+     or new.status = 'cancelled' or coalesce(new.is_cancelled, false)
+     or new.booking_date is null
+     or new.booking_date < (now() at time zone 'Asia/Jerusalem')::date then
     return null;
   end if;
 
