@@ -8,7 +8,7 @@
 
 ## [2026-10-14] — Espace partenaire, 3 correctifs : avis sans coordonnées, demandes particulières, emails des paiements confirmés en retard
 
-> Statut : en ligne le 15/10/2026 (fonctions déployées, migration appliquée, site poussé). `npm run build` passe, 16 tests partenaires OK. Pas de message WhatsApp prestataire : décision de Shana, l'email et l'espace partenaire suffisent.
+> Statut : en ligne le 15/10/2026 (fonctions déployées, migration appliquée, site poussé). Ancienne règle des avis supprimée par Shana le 16/10/2026 dans l'éditeur SQL. Testé en production avec une réservation et un prestataire TEST, supprimés ensuite : un seul envoi client + prestataire, aucun renvoi au second passage en payée, rien pour une date passée, demande particulière visible au back-office et dans l'espace partenaire. `npm run build` passe, 16 tests partenaires OK. Pas de message WhatsApp prestataire : décision de Shana, l'email et l'espace partenaire suffisent.
 
 ### Ce qui a changé côté code
 - `src/hooks/useReviewsSummary.ts` : le site public lit les avis dans la vue `reviews_public` au lieu de la table `reviews`. Mêmes colonnes demandées qu'avant, affichage identique.
