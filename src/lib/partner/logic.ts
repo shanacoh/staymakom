@@ -162,6 +162,36 @@ export function monthlyRevenue(bookings: PartnerBooking[]): MonthlyRevenue[] {
     .sort((a, b) => b.month.localeCompare(a.month) || a.currency.localeCompare(b.currency));
 }
 
+export interface RevenueTotal {
+  currency: string;
+  /** Tout ce qui revient au prestataire, réservations passées et à venir. */
+  total: number;
+  /** La part pas encore réglée par STAYMAKOM. */
+  due: number;
+}
+
+/** Totaux de l'accueil, une ligne par devise (la plus grosse d'abord), sans les montants inconnus. */
+export function revenueTotals(bookings: PartnerBooking[]): RevenueTotal[] {
+  const byCurrency = new Map<string, RevenueTotal>();
+  for (const month of monthlyRevenue(bookings)) {
+    const stat = byCurrency.get(month.currency) ?? { currency: month.currency, total: 0, due: 0 };
+    stat.total += month.total;
+    stat.due += month.due;
+    byCurrency.set(month.currency, stat);
+  }
+  const round = (n: number) => Math.round(n * 100) / 100;
+  return [...byCurrency.values()]
+    .map((t) => ({ ...t, total: round(t.total), due: round(t.due) }))
+    .sort((a, b) => b.total - a.total);
+}
+
+/** Dates (AAAA-MM-JJ) où le prestataire a au moins une réservation, pour les marquer au calendrier. */
+export function bookedDates(bookings: PartnerBooking[], experienceId?: string): Set<string> {
+  return new Set(
+    bookings.filter((b) => !experienceId || b.experience_id === experienceId).map((b) => b.booking_date),
+  );
+}
+
 // ── Propositions ────────────────────────────────────────────────────────────────────────────────
 
 /** Ne garde d'un formulaire que les champs réellement modifiés (comparés sans les espaces de bord). */

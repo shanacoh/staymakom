@@ -3,12 +3,12 @@
 // valeur : les règles sont dans lib/partner/logic.ts.
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { X } from "lucide-react";
+import { AvailabilityCalendar } from "@/components/partner/AvailabilityCalendar";
 import { Hint, QuietButton } from "@/components/partner/ui";
 import { cn } from "@/lib/utils";
 import { usePartner } from "@/lib/partner/context";
-import { formatPartnerMonth } from "@/lib/partner/i18n";
-import { addTimeSlot, isDateOpen, monthCells, removeTimeSlot, toIsoDate, toggleDate, toggleWeekday } from "@/lib/partner/logic";
+import { addTimeSlot, removeTimeSlot, toggleWeekday } from "@/lib/partner/logic";
 import type { PartnerAvailability } from "@/lib/partner/types";
 
 // Affichés dans l'ordre de la semaine israélienne : dimanche (7) d'abord.
@@ -17,26 +17,15 @@ const WEEKDAY_ORDER = [7, 1, 2, 3, 4, 5, 6];
 interface Props {
   value: PartnerAvailability;
   onChange: (next: PartnerAvailability) => void;
+  bookedDates?: Set<string>;
 }
 
-export function AvailabilityEditor({ value, onChange }: Props) {
-  const { t, lang } = usePartner();
-  const today = toIsoDate(new Date());
-  const [cursor, setCursor] = useState(() => {
-    const now = new Date();
-    return { year: now.getFullYear(), month: now.getMonth() };
-  });
+export function AvailabilityEditor({ value, onChange, bookedDates }: Props) {
+  const { t } = usePartner();
   const [slotInput, setSlotInput] = useState("");
   const [slotError, setSlotError] = useState(false);
 
   const byDates = value.availability_mode === "whitelist";
-  const monthKey = `${cursor.year}-${String(cursor.month + 1).padStart(2, "0")}`;
-  const atCurrentMonth = monthKey <= today.slice(0, 7);
-  const moveMonth = (delta: number) =>
-    setCursor(({ year, month }) => {
-      const next = new Date(year, month + delta, 1);
-      return { year: next.getFullYear(), month: next.getMonth() };
-    });
 
   const addSlot = () => {
     const next = addTimeSlot(value, slotInput);
@@ -103,67 +92,7 @@ export function AvailabilityEditor({ value, onChange }: Props) {
         </div>
       )}
 
-      <div>
-        <div className="mb-2 flex items-center justify-between">
-          <button
-            type="button"
-            disabled={atCurrentMonth}
-            onClick={() => moveMonth(-1)}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-300 disabled:opacity-30"
-            aria-label="←"
-          >
-            <ChevronLeft className="h-4 w-4 rtl:-scale-x-100" aria-hidden />
-          </button>
-          <p className="text-[14px] font-semibold capitalize text-neutral-900">{formatPartnerMonth(monthKey, lang)}</p>
-          <button
-            type="button"
-            onClick={() => moveMonth(1)}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-300"
-            aria-label="→"
-          >
-            <ChevronRight className="h-4 w-4 rtl:-scale-x-100" aria-hidden />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-7 gap-1 text-center">
-          {t.weekdaysShort.map((name) => (
-            <span key={name} className="py-1 text-[11px] font-medium text-neutral-400">
-              {name}
-            </span>
-          ))}
-          {monthCells(cursor.year, cursor.month).map((date, index) => {
-            if (!date) return <span key={`empty-${index}`} />;
-            const past = date < today;
-            const open = isDateOpen(value, date);
-            return (
-              <button
-                key={date}
-                type="button"
-                disabled={past}
-                aria-pressed={open}
-                onClick={() => onChange(toggleDate(value, date))}
-                className={cn(
-                  "flex aspect-square items-center justify-center rounded-[10px] text-[14px] font-medium",
-                  past && "text-neutral-300",
-                  !past && open && "bg-neutral-900 text-white",
-                  !past && !open && "border border-neutral-200 bg-white text-neutral-400 line-through",
-                )}
-              >
-                {Number(date.slice(8))}
-              </button>
-            );
-          })}
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-neutral-500">
-          <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-[4px] bg-neutral-900" /> {t.avLegendOpen}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-[4px] border border-neutral-300 bg-white" /> {t.avLegendClosed}
-          </span>
-          <span>{byDates ? t.avCalendarDates : t.avCalendarDays}</span>
-        </div>
-      </div>
+      <AvailabilityCalendar value={value} onChange={onChange} bookedDates={bookedDates} />
 
       <div className="space-y-2">
         <p className="text-[13px] font-semibold text-neutral-900">{t.avSlots}</p>

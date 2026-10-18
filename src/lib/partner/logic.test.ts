@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   addTimeSlot,
+  bookedDates,
   changedFields,
   displayText,
   initialPartnerLang,
@@ -11,6 +12,7 @@ import {
   normalizeTimeSlot,
   ownText,
   removeTimeSlot,
+  revenueTotals,
   splitBookings,
   toggleDate,
   toggleWeekday,
@@ -160,5 +162,35 @@ describe("réservations et revenus", () => {
 describe("changedFields", () => {
   it("ne garde que les champs réellement modifiés", () => {
     expect(changedFields({ title: "A", subtitle: "B" }, { title: " A ", subtitle: "C", duration: "" })).toEqual({ subtitle: "C" });
+  });
+});
+
+describe("revenueTotals", () => {
+  it("additionne ce qui revient au prestataire par devise, sans les montants inconnus", () => {
+    const totals = revenueTotals([
+      booking({ id: "1", booking_date: "2026-09-10", provider_amount: 100, currency: "ILS", settled: true }),
+      booking({ id: "2", booking_date: "2026-10-20", provider_amount: 250.5, currency: "ILS", settled: false }),
+      booking({ id: "3", booking_date: "2026-10-21", provider_amount: null, currency: "ILS" }),
+      booking({ id: "4", booking_date: "2026-10-22", provider_amount: 40, currency: "USD", settled: false }),
+    ]);
+    expect(totals).toEqual([
+      { currency: "ILS", total: 350.5, due: 250.5 },
+      { currency: "USD", total: 40, due: 40 },
+    ]);
+  });
+
+  it("ne renvoie rien sans réservation", () => {
+    expect(revenueTotals([])).toEqual([]);
+  });
+});
+
+describe("bookedDates", () => {
+  it("garde les dates réservées, éventuellement pour une seule expérience", () => {
+    const list = [
+      booking({ id: "1", booking_date: "2026-10-20", experience_id: "a" }),
+      booking({ id: "2", booking_date: "2026-10-22", experience_id: "b" }),
+    ];
+    expect([...bookedDates(list)].sort()).toEqual(["2026-10-20", "2026-10-22"]);
+    expect([...bookedDates(list, "a")]).toEqual(["2026-10-20"]);
   });
 });

@@ -6,6 +6,40 @@
 
 ---
 
+## [2026-10-18] — Espace partenaire : accueil plus visuel avec calendrier rapide, onglet « Proposer une expérience » en dernier
+
+> Statut : construit (`npm run build` passe, 19 tests partenaires OK). Pas vu à l'écran : aucun prestataire n'a encore de compte actif.
+
+### Ce qui a changé côté code
+- `src/pages/partner/PartnerHome.tsx` : nouvel ordre de l'accueil. Les deux chiffres clés, puis « À faire » (affiché seulement s'il y a quelque chose à faire), puis le calendrier rapide, les prochaines réservations et les propositions.
+- `src/components/partner/home/HomeStats.tsx` (créé) : deux tuiles cliquables, « Réservations à venir » (le nombre) et « Total généré » (la part du prestataire, avec « dont X à régler »). Jamais le prix client ni la marge.
+- `src/components/partner/home/QuickAvailability.tsx` (créé) : calendrier du mois sur l'accueil, un appui ouvre ou ferme une date, bouton « Enregistrer » seulement après un changement. Pastilles pour choisir l'expérience s'il y en a plusieurs. Seulement les expériences dont le prestataire est le prestataire principal (même règle qu'avant). Lien vers les réglages complets.
+- `src/components/partner/AvailabilityCalendar.tsx` (créé) : le calendrier, sorti de `AvailabilityEditor.tsx` pour servir à l'accueil et à la fiche. Les jours réservés portent un point rouge.
+- `src/lib/partner/useAvailabilityDraft.ts` (créé) : la logique « brouillon puis Enregistrer » des disponibilités, partagée entre l'accueil et la fiche (sortie de `experience/AvailabilitySection.tsx`, qui expose aussi la barre d'enregistrement).
+- `src/lib/partner/logic.ts` : `revenueTotals` (totaux par devise) et `bookedDates` (jours réservés), avec 3 tests dans `logic.test.ts`.
+- `src/components/partner/PartnerShell.tsx` et `src/lib/partner/i18n.ts` : l'onglet « Proposer » devient « Proposer une expérience » (EN « Suggest an experience », HE « הצעת חוויה חדשה ») et passe en dernière position ; nouveaux textes de l'accueil en FR / EN / HE.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Shana veut un accueil partenaire plus visuel : voir d'un coup d'œil les réservations à venir et ce que le prestataire a gagné, et changer ses dates sans chercher. « Proposer » n'était pas assez parlant et passait avant les onglets du quotidien.
+
+---
+
+## [2026-10-18] — Espace partenaire : raison sociale et numéro fiscal ne sont plus demandés
+
+### Ce qui a changé côté code
+- `src/components/partner/ProfileFields.tsx` : les champs « Raison sociale » et « Numéro fiscal » sont retirés du formulaire (première connexion et onglet Profil). Ils ne sont plus envoyés, donc la base garde leur valeur actuelle.
+
+### Ce qui a changé côté base de données
+- Rien : les colonnes `providers.legal_name` et `providers.tax_id` restent, toujours modifiables dans la fiche prestataire du back-office.
+
+### Pourquoi ce changement
+- Shana ne veut plus demander ces informations au prestataire, sans perdre celles déjà saisies.
+
+---
+
 ## [2026-10-14] — Espace partenaire, 3 correctifs : avis sans coordonnées, demandes particulières, emails des paiements confirmés en retard
 
 > Statut : en ligne le 15/10/2026 (fonctions déployées, migration appliquée, site poussé). Ancienne règle des avis supprimée par Shana le 16/10/2026 dans l'éditeur SQL. Testé en production avec une réservation et un prestataire TEST, supprimés ensuite : un seul envoi client + prestataire, aucun renvoi au second passage en payée, rien pour une date passée, demande particulière visible au back-office et dans l'espace partenaire. `npm run build` passe, 16 tests partenaires OK. Pas de message WhatsApp prestataire : décision de Shana, l'email et l'espace partenaire suffisent.

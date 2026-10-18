@@ -46,11 +46,12 @@ export function PartnerShell({ children }: { children: ReactNode }) {
   const tabs = [
     { to: "/partner", label: t.tabHome, end: true },
     { to: "/partner/experiences", label: t.tabExperiences },
-    { to: "/partner/new", label: t.tabNew },
     { to: "/partner/bookings", label: t.tabBookings },
     { to: "/partner/revenue", label: t.tabRevenue },
     { to: "/partner/reviews", label: t.tabReviews },
     { to: "/partner/profile", label: t.tabProfile },
+    // En dernier : proposer une nouvelle expérience est occasionnel, le quotidien passe avant.
+    { to: "/partner/new", label: t.tabNew },
   ];
 
   return (

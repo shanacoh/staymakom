@@ -1,14 +1,17 @@
-// Accueil : prochaines réservations, actions qui attendent le partenaire, état de ses propositions.
+// Accueil : les chiffres clés (réservations à venir, total généré), ce qui attend le partenaire,
+// le calendrier pour ouvrir ou fermer une date, les prochaines réservations et ses propositions.
 
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight } from "lucide-react";
 import { BookingCard } from "@/components/partner/BookingCard";
+import { HomeStats } from "@/components/partner/home/HomeStats";
+import { QuickAvailability } from "@/components/partner/home/QuickAvailability";
 import { ProposalList } from "@/components/partner/ProposalList";
 import { Card, Empty, Hint, PageLoader, Pill, SectionTitle } from "@/components/partner/ui";
 import { fetchPartnerBookings, fetchPartnerExperiences, fetchPartnerProposals, partnerKeys } from "@/lib/partner/api";
 import { usePartner, usePartnerSession } from "@/lib/partner/context";
-import { displayText, splitBookings, toIsoDate } from "@/lib/partner/logic";
+import { displayText, revenueTotals, splitBookings, toIsoDate } from "@/lib/partner/logic";
 
 export default function PartnerHome() {
   const { t, lang } = usePartner();
@@ -19,7 +22,9 @@ export default function PartnerHome() {
 
   if (bookings.isLoading || experiences.isLoading || proposals.isLoading) return <PageLoader label={t.loading} />;
 
-  const upcoming = splitBookings(bookings.data ?? [], toIsoDate(new Date())).upcoming.slice(0, 3);
+  const allBookings = bookings.data ?? [];
+  const allUpcoming = splitBookings(allBookings, toIsoDate(new Date())).upcoming;
+  const upcoming = allUpcoming.slice(0, 3);
   const actions = (experiences.data ?? []).flatMap((experience) => {
     const title = displayText(experience as unknown as Record<string, unknown>, "title", lang) || experience.slug;
     return [
@@ -33,11 +38,12 @@ export default function PartnerHome() {
     <>
       <h1 className="text-xl font-bold tracking-tight">{t.homeHello(session.provider.contact_name || session.provider.name)}</h1>
 
-      <Card>
-        <SectionTitle aside={actions.length > 0 ? <Pill tone="urgent">{actions.length}</Pill> : undefined}>{t.homeActions}</SectionTitle>
-        {actions.length === 0 ? (
-          <Hint>{t.homeNoActions}</Hint>
-        ) : (
+      <HomeStats upcomingCount={allUpcoming.length} totals={revenueTotals(allBookings)} />
+
+      {/* « À faire » n'apparaît que s'il y a vraiment quelque chose à faire. */}
+      {actions.length > 0 && (
+        <Card>
+          <SectionTitle aside={<Pill tone="urgent">{actions.length}</Pill>}>{t.homeActions}</SectionTitle>
           <ul className="divide-y divide-neutral-100">
             {actions.map((action) => (
               <li key={action.key}>
@@ -54,8 +60,10 @@ export default function PartnerHome() {
               </li>
             ))}
           </ul>
-        )}
-      </Card>
+        </Card>
+      )}
+
+      <QuickAvailability experiences={experiences.data ?? []} bookings={allBookings} />
 
       <div>
         <SectionTitle
