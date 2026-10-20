@@ -17,7 +17,7 @@ export default function PartnerExperiences() {
 
   return (
     <>
-      <h1 className="text-xl font-bold tracking-tight">{t.tabExperiences}</h1>
+      <h1 className="text-[17px] font-semibold tracking-tight">{t.tabExperiences}</h1>
       {experiences.length === 0 ? (
         <Empty>{t.expEmpty}</Empty>
       ) : (
@@ -34,7 +34,7 @@ export default function PartnerExperiences() {
                     {experience.image && <img src={experience.image} alt="" loading="lazy" className="h-full w-full object-cover" />}
                   </div>
                   <div className="min-w-0 flex-1 space-y-1.5">
-                    <p className="line-clamp-2 text-[14px] font-semibold leading-snug text-neutral-900">
+                    <p className="line-clamp-2 text-[13px] font-semibold leading-snug text-neutral-900">
                       {displayText(experience as unknown as Record<string, unknown>, "title", lang) || experience.slug}
                     </p>
                     <div className="flex flex-wrap items-center gap-1.5">

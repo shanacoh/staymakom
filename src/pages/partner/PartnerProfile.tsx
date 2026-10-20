@@ -40,7 +40,7 @@ export default function PartnerProfile() {
 
   return (
     <>
-      <h1 className="text-xl font-bold tracking-tight">{t.tabProfile}</h1>
+      <h1 className="text-[17px] font-semibold tracking-tight">{t.tabProfile}</h1>
 
       <Card className="space-y-4">
         <SectionTitle>{t.fInfo}</SectionTitle>
@@ -89,7 +89,7 @@ export default function PartnerProfile() {
           {(users.data ?? []).map((user) => (
             <li key={user.email} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
               <div className="min-w-0">
-                <p className="truncate text-[14px] font-medium text-neutral-900" dir="ltr">
+                <p className="truncate text-[13px] font-medium text-neutral-900" dir="ltr">
                   {user.email}
                 </p>
                 <p className="text-[12px] text-neutral-500">
@@ -105,14 +105,14 @@ export default function PartnerProfile() {
       <Card className="space-y-3">
         <SectionTitle>{t.fTerms}</SectionTitle>
         {terms.accepted_version && (
-          <div className="text-[14px] text-neutral-800">
+          <div className="text-[13px] text-neutral-800">
             <p>{t.fTermsAccepted(terms.accepted_version, formatPartnerDate(terms.accepted_at, lang))}</p>
             {terms.signer_name && <p className="text-[13px] text-neutral-500">{t.fTermsSigner(terms.signer_name)}</p>}
           </div>
         )}
         <QuietButton onClick={() => setShowTerms((shown) => !shown)}>{t.fTermsRead}</QuietButton>
         {showTerms && (
-          <div className="max-h-[50vh] overflow-y-auto whitespace-pre-line rounded-[10px] border border-neutral-200 bg-neutral-50 p-4 text-[14px] leading-relaxed text-neutral-800">
+          <div className="max-h-[50vh] overflow-y-auto whitespace-pre-line rounded-[10px] border border-neutral-200 bg-neutral-50 p-4 text-[13px] leading-relaxed text-neutral-800">
             {termsText(terms, lang)}
           </div>
         )}

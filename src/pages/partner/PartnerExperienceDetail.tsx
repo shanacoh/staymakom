@@ -54,7 +54,7 @@ export default function PartnerExperienceDetail() {
     <>
       {back}
       <div className="space-y-2">
-        <h1 className="text-xl font-bold leading-snug tracking-tight">{displayText(experience, "title", lang) || experience.slug}</h1>
+        <h1 className="text-[17px] font-semibold leading-snug tracking-tight">{displayText(experience, "title", lang) || experience.slug}</h1>
         <Pill tone={experience.status === "published" ? "strong" : "muted"}>
           {experience.status === "published" ? t.statusPublished : t.statusDraft}
         </Pill>
@@ -71,7 +71,7 @@ export default function PartnerExperienceDetail() {
             aria-selected={section === s.key}
             onClick={() => setSearchParams({ section: s.key }, { replace: true })}
             className={cn(
-              "min-h-[38px] flex-1 whitespace-nowrap rounded-full px-3 text-[13px] font-semibold transition-colors",
+              "min-h-[32px] flex-1 whitespace-nowrap rounded-full px-3 text-[12px] font-semibold transition-colors",
               section === s.key ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-600",
             )}
           >

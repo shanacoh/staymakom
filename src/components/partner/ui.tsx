@@ -1,25 +1,27 @@
 // Petites briques d'affichage de l'espace partenaire. Sobre : noir et gris neutres, pensé pour le
-// téléphone (zones d'appui hautes). Le rouge n'apparaît que pour ce qui attend une action.
+// téléphone. Gabarit volontairement compact et aéré (textes 13 px, champs et boutons de 38-40 px) :
+// l'espace ne doit pas donner l'impression d'un gros formulaire. Le rouge n'apparaît que pour ce
+// qui attend une action.
 
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <section className={cn("rounded-[14px] border border-neutral-200 bg-white p-4 sm:p-5", className)}>{children}</section>;
+  return <section className={cn("rounded-[12px] border border-neutral-200/80 bg-white p-3.5 sm:p-4", className)}>{children}</section>;
 }
 
 export function SectionTitle({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
   return (
-    <div className="mb-3 flex items-center justify-between gap-3">
-      <h2 className="text-[13px] font-bold uppercase tracking-[0.08em] text-neutral-900">{children}</h2>
+    <div className="mb-2.5 flex items-center justify-between gap-3">
+      <h2 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-neutral-500">{children}</h2>
       {aside}
     </div>
   );
 }
 
 export function Hint({ children, className }: { children: ReactNode; className?: string }) {
-  return <p className={cn("text-[13px] leading-relaxed text-neutral-500", className)}>{children}</p>;
+  return <p className={cn("text-[12px] leading-relaxed text-neutral-500", className)}>{children}</p>;
 }
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { busy?: boolean };
@@ -30,7 +32,7 @@ export function PrimaryButton({ busy, children, className, disabled, ...props }:
       type="button"
       disabled={disabled || busy}
       className={cn(
-        "inline-flex min-h-[46px] w-full items-center justify-center gap-2 rounded-full bg-neutral-900 px-6 text-sm font-semibold text-white transition-colors",
+        "inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-full bg-neutral-900 px-5 text-[13px] font-semibold text-white transition-colors",
         "hover:bg-neutral-700 disabled:cursor-not-allowed disabled:bg-neutral-300 sm:w-auto",
         className,
       )}
@@ -48,7 +50,7 @@ export function QuietButton({ busy, children, className, disabled, ...props }: B
       type="button"
       disabled={disabled || busy}
       className={cn(
-        "inline-flex min-h-[42px] items-center justify-center gap-2 rounded-full border border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-900 transition-colors",
+        "inline-flex min-h-[36px] items-center justify-center gap-2 rounded-full border border-neutral-300 bg-white px-4 text-[13px] font-medium text-neutral-900 transition-colors",
         "hover:bg-neutral-100 disabled:cursor-not-allowed disabled:text-neutral-400",
         className,
       )}
@@ -61,7 +63,7 @@ export function QuietButton({ busy, children, className, disabled, ...props }: B
 }
 
 const FIELD_CLASS =
-  "w-full rounded-[10px] border border-neutral-300 bg-white px-3 py-2.5 text-[15px] text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 disabled:bg-neutral-100 disabled:text-neutral-500";
+  "w-full rounded-[9px] border border-neutral-200 bg-white px-3 py-2 text-[14px] text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 disabled:bg-neutral-100 disabled:text-neutral-500";
 
 interface FieldShellProps {
   label: string;
@@ -72,13 +74,13 @@ interface FieldShellProps {
 
 function FieldShell({ label, hint, optional, children }: FieldShellProps) {
   return (
-    <label className="block space-y-1.5">
-      <span className="flex items-baseline gap-2 text-[13px] font-semibold text-neutral-900">
+    <label className="block space-y-1">
+      <span className="flex items-baseline gap-2 text-[12px] font-medium text-neutral-700">
         {label}
         {optional && <span className="font-normal text-neutral-400">{optional}</span>}
       </span>
       {children}
-      {hint && <span className="block text-[12px] leading-relaxed text-neutral-500">{hint}</span>}
+      {hint && <span className="block text-[11px] leading-relaxed text-neutral-500">{hint}</span>}
     </label>
   );
 }
@@ -147,14 +149,14 @@ export function Pill({ children, tone = "neutral" }: { children: ReactNode; tone
     muted: "bg-neutral-100 text-neutral-500",
     urgent: "bg-[#ad1414] text-white",
   };
-  return <span className={cn("inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-semibold", tones[tone])}>{children}</span>;
+  return <span className={cn("inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold", tones[tone])}>{children}</span>;
 }
 
 export function Notice({ children, tone = "neutral" }: { children: ReactNode; tone?: "neutral" | "urgent" }) {
   return (
     <div
       className={cn(
-        "rounded-[10px] px-3.5 py-3 text-[13px] leading-relaxed",
+        "rounded-[9px] px-3 py-2.5 text-[12px] leading-relaxed",
         tone === "urgent" ? "border border-[#ad1414]/30 bg-[#ad1414]/5 text-[#8a1010]" : "bg-neutral-100 text-neutral-700",
       )}
     >
@@ -164,7 +166,7 @@ export function Notice({ children, tone = "neutral" }: { children: ReactNode; to
 }
 
 export function Empty({ children }: { children: ReactNode }) {
-  return <p className="rounded-[14px] border border-dashed border-neutral-300 px-4 py-8 text-center text-sm text-neutral-500">{children}</p>;
+  return <p className="rounded-[12px] border border-dashed border-neutral-300 px-4 py-6 text-center text-[13px] text-neutral-500">{children}</p>;
 }
 
 export function PageLoader({ label }: { label?: string }) {

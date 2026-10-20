@@ -19,7 +19,7 @@ export function ProposalList({ proposals }: { proposals: PartnerProposal[] }) {
           <li key={proposal.id} className="py-3 first:pt-0 last:pb-0">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="truncate text-[14px] font-semibold text-neutral-900">{title}</p>
+                <p className="truncate text-[13px] font-semibold text-neutral-900">{title}</p>
                 <p className="text-[12px] text-neutral-500">
                   {t.typeLabels[proposal.proposal_type]} · {formatPartnerDate(proposal.created_at, lang)}
                 </p>

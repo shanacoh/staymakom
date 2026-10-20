@@ -45,7 +45,7 @@ export function QuickAvailability({ experiences, bookings }: Props) {
     e.slug;
 
   return (
-    <Card className="space-y-4">
+    <Card className="space-y-3">
       <SectionTitle>{t.homeCalendar}</SectionTitle>
 
       {editable.length > 1 && (
@@ -57,7 +57,7 @@ export function QuickAvailability({ experiences, bookings }: Props) {
               aria-pressed={e.id === selectedId}
               onClick={() => setSelectedId(e.id)}
               className={cn(
-                "min-h-[36px] shrink-0 rounded-full border px-3.5 text-[13px] font-medium",
+                "min-h-[32px] shrink-0 rounded-full border px-3 text-[12px] font-medium",
                 e.id === selectedId
                   ? "border-neutral-900 bg-neutral-900 text-white"
                   : "border-neutral-300 bg-white text-neutral-700",

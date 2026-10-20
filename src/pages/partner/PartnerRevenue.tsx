@@ -21,7 +21,7 @@ export default function PartnerRevenue() {
   return (
     <>
       <div className="space-y-1">
-        <h1 className="text-xl font-bold tracking-tight">{t.tabRevenue}</h1>
+        <h1 className="text-[17px] font-semibold tracking-tight">{t.tabRevenue}</h1>
         <Hint>{t.rIntro}</Hint>
       </div>
 
@@ -36,12 +36,12 @@ export default function PartnerRevenue() {
             <Card key={`${month.month}-${month.currency}`} className="space-y-3">
               <div className="flex items-end justify-between gap-3">
                 <div>
-                  <h2 className="text-[15px] font-bold capitalize text-neutral-900">{formatPartnerMonth(month.month, lang)}</h2>
+                  <h2 className="text-[14px] font-bold capitalize text-neutral-900">{formatPartnerMonth(month.month, lang)}</h2>
                   <p className="text-[12px] text-neutral-500">{t.rBookings(month.count)}</p>
                 </div>
                 <div className="text-end">
                   <p className="text-[11px] uppercase tracking-[0.08em] text-neutral-500">{t.rMonthTotal}</p>
-                  <p className="text-lg font-bold text-neutral-900" dir="ltr">
+                  <p className="text-base font-bold text-neutral-900" dir="ltr">
                     {formatMoney(month.total, month.currency)}
                   </p>
                 </div>
@@ -84,7 +84,7 @@ export default function PartnerRevenue() {
                         <Pill tone="muted">{t.rUnknown}</Pill>
                       ) : (
                         <>
-                          <p className="text-[14px] font-semibold text-neutral-900" dir="ltr">
+                          <p className="text-[13px] font-semibold text-neutral-900" dir="ltr">
                             {formatMoney(booking.provider_amount, booking.currency)}
                           </p>
                           <Pill tone={booking.settled ? "strong" : "neutral"}>{booking.settled ? t.rSettled : t.rDue}</Pill>

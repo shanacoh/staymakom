@@ -36,7 +36,7 @@ export function AvailabilityEditor({ value, onChange, bookedDates }: Props) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <fieldset className="space-y-2">
         <legend className="mb-2 text-[13px] font-semibold text-neutral-900">{t.avModeLabel}</legend>
         {(
@@ -60,7 +60,7 @@ export function AvailabilityEditor({ value, onChange, bookedDates }: Props) {
               onChange={() => onChange({ ...value, availability_mode: option.mode })}
             />
             <span>
-              <span className="block text-[14px] font-semibold text-neutral-900">{option.label}</span>
+              <span className="block text-[13px] font-semibold text-neutral-900">{option.label}</span>
               <span className="block text-[12px] leading-relaxed text-neutral-500">{option.hint}</span>
             </span>
           </label>
@@ -80,8 +80,8 @@ export function AvailabilityEditor({ value, onChange, bookedDates }: Props) {
                   aria-pressed={open}
                   onClick={() => onChange(toggleWeekday(value, day))}
                   className={cn(
-                    "min-h-[40px] rounded-full border px-3.5 text-[13px] font-medium",
-                    open ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-300 bg-white text-neutral-500",
+                    "min-h-[34px] rounded-full border px-3 text-[12px] font-medium",
+                    open ? "border-transparent bg-neutral-100 font-semibold text-neutral-900" : "border-neutral-200 bg-white text-neutral-400",
                   )}
                 >
                   {t.weekdaysLong[day - 1]}
@@ -100,13 +100,13 @@ export function AvailabilityEditor({ value, onChange, bookedDates }: Props) {
         {value.time_slots.length > 0 && (
           <ul className="flex flex-wrap gap-2">
             {value.time_slots.map((slot) => (
-              <li key={slot} className="flex items-center gap-1 rounded-full bg-neutral-900 py-1 pe-1.5 ps-3 text-[13px] font-medium text-white">
+              <li key={slot} className="flex items-center gap-1 rounded-full bg-neutral-100 py-1 pe-1.5 ps-3 text-[12px] font-semibold text-neutral-900">
                 <span dir="ltr">{slot}</span>
                 <button
                   type="button"
                   onClick={() => onChange(removeTimeSlot(value, slot))}
                   aria-label={`${t.cancel} ${slot}`}
-                  className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/20"
+                  className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-neutral-200"
                 >
                   <X className="h-3.5 w-3.5" aria-hidden />
                 </button>
@@ -130,7 +130,7 @@ export function AvailabilityEditor({ value, onChange, bookedDates }: Props) {
                 addSlot();
               }
             }}
-            className="h-[42px] w-28 rounded-[10px] border border-neutral-300 bg-white px-3 text-[15px] focus:border-neutral-900 focus:outline-none"
+            className="h-[36px] w-28 rounded-[9px] border border-neutral-200 bg-white px-3 text-[14px] focus:border-neutral-900 focus:outline-none"
           />
           <QuietButton onClick={addSlot}>{t.avSlotAdd}</QuietButton>
         </div>

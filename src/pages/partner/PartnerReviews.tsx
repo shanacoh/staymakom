@@ -17,7 +17,7 @@ export default function PartnerReviews() {
 
   return (
     <>
-      <h1 className="text-xl font-bold tracking-tight">{t.tabReviews}</h1>
+      <h1 className="text-[17px] font-semibold tracking-tight">{t.tabReviews}</h1>
       {reviews.length === 0 ? (
         <Empty>{t.vEmpty}</Empty>
       ) : (
@@ -25,7 +25,7 @@ export default function PartnerReviews() {
           <Card key={review.id} className="space-y-2">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[14px] font-semibold text-neutral-900">
+                <p className="text-[13px] font-semibold text-neutral-900">
                   {review.customer_first_name}
                   {review.customer_last_initial ? ` ${review.customer_last_initial}.` : ""}
                 </p>
@@ -34,13 +34,13 @@ export default function PartnerReviews() {
                 </p>
               </div>
               {review.rating != null && (
-                <span className="flex shrink-0 items-center gap-1 text-[14px] font-semibold text-neutral-900" dir="ltr">
+                <span className="flex shrink-0 items-center gap-1 text-[13px] font-semibold text-neutral-900" dir="ltr">
                   <Star className="h-4 w-4 fill-neutral-900" aria-hidden />
                   {review.rating}/5
                 </span>
               )}
             </div>
-            {review.comment && <p className="whitespace-pre-line text-[14px] leading-relaxed text-neutral-800">{review.comment}</p>}
+            {review.comment && <p className="whitespace-pre-line text-[13px] leading-relaxed text-neutral-800">{review.comment}</p>}
             {review.staff_reply && (
               <p className="rounded-[10px] bg-neutral-100 px-3 py-2 text-[13px] leading-relaxed text-neutral-700">
                 <span className="font-semibold">{t.vReply} : </span>

@@ -73,7 +73,7 @@ export default function PartnerOnboarding() {
         <Card className="space-y-5">
           <div className="space-y-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">1 / 2 · {session.provider.name}</p>
-            <h1 className="text-xl font-bold tracking-tight">{t.onboardingProfileTitle}</h1>
+            <h1 className="text-[17px] font-semibold tracking-tight">{t.onboardingProfileTitle}</h1>
             <Hint>{t.onboardingProfileIntro}</Hint>
           </div>
           <ProfileFields draft={draft} onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))} />
@@ -88,17 +88,17 @@ export default function PartnerOnboarding() {
               {firstTime ? "2 / 2 · " : ""}
               {session.terms.current_version != null && t.termsVersion(session.terms.current_version)}
             </p>
-            <h1 className="text-xl font-bold tracking-tight">{t.termsTitle}</h1>
+            <h1 className="text-[17px] font-semibold tracking-tight">{t.termsTitle}</h1>
             <Hint>{firstTime ? t.termsIntroFirst : t.termsIntroUpdated}</Hint>
           </div>
 
-          <div className="max-h-[50vh] overflow-y-auto whitespace-pre-line rounded-[10px] border border-neutral-200 bg-neutral-50 p-4 text-[14px] leading-relaxed text-neutral-800">
+          <div className="max-h-[50vh] overflow-y-auto whitespace-pre-line rounded-[10px] border border-neutral-200 bg-neutral-50 p-4 text-[13px] leading-relaxed text-neutral-800">
             {termsText(session.terms, lang)}
           </div>
 
           <TextField label={t.termsSignerLabel} autoComplete="name" value={signerName} onChange={setSignerName} />
 
-          <label className="flex cursor-pointer items-start gap-3 text-[14px] leading-snug text-neutral-900">
+          <label className="flex cursor-pointer items-start gap-3 text-[13px] leading-snug text-neutral-900">
             <input
               type="checkbox"
               className="mt-0.5 h-5 w-5 shrink-0 accent-neutral-900"

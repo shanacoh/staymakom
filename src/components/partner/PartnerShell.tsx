@@ -17,7 +17,7 @@ export function LanguageSwitch() {
       aria-label={t.language}
       value={lang}
       onChange={(e) => setLang(e.target.value as PartnerLang)}
-      className="h-9 rounded-full border border-neutral-300 bg-white px-3 text-[13px] font-medium text-neutral-900 focus:border-neutral-900 focus:outline-none"
+      className="h-8 rounded-full border border-neutral-200 bg-white px-2.5 text-[12px] font-medium text-neutral-900 focus:border-neutral-900 focus:outline-none"
     >
       {PARTNER_LANGS.map((code) => (
         <option key={code} value={code}>
@@ -32,7 +32,7 @@ export function PartnerBrand() {
   const { t } = usePartner();
   return (
     <div className="leading-tight">
-      <div className="text-[15px] font-extrabold tracking-tight text-neutral-900">STAYMAKOM</div>
+      <div className="text-[14px] font-extrabold tracking-tight text-neutral-900">STAYMAKOM</div>
       <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-neutral-500">{t.brandSub}</div>
     </div>
   );
@@ -57,7 +57,7 @@ export function PartnerShell({ children }: { children: ReactNode }) {
   return (
     <>
       <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 py-2.5">
           <div className="flex min-w-0 items-center gap-3">
             <PartnerBrand />
             <span className="hidden truncate border-s border-neutral-200 ps-3 text-[13px] text-neutral-600 sm:block">
@@ -71,13 +71,13 @@ export function PartnerShell({ children }: { children: ReactNode }) {
               onClick={() => signOut()}
               aria-label={t.logout}
               title={t.logout}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-300 text-neutral-700 hover:bg-neutral-100"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 text-neutral-700 hover:bg-neutral-100"
             >
               <LogOut className="h-4 w-4 rtl:-scale-x-100" aria-hidden />
             </button>
           </div>
         </div>
-        <nav className="mx-auto max-w-3xl overflow-x-auto px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <nav className="mx-auto max-w-2xl overflow-x-auto px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <ul className="flex min-w-max gap-1 px-2">
             {tabs.map((tab) => (
               <li key={tab.to}>
@@ -86,7 +86,7 @@ export function PartnerShell({ children }: { children: ReactNode }) {
                   end={tab.end}
                   className={({ isActive }) =>
                     cn(
-                      "block whitespace-nowrap border-b-2 px-3 py-2.5 text-[13px] font-semibold transition-colors",
+                      "block whitespace-nowrap border-b-2 px-2.5 py-2 text-[12px] font-medium transition-colors",
                       isActive ? "border-neutral-900 text-neutral-900" : "border-transparent text-neutral-500 hover:text-neutral-900",
                     )
                   }
@@ -98,7 +98,7 @@ export function PartnerShell({ children }: { children: ReactNode }) {
           </ul>
         </nav>
       </header>
-      <main className="mx-auto max-w-3xl space-y-4 px-4 pb-16 pt-5">{children}</main>
+      <main className="mx-auto max-w-2xl space-y-3.5 px-4 pb-16 pt-4">{children}</main>
     </>
   );
 }

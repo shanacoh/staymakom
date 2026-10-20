@@ -12,8 +12,8 @@ interface Props {
 }
 
 const tile =
-  "block rounded-[14px] p-4 sm:p-5 transition-opacity hover:opacity-90";
-const label = "text-[11px] font-semibold uppercase tracking-[0.08em]";
+  "block rounded-[12px] p-3.5 transition-opacity hover:opacity-90";
+const label = "text-[10px] font-semibold uppercase tracking-[0.1em]";
 
 export function HomeStats({ upcomingCount, totals }: Props) {
   const { t } = usePartner();
@@ -23,21 +23,21 @@ export function HomeStats({ upcomingCount, totals }: Props) {
     <div className="grid grid-cols-2 gap-3">
       <Link
         to="/partner/bookings"
-        className={`${tile} bg-neutral-900 text-white`}
+        className={`${tile} border border-neutral-200/80 bg-white`}
       >
-        <p className={`${label} text-white/60`}>{t.homeStatUpcoming}</p>
-        <p className="mt-2 text-4xl font-extrabold tracking-tight">
+        <p className={`${label} text-neutral-500`}>{t.homeStatUpcoming}</p>
+        <p className="mt-1 text-[22px] font-bold tracking-tight text-neutral-900">
           {upcomingCount}
         </p>
       </Link>
 
       <Link
         to="/partner/revenue"
-        className={`${tile} border border-neutral-200 bg-white`}
+        className={`${tile} border border-neutral-200/80 bg-white`}
       >
         <p className={`${label} text-neutral-500`}>{t.homeStatEarned}</p>
         <p
-          className="mt-2 text-2xl font-extrabold tracking-tight text-neutral-900 sm:text-3xl"
+          className="mt-1 text-[22px] font-bold tracking-tight text-neutral-900"
           dir="ltr"
         >
           {main
@@ -47,14 +47,14 @@ export function HomeStats({ upcomingCount, totals }: Props) {
         {others.map((other) => (
           <p
             key={other.currency}
-            className="text-[14px] font-bold text-neutral-900"
+            className="text-[12px] font-semibold text-neutral-900"
             dir="ltr"
           >
             + {formatMoney(other.total, other.currency)}
           </p>
         ))}
         {main && main.due > 0 && (
-          <p className="mt-1 text-[12px] text-neutral-500">
+          <p className="mt-0.5 text-[11px] text-neutral-500">
             {t.homeStatDue(formatMoney(main.due, main.currency))}
           </p>
         )}

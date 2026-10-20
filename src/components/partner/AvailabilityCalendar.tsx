@@ -35,22 +35,22 @@ export function AvailabilityCalendar({ value, onChange, bookedDates }: Props) {
   const hasBookings = !!bookedDates && bookedDates.size > 0;
 
   return (
-    <div>
+    <div className="mx-auto max-w-sm">
       <div className="mb-2 flex items-center justify-between">
         <button
           type="button"
           disabled={atCurrentMonth}
           onClick={() => moveMonth(-1)}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-300 disabled:opacity-30"
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-300 disabled:opacity-30"
           aria-label="←"
         >
           <ChevronLeft className="h-4 w-4 rtl:-scale-x-100" aria-hidden />
         </button>
-        <p className="text-[14px] font-semibold capitalize text-neutral-900">{formatPartnerMonth(monthKey, lang)}</p>
+        <p className="text-[13px] font-semibold capitalize text-neutral-900">{formatPartnerMonth(monthKey, lang)}</p>
         <button
           type="button"
           onClick={() => moveMonth(1)}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-300"
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-300"
           aria-label="→"
         >
           <ChevronRight className="h-4 w-4 rtl:-scale-x-100" aria-hidden />
@@ -76,24 +76,24 @@ export function AvailabilityCalendar({ value, onChange, bookedDates }: Props) {
               aria-pressed={open}
               onClick={() => onChange(toggleDate(value, date))}
               className={cn(
-                "relative flex aspect-square items-center justify-center rounded-[10px] text-[14px] font-medium",
+                "relative flex h-9 items-center justify-center rounded-[8px] text-[12px] font-medium",
                 past && "text-neutral-300",
-                !past && open && "bg-neutral-900 text-white",
-                !past && !open && "border border-neutral-200 bg-white text-neutral-400 line-through",
+                !past && open && "bg-neutral-100 font-semibold text-neutral-900 hover:bg-neutral-200",
+                !past && !open && "text-neutral-300 line-through hover:bg-neutral-50",
               )}
             >
               {Number(date.slice(8))}
-              {booked && <span className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-[#ad1414]" aria-hidden />}
+              {booked && <span className="absolute bottom-0.5 h-1 w-1 rounded-full bg-[#ad1414]" aria-hidden />}
             </button>
           );
         })}
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-neutral-500">
+      <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-500">
         <span className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded-[4px] bg-neutral-900" /> {t.avLegendOpen}
+          <span className="h-3 w-3 rounded-[4px] bg-neutral-200" /> {t.avLegendOpen}
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded-[4px] border border-neutral-300 bg-white" /> {t.avLegendClosed}
+          <span className="text-neutral-300 line-through">12</span> {t.avLegendClosed}
         </span>
         {hasBookings && (
           <span className="flex items-center gap-1.5">

@@ -21,7 +21,7 @@ export default function PartnerBookings() {
   return (
     <>
       <div className="space-y-1">
-        <h1 className="text-xl font-bold tracking-tight">{t.tabBookings}</h1>
+        <h1 className="text-[17px] font-semibold tracking-tight">{t.tabBookings}</h1>
         <Hint>{t.bOnlyPaid}</Hint>
       </div>
 
@@ -34,7 +34,7 @@ export default function PartnerBookings() {
             aria-selected={tab === key}
             onClick={() => setTab(key)}
             className={cn(
-              "min-h-[38px] flex-1 rounded-full px-3 text-[13px] font-semibold",
+              "min-h-[32px] flex-1 rounded-full px-3 text-[12px] font-semibold",
               tab === key ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-600",
             )}
           >

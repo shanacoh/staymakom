@@ -109,7 +109,7 @@ export default function PartnerApp() {
     const notPartner = partnerErrorCode(sessionQuery.error).includes("not_partner");
     content = (
       <div className="mx-auto max-w-md space-y-4 px-5 py-16 text-center">
-        <h1 className="text-lg font-bold text-neutral-900">{notPartner ? t.notPartnerTitle : t.errorGeneric}</h1>
+        <h1 className="text-base font-bold text-neutral-900">{notPartner ? t.notPartnerTitle : t.errorGeneric}</h1>
         {notPartner && <p className="text-sm leading-relaxed text-neutral-600">{t.notPartnerText}</p>}
         <QuietButton onClick={() => signOut()}>{t.logout}</QuietButton>
       </div>

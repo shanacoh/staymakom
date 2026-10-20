@@ -36,7 +36,7 @@ export default function PartnerHome() {
 
   return (
     <>
-      <h1 className="text-xl font-bold tracking-tight">{t.homeHello(session.provider.contact_name || session.provider.name)}</h1>
+      <h1 className="text-[17px] font-semibold tracking-tight">{t.homeHello(session.provider.contact_name || session.provider.name)}</h1>
 
       <HomeStats upcomingCount={allUpcoming.length} totals={revenueTotals(allBookings)} />
 
@@ -52,7 +52,7 @@ export default function PartnerHome() {
                   className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
                 >
                   <span className="min-w-0">
-                    <span className="block text-[14px] font-semibold text-neutral-900">{action.label}</span>
+                    <span className="block text-[13px] font-semibold text-neutral-900">{action.label}</span>
                     <span className="block truncate text-[12px] text-neutral-500">{action.title}</span>
                   </span>
                   <ChevronRight className="h-4 w-4 shrink-0 text-neutral-400 rtl:-scale-x-100" aria-hidden />
@@ -78,11 +78,11 @@ export default function PartnerHome() {
         {upcoming.length === 0 ? (
           <Empty>{t.homeNoBookings}</Empty>
         ) : (
-          <div className="space-y-3">
+          <Card className="divide-y divide-neutral-100">
             {upcoming.map((booking) => (
               <BookingCard key={booking.id} booking={booking} compact />
             ))}
-          </div>
+          </Card>
         )}
       </div>
 

@@ -51,7 +51,7 @@ export default function PartnerNewExperience() {
   return (
     <>
       <div className="space-y-2">
-        <h1 className="text-xl font-bold tracking-tight">{t.nTitle}</h1>
+        <h1 className="text-[17px] font-semibold tracking-tight">{t.nTitle}</h1>
         <Hint>{t.nIntro}</Hint>
       </div>
       <Card className="space-y-4">

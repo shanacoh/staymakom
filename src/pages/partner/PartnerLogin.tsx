@@ -66,7 +66,7 @@ export default function PartnerLogin() {
           {tokenHash ? (
             <>
               <div className="space-y-2">
-                <h1 className="text-xl font-bold tracking-tight text-neutral-900">{t.loginTokenTitle}</h1>
+                <h1 className="text-[17px] font-semibold tracking-tight text-neutral-900">{t.loginTokenTitle}</h1>
                 <Hint>{t.loginTokenIntro}</Hint>
               </div>
               <PrimaryButton className="sm:w-full" busy={busy} onClick={enter}>
@@ -76,7 +76,7 @@ export default function PartnerLogin() {
           ) : (
             <form className="space-y-5" onSubmit={requestLink}>
               <div className="space-y-2">
-                <h1 className="text-xl font-bold tracking-tight text-neutral-900">{t.loginTitle}</h1>
+                <h1 className="text-[17px] font-semibold tracking-tight text-neutral-900">{t.loginTitle}</h1>
                 <Hint>{t.loginIntro}</Hint>
               </div>
               {error && <Notice tone="urgent">{error}</Notice>}

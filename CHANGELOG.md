@@ -6,6 +6,27 @@
 
 ---
 
+## [2026-10-20] — Espace partenaire : affichage plus petit et plus léger
+
+> Statut : vérifié à l'écran en local (téléphone et ordinateur) avec un prestataire fictif, données simulées dans le navigateur de test, rien en base. `npm run build` passe, 19 tests partenaires OK.
+
+### Ce qui a changé côté code
+- `src/components/partner/ui.tsx` : toutes les briques communes réduites d'un cran (cartes plus fines, titres de section en petites capitales grises, textes de 12-13 px, champs à remplir et boutons moins hauts, bordures plus claires). C'est ce qui allège tout l'espace d'un coup.
+- `src/components/partner/PartnerShell.tsx` : en-tête et onglets plus compacts, page un peu moins large sur ordinateur.
+- `src/components/partner/AvailabilityCalendar.tsx` : calendrier limité en largeur, cases moins hautes ; jours ouverts en gris très clair, jours fermés simplement barrés (plus de cases noires).
+- `src/components/partner/AvailabilityEditor.tsx` : jours de la semaine et créneaux horaires dans le même gris clair.
+- `src/components/partner/BookingCard.tsx` : version courte d'une réservation sur une ligne (pastille jour + date, expérience, client, heure), utilisée sur l'accueil ; version complète un peu plus fine.
+- `src/components/partner/home/HomeStats.tsx` : les deux tuiles en blanc, chiffres moins énormes.
+- `src/pages/partner/*.tsx` et autres composants partenaires : titres de page et textes réduits d'un cran.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Shana trouvait l'espace partenaire trop gros et oppressant, comme un long formulaire, et pas harmonieux. Le noir ne sert plus que pour le bouton principal et l'onglet actif, le rouge pour ce qui attend une action ou marque une réservation.
+
+---
+
 ## [2026-10-18] — Espace partenaire : accueil plus visuel avec calendrier rapide, onglet « Proposer une expérience » en dernier
 
 > Statut : construit (`npm run build` passe, 19 tests partenaires OK). Pas vu à l'écran : aucun prestataire n'a encore de compte actif.
