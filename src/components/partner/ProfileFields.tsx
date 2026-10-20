@@ -23,7 +23,8 @@ export const profileDraftOf = (provider: PartnerProvider): ProfileDraft => ({
 export function ProfileFields({ draft, onChange }: { draft: ProfileDraft; onChange: (patch: Partial<ProfileDraft>) => void }) {
   const { t } = usePartner();
   return (
-    <div className="space-y-4">
+    // Champs courts côte à côte : la page reste courte, on ne croit pas à un long formulaire.
+    <div className="grid grid-cols-2 gap-3">
       <TextField label={t.fContactName} autoComplete="name" value={draft.contact_name} onChange={(v) => onChange({ contact_name: v })} />
       <TextField
         label={t.fWhatsapp}
@@ -34,7 +35,9 @@ export function ProfileFields({ draft, onChange }: { draft: ProfileDraft; onChan
         value={draft.whatsapp}
         onChange={(v) => onChange({ whatsapp: v })}
       />
-      <TextField label={t.fAddress} autoComplete="street-address" value={draft.address} onChange={(v) => onChange({ address: v })} />
+      <div className="col-span-2">
+        <TextField label={t.fAddress} autoComplete="street-address" value={draft.address} onChange={(v) => onChange({ address: v })} />
+      </div>
     </div>
   );
 }

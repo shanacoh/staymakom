@@ -17,6 +17,7 @@ export function ProposalSection({ experience }: { experience: PartnerExperienceD
   const { t, lang } = usePartner();
   const queryClient = useQueryClient();
   const [note, setNote] = useState("");
+  const [noteOpen, setNoteOpen] = useState(false);
   const [sending, setSending] = useState<ProposalType | null>(null);
 
   const originalTexts: Record<string, string> = Object.fromEntries(TEXT_FIELDS.map((field) => [field, ownText(experience, field, lang)]));
@@ -37,6 +38,7 @@ export function ProposalSection({ experience }: { experience: PartnerExperienceD
       toast.success(t.proposalSent);
       onDone();
       setNote("");
+      setNoteOpen(false);
       queryClient.invalidateQueries({ queryKey: partnerKeys.experience(experience.id) });
       queryClient.invalidateQueries({ queryKey: partnerKeys.proposals });
     } catch (error) {
@@ -53,26 +55,37 @@ export function ProposalSection({ experience }: { experience: PartnerExperienceD
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <Hint>{t.pIntro}</Hint>
 
-      <Card className="space-y-4">
-        <TextAreaField label={t.pNote} hint={t.pNoteHint} optional={t.optional} rows={2} value={note} onChange={setNote} />
-      </Card>
+      {/* Le mot pour l'équipe est facultatif : replié derrière un lien, il ne fait pas un champ de plus. */}
+      {noteOpen ? (
+        <Card>
+          <TextAreaField label={t.pNote} hint={t.pNoteHint} optional={t.optional} rows={2} value={note} onChange={setNote} />
+        </Card>
+      ) : (
+        <button type="button" onClick={() => setNoteOpen(true)} className="text-[12px] font-medium text-neutral-700 underline underline-offset-4">
+          {t.pNoteAdd}
+        </button>
+      )}
 
-      <Card className="space-y-4">
+      <Card className="space-y-3">
         <SectionTitle>{t.pTexts}</SectionTitle>
         {pending("text") && <Notice>{t.proposalPendingNotice}</Notice>}
-        <TextField label={t.pTitle} value={texts.title} onChange={(v) => setTexts((c) => ({ ...c, title: v }))} />
+        <div className="grid grid-cols-[1fr_8rem] gap-3">
+          <TextField label={t.pTitle} value={texts.title} onChange={(v) => setTexts((c) => ({ ...c, title: v }))} />
+          <TextField label={t.pDuration} value={texts.duration} onChange={(v) => setTexts((c) => ({ ...c, duration: v }))} />
+        </div>
         <TextAreaField label={t.pSubtitle} rows={2} value={texts.subtitle} onChange={(v) => setTexts((c) => ({ ...c, subtitle: v }))} />
-        <TextAreaField label={t.pDescription} rows={7} value={texts.long_copy} onChange={(v) => setTexts((c) => ({ ...c, long_copy: v }))} />
-        <TextField label={t.pDuration} value={texts.duration} onChange={(v) => setTexts((c) => ({ ...c, duration: v }))} />
-        <PrimaryButton busy={sending === "text"} disabled={sending !== null} onClick={() => send("text", changedFields(originalTexts, texts), () => {})}>
-          {t.pSubmit}
-        </PrimaryButton>
+        <TextAreaField label={t.pDescription} rows={4} value={texts.long_copy} onChange={(v) => setTexts((c) => ({ ...c, long_copy: v }))} />
+        <div className="flex justify-end">
+          <PrimaryButton busy={sending === "text"} disabled={sending !== null} onClick={() => send("text", changedFields(originalTexts, texts), () => {})}>
+            {t.pSubmit}
+          </PrimaryButton>
+        </div>
       </Card>
 
-      <Card className="space-y-4">
+      <Card className="space-y-3">
         <div>
           <SectionTitle>{t.pPhotos}</SectionTitle>
           <Hint>{t.pPhotosHint}</Hint>
@@ -87,7 +100,7 @@ export function ProposalSection({ experience }: { experience: PartnerExperienceD
       </Card>
 
       {experience.is_primary && (
-        <Card className="space-y-4">
+        <Card className="space-y-3">
           <div>
             <SectionTitle>{t.pPrice}</SectionTitle>
             <Hint>{t.pPriceHint}</Hint>
@@ -112,13 +125,15 @@ export function ProposalSection({ experience }: { experience: PartnerExperienceD
               onChange={(child) => setPrice((c) => ({ ...c, child }))}
             />
           </div>
-          <PrimaryButton
-            busy={sending === "price"}
-            disabled={sending !== null}
-            onClick={() => send("price", priceProposal, () => setPrice({ adult: "", child: "" }))}
-          >
-            {t.pSubmit}
-          </PrimaryButton>
+          <div className="flex justify-end">
+            <PrimaryButton
+              busy={sending === "price"}
+              disabled={sending !== null}
+              onClick={() => send("price", priceProposal, () => setPrice({ adult: "", child: "" }))}
+            >
+              {t.pSubmit}
+            </PrimaryButton>
+          </div>
         </Card>
       )}
     </div>

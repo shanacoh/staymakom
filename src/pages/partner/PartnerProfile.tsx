@@ -1,11 +1,11 @@
-// Profil : ses informations, son contact du jour J par défaut, ses utilisateurs et les conditions
-// qu'il a acceptées (version, date, texte consultable).
+// Profil : ses informations et son contact du jour J par défaut (un seul bloc, champs courts côte
+// à côte), puis un bloc « Compte » qui regroupe ses utilisateurs et les conditions acceptées.
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ProfileFields, profileDraftOf, type ProfileDraft } from "@/components/partner/ProfileFields";
-import { Card, Hint, Pill, PrimaryButton, QuietButton, SectionTitle, SelectField, TextField } from "@/components/partner/ui";
+import { Card, Hint, Pill, PrimaryButton, SectionTitle, SelectField, TextField } from "@/components/partner/ui";
 import { fetchPartnerUsers, partnerKeys, updatePartnerProfile } from "@/lib/partner/api";
 import { usePartner, usePartnerSession } from "@/lib/partner/context";
 import { formatPartnerDate } from "@/lib/partner/i18n";
@@ -38,56 +38,70 @@ export default function PartnerProfile() {
     }
   };
 
+  const languageOptions = [{ value: "", label: " " }, ...(["he", "en", "fr"] as const).map((code) => ({ value: code, label: t.langNames[code] }))];
+
   return (
     <>
       <h1 className="text-[17px] font-semibold tracking-tight">{t.tabProfile}</h1>
 
       <Card className="space-y-4">
         <SectionTitle>{t.fInfo}</SectionTitle>
-        <TextField label={t.fName} value={provider.name} disabled onChange={() => {}} />
-        <TextField label={t.fEmail} hint={t.fEmailHint} dir="ltr" value={provider.email ?? session.user_email ?? ""} disabled onChange={() => {}} />
+        {/* Non modifiable ici : affiché en texte, pas en champ grisé qui ressemble à un champ à remplir. */}
+        <div className="grid grid-cols-2 gap-3 text-[13px]">
+          <div className="min-w-0">
+            <p className="text-[12px] text-neutral-500">{t.fName}</p>
+            <p className="truncate font-medium text-neutral-900">{provider.name}</p>
+          </div>
+          <div className="min-w-0">
+            <p className="text-[12px] text-neutral-500">{t.fEmail}</p>
+            <p className="truncate font-medium text-neutral-900" dir="ltr" title={t.fEmailHint}>
+              {provider.email ?? session.user_email ?? ""}
+            </p>
+          </div>
+        </div>
         <ProfileFields draft={draft} onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))} />
-      </Card>
 
-      <Card className="space-y-4">
-        <div>
-          <SectionTitle>{t.fDayContact}</SectionTitle>
-          <Hint>{t.fDayContactHint}</Hint>
+        <div className="space-y-3 border-t border-neutral-100 pt-4">
+          <div>
+            <p className="text-[12px] font-semibold text-neutral-900">{t.fDayContact}</p>
+            <Hint>{t.fDayContactHint}</Hint>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <TextField
+              label={t.qDayContactName}
+              value={dayContact.day_contact_name}
+              onChange={(v) => setDayContact((c) => ({ ...c, day_contact_name: v }))}
+            />
+            <TextField
+              label={t.qDayContactPhone}
+              type="tel"
+              inputMode="tel"
+              dir="ltr"
+              placeholder="+972…"
+              value={dayContact.day_contact_whatsapp}
+              onChange={(v) => setDayContact((c) => ({ ...c, day_contact_whatsapp: v }))}
+            />
+            <SelectField
+              label={t.qDayContactLanguage}
+              value={dayContact.day_contact_language}
+              onChange={(v) => setDayContact((c) => ({ ...c, day_contact_language: v }))}
+              options={languageOptions}
+            />
+            <div className="flex items-end justify-end">
+              <PrimaryButton className="w-full sm:w-auto" busy={saving} onClick={save}>
+                {t.save}
+              </PrimaryButton>
+            </div>
+          </div>
         </div>
-        <TextField
-          label={t.qDayContactName}
-          value={dayContact.day_contact_name}
-          onChange={(v) => setDayContact((c) => ({ ...c, day_contact_name: v }))}
-        />
-        <TextField
-          label={t.qDayContactPhone}
-          type="tel"
-          inputMode="tel"
-          dir="ltr"
-          placeholder="+972…"
-          value={dayContact.day_contact_whatsapp}
-          onChange={(v) => setDayContact((c) => ({ ...c, day_contact_whatsapp: v }))}
-        />
-        <SelectField
-          label={t.qDayContactLanguage}
-          value={dayContact.day_contact_language}
-          onChange={(v) => setDayContact((c) => ({ ...c, day_contact_language: v }))}
-          options={[{ value: "", label: " " }, ...(["he", "en", "fr"] as const).map((code) => ({ value: code, label: t.langNames[code] }))]}
-        />
       </Card>
 
-      <PrimaryButton busy={saving} onClick={save}>
-        {t.save}
-      </PrimaryButton>
-
+      {/* Utilisateurs et conditions : de la consultation, regroupés en un seul bloc court. */}
       <Card className="space-y-3">
-        <div>
-          <SectionTitle>{t.fUsers}</SectionTitle>
-          <Hint>{t.fUsersHint}</Hint>
-        </div>
+        <SectionTitle>{t.fAccount}</SectionTitle>
         <ul className="divide-y divide-neutral-100">
           {(users.data ?? []).map((user) => (
-            <li key={user.email} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+            <li key={user.email} className="flex items-center justify-between gap-3 py-2 first:pt-0">
               <div className="min-w-0">
                 <p className="truncate text-[13px] font-medium text-neutral-900" dir="ltr">
                   {user.email}
@@ -100,19 +114,22 @@ export default function PartnerProfile() {
             </li>
           ))}
         </ul>
-      </Card>
-
-      <Card className="space-y-3">
-        <SectionTitle>{t.fTerms}</SectionTitle>
-        {terms.accepted_version && (
-          <div className="text-[13px] text-neutral-800">
-            <p>{t.fTermsAccepted(terms.accepted_version, formatPartnerDate(terms.accepted_at, lang))}</p>
-            {terms.signer_name && <p className="text-[13px] text-neutral-500">{t.fTermsSigner(terms.signer_name)}</p>}
-          </div>
-        )}
-        <QuietButton onClick={() => setShowTerms((shown) => !shown)}>{t.fTermsRead}</QuietButton>
+        <Hint>{t.fUsersHint}</Hint>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-neutral-100 pt-3">
+          <p className="text-[12px] text-neutral-600">
+            {terms.accepted_version ? t.fTermsAccepted(terms.accepted_version, formatPartnerDate(terms.accepted_at, lang)) : t.fTerms}
+            {terms.signer_name && <span className="text-neutral-400"> · {terms.signer_name}</span>}
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowTerms((shown) => !shown)}
+            className="text-[12px] font-medium text-neutral-700 underline underline-offset-4"
+          >
+            {t.fTermsRead}
+          </button>
+        </div>
         {showTerms && (
-          <div className="max-h-[50vh] overflow-y-auto whitespace-pre-line rounded-[10px] border border-neutral-200 bg-neutral-50 p-4 text-[13px] leading-relaxed text-neutral-800">
+          <div className="max-h-[50vh] overflow-y-auto whitespace-pre-line rounded-[9px] border border-neutral-200 bg-neutral-50 p-3 text-[12px] leading-relaxed text-neutral-800">
             {termsText(terms, lang)}
           </div>
         )}

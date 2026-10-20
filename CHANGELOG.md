@@ -6,6 +6,25 @@
 
 ---
 
+## [2026-10-20] — Espace partenaire : Profil et fiche d'une expérience plus courts
+
+> Statut : vérifié à l'écran en local (téléphone) avec un prestataire fictif, données simulées dans le navigateur de test, rien en base. `npm run build` passe, 19 tests partenaires OK.
+
+### Ce qui a changé côté code
+- `src/pages/partner/PartnerProfile.tsx` : nom du prestataire et email affichés en texte (plus de cases grises) ; informations et contact du jour J dans un seul bloc, champs courts deux par ligne, « Enregistrer » à côté de la langue ; « Utilisateurs » et « Conditions acceptées » regroupés en un bloc « Compte » avec un lien « Relire les conditions ».
+- `src/components/partner/ProfileFields.tsx` : nom du contact et WhatsApp côte à côte, adresse sur toute la largeur.
+- `src/components/partner/experience/QuestionnaireSection.tsx` : contact du jour J en deux colonnes ; adresse et minutes d'avance sur la même ligne ; aides des zones de texte placées dans les cases (texte gris) au lieu d'une ligne sous chaque champ ; zones de texte sur 2 lignes.
+- `src/components/partner/experience/ProposalSection.tsx` : titre et durée côte à côte, description plus courte à l'écran, « mot pour l'équipe » replié derrière un lien.
+- `src/lib/partner/i18n.ts` : sous-onglets raccourcis (« Infos pratiques », « Modifier la fiche », équivalents EN), « Minutes d'avance », nouveaux textes « Compte » et « + Ajouter un mot pour l'équipe » (FR / EN / HE).
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Shana trouvait le Profil et la fiche d'une expérience trop longs pour rien : un champ par ligne faisait défiler la page et donnait l'impression de beaucoup de choses à remplir. Mêmes informations, mise en page plus ergonomique.
+
+---
+
 ## [2026-10-20] — Espace partenaire : affichage plus petit et plus léger
 
 > Statut : vérifié à l'écran en local (téléphone et ordinateur) avec un prestataire fictif, données simulées dans le navigateur de test, rien en base. `npm run build` passe, 19 tests partenaires OK.

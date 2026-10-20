@@ -71,58 +71,67 @@ export function QuestionnaireSection({ experience }: { experience: PartnerExperi
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <Hint>{t.qIntro}</Hint>
 
       {experience.is_primary && (
-        <Card className="space-y-4">
+        <Card className="space-y-3">
           <div>
             <SectionTitle>{t.qDayContactTitle}</SectionTitle>
             <Hint>{t.qDayContactHint}</Hint>
           </div>
-          <TextField label={t.qDayContactName} value={contact.name} onChange={(name) => setContact((c) => ({ ...c, name }))} />
-          <TextField
-            label={t.qDayContactPhone}
-            type="tel"
-            inputMode="tel"
-            dir="ltr"
-            placeholder="+972…"
-            value={contact.phone}
-            onChange={(phone) => setContact((c) => ({ ...c, phone }))}
-          />
-          <SelectField
-            label={t.qDayContactLanguage}
-            value={contact.language}
-            onChange={(language) => setContact((c) => ({ ...c, language }))}
-            options={[{ value: "", label: " " }, ...(["he", "en", "fr"] as const).map((code) => ({ value: code, label: t.langNames[code] }))]}
-          />
-          <PrimaryButton busy={savingContact} onClick={saveContact}>
-            {t.save}
-          </PrimaryButton>
+          <div className="grid grid-cols-2 gap-3">
+            <TextField label={t.qDayContactName} value={contact.name} onChange={(name) => setContact((c) => ({ ...c, name }))} />
+            <TextField
+              label={t.qDayContactPhone}
+              type="tel"
+              inputMode="tel"
+              dir="ltr"
+              placeholder="+972…"
+              value={contact.phone}
+              onChange={(phone) => setContact((c) => ({ ...c, phone }))}
+            />
+            <SelectField
+              label={t.qDayContactLanguage}
+              value={contact.language}
+              onChange={(language) => setContact((c) => ({ ...c, language }))}
+              options={[{ value: "", label: " " }, ...(["he", "en", "fr"] as const).map((code) => ({ value: code, label: t.langNames[code] }))]}
+            />
+            <div className="flex items-end justify-end">
+              <PrimaryButton className="w-full sm:w-auto" busy={savingContact} onClick={saveContact}>
+                {t.save}
+              </PrimaryButton>
+            </div>
+          </div>
         </Card>
       )}
 
-      <Card className="space-y-4">
+      <Card className="space-y-3">
         {pending && <Notice>{t.proposalPendingNotice}</Notice>}
-        <TextAreaField label={t.qMeetingPoint} hint={t.qMeetingPointHint} rows={2} value={form.meeting_point} onChange={set("meeting_point")} />
-        <TextField label={t.qAddress} value={form.address} onChange={set("address")} />
-        <TextAreaField label={t.qAccess} hint={t.qAccessHint} rows={2} value={form.access_note} onChange={set("access_note")} />
-        <TextField
-          label={t.qArrive}
-          type="number"
-          inputMode="numeric"
-          min={0}
-          max={600}
-          dir="ltr"
-          className="w-28"
-          value={form.arrive_minutes_before}
-          onChange={set("arrive_minutes_before")}
-        />
-        <TextAreaField label={t.qKnow} hint={t.qKnowHint} value={form.know_before_you_go} onChange={set("know_before_you_go")} />
-        <TextAreaField label={t.qContingency} hint={t.qContingencyHint} value={form.contingency_note} onChange={set("contingency_note")} />
-        <PrimaryButton busy={sending} onClick={submit}>
-          {t.qSubmit}
-        </PrimaryButton>
+        <TextAreaField label={t.qMeetingPoint} placeholder={t.qMeetingPointHint} rows={2} value={form.meeting_point} onChange={set("meeting_point")} />
+        {/* Adresse et minutes d'avance sur la même ligne : deux champs courts. */}
+        <div className="grid grid-cols-[1fr_7rem] gap-3">
+          <TextField label={t.qAddress} value={form.address} onChange={set("address")} />
+          <TextField
+            label={t.qArrive}
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={600}
+            dir="ltr"
+            value={form.arrive_minutes_before}
+            onChange={set("arrive_minutes_before")}
+          />
+        </div>
+        {/* Les aides sont dans les cases (texte gris) : pas une ligne de plus sous chaque champ. */}
+        <TextAreaField label={t.qAccess} placeholder={t.qAccessHint} rows={2} value={form.access_note} onChange={set("access_note")} />
+        <TextAreaField label={t.qKnow} placeholder={t.qKnowHint} rows={2} value={form.know_before_you_go} onChange={set("know_before_you_go")} />
+        <TextAreaField label={t.qContingency} placeholder={t.qContingencyHint} rows={2} value={form.contingency_note} onChange={set("contingency_note")} />
+        <div className="flex justify-end">
+          <PrimaryButton busy={sending} onClick={submit}>
+            {t.qSubmit}
+          </PrimaryButton>
+        </div>
       </Card>
     </div>
   );
