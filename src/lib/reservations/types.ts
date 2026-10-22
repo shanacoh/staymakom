@@ -55,6 +55,9 @@ export interface ReservationRow {
   supplierRefundStatus: SupplierRefundStatus;
   supplierRefundAmount: number | null;
   supplierCreditOpen: boolean;
+  // Marquée « à vérifier » (clic droit dans la Saisie), avec sa note éventuelle.
+  flagged: boolean;
+  checkNote: string | null;
 }
 
 export type RefundStatus = "none" | "todo" | "done";
@@ -97,7 +100,18 @@ export interface NextAction {
 }
 
 export type ReservationTab = "all" | "hotels" | "experiences" | "itineraries";
-export type StatusChip = "all" | "requests" | "todo";
+// Filtre posé par une puce de la barre d'outils ou par un chiffre clé cliqué.
+export type FocusFilter =
+  | "requests"
+  | "now"
+  | "watch"
+  | "to_check"
+  | "to_collect"
+  | "to_pay"
+  | "missing_cost"
+  | "refunds"
+  | "to_recover";
+export type StatusChip = "all" | FocusFilter;
 export type PaymentFilter = "all" | "client_unpaid" | "client_deposit" | "client_paid" | "supplier_todo";
 export type PeriodFilter = "all" | "upcoming" | "this_month" | "last_month" | "past";
 

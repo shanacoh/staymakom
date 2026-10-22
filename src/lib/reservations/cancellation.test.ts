@@ -48,6 +48,8 @@ function row(overrides: Partial<ReservationRow>): ReservationRow {
     supplierRefundStatus: "none",
     supplierRefundAmount: null,
     supplierCreditOpen: false,
+    flagged: false,
+    checkNote: null,
     ...overrides,
   };
 }

@@ -210,23 +210,6 @@ export function applyToolbarFilters(
   );
 }
 
-export interface ReservationGroups {
-  requests: ReservationRow[];
-  todo: ReservationRow[];
-  settled: ReservationRow[];
-}
-
-/** Demandes en haut, puis ce qui attend une action, puis ce qui est soldé. */
-export function groupRows(rows: ReservationRow[], today: Date = new Date()): ReservationGroups {
-  const groups: ReservationGroups = { requests: [], todo: [], settled: [] };
-  for (const row of rows) {
-    if (isRequest(row)) groups.requests.push(row);
-    else if (nextAction(row, today)) groups.todo.push(row);
-    else groups.settled.push(row);
-  }
-  return groups;
-}
-
 function add(totals: MoneyByCurrency, currency: string, amount: number) {
   if (amount === 0) return;
   totals[currency] = (totals[currency] ?? 0) + amount;

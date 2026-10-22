@@ -44,7 +44,10 @@ interface Props {
   statusChip: StatusChip;
   onStatusChipChange: (value: StatusChip) => void;
   requestsCount: number;
-  todoCount: number;
+  nowCount: number;
+  watchCount: number;
+  // Lignes marquées « à vérifier » (clic droit dans la Saisie).
+  toCheckCount: number;
   showBoatsChip: boolean;
   boatsOnly: boolean;
   onBoatsOnlyChange: (value: boolean) => void;
@@ -84,17 +87,33 @@ const ReservationsToolbar = (props: Props) => (
 
     <FilterChip label="Tous statuts" active={props.statusChip === "all"} onClick={() => props.onStatusChipChange("all")} />
     <FilterChip
+      tone="alert"
+      label="À faire maintenant"
+      count={props.nowCount}
+      active={props.statusChip === "now"}
+      onClick={() => props.onStatusChipChange(props.statusChip === "now" ? "all" : "now")}
+    />
+    <FilterChip
+      label="À surveiller"
+      count={props.watchCount}
+      active={props.statusChip === "watch"}
+      onClick={() => props.onStatusChipChange(props.statusChip === "watch" ? "all" : "watch")}
+    />
+    <FilterChip
       label="Demandes"
       count={props.requestsCount}
       active={props.statusChip === "requests"}
       onClick={() => props.onStatusChipChange(props.statusChip === "requests" ? "all" : "requests")}
     />
-    <FilterChip
-      label="À traiter"
-      count={props.todoCount}
-      active={props.statusChip === "todo"}
-      onClick={() => props.onStatusChipChange(props.statusChip === "todo" ? "all" : "todo")}
-    />
+    {(props.toCheckCount > 0 || props.statusChip === "to_check") && (
+      <FilterChip
+        label="À vérifier"
+        count={props.toCheckCount}
+        active={props.statusChip === "to_check"}
+        onClick={() => props.onStatusChipChange(props.statusChip === "to_check" ? "all" : "to_check")}
+        title="Lignes marquées « à vérifier » d'un clic droit dans la Saisie."
+      />
+    )}
 
     {props.showBoatsChip && (
       <FilterChip label="Bateaux" active={props.boatsOnly} onClick={() => props.onBoatsOnlyChange(!props.boatsOnly)} />

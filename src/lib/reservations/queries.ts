@@ -117,6 +117,8 @@ function toReservationRow(row: AdminReservationViewRow): ReservationRow {
     supplierRefundStatus: row.supplier_refund_status ?? "none",
     supplierRefundAmount: toNumber(row.supplier_refund_amount),
     supplierCreditOpen: row.supplier_credit_open ?? false,
+    flagged: false,
+    checkNote: null,
   };
 }
 
@@ -126,7 +128,18 @@ async function fetchReservationRows(): Promise<ReservationRow[]> {
   const { data, error } = await (supabase as any).from("admin_reservations").select("*");
   if (error) throw error;
 
-  const rows = (data as AdminReservationViewRow[]).map(toReservationRow);
+  // Lignes marquées « à vérifier » : table à part, rapprochée par origine et identifiant.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: flags, error: flagsError } = await (supabase as any).from("reservation_flags").select("source, row_id, note");
+  if (flagsError) throw flagsError;
+  const notes = new Map<string, string | null>(
+    (flags as { source: string; row_id: string; note: string | null }[]).map((f) => [`${f.source}:${f.row_id}`, f.note]),
+  );
+
+  const rows = (data as AdminReservationViewRow[]).map((viewRow) => {
+    const row = toReservationRow(viewRow);
+    return notes.has(row.key) ? { ...row, flagged: true, checkNote: notes.get(row.key) ?? null } : row;
+  });
   // Du plus récent au plus ancien ; une demande sans date précise se classe à sa date de réception.
   const sortDate = (row: ReservationRow) => row.date ?? row.receivedAt?.slice(0, 10) ?? "";
   return rows.sort((a, b) => sortDate(b).localeCompare(sortDate(a)));

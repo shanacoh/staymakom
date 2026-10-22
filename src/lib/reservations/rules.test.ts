@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { applyToolbarFilters, computeKpis, dateHint, groupRows, nextAction } from "./rules";
+import { applyToolbarFilters, computeKpis, dateHint, nextAction } from "./rules";
+import { groupByUrgency } from "./attention";
 import type { ReservationRow } from "./types";
 
 const TODAY = new Date("2026-10-06T10:00:00");
@@ -41,6 +42,8 @@ function row(overrides: Partial<ReservationRow>): ReservationRow {
     supplierRefundStatus: "none",
     supplierRefundAmount: null,
     supplierCreditOpen: false,
+    flagged: false,
+    checkNote: null,
     ...overrides,
   };
   // Comme la vue SQL : une réservation sans coût a un coût manquant, et doit son coût tant qu'il n'est pas payé.
@@ -135,11 +138,12 @@ describe("groupes, filtres et chiffres clés", () => {
     row({ key: "b4", clientPayment: "unpaid", collected: 0, supplierCost: 400, supplierPayment: "todo" }),
   ];
 
-  it("range chaque ligne dans un seul groupe", () => {
-    const groups = groupRows(rows, TODAY);
-    expect(groups.requests.map((r) => r.key)).toEqual(["r1"]);
-    expect(groups.todo.map((r) => r.key)).toEqual(["b1", "b4"]);
-    expect(groups.settled.map((r) => r.key)).toEqual(["b2", "b3"]);
+  it("range chaque ligne dans un seul groupe d'urgence", () => {
+    const groups = groupByUrgency(rows, TODAY);
+    expect(groups.now.map((r) => r.key)).toEqual(["r1"]);
+    expect(groups.watch.map((r) => r.key)).toEqual(["b1", "b4"]);
+    expect(groups.upcoming.map((r) => r.key)).toEqual(["b2"]);
+    expect(groups.settled.map((r) => r.key)).toEqual(["b3"]);
   });
 
   it("ne compte ni les demandes ni les annulations dans les totaux d'argent", () => {
@@ -216,9 +220,9 @@ describe("demande de voyage sur mesure", () => {
     expect(nextAction(tailorMade(), TODAY)).toMatchObject({ kind: "open_request", urgent: true });
   });
 
-  it("rangée avec les demandes et comptée comme telle, sans entrer dans les totaux d'argent", () => {
+  it("à faire maintenant et comptée comme demande, sans entrer dans les totaux d'argent", () => {
     const rows = [tailorMade()];
-    expect(groupRows(rows, TODAY).requests).toHaveLength(1);
+    expect(groupByUrgency(rows, TODAY).now).toHaveLength(1);
     expect(computeKpis(rows)).toMatchObject({ requests: 1, toCollect: {}, missingCost: 0 });
   });
 

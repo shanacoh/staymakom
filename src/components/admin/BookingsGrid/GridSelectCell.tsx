@@ -1,4 +1,4 @@
-import { forwardRef, useState } from "react";
+import { forwardRef, useState, type ReactNode } from "react";
 import { TableCell } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,9 @@ interface GridSelectCellProps {
   options: SelectOption[];
   onCommit: (rawValue: string) => Promise<boolean>;
   className?: string;
+  // Affichage de la valeur choisie à la place du libellé (ex. une pastille de couleur).
+  renderValue?: ReactNode;
+  triggerClassName?: string;
 }
 
 /**
@@ -16,7 +19,7 @@ interface GridSelectCellProps {
  * option est choisie, pas besoin d'un mode édition séparé.
  */
 const GridSelectCell = forwardRef<HTMLTableCellElement, GridSelectCellProps>(function GridSelectCell(
-  { value, options, onCommit, className },
+  { value, options, onCommit, className, renderValue, triggerClassName },
   ref,
 ) {
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -32,8 +35,8 @@ const GridSelectCell = forwardRef<HTMLTableCellElement, GridSelectCellProps>(fun
   return (
     <TableCell ref={ref} className={cn("relative p-1", className)}>
       <Select value={value ?? undefined} onValueChange={handleChange}>
-        <SelectTrigger className="h-8 border-transparent hover:border-input focus:border-input text-sm">
-          <SelectValue placeholder="-" />
+        <SelectTrigger className={cn("h-8 border-transparent hover:border-input focus:border-input text-sm", triggerClassName)}>
+          {renderValue ?? <SelectValue placeholder="-" />}
         </SelectTrigger>
         <SelectContent>
           {options.map((opt) => (

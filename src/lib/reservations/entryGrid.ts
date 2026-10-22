@@ -33,10 +33,11 @@ export interface EntryColumn {
 }
 
 export const ENTRY_COLUMNS: EntryColumn[] = [
+  // Le client vient en premier : la colonne reste figée à gauche quand la grille défile.
+  { key: "client", label: "Client", kind: "text", widthClass: "w-[180px] min-w-[180px]" },
   { key: "ref", label: "Réf", kind: "text", widthClass: "w-[80px]" },
   { key: "status", label: "Statut", kind: "select", widthClass: "w-[130px]" },
   { key: "type", label: "Type", kind: "select", widthClass: "w-[125px]" },
-  { key: "client", label: "Client", kind: "text", widthClass: "w-[180px]" },
   { key: "product", label: "Produit", kind: "text", widthClass: "w-[220px]" },
   { key: "date", label: "Date", kind: "date", widthClass: "w-[120px]" },
   { key: "pax", label: "Pers.", kind: "number", align: "right", widthClass: "w-[70px]" },
@@ -45,7 +46,7 @@ export const ENTRY_COLUMNS: EntryColumn[] = [
   { key: "clientPayment", label: "Paie. client", kind: "select", widthClass: "w-[130px]" },
   { key: "supplierCost", label: "Coût fourn.", kind: "money", align: "right", widthClass: "w-[110px]" },
   { key: "supplierPayment", label: "Paie. fourn.", kind: "select", widthClass: "w-[125px]" },
-  { key: "margin", label: "Marge", kind: "money", align: "right", widthClass: "w-[100px]" },
+  { key: "margin", label: "Marge", kind: "money", align: "right", widthClass: "w-[140px]" },
   { key: "channel", label: "Canal", kind: "select", widthClass: "w-[150px]" },
   { key: "notes", label: "Notes / relance", kind: "text", widthClass: "w-[260px]" },
 ];

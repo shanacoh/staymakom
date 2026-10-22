@@ -24,6 +24,7 @@ import DeletedReservationsTable from "@/components/admin/ReservationsHub/Deleted
 import UnfinishedPaymentsTable from "@/components/admin/ReservationsHub/UnfinishedPaymentsTable";
 import RequestArchivesTable from "@/components/admin/ReservationsHub/RequestArchivesTable";
 import ItinerariesView from "@/components/admin/ReservationsHub/ItinerariesView";
+import FlagRowDialog from "@/components/admin/ReservationsHub/FlagRowDialog";
 import ReservationsEntryGrid from "@/components/admin/ReservationsHub/ReservationsEntryGrid";
 import CreateManualHotelBookingDialog from "@/components/admin/ReservationsHub/CreateManualHotelBookingDialog";
 import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
@@ -47,13 +48,15 @@ import {
 } from "@/lib/reservations/queries";
 import {
   createBookingFromGrid,
+  unflagRow,
   saveCellUpdate,
   saveDossierLineCost,
   setDossierLineSupplierPaid,
 } from "@/lib/reservations/actions";
 import { buildCellUpdate, type EntryColumnKey } from "@/lib/reservations/entryGrid";
 import { useIncompletePracticalInfo } from "@/lib/reservations/practicalInfoAlerts";
-import { applyToolbarFilters, computeKpis, groupRows, matchesTab } from "@/lib/reservations/rules";
+import { applyToolbarFilters, computeKpis, isRequest, matchesTab } from "@/lib/reservations/rules";
+import { groupByUrgency, matchesFocus } from "@/lib/reservations/attention";
 import type {
   DossierLine,
   NextAction,
@@ -126,6 +129,8 @@ const AdminReservations = () => {
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   // Une seule liste à part ouverte à la fois, à la place des réservations.
   const [sideList, setSideList] = useState<SideList>(null);
+  // Ligne dont on saisit la note « à vérifier » (clic droit dans la Saisie).
+  const [rowToFlag, setRowToFlag] = useState<ReservationRow | null>(null);
   const [savedVisible, setSavedVisible] = useState(false);
   const savedTimer = useRef<number>();
 
@@ -163,20 +168,25 @@ const AdminReservations = () => {
   );
 
   const tabRows = useMemo(() => filteredRows.filter((row) => matchesTab(row, tab)), [filteredRows, tab]);
-  const groups = useMemo(() => groupRows(tabRows), [tabRows]);
+  const practicalInfoIncomplete = useMemo(() => incompletePracticalInfo ?? new Set<string>(), [incompletePracticalInfo]);
+  const groups = useMemo(() => groupByUrgency(tabRows, new Date(), practicalInfoIncomplete), [tabRows, practicalInfoIncomplete]);
   const kpis = useMemo(() => computeKpis(tabRows), [tabRows]);
+  const requestsCount = useMemo(() => tabRows.filter(isRequest).length, [tabRows]);
+  const toCheckCount = useMemo(() => tabRows.filter((row) => row.flagged).length, [tabRows]);
 
-  const visibleGroups = useMemo(() => {
-    if (statusChip === "requests") return { requests: groups.requests, todo: [], settled: [] };
-    if (statusChip === "todo") return { requests: [], todo: groups.todo, settled: [] };
-    return groups;
-  }, [groups, statusChip]);
-  // Même sélection que les groupes, mais dans l'ordre des dates : en Saisie, une ligne ne doit
-  // pas changer de place parce qu'on vient de modifier une de ses cellules.
-  const visibleRows = useMemo(() => {
-    const visible = new Set([...visibleGroups.requests, ...visibleGroups.todo, ...visibleGroups.settled]);
-    return tabRows.filter((row) => visible.has(row));
-  }, [tabRows, visibleGroups]);
+  // Lignes retenues par la puce ou le chiffre clé choisi, dans l'ordre des dates : en Saisie, une
+  // ligne ne doit pas changer de place parce qu'on vient de modifier une de ses cellules.
+  const visibleRows = useMemo(
+    () =>
+      statusChip === "all"
+        ? tabRows
+        : tabRows.filter((row) => matchesFocus(row, statusChip, new Date(), practicalInfoIncomplete)),
+    [tabRows, statusChip, practicalInfoIncomplete],
+  );
+  const visibleGroups = useMemo(
+    () => groupByUrgency(visibleRows, new Date(), practicalInfoIncomplete),
+    [visibleRows, practicalInfoIncomplete],
+  );
 
   // Seules les lignes encore affichées comptent : une ligne cochée puis masquée par un filtre
   // ne doit pas être supprimée sans être vue.
@@ -422,8 +432,10 @@ const AdminReservations = () => {
         onSearchChange={setSearch}
         statusChip={statusChip}
         onStatusChipChange={setStatusChip}
-        requestsCount={groups.requests.length}
-        todoCount={groups.todo.length}
+        requestsCount={requestsCount}
+        nowCount={groups.now.length}
+        watchCount={groups.watch.length}
+        toCheckCount={toCheckCount}
         showBoatsChip={showBoatsChip}
         boatsOnly={boatsOnly}
         onBoatsOnlyChange={setBoatsOnly}
@@ -467,7 +479,11 @@ const AdminReservations = () => {
         />
       ) : displayMode === "vue" ? (
         <>
-          <ReservationsKpis kpis={kpis} />
+          <ReservationsKpis
+            kpis={kpis}
+            focus={statusChip}
+            onFocusChange={(focus) => setStatusChip(focus === statusChip ? "all" : focus)}
+          />
           {visibleRows.length > 0 ? (
             <ReservationsSummaryTable
               groups={visibleGroups}
@@ -527,6 +543,17 @@ const AdminReservations = () => {
               linesByDossier={linesByDossier}
               onLineCost={handleLineCost}
               onLinePaid={handleLinePaid}
+              onFlag={setRowToFlag}
+              onUnflag={async (row) => {
+                try {
+                  await unflagRow(row.source, row.id);
+                } catch (e) {
+                  toast.error("Impossible de retirer la marque", { description: (e as Error).message });
+                  return;
+                }
+                flashSaved();
+                await refreshRows();
+              }}
             />
           ) : (
             emptyState
@@ -568,6 +595,7 @@ const AdminReservations = () => {
           refreshRows();
         }}
       />
+      {rowToFlag && <FlagRowDialog row={rowToFlag} onClose={() => setRowToFlag(null)} onDone={refreshRows} />}
       <DeleteReservationDialog rows={rowsToDelete} onClose={() => setRowsToDelete([])} onDeleted={refreshAfterTrashChange} />
       <ReservationActionDialogs pending={pendingAction} onClose={() => setPendingAction(null)} onDone={refreshRowsAndArchives} />
     </div>

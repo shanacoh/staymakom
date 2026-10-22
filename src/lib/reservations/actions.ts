@@ -252,6 +252,18 @@ export async function applySupplierCredit(creditBookingId: string, targetBooking
   if (error) throw error;
 }
 
+/** Marque une ligne « à vérifier », ou change sa note. */
+export async function flagRow(source: string, rowId: string, note: string | null) {
+  const { error } = await db.from("reservation_flags").upsert({ source, row_id: rowId, note }, { onConflict: "source,row_id" });
+  if (error) throw error;
+}
+
+/** Retire le marquage « à vérifier ». */
+export async function unflagRow(source: string, rowId: string) {
+  const { error } = await db.from("reservation_flags").delete().eq("source", source).eq("row_id", rowId);
+  if (error) throw error;
+}
+
 /** Écrit la modification d'une cellule de la grille de Saisie (une cellule = une écriture). */
 export async function saveCellUpdate(table: string, rowId: string, patch: Record<string, unknown>) {
   const { data, error } = await db.from(table).update(patch).eq("id", rowId).select("id");

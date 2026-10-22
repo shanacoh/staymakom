@@ -6,6 +6,46 @@
 
 ---
 
+## [2026-10-22] — Réservations : Vue d'ensemble rangée par urgence, en couleur
+
+> Statut : mis en ligne à la demande de Shana (« on verra la suite »), ajustements possibles ensuite. Tests OK (59 sur les réservations), le site se construit sans erreur, aucune nouvelle erreur de compilation. Aucun changement de base pour cette partie.
+
+### Ce qui a changé côté code
+- `src/lib/reservations/attention.ts` (nouveau) + `attention.test.ts` : groupes d'urgence (À faire maintenant, À surveiller, À venir, Soldées), signaux d'alerte d'une ligne (remboursement à faire, argent à récupérer, avoir ouvert, coût manquant, infos pratiques, à vérifier), filtres des puces et des chiffres clés. Remplace l'ancien rangement Demandes / À traiter / Soldées (`groupRows`, supprimé de `rules.ts`).
+- `src/components/admin/ReservationsHub/ReservationsSummaryTable.tsx` : réécrit. Groupes par urgence avec repère de couleur, Soldées repliées, regroupement par mois avec résumé (résas, montant, marge), ligne teintée selon son état, pastille « État » pleine, colonne « Alertes » (icônes avec explication au survol), bouton de prochaine action et menu « … ».
+- `src/components/admin/ReservationsHub/ReservationsKpis.tsx` : chiffres clés cliquables (filtrent les lignes concernées), en couleur quand ils demandent quelque chose.
+- `src/components/admin/ReservationsHub/ReservationsToolbar.tsx`, `src/pages/admin/Reservations.tsx` : puces « À faire maintenant », « À surveiller », « Demandes », « À vérifier ».
+- `src/components/admin/ReservationsHub/rowTint.ts` (nouveau) : fonds de ligne par état.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- La Vue d'ensemble sert à voir d'un coup d'œil ce qui demande une action ou de l'attention ; l'ancien groupe « À traiter » mélangeait l'urgent et le pas pressé, et les couleurs étaient trop pâles pour le repérer.
+
+---
+
+## [2026-10-22] — Réservations : Saisie plus lisible et marquage « À vérifier »
+
+> Statut : mis en ligne à la demande de Shana. Première étape : la saisie rapide façon Excel (tout au clavier, ajout de tout type de ligne, produit du catalogue...) reste à faire. Migration appliquée en production (par `supabase db query --linked -f`, historique des migrations non mis à jour).
+
+### Ce qui a changé côté code
+- `src/lib/reservations/entryLook.ts` (nouveau) + `entryLook.test.ts` : état calculé de chaque ligne (FAIT, À RÉGLER, DEMANDE, ANNULÉ-REMBOURSÉ, ANNULÉ-PAS PAYÉ, ANNULÉ quand un acompte est gardé, AVOIR), teinte, pastilles de paiement, marge en valeur et en %, coût manquant, regroupement par mois.
+- `src/components/admin/ReservationsHub/ReservationsEntryGrid.tsx` : colonne « État » en pastille, colonne Client en premier et figée avec l'État et la case à cocher, en-tête figé, lignes compactes (32 px), mois avec sous-totaux (montant, encaissé, coûts, marge), pastilles de paiement pleines, coût manquant hachuré « ? », marge en valeur et en % (rouge si négative), montants barrés pour une annulation entièrement remboursée, clic droit « Marquer à vérifier » (bordure rouge + icône avec la note). Pas de teinte de ligne : elle est dans la Vue.
+- `src/lib/reservations/entryGrid.ts` : la colonne Client passe en premier (figée), la colonne Marge s'élargit.
+- `src/components/admin/BookingsGrid/GridSelectCell.tsx` : option d'affichage de la valeur choisie (pastille) ; sans effet ailleurs.
+- `src/components/admin/ReservationsHub/ReservationPills.tsx` : pastilles pleines.
+- `src/components/admin/ReservationsHub/FlagRowDialog.tsx` (nouveau) : note « à vérifier ».
+- `src/lib/reservations/actions.ts`, `queries.ts`, `types.ts` : marquage, lecture des marques.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261022240000_reservation_flags.sql` : nouvelle table `reservation_flags` (origine de la ligne, identifiant, note), une marque par ligne, réservée aux admins. Aucune table de réservation n'est modifiée.
+
+### Pourquoi ce changement
+- Retrouver dans la Saisie les repères de l'Excel de Shana (mois, sous-totaux, cellules rouges « à vérifier ») sans alourdir un écran fait pour saisir.
+
+---
+
 ## [2026-10-22] — Réservations : annulations, remboursements et avoirs prestataire
 
 > Statut : validé par Shana. Tests OK (49 sur les réservations ; les 9 échecs restants du projet, catalogue et photos, existaient avant), le site se construit sans erreur. Migration appliquée en production (par `supabase db query --linked -f`, historique des migrations non mis à jour). Doublon « Dégustation de vin dans le Néguev » de Sarah Toledano (ligne bd12) passé à la corbeille de la page Réservations. Lot 4 sur 5 de la refonte Réservations v2.

@@ -7,6 +7,7 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { ClientPayment, ReservationStatus, ReservationType, SupplierPayment } from "@/lib/reservations/types";
+import type { Tone as LookTone } from "@/lib/reservations/entryLook";
 
 const TONE = {
   neutral: "border-transparent bg-muted text-foreground",
@@ -67,3 +68,26 @@ export const SupplierPaymentPill = ({ payment }: { payment: SupplierPayment }) =
   if (payment === "none") return <span className="text-muted-foreground">—</span>;
   return payment === "paid" ? <Pill tone="neutral">Payé</Pill> : <Pill tone="amber">À payer</Pill>;
 };
+
+// Pastilles pleines de l'affichage « Saisie », façon Excel : gris foncé = réglé, ambre = à régler,
+// bleu = acompte ou demande, violet = annulé ou remboursé, jaune = avoir. Toujours pas de vert.
+const FILLED: Record<LookTone, string> = {
+  neutral: "bg-muted text-foreground",
+  dark: "bg-neutral-700 text-white",
+  amber: "bg-amber-400 text-amber-950",
+  blue: "bg-sky-600 text-white",
+  violet: "bg-violet-500 text-white",
+  yellow: "bg-yellow-300 text-yellow-950",
+};
+
+export const FilledPill = ({ tone, children, className }: { tone: LookTone; children: React.ReactNode; className?: string }) => (
+  <span
+    className={cn(
+      "inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold leading-4",
+      FILLED[tone],
+      className,
+    )}
+  >
+    {children}
+  </span>
+);
