@@ -23,6 +23,7 @@ import DeleteReservationDialog from "@/components/admin/ReservationsHub/DeleteRe
 import DeletedReservationsTable from "@/components/admin/ReservationsHub/DeletedReservationsTable";
 import UnfinishedPaymentsTable from "@/components/admin/ReservationsHub/UnfinishedPaymentsTable";
 import RequestArchivesTable from "@/components/admin/ReservationsHub/RequestArchivesTable";
+import ItinerariesView from "@/components/admin/ReservationsHub/ItinerariesView";
 import ReservationsEntryGrid from "@/components/admin/ReservationsHub/ReservationsEntryGrid";
 import CreateManualHotelBookingDialog from "@/components/admin/ReservationsHub/CreateManualHotelBookingDialog";
 import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
@@ -33,11 +34,13 @@ import ReservationsSummaryTable from "@/components/admin/ReservationsHub/Reserva
 import {
   DELETED_RESERVATIONS_QUERY_KEY,
   DOSSIER_LINES_QUERY_KEY,
+  ITINERARIES_QUERY_KEY,
   REQUEST_ARCHIVES_QUERY_KEY,
   RESERVATIONS_QUERY_KEY,
   UNPAID_DOSSIERS_QUERY_KEY,
   useDeletedReservations,
   useDossierLines,
+  useItineraries,
   useRequestArchives,
   useReservationRows,
   useUnfinishedPayments,
@@ -131,6 +134,7 @@ const AdminReservations = () => {
   const { data: unfinishedPayments } = useUnfinishedPayments();
   const { data: deletedReservations } = useDeletedReservations();
   const { data: requestArchives } = useRequestArchives();
+  const { data: itineraries } = useItineraries();
   const { data: dossierLines } = useDossierLines();
   const linesByDossier = useMemo(() => {
     const map = new Map<string, DossierLine[]>();
@@ -150,11 +154,12 @@ const AdminReservations = () => {
 
   const tabCounts = useMemo(
     () =>
-      Object.fromEntries(TABS.map((t) => [t.value, filteredRows.filter((row) => matchesTab(row, t.value)).length])) as Record<
-        ReservationTab,
-        number
-      >,
-    [filteredRows],
+      ({
+        ...Object.fromEntries(TABS.map((t) => [t.value, filteredRows.filter((row) => matchesTab(row, t.value)).length])),
+        // L'onglet Itinéraire montre tous les dossiers de voyage, pas seulement les lignes payées.
+        ...(itineraries ? { itineraries: itineraries.filter((d) => d.group !== "modele").length } : {}),
+      }) as Record<ReservationTab, number>,
+    [filteredRows, itineraries],
   );
 
   const tabRows = useMemo(() => filteredRows.filter((row) => matchesTab(row, tab)), [filteredRows, tab]);
@@ -192,6 +197,7 @@ const AdminReservations = () => {
       queryClient.invalidateQueries({ queryKey: DELETED_RESERVATIONS_QUERY_KEY }),
       queryClient.invalidateQueries({ queryKey: DOSSIER_LINES_QUERY_KEY }),
       queryClient.invalidateQueries({ queryKey: UNPAID_DOSSIERS_QUERY_KEY }),
+      queryClient.invalidateQueries({ queryKey: ITINERARIES_QUERY_KEY }),
       refreshRows(),
     ]);
   };
@@ -306,6 +312,7 @@ const AdminReservations = () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: DOSSIER_LINES_QUERY_KEY }),
       queryClient.invalidateQueries({ queryKey: UNPAID_DOSSIERS_QUERY_KEY }),
+      queryClient.invalidateQueries({ queryKey: ITINERARIES_QUERY_KEY }),
       refreshRows(),
     ]);
   };
@@ -447,6 +454,15 @@ const AdminReservations = () => {
         <div className="rounded-lg border bg-card py-12 text-center text-sm text-destructive">
           Impossible de charger les réservations. Recharge la page, et si le problème continue, préviens le développeur.
         </div>
+      ) : displayMode === "vue" && tab === "itineraries" ? (
+        <ItinerariesView
+          dossiers={itineraries ?? []}
+          search={search}
+          linesByDossier={linesByDossier}
+          onLineCost={handleLineCost}
+          onLinePaid={handleLinePaid}
+          onChanged={refreshDossiers}
+        />
       ) : displayMode === "vue" ? (
         <>
           <ReservationsKpis kpis={kpis} />
@@ -516,13 +532,14 @@ const AdminReservations = () => {
         </div>
       )}
 
-      {tab === "itineraries" && (
+      {tab === "itineraries" && displayMode === "saisie" && (
         <p className="text-xs text-muted-foreground">
-          Dossiers pas encore payés : ils vivent dans{" "}
+          En Saisie, seuls les dossiers payés et les demandes sur-mesure sont listés. Tous les dossiers sont dans l'affichage
+          « Vue », et se travaillent dans{" "}
           <Link to="/admin/dossiers" className="font-medium text-foreground underline underline-offset-2">
             Itinéraires
-          </Link>{" "}
-          et arrivent ici au paiement.
+          </Link>
+          .
         </p>
       )}
 

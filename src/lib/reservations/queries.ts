@@ -10,6 +10,7 @@ import type {
   ClientPayment,
   DeletedReservation,
   DossierLine,
+  ItineraryDossier,
   UnpaidDossier,
   ReservationRow,
   ReservationSource,
@@ -283,4 +284,47 @@ async function fetchRequestArchives(): Promise<ArchivedRequest[]> {
 /** Demandes converties ou archivées (vue SQL `admin_request_archives`), derrière la puce « Archives ». */
 export function useRequestArchives() {
   return useQuery({ queryKey: REQUEST_ARCHIVES_QUERY_KEY, queryFn: fetchRequestArchives });
+}
+
+export const ITINERARIES_QUERY_KEY = ["admin-itineraries"];
+
+async function fetchItineraries(): Promise<ItineraryDossier[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from("admin_itineraries")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data as any[]).map((row) => ({
+    id: row.id,
+    ref: row.ref,
+    name: row.nom,
+    client: row.client,
+    createdAt: row.created_at,
+    arrival: row.dates_arrivee,
+    departure: row.dates_depart,
+    travelers: row.nb_voyageurs,
+    objective: row.objectif,
+    statut: row.statut,
+    archived: row.archive,
+    group: row.groupe,
+    opens: row.nb_ouvertures ?? 0,
+    lastOpenedAt: row.derniere_ouverture_at,
+    sentAt: row.envoye_at,
+    paidAt: row.paye_at,
+    amount: toNumber(row.montant),
+    collected: toNumber(row.encaisse),
+    proposedPrice: toNumber(row.prix_propose),
+    currency: row.devise,
+    token: row.token_public,
+    customPage: row.page_sur_mesure,
+    lostReason: row.perdu_motif,
+    lostNote: row.perdu_note,
+  }));
+}
+
+/** Tous les dossiers de voyage pour l'onglet Itinéraire (vue SQL `admin_itineraries`). */
+export function useItineraries() {
+  return useQuery({ queryKey: ITINERARIES_QUERY_KEY, queryFn: fetchItineraries });
 }

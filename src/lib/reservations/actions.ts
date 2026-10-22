@@ -4,7 +4,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { STANDALONE_EXPERIENCE_INTERNAL } from "@/lib/internalFields";
-import type { LostReason } from "./types";
+import type { DossierLostReason, LostReason } from "./types";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const db = supabase as any;
@@ -291,6 +291,10 @@ export async function markDossierPaid(dossierId: string, input: { paidOn: string
       montant_vente_final: input.total,
       montant_encaisse: input.collected,
       statut: "paye",
+      // Un dossier classé non converti peut finalement être payé : il sort des archives.
+      archive: false,
+      perdu_motif: null,
+      perdu_note: null,
     })
     .eq("id", dossierId)
     .is("paye_at", null)
@@ -306,6 +310,45 @@ export async function markDossierBalanceCollected(dossierId: string, total: numb
     .update({ montant_vente_final: total, montant_encaisse: total })
     .eq("id", dossierId)
     .not("paye_at", "is", null)
+    .select("id");
+  if (error) throw error;
+  assertChanged(data, ALREADY_HANDLED);
+}
+
+/** « Classer non converti » : le dossier est archivé avec un motif, sans rien supprimer. */
+export async function classifyDossierLost(dossierId: string, reason: DossierLostReason, note: string | null) {
+  const { data, error } = await db
+    .from("dossiers_voyage")
+    .update({ archive: true, statut: "perdu", perdu_motif: reason, perdu_note: note })
+    .eq("id", dossierId)
+    .is("paye_at", null)
+    .select("id");
+  if (error) throw error;
+  assertChanged(data, "Ce dossier est payé : il ne peut pas être classé non converti.");
+}
+
+/** « Passer en Collab » ou retour à la vente. */
+export async function setDossierObjective(dossierId: string, objective: "vente" | "collab") {
+  const { data, error } = await db
+    .from("dossiers_voyage")
+    .update({ objectif: objective })
+    .eq("id", dossierId)
+    .is("paye_at", null)
+    .select("id");
+  if (error) throw error;
+  assertChanged(data, "Ce dossier est payé : il reste une vente.");
+}
+
+/**
+ * « Réactiver » : le dossier quitte les non convertis et revient en cours, à l'étape où il en
+ * était (envoyé s'il l'avait été, sinon en préparation).
+ */
+export async function reactivateDossier(dossierId: string, wasSent: boolean) {
+  const { data, error } = await db
+    .from("dossiers_voyage")
+    .update({ archive: false, statut: wasSent ? "envoye" : "en_preparation", perdu_motif: null, perdu_note: null })
+    .eq("id", dossierId)
+    .is("paye_at", null)
     .select("id");
   if (error) throw error;
   assertChanged(data, ALREADY_HANDLED);

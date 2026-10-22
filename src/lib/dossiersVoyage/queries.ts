@@ -30,7 +30,11 @@ export function errorMessage(error: unknown): string {
 // l'espace Dossiers qu'une fois le dossier créé depuis sa fiche.
 const STATUT_DEMANDE_SUR_MESURE = "demande_sur_mesure";
 
-/** Tous les dossiers de voyage, du plus récent au plus ancien (modèles et archivés inclus : le filtrage se fait à l'affichage). */
+/**
+ * Tous les dossiers de voyage, du plus récent au plus ancien (modèles et archivés inclus : le filtrage se fait à l'affichage).
+ * Sans les pages-itinéraire écrites dans le code du site (`page_sur_mesure`) : elles n'ont ni proposition ni carnet,
+ * et ne figurent que dans l'onglet Itinéraire de la page Réservations.
+ */
 export function useDossiersVoyage() {
   return useQuery({
     queryKey: LIST_KEY,
@@ -39,6 +43,8 @@ export function useDossiersVoyage() {
         .from("dossiers_voyage")
         .select("*")
         .neq("statut", STATUT_DEMANDE_SUR_MESURE)
+        // La colonne n'est pas encore dans les types générés de la base.
+        .filter("page_sur_mesure" as "id", "is", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];

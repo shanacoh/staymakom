@@ -1,7 +1,8 @@
 /**
  * « Lier un dossier payé » : choisir un dossier de voyage existant et le marquer payé, avec
  * la date, le montant convenu et le montant encaissé. Encaissé inférieur au total = acompte.
- * Le dossier apparaît alors dans l'onglet Itinéraire.
+ * Le dossier apparaît alors dans l'onglet Itinéraire. Ouverte depuis une ligne de l'onglet
+ * (« Marquer payé »), la fenêtre vise directement ce dossier, sans liste à choisir.
  */
 
 import { useEffect, useState } from "react";
@@ -16,11 +17,14 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { formatCurrency } from "@/components/admin/BookingsGrid/columnTypes";
 import { markDossierPaid } from "@/lib/reservations/actions";
 import { useUnpaidDossiers } from "@/lib/reservations/queries";
+import type { UnpaidDossier } from "@/lib/reservations/types";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onLinked: () => void;
+  // Dossier visé d'avance (action « Marquer payé » d'une ligne), même archivé.
+  preset?: UnpaidDossier | null;
 }
 
 const parseAmount = (raw: string): number | null => {
@@ -30,8 +34,9 @@ const parseAmount = (raw: string): number | null => {
   return Number.isNaN(n) || n < 0 ? null : n;
 };
 
-const LinkPaidDossierDialog = ({ open, onOpenChange, onLinked }: Props) => {
-  const { data: dossiers, isLoading } = useUnpaidDossiers(open);
+const LinkPaidDossierDialog = ({ open, onOpenChange, onLinked, preset }: Props) => {
+  const { data: unpaid, isLoading } = useUnpaidDossiers(open && !preset);
+  const dossiers = preset ? [preset] : unpaid;
   const [dossierId, setDossierId] = useState("");
   const [paidOn, setPaidOn] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [total, setTotal] = useState("");
@@ -45,8 +50,13 @@ const LinkPaidDossierDialog = ({ open, onOpenChange, onLinked }: Props) => {
       setTotal("");
       setCollected("");
       setPaidOn(format(new Date(), "yyyy-MM-dd"));
+    } else if (preset) {
+      const text = preset.proposedTotal === null ? "" : String(preset.proposedTotal);
+      setDossierId(preset.id);
+      setTotal(text);
+      setCollected(text);
     }
-  }, [open]);
+  }, [open, preset]);
 
   // Le prix de la proposition sert de point de départ : il reste modifiable.
   const selectDossier = (id: string) => {
@@ -84,30 +94,34 @@ const LinkPaidDossierDialog = ({ open, onOpenChange, onLinked }: Props) => {
           }}
         >
           <DialogHeader>
-            <DialogTitle>Lier un dossier payé</DialogTitle>
+            <DialogTitle>{preset ? "Marquer payé" : "Lier un dossier payé"}</DialogTitle>
             <DialogDescription>
               Le dossier choisi passe en « Payé » et apparaît dans l'onglet Itinéraire, avec ses lignes de réservation.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-1.5">
-            <Label>Dossier</Label>
-            <Select value={dossierId} onValueChange={selectDossier}>
-              <SelectTrigger>
-                <SelectValue placeholder={isLoading ? "Chargement..." : "Choisir un dossier pas encore payé"} />
-              </SelectTrigger>
-              <SelectContent>
-                {(dossiers ?? []).map((d) => (
-                  <SelectItem key={d.id} value={d.id}>
-                    {d.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {!isLoading && (dossiers ?? []).length === 0 && (
-              <p className="text-xs text-muted-foreground">Aucun dossier en attente de paiement.</p>
-            )}
-          </div>
+          {preset ? (
+            <p className="text-sm font-medium text-foreground">{preset.label}</p>
+          ) : (
+            <div className="space-y-1.5">
+              <Label>Dossier</Label>
+              <Select value={dossierId} onValueChange={selectDossier}>
+                <SelectTrigger>
+                  <SelectValue placeholder={isLoading ? "Chargement..." : "Choisir un dossier pas encore payé"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(dossiers ?? []).map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!isLoading && (dossiers ?? []).length === 0 && (
+                <p className="text-xs text-muted-foreground">Aucun dossier en attente de paiement.</p>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="space-y-1.5">
@@ -136,7 +150,7 @@ const LinkPaidDossierDialog = ({ open, onOpenChange, onLinked }: Props) => {
               Annuler
             </Button>
             <Button type="submit" disabled={!valid || link.isPending}>
-              Lier le dossier
+              {preset ? "Marquer payé" : "Lier le dossier"}
             </Button>
           </DialogFooter>
         </form>

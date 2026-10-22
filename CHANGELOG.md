@@ -6,6 +6,33 @@
 
 ---
 
+## [2026-10-22] — Réservations : l'onglet Itinéraire montre tous les dossiers de voyage et les pages faites sur mesure
+
+> Statut : validé par Shana. Tests OK (40), le site se construit sans erreur, aucune nouvelle erreur de compilation. Migration appliquée en production (par `supabase db query --linked -f`, historique des migrations non mis à jour) et vérifiée : 1 converti, 4 en cours, 1 collab, 3 modèles, 11 non convertis, 10 pages sur mesure rattachées. Lot 3 sur 5 de la refonte Réservations v2.
+
+### Ce qui a changé côté code
+- `src/components/admin/ReservationsHub/ItinerariesView.tsx` (nouveau) : affichage « Vue » de l'onglet Itinéraire. Chiffres clés (dossiers créés, envoyés, convertis, taux de conversion sur la vente, CA itinéraires), groupes Convertis / En cours / Collab / Modèles / Non convertis, colonnes réf, nom, client, créé le, dates, voyageurs, objectif, statut (avec motif), ouvertures, montant, lien client, ouverture dans Itinéraires. Menu « … » : Marquer payé, Classer non converti, Passer en Collab / Repasser en Vente, Réactiver. Un dossier converti se déplie sur ses lignes de réservation.
+- `src/components/admin/ReservationsHub/LostDossierDialog.tsx` (nouveau) : fenêtre « Classer non converti » (motif obligatoire, note obligatoire si « Autre »).
+- `src/components/admin/ReservationsHub/LinkPaidDossierDialog.tsx` : peut viser un dossier précis (action « Marquer payé » d'une ligne), même archivé.
+- `src/lib/reservations/itineraries.ts` (nouveau) + `itineraries.test.ts` : groupes, libellés de statut et de motif, lien client (page sur mesure sinon /voyage/…), chiffres clés.
+- `src/lib/reservations/actions.ts` : `classifyDossierLost`, `setDossierObjective`, `reactivateDossier` ; « Marquer payé » sort aussi le dossier des archives.
+- `src/lib/reservations/queries.ts`, `types.ts` : lecture de la vue `admin_itineraries`.
+- `src/pages/admin/Reservations.tsx` : l'onglet Itinéraire en Vue affiche `ItinerariesView` ; son compteur compte tous les dossiers (hors modèles). En Saisie, rien ne change.
+- `src/lib/dossiersVoyage/queries.ts` : l'espace Itinéraires (et le tableau de bord) ne liste pas les pages sur mesure, qui n'ont ni proposition ni carnet.
+- `ARCHITECTURE.md` : note sur l'onglet Itinéraire.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261022200000_itineraries_all_dossiers.sql` :
+  - Table `dossiers_voyage`, nouvelles colonnes : `perdu_motif` (motif d'un dossier non converti : prix, client ne répond plus, a réservé ailleurs, V0 test, autre), `perdu_note`, `page_sur_mesure` (chemin d'une page-itinéraire écrite dans le code du site, ex. /happy-birthday-mom), `client_nom` (nom du client quand le nom du dossier ne le dit pas).
+  - Nouvelle vue `admin_itineraries` (lecture seule, droits admin) : tous les dossiers avec leur groupe.
+  - Vue `admin_reservations` : un dossier payé affiche le nom du client (`client_nom`) et « Page sur mesure · nom » pour une page. Le reste est inchangé.
+  - Données : les pages du site deviennent des dossiers repères. Happy Birthday Mom (Josh Sirota) payée 150 $ le 24/08 ; Carrie Safed en collab ; AJ, Celine30, Votre itinéraire, Tsfat, NP, EL et Laura en non converti (motif à préciser) ; la page Rebeca est rattachée au dossier TM-1006. Le doublon « SURPRISE PÈRE-FILLE MÉDECINE EN POCHE » le plus récent est passé à la corbeille de la page Réservations (restaurable).
+
+### Pourquoi ce changement
+- Shana veut suivre dans un seul endroit tous les itinéraires proposés aux clients, y compris les pages faites à la main dans le site, savoir lesquels se sont convertis et pourquoi les autres non, et ouvrir en un clic la page que voit le client.
+
+---
+
 ## [2026-10-22] — Réservations : réservations d'hôtel saisies à la main (WhatsApp, téléphone)
 
 > Statut : validé par Shana. Tests OK (35), le site se construit sans erreur, aucune nouvelle erreur de compilation. Migration appliquée en production (par `supabase db query --linked -f`, historique des migrations non mis à jour, voir le décalage connu). Fonctions `create-hotel-manual-booking` et `admin-resend-email` redéployées. Lot 2 sur 5 de la refonte Réservations v2.

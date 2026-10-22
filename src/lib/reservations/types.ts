@@ -161,3 +161,46 @@ export interface UnpaidDossier {
   currency: string;
   proposedTotal: number | null;
 }
+
+// Onglet Itinéraire : un dossier de voyage, quel que soit son statut (vue SQL `admin_itineraries`).
+export type ItineraryGroup = "converti" | "en_cours" | "collab" | "modele" | "non_converti";
+export type DossierLostReason = "prix" | "client_ne_repond_plus" | "a_reserve_ailleurs" | "v0_test" | "autre";
+
+export interface ItineraryDossier {
+  id: string;
+  ref: string;
+  // Nom du dossier (ex. « HAPPY BIRTHDAY MOM ») et client quand il est connu (ex. Josh Sirota).
+  name: string;
+  client: string | null;
+  createdAt: string;
+  arrival: string | null;
+  departure: string | null;
+  travelers: number | null;
+  objective: "vente" | "collab";
+  statut: string;
+  archived: boolean;
+  group: ItineraryGroup;
+  opens: number;
+  lastOpenedAt: string | null;
+  sentAt: string | null;
+  paidAt: string | null;
+  // Montant convenu, seulement pour un dossier payé.
+  amount: number | null;
+  collected: number | null;
+  proposedPrice: number | null;
+  currency: string;
+  token: string;
+  // Page-itinéraire écrite dans le code du site (ex. /happy-birthday-mom) : le lien client y mène.
+  customPage: string | null;
+  lostReason: DossierLostReason | null;
+  lostNote: string | null;
+}
+
+export interface ItineraryKpis {
+  created: number;
+  sent: number;
+  converted: number;
+  // Convertis / envoyés, en pourcentage arrondi. Absent tant que rien n'est envoyé.
+  conversionRate: number | null;
+  revenue: MoneyByCurrency;
+}
