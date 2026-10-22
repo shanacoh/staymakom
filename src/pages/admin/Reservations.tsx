@@ -22,6 +22,7 @@ import EditRequestDialog from "@/components/admin/ReservationsHub/EditRequestDia
 import DeleteReservationDialog from "@/components/admin/ReservationsHub/DeleteReservationDialog";
 import DeletedReservationsTable from "@/components/admin/ReservationsHub/DeletedReservationsTable";
 import UnfinishedPaymentsTable from "@/components/admin/ReservationsHub/UnfinishedPaymentsTable";
+import RequestArchivesTable from "@/components/admin/ReservationsHub/RequestArchivesTable";
 import ReservationsEntryGrid from "@/components/admin/ReservationsHub/ReservationsEntryGrid";
 import CreateManualHotelBookingDialog from "@/components/admin/ReservationsHub/CreateManualHotelBookingDialog";
 import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
@@ -32,10 +33,12 @@ import ReservationsSummaryTable from "@/components/admin/ReservationsHub/Reserva
 import {
   DELETED_RESERVATIONS_QUERY_KEY,
   DOSSIER_LINES_QUERY_KEY,
+  REQUEST_ARCHIVES_QUERY_KEY,
   RESERVATIONS_QUERY_KEY,
   UNPAID_DOSSIERS_QUERY_KEY,
   useDeletedReservations,
   useDossierLines,
+  useRequestArchives,
   useReservationRows,
   useUnfinishedPayments,
 } from "@/lib/reservations/queries";
@@ -59,6 +62,8 @@ import type {
 } from "@/lib/reservations/types";
 
 type DisplayMode = "vue" | "saisie";
+// Listes à part ouvertes par les puces de fin de rangée.
+type SideList = "unfinished" | "trash" | "archives" | null;
 
 const DISPLAY_MODE_STORAGE_KEY = "admin-reservations-display";
 
@@ -108,7 +113,6 @@ const AdminReservations = () => {
   const [hotelCreateOpen, setHotelCreateOpen] = useState(false);
   const [experienceCreateOpen, setExperienceCreateOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
-  const [unfinishedOpen, setUnfinishedOpen] = useState(false);
   const [linkDossierOpen, setLinkDossierOpen] = useState(false);
   const [editRequestId, setEditRequestId] = useState<string | null>(null);
   const [expandedDossiers, setExpandedDossiers] = useState<Set<string>>(new Set());
@@ -117,7 +121,8 @@ const AdminReservations = () => {
   const [rowsToDelete, setRowsToDelete] = useState<ReservationRow[]>([]);
   // Lignes cochées dans la grille de Saisie, par leur clé.
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
-  const [trashOpen, setTrashOpen] = useState(false);
+  // Une seule liste à part ouverte à la fois, à la place des réservations.
+  const [sideList, setSideList] = useState<SideList>(null);
   const [savedVisible, setSavedVisible] = useState(false);
   const savedTimer = useRef<number>();
 
@@ -125,6 +130,7 @@ const AdminReservations = () => {
   const { data: incompletePracticalInfo } = useIncompletePracticalInfo();
   const { data: unfinishedPayments } = useUnfinishedPayments();
   const { data: deletedReservations } = useDeletedReservations();
+  const { data: requestArchives } = useRequestArchives();
   const { data: dossierLines } = useDossierLines();
   const linesByDossier = useMemo(() => {
     const map = new Map<string, DossierLine[]>();
@@ -175,6 +181,9 @@ const AdminReservations = () => {
   const allowNewRow = tab === "all" || tab === "experiences";
 
   const refreshRows = () => queryClient.invalidateQueries({ queryKey: RESERVATIONS_QUERY_KEY });
+  // Une demande qui sort du flux (archivée, convertie) ou y revient change les deux listes.
+  const refreshRowsAndArchives = () =>
+    Promise.all([refreshRows(), queryClient.invalidateQueries({ queryKey: REQUEST_ARCHIVES_QUERY_KEY })]);
 
   // Une suppression ou une restauration peut toucher un dossier : tout ce que la page lit est relu.
   const refreshAfterTrashChange = async () => {
@@ -415,23 +424,22 @@ const AdminReservations = () => {
         channel={channel}
         onChannelChange={setChannel}
         unfinishedCount={unfinishedToFollowUp}
-        unfinishedOpen={unfinishedOpen}
-        onUnfinishedOpenChange={(open) => {
-          setUnfinishedOpen(open);
-          if (open) setTrashOpen(false);
-        }}
+        unfinishedOpen={sideList === "unfinished"}
+        onUnfinishedOpenChange={(open) => setSideList(open ? "unfinished" : null)}
         trashCount={deletedReservations?.length ?? 0}
-        trashOpen={trashOpen}
-        onTrashOpenChange={(open) => {
-          setTrashOpen(open);
-          if (open) setUnfinishedOpen(false);
-        }}
+        trashOpen={sideList === "trash"}
+        onTrashOpenChange={(open) => setSideList(open ? "trash" : null)}
+        archivesCount={requestArchives?.length ?? 0}
+        archivesOpen={sideList === "archives"}
+        onArchivesOpenChange={(open) => setSideList(open ? "archives" : null)}
       />
 
-      {trashOpen ? (
+      {sideList === "trash" ? (
         <DeletedReservationsTable items={deletedReservations ?? []} onRestored={refreshAfterTrashChange} />
-      ) : unfinishedOpen ? (
+      ) : sideList === "unfinished" ? (
         <UnfinishedPaymentsTable payments={unfinishedPayments ?? []} />
+      ) : sideList === "archives" ? (
+        <RequestArchivesTable items={requestArchives ?? []} search={search} onReopened={refreshRowsAndArchives} />
       ) : isLoading ? (
         <div className="py-12 text-center text-muted-foreground">Chargement...</div>
       ) : error ? (
@@ -492,6 +500,7 @@ const AdminReservations = () => {
               onCellCommit={commitCell}
               onNewRowCommit={commitNewRow}
               onOpen={openRow}
+              onAction={handleAction}
               onDelete={(row) => setRowsToDelete([row])}
               selectedKeys={selectedKeys}
               onToggleRow={toggleRowSelection}
@@ -540,7 +549,7 @@ const AdminReservations = () => {
         }}
       />
       <DeleteReservationDialog rows={rowsToDelete} onClose={() => setRowsToDelete([])} onDeleted={refreshAfterTrashChange} />
-      <ReservationActionDialogs pending={pendingAction} onClose={() => setPendingAction(null)} onDone={refreshRows} />
+      <ReservationActionDialogs pending={pendingAction} onClose={() => setPendingAction(null)} onDone={refreshRowsAndArchives} />
     </div>
   );
 };

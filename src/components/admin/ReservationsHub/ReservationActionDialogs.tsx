@@ -13,9 +13,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
 import { formatCurrency } from "@/components/admin/BookingsGrid/columnTypes";
 import {
+  archiveRequest,
   fetchBookingContact,
   fetchRequestForAction,
   getOrCreateBalanceLink,
@@ -29,7 +32,8 @@ import {
   type BalanceLink,
 } from "@/lib/reservations/actions";
 import { FOLLOW_UP_LANGUAGES, buildNotAvailableMessage, buildProviderMessage, buildWhatsAppLink } from "@/lib/reservations/whatsapp";
-import type { NextAction, ReservationRow } from "@/lib/reservations/types";
+import { LOST_REASON_OPTIONS } from "@/lib/reservations/archives";
+import type { LostReason, NextAction, ReservationRow } from "@/lib/reservations/types";
 
 export interface PendingAction {
   row: ReservationRow;
@@ -260,6 +264,71 @@ function ConvertRequestDialog({ row, onClose, onDone }: DialogProps) {
   );
 }
 
+// « Archiver » : la demande quitte le flux sans être supprimée, avec un motif à choisir.
+// Elle reste dans les Archives, d'où elle peut être réouverte.
+function ArchiveRequestDialog({ row, onClose, onDone }: DialogProps) {
+  const [reason, setReason] = useState<LostReason | "">("");
+  const [note, setNote] = useState("");
+  const archive = useMutation({
+    mutationFn: () => archiveRequest(row.id, reason as LostReason, note.trim() || null),
+    onSuccess: () => {
+      toast.success("Demande archivée");
+      onDone();
+      onClose();
+    },
+    onError: errorToast,
+  });
+  const valid = reason !== "" && (reason !== "autre" || note.trim() !== "");
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Archiver la demande</DialogTitle>
+          <DialogDescription>
+            {row.client} · {row.product}. Elle quitte le flux et reste consultable dans les Archives.
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (valid) archive.mutate();
+          }}
+        >
+          <div className="space-y-1.5">
+            <Label htmlFor="archive-reason">Motif</Label>
+            <Select value={reason} onValueChange={(v) => setReason(v as LostReason)}>
+              <SelectTrigger id="archive-reason">
+                <SelectValue placeholder="Choisir un motif" />
+              </SelectTrigger>
+              <SelectContent>
+                {LOST_REASON_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="archive-note">Note {reason === "autre" ? "" : "(facultatif)"}</Label>
+            <Textarea id="archive-note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annuler
+            </Button>
+            <Button type="submit" disabled={!valid || archive.isPending}>
+              Archiver
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function BalanceLinkDialog({ row, onClose, onDone }: DialogProps) {
   const balance = (row.amount ?? 0) - row.collected;
   const [link, setLink] = useState<BalanceLink | null>(null);
@@ -465,7 +534,10 @@ const ReservationActionDialogs = ({ pending, onClose, onDone }: Props) => {
       return <ProviderAnswerDialog key={instance} {...common} />;
     case "send_deposit_link":
     case "send_payment_link":
+    case "convert_request":
       return <ConvertRequestDialog key={instance} {...common} />;
+    case "archive_request":
+      return <ArchiveRequestDialog key={instance} {...common} />;
     case "send_balance_link":
       return <BalanceLinkDialog key={instance} {...common} />;
     case "confirm_collection":

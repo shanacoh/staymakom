@@ -4,6 +4,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { STANDALONE_EXPERIENCE_INTERNAL } from "@/lib/internalFields";
+import type { LostReason } from "./types";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const db = supabase as any;
@@ -54,13 +55,46 @@ export async function markRequestSentToProvider(requestId: string) {
   return (data as unknown[]).length > 0;
 }
 
-/** Réponse du prestataire : disponible (la demande passe en « Dispo OK ») ou non (elle est fermée). */
+/** Réponse du prestataire : disponible (la demande passe en « Dispo OK ») ou non (archivée « Pas de dispo »). */
 export async function recordProviderAnswer(requestId: string, available: boolean) {
   const { data, error } = await db
     .from("standalone_experience_requests")
-    .update({ status: available ? "availability_confirmed" : "closed", provider_responded_at: new Date().toISOString() })
+    .update({
+      ...(available ? { status: "availability_confirmed" } : { status: "closed", lost_reason: "pas_de_dispo" }),
+      provider_responded_at: new Date().toISOString(),
+    })
     .eq("id", requestId)
     .in("status", ["new", "sent_to_provider", "contacted"])
+    .select("id");
+  if (error) throw error;
+  assertChanged(data, ALREADY_HANDLED);
+}
+
+const ACTIVE_REQUEST_STATUSES = ["new", "sent_to_provider", "contacted", "availability_confirmed"];
+
+/** Sort une demande du flux sans la supprimer : elle part dans les Archives avec son motif. */
+export async function archiveRequest(requestId: string, reason: LostReason, note: string | null) {
+  const { data, error } = await db
+    .from("standalone_experience_requests")
+    .update({ status: "closed", lost_reason: reason, lost_note: note })
+    .eq("id", requestId)
+    .in("status", ACTIVE_REQUEST_STATUSES)
+    .select("id");
+  if (error) throw error;
+  assertChanged(data, ALREADY_HANDLED);
+}
+
+/**
+ * Remet une demande archivée dans le flux, comme une demande toute neuve : le motif, la date de
+ * sortie et l'envoi au prestataire sont effacés (la base efface les deux premiers d'elle-même).
+ * Une demande convertie ne se réouvre pas : sa réservation existe.
+ */
+export async function reopenRequest(requestId: string) {
+  const { data, error } = await db
+    .from("standalone_experience_requests")
+    .update({ status: "new", sent_to_provider_at: null, provider_responded_at: null })
+    .eq("id", requestId)
+    .eq("status", "closed")
     .select("id");
   if (error) throw error;
   assertChanged(data, ALREADY_HANDLED);

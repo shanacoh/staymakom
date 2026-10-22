@@ -1,6 +1,7 @@
 /**
  * Barre d'outils commune à tous les onglets de la page Réservations : recherche,
- * filtres de statut en puces, filtre rapide Bateaux, puis Paiement, Période et Canal.
+ * filtres de statut en puces, filtre rapide Bateaux, puis Paiement, Période et Canal, et en fin
+ * de rangée les listes à part (paiements non aboutis, corbeille, archives).
  */
 
 import { Search } from "lucide-react";
@@ -61,6 +62,10 @@ interface Props {
   trashCount: number;
   trashOpen: boolean;
   onTrashOpenChange: (value: boolean) => void;
+  // Puce « Archives » : ouvre la liste des demandes sorties du flux.
+  archivesCount: number;
+  archivesOpen: boolean;
+  onArchivesOpenChange: (value: boolean) => void;
 }
 
 const ReservationsToolbar = (props: Props) => (
@@ -154,6 +159,14 @@ const ReservationsToolbar = (props: Props) => (
         title="Lignes supprimées. Elles peuvent être restaurées."
       />
     )}
+
+    <FilterChip
+      label="Archives"
+      count={props.archivesCount}
+      active={props.archivesOpen}
+      onClick={() => props.onArchivesOpenChange(!props.archivesOpen)}
+      title="Demandes converties en réservation ou archivées avec un motif."
+    />
   </div>
 );
 

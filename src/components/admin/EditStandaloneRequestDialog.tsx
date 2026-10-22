@@ -2,7 +2,8 @@
  * EditStandaloneRequestDialog
  * Permet de corriger les champs d'une demande de dates ("sur demande") déjà
  * reçue — coordonnées client, date souhaitée, nombre de personnes, message,
- * notes internes — sans passer par la conversion en réservation. Modifie la
+ * notes internes — sans passer par la conversion en réservation. Le statut ne se change pas
+ * ici : une demande sort du flux par « Convertir en réservation » ou « Archiver » (avec motif). Modifie la
  * ligne standalone_experience_requests en place (UPDATE), contrairement à
  * CreateManualStandaloneBookingDialog qui crée toujours une nouvelle entité.
  */
@@ -14,19 +15,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-
-const STATUS_OPTIONS = [
-  { value: "new", label: "Nouveau" },
-  { value: "contacted", label: "Contacté" },
-  { value: "converted", label: "Converti" },
-  { value: "closed", label: "Sans suite" },
-];
 
 const REQUESTS_QUERY_KEY = ["admin-standalone-experience-requests"];
 
@@ -39,7 +30,6 @@ const EMPTY_FORM = {
   children: 0,
   message: "",
   internal_notes: "",
-  status: "new",
 };
 
 interface Props {
@@ -63,7 +53,6 @@ const EditStandaloneRequestDialog = ({ open, onOpenChange, request }: Props) => 
       children: request.children ?? 0,
       message: request.message || "",
       internal_notes: request.internal_notes || "",
-      status: request.status || "new",
     });
   }, [open, request]);
 
@@ -81,7 +70,6 @@ const EditStandaloneRequestDialog = ({ open, onOpenChange, request }: Props) => 
           children: form.children,
           message: form.message || null,
           internal_notes: form.internal_notes || null,
-          status: form.status,
         })
         .eq("id", request.id);
       if (error) throw error;
@@ -163,23 +151,6 @@ const EditStandaloneRequestDialog = ({ open, onOpenChange, request }: Props) => 
                 onChange={(e) => setForm((f) => ({ ...f, children: parseInt(e.target.value) || 0 }))}
               />
             </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Statut</Label>
-            <Select
-              value={form.status}
-              onValueChange={(v) => setForm((f) => ({ ...f, status: v }))}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="space-y-1.5">

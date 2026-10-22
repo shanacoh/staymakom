@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { CHANNEL_LABELS } from "@/components/admin/BookingsGrid/columnTypes";
 import type {
+  ArchivedRequest,
   ClientPayment,
   DeletedReservation,
   DossierLine,
@@ -249,4 +250,37 @@ async function fetchUnpaidDossiers(): Promise<UnpaidDossier[]> {
 /** Dossiers de voyage pas encore payés, pour la fenêtre « Lier un dossier payé ». */
 export function useUnpaidDossiers(enabled: boolean) {
   return useQuery({ queryKey: UNPAID_DOSSIERS_QUERY_KEY, queryFn: fetchUnpaidDossiers, enabled });
+}
+
+export const REQUEST_ARCHIVES_QUERY_KEY = ["admin-request-archives"];
+
+async function fetchRequestArchives(): Promise<ArchivedRequest[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from("admin_request_archives")
+    .select("*")
+    .order("received_at", { ascending: false });
+  if (error) throw error;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data as any[]).map((row) => ({
+    id: row.id,
+    receivedAt: row.received_at,
+    client: row.client,
+    phone: row.phone,
+    email: row.email,
+    product: row.product,
+    type: row.type,
+    requestedDate: row.requested_date,
+    pax: row.pax ?? "",
+    exitStatus: row.exit_status,
+    lostReason: row.lost_reason,
+    lostNote: row.lost_note,
+    closedAt: row.closed_at,
+    bookingId: row.booking_id,
+  }));
+}
+
+/** Demandes converties ou archivées (vue SQL `admin_request_archives`), derrière la puce « Archives ». */
+export function useRequestArchives() {
+  return useQuery({ queryKey: REQUEST_ARCHIVES_QUERY_KEY, queryFn: fetchRequestArchives });
 }

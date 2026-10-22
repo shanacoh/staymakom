@@ -48,6 +48,8 @@ export interface ReservationRow {
 
 export type NextActionKind =
   | "open_request"
+  | "convert_request"
+  | "archive_request"
   | "send_to_provider"
   | "confirm_availability"
   | "send_deposit_link"
@@ -104,6 +106,27 @@ export interface UnfinishedPayment {
   kind: "failed" | "unfinished";
   // Une réservation confirmée existe ensuite pour ce client (saisie à la main).
   converted: boolean;
+}
+
+// Motif d'archivage d'une demande sans suite.
+export type LostReason = "prix" | "pas_de_dispo" | "client_ne_repond_plus" | "a_reserve_ailleurs" | "date_passee" | "autre";
+
+// Demande sortie du flux : convertie en réservation, ou archivée à la main avec un motif.
+export interface ArchivedRequest {
+  id: string;
+  receivedAt: string;
+  client: string;
+  phone: string | null;
+  email: string | null;
+  product: string;
+  type: "experience" | "boat";
+  requestedDate: string | null;
+  pax: string;
+  exitStatus: "converted" | "closed";
+  lostReason: LostReason | null;
+  lostNote: string | null;
+  closedAt: string | null;
+  bookingId: string | null;
 }
 
 // Ligne supprimée, gardée dans la corbeille pour pouvoir être restaurée.

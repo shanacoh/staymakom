@@ -26,8 +26,9 @@ import {
   type EntryColumnKey,
 } from "@/lib/reservations/entryGrid";
 import { formatMoneyByCurrency, isRequest } from "@/lib/reservations/rules";
-import type { DossierLine, ReservationRow } from "@/lib/reservations/types";
+import type { DossierLine, NextAction, ReservationRow } from "@/lib/reservations/types";
 import { LineCostInput, NatureTag } from "./DossierLineCells";
+import RequestRowMenu from "./RequestRowMenu";
 
 const HEAD_CLASS = "h-8 px-3 text-[10px] uppercase tracking-wider";
 const CELL_CLASS = "py-2 px-3 text-sm";
@@ -45,6 +46,8 @@ interface Props {
   onCellCommit: (row: ReservationRow, key: EntryColumnKey, rawValue: string) => Promise<boolean>;
   onNewRowCommit: (customerName: string) => Promise<boolean>;
   onOpen: (row: ReservationRow) => void;
+  // Actions du menu « … » d'une demande (convertir, archiver) : les fenêtres sont gérées par la page.
+  onAction: (row: ReservationRow, action: NextAction) => void;
   // Demande de suppression d'une ligne : la confirmation est gérée par la page.
   onDelete: (row: ReservationRow) => void;
   // Lignes cochées (par leur clé), pour la suppression groupée. La sélection est tenue par la page.
@@ -77,7 +80,7 @@ function displayText(row: ReservationRow, column: EntryColumn): string {
   return String(value);
 }
 
-const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit, onNewRowCommit, onOpen, onDelete, selectedKeys, onToggleRow, onToggleAll, linesByDossier, onLineCost, onLinePaid }: Props) => {
+const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit, onNewRowCommit, onOpen, onAction, onDelete, selectedKeys, onToggleRow, onToggleAll, linesByDossier, onLineCost, onLinePaid }: Props) => {
   // Cellules de texte modifiables, repérées par « ligne:colonne », pour les flèches du clavier.
   const cellRefs = useRef(new Map<string, HTMLTableCellElement>());
   const lastRowIndex = allowNewRow ? rows.length : rows.length - 1;
@@ -285,6 +288,7 @@ const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit,
                     <TooltipContent>{row.source === "request" ? "Modifier la demande" : "Ouvrir la fiche (lien de paiement, email de confirmation)"}</TooltipContent>
                   </Tooltip>
                 )}
+                {row.source === "request" && <RequestRowMenu row={row} onAction={onAction} />}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button

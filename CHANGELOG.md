@@ -6,6 +6,38 @@
 
 ---
 
+## [2026-10-22] — Réservations : archives des demandes (sortir du flux sans supprimer)
+
+> Statut : validé par Shana. Tests OK, le site se construit sans erreur, aucune nouvelle erreur de compilation. Migration appliquée en production (vérifiée : 8 demandes archivées, 7 rattachées à leur contact, plus aucune demande active dans le flux). Lot 1 sur 5 de la refonte Réservations v2 (branche `reservations-v2`).
+
+### Ce qui a changé côté code
+- `src/lib/reservations/actions.ts` : nouvelles écritures `archiveRequest` (archive avec motif et note, seulement une demande encore active) et `reopenRequest` (remet une demande archivée en « Demande », envoi au prestataire effacé). Une réponse « pas dispo » du prestataire archive maintenant la demande avec le motif « Pas de dispo ».
+- `src/lib/reservations/archives.ts` (nouveau) + `archives.test.ts` : libellés des motifs et du statut de sortie, fichier d'export CSV (point-virgule + accents, s'ouvre directement dans Excel en français).
+- `src/lib/reservations/queries.ts` : lecture des Archives (`useRequestArchives`).
+- `src/lib/reservations/types.ts` : types `ArchivedRequest`, `LostReason`, actions `convert_request` et `archive_request`.
+- `src/components/admin/ReservationsHub/RequestRowMenu.tsx` (nouveau) : menu « … » d'une ligne de demande (« Convertir en réservation », « Archiver »), en Vue et en Saisie.
+- `src/components/admin/ReservationsHub/ReservationActionDialogs.tsx` : fenêtre « Archiver la demande » (motif obligatoire, note obligatoire si « Autre ») ; « Convertir en réservation » réutilise la fenêtre de conversion pré-remplie existante.
+- `src/components/admin/ReservationsHub/RequestArchivesTable.tsx` (nouveau) : liste des Archives (reçue le, client, téléphone, email, produit, date demandée, pers., sortie, motif), filtre Bateaux, bouton « Exporter », bouton « Réouvrir ».
+- `src/components/admin/ReservationsHub/ReservationsToolbar.tsx` : puce « Archives · N » en fin de rangée.
+- `src/components/admin/ReservationsHub/ReservationsSummaryTable.tsx`, `ReservationsEntryGrid.tsx` : menu « … » sur les lignes de demande.
+- `src/pages/admin/Reservations.tsx` : une seule liste à part ouverte à la fois (Paiements non aboutis, Corbeille ou Archives) ; après une action, flux et Archives sont relus ensemble.
+- `src/components/admin/EditStandaloneRequestDialog.tsx` : le choix du statut est retiré (c'est par là qu'une demande avait été marquée « convertie » sans réservation). Une demande ne sort du flux que par « Convertir » ou « Archiver ».
+- `ARCHITECTURE.md` : note sur le cycle de vie des demandes.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261022140000_requests_archive_lifecycle.sql` :
+  - Table `standalone_experience_requests`, nouvelles colonnes : `lost_reason` (motif d'archivage, liste fermée), `lost_note` (note libre), `closed_at` (date de sortie du flux), `lead_id` (contact du CRM).
+  - Déclencheur `standalone_request_track_closing` : pose `closed_at` quand la demande est convertie ou archivée, l'efface avec le motif quand elle est réouverte.
+  - Déclencheur `standalone_request_link_lead` : rattache chaque nouvelle demande au contact existant de même email (n'en crée pas ; un échec ne bloque jamais la demande du site).
+  - Fonction `link_request_to_booking` : efface aussi un éventuel motif à la conversion.
+  - Nouvelle vue `admin_request_archives` (lecture seule, droits admin) : demandes converties ou archivées.
+  - Données : contact rattaché aux demandes existantes (7 sur 8), les 7 demandes bateau d'août archivées « Date passée », le clic WhatsApp Catamaran du 30/09 (sans nom ni réservation, marqué « converti » à tort) archivé « Client ne répond plus ».
+
+### Pourquoi ce changement
+- Les demandes bateau d'août restaient éternellement dans le flux. Shana veut les sortir à la main avec un motif, les garder consultables et exportables pour relancer ces contacts à la prochaine saison, et pouvoir les réouvrir.
+
+---
+
 ## [2026-10-22] — Archivage des fiches (hôtels, expériences avec hôtel, standalone, bateaux)
 
 > Statut : en attente de validation par Shana. Tests de l'archivage OK, le site se construit sans erreur. Fonction de base de données appliquée en production (elle ne fait que lire).

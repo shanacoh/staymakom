@@ -13,6 +13,7 @@ import { AlertTriangle, ChevronDown, ChevronRight } from "lucide-react";
 import type { DossierLine, NextAction, ReservationRow } from "@/lib/reservations/types";
 import { LineCostInput, NatureTag } from "./DossierLineCells";
 import { StatusPill, SupplierPaymentPill, TypeTag } from "./ReservationPills";
+import RequestRowMenu from "./RequestRowMenu";
 
 export interface DossierLinesProps {
   linesByDossier: Map<string, DossierLine[]>;
@@ -162,13 +163,16 @@ function SummaryRow({
         <MarginCell row={row} />
       </TableCell>
       <TableCell className="whitespace-nowrap">
-        {action ? (
-          <Button size="sm" variant={action.urgent ? "default" : "outline"} onClick={() => onAction(row, action)}>
-            {action.label}
-          </Button>
-        ) : (
-          <span className="text-xs text-muted-foreground">Rien à faire</span>
-        )}
+        <div className="flex items-center gap-1">
+          {action ? (
+            <Button size="sm" variant={action.urgent ? "default" : "outline"} onClick={() => onAction(row, action)}>
+              {action.label}
+            </Button>
+          ) : (
+            <span className="text-xs text-muted-foreground">Rien à faire</span>
+          )}
+          {row.source === "request" && <RequestRowMenu row={row} onAction={onAction} />}
+        </div>
       </TableCell>
     </TableRow>
     {expanded && lines.map((line) => <DossierLineRow key={line.id} line={line} onLineCost={onLineCost} onLinePaid={onLinePaid} />)}
