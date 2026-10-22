@@ -6,7 +6,6 @@ import { format, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { STANDALONE_EXPERIENCE_INTERNAL, fetchInternalFields } from "@/lib/internalFields";
 import { buildWhatsAppLink, FOLLOW_UP_LANGUAGES, type FollowUpLanguage } from "@/lib/reservations/whatsapp";
 import { buildClientWhatsAppMessage, buildPracticalInfo, PRACTICAL_INFO_COLUMNS, type PracticalInfoSource } from "@/lib/practicalInfo";
 
@@ -42,14 +41,12 @@ export default function PracticalInfoWhatsAppCard({ booking }: Props) {
         .eq("id", experienceId!)
         .maybeSingle();
       if (error) throw error;
-      // Le contact du jour J est rangé à part, réservé aux admins.
-      const contact = await fetchInternalFields(STANDALONE_EXPERIENCE_INTERNAL, experienceId!);
-      return { experience: experience as ExperienceForMessage | null, contact };
+      return { experience: experience as ExperienceForMessage | null };
     },
     enabled: !!experienceId,
   });
 
-  const practicalInfo = useMemo(() => buildPracticalInfo(data?.experience, data?.contact, language), [data, language]);
+  const practicalInfo = useMemo(() => buildPracticalInfo(data?.experience, language), [data, language]);
 
   const message = useMemo(() => {
     const experience = data?.experience;

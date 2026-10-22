@@ -129,6 +129,7 @@ export function AfterBookingSection({
 
       <div className="space-y-1.5">
         <Label>Contact le jour J</Label>
+        <p className="text-[11px] text-[#6f6a63]">Interne, jamais envoyé au client.</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <Input placeholder="Nom" disabled={disabled} {...registerField("day_contact_name")} />
           <Input placeholder="Téléphone" type="tel" disabled={disabled} {...registerField("day_contact_phone")} />

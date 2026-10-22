@@ -1,6 +1,8 @@
 // Infos pratiques « après la réservation » : le seul endroit qui décide ce que le client reçoit
-// (point de rendez-vous, accès, arriver X minutes avant, à savoir, météo, contact jour J) et
-// comment c'est écrit, en email comme en message WhatsApp.
+// (point de rendez-vous, accès, arriver X minutes avant, à savoir, météo) et comment c'est écrit,
+// en email comme en message WhatsApp.
+// Le contact du jour J (de l'expérience ou du prestataire) n'y figure jamais : il est interne à
+// l'équipe, le client passe toujours par Staymakom.
 //
 // Fichier sans aucune dépendance : il est lu par les fonctions serveur (email de confirmation,
 // rappel de la veille) et par le back-office (message WhatsApp prêt à envoyer).
@@ -33,40 +35,6 @@ export interface PracticalInfoSource {
   google_maps_link?: string | null;
 }
 
-/** Contact du jour J (table interne, réservée aux admins et au serveur). */
-export interface DayContactSource {
-  day_contact_name?: string | null;
-  day_contact_phone?: string | null;
-  day_contact_language?: string | null;
-}
-
-/** Contact du jour J par défaut d'un prestataire (table `providers`, réservée aux admins et au serveur). */
-export interface ProviderDayContactSource {
-  day_contact_name?: string | null;
-  day_contact_whatsapp?: string | null;
-  day_contact_language?: string | null;
-}
-
-/**
- * Le contact du jour J à envoyer au client : celui de l'expérience s'il existe (nom ou téléphone),
- * sinon celui de son prestataire. Jamais un mélange des deux.
- */
-export function resolveDayContact(
-  experience: DayContactSource | null | undefined,
-  provider: ProviderDayContactSource | null | undefined,
-): DayContactSource | null {
-  const filled = (value: unknown) => typeof value === "string" && value.trim() !== "";
-  if (filled(experience?.day_contact_name) || filled(experience?.day_contact_phone)) return experience ?? null;
-  if (filled(provider?.day_contact_name) || filled(provider?.day_contact_whatsapp)) {
-    return {
-      day_contact_name: provider?.day_contact_name,
-      day_contact_phone: provider?.day_contact_whatsapp,
-      day_contact_language: provider?.day_contact_language,
-    };
-  }
-  return experience ?? null;
-}
-
 /** Colonnes à lire sur `standalone_experiences` pour construire les infos pratiques. */
 export const PRACTICAL_INFO_COLUMNS =
   "meeting_point, meeting_point_fr, meeting_point_he, address, address_fr, address_he, " +
@@ -85,7 +53,6 @@ export interface PracticalInfo {
   arriveMinutes?: number;
   knowBefore?: string;
   contingency?: string;
-  contact?: { name?: string; phone?: string; language?: string };
 }
 
 export function normalizeLang(value: unknown): PracticalLang {
@@ -100,15 +67,6 @@ function localized(source: Record<string, unknown>, base: string, lang: Practica
   return own || clean(source[base]) || clean(source[`${base}_fr`]) || clean(source[`${base}_he`]);
 }
 
-const CONTACT_LANGUAGE_NAMES: Record<string, Record<PracticalLang, string>> = {
-  he: { en: "Hebrew", fr: "hébreu", he: "עברית" },
-  en: { en: "English", fr: "anglais", he: "אנגלית" },
-  fr: { en: "French", fr: "français", he: "צרפתית" },
-  ru: { en: "Russian", fr: "russe", he: "רוסית" },
-  es: { en: "Spanish", fr: "espagnol", he: "ספרדית" },
-  ar: { en: "Arabic", fr: "arabe", he: "ערבית" },
-};
-
 const LABELS: Record<PracticalLang, {
   title: string;
   meetingPoint: string;
@@ -118,8 +76,6 @@ const LABELS: Record<PracticalLang, {
   arrive: (minutes: number) => string;
   knowBefore: string;
   contingency: string;
-  contact: string;
-  speaks: (language: string) => string;
   waze: string;
   maps: string;
   question: string;
@@ -134,8 +90,6 @@ const LABELS: Record<PracticalLang, {
     arrive: (m) => `Please arrive ${m} minutes early.`,
     knowBefore: "Good to know",
     contingency: "Weather or changes",
-    contact: "Your contact on the day",
-    speaks: (l) => `speaks ${l}`,
     waze: "Open in Waze",
     maps: "Open in Google Maps",
     question: "A question? Our team answers on WhatsApp",
@@ -150,8 +104,6 @@ const LABELS: Record<PracticalLang, {
     arrive: (m) => `Merci d'arriver ${m} minutes avant.`,
     knowBefore: "À savoir",
     contingency: "Météo ou imprévu",
-    contact: "Contact le jour J",
-    speaks: (l) => `parle ${l}`,
     waze: "Ouvrir dans Waze",
     maps: "Ouvrir dans Google Maps",
     question: "Une question ? Notre équipe vous répond sur WhatsApp",
@@ -166,8 +118,6 @@ const LABELS: Record<PracticalLang, {
     arrive: (m) => `נא להגיע ${m} דקות לפני.`,
     knowBefore: "חשוב לדעת",
     contingency: "מזג אוויר או שינויים",
-    contact: "איש קשר ביום הפעילות",
-    speaks: (l) => `שפה: ${l}`,
     waze: "פתיחה ב-Waze",
     maps: "פתיחה ב-Google Maps",
     question: "יש שאלה? הצוות שלנו עונה בוואטסאפ",
@@ -203,7 +153,6 @@ function navigationLinks(source: PracticalInfoSource, address: string): { wazeUr
  */
 export function buildPracticalInfo(
   source: PracticalInfoSource | null | undefined,
-  contactSource: DayContactSource | null | undefined,
   langInput: unknown,
 ): PracticalInfo | null {
   if (!source) return null;
@@ -217,11 +166,7 @@ export function buildPracticalInfo(
   const minutes = Number(source.arrive_minutes_before);
   const arriveMinutes = source.arrive_minutes_before != null && Number.isFinite(minutes) && minutes > 0 ? minutes : undefined;
 
-  const contactName = clean(contactSource?.day_contact_name);
-  const contactPhone = clean(contactSource?.day_contact_phone);
-  const hasContact = !!(contactName || contactPhone);
-
-  if (!meetingPoint && !access && !knowBefore && !contingency && !arriveMinutes && !hasContact) return null;
+  if (!meetingPoint && !access && !knowBefore && !contingency && !arriveMinutes) return null;
 
   const address = localized(fields, "address", lang);
   const info: PracticalInfo = { lang, ...navigationLinks(source, address) };
@@ -231,15 +176,6 @@ export function buildPracticalInfo(
   if (arriveMinutes) info.arriveMinutes = arriveMinutes;
   if (knowBefore) info.knowBefore = knowBefore;
   if (contingency) info.contingency = contingency;
-  if (hasContact) {
-    const languageCode = clean(contactSource?.day_contact_language);
-    info.contact = {
-      name: contactName || undefined,
-      phone: contactPhone || undefined,
-      // La langue seule n'a pas de sens sans nom ni téléphone.
-      language: CONTACT_LANGUAGE_NAMES[languageCode]?.[lang],
-    };
-  }
   return info;
 }
 
@@ -250,13 +186,6 @@ export function hasLocation(info: PracticalInfo | null): boolean {
 
 const escapeHTML = (str: string): string =>
   str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-
-function contactLine(info: PracticalInfo): string {
-  if (!info.contact) return "";
-  const { name, phone, language } = info.contact;
-  const who = [name, phone].filter(Boolean).join(", ");
-  return language ? `${who} (${LABELS[info.lang].speaks(language)})` : who;
-}
 
 /** Bloc « Infos pratiques » pour un email, dans l'habillage des emails Staymakom. Chaîne vide si rien à dire. */
 export function renderPracticalInfoHtml(info: PracticalInfo | null): string {
@@ -289,7 +218,6 @@ export function renderPracticalInfoHtml(info: PracticalInfo | null): string {
   if (info.arriveMinutes) row(t.arrival, text(t.arrive(info.arriveMinutes)));
   if (info.knowBefore) row(t.knowBefore, text(info.knowBefore));
   if (info.contingency) row(t.contingency, text(info.contingency));
-  if (info.contact) row(t.contact, text(contactLine(info)));
 
   return `
               <!-- Infos pratiques -->
@@ -321,7 +249,6 @@ export function renderPracticalInfoLines(info: PracticalInfo | null): string[] {
   if (info.arriveMinutes) lines.push(`⏰ ${t.arrive(info.arriveMinutes)}`);
   if (info.knowBefore) lines.push(`ℹ️ ${t.knowBefore} : ${info.knowBefore}`);
   if (info.contingency) lines.push(`🌦 ${t.contingency} : ${info.contingency}`);
-  if (info.contact) lines.push(`📞 ${t.contact} : ${contactLine(info)}`);
   return lines;
 }
 
@@ -332,6 +259,21 @@ export function formatBookingDate(dateStr: string, lang: PracticalLang): string 
   const date = new Date(`${dateStr.slice(0, 10)}T12:00:00Z`);
   if (Number.isNaN(date.getTime())) return dateStr;
   return date.toLocaleDateString(DATE_LOCALES[lang], { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+}
+
+// Créneau « moment de la journée » (codes neutres, mêmes valeurs que _shared/time-slot.ts).
+const SLOT_MOMENTS: Record<string, Record<PracticalLang, string>> = {
+  morning: { en: "in the morning", fr: "le matin", he: "בבוקר" },
+  afternoon: { en: "in the afternoon", fr: "l'après-midi", he: "אחר הצהריים" },
+};
+
+/** « at 10:00 » pour une heure, « in the morning » pour un moment de la journée. */
+function slotPhrase(slot: string | null | undefined, lang: PracticalLang): string {
+  const value = clean(slot);
+  if (!value) return "";
+  if (SLOT_MOMENTS[value]) return ` ${SLOT_MOMENTS[value][lang]}`;
+  const at: Record<PracticalLang, string> = { en: "at", fr: "à", he: "בשעה" };
+  return ` ${at[lang]} ${value}`;
 }
 
 export interface ClientMessageBooking {
@@ -348,20 +290,20 @@ export interface ClientMessageBooking {
 export function buildClientWhatsAppMessage(booking: ClientMessageBooking, info: PracticalInfo | null, langInput: unknown): string {
   const lang = normalizeLang(langInput);
   const date = formatBookingDate(booking.bookingDate, lang);
-  const time = clean(booking.timeSlot);
+  const time = slotPhrase(booking.timeSlot, lang);
   const name = clean(booking.customerName);
   const title = clean(booking.experienceTitle);
   const lines = renderPracticalInfoLines(info);
 
   const intro: Record<PracticalLang, string> = {
-    en: `Hi ${name}, here is the practical info for "${title}", ${date}${time ? ` at ${time}` : ""}.`,
-    fr: `Bonjour ${name}, voici les infos pratiques pour « ${title} », ${date}${time ? ` à ${time}` : ""}.`,
-    he: `היי ${name}, הנה המידע השימושי עבור "${title}", ${date}${time ? ` בשעה ${time}` : ""}.`,
+    en: `Hi ${name}, here is the practical info for "${title}", ${date}${time}.`,
+    fr: `Bonjour ${name}, voici les infos pratiques pour « ${title} », ${date}${time}.`,
+    he: `היי ${name}, הנה המידע השימושי עבור "${title}", ${date}${time}.`,
   };
   const introWithoutInfo: Record<PracticalLang, string> = {
-    en: `Hi ${name}, a quick reminder of your booking "${title}", ${date}${time ? ` at ${time}` : ""}.`,
-    fr: `Bonjour ${name}, un petit rappel de votre réservation « ${title} », ${date}${time ? ` à ${time}` : ""}.`,
-    he: `היי ${name}, תזכורת קטנה להזמנה "${title}", ${date}${time ? ` בשעה ${time}` : ""}.`,
+    en: `Hi ${name}, a quick reminder of your booking "${title}", ${date}${time}.`,
+    fr: `Bonjour ${name}, un petit rappel de votre réservation « ${title} », ${date}${time}.`,
+    he: `היי ${name}, תזכורת קטנה להזמנה "${title}", ${date}${time}.`,
   };
   const outro: Record<PracticalLang, string> = {
     en: "A question? Our team answers right here.\nThe Staymakom team",

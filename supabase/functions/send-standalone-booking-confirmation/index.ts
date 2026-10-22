@@ -8,7 +8,7 @@
 // droite à gauche). Sans langue connue, il part en anglais. La version anglaise est, au caractère
 // près, celle d'origine.
 //
-// Bloc « Infos pratiques » (point de rendez-vous, accès, contact jour J...) : ajouté dans la langue
+// Bloc « Infos pratiques » (point de rendez-vous, accès, à savoir...) : ajouté dans la langue
 // de la réservation, uniquement pour une réservation d'expérience déjà confirmée et non annulée.
 // Si la fiche n'a aucune info pratique, l'email est exactement celui d'avant.
 //
@@ -24,9 +24,10 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { formatBookingDate, hasLocation, normalizeLang, renderPracticalInfoHtml, buildPracticalInfo, type PracticalInfo, type PracticalLang } from '../_shared/practical-info/content.ts';
-import { loadPracticalInfo, SAMPLE_DAY_CONTACT, SAMPLE_PRACTICAL_SOURCE } from '../_shared/practical-info/load.ts';
+import { loadPracticalInfo, SAMPLE_PRACTICAL_SOURCE } from '../_shared/practical-info/load.ts';
 import { getAdminEmail, isAdminEmail, isInternalCron } from '../_shared/internal-auth.ts';
 import { notifyProviderOfBooking } from '../_shared/partner/booking-notice.ts';
+import { formatTimeSlot } from '../_shared/time-slot.ts';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 
@@ -412,7 +413,7 @@ Deno.serve(async (req: Request) => {
       const lang = normalizeLang(body.lang);
       // `sample_info` : montre le rendu d'une fiche complète avec des infos de démonstration.
       const practicalInfo = body.sample_info === true
-        ? buildPracticalInfo(SAMPLE_PRACTICAL_SOURCE, SAMPLE_DAY_CONTACT, lang)
+        ? buildPracticalInfo(SAMPLE_PRACTICAL_SOURCE, lang)
         : await loadPracticalInfo(supabase, previewExperience.id, lang);
 
       const inOneWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -474,7 +475,7 @@ Deno.serve(async (req: Request) => {
       guestName: booking.customer_name,
       experienceTitle,
       bookingDate: booking.booking_date,
-      timeSlot: booking.time_slot || undefined,
+      timeSlot: formatTimeSlot(booking.time_slot, lang) || undefined,
       partySize: booking.party_size,
       totalPrice: booking.sell_price,
       currency: booking.currency || 'USD',

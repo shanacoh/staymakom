@@ -79,7 +79,7 @@ export default function AdminProviders() {
         (!type || p.provider_type === type) &&
         (!status || p.status === status) &&
         (!regionId || p.region_id === regionId) &&
-        (!needle || normalize([p.name, p.contact_name, p.email, p.whatsapp, p.legal_name].filter(Boolean).join(" ")).includes(needle)),
+        (!needle || normalize([p.name, p.contact_name, p.email, p.whatsapp].filter(Boolean).join(" ")).includes(needle)),
     );
   }, [providers, search, type, status, regionId]);
 

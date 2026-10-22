@@ -20,7 +20,7 @@ export const PROVIDERS_QUERY_KEY = ["admin-providers"] as const;
 export const PROVIDER_LINKS_QUERY_KEY = ["admin-provider-links"] as const;
 
 const PROVIDER_COLUMNS =
-  "id, name, provider_type, status, region_id, address, language, contact_name, email, whatsapp, day_contact_name, day_contact_whatsapp, day_contact_language, commission_percent, booking_channel, booking_url, conditions, cancellation_weather_policy, policy_validated, legal_name, tax_id, terms_accepted_at, terms_version, crm_contact_id, internal_notes, is_active";
+  "id, name, provider_type, status, region_id, address, language, contact_name, email, whatsapp, day_contact_same_as_main, day_contact_name, day_contact_whatsapp, day_contact_language, commission_percent, booking_channel, booking_url, conditions, cancellation_weather_policy, policy_validated, payment_method, bank_account_holder, bank_name, bank_account_number, terms_accepted_at, terms_version, crm_contact_id, internal_notes, is_active";
 
 export async function fetchProviders(): Promise<Provider[]> {
   const { data, error } = await db.from("providers").select(PROVIDER_COLUMNS).order("name");

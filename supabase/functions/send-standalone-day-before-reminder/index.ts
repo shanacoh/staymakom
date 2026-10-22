@@ -1,6 +1,6 @@
 // send-standalone-day-before-reminder — Edge Function
 // Rappel envoyé la veille d'une expérience seule, vers 10 h heure d'Israël : l'heure du créneau et
-// le bloc « Infos pratiques » (point de rendez-vous, accès, contact jour J...).
+// le bloc « Infos pratiques » (point de rendez-vous, accès, à savoir...).
 //
 // Qui l'appelle : la tâche planifiée de la base (pg_cron), à 7 h, 8 h et 9 h UTC chaque jour.
 // Selon l'heure d'été ou d'hiver, un passage tombe à 10 h en Israël (l'envoi) et le suivant à 11 h
@@ -18,9 +18,10 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { buildPracticalInfo, normalizeLang, type PracticalInfo } from '../_shared/practical-info/content.ts';
-import { loadPracticalInfo, SAMPLE_DAY_CONTACT, SAMPLE_PRACTICAL_SOURCE } from '../_shared/practical-info/load.ts';
+import { loadPracticalInfo, SAMPLE_PRACTICAL_SOURCE } from '../_shared/practical-info/load.ts';
 import { getAdminEmail, isAdminEmail, isInternalCron } from '../_shared/internal-auth.ts';
 import { buildReminderEmail } from './template.ts';
+import { formatTimeSlot } from '../_shared/time-slot.ts';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 // 10 h : l'envoi. 11 h : rattrapage de ce qui a échoué à 10 h (les rappels déjà partis sont ignorés).
@@ -86,7 +87,7 @@ Deno.serve(async (req: Request) => {
         timeSlot: '10:00',
         partySize: 2,
         confirmationToken: 'apercu',
-        practicalInfo: buildPracticalInfo(SAMPLE_PRACTICAL_SOURCE, SAMPLE_DAY_CONTACT, lang),
+        practicalInfo: buildPracticalInfo(SAMPLE_PRACTICAL_SOURCE, lang),
       });
       const sent = await sendEmail(recipient, `[Aperçu] ${email.subject}`, email.html);
       return sent.ok ? json({ success: true, sent_to: recipient }) : json({ error: 'Email send failed', details: sent.details }, 500);
@@ -155,7 +156,7 @@ Deno.serve(async (req: Request) => {
           guestName: booking.customer_name || '',
           experienceTitle: localizedTitle || experience?.title || booking.custom_experience_title || '',
           bookingDate: booking.booking_date,
-          timeSlot: booking.time_slot || undefined,
+          timeSlot: formatTimeSlot(booking.time_slot, lang) || undefined,
           partySize: booking.party_size,
           confirmationToken: booking.confirmation_token,
           address: booking.custom_address || experience?.address || undefined,

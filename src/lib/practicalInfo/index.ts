@@ -6,7 +6,6 @@ export {
   buildPracticalInfo,
   normalizeLang,
   PRACTICAL_INFO_COLUMNS,
-  type DayContactSource,
   type PracticalInfo,
   type PracticalInfoSource,
   type PracticalLang,

@@ -1,11 +1,10 @@
 // Garde-fou de la page Réservations : repère les réservations d'expérience des 7 prochains jours
-// dont la fiche n'a ni point de rendez-vous ni contact jour J (le sien, ou à défaut celui de son
-// prestataire). Le client recevrait alors une confirmation et un rappel sans savoir où aller ni qui appeler.
+// dont la fiche n'a pas de point de rendez-vous. Le client recevrait alors une confirmation et un
+// rappel sans savoir où aller (le contact du jour J ne lui est jamais envoyé, il reste interne).
 
 import { useQuery } from "@tanstack/react-query";
 import { addDays, format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { STANDALONE_EXPERIENCE_INTERNAL, withInternalFields } from "@/lib/internalFields";
 
 export const INCOMPLETE_PRACTICAL_INFO_QUERY_KEY = ["admin-incomplete-practical-info"];
 export const PRACTICAL_INFO_ALERT_DAYS = 7;
@@ -16,32 +15,11 @@ export interface PracticalInfoCheck {
   meeting_point?: string | null;
   meeting_point_fr?: string | null;
   meeting_point_he?: string | null;
-  day_contact_name?: string | null;
-  day_contact_phone?: string | null;
 }
 
-/** Vrai si la fiche n'a ni point de rendez-vous (dans aucune langue) ni contact jour J. */
+/** Vrai si la fiche n'a de point de rendez-vous dans aucune langue. */
 export function isPracticalInfoIncomplete(experience: PracticalInfoCheck): boolean {
-  const hasMeetingPoint = filled(experience.meeting_point) || filled(experience.meeting_point_fr) || filled(experience.meeting_point_he);
-  const hasDayContact = filled(experience.day_contact_name) || filled(experience.day_contact_phone);
-  return !hasMeetingPoint && !hasDayContact;
-}
-
-/** Parmi ces prestataires, ceux qui ont un contact du jour J par défaut : il sert quand la fiche n'a pas le sien. */
-async function fetchProvidersWithDayContact(providerIds: (string | null | undefined)[]): Promise<Set<string>> {
-  const ids = [...new Set(providerIds.filter((id): id is string => !!id))];
-  if (ids.length === 0) return new Set();
-  // Les colonnes du contact jour J ne sont pas encore dans les types générés.
-  const { data, error } = await (supabase as any)
-    .from("providers")
-    .select("id, day_contact_name, day_contact_whatsapp")
-    .in("id", ids);
-  if (error) throw error;
-  return new Set(
-    ((data ?? []) as { id: string; day_contact_name: string | null; day_contact_whatsapp: string | null }[])
-      .filter((p) => filled(p.day_contact_name) || filled(p.day_contact_whatsapp))
-      .map((p) => p.id),
-  );
+  return !filled(experience.meeting_point) && !filled(experience.meeting_point_fr) && !filled(experience.meeting_point_he);
 }
 
 async function fetchIncompleteBookingIds(): Promise<Set<string>> {
@@ -65,15 +43,8 @@ async function fetchIncompleteBookingIds(): Promise<Set<string>> {
     .in("id", experienceIds);
   if (experiencesError) throw experiencesError;
 
-  const withContact = (await withInternalFields(STANDALONE_EXPERIENCE_INTERNAL, (experiences ?? []) as { id: string }[])) as ({
-    id: string;
-    provider_id?: string | null;
-  } & PracticalInfoCheck)[];
-  const providersWithContact = await fetchProvidersWithDayContact(withContact.map((e) => e.provider_id));
   const incompleteExperiences = new Set(
-    withContact
-      .filter((e) => isPracticalInfoIncomplete(e) && !(e.provider_id && providersWithContact.has(e.provider_id)))
-      .map((e) => e.id),
+    ((experiences ?? []) as ({ id: string } & PracticalInfoCheck)[]).filter(isPracticalInfoIncomplete).map((e) => e.id),
   );
 
   return new Set(bookings.filter((b) => incompleteExperiences.has(b.standalone_experience_id as string)).map((b) => b.id));

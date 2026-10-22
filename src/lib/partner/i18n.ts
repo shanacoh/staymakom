@@ -84,9 +84,9 @@ const fr = {
   expSharedNotice: "Cette expérience est partagée entre plusieurs prestataires : ses disponibilités et son contact du jour sont gérés par l'équipe STAYMAKOM.",
 
   // Questionnaire
-  qIntro: "Ces informations sont envoyées au client après sa réservation. Le contact du jour J est enregistré tout de suite. Le reste est envoyé à l'équipe STAYMAKOM pour validation avant d'être transmis aux clients.",
+  qIntro: "Ces informations sont envoyées au client après sa réservation, sauf le contact du jour J qui reste réservé à l'équipe STAYMAKOM. Le contact du jour J est enregistré tout de suite. Le reste est envoyé à l'équipe STAYMAKOM pour validation avant d'être transmis aux clients.",
   qDayContactTitle: "Contact du jour J",
-  qDayContactHint: "La personne que le client peut joindre le jour de l'expérience.",
+  qDayContactHint: "La personne que l'équipe STAYMAKOM peut joindre le jour de l'expérience. Elle n'est pas transmise au client.",
   qDayContactName: "Nom",
   qDayContactPhone: "Téléphone / WhatsApp",
   qDayContactLanguage: "Langue parlée",
@@ -298,9 +298,9 @@ const en: PartnerTexts = {
   expSectionProposal: "Edit the page",
   expSharedNotice: "This experience is shared between several providers: its availability and day contact are managed by the STAYMAKOM team.",
 
-  qIntro: "This information is sent to the customer after booking. The day contact is saved right away. The rest is sent to the STAYMAKOM team for approval before it reaches customers.",
+  qIntro: "This information is sent to the customer after booking, except the day contact, which stays with the STAYMAKOM team. The day contact is saved right away. The rest is sent to the STAYMAKOM team for approval before it reaches customers.",
   qDayContactTitle: "Day contact",
-  qDayContactHint: "The person the customer can reach on the day of the experience.",
+  qDayContactHint: "The person the STAYMAKOM team can reach on the day of the experience. It is not shared with the customer.",
   qDayContactName: "Name",
   qDayContactPhone: "Phone / WhatsApp",
   qDayContactLanguage: "Language spoken",
@@ -502,9 +502,9 @@ const he: PartnerTexts = {
   expSectionProposal: "הצעת שינוי",
   expSharedNotice: "החוויה הזו משותפת לכמה ספקים: הזמינות ואיש הקשר ביום הפעילות מנוהלים על ידי צוות STAYMAKOM.",
 
-  qIntro: "המידע הזה נשלח ללקוח אחרי ההזמנה. איש הקשר ביום הפעילות נשמר מיד. שאר הפרטים נשלחים לצוות STAYMAKOM לאישור לפני שהם מגיעים ללקוחות.",
+  qIntro: "המידע הזה נשלח ללקוח אחרי ההזמנה, חוץ מאיש הקשר ביום הפעילות שנשאר אצל צוות STAYMAKOM בלבד. איש הקשר ביום הפעילות נשמר מיד. שאר הפרטים נשלחים לצוות STAYMAKOM לאישור לפני שהם מגיעים ללקוחות.",
   qDayContactTitle: "איש קשר ביום הפעילות",
-  qDayContactHint: "מי שהלקוח יכול להשיג ביום החוויה.",
+  qDayContactHint: "מי שצוות STAYMAKOM יכול להשיג ביום החוויה. הפרטים לא מועברים ללקוח.",
   qDayContactName: "שם",
   qDayContactPhone: "טלפון / וואטסאפ",
   qDayContactLanguage: "שפת דיבור",

@@ -5,6 +5,7 @@ export type ProviderType = "experience" | "hotel" | "boat" | "other";
 export type ProviderStatus = "prospect" | "en_discussion" | "signe" | "actif" | "en_pause" | "arrete";
 export type ProviderLanguage = "he" | "en" | "fr";
 export type ProviderBookingChannel = "hyperguest" | "provider_website" | "whatsapp" | "email" | "partner_portal";
+export type ProviderPaymentMethod = "card_on_site" | "bank_transfer" | "bit_paybox" | "cash_on_site";
 
 export interface Option<T extends string> {
   value: T;
@@ -43,6 +44,13 @@ export const PROVIDER_BOOKING_CHANNEL_OPTIONS: Option<ProviderBookingChannel>[] 
   { value: "partner_portal", label: "Espace partenaire", comingSoon: true },
 ];
 
+export const PROVIDER_PAYMENT_METHOD_OPTIONS: Option<ProviderPaymentMethod>[] = [
+  { value: "card_on_site", label: "Carte sur son site" },
+  { value: "bank_transfer", label: "Virement" },
+  { value: "bit_paybox", label: "Bit / PayBox" },
+  { value: "cash_on_site", label: "Espèces sur place" },
+];
+
 const labelOf = <T extends string>(options: Option<T>[], value: string | null | undefined) =>
   options.find((o) => o.value === value)?.label ?? "";
 
@@ -76,7 +84,9 @@ export interface Provider {
   contact_name: string | null;
   email: string | null;
   whatsapp: string | null;
-  /** Contact du jour J par défaut : celui de l'expérience reste prioritaire. */
+  /** Coché : le contact du jour J est le contact principal, les champs ci-dessous ne servent pas. */
+  day_contact_same_as_main: boolean;
+  /** Contact du jour J par défaut : celui de l'expérience reste prioritaire. Interne, jamais envoyé au client. */
   day_contact_name: string | null;
   day_contact_whatsapp: string | null;
   day_contact_language: ProviderLanguage | null;
@@ -88,8 +98,12 @@ export interface Provider {
   conditions: string | null;
   cancellation_weather_policy: string | null;
   policy_validated: boolean;
-  legal_name: string | null;
-  tax_id: string | null;
+  /** Paiement prestataire : interne, jamais montré au client ni au prestataire. */
+  payment_method: ProviderPaymentMethod | null;
+  /** Coordonnées bancaires, utiles seulement pour un virement. */
+  bank_account_holder: string | null;
+  bank_name: string | null;
+  bank_account_number: string | null;
   /** Acceptation des conditions partenaires : remplie plus tard par l'espace partenaire. */
   terms_accepted_at: string | null;
   terms_version: string | null;
@@ -112,6 +126,7 @@ export const EMPTY_PROVIDER_DRAFT: ProviderDraft = {
   contact_name: null,
   email: null,
   whatsapp: null,
+  day_contact_same_as_main: true,
   day_contact_name: null,
   day_contact_whatsapp: null,
   day_contact_language: null,
@@ -121,8 +136,10 @@ export const EMPTY_PROVIDER_DRAFT: ProviderDraft = {
   conditions: null,
   cancellation_weather_policy: null,
   policy_validated: false,
-  legal_name: null,
-  tax_id: null,
+  payment_method: null,
+  bank_account_holder: null,
+  bank_name: null,
+  bank_account_number: null,
   crm_contact_id: null,
   internal_notes: null,
 };

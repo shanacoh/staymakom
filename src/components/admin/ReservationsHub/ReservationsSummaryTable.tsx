@@ -26,7 +26,7 @@ interface Props extends DossierLinesProps {
   groups: ReservationGroups;
   onAction: (row: ReservationRow, action: NextAction) => void;
   onOpen: (row: ReservationRow) => void;
-  /** Réservations des 7 prochains jours dont la fiche n'a ni point de rendez-vous ni contact jour J. */
+  /** Réservations des 7 prochains jours dont la fiche n'a pas de point de rendez-vous. */
   incompletePracticalInfo?: Set<string>;
 }
 
@@ -129,7 +129,7 @@ function SummaryRow({
         {row.source === "booking" && incompletePracticalInfo?.has(row.id) && (
           <div
             className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-destructive"
-            title="La fiche n'a ni point de rendez-vous ni contact jour J (section « Après la réservation »)"
+            title="La fiche n'a pas de point de rendez-vous (section « Après la réservation »)"
           >
             <AlertTriangle className="h-3 w-3" />
             Infos pratiques incomplètes

@@ -1,5 +1,6 @@
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   PROVIDER_BOOKING_CHANNEL_OPTIONS,
   PROVIDER_LANGUAGE_OPTIONS,
+  PROVIDER_PAYMENT_METHOD_OPTIONS,
   PROVIDER_STATUS_OPTIONS,
   PROVIDER_TYPE_OPTIONS,
   type LinkedHotel,
@@ -155,29 +157,41 @@ export function ProviderForm({ draft, onChange, provider, hotels }: ProviderForm
 
       <Section
         title="Contact du jour J par défaut"
-        description="Envoyé au client dans la confirmation et le rappel de la veille, quand l'expérience n'a pas son propre contact. Celui de l'expérience reste prioritaire."
+        description="Interne, jamais envoyé au client. La personne à joindre le jour J quand l'expérience n'a pas son propre contact."
       >
-        <div className="grid gap-3 sm:grid-cols-3">
-          <Field label="Nom" htmlFor="provider-day-name">
-            <Input id="provider-day-name" defaultValue={draft.day_contact_name ?? ""} onChange={set("day_contact_name")} />
-          </Field>
-          <Field label="WhatsApp" htmlFor="provider-day-whatsapp">
-            <Input
-              id="provider-day-whatsapp"
-              type="tel"
-              placeholder="+972…"
-              defaultValue={draft.day_contact_whatsapp ?? ""}
-              onChange={set("day_contact_whatsapp")}
-            />
-          </Field>
-          <Field label="Langue parlée" htmlFor="provider-day-language">
-            <LanguageSelect
-              id="provider-day-language"
-              value={draft.day_contact_language}
-              onChange={(day_contact_language) => onChange({ day_contact_language })}
-            />
-          </Field>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="provider-day-same"
+            checked={draft.day_contact_same_as_main}
+            onCheckedChange={(checked) => onChange({ day_contact_same_as_main: checked === true })}
+          />
+          <Label htmlFor="provider-day-same" className="text-xs">
+            Identique au contact principal
+          </Label>
         </div>
+        {!draft.day_contact_same_as_main && (
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Field label="Nom" htmlFor="provider-day-name">
+              <Input id="provider-day-name" defaultValue={draft.day_contact_name ?? ""} onChange={set("day_contact_name")} />
+            </Field>
+            <Field label="WhatsApp" htmlFor="provider-day-whatsapp">
+              <Input
+                id="provider-day-whatsapp"
+                type="tel"
+                placeholder="+972…"
+                defaultValue={draft.day_contact_whatsapp ?? ""}
+                onChange={set("day_contact_whatsapp")}
+              />
+            </Field>
+            <Field label="Langue parlée" htmlFor="provider-day-language">
+              <LanguageSelect
+                id="provider-day-language"
+                value={draft.day_contact_language}
+                onChange={(day_contact_language) => onChange({ day_contact_language })}
+              />
+            </Field>
+          </div>
+        )}
       </Section>
 
       <Section title="Commission et réservation">
@@ -269,15 +283,45 @@ export function ProviderForm({ draft, onChange, provider, hotels }: ProviderForm
         </div>
       </Section>
 
-      <Section title="Facturation" description="Pas de coordonnées bancaires ici.">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Raison sociale" htmlFor="provider-legal-name">
-            <Input id="provider-legal-name" defaultValue={draft.legal_name ?? ""} onChange={set("legal_name")} />
-          </Field>
-          <Field label="Numéro fiscal" htmlFor="provider-tax-id">
-            <Input id="provider-tax-id" defaultValue={draft.tax_id ?? ""} onChange={set("tax_id")} />
-          </Field>
-        </div>
+      <Section title="Paiement prestataire" description="Interne, jamais visible par le client ni par le prestataire dans son espace.">
+        <Field label="Mode de paiement habituel">
+          <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Mode de paiement habituel">
+            {PROVIDER_PAYMENT_METHOD_OPTIONS.map((o) => {
+              const active = draft.payment_method === o.value;
+              return (
+                <button
+                  key={o.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => onChange({ payment_method: active ? null : o.value })}
+                  className={cn(
+                    "rounded-full border px-3 py-1 text-xs transition-colors",
+                    active ? "border-black bg-black text-white" : "border-border hover:bg-muted",
+                  )}
+                >
+                  {o.label}
+                </button>
+              );
+            })}
+          </div>
+        </Field>
+        {draft.payment_method === "bank_transfer" && (
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Field label="Titulaire" htmlFor="provider-bank-holder">
+              <Input id="provider-bank-holder" defaultValue={draft.bank_account_holder ?? ""} onChange={set("bank_account_holder")} />
+            </Field>
+            <Field label="Banque" htmlFor="provider-bank-name">
+              <Input id="provider-bank-name" defaultValue={draft.bank_name ?? ""} onChange={set("bank_name")} />
+            </Field>
+            <Field label="Numéro de compte / IBAN" htmlFor="provider-bank-account">
+              <Input id="provider-bank-account" defaultValue={draft.bank_account_number ?? ""} onChange={set("bank_account_number")} />
+            </Field>
+          </div>
+        )}
+      </Section>
+
+      <Section title="Suivi interne">
         <Field label="Conditions partenaires" hint="Rempli automatiquement quand le prestataire les acceptera dans son espace partenaire.">
           <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
             {provider.terms_accepted_at
@@ -287,9 +331,6 @@ export function ProviderForm({ draft, onChange, provider, hotels }: ProviderForm
               : "Pas encore acceptées"}
           </p>
         </Field>
-      </Section>
-
-      <Section title="Suivi interne">
         <Field label="Identifiant du contact CRM" htmlFor="provider-crm" hint="Pour relier plus tard cette fiche au CRM.">
           <Input id="provider-crm" defaultValue={draft.crm_contact_id ?? ""} onChange={set("crm_contact_id")} />
         </Field>

@@ -6,6 +6,32 @@
 
 ---
 
+## [2026-10-22] — Fiche prestataire : contact du jour J « identique au contact principal », bloc « Paiement prestataire », plus aucun contact prestataire envoyé au client
+
+> Statut : migration appliquée en production (20 prestataires : 19 cochés, 1 décoché car il avait déjà son contact du jour J). Tests des infos pratiques OK (10/10), aucune nouvelle erreur de compilation. Validé par Shana. Fonctions d'email à redéployer (send-standalone-booking-confirmation, send-standalone-day-before-reminder).
+
+### Ce qui a changé côté code
+- `src/components/admin/providers/ProviderForm.tsx` : case « Identique au contact principal » dans le bloc « Contact du jour J par défaut » (cochée = champs masqués) ; bloc « Facturation » remplacé par « Paiement prestataire » (mode de paiement habituel en 4 boutons, et titulaire / banque / numéro de compte ou IBAN seulement pour « Virement ») ; la ligne « Conditions partenaires » passe dans « Suivi interne ».
+- `src/lib/providers/types.ts`, `src/lib/providers/queries.ts` : nouveaux champs ; raison sociale et numéro fiscal ne sont plus lus ni renvoyés par l'écran (ils restent en base).
+- `src/pages/admin/Providers.tsx` : la recherche ne porte plus sur la raison sociale.
+- `supabase/functions/_shared/practical-info/content.ts`, `load.ts` : le bloc « Infos pratiques » des emails (confirmation, rappel de la veille) et le message WhatsApp client ne contiennent plus jamais de contact du jour J, ni celui de l'expérience ni celui du prestataire. Le client passe toujours par Staymakom.
+- `supabase/functions/send-standalone-booking-confirmation/index.ts`, `send-standalone-day-before-reminder/index.ts`, `src/components/admin/PracticalInfoWhatsAppCard.tsx`, `src/lib/practicalInfo/index.ts` : adaptés en conséquence.
+- `src/lib/reservations/practicalInfoAlerts.ts`, `ReservationsSummaryTable.tsx` : l'alerte de la page Réservations ne signale plus que les fiches sans point de rendez-vous (le contact n'étant plus envoyé, il ne compte plus).
+- `src/lib/partner/i18n.ts` (FR / EN / HE), `src/components/forms/standalone/AfterBookingSection.tsx` : textes corrigés, le contact du jour J est indiqué comme réservé à l'équipe, jamais transmis au client.
+- `supabase/functions/_shared/practical-info/content.test.ts` : tests mis à jour (aucun contact dans ce qui part au client).
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261022100000_provider_day_contact_and_payment.sql` :
+  - `providers.day_contact_same_as_main` (oui/non, oui par défaut) : le contact du jour J est le contact principal. Mis à « non » pour les prestataires qui avaient déjà un contact du jour J.
+  - Déclencheur `providers_day_contact_unset_same` : dès qu'un contact du jour J est saisi (par l'équipe ou par le prestataire dans son espace), la case se décoche toute seule.
+  - `providers.payment_method` (carte sur son site / virement / Bit-PayBox / espèces sur place), `bank_account_holder`, `bank_name`, `bank_account_number` : infos internes, lisibles par les seuls admins, jamais renvoyées à l'espace partenaire.
+  - `legal_name` et `tax_id` ne sont pas touchés.
+
+### Pourquoi ce changement
+- Shana voulait savoir comment payer chaque prestataire, et ne plus ressaisir un contact du jour J identique au contact principal. Elle a aussi décidé que le client ne reçoit jamais le nom ni le numéro du prestataire : uniquement les infos d'accès.
+
+---
+
 ## [2026-10-20] — Espace partenaire : Profil et fiche d'une expérience plus courts
 
 > Statut : vérifié à l'écran en local (téléphone) avec un prestataire fictif, données simulées dans le navigateur de test, rien en base. `npm run build` passe, 19 tests partenaires OK.
