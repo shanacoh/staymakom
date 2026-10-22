@@ -193,6 +193,8 @@ const standaloneExperienceSchema = z.object({
   has_child_price: z.boolean().default(false),
   // Jusqu'à 999 % (colonne NUMERIC(5,2)) : la marge se déduit aussi d'un prix de vente tapé à la main.
   markup_percent: z.number().min(0).max(999).default(0),
+  // Mode choisi dans la calculette (« Marge % » ou « Achat + vente »), retenu pour rouvrir la fiche pareil.
+  price_mode: z.enum(["markup", "price"]).default("markup"),
   // Prix de vente réellement affiché aux clients : pré-rempli avec la
   // suggestion fournisseur + marge, mais modifiable librement une fois édité
   // à la main (bateaux et non-bateaux).
@@ -738,6 +740,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       supplier_price_child: 0,
       has_child_price: false,
       markup_percent: 0,
+      price_mode: "markup",
       base_price: undefined,
       base_price_child: undefined,
       supplier_booking_url: "",
@@ -949,15 +952,18 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     setValue("base_price_child", exp.base_price_child ?? undefined);
     // Bateaux : un prix déjà enregistré est considéré comme fixé à la main
     // (utilisé notamment pour les promos) — le curseur de marge ne doit pas
-    // l'écraser à l'ouverture de la fiche. Non-bateaux : la marge enregistrée
-    // suit toujours le prix adulte (calculette), on rouvre donc en « Marge % » ;
+    // l'écraser à l'ouverture de la fiche. Non-bateaux : la fiche se rouvre dans
+    // le mode choisi par Shana (« Marge % » ou « Achat + vente ») ; en « Marge % »,
     // seul un prix enfant tapé à la main, différent du calcul, est conservé.
+    const storedPriceMode = exp.price_mode === "price" ? "price" : "markup";
+    setValue("price_mode", storedPriceMode);
     const storedChildSuggestion = Math.round((exp.supplier_price_child ?? 0) * (1 + (exp.markup_percent ?? 0) / 100));
-    setPriceTouched(isBoatsExperience ? exp.base_price != null : false);
+    setPriceTouched(isBoatsExperience ? exp.base_price != null : storedPriceMode === "price");
     setChildPriceTouched(
       isBoatsExperience
         ? exp.base_price_child != null
-        : exp.base_price_child != null && exp.base_price_child !== storedChildSuggestion,
+        : storedPriceMode === "price" ||
+          (exp.base_price_child != null && exp.base_price_child !== storedChildSuggestion),
     );
     setValue("supplier_booking_url", exp.supplier_booking_url || "");
     setValue("supplier_contact", exp.supplier_contact || "");
@@ -1556,6 +1562,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       supplier_price_child: data.has_child_price ? data.supplier_price_child : null,
       has_child_price: data.has_child_price,
       markup_percent: data.markup_percent,
+      price_mode: isBoatsExperience ? null : data.price_mode,
       supplier_booking_url: data.supplier_booking_url || null,
       supplier_contact: data.supplier_contact || null,
       supplier_payment_method: data.supplier_payment_method || null,
@@ -3086,6 +3093,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
               <PriceCalculator
                 mode={priceTouched ? "price" : "markup"}
                 onModeChange={(mode) => {
+                  setValue("price_mode", mode, { shouldDirty: true });
                   const typed = mode === "price";
                   setPriceTouched(typed);
                   setChildPriceTouched(typed);

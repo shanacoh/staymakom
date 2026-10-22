@@ -22,6 +22,7 @@ export const STANDALONE_EXPERIENCE_INTERNAL: InternalStore = {
     "supplier_price_adult",
     "supplier_price_child",
     "markup_percent",
+    "price_mode",
     "supplier_name",
     "supplier_boat_name",
     "supplier_contact",
