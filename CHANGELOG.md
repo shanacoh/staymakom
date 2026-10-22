@@ -6,6 +6,29 @@
 
 ---
 
+## [2026-10-22] — Fiche expérience : calculette de prix, créneaux « Matin / Après-midi », délai de 3 jours verrouillé, inclus de l'IA plus factuels
+
+> Statut : validé par Shana. Tests OK (créneaux, message WhatsApp), aucune nouvelle erreur de compilation. Fonction IA `generate-experience-draft` redéployée, migration appliquée en production, fonctions d'email redéployées (`send-standalone-booking-confirmation`, `send-standalone-day-before-reminder`, `partner-notify`). Note : les changements de `send-standalone-booking-confirmation/index.ts`, `send-standalone-day-before-reminder/index.ts` et `_shared/practical-info/content.ts` sont partis dans le commit de l'entrée ci-dessous ; le fichier `_shared/time-slot.ts` qu'ils utilisent arrive dans ce commit-ci.
+
+### Ce qui a changé côté code
+- `src/components/forms/standalone/PriceCalculator.tsx` (nouveau) : calculette de prix sur une ligne par tarif (Achat | Marge | Prix client | Gain). Deux façons de remplir, côte à côte : « Marge % » (le prix client se calcule) ou « Achat + vente » (la marge se déduit). Remplace le curseur de marge sur toute la largeur et les trois grandes cases de prix de vente.
+- `src/components/forms/StandaloneExperienceForm.tsx` :
+  - branche la calculette (expériences hors bateaux ; les bateaux gardent leur écran) ; en mode « Achat + vente », la marge enregistrée suit le prix client adulte tapé (pour rester juste dans les options tarifaires et à la réouverture) ; un prix enfant tapé à la main est conservé à la réouverture ; la marge peut aller jusqu'à 999 % (avant 100 %).
+  - créneaux : boutons « + Matin » et « + Après-midi » à côté de l'heure ; les créneaux sont rangés matin, heures, après-midi.
+  - délai minimum avant réservation : 3 jours par défaut pour toute nouvelle fiche ; le champ est verrouillé et ne s'ouvre qu'avec le bouton « Changer » (avec un rappel que c'est une exception et un lien « Revenir à 3 jours »).
+- `src/lib/timeSlots.ts` (nouveau) et `supabase/functions/_shared/time-slot.ts` (nouveau) : un créneau « moment » est enregistré sous un code neutre (`morning` / `afternoon`) et traduit à l'affichage (Matin / Morning / בוקר…). Les deux tables doivent rester identiques.
+- Affichage traduit du créneau : page expérience (choix du créneau), paiement, page de confirmation, espace client, fiche réservation admin, réservation manuelle, espace partenaire (disponibilités et cartes de réservation) : `StandaloneExperience.tsx`, `StandaloneCheckout.tsx`, `StandaloneBookingConfirmation.tsx`, `MyStaymakomSection.tsx`, `StandaloneBookingDetails.tsx`, `CreateManualStandaloneBookingDialog.tsx`, `EssentialsBlock.tsx`, `partner/AvailabilityEditor.tsx`, `partner/BookingCard.tsx`.
+- Emails : `send-standalone-booking-confirmation/index.ts`, `send-standalone-day-before-reminder/index.ts`, `_shared/partner/booking-notice.ts` traduisent le créneau ; `_shared/practical-info/content.ts` écrit « le matin » / « in the morning » dans le message WhatsApp au lieu de « à 10:00 ».
+- `supabase/functions/_shared/prompts/shana-preferences.ts` : règle « inclus » ajoutée au carnet de l'IA (choses concrètes réellement fournies, rien d'inventé, courts).
+- Tests : `src/lib/timeSlots.test.ts` (nouveau), `content.test.ts` (créneau « matin »).
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261022120000_standalone_lead_time_default_3_days.sql` : la valeur par défaut de `standalone_experiences.lead_time_days` passe de 1 à 3 jours. Les fiches existantes ne changent pas (37 fiches en ligne sont encore à 1 ou 2 jours).
+- Aucune nouvelle colonne : « Matin » et « Après-midi » sont rangés dans la liste de créneaux existante (`time_slots`).
+
+### Pourquoi ce changement
+- En remplissant une fiche, Shana voulait saisir un prix soit par commission, soit avec prix d'achat et prix de vente, sans écran encombrant ; proposer au client « matin » ou « après-midi » au lieu d'une heure ; et imposer par défaut 3 jours de délai, modifiables seulement par un geste volontaire.
+
 ## [2026-10-22] — Fiche prestataire : contact du jour J « identique au contact principal », bloc « Paiement prestataire », plus aucun contact prestataire envoyé au client
 
 > Statut : migration appliquée en production (20 prestataires : 19 cochés, 1 décoché car il avait déjà son contact du jour J). Tests des infos pratiques OK (10/10), aucune nouvelle erreur de compilation. Validé par Shana. Fonctions d'email à redéployer (send-standalone-booking-confirmation, send-standalone-day-before-reminder).

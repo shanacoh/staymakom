@@ -24,6 +24,7 @@ import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManual
 import EditStandaloneBookingDialog from "@/components/admin/EditStandaloneBookingDialog";
 import PracticalInfoWhatsAppCard from "@/components/admin/PracticalInfoWhatsAppCard";
 import { trackReviewRequestSent } from "@/lib/analytics";
+import { formatTimeSlot } from "@/lib/timeSlots";
 
 export default function AdminStandaloneBookingDetails() {
   const { bookingId } = useParams();
@@ -517,7 +518,7 @@ export default function AdminStandaloneBookingDetails() {
                 <p className="text-xs text-muted-foreground">Créneau</p>
                 <p className="font-medium flex items-center gap-1.5">
                   <Clock className="h-4 w-4" />
-                  {booking.time_slot}
+                  {formatTimeSlot(booking.time_slot)}
                 </p>
               </div>
             )}

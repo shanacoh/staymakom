@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { usePartner } from "@/lib/partner/context";
 import { addTimeSlot, removeTimeSlot, toggleWeekday } from "@/lib/partner/logic";
 import type { PartnerAvailability } from "@/lib/partner/types";
+import { formatTimeSlot } from "@/lib/timeSlots";
 
 // Affichés dans l'ordre de la semaine israélienne : dimanche (7) d'abord.
 const WEEKDAY_ORDER = [7, 1, 2, 3, 4, 5, 6];
@@ -21,7 +22,7 @@ interface Props {
 }
 
 export function AvailabilityEditor({ value, onChange, bookedDates }: Props) {
-  const { t } = usePartner();
+  const { t, lang } = usePartner();
   const [slotInput, setSlotInput] = useState("");
   const [slotError, setSlotError] = useState(false);
 
@@ -101,7 +102,7 @@ export function AvailabilityEditor({ value, onChange, bookedDates }: Props) {
           <ul className="flex flex-wrap gap-2">
             {value.time_slots.map((slot) => (
               <li key={slot} className="flex items-center gap-1 rounded-full bg-neutral-100 py-1 pe-1.5 ps-3 text-[12px] font-semibold text-neutral-900">
-                <span dir="ltr">{slot}</span>
+                <span dir="ltr">{formatTimeSlot(slot, lang)}</span>
                 <button
                   type="button"
                   onClick={() => onChange(removeTimeSlot(value, slot))}

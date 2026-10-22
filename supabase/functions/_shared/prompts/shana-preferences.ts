@@ -16,4 +16,9 @@ export const SHANA_PREFERENCES_PROMPT = `
 - « Vous » est réservé au pluriel réel : « vous deux » pour un couple (Romantic Escape), « vous en famille » (Family Fun), un groupe d'amis.
 - Un texte choisit l'un ou l'autre et s'y tient du titre à la dernière ligne. Un texte écrit en « vous deux » ne passe pas à « tu » au milieu, et inversement.
 - En anglais et en hébreu il n'y a pas de vouvoiement : même logique, singulier pour une personne, pluriel pour un couple, une famille ou un groupe.
+
+**Les inclus (22/10/2026) : Shana ne les a pas trouvés pertinents**
+- Un inclus est une chose concrète que le client reçoit vraiment : une dégustation de 5 vins, le matériel, le transfert, un guide. Pas une émotion, pas une ambiance, pas une promesse (« des souvenirs inoubliables », « un moment hors du temps »).
+- Uniquement ce que les informations fournies (prestataire, site, notes de Shana) mentionnent. Rien d'inventé, rien de supposé. S'il n'y a pas assez d'éléments réels, proposer moins d'inclus plutôt que d'en remplir avec du générique.
+- Court : quelques mots, comme une ligne de facture lisible.
 `;

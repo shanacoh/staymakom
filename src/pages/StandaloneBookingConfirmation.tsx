@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import { SEOHead } from "@/components/SEOHead";
+import { formatTimeSlot } from "@/lib/timeSlots";
 
 // ─── Translations ─────────────────────────────────────────────────────────────
 
@@ -225,7 +226,7 @@ export default function StandaloneBookingConfirmation() {
                     <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1 flex items-center gap-1">
                       <Clock className="h-3 w-3" /> {t.time}
                     </p>
-                    <p className="font-semibold text-sm">{booking.time_slot}</p>
+                    <p className="font-semibold text-sm">{formatTimeSlot(booking.time_slot, lang)}</p>
                   </div>
                 )}
 

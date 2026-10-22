@@ -62,6 +62,7 @@ import type { SelectedExtra } from "@/components/experience-test/ExtrasSection2"
 import { Users, Calendar, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fr, he } from "date-fns/locale";
+import { formatTimeSlot } from "@/lib/timeSlots";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -910,7 +911,7 @@ export default function StandaloneExperience() {
                       : "border-border hover:border-[#ad1414]/50 hover:bg-[#FDF2F2]"
                   )}
                 >
-                  {slot}
+                  {formatTimeSlot(slot, lang)}
                 </button>
               ))}
             </div>

@@ -10,6 +10,7 @@
 
 import { formatBookingDate } from "../practical-info/content.ts";
 import { PARTNER_SPACE_URL, partnerLang, renderPartnerEmail, sendPartnerEmail, type PartnerLang } from "./email.ts";
+import { formatTimeSlot } from "../time-slot.ts";
 
 // deno-lint-ignore no-explicit-any
 type ServiceClient = any;
@@ -235,7 +236,7 @@ export async function notifyProviderOfBooking(
   const { subject, html } = buildBookingNotice(kind, lang, {
     experienceTitle: title,
     bookingDate: booking.booking_date,
-    timeSlot: booking.time_slot,
+    timeSlot: formatTimeSlot(booking.time_slot, lang),
     adults: booking.adults_count ?? booking.party_size ?? 0,
     children: booking.children_count ?? 0,
     customerName: booking.customer_name,

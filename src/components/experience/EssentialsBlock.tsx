@@ -10,6 +10,7 @@ import { buildWhatsappMessageForExperience } from "@/constants/whatsapp";
 import { WHATSAPP_NUMBER } from "@/constants/whatsapp";
 import { trackEssentialsExpanded } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+import { formatTimeSlot } from "@/lib/timeSlots";
 
 // Sous-ensemble des champs de l'expérience nécessaires au bloc "L'essentiel".
 // Tous optionnels : une fiche déjà publiée doit s'afficher sans erreur même
@@ -171,7 +172,7 @@ export default function EssentialsBlock({ experience, experienceTitle, lang, com
             const customLabel = experience.session_labels?.[dateStr]?.[lang];
             const timePart =
               experience.has_time_slots && (experience.time_slots?.length ?? 0) > 0
-                ? ` · ${experience.time_slots![0]}`
+                ? ` · ${formatTimeSlot(experience.time_slots![0], lang)}`
                 : "";
             const pillText = customLabel ? `${customLabel} · ${formatted}${timePart}` : `${formatted}${timePart}`;
             return (

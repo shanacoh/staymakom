@@ -44,6 +44,7 @@ import {
   trackCheckoutAbandoned,
   identifyLead,
 } from "@/lib/analytics";
+import { formatTimeSlot } from "@/lib/timeSlots";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -650,7 +651,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
           {state.selectedSlot && (
             <div className="flex justify-between gap-2">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5 shrink-0">{t.timeSlot}</span>
-              <span className="text-xs font-medium">{state.selectedSlot}</span>
+              <span className="text-xs font-medium">{formatTimeSlot(state.selectedSlot, lang)}</span>
             </div>
           )}
           {state.selectedRateOptionLabel && (
@@ -980,7 +981,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                   {state.selectedSlot && (
                     <div>
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{t.timeSlot}</p>
-                      <p className="text-sm font-medium">{state.selectedSlot}</p>
+                      <p className="text-sm font-medium">{formatTimeSlot(state.selectedSlot, lang)}</p>
                     </div>
                   )}
                   <div>

@@ -22,6 +22,7 @@ import {
 import { useLanguage } from "@/hooks/useLanguage";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { analyzeCancellationPolicies } from "@/utils/cancellationPolicy";
+import { formatTimeSlot } from "@/lib/timeSlots";
 
 interface MyStaymakomSectionProps {
   userId?: string;
@@ -373,7 +374,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
       currency: b.currency,
       status: b.status,
       isCancelled: b.is_cancelled ?? false,
-      roomName: b.time_slot ? `🕐 ${b.time_slot}` : null,
+      roomName: b.time_slot ? `🕐 ${formatTimeSlot(b.time_slot, lang)}` : null,
       hgBookingId: null,
       slug: null,
       heroImage: b.standalone_experiences?.hero_image || null,

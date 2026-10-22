@@ -96,4 +96,10 @@ describe("buildClientWhatsAppMessage", () => {
     expect(message.split("\n")).toHaveLength(3);
     expect(message).toContain("Hi Dana, a quick reminder of your booking");
   });
+
+  it("écrit « le matin » quand le créneau est un moment de la journée", () => {
+    const message = buildClientWhatsAppMessage({ ...booking, timeSlot: "morning" }, null, "fr");
+    expect(message).toContain("mardi 20 octobre 2026 le matin.");
+    expect(buildClientWhatsAppMessage({ ...booking, timeSlot: "afternoon" }, null, "en")).toContain("in the afternoon.");
+  });
 });

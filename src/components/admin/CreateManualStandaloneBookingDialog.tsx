@@ -22,6 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { CHANNEL_OPTIONS } from "@/components/admin/BookingsGrid/columnTypes";
+import { formatTimeSlot } from "@/lib/timeSlots";
 
 const CURRENCIES = ["ILS", "USD", "EUR"];
 
@@ -328,7 +329,7 @@ const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom
                 </SelectTrigger>
                 <SelectContent>
                   {(selectedExperience.time_slots as string[])?.map((slot) => (
-                    <SelectItem key={slot} value={slot}>{slot}</SelectItem>
+                    <SelectItem key={slot} value={slot}>{formatTimeSlot(slot)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

@@ -7,6 +7,7 @@ import { usePartner } from "@/lib/partner/context";
 import { formatPartnerDate } from "@/lib/partner/i18n";
 import { displayText } from "@/lib/partner/logic";
 import type { PartnerBooking } from "@/lib/partner/types";
+import { formatTimeSlot } from "@/lib/timeSlots";
 
 export const customerLabel = (booking: PartnerBooking) =>
   `${booking.customer_first_name}${booking.customer_last_initial ? ` ${booking.customer_last_initial}.` : ""}`;
@@ -33,7 +34,7 @@ export function BookingCard({ booking, compact = false }: { booking: PartnerBook
         </div>
         {booking.time_slot && (
           <span className="shrink-0 text-[12px] font-medium text-neutral-700" dir="ltr">
-            {booking.time_slot}
+            {formatTimeSlot(booking.time_slot, lang)}
           </span>
         )}
       </div>
@@ -60,7 +61,7 @@ export function BookingCard({ booking, compact = false }: { booking: PartnerBook
         {booking.time_slot && (
           <div className="flex items-center gap-1.5">
             <Clock className="h-3.5 w-3.5 text-neutral-400" aria-hidden />
-            <dd dir="ltr">{booking.time_slot}</dd>
+            <dd dir="ltr">{formatTimeSlot(booking.time_slot, lang)}</dd>
           </div>
         )}
         <div className="flex items-center gap-1.5">

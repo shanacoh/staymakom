@@ -34,12 +34,14 @@ import {
 import {
   Save, Rocket, X, Upload, Loader2, ArrowLeft, Plus, Star, Clock, Sparkles,
   MapPin, DollarSign, Check, Tag, Car, Utensils, Dumbbell, Waves, Users,
-  ChevronDown, Globe, AlertTriangle, EyeOff,
+  ChevronDown, Globe, AlertTriangle, EyeOff, Lock,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import RichTextEditor from "@/components/ui/rich-text-editor";
 import { generateSlug, buildImageFileName, cn } from "@/lib/utils";
+import { TIME_SLOT_MOMENTS, formatTimeSlot, sortTimeSlots } from "@/lib/timeSlots";
+import { PriceCalculator } from "@/components/forms/standalone/PriceCalculator";
 import { Separator } from "@/components/ui/separator";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -155,6 +157,10 @@ type TabId = (typeof TABS_DEFAULT)[number]["id"] | (typeof TABS_BOATS)[number]["
 // Zod schema
 // ---------------------------------------------------------------------------
 
+// Règle Staymakom : un client réserve au moins 3 jours avant. Changeable fiche par fiche, mais
+// seulement en déverrouillant le champ exprès (bouton « Changer »).
+const DEFAULT_LEAD_TIME_DAYS = 3;
+
 const optNum = (min = 0) =>
   z.preprocess((v) => (typeof v === "number" && isNaN(v) ? undefined : v), z.number().min(min).optional());
 
@@ -183,7 +189,8 @@ const standaloneExperienceSchema = z.object({
   supplier_price_adult: z.number().min(0).default(0),
   supplier_price_child: z.number().min(0).default(0),
   has_child_price: z.boolean().default(false),
-  markup_percent: z.number().min(0).max(100).default(0),
+  // Jusqu'à 999 % (colonne NUMERIC(5,2)) : la marge se déduit aussi d'un prix de vente tapé à la main.
+  markup_percent: z.number().min(0).max(999).default(0),
   // Prix de vente réellement affiché aux clients : pré-rempli avec la
   // suggestion fournisseur + marge, mais modifiable librement une fois édité
   // à la main (bateaux et non-bateaux).
@@ -481,6 +488,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   // Bateaux — prix de vente fixé à la main : tant que Shana n'y a pas touché,
   // le champ suit la suggestion du curseur de marge (voir useEffect plus bas).
   const [priceTouched, setPriceTouched] = useState(false);
+  // Délai minimum : verrouillé sur la règle Staymakom, il faut cliquer « Changer » pour l'ouvrir.
+  const [leadTimeUnlocked, setLeadTimeUnlocked] = useState(false);
   const [childPriceTouched, setChildPriceTouched] = useState(false);
 
   // Includes lists
@@ -735,7 +744,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       departure_location: "",
       base_price_type: "per_person",
       currency: "ILS",
-      lead_time_days: 0,
+      lead_time_days: DEFAULT_LEAD_TIME_DAYS,
       has_time_slots: false,
       has_rate_options: false,
       is_bookable: true,
@@ -843,6 +852,14 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     setValue("base_price", computedAdultPrice);
   }, [computedAdultPrice, priceTouched, setValue]);
 
+  // Calculette en mode « Achat + vente » : la marge se déduit du prix client adulte tapé,
+  // pour rester juste partout où elle est relue (options tarifaires, réouverture de la fiche).
+  useEffect(() => {
+    if (isBoatsExperience || !priceTouched || supplierPriceAdult <= 0 || !sellPriceAdult) return;
+    const derived = Math.min(999, Math.max(0, Math.round(((sellPriceAdult - supplierPriceAdult) / supplierPriceAdult) * 10000) / 100));
+    if (derived !== markupPercent) setValue("markup_percent", derived, { shouldDirty: true });
+  }, [isBoatsExperience, priceTouched, supplierPriceAdult, sellPriceAdult, markupPercent, setValue]);
+
   useEffect(() => {
     if (!hasChildPrice || childPriceTouched) return;
     setValue("base_price_child", computedChildPrice);
@@ -928,12 +945,16 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     setValue("base_price_child", exp.base_price_child ?? undefined);
     // Bateaux : un prix déjà enregistré est considéré comme fixé à la main
     // (utilisé notamment pour les promos) — le curseur de marge ne doit pas
-    // l'écraser à l'ouverture de la fiche. Non-bateaux : le prix de vente
-    // n'a jamais été éditable à la main jusqu'ici, donc une valeur déjà
-    // enregistrée n'est pas un choix volontaire — on resynchronise dès
-    // l'ouverture sur fournisseur + marge.
+    // l'écraser à l'ouverture de la fiche. Non-bateaux : la marge enregistrée
+    // suit toujours le prix adulte (calculette), on rouvre donc en « Marge % » ;
+    // seul un prix enfant tapé à la main, différent du calcul, est conservé.
+    const storedChildSuggestion = Math.round((exp.supplier_price_child ?? 0) * (1 + (exp.markup_percent ?? 0) / 100));
     setPriceTouched(isBoatsExperience ? exp.base_price != null : false);
-    setChildPriceTouched(isBoatsExperience ? exp.base_price_child != null : false);
+    setChildPriceTouched(
+      isBoatsExperience
+        ? exp.base_price_child != null
+        : exp.base_price_child != null && exp.base_price_child !== storedChildSuggestion,
+    );
     setValue("supplier_booking_url", exp.supplier_booking_url || "");
     setValue("supplier_contact", exp.supplier_contact || "");
     setValue("supplier_payment_method", exp.supplier_payment_method || undefined);
@@ -942,7 +963,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     setValue("departure_location", exp.departure_location || "");
     setValue("base_price_type", exp.base_price_type || "per_person");
     setValue("currency", exp.currency || "ILS");
-    setValue("lead_time_days", exp.lead_time_days ?? 0);
+    setValue("lead_time_days", exp.lead_time_days ?? DEFAULT_LEAD_TIME_DAYS);
     setValue("has_time_slots", exp.has_time_slots ?? false);
     setValue("has_rate_options", exp.has_rate_options ?? false);
     setValue("is_bookable", exp.is_bookable ?? true);
@@ -1156,10 +1177,12 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   // Time slots helpers
   // -------------------------------------------------------------------------
 
-  const addTimeSlot = () => {
-    if (!newSlot || timeSlots.includes(newSlot)) return;
-    setTimeSlots((prev) => [...prev, newSlot].sort());
-    setNewSlot("");
+  // Un créneau est une heure ("09:30") ou un moment de la journée ("morning" / "afternoon"),
+  // traduit en Matin / Après-midi pour le client.
+  const addTimeSlot = (slot: string = newSlot) => {
+    if (!slot || timeSlots.includes(slot)) return;
+    setTimeSlots((prev) => sortTimeSlots([...prev, slot]));
+    if (slot === newSlot) setNewSlot("");
   };
 
   const removeTimeSlot = (slot: string) => {
@@ -1539,7 +1562,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       base_price_child: computedBasePriceChild,
       base_price_type: data.base_price_type,
       currency: data.currency,
-      lead_time_days: data.lead_time_days ?? 0,
+      lead_time_days: data.lead_time_days ?? DEFAULT_LEAD_TIME_DAYS,
       has_time_slots: data.has_time_slots,
       time_slots: data.has_time_slots ? timeSlots : [],
       has_rate_options: data.has_rate_options,
@@ -3053,103 +3076,34 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
 
             <Separator />
 
-            {/* Tarif fournisseur */}
+            {/* Prix d'achat, marge et prix client sur une seule calculette */}
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Tarif fournisseur (Prix net achat)</p>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="supplier_price_adult">
-                    {isFixed ? "Prix total forfait" : "Prix adulte"} <span className="text-destructive">*</span>
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="supplier_price_adult"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      {...register("supplier_price_adult", { valueAsNumber: true })}
-                      placeholder="0"
-                      disabled={isSaving}
-                      className="pr-8"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {isFixed
-                      ? "Prix total que vous payez au prestataire, pour tout le groupe"
-                      : "Prix que vous payez au prestataire"}
-                  </p>
-                  {errors.supplier_price_adult && <p className="text-destructive text-xs">{errors.supplier_price_adult.message}</p>}
-                </div>
-
-                {isFixed ? (
-                  <div className="space-y-2 flex items-center">
-                    <p className="text-xs text-muted-foreground italic">
-                      Le tarif enfant n'est pas applicable pour un forfait — le prix est le même pour tout le groupe.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="supplier_price_child">Prix enfant</Label>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">Tarif différent</span>
-                        <Controller
-                          name="has_child_price"
-                          control={control}
-                          render={({ field }) => (
-                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                          )}
-                        />
-                      </div>
-                    </div>
-                    <div className="relative">
-                      <Input
-                        id="supplier_price_child"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        {...register("supplier_price_child", { valueAsNumber: true })}
-                        placeholder="100"
-                        disabled={isSaving || !hasChildPrice}
-                        className={cn("pr-8", !hasChildPrice && "opacity-40")}
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {hasChildPrice ? "Prix enfant au prestataire" : "Activer pour saisir un prix enfant"}
-                    </p>
-                  </div>
-                )}
-              </div>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Prix</p>
+              <PriceCalculator
+                mode={priceTouched ? "price" : "markup"}
+                onModeChange={(mode) => {
+                  const typed = mode === "price";
+                  setPriceTouched(typed);
+                  setChildPriceTouched(typed);
+                }}
+                currencySymbol={currencySymbol}
+                isFixed={isFixed}
+                groupSize={maxPartyWatch}
+                markupPercent={markupPercent}
+                onMarkupChange={(v) => setValue("markup_percent", v, { shouldDirty: true })}
+                adult={{ cost: supplierPriceAdult, sale: sellPriceAdult }}
+                child={{ cost: supplierPriceChild, sale: watch("base_price_child") }}
+                hasChildPrice={hasChildPrice}
+                onHasChildPriceChange={(v) => setValue("has_child_price", v, { shouldDirty: true })}
+                onCostChange={(line, v) =>
+                  setValue(line === "adult" ? "supplier_price_adult" : "supplier_price_child", v, { shouldDirty: true, shouldValidate: true })
+                }
+                onSaleChange={(line, v) => setValue(line === "adult" ? "base_price" : "base_price_child", v, { shouldDirty: true })}
+                costError={errors.supplier_price_adult?.message}
+                disabled={isSaving}
+              />
             </div>
 
-            <Separator />
-
-            {/* Markup STAYMAKOM */}
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Markup STAYMAKOM</p>
-              <div className="rounded-lg border bg-white p-4">
-                <div className="flex items-center gap-4">
-                  <span className="text-sm text-muted-foreground shrink-0 w-16">Marge %</span>
-                  <Controller
-                    name="markup_percent"
-                    control={control}
-                    render={({ field }) => (
-                      <Slider
-                        min={0}
-                        max={100}
-                        step={1}
-                        value={[field.value ?? 0]}
-                        onValueChange={([v]) => field.onChange(v)}
-                        className="flex-1"
-                      />
-                    )}
-                  />
-                  <span className="text-sm font-semibold w-12 text-right">{markupPercent}%</span>
-                </div>
-              </div>
-            </div>
             <Separator />
 
             {supplierBookingUrlField}
@@ -3162,148 +3116,50 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       {/* Bateaux : le lien reste à sa place d'origine, hors encadré. */}
       {isBoatsExperience && supplierBookingUrlField}
 
-      {/* Prix de vente réellement enregistré (celui lu par le site public).
-          Éditable : le curseur de marge ci-dessus ne fait que proposer une
-          suggestion, tant que ce champ n'est pas modifié à la main il reste
-          synchronisé dessus (cf. useEffect plus haut dans le composant). */}
-      {!isBoatsExperience && supplierPriceAdult > 0 && (
-        <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-lg border p-4 bg-background">
-            <div className="flex items-center justify-between gap-1.5 text-muted-foreground text-xs mb-2">
-              <span className="flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5" />
-                {isFixed ? "Prix total affiché" : "Adulte"}
-              </span>
-              {priceTouched && (
-                <button
-                  type="button"
-                  className="text-primary underline text-[11px]"
-                  onClick={() => { setPriceTouched(false); setValue("base_price", computedAdultPrice); }}
-                >
-                  Reprendre la suggestion
-                </button>
-              )}
-            </div>
-            <Controller
-              name="base_price"
-              control={control}
-              render={({ field }) => (
-                <div className="relative">
-                  <Input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={field.value ?? ""}
-                    disabled={isSaving}
-                    className="text-lg font-bold h-auto py-1.5 pr-8"
-                    onChange={(e) => {
-                      setPriceTouched(true);
-                      field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value));
-                    }}
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
-                </div>
-              )}
-            />
-            {isFixed ? (
-              <p className="text-xs text-muted-foreground mt-1">Prix forfait tout groupe</p>
-            ) : (
-              <p className="text-xs text-muted-foreground mt-1">Suggestion : {supplierPriceAdult} + {markupPercent}% = {computedAdultPrice}</p>
-            )}
-          </div>
-          {isFixed ? (
-            <div className="rounded-lg border p-4 bg-accent/20">
-              <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
-                <Users className="h-3.5 w-3.5" /> À partir de
-              </div>
-              {maxPartyWatch > 0 ? (
-                <>
-                  <p className="text-2xl font-bold">{prixParPersonneAffiche} <span className="text-base font-normal">{currencySymbol}</span></p>
-                  <p className="text-xs text-muted-foreground mt-1">/ pers. (groupe de {maxPartyWatch})</p>
-                </>
-              ) : (
-                <>
-                  <p className="text-2xl font-bold text-muted-foreground">—</p>
-                  <p className="text-xs text-muted-foreground mt-1">Renseigner max participants</p>
-                </>
-              )}
-            </div>
-          ) : (
-            <div className={cn("rounded-lg border p-4", hasChildPrice ? "bg-background" : "bg-muted/30")}>
-              <div className="flex items-center justify-between gap-1.5 text-muted-foreground text-xs mb-2">
-                <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> Enfant</span>
-                {hasChildPrice && childPriceTouched && (
-                  <button
-                    type="button"
-                    className="text-primary underline text-[11px]"
-                    onClick={() => { setChildPriceTouched(false); setValue("base_price_child", computedChildPrice); }}
-                  >
-                    Reprendre la suggestion
-                  </button>
-                )}
-              </div>
-              {hasChildPrice ? (
-                <>
-                  <Controller
-                    name="base_price_child"
-                    control={control}
-                    render={({ field }) => (
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          min={0}
-                          step="0.01"
-                          value={field.value ?? ""}
-                          disabled={isSaving}
-                          className="text-lg font-bold h-auto py-1.5 pr-8"
-                          onChange={(e) => {
-                            setChildPriceTouched(true);
-                            field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value));
-                          }}
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
-                      </div>
-                    )}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Suggestion : {supplierPriceChild} + {markupPercent}% = {computedChildPrice}</p>
-                </>
-              ) : (
-                <>
-                  <p className="text-2xl font-bold text-muted-foreground">—</p>
-                  <p className="text-xs text-muted-foreground mt-1">Tarif enfant désactivé</p>
-                </>
-              )}
-            </div>
-          )}
-          <div className="rounded-lg border p-4 bg-background">
-            <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
-              <span className="text-xs font-bold">%</span> Marge unitaire
-            </div>
-            <p className="text-2xl font-bold">{margeUnitaireAdult} <span className="text-base font-normal">{currencySymbol}</span></p>
-            <p className="text-xs text-muted-foreground mt-1">{isFixed ? "sur le forfait" : "par adulte"}</p>
-          </div>
-        </div>
-      )}
-
       <Separator />
 
-      {/* Délai de réservation */}
+      {/* Délai de réservation : règle Staymakom de 3 jours, modifiable seulement sur demande */}
       <div className="space-y-2">
-        <Label htmlFor="lead_time_days">Délai minimum avant réservation (jours)</Label>
-        <div className="flex items-center gap-3">
-          <Input
-            id="lead_time_days"
-            type="number"
-            min={0}
-            max={365}
-            {...register("lead_time_days", { valueAsNumber: true })}
-            disabled={isSaving}
-            className="w-32"
-          />
-          <p className="text-sm text-muted-foreground">
-            Les clients devront réserver au moins {watch("lead_time_days") ?? 0} jour{(watch("lead_time_days") ?? 0) > 1 ? "s" : ""} à l'avance.
-          </p>
-        </div>
+        <Label htmlFor="lead_time_days">Délai minimum avant réservation</Label>
+        {leadTimeUnlocked ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative w-28">
+              <Input
+                id="lead_time_days"
+                type="number"
+                min={0}
+                max={365}
+                {...register("lead_time_days", { valueAsNumber: true })}
+                disabled={isSaving}
+                className="pr-12"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">jours</span>
+            </div>
+            <p className="text-sm text-[#8a6100]">
+              Exception à la règle des {DEFAULT_LEAD_TIME_DAYS} jours : vérifie que le prestataire peut suivre.
+            </p>
+            <button
+              type="button"
+              className="text-primary underline text-xs"
+              onClick={() => { setValue("lead_time_days", DEFAULT_LEAD_TIME_DAYS, { shouldDirty: true }); setLeadTimeUnlocked(false); }}
+            >
+              Revenir à {DEFAULT_LEAD_TIME_DAYS} jours
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 rounded-full border bg-muted/40 px-3 py-1.5 text-sm font-medium">
+              <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+              {watch("lead_time_days") ?? DEFAULT_LEAD_TIME_DAYS} jour{(watch("lead_time_days") ?? DEFAULT_LEAD_TIME_DAYS) > 1 ? "s" : ""} à l'avance
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {(watch("lead_time_days") ?? DEFAULT_LEAD_TIME_DAYS) === DEFAULT_LEAD_TIME_DAYS ? "Règle Staymakom" : "Exception déjà enregistrée"}
+            </span>
+            <button type="button" className="text-primary underline text-xs" onClick={() => setLeadTimeUnlocked(true)} disabled={isSaving}>
+              Changer
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
@@ -3353,7 +3209,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
               <Clock className="h-4 w-4" />
               Créneaux horaires
             </CardTitle>
-            <CardDescription>Activez si l'expérience se déroule à des horaires précis</CardDescription>
+            <CardDescription>Le client choisit un créneau après la date : une heure précise, ou simplement le matin ou l'après-midi</CardDescription>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">{hasTimeSlots ? "Activés" : "Désactivés"}</span>
@@ -3369,18 +3225,31 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       </CardHeader>
       {hasTimeSlots && (
         <CardContent className="space-y-4">
-          <div className="flex gap-2">
-            <Input type="time" value={newSlot} onChange={(e) => setNewSlot(e.target.value)} className="w-40" />
-            <Button type="button" variant="outline" onClick={addTimeSlot} disabled={!newSlot}>
+          <div className="flex flex-wrap items-center gap-2">
+            <Input type="time" value={newSlot} onChange={(e) => setNewSlot(e.target.value)} className="w-32" />
+            <Button type="button" variant="outline" onClick={() => addTimeSlot()} disabled={!newSlot}>
               <Plus className="h-4 w-4 mr-1" />
-              Ajouter
+              Heure
             </Button>
+            <span className="text-xs text-muted-foreground px-1">ou</span>
+            {Object.keys(TIME_SLOT_MOMENTS).map((moment) => (
+              <Button
+                key={moment}
+                type="button"
+                variant="outline"
+                onClick={() => addTimeSlot(moment)}
+                disabled={timeSlots.includes(moment)}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                {formatTimeSlot(moment)}
+              </Button>
+            ))}
           </div>
           {timeSlots.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {timeSlots.map((slot) => (
                 <span key={slot} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium">
-                  {slot}
+                  {formatTimeSlot(slot)}
                   <button type="button" onClick={() => removeTimeSlot(slot)} className="hover:text-destructive transition-colors">
                     <X className="h-3 w-3" />
                   </button>
