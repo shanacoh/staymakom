@@ -41,6 +41,7 @@ import {
   UNPAID_DOSSIERS_QUERY_KEY,
   useDeletedReservations,
   useDossierLines,
+  useGridCatalogue,
   useItineraries,
   useRequestArchives,
   useReservationRows,
@@ -48,6 +49,8 @@ import {
 } from "@/lib/reservations/queries";
 import {
   createBookingFromGrid,
+  duplicateReservation,
+  type NewRowType,
   unflagRow,
   saveCellUpdate,
   saveDossierLineCost,
@@ -57,6 +60,8 @@ import { buildCellUpdate, type EntryColumnKey } from "@/lib/reservations/entryGr
 import { useIncompletePracticalInfo } from "@/lib/reservations/practicalInfoAlerts";
 import { applyToolbarFilters, computeKpis, isRequest, matchesTab } from "@/lib/reservations/rules";
 import { groupByUrgency, matchesFocus } from "@/lib/reservations/attention";
+import type { ChoiceUpdate } from "@/lib/reservations/productChoice";
+import { useProviders } from "@/lib/providers/queries";
 import type {
   DossierLine,
   NextAction,
@@ -192,8 +197,10 @@ const AdminReservations = () => {
   // ne doit pas être supprimée sans être vue.
   const selectedRows = useMemo(() => visibleRows.filter((row) => selectedKeys.has(row.key)), [visibleRows, selectedKeys]);
 
-  // Une ligne ne se crée en tapant que là où c'est une réservation d'expérience ou de bateau.
-  const allowNewRow = tab === "all" || tab === "experiences";
+  // Une ligne se crée en tapant là où c'est une réservation d'expérience, de bateau ou d'hôtel.
+  const allowNewRow = tab === "all" || tab === "experiences" || tab === "hotels";
+  const { data: gridCatalogue } = useGridCatalogue(displayMode === "saisie");
+  const { providers } = useProviders();
 
   const refreshRows = () => queryClient.invalidateQueries({ queryKey: RESERVATIONS_QUERY_KEY });
   // Une demande qui sort du flux (archivée, convertie) ou y revient change les deux listes.
@@ -250,11 +257,11 @@ const AdminReservations = () => {
     return true;
   };
 
-  const commitNewRow = async (customerName: string): Promise<boolean> => {
+  const commitNewRow = async (customerName: string, type: NewRowType): Promise<boolean> => {
     if (isCreatingRow) return false;
     setIsCreatingRow(true);
     try {
-      await createBookingFromGrid(customerName, format(new Date(), "yyyy-MM-dd"));
+      await createBookingFromGrid(customerName, format(new Date(), "yyyy-MM-dd"), type);
     } catch (e) {
       toast.error("Impossible de créer la réservation", { description: (e as Error).message });
       return false;
@@ -264,6 +271,34 @@ const AdminReservations = () => {
     flashSaved();
     await refreshRows();
     return true;
+  };
+
+  // Choix fait dans une cellule Produit ou Prestataire de la Saisie.
+  const commitChoice = async (row: ReservationRow, update: ChoiceUpdate): Promise<boolean> => {
+    if ("message" in update) {
+      toast.error("Valeur refusée", { description: update.message });
+      return false;
+    }
+    try {
+      await saveCellUpdate(update.table, row.id, update.patch);
+    } catch (e) {
+      toast.error("Erreur de sauvegarde", { description: (e as Error).message });
+      return false;
+    }
+    flashSaved();
+    await refreshRows();
+    return true;
+  };
+
+  const duplicateRow = async (row: ReservationRow) => {
+    try {
+      await duplicateReservation(row.source, row.id, `${row.client} (copie)`);
+    } catch (e) {
+      toast.error("Impossible de dupliquer la ligne", { description: (e as Error).message });
+      return;
+    }
+    toast.success("Ligne dupliquée : change le nom du client sur la copie");
+    await refreshRows();
   };
 
   const handleTabChange = (value: string) => {
@@ -531,6 +566,12 @@ const AdminReservations = () => {
             <ReservationsEntryGrid
               rows={visibleRows}
               allowNewRow={allowNewRow}
+              defaultNewRowType={tab === "hotels" ? "hotel" : "experience"}
+              experiences={gridCatalogue?.experiences ?? []}
+              hotels={gridCatalogue?.hotels ?? []}
+              providers={providers}
+              onChoiceCommit={commitChoice}
+              onDuplicate={duplicateRow}
               isCreatingRow={isCreatingRow}
               onCellCommit={commitCell}
               onNewRowCommit={commitNewRow}

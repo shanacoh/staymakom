@@ -2,6 +2,7 @@
 // quelles cellules sont modifiables selon l'origine de la ligne, et quelle modification
 // écrire dans quelle table quand une cellule est validée.
 
+import { addDays, format, parseISO } from "date-fns";
 import { CHANNEL_OPTIONS, type SelectOption } from "@/components/admin/BookingsGrid/columnTypes";
 import { cancellationMargin, isCancellation } from "./cancellation";
 import { isRequest } from "./rules";
@@ -12,8 +13,11 @@ export type EntryColumnKey =
   | "status"
   | "type"
   | "client"
+  | "phone"
   | "product"
+  | "partner"
   | "date"
+  | "nights"
   | "pax"
   | "amount"
   | "collected"
@@ -27,7 +31,8 @@ export type EntryColumnKey =
 export interface EntryColumn {
   key: EntryColumnKey;
   label: string;
-  kind: "text" | "number" | "date" | "select" | "money";
+  // "combo" : choix dans une liste avec recherche (produit du catalogue, prestataire).
+  kind: "text" | "number" | "date" | "select" | "money" | "combo";
   align?: "left" | "right";
   widthClass: string;
 }
@@ -35,11 +40,14 @@ export interface EntryColumn {
 export const ENTRY_COLUMNS: EntryColumn[] = [
   // Le client vient en premier : la colonne reste figée à gauche quand la grille défile.
   { key: "client", label: "Client", kind: "text", widthClass: "w-[180px] min-w-[180px]" },
+  { key: "phone", label: "Téléphone", kind: "text", widthClass: "w-[140px]" },
   { key: "ref", label: "Réf", kind: "text", widthClass: "w-[80px]" },
   { key: "status", label: "Statut", kind: "select", widthClass: "w-[130px]" },
   { key: "type", label: "Type", kind: "select", widthClass: "w-[125px]" },
-  { key: "product", label: "Produit", kind: "text", widthClass: "w-[220px]" },
+  { key: "product", label: "Produit", kind: "combo", widthClass: "w-[240px]" },
+  { key: "partner", label: "Prestataire", kind: "combo", widthClass: "w-[170px]" },
   { key: "date", label: "Date", kind: "date", widthClass: "w-[120px]" },
+  { key: "nights", label: "Nuits", kind: "number", align: "right", widthClass: "w-[70px]" },
   { key: "pax", label: "Pers.", kind: "number", align: "right", widthClass: "w-[70px]" },
   { key: "amount", label: "Montant", kind: "money", align: "right", widthClass: "w-[110px]" },
   { key: "collected", label: "Encaissé", kind: "money", align: "right", widthClass: "w-[110px]" },
@@ -56,8 +64,21 @@ export const ENTRY_COLUMNS: EntryColumn[] = [
 export type CellMode = "edit" | "locked" | "readonly";
 
 const REVOLUT_COLUMNS: EntryColumnKey[] = ["amount", "collected", "clientPayment"];
-const REQUEST_EDITABLE: EntryColumnKey[] = ["status", "client", "date", "notes"];
-const HOTEL_MANUAL_EDITABLE: EntryColumnKey[] = ["client", "pax", "amount", "clientPayment", "supplierCost", "supplierPayment", "channel"];
+const REQUEST_EDITABLE: EntryColumnKey[] = ["status", "client", "phone", "date", "notes"];
+const HOTEL_MANUAL_EDITABLE: EntryColumnKey[] = [
+  "client",
+  "phone",
+  "product",
+  "date",
+  "nights",
+  "pax",
+  "amount",
+  "collected",
+  "clientPayment",
+  "supplierCost",
+  "supplierPayment",
+  "channel",
+];
 
 export function cellMode(row: ReservationRow, key: EntryColumnKey): CellMode {
   if (key === "ref" || key === "margin") return "readonly";
@@ -65,8 +86,8 @@ export function cellMode(row: ReservationRow, key: EntryColumnKey): CellMode {
 
   switch (row.source) {
     case "booking":
-      // L'encaissé se déduit du paiement client, et le canal d'une réservation en ligne est « En ligne ».
-      if (key === "collected") return "readonly";
+      // Les nuits ne concernent que les hôtels ; le canal d'une réservation en ligne est « En ligne ».
+      if (key === "nights") return "readonly";
       if (key === "channel" && row.isOnline) return "readonly";
       return "edit";
     case "request":
@@ -74,7 +95,7 @@ export function cellMode(row: ReservationRow, key: EntryColumnKey): CellMode {
     case "hotel":
       if (key === "notes") return "edit";
       // Une réservation d'hôtel synchronisée automatiquement ne se corrige pas à la main.
-      // Les dates (arrivée et départ) et le statut se changent dans la fiche.
+      // Le statut (annulation) se change par le menu « … », le prestataire est l'hôtel lui-même.
       return !row.isOnline && HOTEL_MANUAL_EDITABLE.includes(key) ? "edit" : "readonly";
     default:
       return "readonly";
@@ -149,9 +170,27 @@ const CLIENT_PAYMENT_TO_DB: Record<string, string> = {
   refunded: "refunded",
 };
 
-function bookingPatch(key: EntryColumnKey, raw: string): Record<string, unknown> | string {
+/**
+ * Encaissé saisi à la main : rien = non payé, tout = payé, entre les deux = acompte. Le statut de
+ * paiement suit, comme si on l'avait choisi dans « Paie. client ».
+ */
+function collectedStatus(row: ReservationRow, collected: number): "unpaid" | "deposit" | "paid" {
+  if (collected <= 0) return "unpaid";
+  return row.amount !== null && collected >= row.amount ? "paid" : "deposit";
+}
+
+function bookingPatch(row: ReservationRow, key: EntryColumnKey, raw: string): Record<string, unknown> | string {
   const trimmed = raw.trim();
   switch (key) {
+    case "phone":
+      return { customer_phone: trimmed || null };
+    case "collected": {
+      const n = parseAmount(raw);
+      if (n === undefined) return "Montant invalide";
+      const status = collectedStatus(row, n ?? 0);
+      if (status === "deposit") return { payment_status: "deposit_paid", deposit_amount: n };
+      return { payment_status: CLIENT_PAYMENT_TO_DB[status] };
+    }
     case "status":
       // « Passée » n'est pas enregistré : c'est une réservation confirmée dont la date est dépassée.
       return trimmed === "annulee"
@@ -193,6 +232,8 @@ function bookingPatch(key: EntryColumnKey, raw: string): Record<string, unknown>
 function requestPatch(row: ReservationRow, key: EntryColumnKey, raw: string): Record<string, unknown> | string {
   const trimmed = raw.trim();
   switch (key) {
+    case "phone":
+      return { customer_phone: trimmed || null };
     case "status":
       if (trimmed === "dispo_ok") return { status: "availability_confirmed" };
       return { status: row.sentToProviderAt ? "sent_to_provider" : "new" };
@@ -217,9 +258,27 @@ const HOTEL_PAYMENT_TO_DB: Record<string, string> = {
 // Pour un hôtel, la commission enregistrée (montant client moins coût net) suit chaque
 // modification de l'un ou de l'autre, pour que les deux restent cohérents. Un coût vidé
 // redevient « à saisir » (commission à 0, comme à la création sans coût).
+// Départ d'un hôtel = arrivée + nuits.
+const checkoutOf = (checkin: string, nights: number) => format(addDays(parseISO(checkin), nights), "yyyy-MM-dd");
+
 function hotelPatch(row: ReservationRow, key: EntryColumnKey, raw: string): Record<string, unknown> | string {
   const trimmed = raw.trim();
   switch (key) {
+    case "phone":
+      return { customer_phone: trimmed || null };
+    case "date":
+      return trimmed ? { checkin: trimmed, checkout: checkoutOf(trimmed, row.nights ?? 1) } : "La date d'arrivée est obligatoire";
+    case "nights": {
+      const n = parseInt(trimmed, 10);
+      if (Number.isNaN(n) || n < 1) return "Nombre de nuits invalide";
+      return row.date ? { nights: n, checkout: checkoutOf(row.date, n) } : "Saisis d'abord la date d'arrivée";
+    }
+    case "collected": {
+      const n = parseAmount(raw);
+      if (n === undefined) return "Montant invalide";
+      const status = collectedStatus(row, n ?? 0);
+      return { payment_status: HOTEL_PAYMENT_TO_DB[status], paid_amount: status === "unpaid" ? null : n };
+    }
     case "notes":
       return { internal_notes: trimmed || null };
     case "channel":
@@ -264,7 +323,7 @@ export function buildCellUpdate(row: ReservationRow, key: EntryColumnKey, raw: s
   const table = TABLES[row.source];
   if (!table || cellMode(row, key) !== "edit") return invalid("Cette cellule n'est pas modifiable");
   const patch =
-    row.source === "booking" ? bookingPatch(key, raw) : row.source === "request" ? requestPatch(row, key, raw) : hotelPatch(row, key, raw);
+    row.source === "booking" ? bookingPatch(row, key, raw) : row.source === "request" ? requestPatch(row, key, raw) : hotelPatch(row, key, raw);
   return typeof patch === "string" ? invalid(patch) : { ok: true, table, patch };
 }
 
@@ -279,10 +338,16 @@ export function cellValue(row: ReservationRow, key: EntryColumnKey): string | nu
       return row.type;
     case "client":
       return row.client;
+    case "phone":
+      return row.phone;
     case "product":
       return row.product;
+    case "partner":
+      return row.partner;
     case "date":
       return row.date;
+    case "nights":
+      return row.nights;
     case "pax":
       return row.pax || null;
     case "amount":

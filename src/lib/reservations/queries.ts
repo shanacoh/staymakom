@@ -5,6 +5,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { CHANNEL_LABELS } from "@/components/admin/BookingsGrid/columnTypes";
+import type { CatalogueExperience, CatalogueHotel } from "./productChoice";
 import type {
   ArchivedRequest,
   ClientPayment,
@@ -61,6 +62,8 @@ interface AdminReservationViewRow {
   supplier_refund_status: SupplierRefundStatus;
   supplier_refund_amount: number | null;
   supplier_credit_open: boolean;
+  phone: string | null;
+  nights: number | null;
 }
 
 const DETAIL_PATHS: Record<ReservationSource, ((id: string) => string) | null> = {
@@ -117,6 +120,8 @@ function toReservationRow(row: AdminReservationViewRow): ReservationRow {
     supplierRefundStatus: row.supplier_refund_status ?? "none",
     supplierRefundAmount: toNumber(row.supplier_refund_amount),
     supplierCreditOpen: row.supplier_credit_open ?? false,
+    phone: row.phone,
+    nights: row.nights,
     flagged: false,
     checkNote: null,
   };
@@ -393,4 +398,44 @@ export function useSupplierCredits(providerId: string | null | undefined) {
     queryFn: () => fetchSupplierCredits(providerId as string),
     enabled: !!providerId,
   });
+}
+
+export const GRID_CATALOGUE_QUERY_KEY = ["admin-reservations-grid-catalogue"];
+
+async function fetchGridCatalogue(): Promise<{ experiences: CatalogueExperience[]; hotels: CatalogueHotel[] }> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = supabase as any;
+  const [experiences, internal, hotels] = await Promise.all([
+    db
+      .from("standalone_experiences")
+      .select("id, title, title_fr, currency, base_price, base_price_type, status, categories(slug)")
+      .neq("status", "archived")
+      .order("title"),
+    db.from("standalone_experience_internal").select("experience_id, supplier_price_adult"),
+    db.from("hotels2").select("id, name").neq("status", "archived").order("name"),
+  ]);
+  for (const result of [experiences, internal, hotels]) if (result.error) throw result.error;
+  const supplierPrice = new Map<string, number | null>(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (internal.data as any[]).map((i) => [i.experience_id, toNumber(i.supplier_price_adult)]),
+  );
+  return {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    experiences: (experiences.data as any[]).map((e) => ({
+      id: e.id,
+      title: e.title_fr || e.title,
+      currency: e.currency || "ILS",
+      basePrice: toNumber(e.base_price),
+      basePriceType: e.base_price_type,
+      isBoat: e.categories?.slug === "bateaux",
+      supplierPriceAdult: supplierPrice.get(e.id) ?? null,
+    })),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    hotels: (hotels.data as any[]).map((h) => ({ id: h.id, name: h.name })),
+  };
+}
+
+/** Expériences et hôtels du catalogue, pour choisir le produit d'une ligne dans la Saisie. */
+export function useGridCatalogue(enabled: boolean) {
+  return useQuery({ queryKey: GRID_CATALOGUE_QUERY_KEY, queryFn: fetchGridCatalogue, enabled, staleTime: 5 * 60_000 });
 }

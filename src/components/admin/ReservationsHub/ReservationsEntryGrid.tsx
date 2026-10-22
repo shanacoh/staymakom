@@ -10,7 +10,7 @@
  * Un clic droit marque une ligne « à vérifier » (bordure rouge), avec une note.
  */
 
-import { Fragment, useRef } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { AlertTriangle, Eye, Lock, Trash2 } from "lucide-react";
 import { TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -46,6 +46,10 @@ import {
 import type { DossierLine, NextAction, ReservationRow } from "@/lib/reservations/types";
 import { LineCostInput, NatureTag } from "./DossierLineCells";
 import ReservationRowMenu from "./ReservationRowMenu";
+import GridComboCell, { type ComboOption } from "./GridComboCell";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { productChoicePatch, partnerChoicePatch, type CatalogueExperience, type CatalogueHotel, type ChoiceUpdate } from "@/lib/reservations/productChoice";
+import type { NewRowType } from "@/lib/reservations/actions";
 import { FilledPill } from "./ReservationPills";
 
 const HEAD_CLASS = "sticky top-0 z-20 h-8 bg-muted px-3 text-[10px] uppercase tracking-wider";
@@ -71,7 +75,17 @@ interface Props {
   allowNewRow: boolean;
   isCreatingRow: boolean;
   onCellCommit: (row: ReservationRow, key: EntryColumnKey, rawValue: string) => Promise<boolean>;
-  onNewRowCommit: (customerName: string) => Promise<boolean>;
+  onNewRowCommit: (customerName: string, type: NewRowType) => Promise<boolean>;
+  // Type proposé d'office pour la ligne vide du bas (hôtel sur l'onglet Hôtel).
+  defaultNewRowType: NewRowType;
+  // Catalogue (expériences, hôtels) et prestataires, pour les cellules Produit et Prestataire.
+  experiences: CatalogueExperience[];
+  hotels: CatalogueHotel[];
+  providers: { id: string; name: string }[];
+  // Écrit le choix fait dans une cellule Produit ou Prestataire.
+  onChoiceCommit: (row: ReservationRow, update: ChoiceUpdate) => Promise<boolean>;
+  // Clic droit « Dupliquer la ligne ».
+  onDuplicate: (row: ReservationRow) => void;
   onOpen: (row: ReservationRow) => void;
   // Actions du menu « … » (convertir, archiver, annuler) : les fenêtres sont gérées par la page.
   onAction: (row: ReservationRow, action: NextAction) => void;
@@ -127,7 +141,45 @@ function PaymentPill({ row, column }: { row: ReservationRow; column: "clientPaym
   return look ? <FilledPill tone={look.tone}>{look.label}</FilledPill> : <span className="text-muted-foreground">-</span>;
 }
 
-const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit, onNewRowCommit, onOpen, onAction, onDelete, selectedKeys, onToggleRow, onToggleAll, linesByDossier, onLineCost, onLinePaid, onFlag, onUnflag }: Props) => {
+const NEW_ROW_TYPES: { value: NewRowType; label: string }[] = [
+  { value: "experience", label: "Expérience" },
+  { value: "boat", label: "Bateau" },
+  { value: "hotel", label: "Hôtel" },
+];
+
+const ReservationsEntryGrid = ({
+  rows,
+  allowNewRow,
+  isCreatingRow,
+  onCellCommit,
+  onNewRowCommit,
+  defaultNewRowType,
+  experiences,
+  hotels,
+  providers,
+  onChoiceCommit,
+  onDuplicate,
+  onOpen,
+  onAction,
+  onDelete,
+  selectedKeys,
+  onToggleRow,
+  onToggleAll,
+  linesByDossier,
+  onLineCost,
+  onLinePaid,
+  onFlag,
+  onUnflag,
+}: Props) => {
+  const [newRowType, setNewRowType] = useState<NewRowType>(defaultNewRowType);
+  useEffect(() => setNewRowType(defaultNewRowType), [defaultNewRowType]);
+  const experienceOptions: ComboOption[] = useMemo(
+    () => experiences.map((e) => ({ value: e.id, label: e.title, hint: e.isBoat ? "Bateau" : undefined })),
+    [experiences],
+  );
+  const hotelOptions: ComboOption[] = useMemo(() => hotels.map((h) => ({ value: h.id, label: h.name })), [hotels]);
+  const providerOptions: ComboOption[] = useMemo(() => providers.map((p) => ({ value: p.id, label: p.name })), [providers]);
+
   // Cellules de texte modifiables, repérées par « ligne:colonne », pour les flèches du clavier.
   const cellRefs = useRef(new Map<string, HTMLTableCellElement>());
   const lastRowIndex = allowNewRow ? rows.length : rows.length - 1;
@@ -147,7 +199,8 @@ const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit,
     while (r >= 0 && r <= lastRowIndex && c >= 0 && c < ENTRY_COLUMNS.length) {
       const target = cellRefs.current.get(`${r}:${c}`);
       if (target) {
-        target.focus();
+        // Case de choix : le focus va sur son bouton, pour qu'Entrée ouvre la liste.
+        (target.querySelector<HTMLElement>("button") ?? target).focus();
         return;
       }
       r += stepRow;
@@ -204,10 +257,40 @@ const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit,
     const commit = (rawValue: string) => onCellCommit(row, column.key, rawValue);
     const value = cellValue(row, column.key);
 
+    if (column.kind === "combo") {
+      const isProduct = column.key === "product";
+      const isHotel = row.source === "hotel";
+      const options = isProduct ? (isHotel ? hotelOptions : experienceOptions) : providerOptions;
+      return (
+        <GridComboCell
+          key={column.key}
+          ref={registerRef(rowIndex, colIndex)}
+          display={displayText(row, column) === "-" ? "" : displayText(row, column)}
+          options={options}
+          placeholder={isProduct ? (isHotel ? "Choisir un hôtel" : "Choisir un produit") : "Choisir"}
+          allowFreeText={isProduct}
+          noneLabel={isProduct ? undefined : "Aucun (prestataire de la fiche)"}
+          onPick={(choice) => {
+            if (!isProduct) return onChoiceCommit(row, partnerChoicePatch(row, "value" in choice ? choice.value : null));
+            if ("text" in choice) return onChoiceCommit(row, productChoicePatch(row, { kind: "free", text: choice.text }));
+            const experience = experiences.find((e) => e.id === choice.value);
+            const hotel = hotels.find((h) => h.id === choice.value);
+            if (experience) return onChoiceCommit(row, productChoicePatch(row, { kind: "experience", experience }));
+            if (hotel) return onChoiceCommit(row, productChoicePatch(row, { kind: "hotel", hotel }));
+            return Promise.resolve(false);
+          }}
+          onNavigate={makeNavigate(rowIndex, colIndex)}
+          className={cn(column.widthClass, extraClass)}
+        />
+      );
+    }
+
     if (column.kind === "select") {
       return (
         <GridSelectCell
           key={column.key}
+          ref={registerRef(rowIndex, colIndex)}
+          onNavigate={makeNavigate(rowIndex, colIndex)}
           value={value === null ? null : String(value)}
           options={selectOptions(row, column.key)}
           onCommit={commit}
@@ -383,6 +466,9 @@ const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit,
             </TableRow>
           </ContextMenuTrigger>
           <ContextMenuContent>
+            {(row.source === "booking" || row.source === "hotel") && (
+              <ContextMenuItem onSelect={() => onDuplicate(row)}>Dupliquer la ligne</ContextMenuItem>
+            )}
             <ContextMenuItem onSelect={() => onFlag(row)}>
               {row.flagged ? "Modifier la note « à vérifier »" : "Marquer à vérifier"}
             </ContextMenuItem>
@@ -482,10 +568,25 @@ const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit,
                     value={null}
                     type="text"
                     displayValue="Nouvelle ligne : tape un nom…"
-                    onCommit={(rawValue) => (rawValue.trim() ? onNewRowCommit(rawValue.trim()) : Promise.resolve(true))}
+                    onCommit={(rawValue) => (rawValue.trim() ? onNewRowCommit(rawValue.trim(), newRowType) : Promise.resolve(true))}
                     onNavigate={makeNavigate(rows.length, clientColIndex)}
                     className={cn("py-1", column.widthClass, CLIENT_STICKY_CLASS, "bg-card text-muted-foreground")}
                   />
+                ) : column.key === "type" ? (
+                  <TableCell key={column.key} className={cn("p-1", column.widthClass)}>
+                    <Select value={newRowType} onValueChange={(v) => setNewRowType(v as NewRowType)}>
+                      <SelectTrigger className="h-7 text-sm" aria-label="Type de la nouvelle ligne">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {NEW_ROW_TYPES.map((t) => (
+                          <SelectItem key={t.value} value={t.value}>
+                            {t.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
                 ) : (
                   <TableCell key={column.key} className={cn(CELL_CLASS, "text-muted-foreground", column.widthClass)}>
                     {column.key === "ref" ? "+" : ""}

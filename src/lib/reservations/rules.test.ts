@@ -44,6 +44,8 @@ function row(overrides: Partial<ReservationRow>): ReservationRow {
     supplierCreditOpen: false,
     flagged: false,
     checkNote: null,
+    phone: null,
+    nights: null,
     ...overrides,
   };
   // Comme la vue SQL : une réservation sans coût a un coût manquant, et doit son coût tant qu'il n'est pas payé.

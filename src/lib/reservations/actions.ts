@@ -3,6 +3,7 @@
 // ligne : si quelqu'un d'autre l'a déjà traitée entre-temps, rien n'est écrasé.
 
 import { supabase } from "@/integrations/supabase/client";
+import { addDays, format, parseISO } from "date-fns";
 import { STANDALONE_EXPERIENCE_INTERNAL } from "@/lib/internalFields";
 import type { DossierLostReason, LostReason } from "./types";
 
@@ -271,17 +272,41 @@ export async function saveCellUpdate(table: string, rowId: string, patch: Record
   assertChanged(data, "Ligne introuvable. Recharge la liste.");
 }
 
+export type NewRowType = "experience" | "boat" | "hotel";
+
 /**
- * Ligne vide du bas de la grille : dès qu'un nom est tapé, la réservation est créée.
- * Elle démarre « Confirmée », paiement client « Non payé », à la date du jour, et se complète
- * ensuite cellule par cellule. Le type (Expérience / Bateau) est posé par la base.
+ * Ligne vide du bas de la grille : dès qu'un nom est tapé, la réservation est créée, du type
+ * choisi juste à côté. Elle démarre « Confirmée », paiement client « Non payé », à la date du
+ * jour, et se complète ensuite cellule par cellule. Un hôtel démarre « à préciser » pour une nuit.
  */
-export async function createBookingFromGrid(customerName: string, today: string) {
+export async function createBookingFromGrid(customerName: string, today: string, type: NewRowType = "experience") {
+  if (type === "hotel") {
+    const { error } = await db.from("bookings_hg").insert({
+      hg_booking_id: `MANUAL-${crypto.randomUUID()}`,
+      hotel_name: "Hôtel à préciser",
+      customer_name: customerName,
+      checkin: today,
+      checkout: format(addDays(parseISO(today), 1), "yyyy-MM-dd"),
+      nights: 1,
+      party_size: 1,
+      sell_price: 0,
+      net_price: null,
+      commission_amount: 0,
+      currency: "ILS",
+      status: "confirmed",
+      payment_status: "unpaid",
+      is_cancelled: false,
+      source: "manual_admin",
+    });
+    if (error) throw error;
+    return;
+  }
   const { error } = await db.from("standalone_bookings").insert({
     customer_name: customerName,
     customer_email: "",
-    // La base exige une fiche liée ou un titre : titre vide en attendant la saisie du produit.
+    // La base exige une fiche liée ou un titre : titre vide en attendant le choix du produit.
     custom_experience_title: "",
+    product_type: type,
     booking_date: today,
     party_size: 1,
     sell_price: 0,
@@ -292,6 +317,67 @@ export async function createBookingFromGrid(customerName: string, today: string)
     source: "manual_admin",
   });
   if (error) throw error;
+}
+
+// Ce qu'une copie reprend de la ligne d'origine : le produit, la date, le prix et le prestataire.
+// Le client, ses coordonnées, les paiements et tout ce qui touche à une annulation repartent à zéro.
+const BOOKING_COPIED = [
+  "standalone_experience_id",
+  "custom_experience_title",
+  "product_type",
+  "booking_date",
+  "time_slot",
+  "party_size",
+  "adults_count",
+  "children_count",
+  "sell_price",
+  "currency",
+  "supplier_cost",
+  "provider_id",
+  "supplier_name",
+  "channel",
+  "custom_regulations",
+  "custom_address",
+  "rate_option",
+  "extras",
+];
+const HOTEL_COPIED = [
+  "hotel_id",
+  "hotel_name",
+  "experience_id",
+  "checkin",
+  "checkout",
+  "nights",
+  "party_size",
+  "room_code",
+  "room_name",
+  "board_type",
+  "rate_plan",
+  "sell_price",
+  "net_price",
+  "commission_amount",
+  "currency",
+  "channel",
+];
+
+/** Duplique une réservation saisie (même produit, même date, même prix) pour un autre client. */
+export async function duplicateReservation(source: string, rowId: string, copyName: string) {
+  const table = source === "hotel" ? "bookings_hg" : source === "booking" ? "standalone_bookings" : null;
+  if (!table) throw new Error("Cette ligne ne se duplique pas");
+  const { data, error } = await db.from(table).select("*").eq("id", rowId).single();
+  if (error) throw error;
+  const fields = table === "bookings_hg" ? HOTEL_COPIED : BOOKING_COPIED;
+  const copy: Record<string, unknown> = Object.fromEntries(fields.map((field) => [field, (data as any)[field]]));
+  copy.customer_name = copyName;
+  copy.status = "confirmed";
+  copy.source = "manual_admin";
+  if (table === "bookings_hg") {
+    Object.assign(copy, { hg_booking_id: `MANUAL-${crypto.randomUUID()}`, payment_status: "unpaid", is_cancelled: false });
+  } else {
+    Object.assign(copy, { customer_email: "", payment_status: "pending", supplier_payment_status: "pending" });
+  }
+  const { error: insertError } = await db.from(table).insert(copy);
+  if (insertError) throw insertError;
 }
 
 /**

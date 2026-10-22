@@ -55,6 +55,9 @@ export interface ReservationRow {
   supplierRefundStatus: SupplierRefundStatus;
   supplierRefundAmount: number | null;
   supplierCreditOpen: boolean;
+  phone: string | null;
+  // Nuits d'un hôtel (vide pour les autres lignes).
+  nights: number | null;
   // Marquée « à vérifier » (clic droit dans la Saisie), avec sa note éventuelle.
   flagged: boolean;
   checkNote: string | null;

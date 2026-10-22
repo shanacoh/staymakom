@@ -6,6 +6,30 @@
 
 ---
 
+## [2026-10-23] — Réservations : Saisie rapide façon Excel (ajout de tout type de ligne, produit du catalogue, tout au clavier, duplication)
+
+> Statut : validé par Shana. Tests OK (66 sur les réservations), le site se construit sans erreur, aucune nouvelle erreur de compilation. Migration appliquée en production le 22/10 (par `supabase db query --linked -f`, historique des migrations non mis à jour).
+
+### Ce qui a changé côté code
+- `src/lib/reservations/entryGrid.ts` (+ tests) : nouvelles colonnes Téléphone, Prestataire, Nuits ; Produit et Prestataire deviennent des choix avec recherche ; Encaissé modifiable (0 = non payé, une partie = acompte, tout = payé) ; pour un hôtel saisi à la main, date d'arrivée et nuits modifiables (le départ se recalcule).
+- `src/lib/reservations/productChoice.ts` (nouveau) + `productChoice.test.ts` : ce qu'écrit le choix d'une expérience du catalogue (fiche liée, type Bateau / Expérience, prix et coût proposés seulement s'ils sont vides), d'un hôtel du catalogue, d'un texte libre, ou d'un prestataire.
+- `src/components/admin/ReservationsHub/GridComboCell.tsx` (nouveau) : cellule de choix avec recherche, navigable au clavier, texte libre possible.
+- `src/components/admin/BookingsGrid/GridSelectCell.tsx` : les flèches passent d'une case de choix à la voisine (Entrée ouvre la liste, une lettre choisit) ; sans effet là où la navigation n'est pas demandée.
+- `src/components/admin/ReservationsHub/ReservationsEntryGrid.tsx` : type de la nouvelle ligne (Expérience, Bateau, Hôtel), cellules Produit et Prestataire, navigation au clavier sur toutes les cellules modifiables, clic droit « Dupliquer la ligne ».
+- `src/lib/reservations/actions.ts` : `createBookingFromGrid` crée aussi un hôtel (« Hôtel à préciser », 1 nuit) ; `duplicateReservation` copie produit, date, prix et prestataire, jamais le client ni les paiements.
+- `src/lib/reservations/queries.ts`, `types.ts` : téléphone, nuits, catalogue pour la grille.
+- `src/pages/admin/Reservations.tsx` : ligne vide aussi sur l'onglet Hôtel, branchement des choix et de la duplication.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261023100000_reservations_phone_nights.sql` :
+  - Table `bookings_hg` : nouvelle colonne `customer_phone`. **Correctif** : la fonction `create-hotel-manual-booking` écrivait déjà ce téléphone dans une colonne qui n'existait pas, donc toute réservation d'hôtel saisie à la main échouait (aucune n'avait jamais été enregistrée).
+  - Vue `admin_reservations` : deux colonnes ajoutées en fin de ligne, téléphone du client et nuits d'un hôtel. Le reste est inchangé.
+
+### Pourquoi ce changement
+- La Saisie sert d'abord à rentrer vite les réservations prises par WhatsApp : il fallait pouvoir créer tout type de ligne, choisir le produit dans le catalogue avec son prix, tout faire au clavier et dupliquer une sortie pour un autre client.
+
+---
+
 ## [2026-10-22] — Réservations : Vue d'ensemble rangée par urgence, en couleur
 
 > Statut : mis en ligne à la demande de Shana (« on verra la suite »), ajustements possibles ensuite. Tests OK (59 sur les réservations), le site se construit sans erreur, aucune nouvelle erreur de compilation. Aucun changement de base pour cette partie.

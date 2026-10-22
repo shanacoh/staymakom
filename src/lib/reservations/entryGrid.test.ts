@@ -41,6 +41,8 @@ function row(overrides: Partial<ReservationRow>): ReservationRow {
     supplierCreditOpen: false,
     flagged: false,
     checkNote: null,
+    phone: null,
+    nights: null,
     ...overrides,
   };
   // Comme la vue SQL : une réservation sans coût a un coût manquant, et doit son coût tant qu'il n'est pas payé.
@@ -125,9 +127,10 @@ describe("réservation d'hôtel dans la grille", () => {
   const hotel = (overrides: Partial<ReservationRow> = {}) =>
     row({ source: "hotel", type: "hotel", supplierPayment: "none", amount: 2000, supplierCost: 1500, ...overrides });
 
-  it("saisie à la main : modifiable, sauf la date ; synchronisée : seules les notes", () => {
+  it("saisie à la main : modifiable, dates comprises ; synchronisée : seules les notes", () => {
     expect(cellMode(hotel(), "amount")).toBe("edit");
-    expect(cellMode(hotel(), "date")).toBe("readonly");
+    expect(cellMode(hotel(), "date")).toBe("edit");
+    expect(cellMode(hotel(), "partner")).toBe("readonly");
     expect(cellMode(hotel({ isOnline: true }), "client")).toBe("readonly");
     expect(cellMode(hotel({ isOnline: true }), "notes")).toBe("edit");
   });
@@ -158,6 +161,22 @@ describe("réservation d'hôtel dans la grille", () => {
     expect(buildCellUpdate(hotel({ supplierPayment: "paid" }), "supplierPayment", "todo")).toMatchObject({
       patch: { supplier_payment_status: "pending", supplier_paid_at: null },
     });
+  });
+
+  it("l'arrivée et les nuits recalculent le départ", () => {
+    expect(buildCellUpdate(hotel({ date: "2026-08-10", nights: 2 }), "date", "2026-08-20")).toMatchObject({
+      patch: { checkin: "2026-08-20", checkout: "2026-08-22" },
+    });
+    expect(buildCellUpdate(hotel({ date: "2026-08-10", nights: 2 }), "nights", "3")).toMatchObject({
+      patch: { nights: 3, checkout: "2026-08-13" },
+    });
+    expect(buildCellUpdate(hotel({ date: "2026-08-10" }), "nights", "0").ok).toBe(false);
+  });
+
+  it("l'encaissé saisi fixe le paiement : rien, acompte ou tout", () => {
+    expect(buildCellUpdate(hotel(), "collected", "500")).toMatchObject({ patch: { payment_status: "deposit_paid", paid_amount: 500 } });
+    expect(buildCellUpdate(hotel(), "collected", "2000")).toMatchObject({ patch: { payment_status: "paid", paid_amount: 2000 } });
+    expect(buildCellUpdate(hotel(), "collected", "")).toMatchObject({ patch: { payment_status: "unpaid", paid_amount: null } });
   });
 
   it("l'encaissé suit le paiement client", () => {
