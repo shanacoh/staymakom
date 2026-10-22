@@ -125,7 +125,7 @@ export function PriceCalculator(props: PriceCalculatorProps) {
                   type="number"
                   min={0}
                   max={999}
-                  step="0.5"
+                  step="any"
                   aria-label="Marge en pourcentage"
                   value={markupPercent}
                   disabled={disabled}

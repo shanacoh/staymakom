@@ -3823,7 +3823,9 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
 
   return (
     <div className="space-y-6 pb-24">
-      <form onSubmit={handleSubmit(handlePublish, onInvalidSubmit)} className="space-y-6">
+      {/* noValidate : les contrôles sont faits par le formulaire lui-même (messages en français),
+          pas par le navigateur, qui bloquait par exemple une marge déduite à 26,05 %. */}
+      <form noValidate onSubmit={handleSubmit(handlePublish, onInvalidSubmit)} className="space-y-6">
         {/* Barre du haut, collante */}
         <FormHeaderBar
           onClose={onClose}

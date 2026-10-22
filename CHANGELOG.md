@@ -6,6 +6,23 @@
 
 ---
 
+## [2026-10-22] — Fiche expérience : enregistrement bloqué par une marge à décimales
+
+> Statut : validé par Shana. Aucune nouvelle erreur de compilation.
+
+### Ce qui a changé côté code
+- `src/components/forms/standalone/PriceCalculator.tsx` : la case « Marge % » accepte toute valeur (avant : pas de 0,5 seulement). Une marge déduite en « Achat + vente » (ex. 26,05 %) faisait refuser l'enregistrement par le navigateur dès qu'on repassait sur « Marge % » ou qu'on rouvrait la fiche.
+- `src/components/forms/StandaloneExperienceForm.tsx` : le formulaire désactive les contrôles automatiques du navigateur (`noValidate`) ; les vérifications restent faites par le formulaire, avec ses messages en français.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Shana changeait le prix du Wildlife Safari en « Achat + vente » et un message lui demandait de « valider la marge » : la modification n'était pas enregistrée (resté à 119 / 119, marge 0 %).
+
+---
+
+
 ## 22/10/2026 : Fiche expérience standalone, bloc WhatsApp plus clair
 
 ### Ce qui a changé côté code
