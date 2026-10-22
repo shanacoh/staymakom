@@ -6,6 +6,22 @@
 
 ---
 
+## [2026-10-22] — Fiche expérience : la calculette de prix se rouvre sur le mode choisi
+
+> Statut : validé par Shana. Aucune nouvelle erreur de compilation. Migration appliquée en production.
+
+### Ce qui a changé côté code
+- `src/components/forms/StandaloneExperienceForm.tsx` : le mode cliqué dans la calculette (« Marge % » ou « Achat + vente ») est enregistré avec la fiche ; à la réouverture, la fiche s'ouvre sur ce mode (avant : toujours « Marge % »). Bateaux inchangés.
+- `src/lib/internalFields.ts` : `price_mode` rangé avec les autres champs internes (réservés aux admins).
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261022180000_standalone_price_mode.sql` : table `standalone_experience_internal`, nouvelle colonne `price_mode` (`markup` ou `price`, vide = « Marge % »). Le Wildlife Safari a été réglé sur `price`.
+
+### Pourquoi ce changement
+- Quand Shana fixe un prix en « Achat + vente », elle veut retrouver la fiche dans ce mode, pas une marge recalculée à décimales.
+
+---
+
 ## [2026-10-22] — Fiche expérience : enregistrement bloqué par une marge à décimales
 
 > Statut : validé par Shana. Aucune nouvelle erreur de compilation.
