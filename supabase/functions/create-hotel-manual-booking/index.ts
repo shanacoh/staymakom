@@ -2,7 +2,11 @@
 // Permet à un admin de saisir une réservation hôtel pour un client contacté
 // en direct (téléphone, WhatsApp, email), sur le même modèle que
 // create-standalone-manual-booking. Crée une ligne bookings_hg avec
-// source = 'manual_admin' et un hg_booking_id synthétique unique
+// source = 'manual_admin' et un hg_booking_id synthétique unique. L'hôtel est
+// choisi dans le catalogue (hotel_id) ou écrit en clair (hotel_name). L'email
+// du client est facultatif (réservation WhatsApp), le coût de l'hôtel aussi
+// (vide = « à saisir »). Paiement client et paiement de l'hôtel sont saisis
+// dès la création
 // (jamais un vrai id HyperGuest) — SANS toucher aux champs revolut_*/
 // hg_raw_data/hg_status (laissés vides, ce qui distingue visuellement une
 // vraie synchro d'une saisie manuelle) et sans envoyer d'email : Shana décide
@@ -82,6 +86,7 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const {
       hotel_id,
+      hotel_name,
       experience_id,
       checkin,
       checkout,
@@ -95,11 +100,15 @@ Deno.serve(async (req: Request) => {
       internal_notes,
       channel,
       channel_detail,
+      client_payment,
+      deposit_amount,
+      supplier_paid,
     } = body;
 
     const party_size: number = typeof partySizeRaw === 'number' ? partySizeRaw : 1;
 
-    if (!hotel_id || !checkin || !checkout || !customer_name || !customer_email) {
+    const hotelName = typeof hotel_name === 'string' ? hotel_name.trim() : '';
+    if ((!hotel_id && !hotelName) || !checkin || !checkout || !customer_name) {
       return new Response(JSON.stringify({ error: 'Champs requis manquants' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -120,6 +129,35 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    if (net_price != null && (typeof net_price !== 'number' || net_price < 0)) {
+      return new Response(JSON.stringify({ error: 'Coût de l\'hôtel invalide' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Paiement client : non payé, acompte reçu (montant), ou payé en totalité.
+    const clientPayment = client_payment ?? 'unpaid';
+    if (!['unpaid', 'deposit_paid', 'paid'].includes(clientPayment)) {
+      return new Response(JSON.stringify({ error: 'Paiement client invalide' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    if (clientPayment === 'deposit_paid' && (typeof deposit_amount !== 'number' || deposit_amount <= 0 || deposit_amount >= sell_price)) {
+      return new Response(JSON.stringify({ error: 'L\'acompte doit être supérieur à 0 et inférieur au prix total' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const paidAmount = clientPayment === 'paid' ? sell_price : clientPayment === 'deposit_paid' ? deposit_amount : null;
+    if (supplier_paid === true && net_price == null) {
+      return new Response(JSON.stringify({ error: 'Saisis le coût de l\'hôtel avant de le noter payé' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const checkinDate = new Date(checkin);
     const checkoutDate = new Date(checkout);
     if (Number.isNaN(checkinDate.getTime()) || Number.isNaN(checkoutDate.getTime()) || checkoutDate <= checkinDate) {
@@ -130,16 +168,18 @@ Deno.serve(async (req: Request) => {
     }
     const nights = Math.round((checkoutDate.getTime() - checkinDate.getTime()) / (1000 * 60 * 60 * 24));
 
-    const { data: hotel, error: hotelError } = await supabase
-      .from('hotels2')
-      .select('id')
-      .eq('id', hotel_id)
-      .maybeSingle();
-    if (hotelError || !hotel) {
-      return new Response(JSON.stringify({ error: 'Hôtel introuvable' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (hotel_id) {
+      const { data: hotel, error: hotelError } = await supabase
+        .from('hotels2')
+        .select('id')
+        .eq('id', hotel_id)
+        .maybeSingle();
+      if (hotelError || !hotel) {
+        return new Response(JSON.stringify({ error: 'Hôtel introuvable' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     const hgBookingId = `MANUAL-${crypto.randomUUID()}`;
@@ -148,21 +188,26 @@ Deno.serve(async (req: Request) => {
       .from('bookings_hg')
       .insert([{
         hg_booking_id: hgBookingId,
-        hotel_id,
+        hotel_id: hotel_id || null,
+        hotel_name: hotel_id ? null : hotelName,
         experience_id: experience_id || null,
         checkin,
         checkout,
         nights,
         party_size,
         customer_name,
-        customer_email,
+        customer_email: customer_email || null,
         customer_phone: customer_phone || null,
         sell_price,
-        net_price: net_price ?? sell_price,
+        net_price: net_price ?? null,
         commission_amount: net_price != null ? sell_price - net_price : 0,
         currency: currency || 'ILS',
         status: 'confirmed',
-        payment_status: 'unpaid',
+        payment_status: clientPayment,
+        paid_amount: paidAmount,
+        paid_at: clientPayment === 'unpaid' ? null : new Date().toISOString(),
+        supplier_payment_status: supplier_paid === true ? 'paid' : 'pending',
+        supplier_paid_at: supplier_paid === true ? new Date().toISOString().slice(0, 10) : null,
         is_cancelled: false,
         source: 'manual_admin',
         internal_notes: internal_notes || null,

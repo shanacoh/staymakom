@@ -61,6 +61,15 @@ export function nextAction(row: ReservationRow, today: Date = new Date()): NextA
     };
   }
 
+  // Un hôtel saisi à la main n'a pas non plus de lien de paiement : son solde se confirme à la main.
+  if (row.source === "hotel" && !row.isOnline && row.clientPayment === "deposit" && balance > 0) {
+    return {
+      kind: "confirm_collection",
+      label: `Confirmer le solde · ${formatCurrency(balance, row.currency)}`,
+      urgent: days !== null && days <= BALANCE_URGENT_DAYS,
+    };
+  }
+
   if (row.clientPayment === "deposit" && balance > 0) {
     return {
       kind: "send_balance_link",

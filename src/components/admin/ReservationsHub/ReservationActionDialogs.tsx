@@ -24,10 +24,13 @@ import {
   getOrCreateBalanceLink,
   linkRequestToBooking,
   markClientPaid,
+  markHotelClientPaid,
+  markHotelSupplierPaid,
   markDossierBalanceCollected,
   markRequestSentToProvider,
   markSupplierPaid,
   recordProviderAnswer,
+  saveHotelSupplierCost,
   saveSupplierCost,
   type BalanceLink,
 } from "@/lib/reservations/actions";
@@ -467,7 +470,7 @@ function SupplierCostDialog({ row, onClose, onDone }: DialogProps) {
   const margin = valid && row.amount !== null ? row.amount - cost : null;
 
   const save = useMutation({
-    mutationFn: () => saveSupplierCost(row.id, cost),
+    mutationFn: () => (row.source === "hotel" ? saveHotelSupplierCost(row.id, cost, row.amount ?? 0) : saveSupplierCost(row.id, cost)),
     onSuccess: () => {
       toast.success("Coût fournisseur enregistré");
       onDone();
@@ -554,6 +557,20 @@ const ReservationActionDialogs = ({ pending, onClose, onDone }: Props) => {
           />
         );
       }
+      // Hôtel saisi à la main avec un acompte : pas de lien de paiement, le solde se confirme ici.
+      if (row.source === "hotel" && row.collected > 0) {
+        return (
+          <ConfirmDialog
+            key={instance}
+            {...common}
+            title="Confirmer le solde"
+            question={`As-tu bien reçu le solde de ${formatCurrency((row.amount ?? 0) - row.collected, row.currency)} ? La réservation passera en « Payé ».`}
+            confirmLabel="Oui, le solde est encaissé"
+            successMessage="Solde confirmé"
+            run={() => markHotelClientPaid(row.id, row.amount ?? 0)}
+          />
+        );
+      }
       return (
         <ConfirmDialog
           key={instance}
@@ -562,7 +579,7 @@ const ReservationActionDialogs = ({ pending, onClose, onDone }: Props) => {
           question={`As-tu bien reçu ${formatCurrency(row.amount, row.currency)} du client ? La réservation passera en « Payé ».`}
           confirmLabel="Oui, c'est encaissé"
           successMessage="Encaissement confirmé"
-          run={() => markClientPaid(row.id)}
+          run={() => (row.source === "hotel" ? markHotelClientPaid(row.id, row.amount ?? 0) : markClientPaid(row.id))}
         />
       );
     case "enter_supplier_cost":
@@ -576,7 +593,7 @@ const ReservationActionDialogs = ({ pending, onClose, onDone }: Props) => {
           question={`As-tu bien payé ${formatCurrency(row.supplierCost, row.currency)} au fournisseur ? Cette action ne déclenche aucun virement, elle note seulement que c'est fait.`}
           confirmLabel="Oui, c'est payé"
           successMessage="Fournisseur noté comme payé"
-          run={() => markSupplierPaid(row.id)}
+          run={() => (row.source === "hotel" ? markHotelSupplierPaid(row.id) : markSupplierPaid(row.id))}
         />
       );
   }

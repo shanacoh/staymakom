@@ -191,6 +191,47 @@ export async function markSupplierPaid(bookingId: string) {
   assertChanged(data, ALREADY_HANDLED);
 }
 
+/**
+ * Hôtel saisi à la main : encaissement (ou solde) confirmé, l'encaissé rejoint le prix total.
+ * Jamais sur une réservation synchronisée : là, c'est le paiement en ligne qui décide.
+ */
+export async function markHotelClientPaid(bookingId: string, total: number) {
+  const { data, error } = await db
+    .from("bookings_hg")
+    .update({ payment_status: "paid", paid_amount: total, paid_at: new Date().toISOString() })
+    .eq("id", bookingId)
+    .eq("source", "manual_admin")
+    .in("payment_status", ["unpaid", "deposit_paid"])
+    .select("id");
+  if (error) throw error;
+  assertChanged(data, ALREADY_HANDLED);
+}
+
+/** Coût de l'hôtel saisi à la main ; la commission enregistrée suit. */
+export async function saveHotelSupplierCost(bookingId: string, cost: number, sellPrice: number) {
+  const { data, error } = await db
+    .from("bookings_hg")
+    .update({ net_price: cost, commission_amount: sellPrice - cost })
+    .eq("id", bookingId)
+    .eq("source", "manual_admin")
+    .select("id");
+  if (error) throw error;
+  assertChanged(data, "Réservation introuvable.");
+}
+
+export async function markHotelSupplierPaid(bookingId: string) {
+  const { data, error } = await db
+    .from("bookings_hg")
+    .update({ supplier_payment_status: "paid", supplier_paid_at: new Date().toISOString().slice(0, 10) })
+    .eq("id", bookingId)
+    .eq("source", "manual_admin")
+    .eq("supplier_payment_status", "pending")
+    .not("net_price", "is", null)
+    .select("id");
+  if (error) throw error;
+  assertChanged(data, ALREADY_HANDLED);
+}
+
 /** Écrit la modification d'une cellule de la grille de Saisie (une cellule = une écriture). */
 export async function saveCellUpdate(table: string, rowId: string, patch: Record<string, unknown>) {
   const { data, error } = await db.from(table).update(patch).eq("id", rowId).select("id");

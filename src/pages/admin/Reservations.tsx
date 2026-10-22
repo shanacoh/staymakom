@@ -288,7 +288,8 @@ const AdminReservations = () => {
     }
     const handledHere =
       row.source === "request" ||
-      (row.source === "booking" && !(action.kind === "confirm_collection" && row.isOnline));
+      (row.source === "booking" && !(action.kind === "confirm_collection" && row.isOnline)) ||
+      (row.source === "hotel" && !row.isOnline);
     if (handledHere) setPendingAction({ row, action });
     else if (row.detailPath) navigate(row.detailPath);
   };

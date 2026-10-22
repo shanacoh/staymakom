@@ -6,6 +6,33 @@
 
 ---
 
+## [2026-10-22] — Réservations : réservations d'hôtel saisies à la main (WhatsApp, téléphone)
+
+> Statut : validé par Shana. Tests OK (35), le site se construit sans erreur, aucune nouvelle erreur de compilation. Migration appliquée en production (par `supabase db query --linked -f`, historique des migrations non mis à jour, voir le décalage connu). Fonctions `create-hotel-manual-booking` et `admin-resend-email` redéployées. Lot 2 sur 5 de la refonte Réservations v2.
+
+### Ce qui a changé côté code
+- `src/components/admin/ReservationsHub/CreateManualHotelBookingDialog.tsx` : hôtel du catalogue ou « Autre hôtel (hors catalogue) » avec nom en clair ; email client facultatif ; coût hôtel facultatif (vide = à saisir) ; paiement client (non payé, acompte avec montant, payé) ; case « Hôtel déjà payé » ; la ligne apparaît aussitôt dans la page (avant, il fallait recharger), avec un bouton « Ouvrir la fiche » dans le message de confirmation.
+- `supabase/functions/create-hotel-manual-booking/index.ts` : accepte `hotel_name` à la place de `hotel_id`, email facultatif, paiement client et acompte, paiement de l'hôtel. Un coût absent reste vide (avant, il était remplacé par le prix client, ce qui affichait une marge de 0).
+- `supabase/functions/admin-resend-email/index.ts` : nom de l'hôtel hors catalogue dans l'email ; avec un acompte, l'email annonce le prix total.
+- `src/pages/admin/ReservationDetails.tsx` : nom de l'hôtel hors catalogue sur la fiche.
+- `src/lib/reservations/actions.ts` : `markHotelClientPaid`, `saveHotelSupplierCost`, `markHotelSupplierPaid` (hôtels saisis à la main seulement).
+- `src/components/admin/ReservationsHub/ReservationActionDialogs.tsx`, `src/pages/admin/Reservations.tsx` : les boutons de prochaine action d'un hôtel saisi à la main (coût, encaissement, solde, paiement de l'hôtel) s'ouvrent sur la page au lieu d'envoyer vers la fiche.
+- `src/lib/reservations/rules.ts` (+ test) : hôtel saisi à la main avec acompte = « Confirmer le solde » (pas de lien de paiement pour un hôtel).
+- `src/lib/reservations/entryGrid.ts` (+ tests) : en Saisie, le paiement de l'hôtel se modifie, le coût peut être vidé, et le paiement client « payé » / « non payé » met l'encaissé à jour.
+- `ARCHITECTURE.md` : note sur les hôtels saisis à la main.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261022180000_manual_hotel_bookings.sql` :
+  - Table `bookings_hg`, nouvelles colonnes : `hotel_name` (hôtel hors catalogue), `supplier_payment_status` (`pending` / `paid`, paiement de l'hôtel par Staymakom), `supplier_paid_at` (date de ce paiement).
+  - Règle : une saisie à la main a toujours un hôtel (catalogue ou nom en clair).
+  - `net_price` (coût de l'hôtel) peut maintenant rester vide.
+  - Vue `admin_reservations` : bloc hôtel revu (nom hors catalogue, encaissé selon le paiement, coût à saisir et paiement de l'hôtel suivis pour les saisies à la main ; les réservations synchronisées HyperGuest n'ont toujours pas de fournisseur à payer ici). Le reste de la vue est inchangé.
+
+### Pourquoi ce changement
+- Aucune des réservations d'hôtel d'août faites par WhatsApp n'était en base : le formulaire exigeait un hôtel du catalogue et un email, et ne suivait ni l'acompte ni le paiement de l'hôtel. Shana veut pouvoir les saisir complètement et suivre ce qui reste à encaisser et à payer.
+
+---
+
 ## [2026-10-22] — Réservations : archives des demandes (sortir du flux sans supprimer)
 
 > Statut : validé par Shana. Tests OK, le site se construit sans erreur, aucune nouvelle erreur de compilation. Migration appliquée en production (vérifiée : 8 demandes archivées, 7 rattachées à leur contact, plus aucune demande active dans le flux). Lot 1 sur 5 de la refonte Réservations v2 (branche `reservations-v2`).

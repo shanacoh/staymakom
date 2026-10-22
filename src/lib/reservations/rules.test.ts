@@ -72,6 +72,14 @@ describe("nextAction", () => {
     expect(nextAction(row({ ...deposit, date: "2026-10-09" }), TODAY)).toMatchObject({ kind: "send_balance_link", urgent: false });
   });
 
+  it("hôtel saisi à la main avec acompte : solde à confirmer, pas de lien de paiement", () => {
+    const hotelDeposit = { source: "hotel" as const, type: "hotel" as const, clientPayment: "deposit" as const, amount: 2000, collected: 500 };
+    const action = nextAction(row({ ...hotelDeposit, date: "2026-10-07" }), TODAY);
+    expect(action).toMatchObject({ kind: "confirm_collection", urgent: true });
+    expect(action?.label).toContain("1");
+    expect(nextAction(row({ ...hotelDeposit, isOnline: true }), TODAY)?.kind).toBe("send_balance_link");
+  });
+
   it("date passée et client non payé : confirmer l'encaissement avant le coût fournisseur", () => {
     const action = nextAction(
       row({ status: "passee", date: "2026-09-04", clientPayment: "unpaid", collected: 0, supplierCost: null, supplierPayment: "todo" }),

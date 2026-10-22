@@ -128,6 +128,29 @@ describe("réservation d'hôtel dans la grille", () => {
       patch: { sell_price: 2400, commission_amount: 900 },
     });
     expect(buildCellUpdate(hotel(), "supplierCost", "1600")).toMatchObject({ patch: { net_price: 1600, commission_amount: 400 } });
-    expect(buildCellUpdate(hotel(), "supplierCost", "").ok).toBe(false);
+    expect(buildCellUpdate(hotel(), "supplierCost", "abc").ok).toBe(false);
+  });
+
+  it("un coût vidé redevient « à saisir », sauf si l'hôtel est noté payé", () => {
+    expect(buildCellUpdate(hotel({ supplierPayment: "todo" }), "supplierCost", "")).toMatchObject({
+      patch: { net_price: null, commission_amount: 0 },
+    });
+    expect(buildCellUpdate(hotel({ supplierPayment: "paid" }), "supplierCost", "").ok).toBe(false);
+  });
+
+  it("le paiement de l'hôtel se note à la main, une fois le coût connu", () => {
+    expect(cellMode(hotel({ supplierPayment: "todo" }), "supplierPayment")).toBe("edit");
+    expect(buildCellUpdate(hotel({ supplierPayment: "todo" }), "supplierPayment", "paid")).toMatchObject({
+      patch: { supplier_payment_status: "paid" },
+    });
+    expect(buildCellUpdate(hotel({ supplierPayment: "todo", supplierCost: null }), "supplierPayment", "paid").ok).toBe(false);
+    expect(buildCellUpdate(hotel({ supplierPayment: "paid" }), "supplierPayment", "todo")).toMatchObject({
+      patch: { supplier_payment_status: "pending", supplier_paid_at: null },
+    });
+  });
+
+  it("l'encaissé suit le paiement client", () => {
+    expect(buildCellUpdate(hotel(), "clientPayment", "paid")).toMatchObject({ patch: { payment_status: "paid", paid_amount: 2000 } });
+    expect(buildCellUpdate(hotel(), "clientPayment", "unpaid")).toMatchObject({ patch: { payment_status: "unpaid", paid_amount: null } });
   });
 });

@@ -307,7 +307,7 @@ export default function AdminReservationDetails() {
           <CardContent className="space-y-3">
             <div>
               <p className="text-xs text-muted-foreground">Hôtel</p>
-              <p className="font-medium">{booking.hotels2?.name || "-"}</p>
+              <p className="font-medium">{booking.hotels2?.name || booking.hotel_name || "-"}</p>
               {booking.hotels2?.city && <p className="text-xs text-muted-foreground">{booking.hotels2.city}</p>}
             </div>
             <div>

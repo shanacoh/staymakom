@@ -55,7 +55,7 @@ export type CellMode = "edit" | "locked" | "readonly";
 
 const REVOLUT_COLUMNS: EntryColumnKey[] = ["amount", "collected", "clientPayment"];
 const REQUEST_EDITABLE: EntryColumnKey[] = ["status", "client", "date", "notes"];
-const HOTEL_MANUAL_EDITABLE: EntryColumnKey[] = ["client", "pax", "amount", "clientPayment", "supplierCost", "channel"];
+const HOTEL_MANUAL_EDITABLE: EntryColumnKey[] = ["client", "pax", "amount", "clientPayment", "supplierCost", "supplierPayment", "channel"];
 
 export function cellMode(row: ReservationRow, key: EntryColumnKey): CellMode {
   if (key === "ref" || key === "margin") return "readonly";
@@ -213,7 +213,8 @@ const HOTEL_PAYMENT_TO_DB: Record<string, string> = {
 };
 
 // Pour un hôtel, la commission enregistrée (montant client moins coût net) suit chaque
-// modification de l'un ou de l'autre, pour que les deux restent cohérents.
+// modification de l'un ou de l'autre, pour que les deux restent cohérents. Un coût vidé
+// redevient « à saisir » (commission à 0, comme à la création sans coût).
 function hotelPatch(row: ReservationRow, key: EntryColumnKey, raw: string): Record<string, unknown> | string {
   const trimmed = raw.trim();
   switch (key) {
@@ -233,10 +234,24 @@ function hotelPatch(row: ReservationRow, key: EntryColumnKey, raw: string): Reco
     }
     case "supplierCost": {
       const n = parseAmount(raw);
-      return n === undefined || n === null ? "Coût invalide" : { net_price: n, commission_amount: (row.amount ?? 0) - n };
+      if (n === undefined) return "Coût invalide";
+      if (n === null) return row.supplierPayment === "paid" ? "L'hôtel est noté payé : remets-le « À payer » avant de vider le coût" : { net_price: null, commission_amount: 0 };
+      return { net_price: n, commission_amount: (row.amount ?? 0) - n };
     }
-    case "clientPayment":
-      return HOTEL_PAYMENT_TO_DB[trimmed] ? { payment_status: HOTEL_PAYMENT_TO_DB[trimmed] } : "Paiement invalide";
+    case "clientPayment": {
+      const status = HOTEL_PAYMENT_TO_DB[trimmed];
+      if (!status) return "Paiement invalide";
+      // L'encaissé d'un hôtel saisi à la main est paid_amount : payé = tout, non payé = rien.
+      // Un acompte garde le montant déjà noté (il se saisit à la création).
+      if (trimmed === "paid") return { payment_status: status, paid_amount: row.amount };
+      if (trimmed === "unpaid") return { payment_status: status, paid_amount: null };
+      return { payment_status: status };
+    }
+    case "supplierPayment":
+      if (trimmed === "paid" && row.supplierCost === null) return "Saisis d'abord le coût de l'hôtel";
+      return trimmed === "paid"
+        ? { supplier_payment_status: "paid", supplier_paid_at: new Date().toISOString().slice(0, 10) }
+        : { supplier_payment_status: "pending", supplier_paid_at: null };
     default:
       return "Cette cellule n'est pas modifiable";
   }
