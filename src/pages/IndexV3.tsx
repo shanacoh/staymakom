@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
 import { useLocalizedNavigation } from "@/hooks/useLocalizedNavigation";
@@ -29,7 +29,7 @@ import { trackGiftCardClicked, trackViewAllExperiencesClicked, trackHeroCtaClick
 import RegionFilter from "@/components/RegionFilter";
 import { useMoodCards } from "@/lib/moodDisplay/queries";
 import { useNearMe } from "@/hooks/useNearMe";
-import { countByRegion, filterByRegion, type RegionChoice } from "@/lib/regionList/filter";
+import { countByRegion, filterByRegion, regionChoice as regionChoiceOf, type RegionChoice } from "@/lib/regionList/filter";
 import { useRegionList } from "@/lib/regionList/queries";
 import heroImage from "@/assets/hero-road-desert.jpg";
 import handpickedHero from "@/assets/handpicked-hero.jpg";
@@ -102,10 +102,13 @@ const IndexV3 = () => {
   const isRTL = lang === "he";
   const queryClient = useQueryClient();
 
-  const [mode, setMode] = useState<"stay" | "live">("live");
+  // ?region=<slug>&mode=stay : accueil ouvert sur une région (ex. lien vers une fiche archivée).
+  const [searchParams] = useSearchParams();
+  const regionParam = searchParams.get("region");
+  const [mode, setMode] = useState<"stay" | "live">(searchParams.get("mode") === "stay" ? "stay" : "live");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedBoatId, setSelectedBoatId] = useState<string | null>(null);
-  const [regionChoice, setRegionChoice] = useState<RegionChoice>(null);
+  const [regionChoice, setRegionChoice] = useState<RegionChoice>(regionParam ? regionChoiceOf(regionParam) : null);
   const nearMe = useNearMe();
   const regionList = useRegionList();
 

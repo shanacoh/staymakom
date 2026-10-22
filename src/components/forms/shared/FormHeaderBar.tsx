@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, Loader2, Rocket, Save, Sparkles } from "lucide-react";
+import { Archive, ArchiveRestore, ArrowLeft, Check, Loader2, Rocket, Save, Sparkles } from "lucide-react";
 import { Button } from "@/components/forms/styled";
 import { cn } from "@/lib/utils";
 
@@ -27,10 +27,12 @@ interface FormHeaderBarProps {
   canPublish: boolean;
   /** Enregistrement ou upload en cours : tous les boutons sont grisés. */
   busy: boolean;
+  /** Fiche déjà enregistrée : bouton Archiver / Désarchiver. Omis = pas de bouton (nouvelle fiche). */
+  archive?: { archived: boolean; onToggle: () => void };
 }
 
 // Barre du haut, collante : titre, statut, FR | EN | HE, Traduire tout,
-// Brouillon, Publier. Le bouton Publier est de type "submit" : la barre doit
+// Archiver (fiche existante), Brouillon, Publier. Le bouton Publier est de type "submit" : la barre doit
 // être placée à l'intérieur du <form>.
 export function FormHeaderBar({
   onClose,
@@ -45,6 +47,7 @@ export function FormHeaderBar({
   onSaveDraft,
   canPublish,
   busy,
+  archive,
 }: FormHeaderBarProps) {
   return (
     <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b -mx-6 px-6 py-3 flex items-center justify-between flex-wrap gap-3">
@@ -97,6 +100,19 @@ export function FormHeaderBar({
           {isTranslating ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1.5" />}
           Traduire tout
         </Button>
+        {archive && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 text-[13px]"
+            onClick={archive.onToggle}
+            disabled={busy}
+          >
+            {archive.archived ? <ArchiveRestore className="h-3.5 w-3.5 mr-1.5" /> : <Archive className="h-3.5 w-3.5 mr-1.5" />}
+            {archive.archived ? "Désarchiver" : "Archiver"}
+          </Button>
+        )}
         <Button
           type="button"
           variant="outline"

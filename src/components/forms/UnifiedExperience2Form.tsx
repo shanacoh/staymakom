@@ -29,6 +29,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Save, Rocket, X, Upload, Loader2, ArrowLeft, Plus, ChevronUp, ChevronDown, Star, Image as ImageIcon, HelpCircle, Check, DollarSign, TrendingUp, Receipt, Percent, Building2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { draftSaveStatus, formStatusLabel } from "@/lib/archive/status";
+import { useFormArchiveToggle } from "@/lib/archive/useFormArchiveToggle";
 import RichTextEditor from "@/components/ui/rich-text-editor";
 import { generateSlug, buildImageFileName } from "@/lib/utils";
 import { Experience2AddonsManager, type LocalAddonEntry } from "@/components/admin/Experience2AddonsManager";
@@ -278,6 +280,8 @@ export function UnifiedExperience2Form({
     },
     enabled: !!experienceId,
   });
+  // Archiver / Désarchiver depuis la barre du haut ; une fiche archivée le reste quand on enregistre un brouillon.
+  const archiveToggle = useFormArchiveToggle("experience", experienceId, existingExperience?.status, ["admin-experiences2"]);
 
   // Check if this experience already has linked extras (to restore showExtras toggle)
   const { data: existingExtrasCount } = useQuery({
@@ -735,7 +739,7 @@ export function UnifiedExperience2Form({
   // Build experience data object
   // -------------------------------------------------------------------------
 
-  const buildExperienceData = async (data: Experience2FormData, status: "draft" | "published") => {
+  const buildExperienceData = async (data: Experience2FormData, status: "draft" | "published" | "archived") => {
     // hero is already uploaded immediately on selection — just use the URL
     const heroImageUrl = heroImagePreview || existingExperience?.hero_image || "";
 
@@ -884,7 +888,7 @@ export function UnifiedExperience2Form({
   const handleSaveDraft = async (data: Experience2FormData) => {
     setIsSaving(true);
     try {
-      const { publicFields, internalFields } = splitInternalFields(EXPERIENCE2_INTERNAL, await buildExperienceData(data, "draft"));
+      const { publicFields, internalFields } = splitInternalFields(EXPERIENCE2_INTERNAL, await buildExperienceData(data, draftSaveStatus(archiveToggle.status)));
       const experienceData = publicFields as Awaited<ReturnType<typeof buildExperienceData>>;
       if (currentExperienceId) {
         const { error } = await supabase.from("experiences2").update(experienceData).eq("id", currentExperienceId);
@@ -1262,7 +1266,7 @@ export function UnifiedExperience2Form({
   const seoTitleEn = watch("seo_title_en");
   const totalPhotosCount = (heroImagePreview ? 1 : 0) + galleryPreviews.length;
   const unreviewedAi = aiDraftPanelRef.current?.getUnreviewedAiCount() ?? 0;
-  const currentStatus = existingExperience?.status === "published" ? "Publiée" : "Brouillon";
+  const currentStatus = formStatusLabel(archiveToggle.status);
 
   const includesForPreview: { title: string; icon_url?: string | null }[] = currentExperienceId
     ? ((savedIncludes as any[] | undefined) ?? []).filter((i) => i.published)
@@ -1340,6 +1344,7 @@ export function UnifiedExperience2Form({
           onSaveDraft={handleSubmit(handleSaveDraft, onInvalidSubmit)}
           canPublish={!!canPublish}
           busy={isSaving || heroImageUploading}
+          archive={archiveToggle.archive}
         />
 
         {/* Générer avec l'IA */}

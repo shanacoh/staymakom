@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Eye, EyeOff, ExternalLink } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff, ExternalLink, Archive, ArchiveRestore } from "lucide-react";
 import { toast } from "sonner";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -35,6 +35,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { HotelEditor2 } from "./HotelEditor2";
 import { formatDistanceToNow } from "date-fns";
 import { StatusBadge, WarningBadge } from "@/components/admin/StatusBadge";
+import { ArchivedToggle } from "@/components/admin/ArchivedToggle";
+import { isArchived, splitArchived } from "@/lib/archive/status";
+import { setListingArchived } from "@/lib/archive/actions";
 
 const AdminHotels2 = () => {
   const { hotelId } = useParams();
@@ -42,6 +45,7 @@ const AdminHotels2 = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [regionFilter, setRegionFilter] = useState<string>("all");
+  const [showArchived, setShowArchived] = useState(false);
   // Le back-office est en français : on affiche le nom français de la région.
   const regionLabelOf = useRegionLabel("fr");
   const queryClient = useQueryClient();
@@ -76,17 +80,18 @@ const AdminHotels2 = () => {
           stats[exp.hotel_id] = { published: 0, draft: 0 };
         }
         if (exp.status === "published") stats[exp.hotel_id].published += 1;
-        else stats[exp.hotel_id].draft += 1;
+        else if (!isArchived(exp.status)) stats[exp.hotel_id].draft += 1;
       });
 
       return stats;
     },
   });
 
-  const filteredHotels = useMemo(() => {
-    if (!hotels) return [];
-    
-    return hotels.filter((hotel) => {
+  // Hôtels filtrés ; les archivés ne s'affichent que dépliés, en fin de liste.
+  const hotelLists = useMemo(() => {
+    if (!hotels) return { active: [], archived: [] };
+
+    return splitArchived(hotels.filter((hotel) => {
       const matchesStatus = statusFilter === "all" || hotel.status === statusFilter;
       const matchesRegion = regionFilter === "all" || regionLabelOf(hotel) === regionFilter;
 
@@ -96,8 +101,9 @@ const AdminHotels2 = () => {
       }
 
       return matchesStatus && matchesRegion;
-    });
+    }));
   }, [hotels, statusFilter, regionFilter, regionLabelOf]);
+  const filteredHotels = showArchived ? [...hotelLists.active, ...hotelLists.archived] : hotelLists.active;
 
   const regions = useMemo(() => {
     if (!hotels) return [];
@@ -154,6 +160,17 @@ const AdminHotels2 = () => {
     },
   });
 
+  // Archiver ne supprime rien : l'hôtel (et ses expériences) quittent le site, les réservations restent.
+  // Désarchiver = retour en brouillon.
+  const archiveMutation = useMutation({
+    mutationFn: ({ id, archived }: { id: string; archived: boolean }) => setListingArchived("hotel", id, archived),
+    onSuccess: (_data, { archived }) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-hotels2"] });
+      toast.success(archived ? "Hôtel archivé" : "Hôtel désarchivé (repassé en brouillon)");
+    },
+    onError: () => toast.error("Erreur lors de l'archivage"),
+  });
+
   if (isFormView) {
     return (
       <HotelEditor2
@@ -187,7 +204,6 @@ const AdminHotels2 = () => {
               <SelectItem value="published">Published</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="archived">Archived</SelectItem>
               <SelectItem value="missing_hg">⚠ Missing HyperGuest ID</SelectItem>
             </SelectContent>
           </Select>
@@ -313,7 +329,8 @@ const AdminHotels2 = () => {
                               <TooltipContent>Preview on site</TooltipContent>
                             </Tooltip>
                           )}
-                          {/* 3. Hide/Show */}
+                          {/* 3. Hide/Show (pas pour un hôtel archivé : on le désarchive d'abord) */}
+                          {!isArchived(hotel.status) && (
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
@@ -336,7 +353,22 @@ const AdminHotels2 = () => {
                             </TooltipTrigger>
                             <TooltipContent>{hotel.status === "published" ? "Unpublish" : "Publish"}</TooltipContent>
                           </Tooltip>
-                          {/* 4. Delete */}
+                          )}
+                          {/* 4. Archiver / Désarchiver */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => archiveMutation.mutate({ id: hotel.id, archived: !isArchived(hotel.status) })}
+                                className="text-[#6B7280] hover:text-[#1A1814]"
+                              >
+                                {isArchived(hotel.status) ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>{isArchived(hotel.status) ? "Désarchiver" : "Archiver"}</TooltipContent>
+                          </Tooltip>
+                          {/* 5. Delete */}
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
@@ -370,6 +402,10 @@ const AdminHotels2 = () => {
               Add your first hotel
             </Button>
           </div>
+        )}
+
+        {!isLoading && (
+          <ArchivedToggle count={hotelLists.archived.length} open={showArchived} onToggle={() => setShowArchived((v) => !v)} />
         )}
 
         <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>

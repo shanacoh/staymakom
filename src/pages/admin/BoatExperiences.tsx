@@ -6,7 +6,7 @@
  * le reste des expériences standalone) via defaultCategoryId, pas de formulaire dédié.
  * Bascule liste/formulaire selon la route, même pattern que Experiences2.tsx.
  */
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -27,12 +27,16 @@ import { CSS } from "@dnd-kit/utilities";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, GripVertical } from "lucide-react";
+import { Plus, Edit, GripVertical, Archive, ArchiveRestore } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import { StandaloneExperienceForm } from "@/components/forms/StandaloneExperienceForm";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { BOATS_CATEGORY_ID } from "@/lib/boatsCategory";
 import { STANDALONE_EXPERIENCE_INTERNAL, withInternalFields } from "@/lib/internalFields";
+import { ArchivedToggle } from "@/components/admin/ArchivedToggle";
+import { isArchived, splitArchived } from "@/lib/archive/status";
+import { setListingArchived } from "@/lib/archive/actions";
 
 const BOATS_QUERY_KEY = ["admin-boat-experiences"];
 
@@ -50,8 +54,10 @@ function useReorderBoats() {
   });
 }
 
-function SortableBoatRow({ boat, onEdit }: { boat: any; onEdit: () => void }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: boat.id });
+function SortableBoatRow({ boat, onEdit, onToggleArchive }: { boat: any; onEdit: () => void; onToggleArchive: () => void }) {
+  // Une fiche archivée reste affichée (archives dépliées) mais ne compte pas dans l'ordre du site.
+  const archived = isArchived(boat.status);
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: boat.id, disabled: archived });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -65,7 +71,7 @@ function SortableBoatRow({ boat, onEdit }: { boat: any; onEdit: () => void }) {
           type="button"
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing text-muted-foreground touch-none"
+          className={archived ? "invisible" : "cursor-grab active:cursor-grabbing text-muted-foreground touch-none"}
         >
           <GripVertical className="h-4 w-4" />
         </button>
@@ -101,6 +107,10 @@ function SortableBoatRow({ boat, onEdit }: { boat: any; onEdit: () => void }) {
         {boat.updated_at ? format(new Date(boat.updated_at), "dd MMM yyyy") : "-"}
       </td>
       <td className="p-3 text-right">
+        <Button variant="ghost" size="sm" onClick={onToggleArchive}>
+          {archived ? <ArchiveRestore className="h-4 w-4 mr-2" /> : <Archive className="h-4 w-4 mr-2" />}
+          {archived ? "Désarchiver" : "Archiver"}
+        </Button>
         <Button variant="ghost" size="sm" onClick={onEdit}>
           <Edit className="h-4 w-4 mr-2" />
           Modifier
@@ -133,17 +143,39 @@ export default function BoatExperiences() {
     enabled: !isFormView,
   });
 
-  const sortedBoats = useMemo(() => boats ?? [], [boats]);
+  const [showArchived, setShowArchived] = useState(false);
+  const { active: activeBoats, archived: archivedBoats } = useMemo(() => splitArchived(boats ?? []), [boats]);
 
+  // Archiver ne supprime rien : la fiche quitte /boat, ses réservations restent. Désarchiver = retour en brouillon.
+  const archiveMutation = useMutation({
+    mutationFn: ({ id, archived }: { id: string; archived: boolean }) => setListingArchived("standalone", id, archived),
+    onSuccess: (_data, { archived }) => {
+      queryClient.invalidateQueries({ queryKey: BOATS_QUERY_KEY });
+      toast.success(archived ? "Bateau archivé" : "Bateau désarchivé (repassé en brouillon)");
+    },
+    onError: () => toast.error("Erreur lors de l'archivage"),
+  });
+
+  // Seules les fiches actives se réordonnent ; les archivées gardent leur place en fin de liste.
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (!over || active.id === over.id || !boats) return;
-    const oldIndex = boats.findIndex((b) => b.id === active.id);
-    const newIndex = boats.findIndex((b) => b.id === over.id);
-    const reordered = arrayMove(boats, oldIndex, newIndex);
-    queryClient.setQueryData(BOATS_QUERY_KEY, reordered);
+    if (!over || active.id === over.id) return;
+    const oldIndex = activeBoats.findIndex((b) => b.id === active.id);
+    const newIndex = activeBoats.findIndex((b) => b.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const reordered = arrayMove(activeBoats, oldIndex, newIndex);
+    queryClient.setQueryData(BOATS_QUERY_KEY, [...reordered, ...archivedBoats]);
     reorderMutation.mutate(reordered.map((b, index) => ({ id: b.id, display_order: index })));
   };
+
+  const renderRow = (boat: any) => (
+    <SortableBoatRow
+      key={boat.id}
+      boat={boat}
+      onEdit={() => navigate(`/admin/boats/edit/${boat.id}`)}
+      onToggleArchive={() => archiveMutation.mutate({ id: boat.id, archived: !isArchived(boat.status) })}
+    />
+  );
 
   const handleClose = () => {
     navigate("/admin/experiences2?tab=boats");
@@ -177,7 +209,7 @@ export default function BoatExperiences() {
 
       {isLoading ? (
         <div className="text-center py-12 text-muted-foreground">Chargement...</div>
-      ) : sortedBoats.length > 0 ? (
+      ) : activeBoats.length > 0 || showArchived ? (
         <div className="border rounded-lg bg-card overflow-x-auto">
           <p className="text-xs text-muted-foreground p-3 border-b">
             Glisse les lignes avec l'icône ⠿ pour changer l'ordre d'affichage des bateaux sur le site (/boat).
@@ -196,17 +228,14 @@ export default function BoatExperiences() {
               </tr>
             </thead>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={sortedBoats.map((b) => b.id)} strategy={verticalListSortingStrategy}>
-                <tbody>
-                  {sortedBoats.map((boat) => (
-                    <SortableBoatRow
-                      key={boat.id}
-                      boat={boat}
-                      onEdit={() => navigate(`/admin/boats/edit/${boat.id}`)}
-                    />
-                  ))}
-                </tbody>
+              <SortableContext items={activeBoats.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+                <tbody>{activeBoats.map(renderRow)}</tbody>
               </SortableContext>
+              {showArchived && (
+                <SortableContext items={archivedBoats.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+                  <tbody className="border-t">{archivedBoats.map(renderRow)}</tbody>
+                </SortableContext>
+              )}
             </DndContext>
           </table>
         </div>
@@ -214,6 +243,9 @@ export default function BoatExperiences() {
         <div className="text-center py-12 border rounded-lg bg-card">
           <p className="text-muted-foreground">Aucun bateau pour le moment</p>
         </div>
+      )}
+      {!isLoading && (
+        <ArchivedToggle count={archivedBoats.length} open={showArchived} onToggle={() => setShowArchived((v) => !v)} />
       )}
     </div>
   );

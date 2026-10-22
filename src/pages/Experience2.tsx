@@ -46,6 +46,8 @@ import {
 import { useSetCurrentProduct } from "@/contexts/CurrentProductContext";
 import { useScrollDepth } from "@/hooks/useScrollDepth";
 import { MapPin, Moon } from "lucide-react";
+import { ArchivedListingRedirect } from "@/components/ArchivedListingRedirect";
+import { isArchived } from "@/lib/archive/status";
 
 function toProductLike(experience: any, primaryHotel: any): ProductLike {
   return {
@@ -346,18 +348,21 @@ export default function Experience2() {
   // Error / not found
   // ---------------------------------------------------------------------------
 
-  if (error || !experience) {
+  // Une fiche archivée n'est plus visible (même pour un admin connecté) : redirection vers son mood ou sa région.
+  if (error || !experience || isArchived(experience.status)) {
     return (
-      <div className="min-h-screen bg-background">
-        <V3Header />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center space-y-4">
-            <h1 className="text-base font-semibold">{t.notFound}</h1>
-            <p className="text-muted-foreground">{t.notFoundDesc}</p>
+      <ArchivedListingRedirect kind="experience" slug={slug}>
+        <div className="min-h-screen bg-background">
+          <V3Header />
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center space-y-4">
+              <h1 className="text-base font-semibold">{t.notFound}</h1>
+              <p className="text-muted-foreground">{t.notFoundDesc}</p>
+            </div>
           </div>
+          <LaunchFooter />
         </div>
-        <LaunchFooter />
-      </div>
+      </ArchivedListingRedirect>
     );
   }
 

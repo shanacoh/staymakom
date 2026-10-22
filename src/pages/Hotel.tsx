@@ -17,6 +17,7 @@ import { trackedRegionName, useRegionLabel } from "@/lib/regionList/queries";
 import { t } from "@/lib/translations";
 import LocationMap from "@/components/experience-test/LocationMap";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ArchivedListingRedirect } from "@/components/ArchivedListingRedirect";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -148,14 +149,17 @@ const Hotel = () => {
   }
 
   if (!hotel) {
+    // Hôtel archivé : redirection vers sa région plutôt qu'une page vide.
     return (
-      <div className="min-h-screen flex flex-col">
-        <V3Header />
-        <main className="flex-1 flex items-center justify-center">
-          <p className="text-muted-foreground">{t(lang, 'hotelNotFound')}</p>
-        </main>
-        <LaunchFooter />
-      </div>);
+      <ArchivedListingRedirect kind="hotel" slug={slug}>
+        <div className="min-h-screen flex flex-col">
+          <V3Header />
+          <main className="flex-1 flex items-center justify-center">
+            <p className="text-muted-foreground">{t(lang, 'hotelNotFound')}</p>
+          </main>
+          <LaunchFooter />
+        </div>
+      </ArchivedListingRedirect>);
 
   }
 

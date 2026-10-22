@@ -3,7 +3,7 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { EXPERIENCE2_INTERNAL, fetchInternalFields, saveInternalFields } from "@/lib/internalFields";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit, Eye, EyeOff, Copy, Trash2, ExternalLink, MoreHorizontal, GripVertical, Building2, Zap, Sailboat } from "lucide-react";
+import { Plus, Edit, Eye, EyeOff, Copy, Trash2, ExternalLink, MoreHorizontal, GripVertical, Building2, Zap, Sailboat, Archive, ArchiveRestore } from "lucide-react";
 import BoatExperiences from "@/pages/admin/BoatExperiences";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,6 +31,9 @@ import { MissingProviderBadge } from "@/components/admin/providers/ProviderBadge
 import { hotelExperienceProviderId } from "@/lib/providers/compute";
 import { useProviderLinks } from "@/lib/providers/queries";
 import { OpsSlidePanel } from "@/components/admin/OpsSlidePanel";
+import { ArchivedToggle } from "@/components/admin/ArchivedToggle";
+import { isArchived, splitArchived, type ListingKind } from "@/lib/archive/status";
+import { setListingArchived } from "@/lib/archive/actions";
 
 function computeAvailabilityAlert(exp: any): { daysToEnd: number; remainingDates: number } | null {
   if (!exp.availability_end_date) return null;
@@ -66,6 +69,7 @@ const AdminExperiences2 = () => {
   const [hotelFilter, setHotelFilter] = useState<string>("all");
   const [providerFilter, setProviderFilter] = useState<"all" | "missing">("all");
   const [sortBy, setSortBy] = useState<"updated_desc" | "manual" | "created_desc" | "status">("updated_desc");
+  const [showArchived, setShowArchived] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [experienceToDelete, setExperienceToDelete] = useState<string | null>(null);
   const [opsPanel, setOpsPanel] = useState<{ id: string; title: string } | null>(null);
@@ -169,8 +173,8 @@ const AdminExperiences2 = () => {
     [providerFilter, missingProviderIds],
   );
 
-  // Expériences avec hôtel filtrées puis triées
-  const displayedExperiences = useMemo(() => {
+  // Expériences avec hôtel filtrées puis triées ; les archivées ne s'affichent que dépliées, en fin de liste.
+  const hotelLists = useMemo(() => {
     const filtered = (experiences || []).filter((exp) => {
       const matchesCategory = !selectedCategory || (exp as any).categories?.slug === selectedCategory;
       const matchesSearch = exp.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -182,19 +186,22 @@ const AdminExperiences2 = () => {
       }
       return matchesCategory && matchesSearch && matchesStatus && matchesHotel && matchesProviderFilter(exp.id);
     });
-    return sortExperiences(filtered);
+    return splitArchived(sortExperiences(filtered));
   }, [experiences, selectedCategory, searchQuery, statusFilter, hotelFilter, sortExperiences, matchesProviderFilter]);
 
-  // Expériences standalone filtrées puis triées
-  const displayedStandalone = useMemo(() => {
+  // Expériences standalone filtrées puis triées ; les archivées ne s'affichent que dépliées, en fin de liste.
+  const standaloneLists = useMemo(() => {
     const filtered = (standaloneExps || []).filter((exp: any) => {
       const matchesCategory = !selectedCategory || exp.categories?.slug === selectedCategory;
       const matchesSearch = exp.title.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === "all" || exp.status === statusFilter;
       return matchesCategory && matchesSearch && matchesStatus && matchesProviderFilter(exp.id);
     });
-    return sortExperiences(filtered);
+    return splitArchived(sortExperiences(filtered));
   }, [standaloneExps, selectedCategory, searchQuery, statusFilter, sortExperiences, matchesProviderFilter]);
+
+  const displayedExperiences = showArchived ? [...hotelLists.active, ...hotelLists.archived] : hotelLists.active;
+  const displayedStandalone = showArchived ? [...standaloneLists.active, ...standaloneLists.archived] : standaloneLists.active;
 
   const handleCreateNew = () => {
     if (mode === "hotel") {
@@ -239,6 +246,17 @@ const AdminExperiences2 = () => {
       toast.success("Visibilité mise à jour");
     },
     onError: () => toast.error("Erreur"),
+  });
+
+  // Archiver ne supprime rien : la fiche quitte le site, ses réservations restent. Désarchiver = retour en brouillon.
+  const archiveMutation = useMutation({
+    mutationFn: ({ kind, id, archived }: { kind: ListingKind; id: string; archived: boolean }) =>
+      setListingArchived(kind, id, archived),
+    onSuccess: (_data, { kind, archived }) => {
+      queryClient.invalidateQueries({ queryKey: kind === "standalone" ? ["admin-standalone-exps-hub"] : ["admin-experiences2"] });
+      toast.success(archived ? "Fiche archivée" : "Fiche désarchivée (repassée en brouillon)");
+    },
+    onError: () => toast.error("Erreur lors de l'archivage"),
   });
 
   const toggleStandaloneV3OnlyMutation = useMutation({
@@ -405,8 +423,9 @@ const AdminExperiences2 = () => {
     onError: () => toast.error("Erreur lors de la sauvegarde de l'ordre"),
   });
 
-  const hasActiveFilters = searchQuery !== "" || statusFilter !== "all" || hotelFilter !== "all" || providerFilter !== "all";
-  const hasActiveFiltersStandalone = searchQuery !== "" || statusFilter !== "all" || providerFilter !== "all";
+  // Archives dépliées = filtre actif : le glisser-déposer ne doit réordonner que les fiches actives.
+  const hasActiveFilters = searchQuery !== "" || statusFilter !== "all" || hotelFilter !== "all" || providerFilter !== "all" || showArchived;
+  const hasActiveFiltersStandalone = searchQuery !== "" || statusFilter !== "all" || providerFilter !== "all" || showArchived;
   const isManualSort = sortBy === "manual";
   const dragDisabled = hasActiveFilters || !isManualSort;
   const dragDisabledStandalone = hasActiveFiltersStandalone || !isManualSort;
@@ -762,7 +781,7 @@ const AdminExperiences2 = () => {
                         >
                           Ops
                         </button>
-                        {experience.slug && (
+                        {experience.slug && !isArchived(experience.status) && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -798,13 +817,24 @@ const AdminExperiences2 = () => {
                                 </a>
                               </DropdownMenuItem>
                             )}
+                            {!isArchived(experience.status) && (
+                              <DropdownMenuItem
+                                onClick={() => toggleVisibilityMutation.mutate({ id: experience.id, currentStatus: experience.status || "draft" })}
+                                className="flex items-center gap-2"
+                              >
+                                {experience.status === "published"
+                                  ? <><EyeOff className="h-3.5 w-3.5" /> Unpublish</>
+                                  : <><Eye className="h-3.5 w-3.5" /> Publish</>
+                                }
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
-                              onClick={() => toggleVisibilityMutation.mutate({ id: experience.id, currentStatus: experience.status || "draft" })}
+                              onClick={() => archiveMutation.mutate({ kind: "experience", id: experience.id, archived: !isArchived(experience.status) })}
                               className="flex items-center gap-2"
                             >
-                              {experience.status === "published"
-                                ? <><EyeOff className="h-3.5 w-3.5" /> Unpublish</>
-                                : <><Eye className="h-3.5 w-3.5" /> Publish</>
+                              {isArchived(experience.status)
+                                ? <><ArchiveRestore className="h-3.5 w-3.5" /> Désarchiver</>
+                                : <><Archive className="h-3.5 w-3.5" /> Archiver</>
                               }
                             </DropdownMenuItem>
                             <DropdownMenuItem
@@ -831,6 +861,9 @@ const AdminExperiences2 = () => {
               </div>
             </Card>
           )
+        )}
+        {mode === "hotel" && !isLoading && (
+          <ArchivedToggle count={hotelLists.archived.length} open={showArchived} onToggle={() => setShowArchived((v) => !v)} />
         )}
 
         {/* Bandeau drag-and-drop désactivé (tri non manuel ou filtres actifs, standalone) */}
@@ -948,7 +981,7 @@ const AdminExperiences2 = () => {
                           />
                           <span className="text-[10px] text-muted-foreground font-medium">Vitrine</span>
                         </div>
-                        {exp.slug && (
+                        {exp.slug && !isArchived(exp.status) && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -984,13 +1017,24 @@ const AdminExperiences2 = () => {
                                 </a>
                               </DropdownMenuItem>
                             )}
+                            {!isArchived(exp.status) && (
+                              <DropdownMenuItem
+                                onClick={() => toggleStandaloneVisibilityMutation.mutate({ id: exp.id, currentStatus: exp.status || "draft" })}
+                                className="flex items-center gap-2"
+                              >
+                                {exp.status === "published"
+                                  ? <><EyeOff className="h-3.5 w-3.5" /> Unpublish</>
+                                  : <><Eye className="h-3.5 w-3.5" /> Publish</>
+                                }
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
-                              onClick={() => toggleStandaloneVisibilityMutation.mutate({ id: exp.id, currentStatus: exp.status || "draft" })}
+                              onClick={() => archiveMutation.mutate({ kind: "standalone", id: exp.id, archived: !isArchived(exp.status) })}
                               className="flex items-center gap-2"
                             >
-                              {exp.status === "published"
-                                ? <><EyeOff className="h-3.5 w-3.5" /> Unpublish</>
-                                : <><Eye className="h-3.5 w-3.5" /> Publish</>
+                              {isArchived(exp.status)
+                                ? <><ArchiveRestore className="h-3.5 w-3.5" /> Désarchiver</>
+                                : <><Archive className="h-3.5 w-3.5" /> Archiver</>
                               }
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
@@ -1010,6 +1054,9 @@ const AdminExperiences2 = () => {
               </div>
             </Card>
           )
+        )}
+        {mode === "standalone" && !isLoadingStandalone && (
+          <ArchivedToggle count={standaloneLists.archived.length} open={showArchived} onToggle={() => setShowArchived((v) => !v)} />
         )}
 
         </>

@@ -13,7 +13,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, MapPin, Sparkles, Image as ImageIcon, Save, Star, Car, Dumbbell, Waves, Users, Landmark, Droplets } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Sparkles, Image as ImageIcon, Save, Star, Car, Dumbbell, Waves, Users, Landmark, Droplets, Archive, ArchiveRestore } from "lucide-react";
+import { StatusBadge } from "@/components/admin/StatusBadge";
+import { draftSaveStatus } from "@/lib/archive/status";
+import { useFormArchiveToggle } from "@/lib/archive/useFormArchiveToggle";
 import { generateSlug, buildImageFileName } from "@/lib/utils";
 import { Hotel2ExtrasManager } from "@/components/admin/Hotel2ExtrasManager";
 import { HighlightTagsSelectorHotel2 } from "@/components/admin/HighlightTagsSelectorHotel2";
@@ -423,7 +426,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
         contact_email: (h.contact_email as string) || "",
         contact_phone: (h.contact_phone as string) || "",
         provider_id: (h.provider_id as string | null) ?? null,
-        status: (h.status as "draft" | "published") || "draft",
+        status: (h.status as "draft" | "published" | "pending" | "archived") || "draft",
         address: (h.address as string) || "",
         address_he: (h.address_he as string) || "",
         address_fr: (h.address_fr as string) || "",
@@ -517,6 +520,9 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
   // ==========================================================================
   // SAVE MUTATION (avec debug logging)
   // ==========================================================================
+  // Archiver / Désarchiver depuis la barre du haut (statut lu en base à l'ouverture de la fiche).
+  const archiveToggle = useFormArchiveToggle("hotel", hotelId, (hotel as { status?: string } | null | undefined)?.status, ["admin-hotels2"]);
+
   const saveMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       const dataWithSlug = {
@@ -663,18 +669,27 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
             </Button>
           </Link>
           <h1 className="text-xl font-bold tracking-tight text-foreground">{hotelId ? "Edit Hotel" : "New Hotel"}</h1>
+          {hotelId && <StatusBadge status={archiveToggle.status || "draft"} />}
         </div>
         <div className="flex gap-2">
+          {archiveToggle.archive && (
+            <Button type="button" variant="outline" onClick={archiveToggle.archive.onToggle} disabled={saveMutation.isPending}>
+              {archiveToggle.archive.archived ? <ArchiveRestore className="h-4 w-4 mr-2" /> : <Archive className="h-4 w-4 mr-2" />}
+              {archiveToggle.archive.archived ? "Désarchiver" : "Archiver"}
+            </Button>
+          )}
           <Button
             type="button"
             variant="outline"
             onClick={() => {
-              setFormData(prev => ({ ...prev, status: "draft" }));
-              saveMutation.mutate({ ...formData, status: "draft" });
+              // Un hôtel archivé le reste quand on enregistre un brouillon.
+              const status = draftSaveStatus(archiveToggle.status);
+              setFormData(prev => ({ ...prev, status }));
+              saveMutation.mutate({ ...formData, status });
             }}
             disabled={saveMutation.isPending || !formData.name}
           >
-            {saveMutation.isPending && formData.status === "draft" ? (
+            {saveMutation.isPending && formData.status !== "published" ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
               <Save className="h-4 w-4 mr-2" />
@@ -1825,8 +1840,10 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
             type="button"
             variant="outline"
             onClick={() => {
-              setFormData(prev => ({ ...prev, status: "draft" }));
-              saveMutation.mutate({ ...formData, status: "draft" });
+              // Un hôtel archivé le reste quand on enregistre un brouillon.
+              const status = draftSaveStatus(archiveToggle.status);
+              setFormData(prev => ({ ...prev, status }));
+              saveMutation.mutate({ ...formData, status });
             }}
             disabled={saveMutation.isPending || !formData.name}
           >

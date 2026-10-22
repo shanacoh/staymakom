@@ -38,6 +38,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { draftSaveStatus, formStatusLabel } from "@/lib/archive/status";
+import { useFormArchiveToggle } from "@/lib/archive/useFormArchiveToggle";
 import RichTextEditor from "@/components/ui/rich-text-editor";
 import { generateSlug, buildImageFileName, cn } from "@/lib/utils";
 import { TIME_SLOT_MOMENTS, formatTimeSlot, sortTimeSlots } from "@/lib/timeSlots";
@@ -649,6 +651,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     },
     enabled: !!experienceId,
   });
+  // Archiver / Désarchiver depuis la barre du haut ; une fiche archivée le reste quand on enregistre un brouillon.
+  const archiveToggle = useFormArchiveToggle("standalone", experienceId, (existingExperience as any)?.status, ["admin-standalone-exps-hub"]);
 
   // Versions propres des moods non principaux, chargées à l'ouverture d'une fiche existante.
   // (Pour une fiche créée dans cette session, le formulaire reste la référence.)
@@ -1482,7 +1486,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   // Build experience data object
   // -------------------------------------------------------------------------
 
-  const buildExperienceData = async (data: StandaloneFormData, status: "draft" | "published") => {
+  const buildExperienceData = async (data: StandaloneFormData, status: "draft" | "published" | "archived") => {
     const galleryImagesSnapshot = [...galleryImages];
     const galleryPreviewsSnapshot = [...galleryPreviews];
 
@@ -1676,7 +1680,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
    * - Ordre des écritures : versions de mood nouvelles ou modifiées, puis la fiche, puis retrait des
    *   versions devenues inutiles. Un incident en cours de route ne fait donc perdre aucun texte.
    */
-  const persistExperience = async (data: StandaloneFormData, status: "draft" | "published"): Promise<"created" | "saved" | "unchanged"> => {
+  const persistExperience = async (data: StandaloneFormData, status: "draft" | "published" | "archived"): Promise<"created" | "saved" | "unchanged"> => {
     const experienceData = await buildExperienceData(data, status);
     const primaryId = (experienceData.category_id as string | null) ?? null;
     let targetId = currentExperienceId;
@@ -1753,7 +1757,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   const handleSaveDraft = async (data: StandaloneFormData) => {
     setIsSaving(true);
     try {
-      const outcome = await persistExperience(data, "draft");
+      const outcome = await persistExperience(data, draftSaveStatus(archiveToggle.status));
       toast.success(
         outcome === "created" ? "Brouillon créé !" : outcome === "unchanged" ? "Aucune modification à enregistrer" : "Brouillon sauvegardé"
       );
@@ -1950,7 +1954,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
 
   const practicalCompleteness = getPracticalInfoCompleteness(practicalInfo);
   const autoBadgesPreview = getAutoBadgesFromPracticalInfo(practicalInfo, "fr");
-  const currentStatus = (existingExperience as any)?.status === "published" ? "Publiée" : "Brouillon";
+  const currentStatus = formStatusLabel(archiveToggle.status);
   const SPOKEN_LANGUAGE_OPTIONS = [
     { code: "en", label: "EN" },
     { code: "he", label: "HE" },
@@ -3834,6 +3838,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
           onSaveDraft={handleSaveDraftClick}
           canPublish={canPublish}
           busy={isSaving || heroImageUploading}
+          archive={archiveToggle.archive}
         />
 
         {/* Une proposition de prix d'un prestataire a été acceptée : le prix client reste à vérifier. */}

@@ -6,6 +6,35 @@
 
 ---
 
+## [2026-10-22] — Archivage des fiches (hôtels, expériences avec hôtel, standalone, bateaux)
+
+> Statut : en attente de validation par Shana. Tests de l'archivage OK, le site se construit sans erreur. Fonction de base de données appliquée en production (elle ne fait que lire).
+
+### Ce qui a changé côté code
+- `src/lib/archive/status.ts` (nouveau) : règles communes de l'archivage (une fiche archivée est rangée à part, désarchiver = retour en brouillon, enregistrer un brouillon d'une fiche archivée la laisse archivée).
+- `src/lib/archive/actions.ts` (nouveau) : archive ou désarchive une fiche (change seulement son statut, ne supprime rien).
+- `src/lib/archive/redirect.ts` (nouveau) : calcule où envoyer un visiteur qui ouvre le lien d'une fiche archivée (page du mood, sinon accueil filtré sur la région, sinon accueil ; bateaux vers /boat).
+- `src/lib/archive/useFormArchiveToggle.ts` (nouveau) : bouton Archiver / Désarchiver des formulaires d'édition.
+- `src/lib/archive/archive.test.ts` (nouveau) : tests de ces règles.
+- `src/components/admin/ArchivedToggle.tsx` (nouveau) : lien discret « Archivés (X) » sous chaque liste, qui déplie / replie les fiches archivées.
+- `src/components/ArchivedListingRedirect.tsx` (nouveau) : sur une page de fiche introuvable, redirige si la fiche est archivée.
+- `src/pages/admin/Experiences2.tsx` : onglets « With Hotel » et « Experience Only » : archivées masquées par défaut, lien « Archivés (X) », action Archiver / Désarchiver dans le menu « … » de chaque ligne (« Publish » et « Preview » masqués sur une fiche archivée). Le glisser-déposer est coupé tant que les archives sont dépliées.
+- `src/pages/admin/BoatExperiences.tsx` : même logique dans l'onglet Bateaux (bouton Archiver / Désarchiver par ligne ; seules les fiches actives se réordonnent).
+- `src/pages/admin/Hotels2.tsx` : même logique pour les hôtels (bouton Archiver / Désarchiver par ligne). L'option « Archived » du filtre de statut est retirée (remplacée par le lien « Archivés (X) »). Le compteur d'expériences d'un hôtel ne compte plus les expériences archivées comme brouillons.
+- `src/components/forms/shared/FormHeaderBar.tsx`, `src/components/forms/UnifiedExperience2Form.tsx`, `src/components/forms/StandaloneExperienceForm.tsx`, `src/pages/admin/HotelEditor2.tsx` : bouton Archiver / Désarchiver à côté de Brouillon / Publier (fiches déjà enregistrées) ; l'en-tête affiche « Archivée ». Ces formulaires n'ont pas de menu déroulant de statut, d'où le bouton.
+- `src/pages/Experience2.tsx`, `src/pages/Hotel.tsx`, `src/pages/StandaloneExperience.tsx` : lien direct vers une fiche archivée = redirection (plus de page « introuvable »).
+- `src/pages/IndexV3.tsx` : l'accueil accepte `?region=<slug>` (région présélectionnée) et `?mode=stay` (onglet séjour), utilisés par la redirection.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261022160000_archived_listing_redirect.sql` : nouvelle fonction `archived_listing_redirect(kind, slug)`. Pour une fiche archivée seulement, elle renvoie le slug de son mood et de sa région (rien d'autre). Pour un brouillon ou une fiche publiée, elle ne renvoie rien. Nécessaire car les règles de sécurité de la base empêchent les visiteurs de lire une fiche non publiée.
+- Aucun nouveau statut, aucune nouvelle colonne : le statut « archived » existait déjà.
+- Vérification faite : le site public ne s'appuie nulle part sur « statut différent de brouillon ». Les listes filtrent sur « publié », et la base elle-même ne montre aux visiteurs que les fiches publiées (plus les fiches « vitrine » non archivées).
+
+### Pourquoi ce changement
+- Shana veut pouvoir retirer une fiche du site sans la supprimer : elle reste consultable dans le back-office, ses réservations restent intactes, et elle peut revenir en brouillon à tout moment.
+
+---
+
 ## [2026-10-22] — Fiche expérience : calculette de prix, créneaux « Matin / Après-midi », délai de 3 jours verrouillé, inclus de l'IA plus factuels
 
 > Statut : validé par Shana. Tests OK (créneaux, message WhatsApp), aucune nouvelle erreur de compilation. Fonction IA `generate-experience-draft` redéployée, migration appliquée en production, fonctions d'email redéployées (`send-standalone-booking-confirmation`, `send-standalone-day-before-reminder`, `partner-notify`). Note : les changements de `send-standalone-booking-confirmation/index.ts`, `send-standalone-day-before-reminder/index.ts` et `_shared/practical-info/content.ts` sont partis dans le commit de l'entrée ci-dessous ; le fichier `_shared/time-slot.ts` qu'ils utilisent arrive dans ce commit-ci.

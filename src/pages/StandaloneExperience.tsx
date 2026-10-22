@@ -63,6 +63,7 @@ import { Users, Calendar, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fr, he } from "date-fns/locale";
 import { formatTimeSlot } from "@/lib/timeSlots";
+import { ArchivedListingRedirect } from "@/components/ArchivedListingRedirect";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -622,17 +623,20 @@ export default function StandaloneExperience() {
         ? { title: "Expérience non trouvée", desc: "L'expérience que vous recherchez n'existe pas ou n'est plus disponible." }
         : { title: "Experience not found", desc: "The experience you are looking for does not exist or is no longer available." };
 
+    // Fiche archivée : redirection vers son mood ou sa région plutôt qu'une page vide.
     return (
-      <div className="min-h-screen bg-background">
-        <V3Header />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center space-y-4">
-            <h1 className="text-base font-semibold">{notFoundMsg.title}</h1>
-            <p className="text-muted-foreground">{notFoundMsg.desc}</p>
+      <ArchivedListingRedirect kind="standalone" slug={slug}>
+        <div className="min-h-screen bg-background">
+          <V3Header />
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center space-y-4">
+              <h1 className="text-base font-semibold">{notFoundMsg.title}</h1>
+              <p className="text-muted-foreground">{notFoundMsg.desc}</p>
+            </div>
           </div>
+          <LaunchFooter />
         </div>
-        <LaunchFooter />
-      </div>
+      </ArchivedListingRedirect>
     );
   }
 
