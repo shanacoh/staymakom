@@ -21,6 +21,7 @@ import StickyPriceBar from "@/components/experience-test/StickyPriceBar";
 import PracticalInfo from "@/components/experience-test/PracticalInfo";
 import { ReviewsBlock } from "@/components/reviews/ReviewsBlock";
 import { useReviewsSummary } from "@/hooks/useReviewsSummary";
+import { useExperienceIncludes, withIncludePhotos } from "@/hooks/useExperienceIncludes";
 import ExtrasSection2, { type SelectedExtra } from "@/components/experience-test/ExtrasSection2";
 import ShareWithFriendsSection from "@/components/experience/ShareWithFriendsSection";
 import OtherExperiences2 from "@/components/experience-test/OtherExperiences2";
@@ -205,6 +206,7 @@ export default function Experience2() {
   const { data: reviewsSummary } = useReviewsSummary({ scope: "experience2", entityId: experience?.id });
   const reviewsCount = reviewsSummary?.count ?? 0;
   const averageRating = reviewsSummary?.averageRating ?? null;
+  const { data: includes } = useExperienceIncludes(experience?.id, "experience2");
 
   // ---------------------------------------------------------------------------
   // Availability rules (public, only active)
@@ -378,12 +380,14 @@ export default function Experience2() {
   const displayCurrency = "ILS";
 
   // Règle des photos (affichage uniquement, rien n'est modifié dans les données) :
-  // - 3 photos ou plus propres à l'expérience (couverture + galerie) → uniquement les siennes.
+  // - photos propres à l'expérience = couverture, puis galerie, puis photos des inclus, sans doublon.
+  // - 3 photos ou plus propres à l'expérience → uniquement les siennes.
   // - moins de 3 → les siennes d'abord, puis celles de l'hôtel du parcours, sans doublon.
   // - aucune → celles de l'hôtel, pour qu'il y ait toujours quelque chose à montrer.
   const MIN_OWN_PHOTOS = 3;
-  const expPhotos: string[] = Array.from(
-    new Set([experience.hero_image, ...(experience.photos ?? [])].filter(Boolean) as string[])
+  const expPhotos: string[] = withIncludePhotos(
+    Array.from(new Set([experience.hero_image, ...(experience.photos ?? [])].filter(Boolean) as string[])),
+    includes
   );
   const hotelPhotos: string[] =
     allHotelPhotos.length > 0 ? allHotelPhotos : ([primaryHotel?.hero_image].filter(Boolean) as string[]);

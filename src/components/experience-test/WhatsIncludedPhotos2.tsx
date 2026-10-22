@@ -1,5 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useExperienceIncludes } from "@/hooks/useExperienceIncludes";
 import { icons, Sparkles } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import DOMPurify from "dompurify";
@@ -12,21 +11,7 @@ interface WhatsIncludedPhotos2Props {
 }
 
 const WhatsIncludedPhotos2 = ({ experienceId, lang = "en", longCopy, source = "experience2" }: WhatsIncludedPhotos2Props) => {
-  const table = source === "standalone" ? "standalone_experience_includes" : "experience2_includes";
-
-  const { data: includes } = useQuery({
-    queryKey: ["experience-includes", experienceId, source],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from(table)
-        .select("*")
-        .eq("experience_id", experienceId)
-        .eq("published", true)
-        .order("order_index", { ascending: true });
-      if (error) throw error;
-      return data;
-    },
-  });
+  const { data: includes } = useExperienceIncludes(experienceId, source);
 
   if (!includes || includes.length === 0) {
     if (!longCopy) return null;

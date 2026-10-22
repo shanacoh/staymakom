@@ -6,6 +6,24 @@
 
 ---
 
+## [2026-10-22] — Fiches expérience : les photos des inclus défilent dans le carrousel
+
+> Statut : validé par Shana. Le site se construit sans erreur, aucune nouvelle erreur de compilation. Aucun changement de données.
+
+### Ce qui a changé côté code
+- `src/hooks/useExperienceIncludes.ts` (nouveau) : lecture unique des inclus publiés d'une fiche (avec hôtel ou standalone), partagée par toute la page, et règle d'ordre des photos `withIncludePhotos` (photos des inclus ajoutées à la suite, sans doublon).
+- `src/pages/StandaloneExperience.tsx` (standalone et bateaux) : carrousel = couverture (celle du mood d'abord), galerie de la fiche, puis photos des inclus.
+- `src/pages/Experience2.tsx` (expériences avec hôtel) : même ordre ; les photos des inclus comptent comme photos propres de l'expérience dans la règle « moins de 3 photos, on complète avec l'hôtel ».
+- `src/components/experience-test/WhatsIncludedPhotos2.tsx`, `src/components/experience/EssentialsBlock.tsx` : utilisent la lecture partagée au lieu de leur propre requête (même résultat, une requête de moins).
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Les photos des inclus sont les plus concrètes (dégustation, bateau, atelier) mais n'étaient visibles qu'en bas de page. Le client les voit maintenant en faisant défiler les photos du haut de la fiche, à la suite des photos de la galerie.
+
+---
+
 ## [2026-10-23] — Réservations : Saisie rapide façon Excel (ajout de tout type de ligne, produit du catalogue, tout au clavier, duplication)
 
 > Statut : validé par Shana. Tests OK (66 sur les réservations), le site se construit sans erreur, aucune nouvelle erreur de compilation. Migration appliquée en production le 22/10 (par `supabase db query --linked -f`, historique des migrations non mis à jour).

@@ -37,6 +37,7 @@ import { trackedRegionName, useRegionLabel } from "@/lib/regionList/queries";
 import { SEOHead } from "@/components/SEOHead";
 import { MOOD_PARAM, inMood, orderedPhotos } from "@/lib/moodDisplay/moodDisplay";
 import { useArrivalMood } from "@/lib/moodDisplay/queries";
+import { useExperienceIncludes, withIncludePhotos } from "@/hooks/useExperienceIncludes";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumbJsonLd";
 import {
   trackExperiencePageViewed,
@@ -316,6 +317,7 @@ export default function StandaloneExperience() {
   // écrite pour ce mood. Sans paramètre, ou si ce mood n'est pas un mood publié de cette expérience,
   // c'est la présentation principale.
   const arrivalMood = useArrivalMood(experience, searchParams.get(MOOD_PARAM));
+  const { data: includes } = useExperienceIncludes(experience?.id, "standalone");
   const shown = useMemo(
     () => (experience ? inMood(experience, arrivalMood.version) : undefined),
     [experience, arrivalMood.version],
@@ -551,14 +553,13 @@ export default function StandaloneExperience() {
   const shownSubtitle = shownText("subtitle");
   const shownLongCopy = shownText("long_copy");
 
+  // Ordre du carrousel : couverture (celle du mood d'abord), galerie de la fiche, puis photos des inclus.
   const photos: string[] = (() => {
     if (!experience) return [];
     const hero = experience.hero_image;
     const gallery = experience.photos ?? [];
-    // Mêmes photos, avec la photo du mood passée en premier.
-    if (shown?.hero_image && shown.hero_image !== hero) return orderedPhotos(shown.hero_image, hero, gallery);
-    if (hero) return [hero, ...gallery.filter((p) => p !== hero)];
-    return gallery;
+    const cover = shown?.hero_image && shown.hero_image !== hero ? shown.hero_image : hero;
+    return withIncludePhotos(orderedPhotos(cover, hero, gallery), includes);
   })();
 
   // -------------------------------------------------------------------------

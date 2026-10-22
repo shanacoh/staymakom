@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { fr, he } from "date-fns/locale";
 import { Clock, CalendarClock, MapPin, Sparkles, Users, Utensils, Globe, Accessibility, AlertCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { useExperienceIncludes } from "@/hooks/useExperienceIncludes";
 import { getLocalizedField, type Language } from "@/hooks/useLanguage";
 import { normalizeLegacyPracticalInfo, kidsLabel, getParkingLabel } from "@/lib/standaloneBadges";
 import { buildWhatsappMessageForExperience } from "@/constants/whatsapp";
@@ -110,19 +109,7 @@ function getUpcomingSessionDates(experience: EssentialsExperience, minDate: Date
 export default function EssentialsBlock({ experience, experienceTitle, lang, compact = false }: EssentialsBlockProps) {
   const [expanded, setExpanded] = useState(false);
 
-  const { data: includes } = useQuery({
-    queryKey: ["experience-includes", experience.id, "standalone"],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("standalone_experience_includes")
-        .select("*")
-        .eq("experience_id", experience.id)
-        .eq("published", true)
-        .order("order_index", { ascending: true });
-      if (error) throw error;
-      return data;
-    },
-  });
+  const { data: includes } = useExperienceIncludes(experience.id, "standalone");
 
   const practicalInfo = normalizeLegacyPracticalInfo(experience.practical_info);
   const dateLocale = lang === "fr" ? fr : lang === "he" ? he : undefined;
