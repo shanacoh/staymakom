@@ -23,6 +23,11 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { CHANNEL_OPTIONS } from "@/components/admin/BookingsGrid/columnTypes";
 import { formatTimeSlot } from "@/lib/timeSlots";
+import { Checkbox } from "@/components/ui/checkbox";
+import { formatCurrency } from "@/components/admin/BookingsGrid/columnTypes";
+import { STANDALONE_EXPERIENCE_INTERNAL } from "@/lib/internalFields";
+import { applySupplierCredit } from "@/lib/reservations/actions";
+import { SUPPLIER_CREDITS_QUERY_KEY, useSupplierCredits } from "@/lib/reservations/queries";
 
 const CURRENCIES = ["ILS", "USD", "EUR"];
 
@@ -112,6 +117,25 @@ const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom
 
   const selectedExperience = publishedExperiences?.find((e) => e.id === manualForm.experience_id);
 
+  // Prestataire de l'expérience choisie, pour proposer ses avoirs ouverts (réservation annulée
+  // dont il a gardé l'argent).
+  const { data: experienceProviderId } = useQuery({
+    queryKey: ["admin-standalone-experience-provider", manualForm.experience_id],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from(STANDALONE_EXPERIENCE_INTERNAL.table)
+        .select("provider_id")
+        .eq(STANDALONE_EXPERIENCE_INTERNAL.key, manualForm.experience_id)
+        .maybeSingle();
+      if (error) throw error;
+      return (data?.provider_id as string | null) ?? null;
+    },
+    enabled: open && !manualForm.isCustomExperience && !!manualForm.experience_id,
+  });
+  const { data: openCredits } = useSupplierCredits(manualForm.isCustomExperience ? null : experienceProviderId);
+  const [creditToUse, setCreditToUse] = useState<string | null>(null);
+  useEffect(() => setCreditToUse(null), [manualForm.experience_id, open]);
+
   const { data: rateOptions } = useQuery({
     queryKey: ["admin-standalone-rate-options-for-manual", manualForm.experience_id],
     queryFn: async () => {
@@ -196,10 +220,22 @@ const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+      // L'avoir se rattache une fois la réservation créée. S'il échoue, la réservation reste
+      // créée et l'avoir ouvert : on le signale sans bloquer.
+      if (creditToUse) {
+        try {
+          await applySupplierCredit(creditToUse, data.booking_id);
+        } catch (creditError) {
+          toast.error("Réservation créée, mais l'avoir n'a pas pu être marqué utilisé", {
+            description: (creditError as Error).message,
+          });
+        }
+      }
       return data;
     },
     onSuccess: (data: any) => {
       BOOKING_LIST_QUERY_KEYS.forEach((queryKey) => queryClient.invalidateQueries({ queryKey }));
+      queryClient.invalidateQueries({ queryKey: SUPPLIER_CREDITS_QUERY_KEY });
       onOpenChange(false);
       resetManualForm();
       toast.success("Réservation créée : marquez le paiement et envoyez l'email depuis la fiche");
@@ -445,6 +481,28 @@ const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom
               />
             </div>
           </div>
+
+          {(openCredits ?? []).length > 0 && (
+            <div className="space-y-2 rounded-md border border-amber-200 bg-amber-50/60 p-3">
+              <p className="text-sm font-medium text-foreground">Ce prestataire a un avoir ouvert</p>
+              {(openCredits ?? []).map((credit) => (
+                <div key={credit.id} className="flex items-start gap-2">
+                  <Checkbox
+                    id={`credit-${credit.id}`}
+                    checked={creditToUse === credit.id}
+                    onCheckedChange={(checked) => setCreditToUse(checked === true ? credit.id : null)}
+                  />
+                  <Label htmlFor={`credit-${credit.id}`} className="font-normal leading-snug">
+                    Utiliser l'avoir de {formatCurrency(credit.amount, credit.currency)} ({credit.product}, {credit.client}) sur cette
+                    réservation
+                  </Label>
+                </div>
+              ))}
+              <p className="text-xs text-muted-foreground">
+                L'avoir sera noté utilisé et mentionné dans les notes internes. Le coût prestataire reste celui saisi ci-dessus.
+              </p>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label>Adresse et directions <span className="text-muted-foreground font-normal">(visible du client, si rempli)</span></Label>

@@ -28,7 +28,7 @@ import {
 import { formatMoneyByCurrency, isRequest } from "@/lib/reservations/rules";
 import type { DossierLine, NextAction, ReservationRow } from "@/lib/reservations/types";
 import { LineCostInput, NatureTag } from "./DossierLineCells";
-import RequestRowMenu from "./RequestRowMenu";
+import ReservationRowMenu from "./ReservationRowMenu";
 
 const HEAD_CLASS = "h-8 px-3 text-[10px] uppercase tracking-wider";
 const CELL_CLASS = "py-2 px-3 text-sm";
@@ -46,7 +46,7 @@ interface Props {
   onCellCommit: (row: ReservationRow, key: EntryColumnKey, rawValue: string) => Promise<boolean>;
   onNewRowCommit: (customerName: string) => Promise<boolean>;
   onOpen: (row: ReservationRow) => void;
-  // Actions du menu « … » d'une demande (convertir, archiver) : les fenêtres sont gérées par la page.
+  // Actions du menu « … » (convertir, archiver, annuler) : les fenêtres sont gérées par la page.
   onAction: (row: ReservationRow, action: NextAction) => void;
   // Demande de suppression d'une ligne : la confirmation est gérée par la page.
   onDelete: (row: ReservationRow) => void;
@@ -288,7 +288,7 @@ const ReservationsEntryGrid = ({ rows, allowNewRow, isCreatingRow, onCellCommit,
                     <TooltipContent>{row.source === "request" ? "Modifier la demande" : "Ouvrir la fiche (lien de paiement, email de confirmation)"}</TooltipContent>
                   </Tooltip>
                 )}
-                {row.source === "request" && <RequestRowMenu row={row} onAction={onAction} />}
+                <ReservationRowMenu row={row} onAction={onAction} />
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button

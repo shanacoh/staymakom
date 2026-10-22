@@ -3,6 +3,7 @@
 // écrire dans quelle table quand une cellule est validée.
 
 import { CHANNEL_OPTIONS, type SelectOption } from "@/components/admin/BookingsGrid/columnTypes";
+import { cancellationMargin, isCancellation } from "./cancellation";
 import { isRequest } from "./rules";
 import type { MoneyByCurrency, ReservationRow, ReservationSource } from "./types";
 
@@ -294,6 +295,7 @@ export function cellValue(row: ReservationRow, key: EntryColumnKey): string | nu
     case "supplierPayment":
       return row.supplierPayment === "none" ? null : row.supplierPayment;
     case "margin":
+      if (isCancellation(row)) return cancellationMargin(row);
       return isRequest(row) || row.amount === null || row.supplierCost === null ? null : row.amount - row.supplierCost;
     case "channel":
       return row.channelKey;
@@ -309,14 +311,22 @@ export interface EntryTotals {
   knownMargin: MoneyByCurrency;
 }
 
-/** Totaux du bas de grille. Les demandes (montants estimés) et les annulations ne comptent pas. */
+/**
+ * Totaux du bas de grille. Les demandes (montants estimés) ne comptent pas. Une annulation ne
+ * compte que par sa marge d'annulation.
+ */
 export function computeTotals(rows: ReservationRow[]): EntryTotals {
   const totals: EntryTotals = { amount: {}, collected: {}, costs: {}, knownMargin: {} };
   const add = (bucket: MoneyByCurrency, currency: string, value: number) => {
     bucket[currency] = (bucket[currency] ?? 0) + value;
   };
   for (const row of rows) {
-    if (isRequest(row) || row.status === "annulee") continue;
+    if (isRequest(row)) continue;
+    if (isCancellation(row)) {
+      const margin = cancellationMargin(row);
+      if (margin !== null) add(totals.knownMargin, row.currency, margin);
+      continue;
+    }
     if (row.amount !== null) add(totals.amount, row.currency, row.amount);
     add(totals.collected, row.currency, row.collected);
     if (row.supplierCost !== null) {

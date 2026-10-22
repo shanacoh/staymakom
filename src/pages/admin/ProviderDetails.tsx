@@ -22,6 +22,7 @@ import { ProviderForm } from "@/components/admin/providers/ProviderForm";
 import { ProviderLinkedSection } from "@/components/admin/providers/ProviderLinkedSection";
 import { ProviderPartnerAccess } from "@/components/admin/providers/ProviderPartnerAccess";
 import { ProviderSettlementsSection } from "@/components/admin/providers/ProviderSettlementsSection";
+import { ProviderCreditsSection } from "@/components/admin/providers/ProviderCreditsSection";
 import { errorMessage } from "@/lib/catalogue/queries";
 import { linkedTo } from "@/lib/providers/compute";
 import {
@@ -143,6 +144,8 @@ export default function AdminProviderDetails() {
       <ProviderLinkedSection providerId={provider.id} linked={linked} />
 
       <ProviderBookingsSection bookings={bookings.data} isLoading={bookings.isLoading} error={bookings.error} />
+
+      {provider.provider_type !== "hotel" && <ProviderCreditsSection providerId={provider.id} />}
 
       {provider.provider_type !== "hotel" && <ProviderSettlementsSection providerId={provider.id} />}
 

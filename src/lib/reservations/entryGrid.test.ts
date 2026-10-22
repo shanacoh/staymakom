@@ -31,6 +31,14 @@ function row(overrides: Partial<ReservationRow>): ReservationRow {
     missingCosts: 0,
     supplierDue: null,
     detailPath: null,
+    providerId: null,
+    refundAmount: null,
+    refundStatus: "none",
+    refundMethod: null,
+    keptAmount: null,
+    supplierRefundStatus: "none",
+    supplierRefundAmount: null,
+    supplierCreditOpen: false,
     ...overrides,
   };
   // Comme la vue SQL : une réservation sans coût a un coût manquant, et doit son coût tant qu'il n'est pas payé.
@@ -101,7 +109,8 @@ describe("computeTotals", () => {
       row({}),
       row({ key: "b2", supplierCost: null }),
       row({ key: "r1", source: "request", status: "demande", amount: 3900 }),
-      row({ key: "b3", status: "annulee" }),
+      // Annulée, client remboursé en totalité, prestataire pas payé : marge d'annulation nulle.
+      row({ key: "b3", status: "annulee", clientPayment: "refunded", collected: 0, supplierPayment: "todo" }),
     ]);
     expect(totals.amount).toEqual({ ILS: 2000 });
     expect(totals.collected).toEqual({ ILS: 1000 });

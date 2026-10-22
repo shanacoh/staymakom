@@ -3,6 +3,7 @@
 
 import { differenceInCalendarDays, differenceInMinutes, isSameMonth, parseISO, subMonths } from "date-fns";
 import { formatCurrency } from "@/components/admin/BookingsGrid/columnTypes";
+import { cancellationMargin, isCancellation } from "./cancellation";
 import type {
   MoneyByCurrency,
   NextAction,
@@ -28,7 +29,20 @@ function daysUntil(date: string | null, today: Date): number | null {
 
 /** Le bouton « Prochaine action » d'une ligne, dans l'ordre de priorité fixé par Shana. Rien = ligne soldée. */
 export function nextAction(row: ReservationRow, today: Date = new Date()): NextAction | null {
-  if (row.status === "annulee") return null;
+  // Annulation : seuls restent le remboursement du client et l'argent à récupérer chez le prestataire.
+  if (isCancellation(row)) {
+    if (row.refundStatus === "todo") {
+      return { kind: "refund_client", label: `Rembourser le client · ${formatCurrency(row.refundAmount, row.currency)}`, urgent: true };
+    }
+    if (row.supplierRefundStatus === "a_recuperer") {
+      return {
+        kind: "recover_supplier",
+        label: `Récupérer auprès du prestataire · ${formatCurrency(row.supplierRefundAmount, row.currency)}`,
+        urgent: false,
+      };
+    }
+    return null;
+  }
 
   // Demande de voyage sur mesure : tout se passe sur sa fiche (réponses du client, création du dossier).
   if (isTailorMadeRequest(row)) return { kind: "open_request", label: "Traiter la demande", urgent: true };
@@ -218,15 +232,36 @@ function add(totals: MoneyByCurrency, currency: string, amount: number) {
   totals[currency] = (totals[currency] ?? 0) + amount;
 }
 
-/** Chiffres clés. Les demandes (montants estimés) et les annulations n'entrent dans aucun total d'argent. */
+/**
+ * Chiffres clés. Les demandes (montants estimés) n'entrent dans aucun total d'argent. Une
+ * annulation ne compte ni à encaisser ni à payer : elle apporte sa marge d'annulation (ce qui
+ * est gardé moins ce qui est perdu chez le prestataire), ses remboursements à faire et ce qu'il
+ * reste à récupérer ou en avoir chez le prestataire.
+ */
 export function computeKpis(rows: ReservationRow[]): ReservationKpis {
-  const kpis: ReservationKpis = { requests: 0, toCollect: {}, toPaySuppliers: {}, knownMargin: {}, missingCost: 0 };
+  const kpis: ReservationKpis = {
+    requests: 0,
+    toCollect: {},
+    toPaySuppliers: {},
+    knownMargin: {},
+    missingCost: 0,
+    refundsToDo: {},
+    supplierToRecover: {},
+  };
   for (const row of rows) {
     if (isRequest(row)) {
       kpis.requests += 1;
       continue;
     }
-    if (row.status === "annulee" || row.clientPayment === "refunded") continue;
+    if (isCancellation(row)) {
+      if (row.refundStatus === "todo") add(kpis.refundsToDo, row.currency, row.refundAmount ?? 0);
+      if (row.supplierRefundStatus === "a_recuperer" || row.supplierCreditOpen) {
+        add(kpis.supplierToRecover, row.currency, row.supplierRefundAmount ?? 0);
+      }
+      const margin = cancellationMargin(row);
+      if (margin !== null) add(kpis.knownMargin, row.currency, margin);
+      continue;
+    }
     if (row.amount !== null) add(kpis.toCollect, row.currency, Math.max(row.amount - row.collected, 0));
     if (row.supplierPayment === "todo") {
       kpis.missingCost += row.missingCosts;

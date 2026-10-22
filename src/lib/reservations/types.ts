@@ -44,12 +44,43 @@ export interface ReservationRow {
   // Ce qui reste à payer aux fournisseurs sur cette ligne, quand les coûts sont connus.
   supplierDue: number | null;
   detailPath: string | null;
+  // Prestataire lié (réservation d'expérience), pour retrouver ses avoirs.
+  providerId: string | null;
+  // Annulation, côté client : remboursement (montant, à faire ou fait, moyen) et ce que Staymakom garde.
+  refundAmount: number | null;
+  refundStatus: RefundStatus;
+  refundMethod: RefundMethod | null;
+  keptAmount: number | null;
+  // Annulation, côté prestataire : rien, à récupérer, récupéré ou gardé en avoir (montant), avoir encore ouvert.
+  supplierRefundStatus: SupplierRefundStatus;
+  supplierRefundAmount: number | null;
+  supplierCreditOpen: boolean;
+}
+
+export type RefundStatus = "none" | "todo" | "done";
+export type RefundMethod = "revolut_business" | "revolut_perso" | "especes" | "avoir_client" | "autre";
+export type SupplierRefundStatus = "none" | "a_recuperer" | "recupere" | "avoir";
+
+// Avoir prestataire encore ouvert (vue SQL `admin_supplier_credits`).
+export interface SupplierCredit {
+  id: string;
+  ref: string;
+  providerId: string | null;
+  providerName: string | null;
+  client: string;
+  product: string;
+  date: string | null;
+  amount: number;
+  currency: string;
 }
 
 export type NextActionKind =
   | "open_request"
   | "convert_request"
   | "archive_request"
+  | "cancel_refund"
+  | "refund_client"
+  | "recover_supplier"
   | "send_to_provider"
   | "confirm_availability"
   | "send_deposit_link"
@@ -87,6 +118,10 @@ export interface ReservationKpis {
   toPaySuppliers: MoneyByCurrency;
   knownMargin: MoneyByCurrency;
   missingCost: number;
+  // Annulations : remboursements clients encore à faire, et argent chez les prestataires
+  // (à récupérer, ou gardé en avoir pas encore utilisé).
+  refundsToDo: MoneyByCurrency;
+  supplierToRecover: MoneyByCurrency;
 }
 
 // Paiement en ligne non abouti : une ligne par client et par expérience, tentatives regroupées.

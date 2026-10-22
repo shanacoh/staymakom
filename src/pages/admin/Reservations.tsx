@@ -278,9 +278,9 @@ const AdminReservations = () => {
     }
   };
 
-  // Les actions directes existent pour les demandes et les réservations d'expérience saisies
-  // à la main. Pour le reste (hôtel, dossier, réservation payée en ligne à encaisser), le
-  // bouton ouvre la fiche, où se trouvent les outils propres à ce type de réservation.
+  // Les actions directes existent pour les demandes, les réservations d'expérience et d'hôtel saisies
+  // à la main, et pour toute annulation. Pour le reste (dossier, réservation payée en ligne à
+  // encaisser), le bouton ouvre la fiche, où se trouvent les outils propres à ce type de réservation.
   const handleAction = (row: ReservationRow, action: NextAction) => {
     if (action.kind === "open_request") {
       if (row.detailPath) navigate(row.detailPath);
@@ -292,7 +292,9 @@ const AdminReservations = () => {
       else setExpandedDossiers((current) => new Set(current).add(row.id));
       return;
     }
+    const cancellationKinds: NextAction["kind"][] = ["cancel_refund", "refund_client", "recover_supplier"];
     const handledHere =
+      cancellationKinds.includes(action.kind) ||
       row.source === "request" ||
       (row.source === "booking" && !(action.kind === "confirm_collection" && row.isOnline)) ||
       (row.source === "hotel" && !row.isOnline);

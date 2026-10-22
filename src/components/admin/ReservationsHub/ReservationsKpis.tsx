@@ -7,7 +7,7 @@ import type { ReservationKpis } from "@/lib/reservations/types";
 const VALUE_CLASS = "text-xl font-semibold tabular-nums";
 
 const ReservationsKpis = ({ kpis }: { kpis: ReservationKpis }) => (
-  <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+  <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
     <Tile label="Demandes en cours">
       <p className={VALUE_CLASS}>{kpis.requests}</p>
     </Tile>
@@ -24,6 +24,12 @@ const ReservationsKpis = ({ kpis }: { kpis: ReservationKpis }) => (
       <p className={`${VALUE_CLASS} ${kpis.missingCost > 0 ? "text-amber-800" : ""}`}>
         {kpis.missingCost} ligne{kpis.missingCost > 1 ? "s" : ""}
       </p>
+    </Tile>
+    <Tile label="Remboursements à faire">
+      <p className={VALUE_CLASS}>{formatMoneyByCurrency(kpis.refundsToDo)}</p>
+    </Tile>
+    <Tile label="À récupérer / avoirs ouverts">
+      <p className={VALUE_CLASS}>{formatMoneyByCurrency(kpis.supplierToRecover)}</p>
     </Tile>
   </div>
 );

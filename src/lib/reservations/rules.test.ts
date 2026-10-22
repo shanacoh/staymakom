@@ -33,6 +33,14 @@ function row(overrides: Partial<ReservationRow>): ReservationRow {
     missingCosts: 0,
     supplierDue: null,
     detailPath: null,
+    providerId: null,
+    refundAmount: null,
+    refundStatus: "none",
+    refundMethod: null,
+    keptAmount: null,
+    supplierRefundStatus: "none",
+    supplierRefundAmount: null,
+    supplierCreditOpen: false,
     ...overrides,
   };
   // Comme la vue SQL : une réservation sans coût a un coût manquant, et doit son coût tant qu'il n'est pas payé.
@@ -122,7 +130,8 @@ describe("groupes, filtres et chiffres clés", () => {
     request({ key: "r1", amount: 3900 }),
     row({ key: "b1", type: "boat", supplierCost: null, supplierPayment: "todo" }),
     row({ key: "b2" }),
-    row({ key: "b3", status: "annulee", clientPayment: "unpaid", collected: 0 }),
+    // Annulée avant tout paiement, d'un côté comme de l'autre : sa marge d'annulation est nulle.
+    row({ key: "b3", status: "annulee", clientPayment: "unpaid", collected: 0, supplierPayment: "todo" }),
     row({ key: "b4", clientPayment: "unpaid", collected: 0, supplierCost: 400, supplierPayment: "todo" }),
   ];
 
@@ -140,6 +149,26 @@ describe("groupes, filtres et chiffres clés", () => {
     expect(kpis.toPaySuppliers).toEqual({ ILS: 400 });
     expect(kpis.knownMargin).toEqual({ ILS: 1000 });
     expect(kpis.missingCost).toBe(1);
+  });
+
+  it("annulations : remboursement à faire puis argent à récupérer, comptés à part", () => {
+    const neguev = row({
+      key: "c1",
+      status: "annulee",
+      amount: 240,
+      supplierCost: 220,
+      refundAmount: 180,
+      refundStatus: "todo",
+      keptAmount: 60,
+      supplierRefundStatus: "a_recuperer",
+      supplierRefundAmount: 220,
+    });
+    expect(nextAction(neguev, TODAY)).toMatchObject({ kind: "refund_client", urgent: true });
+    expect(nextAction({ ...neguev, refundStatus: "done" }, TODAY)).toMatchObject({ kind: "recover_supplier" });
+    const cooking = row({ key: "c2", status: "annulee", clientPayment: "refunded", collected: 0, supplierCost: 540, refundAmount: 651, refundStatus: "done", keptAmount: 0, supplierRefundStatus: "avoir", supplierRefundAmount: 540, supplierCreditOpen: true });
+    expect(nextAction(cooking, TODAY)).toBeNull();
+    const kpis = computeKpis([neguev, cooking]);
+    expect(kpis).toMatchObject({ refundsToDo: { ILS: 180 }, supplierToRecover: { ILS: 760 }, knownMargin: { ILS: 60 }, toCollect: {}, toPaySuppliers: {} });
   });
 
   it("filtre Bateaux et recherche sur plusieurs mots", () => {

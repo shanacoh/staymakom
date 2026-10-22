@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
+import CancellationDialog from "./CancellationDialog";
 import { formatCurrency } from "@/components/admin/BookingsGrid/columnTypes";
 import {
   archiveRequest,
@@ -541,6 +542,10 @@ const ReservationActionDialogs = ({ pending, onClose, onDone }: Props) => {
       return <ConvertRequestDialog key={instance} {...common} />;
     case "archive_request":
       return <ArchiveRequestDialog key={instance} {...common} />;
+    case "cancel_refund":
+    case "refund_client":
+    case "recover_supplier":
+      return <CancellationDialog key={instance} {...common} />;
     case "send_balance_link":
       return <BalanceLinkDialog key={instance} {...common} />;
     case "confirm_collection":

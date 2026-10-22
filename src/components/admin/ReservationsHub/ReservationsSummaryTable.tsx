@@ -8,12 +8,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/components/admin/BookingsGrid/columnTypes";
+import { cancellationMargin, isCancellation, keptByStaymakom } from "@/lib/reservations/cancellation";
 import { dateHint, isRequest, isTailorMadeRequest, nextAction, type ReservationGroups } from "@/lib/reservations/rules";
 import { AlertTriangle, ChevronDown, ChevronRight } from "lucide-react";
 import type { DossierLine, NextAction, ReservationRow } from "@/lib/reservations/types";
 import { LineCostInput, NatureTag } from "./DossierLineCells";
 import { StatusPill, SupplierPaymentPill, TypeTag } from "./ReservationPills";
-import RequestRowMenu from "./RequestRowMenu";
+import ReservationRowMenu from "./ReservationRowMenu";
 
 export interface DossierLinesProps {
   linesByDossier: Map<string, DossierLine[]>;
@@ -33,7 +34,11 @@ interface Props extends DossierLinesProps {
 
 function collectedLabel(row: ReservationRow): string {
   if (isRequest(row)) return "estimé";
-  if (row.clientPayment === "refunded") return "remboursé";
+  if (row.refundStatus === "todo") return `${formatCurrency(row.refundAmount, row.currency)} à rembourser`;
+  if (isCancellation(row)) {
+    const kept = keptByStaymakom(row);
+    return kept > 0 ? `${formatCurrency(kept, row.currency)} gardé` : "remboursé";
+  }
   if (row.amount !== null && row.collected >= row.amount) return "payé";
   if (row.collected > 0) return `${formatCurrency(row.collected, row.currency)} encaissé`;
   return "non encaissé";
@@ -41,6 +46,16 @@ function collectedLabel(row: ReservationRow): string {
 
 function MarginCell({ row }: { row: ReservationRow }) {
   if (isRequest(row)) return <span className="text-muted-foreground">estimée</span>;
+  if (isCancellation(row)) {
+    const margin = cancellationMargin(row);
+    if (margin === null) return <span className="text-amber-800">coût ?</span>;
+    return (
+      <>
+        <div className={cn(margin < 0 && "text-destructive")}>{formatCurrency(margin, row.currency)}</div>
+        <div className="text-xs text-muted-foreground">annulation</div>
+      </>
+    );
+  }
   if (row.amount === null || row.supplierCost === null) return <span className="text-amber-800">coût ?</span>;
   return <>{formatCurrency(row.amount - row.supplierCost, row.currency)}</>;
 }
@@ -171,7 +186,7 @@ function SummaryRow({
           ) : (
             <span className="text-xs text-muted-foreground">Rien à faire</span>
           )}
-          {row.source === "request" && <RequestRowMenu row={row} onAction={onAction} />}
+          <ReservationRowMenu row={row} onAction={onAction} />
         </div>
       </TableCell>
     </TableRow>

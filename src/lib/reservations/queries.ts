@@ -11,6 +11,10 @@ import type {
   DeletedReservation,
   DossierLine,
   ItineraryDossier,
+  RefundMethod,
+  RefundStatus,
+  SupplierCredit,
+  SupplierRefundStatus,
   UnpaidDossier,
   ReservationRow,
   ReservationSource,
@@ -49,6 +53,14 @@ interface AdminReservationViewRow {
   deposit_due: number | null;
   missing_costs: number | null;
   supplier_due: number | null;
+  provider_id: string | null;
+  refund_amount: number | null;
+  refund_status: RefundStatus;
+  refund_method: RefundMethod | null;
+  kept_amount: number | null;
+  supplier_refund_status: SupplierRefundStatus;
+  supplier_refund_amount: number | null;
+  supplier_credit_open: boolean;
 }
 
 const DETAIL_PATHS: Record<ReservationSource, ((id: string) => string) | null> = {
@@ -97,6 +109,14 @@ function toReservationRow(row: AdminReservationViewRow): ReservationRow {
     missingCosts: row.missing_costs ?? 0,
     supplierDue: toNumber(row.supplier_due),
     detailPath: DETAIL_PATHS[row.source]?.(row.id) ?? null,
+    providerId: row.provider_id,
+    refundAmount: toNumber(row.refund_amount),
+    refundStatus: row.refund_status ?? "none",
+    refundMethod: row.refund_method,
+    keptAmount: toNumber(row.kept_amount),
+    supplierRefundStatus: row.supplier_refund_status ?? "none",
+    supplierRefundAmount: toNumber(row.supplier_refund_amount),
+    supplierCreditOpen: row.supplier_credit_open ?? false,
   };
 }
 
@@ -327,4 +347,37 @@ async function fetchItineraries(): Promise<ItineraryDossier[]> {
 /** Tous les dossiers de voyage pour l'onglet Itinéraire (vue SQL `admin_itineraries`). */
 export function useItineraries() {
   return useQuery({ queryKey: ITINERARIES_QUERY_KEY, queryFn: fetchItineraries });
+}
+
+export const SUPPLIER_CREDITS_QUERY_KEY = ["admin-supplier-credits"];
+
+async function fetchSupplierCredits(providerId: string): Promise<SupplierCredit[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from("admin_supplier_credits")
+    .select("*")
+    .eq("provider_id", providerId)
+    .order("service_date");
+  if (error) throw error;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data as any[]).map((row) => ({
+    id: row.id,
+    ref: row.ref,
+    providerId: row.provider_id,
+    providerName: row.provider_name,
+    client: row.client,
+    product: row.product,
+    date: row.service_date,
+    amount: Number(row.amount),
+    currency: row.currency,
+  }));
+}
+
+/** Avoirs encore ouverts chez un prestataire (vue SQL `admin_supplier_credits`). */
+export function useSupplierCredits(providerId: string | null | undefined) {
+  return useQuery({
+    queryKey: [...SUPPLIER_CREDITS_QUERY_KEY, providerId],
+    queryFn: () => fetchSupplierCredits(providerId as string),
+    enabled: !!providerId,
+  });
 }

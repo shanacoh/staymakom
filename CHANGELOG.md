@@ -6,6 +6,35 @@
 
 ---
 
+## [2026-10-22] — Réservations : annulations, remboursements et avoirs prestataire
+
+> Statut : validé par Shana. Tests OK (49 sur les réservations ; les 9 échecs restants du projet, catalogue et photos, existaient avant), le site se construit sans erreur. Migration appliquée en production (par `supabase db query --linked -f`, historique des migrations non mis à jour). Doublon « Dégustation de vin dans le Néguev » de Sarah Toledano (ligne bd12) passé à la corbeille de la page Réservations. Lot 4 sur 5 de la refonte Réservations v2.
+
+### Ce qui a changé côté code
+- `src/lib/reservations/cancellation.ts` (nouveau) + `cancellation.test.ts` : règles d'annulation. Marge d'une annulation = (payé − remboursé) − (coût prestataire − rendu ou gardé en avoir) ; valeurs de départ du panneau ; garde-fous ; contenu écrit en base. Le statut de paiement n'est jamais remis à « payé » (ce passage déclenche les emails de confirmation). Testé sur les cas réels d'août (dégustation Néguev, cours de cuisine, acompte bateau, Boat Day remboursé).
+- `src/components/admin/ReservationsHub/CancellationDialog.tsx` (nouveau) : panneau « Annuler / Rembourser » (client : payé, remboursement aucun / partiel / total, moyen, fait ou à faire ; prestataire : rien, à récupérer, récupéré, gardé en avoir ; email d'annulation au prestataire au choix, décoché pour une date passée).
+- `src/components/admin/ReservationsHub/ReservationRowMenu.tsx` (renommé depuis `RequestRowMenu.tsx`) : le menu « … » existe aussi sur les réservations d'expérience et d'hôtel (« Annuler / Rembourser »).
+- `src/lib/reservations/rules.ts` (+ tests) : prochaine action d'une annulation (« Rembourser le client », puis « Récupérer auprès du prestataire ») ; chiffres clés « Remboursements à faire » et « À récupérer / avoirs ouverts » ; la marge d'annulation compte dans la marge connue.
+- `src/lib/reservations/entryGrid.ts` (+ tests) : en Saisie, la marge d'une annulation et son total.
+- `src/components/admin/ReservationsHub/ReservationsKpis.tsx`, `ReservationsSummaryTable.tsx`, `ReservationsEntryGrid.tsx`, `ReservationActionDialogs.tsx`, `src/pages/admin/Reservations.tsx` : nouveaux chiffres clés, marge et encaissé d'une annulation, branchement du panneau.
+- `src/lib/reservations/actions.ts` : `saveCancellation`, `applySupplierCredit`.
+- `src/lib/reservations/queries.ts`, `types.ts` : nouvelles colonnes de la vue, lecture des avoirs ouverts.
+- `src/components/admin/providers/ProviderCreditsSection.tsx` (nouveau), `src/pages/admin/ProviderDetails.tsx` : encadré « Avoirs ouverts » sur la fiche prestataire.
+- `src/components/admin/CreateManualStandaloneBookingDialog.tsx` : à la création d'une réservation chez un prestataire qui a un avoir ouvert, case « Utiliser l'avoir ». Si l'avoir ne peut pas être rattaché, la réservation reste créée et un message le signale.
+- `ARCHITECTURE.md` : note sur les annulations.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261022220000_cancellations_refunds_credits.sql` :
+  - Tables `standalone_bookings` et `bookings_hg`, nouvelles colonnes : `refund_method` (moyen du remboursement client), `deposit_kept` (ce que Staymakom garde), `supplier_refund_status` (`none` / `a_recuperer` / `recupere` / `avoir`), `supplier_refund_amount`, `supplier_credit_used_on` (réservation sur laquelle l'avoir a été utilisé). Cases existantes réutilisées : `is_cancelled`, `cancelled_at`, `payment_status` (`refund_pending` / `refunded`), `refund_amount`, `refunded_at`.
+  - Vue `admin_reservations` : huit colonnes ajoutées en fin de ligne (prestataire lié, remboursement, montant gardé, côté prestataire, avoir ouvert). Le reste est inchangé.
+  - Nouvelle vue `admin_supplier_credits` : avoirs prestataire encore ouverts.
+  - Nouvelle fonction `use_supplier_credit` : ferme l'avoir et le note sur la nouvelle réservation, en une seule opération.
+
+### Pourquoi ce changement
+- Les annulations d'août (remboursement partiel en attente du prestataire, remboursement depuis le compte perso avec avoir chez le prestataire, acompte conservé) ne pouvaient pas être notées : seul « Remboursé » (tout ou rien) existait, et rien ne suivait l'argent chez les prestataires.
+
+---
+
 ## [2026-10-22] — Réservations : l'onglet Itinéraire montre tous les dossiers de voyage et les pages faites sur mesure
 
 > Statut : validé par Shana. Tests OK (40), le site se construit sans erreur, aucune nouvelle erreur de compilation. Migration appliquée en production (par `supabase db query --linked -f`, historique des migrations non mis à jour) et vérifiée : 1 converti, 4 en cours, 1 collab, 3 modèles, 11 non convertis, 10 pages sur mesure rattachées. Lot 3 sur 5 de la refonte Réservations v2.

@@ -232,6 +232,26 @@ export async function markHotelSupplierPaid(bookingId: string) {
   assertChanged(data, ALREADY_HANDLED);
 }
 
+const CANCELLABLE_TABLES: Partial<Record<string, string>> = { booking: "standalone_bookings", hotel: "bookings_hg" };
+
+/**
+ * Enregistre l'annulation d'une réservation (remboursement client, côté prestataire), en une
+ * seule modification de la ligne. Le contenu vient de `buildCancellationPatch`.
+ */
+export async function saveCancellation(source: string, rowId: string, patch: Record<string, unknown>) {
+  const table = CANCELLABLE_TABLES[source];
+  if (!table) throw new Error("Cette ligne ne s'annule pas ici");
+  const { data, error } = await db.from(table).update(patch).eq("id", rowId).select("id");
+  if (error) throw error;
+  assertChanged(data, "Réservation introuvable. Recharge la liste.");
+}
+
+/** Utilise un avoir prestataire sur une nouvelle réservation : l'avoir se ferme, la réservation le note. */
+export async function applySupplierCredit(creditBookingId: string, targetBookingId: string) {
+  const { error } = await db.rpc("use_supplier_credit", { p_credit_booking_id: creditBookingId, p_target_booking_id: targetBookingId });
+  if (error) throw error;
+}
+
 /** Écrit la modification d'une cellule de la grille de Saisie (une cellule = une écriture). */
 export async function saveCellUpdate(table: string, rowId: string, patch: Record<string, unknown>) {
   const { data, error } = await db.from(table).update(patch).eq("id", rowId).select("id");
