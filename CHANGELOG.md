@@ -23,7 +23,8 @@
 - Tests : `src/lib/timeSlots.test.ts` (nouveau), `content.test.ts` (créneau « matin »).
 
 ### Ce qui a changé côté base de données
-- Migration `supabase/migrations/20261022120000_standalone_lead_time_default_3_days.sql` : la valeur par défaut de `standalone_experiences.lead_time_days` passe de 1 à 3 jours. Les fiches existantes ne changent pas (37 fiches en ligne sont encore à 1 ou 2 jours).
+- Migration `supabase/migrations/20261022120000_standalone_lead_time_default_3_days.sql` : la valeur par défaut de `standalone_experiences.lead_time_days` passe de 1 à 3 jours. Seules les nouvelles fiches sont concernées par ce changement-là.
+- Migration `supabase/migrations/20261022130000_published_standalone_lead_time_3_days.sql` (validée par Shana, appliquée en production) : les 37 fiches en ligne qui étaient à 1 ou 2 jours passent à 3 jours. Anciennes valeurs gardées dans `backup_20261022.standalone_lead_time`. Les brouillons ne sont pas touchés.
 - Aucune nouvelle colonne : « Matin » et « Après-midi » sont rangés dans la liste de créneaux existante (`time_slots`).
 
 ### Pourquoi ce changement
