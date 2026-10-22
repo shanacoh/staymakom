@@ -13,9 +13,9 @@ interface AskTeamProps {
 }
 
 const TEXTS: Record<Lang, { question: string; cta: string }> = {
-  fr: { question: "Une question sur cette expérience ?", cta: "Notre équipe vous répond sur WhatsApp" },
-  en: { question: "Questions about this experience?", cta: "Our team answers on WhatsApp" },
-  he: { question: "שאלה על החוויה?", cta: "הצוות שלנו עונה בוואטסאפ" },
+  fr: { question: "Une question sur cette expérience ?", cta: "Écrivez-nous sur WhatsApp" },
+  en: { question: "Questions about this experience?", cta: "Message us on WhatsApp" },
+  he: { question: "שאלה על החוויה?", cta: "שלחו לנו הודעה בוואטסאפ" },
 };
 
 // Pastille de contact, sans prénom ni photo de personne : on parle toujours au nom de l'équipe.
@@ -58,9 +58,12 @@ export default function AskTeam({ lang, placement, experienceTitle, className }:
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f0e4d8] text-sm font-bold text-[#ad1414]">
         S
       </span>
-      <span className="text-sm text-foreground">
-        {texts.question}{" "}
-        <span className="font-semibold text-[#ad1414]">{texts.cta}</span>
+      {/* L'action est sur sa propre ligne avec une flèche, pour qu'on comprenne qu'il faut cliquer. */}
+      <span className="flex flex-col text-sm text-foreground">
+        <span>{texts.question}</span>
+        <span className="font-semibold text-[#ad1414]">
+          {texts.cta} {lang === "he" ? "←" : "→"}
+        </span>
       </span>
     </a>
   );

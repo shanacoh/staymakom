@@ -20,7 +20,6 @@ import StandaloneExtrasSection from "@/components/experience-test/StandaloneExtr
 import StandaloneRequestPanel from "@/components/experience-test/StandaloneRequestPanel";
 import { ReviewsBlock } from "@/components/reviews/ReviewsBlock";
 import { ReviewsTeaser } from "@/components/reviews/ReviewsTeaser";
-import { ReassuranceLine } from "@/components/reviews/ReassuranceLine";
 import { useReviewsSummary } from "@/hooks/useReviewsSummary";
 import OtherStandaloneExperiences from "@/components/experience-test/OtherStandaloneExperiences";
 import ShareWithFriendsSection from "@/components/experience/ShareWithFriendsSection";
@@ -1035,8 +1034,6 @@ export default function StandaloneExperience() {
         >
           {lang === "he" ? "המשך ←" : lang === "fr" ? "Continuer →" : "Continue →"}
         </Button>
-
-        <ReassuranceLine lang={lang as "fr" | "en" | "he"} />
 
         {experience.cancellation_policy && (
           <p className="text-xs text-muted-foreground text-center">

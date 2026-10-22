@@ -6,6 +6,18 @@
 
 ---
 
+## 22/10/2026 : Fiche expérience standalone, bloc WhatsApp plus clair
+
+### Ce qui a changé côté code
+- `src/components/experience/AskTeam.tsx` : l'encadré « Questions about this experience? » affiche maintenant l'action sur sa propre ligne, en rouge avec une flèche (« Message us on WhatsApp → » / « Écrivez-nous sur WhatsApp → » / « שלחו לנו הודעה בוואטסאפ ← »), pour qu'on comprenne qu'il faut cliquer.
+- `src/pages/StandaloneExperience.tsx` : la phrase de réassurance réglable (« Our team replies on WhatsApp in under 2 hours ») n'est plus affichée sous le bouton Continue des fiches standalone, car elle faisait doublon avec l'encadré WhatsApp. Elle reste sur les fiches hôtel + expérience.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Deux mentions de WhatsApp à la suite brouillaient la hiérarchie, et l'encadré cliquable ne ressemblait pas à une action.
+
 ## [2026-10-22] — Fiches expérience : les photos des inclus défilent dans le carrousel
 
 > Statut : validé par Shana. Le site se construit sans erreur, aucune nouvelle erreur de compilation. Aucun changement de données.
