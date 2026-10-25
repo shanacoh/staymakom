@@ -6,6 +6,21 @@
 
 ---
 
+## [2026-10-25] — Fiche expérience : ligne « Accessibilité » retirée du bloc « L'essentiel »
+
+> Statut : validé par Shana.
+
+### Ce qui a changé côté code
+- `src/components/experience/EssentialsBlock.tsx` : la ligne « Accessibilité » n'est plus affichée dans le bloc récapitulatif « L'essentiel » des fiches expérience seule.
+
+### Ce qui a changé côté base de données
+- Aucun changement. Le champ « Informations d'accessibilité » reste dans le back-office et les textes déjà saisis sont conservés en base (colonnes `accessibility_info` / `_fr` / `_he`).
+
+### Pourquoi ce changement
+- Shana ne veut pas l'accessibilité dans le bloc « L'essentiel », qui doit rester un résumé court des infos clés.
+
+---
+
 ## [2026-10-25] — Prix « à partir de » : toujours le tarif le plus bas (ex. tarif enfant)
 
 ### Ce qui a changé côté code

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { fr, he } from "date-fns/locale";
-import { Clock, CalendarClock, MapPin, Users, Utensils, Globe, Accessibility, AlertCircle } from "lucide-react";
+import { Clock, CalendarClock, MapPin, Users, Utensils, Globe, AlertCircle } from "lucide-react";
 import { getLocalizedField, type Language } from "@/hooks/useLanguage";
 import { normalizeLegacyPracticalInfo, getParkingLabel } from "@/lib/standaloneBadges";
 import { formatAges, maxGroupSize } from "@/lib/heroHighlight";
@@ -48,9 +48,6 @@ interface EssentialsExperience {
   access_note_he?: string | null;
   languages?: string[] | null;
   practical_info?: unknown;
-  accessibility_info?: string | null;
-  accessibility_info_fr?: string | null;
-  accessibility_info_he?: string | null;
   cancellation_policy?: string | null;
   cancellation_policy_fr?: string | null;
   cancellation_policy_he?: string | null;
@@ -234,7 +231,6 @@ export default function EssentialsBlock({ experience, experienceTitle, lang, com
   })();
 
   // ── Lignes restantes ─────────────────────────────────────────────────────
-  const accessibilityContent = (getLocalizedField(experience, "accessibility_info", lang) as string) || experience.accessibility_info || null;
   const cancellationContent = (getLocalizedField(experience, "cancellation_policy", lang) as string) || experience.cancellation_policy || null;
   const durationContent = (getLocalizedField(experience, "duration", lang) as string) || experience.duration || null;
 
@@ -274,12 +270,6 @@ export default function EssentialsBlock({ experience, experienceTitle, lang, com
       icon: Globe,
       label: lang === "he" ? "שפה" : lang === "fr" ? "Langue" : "Language",
       content: languagesContent,
-    },
-    {
-      key: "accessibility",
-      icon: Accessibility,
-      label: lang === "he" ? "נגישות" : lang === "fr" ? "Accessibilité" : "Accessibility",
-      content: accessibilityContent,
     },
     {
       key: "cancellation",
