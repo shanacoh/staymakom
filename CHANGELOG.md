@@ -6,6 +6,21 @@
 
 ---
 
+## [2026-10-25] — Accueil : titre du hero agrandi
+
+> Statut : validé par Shana.
+
+### Ce qui a changé côté code
+- `src/pages/IndexV3.tsx` : le titre « Don't choose a city, choose your escape » (et sa version hébreu) est plus grand : 24 px sur mobile (avant 18), 30 px sur tablette (avant 24), 40 px sur ordinateur (avant 28), interligne un peu resserré.
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Shana voulait un titre d'accueil plus visible.
+
+---
+
 ## [2026-10-22] — Fiche expérience : la calculette de prix se rouvre sur le mode choisi
 
 > Statut : validé par Shana. Aucune nouvelle erreur de compilation. Migration appliquée en production.

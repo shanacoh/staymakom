@@ -339,7 +339,7 @@ const IndexV3 = () => {
             <span className="md:hidden block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-[#ad1414] mb-2 opacity-0 animate-hero-fade-up">
               STAYMAKOM
             </span>
-            <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold uppercase tracking-[0.02em] leading-[1.15] mb-2 opacity-0 animate-hero-fade-up text-[#ad1414] text-center">
+            <h1 className="font-sans text-2xl sm:text-3xl md:text-[40px] font-bold uppercase tracking-[0.02em] leading-[1.1] mb-2 opacity-0 animate-hero-fade-up text-[#ad1414] text-center">
               {isRTL ? (
                 <><span className="whitespace-nowrap">אל תבחר עיר,</span><br /><span className="whitespace-nowrap">בחר את הבריחה שלך</span></>
               ) : (
