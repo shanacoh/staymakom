@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { fr, he } from "date-fns/locale";
-import { Clock, CalendarClock, MapPin, Sparkles, Users, Utensils, Globe, Accessibility, AlertCircle } from "lucide-react";
-import { useExperienceIncludes } from "@/hooks/useExperienceIncludes";
+import { Clock, CalendarClock, MapPin, Users, Utensils, Globe, Accessibility, AlertCircle } from "lucide-react";
 import { getLocalizedField, type Language } from "@/hooks/useLanguage";
 import { normalizeLegacyPracticalInfo, getParkingLabel } from "@/lib/standaloneBadges";
 import { formatAges, maxGroupSize } from "@/lib/heroHighlight";
@@ -113,8 +112,6 @@ function getUpcomingSessionDates(experience: EssentialsExperience, minDate: Date
 export default function EssentialsBlock({ experience, experienceTitle, lang, compact = false }: EssentialsBlockProps) {
   const [expanded, setExpanded] = useState(false);
 
-  const { data: includes } = useExperienceIncludes(experience.id, "standalone");
-
   const practicalInfo = normalizeLegacyPracticalInfo(experience.practical_info);
   const dateLocale = lang === "fr" ? fr : lang === "he" ? he : undefined;
 
@@ -209,15 +206,6 @@ export default function EssentialsBlock({ experience, experienceTitle, lang, com
     );
   })();
 
-  // ── Ligne "Inclus" ───────────────────────────────────────────────────────
-  const includesContent = (() => {
-    if (!includes || includes.length === 0) return null;
-    const titles = includes.map(
-      (item: any) => (lang === "he" ? item.title_he || item.title : lang === "fr" ? item.title_fr || item.title : item.title)
-    );
-    return titles.join(", ");
-  })();
-
   // ── Ligne "Pour qui" ─────────────────────────────────────────────────────
   // L'âge seulement (le nombre de participants est géré à la réservation),
   // sauf pour les bateaux où la capacité est l'info qui compte.
@@ -268,12 +256,6 @@ export default function EssentialsBlock({ experience, experienceTitle, lang, com
       icon: MapPin,
       label: lang === "he" ? "מיקום" : lang === "fr" ? "Lieu" : "Location",
       content: locationContent,
-    },
-    {
-      key: "includes",
-      icon: Sparkles,
-      label: lang === "he" ? "כלול" : lang === "fr" ? "Inclus" : "Included",
-      content: includesContent,
     },
     {
       key: "for_whom",

@@ -534,12 +534,15 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   const [whitelistedDates, setWhitelistedDates] = useState<Date[]>([]);
   const [showPastWhitelistedDates, setShowPastWhitelistedDates] = useState(false);
 
-  const defaultEndDate = useMemo(() => {
+  // Sans date limite par défaut : le calendrier reste ouvert indéfiniment.
+  // La case « Donner une date limite » propose 6 mois plus tard, modifiable.
+  const hasEndDate = availabilityEndDate !== null;
+  const suggestedEndDate = useMemo(() => {
     const d = new Date();
     d.setMonth(d.getMonth() + 6);
     return d.toISOString().split("T")[0];
   }, []);
-  const effectiveEndDate = availabilityEndDate ?? defaultEndDate;
+  const isOpenEnded = availabilityMode === "blacklist" && !hasEndDate;
 
   const toLocalIso = (d: Date) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -553,7 +556,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
         .sort((a, b) => b.getTime() - a.getTime());
       return future.length > 0 ? toLocalIso(future[0]) : null;
     }
-    const end = new Date(effectiveEndDate + "T00:00:00");
+    if (!availabilityEndDate) return null;
+    const end = new Date(availabilityEndDate + "T00:00:00");
     const blockedSet = new Set(blockedDates.map((d) => toLocalIso(d)));
     const jsDays = availableDays.map((d) => (d === 7 ? 0 : d));
     const cursor = new Date(end);
@@ -563,7 +567,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       cursor.setDate(cursor.getDate() - 1);
     }
     return null;
-  }, [effectiveEndDate, availableDays, blockedDates, availabilityMode, whitelistedDates]);
+  }, [availabilityEndDate, availableDays, blockedDates, availabilityMode, whitelistedDates]);
 
   const daysRemaining = lastAvailableDate
     ? Math.ceil((new Date(lastAvailableDate + "T12:00:00").getTime() - Date.now()) / 86400000)
@@ -574,9 +578,10 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       const today = new Date(); today.setHours(0, 0, 0, 0);
       return whitelistedDates.filter((d) => d >= today).length;
     }
+    if (!availabilityEndDate) return null;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const end = new Date(effectiveEndDate + "T00:00:00");
+    const end = new Date(availabilityEndDate + "T00:00:00");
     const blockedSet = new Set(blockedDates.map((d) => toLocalIso(d)));
     const jsDays = availableDays.map((d) => (d === 7 ? 0 : d));
     let count = 0;
@@ -587,7 +592,9 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       cursor.setDate(cursor.getDate() + 1);
     }
     return count;
-  }, [effectiveEndDate, availableDays, blockedDates, availabilityMode, whitelistedDates]);
+  }, [availabilityEndDate, availableDays, blockedDates, availabilityMode, whitelistedDates]);
+  // null = calendrier ouvert sans limite, donc toujours des dates à venir.
+  const hasUpcomingDates = remainingDatesCount === null || remainingDatesCount > 0;
 
   // Local mode — badges / inclus / extras (actifs avant le premier save, puis le composant bascule en mode DB)
   const [localTags, setLocalTags] = useState<LocalTagEntry[]>([]);
@@ -1655,7 +1662,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       practical_info: practicalInfo,
       available_days: availableDays,
       blocked_dates: blockedDates.map((d) => toLocalIso(d)),
-      availability_end_date: effectiveEndDate,
+      availability_end_date: availabilityMode === "blacklist" ? availabilityEndDate : null,
       availability_mode: availabilityMode,
       whitelisted_dates: whitelistedDates.map((d) => toLocalIso(d)),
     };
@@ -3488,21 +3495,29 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
 
           <Separator />
 
-          {/* Date de fermeture */}
+          {/* Date limite (facultative) */}
           <div className="space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-              Disponible jusqu'au
-            </p>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Checkbox
+                checked={hasEndDate}
+                onCheckedChange={(checked) => setAvailabilityEndDate(checked ? suggestedEndDate : null)}
+              />
+              <span className="text-sm font-medium">Donner une date limite à l'expérience</span>
+            </label>
             <p className="text-xs text-muted-foreground">
-              Le calendrier se ferme automatiquement après cette date. Par défaut : 6 mois.
+              {hasEndDate
+                ? "Le calendrier se ferme automatiquement après cette date."
+                : "Sans date limite : le calendrier reste ouvert indéfiniment."}
             </p>
-            <Input
-              type="date"
-              value={availabilityEndDate ?? defaultEndDate}
-              min={new Date().toISOString().split("T")[0]}
-              onChange={(e) => setAvailabilityEndDate(e.target.value || null)}
-              className="w-48"
-            />
+            {hasEndDate && (
+              <Input
+                type="date"
+                value={availabilityEndDate ?? ""}
+                min={new Date().toISOString().split("T")[0]}
+                onChange={(e) => e.target.value && setAvailabilityEndDate(e.target.value)}
+                className="w-48"
+              />
+            )}
           </div>
         </>
       )}
@@ -3630,23 +3645,27 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
             Dernière date disponible
           </p>
           <p className="text-sm font-medium mt-0.5">
-            {lastAvailableDate
+            {isOpenEnded
+              ? "Sans limite"
+              : lastAvailableDate
               ? new Date(lastAvailableDate + "T12:00:00").toLocaleDateString("fr-FR", {
                   day: "numeric", month: "long", year: "numeric",
                 })
               : "Aucune date disponible"}
           </p>
-          {remainingDatesCount > 0 && remainingDatesCount <= 10 && (
+          {remainingDatesCount !== null && remainingDatesCount > 0 && remainingDatesCount <= 10 && (
             <p className="text-xs text-destructive mt-0.5 font-medium">
               Il ne reste que {remainingDatesCount} créneau{remainingDatesCount > 1 ? "x" : ""} disponible{remainingDatesCount > 1 ? "s" : ""}
             </p>
           )}
         </div>
         <Badge
-          variant={daysRemaining > 30 ? "default" : "outline"}
-          className={daysRemaining <= 30 ? "border-[#f0dca0] text-[#8a6100] bg-[#fff4d6]" : ""}
+          variant={isOpenEnded || daysRemaining > 30 ? "default" : "outline"}
+          className={!isOpenEnded && daysRemaining <= 30 ? "border-[#f0dca0] text-[#8a6100] bg-[#fff4d6]" : ""}
         >
-          {availabilityMode === "whitelist"
+          {isOpenEnded
+            ? "Ouvert"
+            : availabilityMode === "whitelist"
             ? `${remainingDatesCount} date${remainingDatesCount > 1 ? "s" : ""}`
             : daysRemaining > 0 ? `${daysRemaining}j restants` : "Expiré"}
         </Badge>
@@ -3750,7 +3769,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     { id: "sec-commun", label: "3. Ce qui est commun", status: sectionStatus(commonFilled.every(Boolean), commonFilled.some(Boolean)) },
     { id: "sec-galerie", label: "4. Galerie", status: sectionStatus(totalPhotosCount >= 5, totalPhotosCount > 0) },
     { id: "sec-apres", label: "5. Après la réservation", status: sectionStatus(meetingPointFilled && dayContactFilled, afterBookingStarted) },
-    { id: "sec-prix", label: "6. Prix, canal & dispos", status: sectionStatus(supplierPriceAdult > 0 && remainingDatesCount > 0, supplierPriceAdult > 0) },
+    { id: "sec-prix", label: "6. Prix, canal & dispos", status: sectionStatus(supplierPriceAdult > 0 && hasUpcomingDates, supplierPriceAdult > 0) },
     {
       id: "sec-conditions",
       label: "7. Conditions & publication",
@@ -3767,7 +3786,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     { id: "description", label: "Description (100 caractères min.)", done: descriptionLength >= 100 },
     { id: "inclus", label: "4 inclus", done: includesCount >= 4 },
     { id: "photos", label: "Au moins 5 photos", done: totalPhotosCount >= 5 },
-    { id: "dates", label: "Au moins une date à venir", done: remainingDatesCount > 0 },
+    { id: "dates", label: "Au moins une date à venir", done: hasUpcomingDates },
     {
       id: "langues",
       label: "Versions EN et HE remplies",
@@ -3838,7 +3857,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     time_slots: timeSlots,
     available_days: availableDays,
     blocked_dates: blockedDates.map((d) => toLocalIso(d)),
-    availability_end_date: effectiveEndDate,
+    availability_end_date: availabilityMode === "blacklist" ? availabilityEndDate : null,
     availability_mode: availabilityMode,
     whitelisted_dates: whitelistedDates.map((d) => toLocalIso(d)),
     schedule_note: watch("schedule_note"),

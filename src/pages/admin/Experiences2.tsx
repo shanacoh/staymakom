@@ -35,9 +35,25 @@ import { ArchivedToggle } from "@/components/admin/ArchivedToggle";
 import { isArchived, splitArchived, type ListingKind } from "@/lib/archive/status";
 import { setListingArchived } from "@/lib/archive/actions";
 
-function computeAvailabilityAlert(exp: any): { daysToEnd: number; remainingDates: number } | null {
-  if (!exp.availability_end_date) return null;
+type AvailabilityAlert = { level: "red" | "orange" | "green"; label: string };
+
+const WHITELIST_LOW_DATES_THRESHOLD = 3;
+
+// Expériences en « dates ponctuelles » : prévenir quand il ne reste plus que
+// quelques dates à venir, et surtout quand il n'y en a plus aucune d'affichée.
+// Les autres n'ont une alerte que si une date limite a été cochée.
+function computeAvailabilityAlert(exp: any): AvailabilityAlert | null {
   const today = new Date(); today.setHours(0, 0, 0, 0);
+  if (exp.availability_mode === "whitelist") {
+    const upcoming = (Array.isArray(exp.whitelisted_dates) ? exp.whitelisted_dates : [])
+      .filter((d: string) => new Date(d + "T00:00:00") >= today).length;
+    if (upcoming === 0) return { level: "red", label: "Plus aucune date affichée" };
+    if (upcoming <= WHITELIST_LOW_DATES_THRESHOLD) {
+      return { level: "orange", label: `Plus que ${upcoming} date${upcoming > 1 ? "s" : ""} à venir` };
+    }
+    return null;
+  }
+  if (!exp.availability_end_date) return null;
   const end = new Date(exp.availability_end_date + "T00:00:00");
   const daysToEnd = Math.ceil((end.getTime() - today.getTime()) / 86400000);
   const blockedSet = new Set<string>(Array.isArray(exp.blocked_dates) ? exp.blocked_dates : []);
@@ -50,7 +66,8 @@ function computeAvailabilityAlert(exp: any): { daysToEnd: number; remainingDates
     if (jsDays.includes(cursor.getDay()) && !blockedSet.has(iso)) remainingDates++;
     cursor.setDate(cursor.getDate() + 1);
   }
-  return { daysToEnd, remainingDates };
+  const level = daysToEnd <= 10 || remainingDates <= 5 ? "red" : daysToEnd <= 30 || remainingDates <= 10 ? "orange" : "green";
+  return { level, label: `${remainingDates} créneaux · ${daysToEnd}j restants` };
 }
 
 const AdminExperiences2 = () => {
@@ -129,7 +146,7 @@ const AdminExperiences2 = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_experiences")
-        .select("id, slug, title, status, hero_image, photos, base_price, currency, display_order, created_at, updated_at, availability_end_date, available_days, blocked_dates, show_on_v3_only, categories(id, name, slug)")
+        .select("id, slug, title, status, hero_image, photos, base_price, currency, display_order, created_at, updated_at, availability_end_date, availability_mode, whitelisted_dates, available_days, blocked_dates, show_on_v3_only, categories(id, name, slug)")
         .order("display_order", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return data as any[];
@@ -202,6 +219,14 @@ const AdminExperiences2 = () => {
 
   const displayedExperiences = showArchived ? [...hotelLists.active, ...hotelLists.archived] : hotelLists.active;
   const displayedStandalone = showArchived ? [...standaloneLists.active, ...standaloneLists.archived] : standaloneLists.active;
+
+  // Fiches en ligne à dates ponctuelles qui n'ont plus aucune date à venir (indépendant des filtres).
+  const publishedWithoutDates = useMemo(
+    () => (standaloneExps || []).filter(
+      (exp: any) => exp.status === "published" && computeAvailabilityAlert(exp)?.level === "red" && exp.availability_mode === "whitelist",
+    ),
+    [standaloneExps],
+  );
 
   const handleCreateNew = () => {
     if (mode === "hotel") {
@@ -878,6 +903,30 @@ const AdminExperiences2 = () => {
           </div>
         )}
 
+        {mode === "standalone" && publishedWithoutDates.length > 0 && (
+          <div className="flex items-start gap-2 px-4 py-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+            <span>🔴</span>
+            <span>
+              {publishedWithoutDates.length === 1
+                ? "1 expérience en ligne n'a plus aucune date affichée : "
+                : `${publishedWithoutDates.length} expériences en ligne n'ont plus aucune date affichée : `}
+              {publishedWithoutDates.map((exp: any, i: number) => (
+                <span key={exp.id}>
+                  {i > 0 && ", "}
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/admin/experiences2/standalone/edit/${exp.id}`)}
+                    className="font-semibold underline underline-offset-2 hover:opacity-80"
+                  >
+                    {exp.title}
+                  </button>
+                </span>
+              ))}
+              . Ajoute de nouvelles dates ou passe la fiche en « tous les jours ».
+            </span>
+          </div>
+        )}
+
         {/* ── Liste des expériences standalone ── */}
         {mode === "standalone" && (
           isLoadingStandalone ? (
@@ -895,13 +944,7 @@ const AdminExperiences2 = () => {
                   if (!exp.hero_image && (!exp.photos || exp.photos.length === 0)) warnings.push("Pas de photo");
                   if (!exp.base_price) warnings.push("Pas de prix");
                   const availAlert = computeAvailabilityAlert(exp);
-                  const availAlertLevel = availAlert
-                    ? (availAlert.daysToEnd <= 10 || availAlert.remainingDates <= 5)
-                      ? "red"
-                      : (availAlert.daysToEnd <= 30 || availAlert.remainingDates <= 10)
-                      ? "orange"
-                      : "green"
-                    : null;
+                  const availAlertLevel = availAlert?.level ?? null;
 
                   return (
                     <div
@@ -967,7 +1010,7 @@ const AdminExperiences2 = () => {
                                 : "bg-green-50 text-green-700 border-green-200"
                             }`}>
                               {availAlertLevel === "red" ? "🔴" : availAlertLevel === "orange" ? "🟠" : "🟢"}{" "}
-                              {availAlert.remainingDates} créneaux · {availAlert.daysToEnd}j restants
+                              {availAlert.label}
                             </span>
                           </div>
                         )}

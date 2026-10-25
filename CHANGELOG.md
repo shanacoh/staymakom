@@ -6,6 +6,33 @@
 
 ---
 
+## [2026-10-25] — Expériences seules : bloc « L'essentiel » sans la ligne « Inclus »
+
+### Ce qui a changé côté code
+- `src/components/experience/EssentialsBlock.tsx` : la ligne « Inclus » est retirée du bloc (et la lecture des inclus qui l'alimentait). Les inclus restent affichés dans leur propre section plus bas sur la fiche.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Shana trouvait que répéter les inclus dans « L'essentiel » faisait redite avec la section dédiée.
+
+---
+
+## [2026-10-25] — Expériences seules : plus de date de fin par défaut, alerte quand les dates ponctuelles s'épuisent
+
+### Ce qui a changé côté code
+- `src/components/forms/StandaloneExperienceForm.tsx` : la date « Disponible jusqu'au » n'est plus imposée (avant : 6 mois par défaut). Une case « Donner une date limite à l'expérience » l'active au besoin (propose 6 mois plus tard, modifiable). Sans case cochée, rien n'est enregistré et l'encart « Dernière date disponible » affiche « Sans limite / Ouvert ». En mode « Dates spécifiques », aucune date de fin n'est enregistrée.
+- `src/pages/admin/Experiences2.tsx` : la liste des expériences seules signale les fiches en « Dates spécifiques » : pastille orange « Plus que N dates à venir » (3 ou moins), rouge « Plus aucune date affichée ». Un bandeau rouge en haut de la liste nomme les fiches en ligne sans aucune date à venir, avec un lien vers leur fiche. Les fiches avec une date limite cochée gardent l'ancienne pastille (créneaux + jours restants).
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261025120000_standalone_no_default_availability_end_date.sql` (appliquée via l'outil Supabase) : `availability_end_date` remis à vide sur 72 fiches (toutes sauf les 12 bateaux, catégorie saisonnière qui garde sa date). Les anciennes dates sont sauvegardées dans `backup_20261025.standalone_experiences_end_dates` (84 lignes).
+
+### Pourquoi ce changement
+- La date de fin posée automatiquement ne servait à rien et fermait les calendriers sans raison. Shana veut un calendrier ouvert sans limite par défaut, une date limite seulement quand elle le décide, et être prévenue quand une expérience à dates ponctuelles n'a plus de dates affichées.
+
+---
+
 ## [2026-10-25] — Expériences seules : adresse masquée et annulation gratuite 48 h partout
 
 > Statut : appliqué directement en base sur demande de Shana.
