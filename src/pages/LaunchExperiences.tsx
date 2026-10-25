@@ -174,7 +174,7 @@ const LaunchExperiences = () => {
           id, slug, title, title_he, title_fr,
           hero_image, photos,
           base_price, base_price_type, currency,
-          min_party, max_party, has_child_price, has_time_slots,
+          min_party, max_party, has_child_price, base_price_child, has_time_slots,
           city, city_he, region, region_he, region_fr, region_id, practical_info,
           latitude, longitude,
           category_id, category_ids,

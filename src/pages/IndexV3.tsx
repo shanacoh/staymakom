@@ -181,7 +181,7 @@ const IndexV3 = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_experiences")
-        .select("id, slug, title, title_he, title_fr, hero_image, photos, base_price, base_price_type, currency, original_price, min_party, max_party, has_child_price, has_time_slots, duration, duration_fr, duration_he, skipper_included, crew_included, display_order, category_id, category_ids, city, city_he, region, region_he, region_id, latitude, longitude, practical_info, show_on_v3_only, category:categories(slug), standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he, label_fr))")
+        .select("id, slug, title, title_he, title_fr, hero_image, photos, base_price, base_price_type, currency, original_price, min_party, max_party, has_child_price, base_price_child, has_time_slots, duration, duration_fr, duration_he, skipper_included, crew_included, display_order, category_id, category_ids, city, city_he, region, region_he, region_id, latitude, longitude, practical_info, show_on_v3_only, category:categories(slug), standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he, label_fr))")
         .eq("status", "published")
         // Les bateaux sont marqués "show_on_v3_only" pour rester hors de la grille par défaut ;
         // on les charge quand même pour la puce Bateaux (voir filteredStandalone).

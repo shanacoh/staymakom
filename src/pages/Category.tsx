@@ -172,7 +172,7 @@ const Category = () => {
           id, slug, title, title_he, title_fr,
           hero_image, photos,
           base_price, base_price_type, currency,
-          min_party, max_party, has_child_price, has_time_slots,
+          min_party, max_party, has_child_price, base_price_child, has_time_slots,
           city, city_he, region, region_he, practical_info,
           original_price, duration, duration_fr, duration_he,
           skipper_included, crew_included,

@@ -61,7 +61,7 @@ const Vitrine = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_experiences")
-        .select("id, slug, title, title_he, title_fr, hero_image, photos, base_price, base_price_type, currency, min_party, max_party, has_child_price, has_time_slots, display_order, category_ids, city, city_he, region, region_he, practical_info, show_on_v3_only, category:categories(slug), standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he, label_fr))")
+        .select("id, slug, title, title_he, title_fr, hero_image, photos, base_price, base_price_type, currency, min_party, max_party, has_child_price, base_price_child, has_time_slots, display_order, category_ids, city, city_he, region, region_he, practical_info, show_on_v3_only, category:categories(slug), standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he, label_fr))")
         .eq("show_on_v3_only", true)
         .neq("status", "archived")
         .order("display_order", { ascending: true, nullsFirst: false });

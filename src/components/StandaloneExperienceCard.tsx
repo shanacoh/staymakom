@@ -1,11 +1,12 @@
 /**
  * Carte pour les expériences "standalone" (Experience Only, sans hôtel).
  * Adaptée de Experience2CardWithPrice — pas de HyperGuest, pas de calcul de prix complexe.
- * Le prix affiché est directement base_price converti dans la devise de l'utilisateur.
+ * Le prix affiché est le tarif le plus bas (adulte ou enfant) converti dans la devise de l'utilisateur.
  */
 import ExperienceCard from "@/components/ExperienceCard";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useLanguage } from "@/hooks/useLanguage";
+import { getStandaloneFromPrice } from "@/lib/standaloneFromPrice";
 import { getAutoBadgeTagsFromPracticalInfo, normalizeLegacyPracticalInfo } from "@/lib/standaloneBadges";
 
 // Bateaux : la 3e bulle fixe (skipper) reflète directement les colonnes
@@ -48,6 +49,7 @@ interface StandaloneExperienceCardProps {
     min_party?: number | null;
     max_party?: number | null;
     has_child_price?: boolean | null;
+    base_price_child?: number | null;
     has_time_slots?: boolean;
     duration?: string | null;
     duration_fr?: string | null;
@@ -88,8 +90,11 @@ export default function StandaloneExperienceCard({
 
   // Pour un forfait (fixed), on affiche le prix "à partir de" = prix total / max participants.
   // Pour un prix par personne, on affiche directement le prix converti.
-  const rawConverted = experience.base_price ? convert(experience.base_price) : 0;
   const isFixed = experience.base_price_type === 'fixed';
+  // Prix par personne : on prend le tarif le plus bas (ex. tarif enfant s'il est moins cher).
+  const rawConverted = experience.base_price
+    ? convert(isFixed ? experience.base_price : getStandaloneFromPrice(experience))
+    : 0;
   const maxParty = experience.max_party ?? 0;
   const displayPrice = isFixed && maxParty > 0
     ? Math.ceil(rawConverted / maxParty)

@@ -6,6 +6,22 @@
 
 ---
 
+## [2026-10-25] — Prix « à partir de » : toujours le tarif le plus bas (ex. tarif enfant)
+
+### Ce qui a changé côté code
+- `src/lib/standaloneFromPrice.ts` (nouveau) : règle unique du prix d'appel d'une expérience seule. Si un tarif enfant existe et qu'il est moins cher que le tarif adulte, c'est lui qui est affiché. Un tarif enfant à 0 est ignoré. Testé dans `src/lib/standaloneFromPrice.test.ts`.
+- `src/pages/StandaloneExperience.tsx` : le prix « From » du haut de fiche utilise cette règle. Le panneau de réservation garde « / adult » avec le détail adulte et enfant.
+- `src/components/StandaloneExperienceCard.tsx` : les cartes à prix par personne utilisent la même règle (les forfaits gardent prix total / nombre max de personnes).
+- `src/pages/IndexV3.tsx`, `src/pages/Category.tsx`, `src/pages/Vitrine.tsx`, `src/pages/LaunchExperiences.tsx` : le tarif enfant est maintenant lu pour alimenter les cartes.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Shana veut que le prix « à partir de » soit toujours le plus bas proposé : sur Chocolate Hour in the Vines, ₪80 (enfant) au lieu de ₪125 (adulte).
+
+---
+
 ## [2026-10-25] — Expériences seules : bloc « L'essentiel » sans la ligne « Inclus »
 
 ### Ce qui a changé côté code

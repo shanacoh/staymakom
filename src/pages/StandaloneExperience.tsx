@@ -16,6 +16,7 @@ import EssentialsBlock from "@/components/experience/EssentialsBlock";
 import AskTeam from "@/components/experience/AskTeam";
 import HeroKeyFacts from "@/components/experience/HeroKeyFacts";
 import { buildStandaloneKeyFacts } from "@/lib/heroKeyFacts";
+import { getStandaloneFromPrice } from "@/lib/standaloneFromPrice";
 import { getHeroHighlight } from "@/lib/heroHighlight";
 import StandaloneExtrasSection from "@/components/experience-test/StandaloneExtrasSection";
 import StandaloneRequestPanel from "@/components/experience-test/StandaloneRequestPanel";
@@ -1181,12 +1182,12 @@ export default function StandaloneExperience() {
                   },
                   lang as "en" | "he" | "fr",
                 )}
-                // Même valeur et même mise en forme que le panneau de réservation (aucun calcul).
+                // Prix d'appel = tarif le plus bas proposé (ex. tarif enfant s'il est moins cher).
                 fromPrice={
                   experience.is_bookable === false
                     ? null
                     : {
-                        amount: `${currencySymbol}${experience.base_price.toFixed(0)}`,
+                        amount: `${currencySymbol}${getStandaloneFromPrice(experience).toFixed(0)}`,
                         unit:
                           experience.base_price_type === "fixed"
                             ? (lang === "he" ? "מחיר קבוע" : lang === "fr" ? "forfait" : "fixed")
