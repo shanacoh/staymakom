@@ -83,7 +83,7 @@ import AiDraftPanel, {
   type AiTranslationResult,
 } from "@/components/forms/ai/AiDraftPanel";
 import { AiMark } from "@/components/forms/ai/AiMark";
-import { CANCELLATION_TEMPLATES, matchCancellationTemplate, type CancellationTemplateId } from "@/constants/cancellationTemplates";
+import { CANCELLATION_TEMPLATES, DEFAULT_CANCELLATION, matchCancellationTemplate, type CancellationTemplateId } from "@/constants/cancellationTemplates";
 import EssentialsBlock from "@/components/experience/EssentialsBlock";
 import { FormSection } from "@/components/forms/shared/FormSection";
 import { FormHeaderBar, FormMobileSaveBar } from "@/components/forms/shared/FormHeaderBar";
@@ -453,7 +453,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
 
   // Annulation par modèles (sprint 5B, étape 3) — "custom" affiche le champ
   // texte libre ; les autres valeurs remplissent les 3 langues d'un coup.
-  const [cancellationTemplate, setCancellationTemplate] = useState<CancellationTemplateId>("custom");
+  // Nouvelle fiche : "Gratuite jusqu'à 48 h avant" par défaut (règle Staymakom du 25/10/2026).
+  const [cancellationTemplate, setCancellationTemplate] = useState<CancellationTemplateId>(DEFAULT_CANCELLATION.id);
 
   // Présentation par mood : versions propres des moods non principaux (le principal, ce sont
   // les champs de la fiche). `loaded...Ref` garde ce qui est en base, pour n'écrire que les écarts.
@@ -733,9 +734,9 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       long_copy_he: "",
       min_party: 1,
       max_party: 10,
-      cancellation_policy: "",
-      cancellation_policy_fr: "",
-      cancellation_policy_he: "",
+      cancellation_policy: DEFAULT_CANCELLATION.en,
+      cancellation_policy_fr: DEFAULT_CANCELLATION.fr,
+      cancellation_policy_he: DEFAULT_CANCELLATION.he,
       supplier_name: "",
       provider_id: null,
       supplier_boat_name: "",
@@ -784,7 +785,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       access_note: "",
       access_note_fr: "",
       access_note_he: "",
-      hide_exact_address: false,
+      hide_exact_address: true,
       essentials_private_on_request: false,
       hero_highlight: "auto",
       meeting_point: "",

@@ -35,6 +35,9 @@ export const CANCELLATION_TEMPLATES: CancellationTemplate[] = [
   },
 ];
 
+// Modèle appliqué d'office à toute nouvelle fiche.
+export const DEFAULT_CANCELLATION = CANCELLATION_TEMPLATES[0];
+
 // Trouve le modèle qui correspond exactement au texte EN/FR/HE enregistré,
 // ou "custom" si rien ne correspond (texte libre déjà écrit, ou vide).
 export function matchCancellationTemplate(

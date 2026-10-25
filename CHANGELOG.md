@@ -6,6 +6,23 @@
 
 ---
 
+## [2026-10-25] — Expériences seules : adresse masquée et annulation gratuite 48 h partout
+
+> Statut : appliqué directement en base sur demande de Shana.
+
+### Ce qui a changé côté code
+- `src/constants/cancellationTemplates.ts` : ajout de `DEFAULT_CANCELLATION` (le modèle « Gratuite jusqu'à 48 h avant »).
+- `src/components/forms/StandaloneExperienceForm.tsx` : une nouvelle fiche démarre avec « Masquer l'adresse exacte » activé et la politique d'annulation 48 h déjà remplie dans les 3 langues (modèle présélectionné). Les fiches existantes gardent ce qui est enregistré en base.
+
+### Ce qui a changé côté base de données
+- Table `standalone_experiences`, les 84 fiches (publiées, brouillons, archivées, bateaux compris) : `hide_exact_address` passé à vrai, et `cancellation_policy` / `_fr` / `_he` remplacés par le texte du modèle « Gratuite jusqu'à 48 h avant » (`src/constants/cancellationTemplates.ts`), pour que le formulaire du back-office reconnaisse le modèle.
+- Aucun fichier de migration `.sql` : mise à jour de données faite via l'outil Supabase. Les anciennes valeurs sont sauvegardées dans `backup_20261025.standalone_experiences_cancel_address` (colonnes id, hide_exact_address, cancellation_policy, _fr, _he).
+
+### Pourquoi ce changement
+- Shana veut une règle unique sur toutes les fiches expérience seule : l'adresse exacte n'apparaît qu'après réservation, et l'annulation est gratuite jusqu'à 48 h avant. Les anciennes conditions prestataire (24 h, 72 h, « non précisée ») ont été remplacées volontairement.
+
+---
+
 ## [2026-10-22] — Fiche standalone : la case de gauche du haut de fiche dépend de la catégorie
 
 > Statut : validé par Shana. Aucune nouvelle erreur de compilation. Migration appliquée en production.
