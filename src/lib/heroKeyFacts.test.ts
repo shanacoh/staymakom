@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { CANCELLATION_TEMPLATES } from "@/constants/cancellationTemplates";
-import { summarizeCancellation, formatGroupRange, formatMinNights, formatBoard, buildStandaloneKeyFacts } from "./heroKeyFacts";
+import { summarizeCancellation, formatMinNights, formatBoard, buildStandaloneKeyFacts } from "./heroKeyFacts";
 
 const template = (id: string) => CANCELLATION_TEMPLATES.find((t) => t.id === id)!;
 
@@ -27,10 +27,7 @@ describe("summarizeCancellation", () => {
 });
 
 describe("cases de la bande", () => {
-  it("met en forme groupe, séjour et pension", () => {
-    expect(formatGroupRange(1, 10, "fr")).toBe("1 à 10");
-    expect(formatGroupRange(4, 4, "fr")).toBe("4");
-    expect(formatGroupRange(1, null, "fr")).toBeNull();
+  it("met en forme séjour et pension", () => {
     expect(formatMinNights(2, "fr")).toBe("2 nuits");
     expect(formatMinNights(1, "fr")).toBe("1 nuit");
     expect(formatMinNights(null, "fr")).toBeNull();
@@ -38,8 +35,8 @@ describe("cases de la bande", () => {
     expect(formatBoard(null, "fr")).toBeNull();
   });
 
-  it("laisse vide une case sans donnée", () => {
-    const facts = buildStandaloneKeyFacts({ duration: null, minParty: 1, maxParty: 10 }, "fr");
-    expect(facts.filter((f) => f.value).map((f) => f.key)).toEqual(["group"]);
+  it("n'ajoute pas de case de gauche vide", () => {
+    const facts = buildStandaloneKeyFacts({ highlight: null, cancellation_policy: template("free_48h").en }, "fr");
+    expect(facts.map((f) => f.key)).toEqual(["cancellation"]);
   });
 });

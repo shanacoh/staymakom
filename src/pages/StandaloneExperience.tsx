@@ -16,6 +16,7 @@ import EssentialsBlock from "@/components/experience/EssentialsBlock";
 import AskTeam from "@/components/experience/AskTeam";
 import HeroKeyFacts from "@/components/experience/HeroKeyFacts";
 import { buildStandaloneKeyFacts } from "@/lib/heroKeyFacts";
+import { getHeroHighlight } from "@/lib/heroHighlight";
 import StandaloneExtrasSection from "@/components/experience-test/StandaloneExtrasSection";
 import StandaloneRequestPanel from "@/components/experience-test/StandaloneRequestPanel";
 import { ReviewsBlock } from "@/components/reviews/ReviewsBlock";
@@ -136,6 +137,8 @@ interface StandaloneExperienceData {
   hide_exact_address?: boolean | null;
   session_labels?: Record<string, { en?: string; fr?: string; he?: string }> | null;
   essentials_private_on_request?: boolean | null;
+  hero_highlight?: string | null;
+  standalone_experience_price_variants?: { max_capacity: number | null; is_active: boolean | null }[] | null;
   seo_title_en?: string | null;
   seo_title_fr?: string | null;
   seo_title_he?: string | null;
@@ -289,7 +292,7 @@ export default function StandaloneExperience() {
         "availability_mode", "whitelisted_dates", "practical_info",
         "languages", "schedule_note", "schedule_note_fr", "schedule_note_he",
         "access_note", "access_note_fr", "access_note_he", "hide_exact_address",
-        "session_labels", "essentials_private_on_request",
+        "session_labels", "essentials_private_on_request", "hero_highlight",
         "seo_title_en", "seo_title_fr", "seo_title_he",
         "meta_description_en", "meta_description_fr", "meta_description_he",
         "og_title_en", "og_title_fr", "og_title_he",
@@ -302,7 +305,7 @@ export default function StandaloneExperience() {
       // sur une carte pourtant visible en vitrine.
       const { data, error } = await (supabase as any)
         .from("standalone_experiences")
-        .select(`${PUBLIC_COLUMNS}, standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he)), categories(id, slug, name, name_fr, name_he, icon)`)
+        .select(`${PUBLIC_COLUMNS}, standalone_experience_highlight_tags(tag_id, position, highlight_tags(id, slug, label_en, label_he)), categories(id, slug, name, name_fr, name_he, icon), standalone_experience_price_variants(max_capacity, is_active)`)
         .eq("slug", slug!)
         .or("status.eq.published,and(status.eq.draft,show_on_v3_only.eq.true)")
         .single();
@@ -1162,11 +1165,16 @@ export default function StandaloneExperience() {
             keyFacts={
               <HeroKeyFacts
                 lang={lang as "en" | "he" | "fr"}
+                minVisibleFacts={1}
                 facts={buildStandaloneKeyFacts(
                   {
-                    duration: (getLocalizedField(experience, "duration", lang) as string) || experience.duration || null,
-                    minParty: experience.min_party,
-                    maxParty: experience.max_party,
+                    highlight: getHeroHighlight(
+                      {
+                        ...experience,
+                        price_variants: experience.standalone_experience_price_variants,
+                      },
+                      lang as "en" | "he" | "fr",
+                    ),
                     cancellation_policy: experience.cancellation_policy,
                     cancellation_policy_fr: experience.cancellation_policy_fr,
                     cancellation_policy_he: experience.cancellation_policy_he,

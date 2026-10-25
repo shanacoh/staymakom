@@ -69,6 +69,7 @@ import BoatPriceVariantsManager from "@/components/admin/BoatPriceVariantsManage
 import FeaturedBadgeToggle from "@/components/admin/FeaturedBadgeToggle";
 import DepositRuleEditor from "@/components/admin/DepositRuleEditor";
 import { BOATS_CATEGORY_ID } from "@/lib/boatsCategory";
+import { HERO_HIGHLIGHT_TYPES } from "@/lib/heroHighlight";
 import AiDraftPanel, {
   AI_TEXT_FIELDS_WITHOUT_AFTER_BOOKING,
   type AiBadgeDraft,
@@ -248,6 +249,8 @@ const standaloneExperienceSchema = z.object({
   access_note_he: z.string().optional(),
   hide_exact_address: z.boolean().default(false),
   essentials_private_on_request: z.boolean().default(false),
+  // Case de gauche du haut de fiche : "auto" = choix selon la catégorie (null en base).
+  hero_highlight: z.enum(["auto", ...HERO_HIGHLIGHT_TYPES]).default("auto"),
   // Après la réservation (chantier Offre, étape 2) : infos envoyées au client une fois réservé.
   meeting_point: z.string().optional(),
   meeting_point_fr: z.string().optional(),
@@ -783,6 +786,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       access_note_he: "",
       hide_exact_address: false,
       essentials_private_on_request: false,
+      hero_highlight: "auto",
       meeting_point: "",
       meeting_point_fr: "",
       meeting_point_he: "",
@@ -1005,6 +1009,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     setValue("access_note_he", exp.access_note_he || "");
     setValue("hide_exact_address", exp.hide_exact_address ?? false);
     setValue("essentials_private_on_request", exp.essentials_private_on_request ?? false);
+    setValue("hero_highlight", exp.hero_highlight ?? "auto");
     if (exp.session_labels && typeof exp.session_labels === "object") {
       setSessionLabels(exp.session_labels);
     }
@@ -1606,6 +1611,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       access_note_he: data.access_note_he || null,
       hide_exact_address: data.hide_exact_address,
       essentials_private_on_request: data.essentials_private_on_request,
+      hero_highlight: data.hero_highlight === "auto" ? null : data.hero_highlight,
       session_labels: Object.keys(sessionLabels).length > 0 ? sessionLabels : null,
       meeting_point: data.meeting_point || null,
       meeting_point_fr: data.meeting_point_fr || null,
@@ -2780,6 +2786,36 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     </div>
   );
 
+  // Info affichée dans la case de gauche du haut de fiche (à côté de « Annulation »).
+  const heroHighlightField = (
+    <div className="space-y-2 max-w-sm">
+      <Label>Info clé du hero</Label>
+      <Controller
+        name="hero_highlight"
+        control={control}
+        render={({ field }) => (
+          <Select value={field.value} onValueChange={field.onChange} disabled={isSaving}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="auto">Auto (selon catégorie)</SelectItem>
+              <SelectItem value="duration">Durée</SelectItem>
+              <SelectItem value="ages">Âge</SelectItem>
+              <SelectItem value="group">Groupe</SelectItem>
+              <SelectItem value="kosher">Kosher</SelectItem>
+              <SelectItem value="languages">Langues</SelectItem>
+              <SelectItem value="private">Privé</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
+      />
+      <p className="text-xs text-muted-foreground">
+        Si l'info choisie n'est pas renseignée sur la fiche, la durée s'affiche à la place.
+      </p>
+    </div>
+  );
+
   // Accessibilité — identique pour une expérience standard et pour un bateau.
   const accessibilityFields = (
     <>
@@ -3808,6 +3844,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     schedule_note_fr: watch("schedule_note_fr"),
     schedule_note_he: watch("schedule_note_he"),
     essentials_private_on_request: watch("essentials_private_on_request"),
+    category_id: selectedCategoryIds[0] ?? null,
     session_labels: sessionLabels,
     city: watch("city"),
     city_fr: watch("city_fr"),
@@ -4482,8 +4519,9 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
               <CardHeader>
                 <CardTitle>Durée de l'expérience</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
                 {durationFields}
+                {heroHighlightField}
               </CardContent>
             </Card>
 
@@ -4640,6 +4678,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                   <Label className="text-sm font-medium mb-3 block">Durée de l'expérience</Label>
                   {durationFields}
                 </div>
+
+                {heroHighlightField}
 
                 <Separator />
 

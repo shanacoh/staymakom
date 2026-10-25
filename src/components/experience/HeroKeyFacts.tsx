@@ -9,17 +9,19 @@ interface HeroKeyFactsProps {
   fromPrice?: { amount: string; unit: string } | null;
   onSeeDates?: () => void;
   lang: HeroLang;
+  /** Nombre de cases remplies en dessous duquel la bande est masquée (2 par défaut). */
+  minVisibleFacts?: number;
 }
 
 // Haut de fiche (ordinateur) : bande de 3 infos clés, prix « à partir de »
 // et bouton « Voir les dates » qui mène au panneau de réservation.
-const HeroKeyFacts = ({ facts, fromPrice, onSeeDates, lang }: HeroKeyFactsProps) => {
+const HeroKeyFacts = ({ facts, fromPrice, onSeeDates, lang, minVisibleFacts = 2 }: HeroKeyFactsProps) => {
   const visibleFacts = facts.filter((f) => !!f.value);
 
   return (
     <div className="flex flex-col items-center gap-3 pt-1">
-      {/* Une case vide est masquée ; à moins de 2 cases, la bande n'apparaît pas. */}
-      {visibleFacts.length >= 2 && (
+      {/* Une case vide est masquée ; une case seule prend toute la largeur, centrée. */}
+      {visibleFacts.length >= Math.max(1, minVisibleFacts) && (
         <div className="flex w-full max-w-[340px] rounded-xl border border-border">
           {visibleFacts.map((fact) => (
             <div

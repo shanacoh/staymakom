@@ -4,7 +4,9 @@ import { fr, he } from "date-fns/locale";
 import { Clock, CalendarClock, MapPin, Sparkles, Users, Utensils, Globe, Accessibility, AlertCircle } from "lucide-react";
 import { useExperienceIncludes } from "@/hooks/useExperienceIncludes";
 import { getLocalizedField, type Language } from "@/hooks/useLanguage";
-import { normalizeLegacyPracticalInfo, kidsLabel, getParkingLabel } from "@/lib/standaloneBadges";
+import { normalizeLegacyPracticalInfo, getParkingLabel } from "@/lib/standaloneBadges";
+import { formatAges, maxGroupSize } from "@/lib/heroHighlight";
+import { BOATS_CATEGORY_ID } from "@/lib/boatsCategory";
 import { buildWhatsappMessageForExperience } from "@/constants/whatsapp";
 import { WHATSAPP_NUMBER } from "@/constants/whatsapp";
 import { trackEssentialsExpanded } from "@/lib/analytics";
@@ -53,6 +55,8 @@ interface EssentialsExperience {
   cancellation_policy?: string | null;
   cancellation_policy_fr?: string | null;
   cancellation_policy_he?: string | null;
+  category_id?: string | null;
+  standalone_experience_price_variants?: { max_capacity: number | null; is_active: boolean | null }[] | null;
 }
 
 interface EssentialsBlockProps {
@@ -215,17 +219,18 @@ export default function EssentialsBlock({ experience, experienceTitle, lang, com
   })();
 
   // ── Ligne "Pour qui" ─────────────────────────────────────────────────────
+  // L'âge seulement (le nombre de participants est géré à la réservation),
+  // sauf pour les bateaux où la capacité est l'info qui compte.
   const forWhomContent = (() => {
-    const partySize =
-      lang === "he" ? `${experience.min_party}-${experience.max_party} אנשים` : lang === "fr" ? `${experience.min_party}-${experience.max_party} personnes` : `${experience.min_party}-${experience.max_party} guests`;
-    const kidsPart =
-      practicalInfo.kids.status === "yes" && practicalInfo.kids.from_age != null
-        ? kidsLabel(practicalInfo.kids.from_age, lang)
-        : null;
-    return kidsPart ? `${partySize}, ${kidsPart.toLowerCase()}` : partySize;
+    if (experience.category_id === BOATS_CATEGORY_ID) {
+      const max = maxGroupSize({ max_party: experience.max_party, price_variants: experience.standalone_experience_price_variants });
+      if (!max) return null;
+      return lang === "he" ? `עד ${max} משתתפים` : lang === "fr" ? `Jusqu'à ${max} personnes` : `Up to ${max} guests`;
+    }
+    return formatAges(experience.practical_info, lang);
   })();
 
-  // ── Ligne "Casher" ───────────────────────────────────────────────────────
+  // ── Ligne "Casher" (masquée si non renseigné ou « non concerné ») ─────────
   const kosherContent =
     practicalInfo.kosher === "yes"
       ? (lang === "he" ? "כן" : lang === "fr" ? "Oui" : "Yes")

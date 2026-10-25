@@ -1,5 +1,5 @@
 // Sprint 5D — textes courts de la bande « infos clés » du haut de fiche
-// (Durée / Groupe / Annulation, ou Séjour / Pension / Annulation).
+// (Info clé / Annulation pour une expérience seule, ou Séjour / Pension / Annulation).
 // Affichage uniquement : aucun prix ni aucune disponibilité n'est calculé ici.
 
 import { CANCELLATION_TEMPLATES, type CancellationTemplateId } from "@/constants/cancellationTemplates";
@@ -63,14 +63,6 @@ export function summarizeCancellation(texts: CancellationTexts, lang: HeroLang):
   return null;
 }
 
-/** « 1 à 10 » (ou « 10 » si min = max). */
-export function formatGroupRange(min: number | null | undefined, max: number | null | undefined, lang: HeroLang): string | null {
-  if (!max || max <= 0) return null;
-  const from = min && min > 0 ? min : 1;
-  if (from >= max) return String(max);
-  return lang === "he" ? `${from} עד ${max}` : lang === "fr" ? `${from} à ${max}` : `${from} to ${max}`;
-}
-
 /** « 2 nuits » (nombre de nuits minimum du séjour). */
 export function formatMinNights(minNights: number | null | undefined, lang: HeroLang): string | null {
   if (!minNights || minNights <= 0) return null;
@@ -94,21 +86,18 @@ export function formatBoard(boardType: unknown, lang: HeroLang): string | null {
 }
 
 const LABELS = {
-  duration: { fr: "Durée", en: "Duration", he: "משך" },
-  group: { fr: "Groupe", en: "Group", he: "קבוצה" },
   cancellation: { fr: "Annulation", en: "Cancellation", he: "ביטול" },
   stay: { fr: "Séjour", en: "Stay", he: "שהייה" },
   board: { fr: "Pension", en: "Board", he: "פנסיון" },
 } as const;
 
-/** Expérience seule : Durée / Groupe / Annulation. */
+/** Expérience seule : case choisie par getHeroHighlight (lib/heroHighlight) / Annulation. */
 export function buildStandaloneKeyFacts(
-  input: CancellationTexts & { duration: string | null; minParty?: number | null; maxParty?: number | null },
+  input: CancellationTexts & { highlight: HeroKeyFact | null },
   lang: HeroLang,
 ): HeroKeyFact[] {
   return [
-    { key: "duration", label: LABELS.duration[lang], value: input.duration },
-    { key: "group", label: LABELS.group[lang], value: formatGroupRange(input.minParty, input.maxParty, lang) },
+    ...(input.highlight ? [input.highlight] : []),
     { key: "cancellation", label: LABELS.cancellation[lang], value: summarizeCancellation(input, lang) },
   ];
 }

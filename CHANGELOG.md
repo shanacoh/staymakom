@@ -6,6 +6,28 @@
 
 ---
 
+## [2026-10-22] — Fiche standalone : la case de gauche du haut de fiche dépend de la catégorie
+
+> Statut : validé par Shana. Aucune nouvelle erreur de compilation. Migration appliquée en production.
+
+### Ce qui a changé côté code
+- `src/lib/heroHighlight.ts` (nouveau) : fonction unique `getHeroHighlight` qui choisit l'info de la case de gauche (choix manuel, sinon selon la catégorie : Bateaux → groupe, Family Fun → âge, Foody Discovery → kasher, Land of Stories → langues, autres → durée), avec repli sur la durée puis sur rien. Contient aussi `formatAges` et `maxGroupSize`, réutilisés par le bloc « L'essentiel ». Pour ajouter un type, tout se passe dans ce fichier.
+- `src/lib/heroKeyFacts.ts` : la bande des expériences seules = case choisie + « Annulation » (l'ancienne case « Groupe 1 à 10 » est retirée).
+- `src/components/experience/HeroKeyFacts.tsx` : une case seule peut s'afficher, sur toute la largeur (option utilisée seulement par les fiches standalone ; les fiches hôtel gardent le minimum de 2 cases).
+- `src/pages/StandaloneExperience.tsx` : lit `hero_highlight` et les capacités des formules de prix actives.
+- `src/components/experience/EssentialsBlock.tsx` : « Pour qui » n'affiche plus le nombre de participants, seulement l'âge (case masquée sans info d'âge) ; exception Bateaux : « Jusqu'à X personnes ». « Casher » reste masqué si non renseigné ou « non concerné ».
+- `src/components/forms/StandaloneExperienceForm.tsx` : menu « Info clé du hero » sous la durée (Auto / Durée / Âge / Groupe / Kosher / Langues / Privé).
+- `src/lib/heroHighlight.test.ts` (nouveau) et `src/lib/heroKeyFacts.test.ts` : tests mis à jour.
+- Sélecteur de participants de la réservation : non modifié (min/max toujours appliqués).
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261023120000_standalone_hero_highlight.sql` : table `standalone_experiences`, nouvelle colonne `hero_highlight` (vide = automatique selon la catégorie ; sinon `duration`, `ages`, `group`, `kosher`, `languages` ou `private`, contrôlé par une règle en base).
+
+### Pourquoi ce changement
+- « Groupe 1 à 10 » n'apprenait rien au client sur la plupart des fiches. Shana veut mettre en avant l'info qui compte selon le type d'expérience, avec la possibilité de choisir à la main.
+
+---
+
 ## [2026-10-22] — Fiche expérience : la calculette de prix se rouvre sur le mode choisi
 
 > Statut : validé par Shana. Aucune nouvelle erreur de compilation. Migration appliquée en production.
