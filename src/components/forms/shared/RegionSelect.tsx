@@ -41,7 +41,16 @@ export function RegionSelect({
 
   return (
     <div className="space-y-1">
-      <Select value={value ?? NONE} onValueChange={(next) => onChange(next === NONE ? null : next)} disabled={disabled}>
+      <Select
+        value={value ?? NONE}
+        onValueChange={(next) => {
+          // Valeur vide : envoyée d'elle-même par le menu quand la région de la fiche arrive avant la liste
+          // des régions. Ce n'est pas un choix : l'ignorer évite d'effacer la région enregistrée.
+          if (next === "") return;
+          onChange(next === NONE ? null : next);
+        }}
+        disabled={disabled}
+      >
         <SelectTrigger id={id} aria-label={ariaLabel} className={triggerClassName}>
           <SelectValue placeholder="Choisir une région" />
         </SelectTrigger>

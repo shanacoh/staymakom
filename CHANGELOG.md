@@ -6,6 +6,21 @@
 
 ---
 
+## [2026-10-25] — Back-office : la région d'une fiche ne s'efface plus à la réouverture
+
+> Statut : validé par Shana.
+
+### Ce qui a changé côté code
+- `src/components/forms/shared/RegionSelect.tsx` : le menu « Région » ignore la valeur vide qu'il envoie de lui-même quand la région de la fiche arrive avant la liste des régions. Avant, à la réouverture d'une fiche, le menu se vidait (« Choisir une région ») et un nouvel enregistrement aurait effacé la région. Seul un vrai choix de l'utilisateur change maintenant la région. Le sélecteur est partagé : la correction vaut partout où il est utilisé.
+
+### Ce qui a changé côté base de données
+- Aucun changement. Vérifié : les régions déjà saisies (ex. Jérusalem) sont bien enregistrées.
+
+### Pourquoi ce changement
+- Shana choisissait « Jérusalem » dans la section « 1. Rangement », publiait, puis voyait le menu vide en rouvrant la fiche.
+
+---
+
 ## [2026-10-25] — Fiche expérience : ligne « Accessibilité » retirée du bloc « L'essentiel »
 
 > Statut : validé par Shana.
