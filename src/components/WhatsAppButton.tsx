@@ -1,21 +1,27 @@
+import { useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useLanguage } from '@/hooks/useLanguage';
 import { WHATSAPP_NUMBER, buildWhatsappMessage, getWhatsappMessageVariant } from '@/constants/whatsapp';
 import { useCurrentProduct } from '@/contexts/CurrentProductContext';
 import { trackWhatsappClicked, identifyWhatsappClicked } from '@/lib/analytics';
 import { isPartnerSpacePath } from "@/lib/partner/logic";
+import { useStopAboveFooter } from '@/hooks/useStopAboveFooter';
 
 const WhatsAppButton = () => {
   const { lang } = useLanguage();
   const location = useLocation();
   const currentProduct = useCurrentProduct();
+  const buttonRef = useRef<HTMLAnchorElement>(null);
 
-  if (
+  const isHidden =
     location.pathname.startsWith('/admin') ||
     location.pathname.startsWith('/hotel-admin') ||
     isPartnerSpacePath(location.pathname) ||
-    location.pathname.startsWith('/swipe/')
-  ) {
+    location.pathname.startsWith('/swipe/');
+
+  useStopAboveFooter(buttonRef, !isHidden);
+
+  if (isHidden) {
     return null;
   }
 
@@ -40,11 +46,12 @@ const WhatsAppButton = () => {
 
   return (
     <a
+      ref={buttonRef}
       href={`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`}
       target="_blank"
       rel="noopener noreferrer"
       onClick={handleClick}
-      className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-40 flex items-center justify-center w-14 h-14 bg-[#25D366] rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+      className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-40 flex items-center justify-center w-14 h-14 bg-[#25D366] rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-[box-shadow,transform] duration-300"
       aria-label="Contact us on WhatsApp"
     >
       <svg viewBox="0 0 24 24" className="w-7 h-7 fill-white" xmlns="http://www.w3.org/2000/svg">

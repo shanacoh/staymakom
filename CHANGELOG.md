@@ -6,6 +6,22 @@
 
 ---
 
+## [2026-10-26] — Bulle WhatsApp : elle s'arrête au-dessus du pied de page
+
+> Statut : validé par Shana.
+
+### Ce qui a changé côté code
+- `src/hooks/useStopAboveFooter.ts` (nouveau) : quand le pied de page (`<footer>`) entre à l'écran, l'élément flottant est remonté juste au-dessus (16 px d'écart), via la propriété CSS `translate`.
+- `src/components/WhatsAppButton.tsx` : la bulle utilise ce hook ; transition limitée à l'ombre et au zoom de survol pour qu'elle suive le défilement sans retard.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Sur tablette, la bulle WhatsApp cachait les liens Instagram / TikTok du pied de page.
+
+---
+
 ## [2026-10-25] — Back-office : la région d'une fiche ne s'efface plus à la réouverture
 
 > Statut : validé par Shana.
