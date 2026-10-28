@@ -6,6 +6,19 @@
 
 ---
 
+## [2026-10-28] — « Jerusalem Lit Up After Dark » : horaires d'hiver
+
+### Ce qui a changé côté code
+- Aucun.
+
+### Ce qui a changé côté base de données
+- Table `standalone_experiences`, fiche `hallelujah-night-show-jerusalem` : `time_slots` passe de 20:15 / 21:00 à 19:15 / 20:00 (modification directe des données, pas de fichier de migration).
+
+### Pourquoi ce changement
+- La Cité de David a avancé le spectacle d'une heure avec l'heure d'hiver. Les créneaux sont du texte fixe, le changement d'heure ne les décale pas : il faut les mettre à jour à la main à chaque changement de saison.
+
+---
+
 ## [2026-10-26] — Bulle WhatsApp : elle s'arrête au-dessus du pied de page
 
 > Statut : validé par Shana.
