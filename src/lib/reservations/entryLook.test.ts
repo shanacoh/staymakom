@@ -36,6 +36,7 @@ function row(overrides: Partial<ReservationRow>): ReservationRow {
     isOnline: false,
     notes: null,
     sentToProviderAt: null,
+    bookedWithProviderAt: "2026-10-01T09:00:00Z",
     depositDue: null,
     missingCosts: 0,
     supplierDue: null,

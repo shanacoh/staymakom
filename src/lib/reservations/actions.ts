@@ -265,6 +265,75 @@ export async function unflagRow(source: string, rowId: string) {
   if (error) throw error;
 }
 
+/** Réservation payée, avec sa fiche, ses consignes et son prestataire : de quoi rédiger le message de résa. */
+export async function fetchBookingForProviderBooking(bookingId: string) {
+  const { data, error } = await db
+    .from("standalone_bookings")
+    .select(
+      "id, standalone_experience_id, customer_name, booking_date, time_slot, party_size, adults_count, children_count, special_requests, custom_experience_title, supplier_name, provider_id, supplier_booking_requested_at, supplier_booked_at, standalone_experiences(title)",
+    )
+    .eq("id", bookingId)
+    .single();
+  if (error) throw error;
+  const booking = data as any;
+  const { data: internal, error: internalError } = booking.standalone_experience_id
+    ? await db
+        .from(STANDALONE_EXPERIENCE_INTERNAL.table)
+        .select("booking_channel, supplier_booking_url, booking_instructions, supplier_name, provider_id")
+        .eq(STANDALONE_EXPERIENCE_INTERNAL.key, booking.standalone_experience_id)
+        .maybeSingle()
+    : { data: null, error: null };
+  if (internalError) throw internalError;
+  // Le prestataire choisi sur la réservation passe avant celui de la fiche.
+  const providerId = booking.provider_id ?? internal?.provider_id ?? null;
+  const { data: provider, error: providerError } = providerId
+    ? await db.from("providers").select("name, whatsapp, booking_channel, booking_url").eq("id", providerId).maybeSingle()
+    : { data: null, error: null };
+  if (providerError) throw providerError;
+  return { booking, internal: internal ?? null, provider: provider ?? null };
+}
+
+/** Message de résa envoyé (au prestataire ou à l'agent) : la ligne attend la confirmation. */
+export async function markProviderBookingRequested(bookingId: string) {
+  const { data, error } = await db
+    .from("standalone_bookings")
+    .update({ supplier_booking_requested_at: new Date().toISOString() })
+    .eq("id", bookingId)
+    .is("supplier_booking_requested_at", null)
+    .select("id");
+  if (error) throw error;
+  // Déjà marquée envoyée (second clic) : ce n'est pas une erreur.
+  return (data as unknown[]).length > 0;
+}
+
+/** Résa confirmée chez le prestataire. Possible aussi sans message (déjà réservée autrement). */
+export async function markProviderBooked(bookingId: string) {
+  const { data, error } = await db
+    .from("standalone_bookings")
+    .update({ supplier_booked_at: new Date().toISOString() })
+    .eq("id", bookingId)
+    .is("supplier_booked_at", null)
+    .select("id");
+  if (error) throw error;
+  assertChanged(data, ALREADY_HANDLED);
+}
+
+const BOOKING_AGENT_KEY = "booking_agent_whatsapp";
+
+/** Numéro WhatsApp de l'agent qui réserve sur les sites des prestataires (réglage réservé aux admins). */
+export async function fetchBookingAgentWhatsapp(): Promise<string | null> {
+  const { data, error } = await db.from("admin_settings").select("value").eq("key", BOOKING_AGENT_KEY).maybeSingle();
+  if (error) throw error;
+  return data?.value || null;
+}
+
+export async function saveBookingAgentWhatsapp(phone: string) {
+  const { error } = await db
+    .from("admin_settings")
+    .upsert({ key: BOOKING_AGENT_KEY, value: phone, updated_at: new Date().toISOString() });
+  if (error) throw error;
+}
+
 /** Écrit la modification d'une cellule de la grille de Saisie (une cellule = une écriture). */
 export async function saveCellUpdate(table: string, rowId: string, patch: Record<string, unknown>) {
   const { data, error } = await db.from(table).update(patch).eq("id", rowId).select("id");

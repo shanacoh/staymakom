@@ -30,6 +30,8 @@ function row(overrides: Partial<ReservationRow>): ReservationRow {
     isOnline: false,
     notes: null,
     sentToProviderAt: null,
+    // Déjà réservée chez le prestataire : les tests suivent la suite (solde, fournisseur).
+    bookedWithProviderAt: "2026-10-01T09:00:00Z",
     depositDue: null,
     missingCosts: 0,
     supplierDue: null,
@@ -58,6 +60,27 @@ const request = (overrides: Partial<ReservationRow> = {}) =>
   row({ source: "request", status: "demande", collected: 0, clientPayment: "unpaid", supplierCost: null, supplierPayment: "none", ...overrides });
 
 describe("nextAction", () => {
+  it("réservation payée pas encore réservée chez le prestataire : réserver, urgent", () => {
+    expect(nextAction(row({ bookedWithProviderAt: null, supplierPayment: "todo" }), TODAY)).toMatchObject({
+      kind: "book_with_provider",
+      urgent: true,
+    });
+  });
+
+  it("message de résa envoyé : confirmer la résa prestataire, sans urgence", () => {
+    expect(nextAction(row({ bookedWithProviderAt: null, sentToProviderAt: "2026-10-06T08:00:00Z" }), TODAY)).toMatchObject({
+      kind: "confirm_provider_booking",
+      urgent: false,
+    });
+  });
+
+  it("résa prestataire : ni pour un hôtel, ni pour une réservation passée ou non payée", () => {
+    const notBooked = { bookedWithProviderAt: null };
+    expect(nextAction(row({ ...notBooked, source: "hotel", type: "hotel" }), TODAY)?.kind).not.toBe("book_with_provider");
+    expect(nextAction(row({ ...notBooked, status: "passee" }), TODAY)?.kind).not.toBe("book_with_provider");
+    expect(nextAction(row({ ...notBooked, clientPayment: "unpaid", collected: 0 }), TODAY)?.kind).not.toBe("book_with_provider");
+  });
+
   it("demande pas encore envoyée : envoyer au prestataire, urgent", () => {
     expect(nextAction(request(), TODAY)).toMatchObject({ kind: "send_to_provider", urgent: true });
   });

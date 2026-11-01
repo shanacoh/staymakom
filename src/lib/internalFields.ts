@@ -30,6 +30,7 @@ export const STANDALONE_EXPERIENCE_INTERNAL: InternalStore = {
     "supplier_booking_url",
     "provider_id",
     "booking_channel",
+    "booking_instructions",
     "day_contact_name",
     "day_contact_phone",
     "day_contact_language",

@@ -2,6 +2,7 @@
 // entre le panneau des demandes et les boutons « Prochaine action ».
 
 import { format, parseISO } from "date-fns";
+import { WHATSAPP_NUMBER } from "@/constants/whatsapp";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -76,4 +77,73 @@ export function buildNotAvailableMessage(clientName: string, alternativesUrl: st
     default:
       return `Bonjour ${clientName}, ici Shana de Staymakom. Ce créneau n'est finalement pas disponible. Voici d'autres propositions qui pourraient vous convenir : ${alternativesUrl}`;
   }
+}
+
+// Coordonnées que l'agent saisit sur le site du prestataire : le billet est au nom du client,
+// mais les confirmations et les appels arrivent chez Staymakom.
+export const STAYMAKOM_BOOKING_CONTACT = { name: "Staymakom", email: "shana@staymakom.com", phone: `+${WHATSAPP_NUMBER}` };
+
+export type ProviderBookingTarget = "provider" | "agent";
+
+/** Résa sur le site ou le portail du prestataire : c'est l'agent qui la fait. Sinon, WhatsApp au prestataire. */
+export function providerBookingTarget(channel: string | null | undefined): ProviderBookingTarget {
+  return channel === "provider_website" || channel === "provider_portal" ? "agent" : "provider";
+}
+
+export interface ProviderBookingInfo {
+  experience: string;
+  date: string;
+  timeSlot: string | null;
+  adults: number | null;
+  children: number | null;
+  partySize: number | null;
+  customerName: string;
+  specialRequests: string | null;
+  ref: string;
+  bookingUrl?: string | null;
+  instructions?: string | null;
+}
+
+function guestsLabel(info: ProviderBookingInfo): string {
+  if (info.adults === null && info.children === null) return `${info.partySize ?? "?"} people`;
+  const adults = info.adults ?? 0;
+  const children = info.children ?? 0;
+  const parts = [`${adults} adult${adults > 1 ? "s" : ""}`];
+  if (children > 0) parts.push(`${children} child${children > 1 ? "ren" : ""}`);
+  return parts.join(", ");
+}
+
+// Infos communes aux deux messages ; une info absente (demande spéciale...) ne laisse pas de ligne vide.
+function bookingLines(info: ProviderBookingInfo): (string | null)[] {
+  const when = format(parseISO(info.date), "dd/MM/yyyy") + (info.timeSlot ? ` at ${info.timeSlot}` : "");
+  return [
+    `Experience: ${info.experience}`,
+    `Date: ${when}`,
+    `Guests: ${guestsLabel(info)}`,
+    `Name on the booking: ${info.customerName}`,
+    info.specialRequests ? `Special requests: ${info.specialRequests}` : null,
+  ];
+}
+
+const joinMessage = (intro: string, lines: (string | null)[], closing: string) =>
+  [intro, ...lines.filter(Boolean), "", closing].join("\n");
+
+/** Message de résa au prestataire, en anglais comme le message des demandes bateau. */
+export function buildProviderBookingMessage(info: ProviderBookingInfo): string {
+  return joinMessage("Hi, new booking from STAYMAKOM:", bookingLines(info), "Can you confirm it? Thanks!");
+}
+
+/** Message à l'agent qui réserve sur le site du prestataire : lien, infos, coordonnées et consignes de la fiche. */
+export function buildAgentBookingMessage(info: ProviderBookingInfo): string {
+  const contact = STAYMAKOM_BOOKING_CONTACT;
+  return joinMessage(
+    `New booking to make on the provider's website (ref ${info.ref}):`,
+    [
+      info.bookingUrl ? `Link: ${info.bookingUrl}` : null,
+      ...bookingLines(info),
+      `Contact details to enter: ${contact.name}, ${contact.email}, ${contact.phone}`,
+      info.instructions ? `Instructions: ${info.instructions}` : null,
+    ],
+    "Please send me the confirmation once it's booked. Thanks!",
+  );
 }

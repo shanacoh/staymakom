@@ -27,6 +27,14 @@ function daysUntil(date: string | null, today: Date): number | null {
   return date ? differenceInCalendarDays(parseISO(date), today) : null;
 }
 
+/** Réservation d'expérience ou de bateau à venir, payée (en tout ou acompte), pas encore réservée chez le prestataire. */
+export const needsProviderBooking = (row: ReservationRow) =>
+  row.source === "booking" &&
+  row.status === "confirmee" &&
+  (row.type === "experience" || row.type === "boat") &&
+  (row.clientPayment === "paid" || row.clientPayment === "deposit") &&
+  !row.bookedWithProviderAt;
+
 /** Le bouton « Prochaine action » d'une ligne, dans l'ordre de priorité fixé par Shana. Rien = ligne soldée. */
 export function nextAction(row: ReservationRow, today: Date = new Date()): NextAction | null {
   // Annulation : seuls restent le remboursement du client et l'argent à récupérer chez le prestataire.
@@ -82,6 +90,14 @@ export function nextAction(row: ReservationRow, today: Date = new Date()): NextA
       label: `Confirmer le solde · ${formatCurrency(balance, row.currency)}`,
       urgent: days !== null && days <= BALANCE_URGENT_DAYS,
     };
+  }
+
+  // Réservation payée à venir : reste à la réserver chez le prestataire (WhatsApp au prestataire
+  // ou à l'agent), en deux temps : message envoyé, puis résa confirmée.
+  if (needsProviderBooking(row)) {
+    return row.sentToProviderAt
+      ? { kind: "confirm_provider_booking", label: "Confirmer la résa prestataire", urgent: false }
+      : { kind: "book_with_provider", label: "Réserver chez le prestataire", urgent: true };
   }
 
   if (row.clientPayment === "deposit" && balance > 0) {

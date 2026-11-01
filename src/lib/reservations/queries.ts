@@ -51,6 +51,7 @@ interface AdminReservationViewRow {
   is_online: boolean;
   notes: string | null;
   sent_to_provider_at: string | null;
+  booked_with_provider_at: string | null;
   deposit_due: number | null;
   missing_costs: number | null;
   supplier_due: number | null;
@@ -108,6 +109,7 @@ function toReservationRow(row: AdminReservationViewRow): ReservationRow {
     isOnline: row.is_online,
     notes: row.notes,
     sentToProviderAt: row.sent_to_provider_at,
+    bookedWithProviderAt: row.booked_with_provider_at ?? null,
     depositDue: toNumber(row.deposit_due),
     missingCosts: row.missing_costs ?? 0,
     supplierDue: toNumber(row.supplier_due),

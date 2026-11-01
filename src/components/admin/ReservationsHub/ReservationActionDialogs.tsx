@@ -1,6 +1,6 @@
 /**
  * Fenêtres ouvertes par les boutons « Prochaine action » de la page Réservations :
- * envoi au prestataire, réponse du prestataire, conversion d'une demande en réservation,
+ * envoi au prestataire, réponse du prestataire, résa chez le prestataire, conversion d'une demande en réservation,
  * lien de solde, encaissement, coût fournisseur et paiement du fournisseur.
  * Une seule fenêtre à la fois, choisie d'après l'action de la ligne.
  */
@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
+import ProviderBookingDialog from "./ProviderBookingDialog";
 import CancellationDialog from "./CancellationDialog";
 import { formatCurrency } from "@/components/admin/BookingsGrid/columnTypes";
 import {
@@ -536,6 +537,9 @@ const ReservationActionDialogs = ({ pending, onClose, onDone }: Props) => {
       return <SendToProviderDialog key={instance} {...common} />;
     case "confirm_availability":
       return <ProviderAnswerDialog key={instance} {...common} />;
+    case "book_with_provider":
+    case "confirm_provider_booking":
+      return <ProviderBookingDialog key={instance} {...common} />;
     case "send_deposit_link":
     case "send_payment_link":
     case "convert_request":

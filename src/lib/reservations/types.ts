@@ -36,7 +36,10 @@ export interface ReservationRow {
   isOnline: boolean;
   notes: string | null;
   // Demande : date d'envoi au prestataire. Sert à savoir si l'action est urgente.
+  // Réservation : date d'envoi du message de résa (au prestataire ou à l'agent).
   sentToProviderAt: string | null;
+  // Réservation confirmée chez le prestataire (vide pour les autres lignes).
+  bookedWithProviderAt: string | null;
   // Acompte à demander une fois la dispo confirmée (règle de la fiche expérience).
   depositDue: number | null;
   // Nombre de coûts fournisseur encore à saisir (1 pour une réservation, une par ligne pour un dossier).
@@ -88,6 +91,8 @@ export type NextActionKind =
   | "refund_client"
   | "recover_supplier"
   | "send_to_provider"
+  | "book_with_provider"
+  | "confirm_provider_booking"
   | "confirm_availability"
   | "send_deposit_link"
   | "send_payment_link"

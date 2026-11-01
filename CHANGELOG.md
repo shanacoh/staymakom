@@ -6,6 +6,30 @@
 
 ---
 
+## [2026-11-01] — Réservations : bouton « Réserver chez le prestataire » (WhatsApp rédigé)
+
+> Statut : en test, pas encore validé par Shana. Ne pas mettre en ligne avant d'avoir appliqué la migration.
+
+### Ce qui a changé côté code
+- `src/lib/reservations/rules.ts` : nouvelle prochaine action pour une réservation d'expérience ou de bateau à venir et payée (totalement ou acompte) : « Réserver chez le prestataire » (urgent), puis « Confirmer la résa prestataire » une fois le message envoyé.
+- `src/lib/reservations/whatsapp.ts` : deux messages en anglais, l'un pour le prestataire (fiches « demande »), l'autre pour l'agent de Shana (fiches « site » ou « portail » du prestataire) avec le lien, les consignes de la fiche et les coordonnées Staymakom à saisir (billet au nom du client, contact Staymakom).
+- `src/components/admin/ReservationsHub/ProviderBookingDialog.tsx` (nouveau) : la fenêtre du bouton (message modifiable, Copier, Ouvrir WhatsApp, Déjà réservé / C'est réservé, saisie unique du numéro de l'agent).
+- `src/lib/reservations/actions.ts` : lecture de la résa avec sa fiche et son prestataire, écriture des deux temps, lecture/enregistrement du numéro de l'agent.
+- `src/components/forms/StandaloneExperienceForm.tsx` + `src/lib/internalFields.ts` : champ « Consignes pour finaliser la résa » sous le lien de réservation fournisseur.
+- Tests : `whatsapp.test.ts` (nouveau) et `rules.test.ts`.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261028120000_reserver_chez_prestataire.sql` :
+  - `standalone_bookings.supplier_booking_requested_at` et `supplier_booked_at` : les deux temps de la résa chez le prestataire (on ne réutilise pas `provider_notified_at`, qui sert à l'email automatique des partenaires) ;
+  - `standalone_experience_internal.booking_instructions` : les consignes de la fiche ;
+  - table `admin_settings` (lisible par les admins seulement) : numéro WhatsApp de l'agent ;
+  - vue `admin_reservations` : `sent_to_provider_at` des réservations rempli par la date d'envoi, nouvelle colonne `booked_with_provider_at`.
+
+### Pourquoi ce changement
+- Après une résa payée, Shana devait rédiger elle-même le message pour réserver chez le prestataire. Un clic prépare maintenant le bon message pour le bon destinataire, et la ligne reste signalée tant que la résa n'est pas confirmée.
+
+---
+
 ## [2026-11-01] — Expériences sans hôtel : « Kosher » ne vient plus que de l'interrupteur
 
 > Statut : validé par Shana.

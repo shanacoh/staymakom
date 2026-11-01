@@ -202,6 +202,7 @@ const standaloneExperienceSchema = z.object({
   base_price: optNum(0),
   base_price_child: optNum(0),
   supplier_booking_url: z.string().optional(),
+  booking_instructions: z.string().optional(),
   // Bateaux — champs spécifiques, affichés uniquement quand isBoatsExperience
   // est vrai. Tous optionnels : aucune validation bloquante, ni pour le
   // brouillon ni pour la publication (remplissage progressif).
@@ -755,6 +756,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       base_price: undefined,
       base_price_child: undefined,
       supplier_booking_url: "",
+      booking_instructions: "",
       supplier_contact: "",
       supplier_payment_method: undefined,
       skipper_included: undefined,
@@ -978,6 +980,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
           (exp.base_price_child != null && exp.base_price_child !== storedChildSuggestion),
     );
     setValue("supplier_booking_url", exp.supplier_booking_url || "");
+    setValue("booking_instructions", exp.booking_instructions || "");
     setValue("supplier_contact", exp.supplier_contact || "");
     setValue("supplier_payment_method", exp.supplier_payment_method || undefined);
     setValue("skipper_included", exp.skipper_included ?? undefined);
@@ -1577,6 +1580,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       markup_percent: data.markup_percent,
       price_mode: isBoatsExperience ? null : data.price_mode,
       supplier_booking_url: data.supplier_booking_url || null,
+      booking_instructions: data.booking_instructions?.trim() || null,
       supplier_contact: data.supplier_contact || null,
       supplier_payment_method: data.supplier_payment_method || null,
       skipper_included: data.skipper_included ?? null,
@@ -3013,6 +3017,19 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
         <p className="text-xs text-muted-foreground">
           Pour les expériences que vous réservez vous-même chez le fournisseur : ce lien apparaîtra
           uniquement dans le récapitulatif de vos réservations, jamais sur le site public.
+        </p>
+      </div>
+      <div className="space-y-2 mt-4">
+        <Label htmlFor="booking_instructions">Consignes pour finaliser la résa</Label>
+        <Textarea
+          id="booking_instructions"
+          rows={3}
+          {...register("booking_instructions")}
+          placeholder="ex. : choisir le show « Hallelujah », billet enfant = 6-12 ans, payer avec la carte Staymakom"
+          disabled={isSaving}
+        />
+        <p className="text-xs text-muted-foreground">
+          Reprises dans le message WhatsApp du bouton « Réserver chez le prestataire » (page Réservations).
         </p>
       </div>
     </div>
