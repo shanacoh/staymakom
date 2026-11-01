@@ -102,6 +102,17 @@ export interface AutoBadgeTag {
   label_fr: string | null;
 }
 
+/**
+ * Pour une expérience seule, « Kosher » ne vient que de l'interrupteur Kosher
+ * des informations clés (practical_info.kosher). Le badge éditorial du même nom
+ * (toujours utilisé par les expériences avec hôtel) est donc ignoré, sinon la
+ * bulle apparaît deux fois ou contredit l'interrupteur.
+ */
+export const KOSHER_EDITORIAL_TAG_SLUG = "kosher";
+
+export const isKosherEditorialTag = (tag: { slug: string; label_en: string }): boolean =>
+  tag.slug === KOSHER_EDITORIAL_TAG_SLUG || tag.label_en.trim().toLowerCase() === "kosher";
+
 export function getAutoBadgeTagsFromPracticalInfo(info: PracticalBadgesInfo): AutoBadgeTag[] {
   const tags: AutoBadgeTag[] = [];
 

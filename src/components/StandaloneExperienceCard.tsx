@@ -7,7 +7,7 @@ import ExperienceCard from "@/components/ExperienceCard";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useLanguage } from "@/hooks/useLanguage";
 import { getStandaloneFromPrice } from "@/lib/standaloneFromPrice";
-import { getAutoBadgeTagsFromPracticalInfo, normalizeLegacyPracticalInfo } from "@/lib/standaloneBadges";
+import { getAutoBadgeTagsFromPracticalInfo, isKosherEditorialTag, normalizeLegacyPracticalInfo } from "@/lib/standaloneBadges";
 
 // Bateaux : la 3e bulle fixe (skipper) reflète directement les colonnes
 // skipper_included / crew_included de la fiche — c'est le même interrupteur
@@ -108,6 +108,7 @@ export default function StandaloneExperienceCard({
   const showFromPrefix = isFixed || (experience.has_child_price ?? false);
 
   const editorialTags = (experience.standalone_experience_highlight_tags ?? [])
+    .filter((link) => !isKosherEditorialTag(link.highlight_tags))
     .sort((a, b) => a.position - b.position)
     .map((link) => ({ highlight_tags: link.highlight_tags }));
 

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, X, Loader2, ChevronUp, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { isKosherEditorialTag } from "@/lib/standaloneBadges";
 
 import { Label, Input, Button, Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/forms/styled/managers";
 import {
@@ -53,6 +54,9 @@ export function HighlightTagsSelectorStandalone({ experienceId, localTags, onLoc
       if (error) throw error;
       return data as TagObject[];
     },
+    // Kosher se règle uniquement par l'interrupteur des informations clés.
+    // Filtré ici (et non dans queryFn) car la clé de cache est partagée avec les formulaires hôtel.
+    select: (data: TagObject[]) => data.filter((tag) => !isKosherEditorialTag(tag)),
   });
 
   const { data: experienceTagLinks, isLoading: isLoadingExpTags } = useQuery({

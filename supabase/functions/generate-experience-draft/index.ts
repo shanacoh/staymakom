@@ -896,7 +896,8 @@ Deno.serve(async (req) => {
     if (isStandalone) {
       const [regionsResult, badgesResult] = await Promise.all([
         supabase.from("regions").select("id, slug, name, name_fr").eq("is_active", true).order("display_order"),
-        supabase.from("highlight_tags").select("id, slug, label_en, label_fr").eq("is_common", true).order("display_order"),
+        // Kosher n'est pas proposé : pour une expérience seule il vient de l'interrupteur des informations clés.
+        supabase.from("highlight_tags").select("id, slug, label_en, label_fr").eq("is_common", true).neq("slug", "kosher").order("display_order"),
       ]);
       regions = (regionsResult.data ?? []).map((r) => ({ id: r.id as string, slug: r.slug as string, name: `${r.name_fr} (${r.name})` }));
       badges = (badgesResult.data ?? []).map((b) => ({ id: b.id as string, slug: b.slug as string, name: (b.label_fr || b.label_en) as string }));

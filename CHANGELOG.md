@@ -6,6 +6,24 @@
 
 ---
 
+## [2026-11-01] — Expériences sans hôtel : « Kosher » ne vient plus que de l'interrupteur
+
+> Statut : validé par Shana.
+
+### Ce qui a changé côté code
+- `src/lib/standaloneBadges.ts` : nouvelle règle `isKosherEditorialTag` qui reconnaît le badge éditorial « Kosher » (slug `kosher` ou libellé « Kosher »).
+- `src/components/StandaloneExperienceCard.tsx` : la carte n'affiche plus le badge éditorial « Kosher » ; seule la bulle venant de l'interrupteur Kosher des informations clés (`practical_info.kosher`) reste. Fin de la bulle en double.
+- `src/components/admin/HighlightTagsSelectorStandalone.tsx` : « Kosher » n'est plus proposé dans les badges d'une expérience sans hôtel (filtré via `select`, car la clé de cache `highlight-tags-common` est partagée avec les formulaires hôtel, qui gardent ce badge).
+- `supabase/functions/generate-experience-draft/index.ts` : l'IA ne propose plus le badge `kosher` pour une expérience sans hôtel.
+
+### Ce qui a changé côté base de données
+- Aucun changement. Les 7 anciens liens « Kosher » dans `standalone_experience_highlight_tags` restent en base mais ne sont plus affichés (nettoyage prévu plus tard, avec sauvegarde avant). Le badge reste utilisé par 24 expériences avec hôtel.
+
+### Pourquoi ce changement
+- Certaines cartes affichaient deux bulles « Kosher » : l'info se remplissait à deux endroits sans lien. L'interrupteur des informations clés devient la seule référence. Effet : « A Shabbat Table in Jerusalem » (interrupteur sur Non) et « Shabbat-Style Dinner with a French-Algerian Touch » (interrupteur vide) n'affichent plus « Kosher » tant que l'interrupteur n'est pas mis sur Oui.
+
+---
+
 ## [2026-10-28] — « Jerusalem Lit Up After Dark » : horaires d'hiver
 
 ### Ce qui a changé côté code
