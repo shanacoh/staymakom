@@ -6,6 +6,39 @@
 
 ---
 
+## [2026-11-02] — Billets d'entrée : transmettre au client le QR du prestataire
+
+> Statut : en test, pas encore validé par Shana. Base de données et 3 nouvelles fonctions serveur déjà en place ; l'email de confirmation et le rappel de la veille restent à redéployer (feu vert de Shana) ; le site (back-office et page billet) part avec la mise en ligne de la branche `billets-entree`.
+
+### Ce qui a changé côté code
+- `supabase/functions/_shared/tickets/` (nouveau) : `content.ts` (reconnaître un fichier billet, textes EN / FR / HE, partagé avec le site), `load.ts` (lire une réservation et ses billets, liens signés), `email.ts` (email « Vos billets », minimaliste, images en pièce jointe intégrée « cid »).
+- `supabase/functions/_shared/amplitude.ts` (nouveau) : envoi d'événements Amplitude depuis le serveur (`tickets_uploaded`, `tickets_sent`, `ticket_page_viewed`).
+- `supabase/functions/send-booking-tickets/` (nouveau) : envoi de l'email « Vos billets » par un admin, pièces jointes originales (.pkpass avec le type Wallet), marqueur d'envoi, renvoi volontaire.
+- `supabase/functions/get-booking-tickets/` (nouveau) : données de la page billet à partir du jeton, liens signés de 30 minutes, rien si annulée ou remboursée.
+- `supabase/functions/track-tickets-uploaded/` (nouveau) : compte les billets déposés (relus en base) dans Amplitude.
+- `send-standalone-booking-confirmation` : seule modification, la ligne « Vos billets d'entrée vous seront envoyés séparément avant l'expérience » quand la fiche demande un billet.
+- `send-standalone-day-before-reminder` : bouton « Ouvrir mes billets » si des billets existent ; `missing-tickets.ts` (nouveau) envoie à Shana « Billet manquant pour demain » (une fois par réservation).
+- `src/pages/BookingTicket.tsx` (nouveau, route `/billet/:token`) + `src/components/tickets/` (rendu de la 1re page des PDF, bloc Infos pratiques) : page billet mobile, non indexée.
+- `src/components/admin/BookingTicketsCard.tsx` + `src/lib/tickets/adminTickets.ts` (nouveaux) : bloc « Billets d'entrée » de la fiche réservation (dépôt glisser-déposer, libellé, ordre, suppression, note, envoi / renvoi, lien vers la page billet).
+- `src/lib/reservations/ticketAlerts.ts` (nouveau) + `ReservationsSummaryTable.tsx` + `Reservations.tsx` : pastille « Billet à envoyer » dans la vue Réservations.
+- `StandaloneExperienceForm.tsx` : interrupteur « Billet d'entrée envoyé par le prestataire » (section 5. Après la réservation).
+- `MobileAppShell.tsx`, `NewsletterPopup.tsx`, `WhatsAppButton.tsx`, `App.tsx` (bandeau cookies) : rien ne s'affiche par-dessus la page billet.
+- `vercel.json` + `public/robots.txt` : `/billet/` jamais indexée ni mise en cache.
+- `package.json` : ajout de `pdfjs-dist` 4.10.38 (affichage des PDF sur téléphone, chargé seulement sur la page billet).
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261102120000_billets_entree.sql` (appliquée avec `supabase db query --linked -f`, donc absente de l'historique des migrations) :
+  - `standalone_experiences.requires_entry_ticket` (non par défaut) ;
+  - `standalone_bookings.ticket_note`, `tickets_sent_at`, `ticket_access_token` (unique), `ticket_missing_alert_sent_at` ;
+  - table `booking_tickets` (fichier, type pdf / image / pkpass, nom d'origine, libellé, ordre), admins seulement ;
+  - déclencheur qui crée le jeton de la page billet au premier billet ; fonction `reorder_booking_tickets` (ordre enregistré en une fois) ;
+  - bucket privé `booking-tickets` (15 Mo max, PDF / PNG / JPG / .pkpass), lecture et écriture admins seulement.
+
+### Pourquoi ce changement
+- Certains prestataires envoient un billet avec QR code après la réservation. Shana peut maintenant le déposer sur la réservation et l'envoyer au client tel quel, par email et sur une page billet à montrer à l'entrée.
+
+---
+
 ## [2026-11-01] — Réservations : bouton « Réserver chez le prestataire » (WhatsApp rédigé)
 
 > Statut : en test, pas encore validé par Shana. Ne pas mettre en ligne avant d'avoir appliqué la migration.

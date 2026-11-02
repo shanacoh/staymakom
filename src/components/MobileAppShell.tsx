@@ -22,7 +22,9 @@ const MobileAppShell = () => {
   const isSwipePublic = location.pathname.startsWith("/swipe/");
   // La page d'attente "offre d'hiver" est plein écran, avec son propre en-tête.
   const isSitePause = location.pathname === "/" && isSitePauseActive();
-  if (isAdmin || isSwipePublic || isSitePause) return null;
+  // La page billet se montre à l'entrée : rien ne doit recouvrir le QR code.
+  const isTicketPage = location.pathname.startsWith("/billet/");
+  if (isAdmin || isSwipePublic || isSitePause || isTicketPage) return null;
 
   // On account sub-pages (with ?tab=), the sub-page provides its own header
   const isAccountSubPage = location.pathname === "/account" && location.search.includes("tab=");

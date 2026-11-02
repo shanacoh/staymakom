@@ -2,6 +2,7 @@
 // (send-standalone-booking-confirmation) : bandeau photo, bannière, carte, bouton rouge, pied de page.
 // Écrit en entier dans la langue du client.
 
+import { TICKET_TEXTS } from '../_shared/tickets/content.ts';
 import { formatBookingDate, hasLocation, renderPracticalInfoHtml, type PracticalInfo, type PracticalLang } from '../_shared/practical-info/content.ts';
 
 const escapeHTML = (str: string): string =>
@@ -84,6 +85,8 @@ export interface ReminderEmailParams {
   /** Adresse montrée dans la carte quand le bloc Infos pratiques ne dit pas déjà où aller. */
   address?: string;
   practicalInfo: PracticalInfo | null;
+  /** Page billet, quand des billets d'entrée existent : bouton « Ouvrir mes billets » (sans pièce jointe). */
+  ticketsUrl?: string;
 }
 
 export function buildReminderEmail(params: ReminderEmailParams): { subject: string; html: string } {
@@ -185,6 +188,16 @@ export function buildReminderEmail(params: ReminderEmailParams): { subject: stri
 
               <!-- CTA -->
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
+                ${params.ticketsUrl ? `
+                <tr>
+                  <td align="center" style="padding-bottom:16px;">
+                    <a href="${params.ticketsUrl}"
+                       style="display:inline-block;background:${brandRed};color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:999px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;">
+                      ${TICKET_TEXTS[lang].openTickets}
+                    </a>
+                  </td>
+                </tr>
+                ` : ''}
                 <tr>
                   <td align="center">
                     <a href="${confirmationUrl}"

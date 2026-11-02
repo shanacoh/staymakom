@@ -112,3 +112,12 @@ verify_jwt = false
 
 [functions.partner-notify]
 verify_jwt = false
+
+[functions.send-booking-tickets]
+verify_jwt = false
+
+[functions.get-booking-tickets]
+verify_jwt = false
+
+[functions.track-tickets-uploaded]
+verify_jwt = false

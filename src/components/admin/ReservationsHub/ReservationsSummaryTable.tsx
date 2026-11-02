@@ -48,6 +48,8 @@ interface Props extends DossierLinesProps {
   onOpen: (row: ReservationRow) => void;
   /** Réservations des 7 prochains jours dont la fiche n'a pas de point de rendez-vous. */
   incompletePracticalInfo?: Set<string>;
+  /** Réservations payées dont les billets d'entrée du prestataire restent à envoyer au client. */
+  ticketsToSend?: Set<string>;
 }
 
 const COLUMN_COUNT = 10;
@@ -168,6 +170,7 @@ function SummaryRow({
   onLineCost,
   onLinePaid,
   incompletePracticalInfo,
+  ticketsToSend,
 }: { row: ReservationRow } & Omit<Props, "groups">) {
   const lines = row.source === "dossier" ? (linesByDossier.get(row.id) ?? []) : [];
   const expanded = expandedDossiers.has(row.id);
@@ -206,6 +209,9 @@ function SummaryRow({
           <div className="truncate text-xs text-muted-foreground">
             {row.product} · {row.channelLabel}
           </div>
+          {row.source === "booking" && ticketsToSend?.has(row.id) && (
+            <FilledPill tone="amber" className="mt-1">Billet à envoyer</FilledPill>
+          )}
           {row.source === "dossier" && !isTailorMadeRequest(row) && (
             <button
               type="button"

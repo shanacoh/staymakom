@@ -125,6 +125,11 @@ const LABELS: Record<PracticalLang, {
   },
 };
 
+/** Intitulés du bloc dans une langue : la page billet du site affiche le bloc avec les mêmes mots. */
+export function practicalInfoLabels(lang: PracticalLang) {
+  return LABELS[lang];
+}
+
 function navigationLinks(source: PracticalInfoSource, address: string): { wazeUrl?: string; mapsUrl?: string } {
   const lat = Number(source.latitude);
   const lng = Number(source.longitude);

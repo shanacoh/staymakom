@@ -19,6 +19,9 @@
 // sans le prix payé ni les coordonnées du client), une seule fois, si la réservation est payée et
 // s'il a été invité dans l'espace partenaire. Cet envoi ne peut jamais empêcher celui du client.
 //
+// Billets d'entrée : si la fiche indique que le prestataire envoie un billet, une ligne sobre annonce
+// qu'il arrivera séparément (email « Vos billets »). Rien d'autre ne change.
+//
 // Aperçu d'une fiche (`preview_experience_id`) : envoie l'email tel que le client le recevrait,
 // avec une réservation fictive, à l'adresse de l'admin connecté. Rien n'est écrit en base.
 
@@ -28,6 +31,7 @@ import { loadPracticalInfo, SAMPLE_PRACTICAL_SOURCE } from '../_shared/practical
 import { getAdminEmail, isAdminEmail, isInternalCron } from '../_shared/internal-auth.ts';
 import { notifyProviderOfBooking } from '../_shared/partner/booking-notice.ts';
 import { formatTimeSlot } from '../_shared/time-slot.ts';
+import { TICKET_TEXTS } from '../_shared/tickets/content.ts';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 
@@ -164,6 +168,7 @@ function buildEmailHtml(params: {
   regulations?: string;
   bookingRef: string;
   practicalInfo?: PracticalInfo | null;
+  requiresEntryTicket?: boolean;
 }): string {
   const {
     guestName, experienceTitle, bookingDate, timeSlot,
@@ -279,7 +284,9 @@ function buildEmailHtml(params: {
                   </td>
                 </tr>
               </table>${practicalInfoHtml}
-
+${params.requiresEntryTicket ? `
+              <p style="margin:0 0 32px;font-size:14px;color:#555;line-height:1.6;">${TICKET_TEXTS[lang].confirmationNotice}</p>
+` : ''}
               ${regulations ? `
               <!-- Good to know -->
               <table width="100%" cellpadding="0" cellspacing="0" style="background:#FAF9F6;border-radius:8px;border:1px solid #eee;margin-bottom:32px;">
@@ -405,7 +412,7 @@ Deno.serve(async (req: Request) => {
 
       const { data: previewExperience, error: previewError } = await supabase
         .from('standalone_experiences')
-        .select('id, title, title_fr, title_he, address, address_fr, address_he')
+        .select('id, title, title_fr, title_he, address, address_fr, address_he, requires_entry_ticket')
         .eq('id', preview_experience_id)
         .maybeSingle();
       if (previewError || !previewExperience) return json({ error: 'Fiche introuvable' }, 404);
@@ -431,6 +438,7 @@ Deno.serve(async (req: Request) => {
         address: localizedField(previewExperience, 'address', lang) || undefined,
         bookingRef: 'SM-APERCU',
         practicalInfo,
+        requiresEntryTicket: previewExperience.requires_entry_ticket === true,
       });
       const sent = await sendEmail(recipient, `[Aperçu] ${TEXTS[lang].subject(previewTitle)}`, html);
       if (!sent.ok) return json({ error: 'Email send failed', details: sent.details }, 500);
@@ -445,7 +453,7 @@ Deno.serve(async (req: Request) => {
     // En mode aperçu sans token, on prend la réservation la plus récente pour montrer un rendu réel.
     const bookingQuery = supabase
       .from('standalone_bookings')
-      .select('id, customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, confirmation_token, custom_experience_title, custom_address, custom_regulations, status, is_cancelled, product_type, preferred_lang, standalone_experience_id, standalone_experiences(title, title_fr, title_he, address, address_fr, address_he)');
+      .select('id, customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, confirmation_token, custom_experience_title, custom_address, custom_regulations, status, is_cancelled, product_type, preferred_lang, standalone_experience_id, standalone_experiences(title, title_fr, title_he, address, address_fr, address_he, requires_entry_ticket)');
     const { data: booking, error: bookingError } = confirmation_token
       ? await bookingQuery.eq('confirmation_token', confirmation_token).single()
       : await bookingQuery.order('created_at', { ascending: false }).limit(1).single();
@@ -484,6 +492,7 @@ Deno.serve(async (req: Request) => {
       regulations: booking.custom_regulations || undefined,
       bookingRef: `SM-${booking.id.slice(0, 8).toUpperCase()}`,
       practicalInfo,
+      requiresEntryTicket: (experience as Record<string, unknown> | null)?.requires_entry_ticket === true,
     });
 
     const subject = TEXTS[lang].subject(experienceTitle);

@@ -34,7 +34,7 @@ import {
 import {
   Save, Rocket, X, Upload, Loader2, ArrowLeft, Plus, Star, Clock, Sparkles,
   MapPin, DollarSign, Check, Tag, Car, Utensils, Dumbbell, Waves, Users,
-  ChevronDown, Globe, AlertTriangle, EyeOff, Lock,
+  ChevronDown, Globe, AlertTriangle, EyeOff, Lock, Ticket,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -268,6 +268,8 @@ const standaloneExperienceSchema = z.object({
   contingency_note_he: z.string().optional(),
   // Canal de réservation, interne, jamais affiché au client.
   booking_channel: z.enum(["provider_request", "provider_website", "provider_portal"]).default("provider_request"),
+  // Le prestataire envoie un billet d'entrée (QR, PDF, Wallet) à transmettre au client.
+  requires_entry_ticket: z.boolean().default(false),
   // SEO
   seo_title_en: z.string().optional(),
   seo_title_he: z.string().optional(),
@@ -811,6 +813,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       contingency_note_fr: "",
       contingency_note_he: "",
       booking_channel: "provider_request",
+      requires_entry_ticket: false,
       seo_title_en: "",
       seo_title_he: "",
       seo_title_fr: "",
@@ -1038,6 +1041,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
     setValue("contingency_note_fr", exp.contingency_note_fr || "");
     setValue("contingency_note_he", exp.contingency_note_he || "");
     setValue("booking_channel", exp.booking_channel || defaultBookingChannel(exp.supplier_booking_url));
+    setValue("requires_entry_ticket", exp.requires_entry_ticket ?? false);
     setValue("seo_title_en", exp.seo_title_en || "");
     setValue("seo_title_he", exp.seo_title_he || "");
     setValue("seo_title_fr", exp.seo_title_fr || "");
@@ -1639,6 +1643,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
       contingency_note_fr: data.contingency_note_fr || null,
       contingency_note_he: data.contingency_note_he || null,
       booking_channel: data.booking_channel,
+      requires_entry_ticket: data.requires_entry_ticket,
       hero_image: heroImageUrl || null,
       thumbnail_image: heroImageUrl || null,
       photos: photoUrls,
@@ -4823,6 +4828,24 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                   previewSending={previewSending}
                   previewUnavailableReason={currentExperienceId ? "" : "Enregistre d'abord la fiche pour recevoir un aperçu."}
                 />
+                <div className="flex items-center justify-between gap-4 p-3 rounded-lg border">
+                  <div className="flex items-center gap-2">
+                    <Ticket className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <Label htmlFor="requires_entry_ticket" className="cursor-pointer">Billet d'entrée envoyé par le prestataire</Label>
+                      <p className="text-xs text-muted-foreground">
+                        La confirmation annonce que les billets arrivent séparément, et la réservation affiche « Billet à envoyer » tant qu'ils ne sont pas partis.
+                      </p>
+                    </div>
+                  </div>
+                  <Controller
+                    name="requires_entry_ticket"
+                    control={control}
+                    render={({ field }) => (
+                      <Switch id="requires_entry_ticket" checked={field.value} onCheckedChange={field.onChange} disabled={isSaving} />
+                    )}
+                  />
+                </div>
               </FormSection>
 
               <FormSection id="sec-prix" title="6. Prix, canal & dispos" description="Canal de réservation, prix, marge et disponibilités">

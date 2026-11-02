@@ -5140,6 +5140,7 @@ export type Database = {
           contingency_note_fr: string | null
           contingency_note_he: string | null
           booking_channel: string | null
+          requires_entry_ticket: boolean
           arrive_minutes_before: number | null
           accessibility_info: string | null
           accessibility_info_he: string | null
@@ -5255,6 +5256,7 @@ export type Database = {
           contingency_note_fr?: string | null
           contingency_note_he?: string | null
           booking_channel?: string | null
+          requires_entry_ticket?: boolean
           arrive_minutes_before?: number | null
           accessibility_info?: string | null
           accessibility_info_he?: string | null
@@ -5370,6 +5372,7 @@ export type Database = {
           contingency_note_fr?: string | null
           contingency_note_he?: string | null
           booking_channel?: string | null
+          requires_entry_ticket?: boolean
           arrive_minutes_before?: number | null
           accessibility_info?: string | null
           accessibility_info_he?: string | null

@@ -17,7 +17,8 @@ const WhatsAppButton = () => {
     location.pathname.startsWith('/admin') ||
     location.pathname.startsWith('/hotel-admin') ||
     isPartnerSpacePath(location.pathname) ||
-    location.pathname.startsWith('/swipe/');
+    location.pathname.startsWith('/swipe/') ||
+    location.pathname.startsWith('/billet/');
 
   useStopAboveFooter(buttonRef, !isHidden);
 

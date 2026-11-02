@@ -101,6 +101,7 @@ const ItineraireChoix            = lazy(() => import("./pages/ItineraireChoix"))
 const StandaloneExperience       = lazy(() => import("./pages/StandaloneExperience"));
 const StandaloneCheckout         = lazy(() => import("./pages/StandaloneCheckout"));
 const StandaloneBookingConfirmation = lazy(() => import("./pages/StandaloneBookingConfirmation"));
+const BookingTicket = lazy(() => import("./pages/BookingTicket"));
 const PublicReviewForm           = lazy(() => import("./pages/PublicReviewForm"));
 const TailorMadeQuestionnaire    = lazy(() => import("./pages/TailorMadeQuestionnaire"));
 const AdminStandaloneBookingDetails = lazy(() => import("./pages/admin/StandaloneBookingDetails"));
@@ -292,6 +293,7 @@ const AppContent = () => {
           <Route path="/boat/:slug" element={<StandaloneExperience />} />
           <Route path="/standalone-checkout" element={<StandaloneCheckout />} />
           <Route path="/standalone-booking/confirmation/:token" element={<StandaloneBookingConfirmation />} />
+          <Route path="/billet/:token" element={<BookingTicket />} />
           <Route path="/avis/:token" element={<PublicReviewForm />} />
           <Route path="/tailor-questionnaire/:token" element={<TailorMadeQuestionnaire />} />
           <Route path="/swipe/:token" element={<SwipePublic />} />
@@ -419,7 +421,7 @@ const AppContent = () => {
         </Routes>
       </Suspense>
 
-      {showBanner && !isPartnerSpacePath(location.pathname) && (
+      {showBanner && !isPartnerSpacePath(location.pathname) && !location.pathname.startsWith("/billet/") && (
         <CookieConsent onAccept={acceptCookies} onDecline={declineCookies} />
       )}
       <NewsletterPopup />
