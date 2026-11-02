@@ -1,8 +1,8 @@
 import V3Header from "@/components/V3Header";
 import heroImg from "@/assets/hero-road-desert.jpg";
-import desertImg from "@/assets/desert-journey.jpg";
-import wineImg from "@/assets/wine.png";
-import safedImg from "@/assets/safed.webp";
+import desertImg from "@/assets/ilona-neguev.jpg";
+import wineImg from "@/assets/ilona-zichron.jpg";
+import safedImg from "@/assets/ilona-tsfat.jpg";
 import { WHATSAPP_NUMBER } from "@/constants/whatsapp";
 
 type Escapade = {
