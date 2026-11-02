@@ -95,6 +95,7 @@ const CarrieSafed                = lazy(() => import("./pages/CarrieSafed"));
 const ItineraireRebeca           = lazy(() => import("./pages/ItineraireRebeca"));
 const LauraMerMorte              = lazy(() => import("./pages/LauraMerMorte"));
 const NP                         = lazy(() => import("./pages/NP"));
+const Ilona                      = lazy(() => import("./pages/Ilona"));
 const EL                         = lazy(() => import("./pages/EL"));
 const Vitrine                    = lazy(() => import("./pages/Vitrine"));
 const ItineraireChoix            = lazy(() => import("./pages/ItineraireChoix"));
@@ -262,6 +263,7 @@ const AppContent = () => {
           <Route path="/rebeca" element={<ItineraireRebeca />} />
           <Route path="/laura-mer-morte" element={<LauraMerMorte />} />
           <Route path="/NP" element={<NP />} />
+          <Route path="/ilona" element={<Ilona />} />
           <Route path="/EL" element={<EL />} />
           <Route path="/partner-exp" element={<PartnerExp />} />
           <Route path="/partner-form" element={<PartnerForm />} />

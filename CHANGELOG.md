@@ -6,6 +6,20 @@
 
 ---
 
+## [2026-11-02] — Page personnalisée « Ilona » (3 escapades romantiques)
+
+### Ce qui a changé côté code
+- `src/pages/Ilona.tsx` (nouveau) : page d'une seule page pour la demande sur-mesure TM-1007 (30 ans du mari d'Ilona, 2 nuits en novembre). Trois escapades (Néguev au Kedma, Zichron Yaakov et Césarée, Tsfat), chacune avec un bouton WhatsApp pré-rempli, puis un bouton « On s'appelle ? ».
+- `src/App.tsx` : nouvelle adresse `/ilona`.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Répondre à la cliente avec un joli lien plutôt qu'un simple message, en reprenant le modèle des pages personnalisées existantes.
+
+---
+
 ## [2026-11-01] — Réservations : bouton « Réserver chez le prestataire » (WhatsApp rédigé)
 
 > Statut : en test, pas encore validé par Shana. Ne pas mettre en ligne avant d'avoir appliqué la migration.
