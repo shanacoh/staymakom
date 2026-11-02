@@ -8,7 +8,7 @@
 
 ## [2026-11-02] — Billets d'entrée : transmettre au client le QR du prestataire
 
-> Statut : en test, pas encore validé par Shana. Base de données et 3 nouvelles fonctions serveur déjà en place ; l'email de confirmation et le rappel de la veille restent à redéployer (feu vert de Shana) ; le site (back-office et page billet) part avec la mise en ligne de la branche `billets-entree`.
+> Statut : en test, pas encore validé par Shana. Base de données et 3 nouvelles fonctions serveur déjà en place ; l'email de confirmation et le rappel de la veille redéployés le 02/11/2026 avec le feu vert de Shana ; le site (back-office et page billet) part avec la mise en ligne de la branche `billets-entree`.
 
 ### Ce qui a changé côté code
 - `supabase/functions/_shared/tickets/` (nouveau) : `content.ts` (reconnaître un fichier billet, textes EN / FR / HE, partagé avec le site), `load.ts` (lire une réservation et ses billets, liens signés), `email.ts` (email « Vos billets », minimaliste, images en pièce jointe intégrée « cid »).
