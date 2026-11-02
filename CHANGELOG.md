@@ -10,6 +10,7 @@
 
 ### Ce qui a changé côté code
 - `src/pages/Ilona.tsx` (nouveau) : page d'une seule page pour la demande sur-mesure TM-1007 (30 ans du mari d'Ilona, 2 nuits en novembre). Trois escapades côte à côte sur ordinateur (Néguev, Zichron Yaakov et Césarée, Tsfat), chacune avec un titre de destination, un sous-titre et trois points, chacune avec un bouton WhatsApp pré-rempli, puis un bouton « On s'appelle ? ».
+- `src/assets/ilona-neguev.jpg`, `ilona-zichron.jpg`, `ilona-tsfat.jpg` (nouveaux) : photos fournies par Shana pour chaque escapade.
 - `src/App.tsx` : nouvelle adresse `/ilona`.
 
 ### Ce qui a changé côté base de données
