@@ -24,7 +24,7 @@ const ESCAPADES: Escapade[] = [
     image: desertImg,
     highlights: [
       "Nuit dans un hôtel de charme en plein désert, sous les étoiles",
-      "Balade à cheval, à dos de chameau ou en jeep au coucher du soleil",
+      "Balade à dos de chameau ou en jeep au coucher du soleil",
       "Dégustation de vin dans un domaine du désert ou séance photo à deux",
     ],
     whatsappMsg: "Bonjour, c'est Ilona ! L'escapade dans le Néguev nous inspire beaucoup 😍",
