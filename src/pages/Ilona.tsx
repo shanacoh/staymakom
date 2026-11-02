@@ -19,12 +19,13 @@ const ESCAPADES: Escapade[] = [
   {
     id: "neguev",
     number: "01",
-    title: "Le désert du Néguev",
-    tagline: "Grands espaces, silence et ciel étoilé, rien que pour vous deux",
+    title: "Le Néguev",
+    tagline: "Le désert, ses grands espaces et ses nuits étoilées",
     image: desertImg,
     highlights: [
-      "Nuit au Kedma, en plein désert",
-      "Une activité au choix : dégustation de vin dans un domaine du désert, séance photo à deux, balade en jeep ou sortie en buggy",
+      "Nuit dans un hôtel de charme en plein désert",
+      "Balade à cheval, à dos de chameau ou en jeep au coucher du soleil",
+      "Dégustation de vin dans un domaine du désert ou séance photo à deux",
     ],
     whatsappMsg: "Bonjour, c'est Ilona ! L'escapade dans le Néguev nous inspire beaucoup 😍",
   },
@@ -32,11 +33,11 @@ const ESCAPADES: Escapade[] = [
     id: "zichron",
     number: "02",
     title: "Zichron Yaakov et Césarée",
-    tagline: "Vignes, pierres anciennes et coucher de soleil sur la Méditerranée",
+    tagline: "Vignobles, vieilles pierres et coucher de soleil sur la Méditerranée",
     image: wineImg,
     highlights: [
       "Balade dans l'ancien port romain de Césarée",
-      "Dégustation de vin dans un domaine de la région",
+      "Dégustation dans un domaine viticole de la région",
       "Nuit dans le charmant village de Zichron Yaakov",
     ],
     whatsappMsg: "Bonjour, c'est Ilona ! L'escapade Zichron Yaakov et Césarée nous inspire beaucoup 😍",
@@ -44,13 +45,13 @@ const ESCAPADES: Escapade[] = [
   {
     id: "tsfat",
     number: "03",
-    title: "Le grand classique : Tsfat",
-    tagline: "Forêt, ruelles d'artistes et magie de la ville bleue",
+    title: "Tsfat",
+    tagline: "La ville bleue, entre forêt et ruelles d'artistes",
     image: safedImg,
     highlights: [
-      "Balade à cheval dans la forêt",
-      "Visite de la vieille ville et de ses ruelles d'artistes",
-      "Nuit sur place",
+      "Balade à cheval dans la forêt de Biriya",
+      "Visite de la vieille ville et de ses galeries",
+      "Nuit sur place, au calme des montagnes de Galilée",
     ],
     whatsappMsg: "Bonjour, c'est Ilona ! L'escapade à Tsfat nous inspire beaucoup 😍",
   },
@@ -102,22 +103,22 @@ const Ilona = () => {
 
       {/* ── Escapades ── */}
       <section className="pt-12 pb-12 px-4">
-        <div className="max-w-4xl mx-auto space-y-10">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
           {ESCAPADES.map((esc) => (
             <div
               key={esc.id}
-              className="rounded-2xl border border-border bg-muted/40 overflow-hidden"
+              className="flex flex-col rounded-2xl border border-border bg-muted/40 overflow-hidden"
             >
               <div
-                className="aspect-[16/7] bg-cover bg-center"
+                className="aspect-[4/3] bg-cover bg-center"
                 style={{ backgroundImage: `url(${esc.image})` }}
               />
 
-              <div className="px-6 sm:px-8 pt-7 pb-5">
+              <div className="px-6 pt-6 pb-4">
                 <p className="font-sans text-[11px] uppercase tracking-[0.2em] text-[#ad1414] font-bold mb-2">
                   {esc.number}
                 </p>
-                <h2 className="font-sans text-xl sm:text-2xl font-bold uppercase tracking-[-0.01em] text-foreground">
+                <h2 className="font-sans text-xl font-bold uppercase tracking-[-0.01em] text-foreground">
                   {esc.title}
                 </h2>
                 <p className="mt-1.5 text-sm text-foreground/70 italic font-sans">
@@ -125,8 +126,8 @@ const Ilona = () => {
                 </p>
               </div>
 
-              <div className="px-6 sm:px-8 pb-7">
-                <ul className="space-y-1.5">
+              <div className="flex flex-col flex-1 px-6 pb-6">
+                <ul className="space-y-1.5 mb-6">
                   {esc.highlights.map((h) => (
                     <li key={h} className="flex items-start gap-2 text-sm text-foreground/80 font-sans leading-relaxed">
                       <span className="text-[#ad1414] mt-1 leading-none">•</span>
@@ -138,7 +139,7 @@ const Ilona = () => {
                   href={waLink(esc.whatsappMsg)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-6 inline-flex items-center justify-center rounded-full bg-[#ad1414] px-6 py-2.5 text-sm font-sans font-medium text-white hover:bg-[#8f1010] transition-colors"
+                  className="mt-auto pt-0 self-start inline-flex items-center justify-center rounded-full bg-[#ad1414] px-6 py-2.5 text-sm font-sans font-medium text-white hover:bg-[#8f1010] transition-colors"
                 >
                   Celle-ci nous inspire
                 </a>

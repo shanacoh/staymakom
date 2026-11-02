@@ -9,7 +9,7 @@
 ## [2026-11-02] — Page personnalisée « Ilona » (3 escapades romantiques)
 
 ### Ce qui a changé côté code
-- `src/pages/Ilona.tsx` (nouveau) : page d'une seule page pour la demande sur-mesure TM-1007 (30 ans du mari d'Ilona, 2 nuits en novembre). Trois escapades (Néguev au Kedma, Zichron Yaakov et Césarée, Tsfat), chacune avec un bouton WhatsApp pré-rempli, puis un bouton « On s'appelle ? ».
+- `src/pages/Ilona.tsx` (nouveau) : page d'une seule page pour la demande sur-mesure TM-1007 (30 ans du mari d'Ilona, 2 nuits en novembre). Trois escapades côte à côte sur ordinateur (Néguev, Zichron Yaakov et Césarée, Tsfat), chacune avec un titre de destination, un sous-titre et trois points, chacune avec un bouton WhatsApp pré-rempli, puis un bouton « On s'appelle ? ».
 - `src/App.tsx` : nouvelle adresse `/ilona`.
 
 ### Ce qui a changé côté base de données
