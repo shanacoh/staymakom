@@ -6,6 +6,23 @@
 
 ---
 
+## [2026-11-06] — Page Ilona : choix de l'hôtel selon la durée du séjour
+
+> Statut : validé par Shana et mis en ligne le 06/11/2026, adresse `/ilona-hotels`. La page `/ilona` (première proposition, les trois escapades) reste inchangée.
+
+### Ce qui a changé côté code
+- `src/pages/IlonaHotels.tsx` (créé) : page personnalisée en deux propositions. Si 2 nuits (ven. 27 → dim. 29 nov.) : Néguev, avec le glamping Jacob et Daroma. Si 1 nuit (sam. 28 → dim. 29 nov.) : Zikhron Yaakov, avec Hagafen 1884 et Gordonia. Chaque hôtel est présenté avec un nom d'ambiance (le vrai nom n'est pas affiché), un carrousel de 4 photos, des pastilles et le prix en shekels avec l'équivalent en euros. Une bulle « Activités à réserver » accompagne chaque option. Le bas de page précise que les prix sont hors TVA (18 % à régler sur place).
+- `src/assets/ilona-hotels/` (créé) : les 16 photos des hôtels (sites officiels, base Staymakom et photos fournies par Shana).
+- `src/App.tsx` : ajout de la route `/ilona-hotels`.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Ilona s'intéresse au Néguev et à Zikhron Yaakov : Shana lui envoie le choix d'hôtel avec les prix (fixés par Shana en euros, hors TVA). L'itinéraire complet sera construit une fois l'hôtel réservé.
+
+---
+
 ## [2026-11-02] — Billets d'entrée : transmettre au client le QR du prestataire
 
 > Statut : validé par Shana et en ligne le 03/11/2026 (envoi testé depuis le back-office en FR et HE). Base de données et 3 nouvelles fonctions serveur déjà en place ; l'email de confirmation et le rappel de la veille redéployés le 02/11/2026 avec le feu vert de Shana ; le site (back-office et page billet) part avec la mise en ligne de la branche `billets-entree`.
