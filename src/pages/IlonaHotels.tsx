@@ -203,7 +203,7 @@ function HotelCard({ hotel }: { hotel: Hotel }) {
           {hotel.badge}
         </span>
         <div className="pointer-events-none absolute left-3 right-3 bottom-3 text-white">
-          <h3 className="text-base font-bold leading-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.45)]">{hotel.name}</h3>
+          <h3 className="text-white text-base font-bold leading-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.45)]">{hotel.name}</h3>
           <p className="text-xs opacity-90 mt-0.5">{hotel.place}</p>
         </div>
       </PhotoCarousel>
@@ -259,7 +259,7 @@ export default function IlonaHotels() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/60" />
         <div className="relative z-10 w-full max-w-[1120px] mx-auto px-5 pt-11 pb-10">
           <p className="text-[11px] font-semibold tracking-[0.28em] uppercase opacity-90">STAYMAKOM · Proposition privée</p>
-          <h1 className="text-[32px] sm:text-5xl lg:text-6xl font-extrabold uppercase tracking-tight leading-[1.02] my-3 [text-wrap:balance]">
+          <h1 className="text-white text-[32px] sm:text-5xl lg:text-6xl font-extrabold uppercase tracking-tight leading-[1.02] my-3 [text-wrap:balance]">
             Votre escapade de fin novembre
           </h1>
           <p className="text-[15px] font-light max-w-[54ch] opacity-90">

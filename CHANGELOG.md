@@ -12,6 +12,7 @@
 
 ### Ce qui a changé côté code
 - `src/pages/IlonaHotels.tsx` (créé) : page personnalisée en deux propositions. Si 2 nuits (ven. 27 → dim. 29 nov.) : Néguev, avec le glamping Jacob et Daroma. Si 1 nuit (sam. 28 → dim. 29 nov.) : Zikhron Yaakov, avec Hagafen 1884 et Gordonia. Chaque hôtel est présenté avec un nom d'ambiance (le vrai nom n'est pas affiché), un carrousel de 4 photos, des pastilles et le prix en shekels avec l'équivalent en euros. Une bulle « Activités à réserver » accompagne chaque option. Le bas de page précise que les prix sont hors TVA (18 % à régler sur place).
+- `src/pages/IlonaHotels.tsx` (retouche) : le grand titre de la photo d'en-tête et les noms d'hôtels posés sur les photos passent en blanc (le site met les titres en rouge par défaut, ce qui se lisait mal sur les photos).
 - `src/assets/ilona-hotels/` (créé) : les 16 photos des hôtels (sites officiels, base Staymakom et photos fournies par Shana).
 - `src/App.tsx` : ajout de la route `/ilona-hotels`.
 
