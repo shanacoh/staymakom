@@ -6,6 +6,23 @@
 
 ---
 
+## [2026-11-06] — Page Jade : itinéraire de 8 jours (Jérusalem, Tel Aviv, options)
+
+> Statut : validé par Shana et mis en ligne le 06/11/2026, adresse `/jade`.
+
+### Ce qui a changé côté code
+- `src/pages/ItineraireJade.tsx` (créé) : copie de la page de Rebeca, adaptée au séjour de Jade du dimanche 8 au dimanche 15 novembre. Chaque jour affiche sa date. Le dernier chapitre présente deux façons de finir le séjour l'une sous l'autre (Option 1 : une journée hors de Tel Aviv puis une journée en mer ; Option 2 : deux jours à Six Senses dans le désert). Nouveau bloc « We take care of everything » : prise en charge à l'aéroport, taxis entre les étapes, hôtels, expériences, restaurants. Pas de bloc prix pour l'instant.
+- `src/data/itineraireJade.ts` (créé) : le contenu de la page (jours, options, services, questions à cocher envoyées sur WhatsApp).
+- `src/App.tsx` : ajout de la route `/jade`.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Shana envoie à Jade une proposition d'itinéraire sur le modèle de celle de Rebeca, en montrant clairement que Staymakom peut tout réserver et organiser (transferts compris).
+
+---
+
 ## [2026-11-06] — Page Ilona : choix de l'hôtel selon la durée du séjour
 
 > Statut : validé par Shana et mis en ligne le 06/11/2026, adresse `/ilona-hotels`. La page `/ilona` (première proposition, les trois escapades) reste inchangée.
