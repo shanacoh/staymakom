@@ -6,6 +6,7 @@ import { resizedImageUrl } from "@/lib/imageUrl";
 import heroDesertRoad from "@/assets/hero-road-desert.jpg";
 import caesarea from "@/assets/cesarea.jpg";
 import psagotWinery from "@/assets/itineraires/psagot-winery.webp";
+import villaPrivee from "@/assets/demande-mariage/villa-privee.jpg";
 
 const STORAGE = "https://uqeipzfdhyjkjzvqbkeu.supabase.co/storage/v1/object/public";
 const stored = (path: string, width = 900) => resizedImageUrl(`${STORAGE}/${path}`, width) as string;
@@ -46,8 +47,8 @@ export const CHAPTERS: Chapter[] = [
     choices: [
       {
         title: "Villa privée",
-        description: "Une villa décorée rien que pour vous, suivie d'un dîner privé.",
-        photo: unsplash("1600596542815-ffad4c1539a9"),
+        description: "Une villa décorée rien que pour vous, suivie d'un dîner privé en famille.",
+        photo: villaPrivee,
       },
       {
         title: "Sur la plage",
