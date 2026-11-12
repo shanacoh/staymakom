@@ -8,7 +8,7 @@
 
 ## [2026-11-12] — Page de proposition « demande en mariage » à cocher
 
-> Statut : en attente de validation par Shana, adresse prévue `/proposal`.
+> Statut : validé par Shana et mis en ligne le 12/11/2026, adresse `/proposal`.
 
 ### Ce qui a changé côté code
 - `src/pages/DemandeMariage.tsx` (créé) : page en français (client francophone) en cinq temps. Option A samedi soir (3 mises en scène : villa privée, plage, jardin), Option B vendredi après-midi (7 expériences), la célébration en famille (Shabbat chez soi ou en villa, dîner du samedi au restaurant ou dans un décor créé pour l'occasion), la révélation du voyage à New York (3 idées), puis un récapitulatif. Le client touche les cartes qui lui plaisent (cercle rouge coché), ajoute un mot libre (dates, invités...) et le bouton « Créer ma demande » ouvre WhatsApp avec sa sélection déjà écrite. Rien n'est enregistré sur le site.
