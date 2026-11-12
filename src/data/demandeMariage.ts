@@ -70,7 +70,7 @@ export const CHAPTERS: Chapter[] = [
     label: "Option B · Vendredi après-midi",
     title: "Vendredi après-midi",
     tagline: "Une expérience avant la grande question.",
-    intro: "Vivez un moment inoubliable à deux, puis faites votre demande. Choisissez l'aventure qui vous ressemble.",
+    intro: "Vivez un moment inoubliable à deux, puis faites votre demande. Choisissez l'aventure qui vous ressemble. Possible également le dimanche.",
     choices: [
       {
         title: "En bateau",
