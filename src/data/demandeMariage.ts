@@ -9,6 +9,7 @@ import psagotWinery from "@/assets/itineraires/psagot-winery.webp";
 import villaPrivee from "@/assets/demande-mariage/villa-privee.jpg";
 import jardin from "@/assets/demande-mariage/jardin.jpg";
 import plage from "@/assets/demande-mariage/plage.jpg";
+import dinerSamedi from "@/assets/demande-mariage/diner-samedi.jpg";
 
 const STORAGE = "https://uqeipzfdhyjkjzvqbkeu.supabase.co/storage/v1/object/public";
 const stored = (path: string, width = 900) => resizedImageUrl(`${STORAGE}/${path}`, width) as string;
@@ -125,7 +126,7 @@ export const CHAPTERS: Chapter[] = [
       {
         title: "Samedi soir · Dîner de fête",
         description: "Un dîner en famille dans un restaurant choisi avec soin, ou dans un décor créé pour l'occasion.",
-        photo: unsplash("1414235077428-338989a2e8c0"),
+        photo: dinerSamedi,
       },
     ],
   },
