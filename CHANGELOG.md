@@ -6,6 +6,23 @@
 
 ---
 
+## [2026-11-12] — Page de proposition « demande en mariage » à cocher
+
+> Statut : en attente de validation par Shana, adresse prévue `/proposal`.
+
+### Ce qui a changé côté code
+- `src/pages/DemandeMariage.tsx` (créé) : page en français (client francophone) en cinq temps. Option A samedi soir (5 mises en scène), Option B vendredi après-midi (7 expériences), la fête en famille (2 formules), la révélation du voyage à New York (3 idées), puis un récapitulatif. Le client touche les cartes qui lui plaisent (cercle rouge coché), ajoute un mot libre (dates, invités...) et le bouton « Créer ma demande » ouvre WhatsApp avec sa sélection déjà écrite. Rien n'est enregistré sur le site.
+- `src/data/demandeMariage.ts` (créé) : le contenu de la page (titres, descriptions, photos). Photos reprises de nos fiches (bateau, cheval, pique-nique, chef privé), de nos images (Césarée, vignoble) et d'Unsplash pour le reste.
+- `src/App.tsx` : ajout de la route `/proposal`.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Un client prépare une demande en mariage en Israël suivie d'une surprise à New York : Shana veut lui présenter toutes les possibilités et qu'il choisisse ce sur quoi il veut un devis.
+
+---
+
 ## [2026-11-06] — Page Jade : itinéraire de 8 jours (Jérusalem, Tel Aviv, options)
 
 > Statut : validé par Shana et mis en ligne le 06/11/2026, adresse `/jade`.
