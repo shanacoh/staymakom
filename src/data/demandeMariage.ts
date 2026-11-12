@@ -7,6 +7,7 @@ import heroDesertRoad from "@/assets/hero-road-desert.jpg";
 import caesarea from "@/assets/cesarea.jpg";
 import psagotWinery from "@/assets/itineraires/psagot-winery.webp";
 import villaPrivee from "@/assets/demande-mariage/villa-privee.jpg";
+import jardin from "@/assets/demande-mariage/jardin.jpg";
 
 const STORAGE = "https://uqeipzfdhyjkjzvqbkeu.supabase.co/storage/v1/object/public";
 const stored = (path: string, width = 900) => resizedImageUrl(`${STORAGE}/${path}`, width) as string;
@@ -56,19 +57,9 @@ export const CHAPTERS: Chapter[] = [
         photo: unsplash("1494774157365-9e04c6720e47"),
       },
       {
-        title: "Jardin privatisé",
+        title: "Jardin",
         description: "Un jardin rien qu'à vous, avec fleurs, bougies et dîner.",
-        photo: unsplash("1529636798458-92182e662485"),
-      },
-      {
-        title: "Rooftop privé",
-        description: "Un rooftop aménagé pour une demande intime, suivie d'un dîner.",
-        photo: unsplash("1559339352-11d035aa65de"),
-      },
-      {
-        title: "Dîner privé",
-        description: "Un dîner gastronomique préparé par un chef privé, dans un cadre pensé pour ce moment.",
-        photo: stored("experience-images/hero/b5232ae6-0962-4002-9092-cefff6538165.jpeg"),
+        photo: jardin,
       },
     ],
   },
@@ -120,19 +111,19 @@ export const CHAPTERS: Chapter[] = [
   {
     id: "celebration",
     number: "03",
-    label: "La fête",
+    label: "Célébration en famille",
     title: "Ceux qu'on aime",
     tagline: "Après la demande, la famille.",
     intro: "Deux façons de réunir tout le monde pour fêter le oui.",
     choices: [
       {
         title: "Vendredi soir · Shabbat en famille",
-        description: "Un dîner de Shabbat en famille dans une villa privée.",
+        description: "Un dîner de Shabbat en famille, chez vous ou dans une villa privée.",
         photo: unsplash("1519225421980-715cb0215aed"),
       },
       {
         title: "Samedi soir · Dîner de fête",
-        description: "Un dîner festif en famille, au restaurant ou dans une villa avec chef privé.",
+        description: "Un dîner en famille dans un restaurant choisi avec soin, ou dans un décor créé pour l'occasion.",
         photo: unsplash("1414235077428-338989a2e8c0"),
       },
     ],

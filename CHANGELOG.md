@@ -11,8 +11,8 @@
 > Statut : en attente de validation par Shana, adresse prévue `/proposal`.
 
 ### Ce qui a changé côté code
-- `src/pages/DemandeMariage.tsx` (créé) : page en français (client francophone) en cinq temps. Option A samedi soir (5 mises en scène), Option B vendredi après-midi (7 expériences), la fête en famille (2 formules), la révélation du voyage à New York (3 idées), puis un récapitulatif. Le client touche les cartes qui lui plaisent (cercle rouge coché), ajoute un mot libre (dates, invités...) et le bouton « Créer ma demande » ouvre WhatsApp avec sa sélection déjà écrite. Rien n'est enregistré sur le site.
-- `src/data/demandeMariage.ts` (créé) : le contenu de la page (titres, descriptions, photos). Photos reprises de nos fiches (bateau, cheval, pique-nique, chef privé), de nos images (Césarée, vignoble) et d'Unsplash pour le reste.
+- `src/pages/DemandeMariage.tsx` (créé) : page en français (client francophone) en cinq temps. Option A samedi soir (3 mises en scène : villa privée, plage, jardin), Option B vendredi après-midi (7 expériences), la célébration en famille (Shabbat chez soi ou en villa, dîner du samedi au restaurant ou dans un décor créé pour l'occasion), la révélation du voyage à New York (3 idées), puis un récapitulatif. Le client touche les cartes qui lui plaisent (cercle rouge coché), ajoute un mot libre (dates, invités...) et le bouton « Créer ma demande » ouvre WhatsApp avec sa sélection déjà écrite. Rien n'est enregistré sur le site.
+- `src/data/demandeMariage.ts` (créé) : le contenu de la page (titres, descriptions, photos). Photos reprises de nos fiches (bateau, cheval, pique-nique), de nos images, de photos fournies par Shana (villa, jardin) (Césarée, vignoble) et d'Unsplash pour le reste.
 - `src/App.tsx` : ajout de la route `/proposal`.
 
 ### Ce qui a changé côté base de données
