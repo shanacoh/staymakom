@@ -4,6 +4,19 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 16/11/2026 : Traduction automatique, correctif « limite de calcul » au lancement initial
+
+### Ce qui a changé côté code
+- `supabase/functions/translate-content/index.ts` : les réponses de l'IA sont reçues d'un seul bloc et non plus au fil de l'eau (la lecture morceau par morceau de 4 réponses en parallèle épuisait les 2 secondes de calcul accordées par Supabase à chaque passage, qui s'arrêtait en « CPU Time exceeded ») ; au plus 12 lots par passage, la suite est enchaînée ; délai d'attente de l'IA porté à 5 minutes.
+
+### Ce qui a changé côté base de données
+- Aucun changement de structure. Données : 774 textes traduits lors du premier passage du lancement initial (avant l'arrêt) ; le passage interrompu est clôturé dans `content_translation_runs` avec une explication.
+
+### Pourquoi ce changement
+- Le lancement initial s'est arrêté au bout de 2 minutes. Il reprendra là où il en est (rien n'est retraduit) dès que le compte Anthropic sera rechargé en crédits.
+
+---
+
 ## 16/11/2026 : Traduction automatique ES / RU / DE, étape 3 (tâche de nuit, bouton par fiche, lancement initial)
 
 ### Ce qui a changé côté code

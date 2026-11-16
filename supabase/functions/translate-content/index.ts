@@ -70,8 +70,14 @@ function json(req: Request, body: unknown, status = 200) {
 }
 
 const DEFAULT_MODEL = "claude-sonnet-5-5";
-const AI_TIMEOUT_MS = 180_000;
-const MAX_OUTPUT_TOKENS = 32_000;
+const AI_TIMEOUT_MS = 300_000;
+/**
+ * Réponse reçue d'un seul bloc (pas au fil de l'eau) : la plateforme n'accorde que 2 secondes de
+ * calcul par passage, et lire une réponse morceau par morceau les consomme très vite.
+ */
+const MAX_OUTPUT_TOKENS = 16_000;
+/** Lots traités au plus par passage ; la suite est enchaînée dans un nouveau passage. */
+const MAX_JOBS_PER_RUN = 12;
 /**
  * On n'entame plus de nouveau lot après ce délai. La plateforme coupe vers 400 s, et un lot
  * déjà commencé (traduction + relecture d'un long article) peut prendre encore 2 à 3 minutes.
@@ -272,7 +278,7 @@ type ParsedEntry = { key: string; text: string; items: string[] };
 
 async function callClaude(client: Anthropic, model: string, system: string, content: string): Promise<Map<string, ParsedEntry>> {
   // deno-lint-ignore no-explicit-any
-  const stream = (client.beta.messages as any).stream({
+  const response = await (client.beta.messages as any).create({
     model,
     max_tokens: MAX_OUTPUT_TOKENS,
     betas: ["server-side-fallback-2026-07-01"],
@@ -281,7 +287,6 @@ async function callClaude(client: Anthropic, model: string, system: string, cont
     system,
     messages: [{ role: "user", content }],
   });
-  const response = await stream.finalMessage();
   if (response.stop_reason === "refusal") throw new Error("L'IA a refusé ce lot");
   if (response.stop_reason === "max_tokens") throw new Error("Réponse trop longue, coupée");
   // deno-lint-ignore no-explicit-any
@@ -541,6 +546,7 @@ Deno.serve(async (req) => {
     });
     const model = Deno.env.get("TRANSLATE_CONTENT_AI_MODEL") || DEFAULT_MODEL;
 
+    let startedJobs = 0;
     const notStarted = await runPool(
       jobs,
       async (job) => {
@@ -571,9 +577,14 @@ Deno.serve(async (req) => {
           console.error("translate-content :", label, message);
         }
       },
-      () => Date.now() - startedAt < TIME_BUDGET_MS,
+      () => {
+        if (Date.now() - startedAt >= TIME_BUDGET_MS || startedJobs >= MAX_JOBS_PER_RUN) return false;
+        startedJobs++;
+        return true;
+      },
     );
-    // Une fois le temps écoulé, tous les lots suivants sont sautés : ce sont les derniers de la liste.
+    // Une fois le temps écoulé ou le nombre de lots atteint, tous les lots suivants sont sautés :
+    // ce sont les derniers de la liste.
     stats.remaining = jobs.slice(jobs.length - notStarted).reduce((n, j) => n + j.units.length, 0);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
