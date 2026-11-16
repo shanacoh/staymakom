@@ -5,6 +5,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { slotsForDate } from '../_shared/time-slot.ts';
+import { loadSupplierPrices, supplierCostOf } from '../_shared/supplier-cost.ts';
 
 const ALLOWED_ORIGINS: (string | RegExp)[] = [
   'https://staymakom.com',
@@ -268,6 +269,17 @@ Deno.serve(async (req: Request) => {
     }
     basePrice = basePrice + extrasTotal;
 
+    // ── Coût fournisseur (interne, jamais renvoyé au client) ─────────────────
+    // Les codes promo et cartes cadeaux réduisent notre marge, pas ce qu'on doit au prestataire.
+    const supplierCost = supplierCostOf({
+      adults,
+      children,
+      priceType: experience.base_price_type,
+      hasChildPrice: !!experience.has_child_price,
+      prices: await loadSupplierPrices(supabase, experience_id, selectedRateOption?.id ?? null),
+      hasExtras: extrasSnapshot.length > 0,
+    });
+
     // ── Appliquer le code promo (re-validé côté serveur) ─────────────────────
     let promoDiscount = 0;
     let validatedPromo: { id: string; code: string; discount_pct: number } | null = null;
@@ -320,6 +332,7 @@ Deno.serve(async (req: Request) => {
           booking_date, time_slot: validatedTimeSlot,
           party_size: totalParty, adults_count: adults, children_count: children,
           sell_price: 0,
+          supplier_cost: supplierCost,
           currency: experience.currency,
           status: 'confirmed', payment_status: 'paid',
           extras: extrasSnapshot.length > 0 ? extrasSnapshot : null,
@@ -399,6 +412,7 @@ Deno.serve(async (req: Request) => {
         adults_count: adults,
         children_count: children,
         sell_price: sellPrice,
+        supplier_cost: supplierCost,
         currency: experience.currency,
         status: 'pending',
         payment_status: 'pending',
