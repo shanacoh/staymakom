@@ -4,6 +4,25 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 16/11/2026 : Réservations en ligne, le coût fournisseur s'enregistre tout seul
+
+### Ce qui a changé côté code
+- `supabase/functions/_shared/supplier-cost.ts` (nouveau) : calcule ce que STAYMAKOM doit au prestataire pour une réservation (prix fournisseur adulte × adultes + prix enfant × enfants, prix du forfait tel quel, ou prix fournisseur de l'option tarifaire choisie). Laisse le coût vide s'il manque un prix fournisseur ou si des extras ont été pris (leur coût fournisseur n'est pas connu).
+- `supabase/functions/process-standalone-payment/index.ts` : à la création d'une réservation payée en ligne (carte ou carte cadeau), le coût calculé est enregistré dans `supplier_cost`. Il n'est jamais renvoyé au client : seuls les admins lisent les réservations, et la page de confirmation ne lit pas ce champ. Les codes promo et cartes cadeaux ne changent pas ce coût (ils réduisent la marge). Si la lecture du prix échoue, le coût reste vide et le paiement passe normalement.
+- `src/lib/supplierCost.test.ts` (nouveau) : 5 tests du calcul.
+
+### Ce qui a changé côté base de données
+- Aucune migration. Données corrigées à la main (copie de sauvegarde dans `backup_20261116.standalone_bookings_couts`) :
+  - Sonja Inzlicht-Sprei (Jérusalem s'illumine, 05/11) : coût 62 ₪, prestataire marqué payé.
+  - Meryll Azourahana (paiement « correctif » de 3 ₪) : coût 0 ₪, rien à reverser.
+  - Tal Geissman (Tête à tête en mer, 24/08) : annulée, 500 ₪ d'acompte gardés, prestataire marqué comme déjà prévenu pour qu'aucun email automatique ne parte. L'avoir chez Simona reste à saisir par Shana quand le montant sera connu.
+- Noam Cohen (Survol, 10/07) laissé tel quel : le prix fournisseur de la fiche a changé depuis, coût réel à confirmer par Shana.
+
+### Pourquoi ce changement
+- Les réservations payées en ligne restaient « à surveiller » avec « Saisir le coût fournisseur », alors que la fiche connaît ce coût. Seules les réservations saisies à la main en avaient un.
+
+---
+
 ## 16/11/2026 : Traduction automatique, correctifs du lancement initial (limite de calcul, lecture au-delà de 1 000 lignes)
 
 ### Ce qui a changé côté code
