@@ -4,16 +4,17 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
-## 16/11/2026 : Traduction automatique, correctif « limite de calcul » au lancement initial
+## 16/11/2026 : Traduction automatique, correctifs du lancement initial (limite de calcul, lecture au-delà de 1 000 lignes)
 
 ### Ce qui a changé côté code
+- `supabase/functions/translate-content/index.ts` : la lecture des traductions existantes se fait page par page (Supabase renvoie au plus 1 000 lignes par lecture ; au-delà, des textes déjà traduits semblaient manquants et étaient retraduits à chaque passage, ce qui a coûté des retraductions en double pendant le lancement initial avant d'être repéré et bloqué).
 - `supabase/functions/translate-content/index.ts` : les réponses de l'IA sont reçues d'un seul bloc et non plus au fil de l'eau (la lecture morceau par morceau de 4 réponses en parallèle épuisait les 2 secondes de calcul accordées par Supabase à chaque passage, qui s'arrêtait en « CPU Time exceeded ») ; au plus 12 lots par passage, la suite est enchaînée ; délai d'attente de l'IA porté à 5 minutes.
 
 ### Ce qui a changé côté base de données
-- Aucun changement de structure. Données : 774 textes traduits lors du premier passage du lancement initial (avant l'arrêt) ; le passage interrompu est clôturé dans `content_translation_runs` avec une explication.
+- Aucun changement de structure. Données : traduction initiale terminée le 16/11 à 18 h 43 (heure d'Israël) : 3 456 textes (1 152 par langue). 2 textes russes gardent un tiret long, signalés « À trancher » (Galilee Couple's Spa Ritual, article « Slow travel in Israel »). Passages interrompus et blocage manuel clôturés dans `content_translation_runs` avec une explication.
 
 ### Pourquoi ce changement
-- Le lancement initial s'est arrêté au bout de 2 minutes. Il reprendra là où il en est (rien n'est retraduit) dès que le compte Anthropic sera rechargé en crédits.
+- Le lancement initial s'est arrêté au bout de 2 minutes (limite de calcul), puis faute de crédit Anthropic, puis a refait des traductions en double : les trois causes sont corrigées et la traduction initiale est complète.
 
 ---
 

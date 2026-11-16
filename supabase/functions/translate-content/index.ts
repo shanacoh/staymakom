@@ -191,19 +191,27 @@ async function collectFiches(
 async function fetchExisting(db: Db, units: SourceUnit[], locales: AutoLocale[]): Promise<Map<string, ExistingTranslation>> {
   const existing = new Map<string, ExistingTranslation>();
   const ids = [...new Set(units.map((u) => u.entityId))];
+  // Supabase renvoie au plus 1 000 lignes par lecture : on lit page par page. Sans cela, les
+  // traductions au-delà de la 1 000e ligne semblaient manquantes et étaient refaites à chaque passage.
+  const PAGE = 1000;
   for (let i = 0; i < ids.length; i += 150) {
-    const { data, error } = await db
-      .from("content_translations")
-      .select("entity_type,entity_id,field,locale,source_hash,status,stale")
-      .in("entity_id", ids.slice(i, i + 150))
-      .in("locale", locales);
-    if (error) throw new Error(`Lecture des traductions existantes : ${error.message}`);
-    for (const r of data ?? []) {
-      existing.set(`${r.locale}|${r.entity_type}|${r.entity_id}|${r.field}`, {
-        source_hash: r.source_hash,
-        status: r.status,
-        stale: r.stale,
-      });
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await db
+        .from("content_translations")
+        .select("id,entity_type,entity_id,field,locale,source_hash,status,stale")
+        .in("entity_id", ids.slice(i, i + 150))
+        .in("locale", locales)
+        .order("id")
+        .range(from, from + PAGE - 1);
+      if (error) throw new Error(`Lecture des traductions existantes : ${error.message}`);
+      for (const r of data ?? []) {
+        existing.set(`${r.locale}|${r.entity_type}|${r.entity_id}|${r.field}`, {
+          source_hash: r.source_hash,
+          status: r.status,
+          stale: r.stale,
+        });
+      }
+      if (!data || data.length < PAGE) break;
     }
   }
   return existing;
