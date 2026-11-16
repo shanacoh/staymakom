@@ -30,7 +30,7 @@
 - `supabase/functions/translate-content/index.ts` : les réponses de l'IA sont reçues d'un seul bloc et non plus au fil de l'eau (la lecture morceau par morceau de 4 réponses en parallèle épuisait les 2 secondes de calcul accordées par Supabase à chaque passage, qui s'arrêtait en « CPU Time exceeded ») ; au plus 12 lots par passage, la suite est enchaînée ; délai d'attente de l'IA porté à 5 minutes.
 
 ### Ce qui a changé côté base de données
-- Aucun changement de structure. Données : traduction initiale terminée le 16/11 à 18 h 43 (heure d'Israël) : 3 456 textes (1 152 par langue). 2 textes russes gardent un tiret long, signalés « À trancher » (Galilee Couple's Spa Ritual, article « Slow travel in Israel »). Passages interrompus et blocage manuel clôturés dans `content_translation_runs` avec une explication.
+- Aucun changement de structure. Données : traduction initiale terminée le 16/11 à 18 h 43 (heure d'Israël) : 3 456 textes (1 152 par langue). 2 textes russes gardaient un tiret long, signalés « À trancher » (Galilee Couple's Spa Ritual, article « Slow travel in Israel ») : phrases reformulées à la main à la demande de Shana (« На следующее утро вас ждёт полноценный завтрак-буфет с видом на озеро. » et « В Израиле контраст является частью и пейзажа, и культуры… »), passées en statut `reviewed` pour ne jamais être écrasées. Plus aucun tiret long dans les traductions. Passages interrompus et blocage manuel clôturés dans `content_translation_runs` avec une explication.
 
 ### Pourquoi ce changement
 - Le lancement initial s'est arrêté au bout de 2 minutes (limite de calcul), puis faute de crédit Anthropic, puis a refait des traductions en double : les trois causes sont corrigées et la traduction initiale est complète.
