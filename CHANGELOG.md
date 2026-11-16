@@ -12,11 +12,11 @@
 - Bouton ajouté dans : `StandaloneExperienceForm.tsx` (expériences seules et bateaux), `UnifiedExperience2Form.tsx` (expériences avec hôtel), `HotelEditor2.tsx`, `CategoryEditor.tsx` (moods), `JournalEditor.tsx`.
 - `supabase/functions/translate-content/index.ts` :
   - 2e passe « relecture native » après chaque traduction (supprime les calques, corrige grammaire et tournures, sans changer le sens) ; si elle échoue, la traduction de la 1re passe est gardée et signalée dans le journal ;
-  - filet automatique : tout tiret long restant devient une virgule ;
+  - un tiret long laissé par l'IA n'est jamais corrigé automatiquement (une virgule crée des fautes, ex. « Север, это… ») : il est listé dans le journal du passage (« À trancher : tiret long dans… ») pour que Shana tranche ;
   - paramètres `only_after_israel_hour` (la tâche de nuit ne fait rien avant 3 h en Israël) et `continue_until_done` (relance un passage tant qu'il reste du travail et qu'il y a eu des progrès) ;
   - passage « tout le site » exclusif : refusé si un autre est en cours.
-- `supabase/functions/_shared/translations/prompt.ts` : allemand toujours en « du » (jamais « ihr », jamais « Sie ») ; règle du mot « mood » (concept STAYMAKOM = « mood » dans toutes les langues, exemples par langue ; sens courant = estado de ánimo / настроение / Stimmung) ; consigne de relecture native avec les exemples de calques relevés par Shana (DE et RU).
-- `supabase/functions/_shared/translations/plan.ts` : `removeLongDashes` ; 3 tests de plus (20 au total).
+- `supabase/functions/_shared/translations/prompt.ts` : allemand toujours en « du » (jamais « ihr », jamais « Sie ») ; règle du mot « mood » : reste en anglais uniquement comme étiquette (rubrique « Moods ») ou nom propre (Mindful Reset...), sinon traduit (estado de ánimo / según cómo quieras sentirte, настроение, Stimmung) ; en russe, aucun mot en alphabet latin hors noms de marque ; la relecture reformule les phrases pour éviter le tiret long ; consigne de relecture native avec les exemples de calques relevés par Shana (DE et RU).
+- `supabase/functions/_shared/translations/plan.ts` : `hasLongDash` (repère sans modifier) ; 2 tests de plus (19 au total).
 - `docs/traductions/traduction-initiale.sql` (nouveau) : à coller dans Supabase pour activer la tâche de nuit et lancer la traduction de tout le contenu publié.
 - `docs/traductions/suivi.sql` (nouveau) : requête de suivi (derniers passages, textes par langue).
 - `ARCHITECTURE.md` : section « Traduction automatique ES / RU / DE ».

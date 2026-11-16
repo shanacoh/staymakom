@@ -55,14 +55,7 @@ export function decideFieldAction(
   return sourceChanged ? "translate" : "skip";
 }
 
-/**
- * Filet de sécurité : la marque n'emploie jamais de tiret long (« — »). Si l'IA en laisse un,
- * il devient une virgule (« Север — это » → « Север, это »). Les intervalles « 2–3 » et les
- * traits d'union ne sont pas touchés.
- */
-export function removeLongDashes(text: string): string {
-  return text
-    .replace(/\s*—\s*/g, ", ")
-    .replace(/,\s*,/g, ",")
-    .replace(/(^|>)\s*,\s*/g, "$1");
+/** Vrai si le texte contient un tiret long (interdit par la marque) : à signaler, jamais corrigé automatiquement. */
+export function hasLongDash(text: string): boolean {
+  return text.includes("—");
 }

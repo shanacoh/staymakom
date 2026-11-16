@@ -98,16 +98,13 @@ describe("articles en blocs", () => {
   });
 });
 
-import { removeLongDashes } from "../../../supabase/functions/_shared/translations/plan";
+import { hasLongDash } from "../../../supabase/functions/_shared/translations/plan";
 
-describe("removeLongDashes", () => {
-  it("remplace le tiret long par une virgule", () => {
-    expect(removeLongDashes("Север — это зелёные пейзажи")).toBe("Север, это зелёные пейзажи");
+describe("hasLongDash", () => {
+  it("repère un tiret long sans rien modifier", () => {
+    expect(hasLongDash("Север — это зелёные пейзажи")).toBe(true);
   });
-  it("ne touche ni aux intervalles ni aux traits d'union", () => {
-    expect(removeLongDashes("2–3 Tage in Тель-Авив")).toBe("2–3 Tage in Тель-Авив");
-  });
-  it("garde le HTML propre", () => {
-    expect(removeLongDashes("<p>— Bonjour</p>")).toBe("<p>Bonjour</p>");
+  it("ignore les intervalles et les traits d'union", () => {
+    expect(hasLongDash("2–3 Tage in Тель-Авив")).toBe(false);
   });
 });

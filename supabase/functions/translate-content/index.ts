@@ -36,7 +36,7 @@ import {
 import {
   decideFieldAction,
   hashSource,
-  removeLongDashes,
+  hasLongDash,
   normalizeSource,
   type ExistingTranslation,
   type TranslationMode,
@@ -318,8 +318,14 @@ function readDrafts(units: SourceUnit[], byKey: Map<string, ParsedEntry>): { dra
  * Si la relecture échoue pour un champ, on garde la traduction de la passe 1 (signalé dans le journal).
  * Renvoie, pour chaque champ réussi, le texte à enregistrer.
  */
-async function translateJob(client: Anthropic, model: string, job: Job): Promise<{ ok: Map<string, string>; failed: string[] }> {
+async function translateJob(
+  client: Anthropic,
+  model: string,
+  job: Job,
+): Promise<{ ok: Map<string, string>; failed: string[]; notes: string[] }> {
   const failed: string[] = [];
+  /** Remarques à relire, qui ne sont pas des erreurs (le texte est bien enregistré). */
+  const notes: string[] = [];
   const label = (key: string) => `${key} (${job.locale})`;
 
   const first = readDrafts(job.units, await callClaude(client, model, buildTranslationSystemPrompt(job.locale), buildTranslateMessage(job.units)));
@@ -346,7 +352,12 @@ async function translateJob(client: Anthropic, model: string, job: Job): Promise
   for (const u of job.units) {
     const rawDraft = finals.get(unitKey(u));
     if (rawDraft === undefined) continue;
-    const draft: Draft = Array.isArray(rawDraft) ? rawDraft.map(removeLongDashes) : removeLongDashes(rawDraft);
+    const draft = rawDraft;
+    // Un tiret long laissé par l'IA n'est jamais corrigé automatiquement (une virgule crée des
+    // fautes) : on enregistre le texte et on le signale dans le journal pour que Shana tranche.
+    if ((Array.isArray(draft) ? draft : [draft]).some(hasLongDash)) {
+      notes.push(`À trancher : tiret long dans ${label(unitKey(u))}`);
+    }
     if (!Array.isArray(draft)) {
       ok.set(unitKey(u), draft);
       continue;
@@ -355,7 +366,7 @@ async function translateJob(client: Anthropic, model: string, job: Job): Promise
     if (value) ok.set(unitKey(u), value);
     else failed.push(`${label(unitKey(u))} : article impossible à reconstruire`);
   }
-  return { ok, failed };
+  return { ok, failed, notes };
 }
 
 // ---------------------------------------------------------------------------
@@ -534,7 +545,7 @@ Deno.serve(async (req) => {
       jobs,
       async (job) => {
         try {
-          const { ok, failed } = await translateJob(client, model, job);
+          const { ok, failed, notes } = await translateJob(client, model, job);
           const rows = job.units
             .filter((u) => ok.has(unitKey(u)))
             .map((u) => ({
@@ -551,7 +562,7 @@ Deno.serve(async (req) => {
           }
           stats.translated += rows.length;
           stats.errors += failed.length;
-          stats.errorDetails.push(...failed);
+          stats.errorDetails.push(...failed, ...notes);
         } catch (error) {
           stats.errors += job.units.length;
           const label = `${job.units[0].entityType}|${job.units[0].entityId} (${job.locale}, ${job.units.length} champs)`;

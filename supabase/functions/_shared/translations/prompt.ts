@@ -10,27 +10,27 @@ const LOCALE_NOTES: Record<AutoLocale, string> = {
   es: `- Espagnol neutre, compréhensible en Espagne comme en Amérique latine.
 - Par défaut, on s'adresse au lecteur au singulier avec « tú » (un « you » anglais générique = « tú »). Le pluriel « ustedes » seulement quand le texte parle clairement à un couple, une famille ou un groupe. Jamais « vosotros ».
 - Noms de lieux d'usage courant : Jerusalén, Tel Aviv, Galilea, Mar Muerto, Mar de Galilea, Néguev, Golán, Haifa, Eilat, Acre, Jaffa, Nazaret, Belén, Ciudad de David, Muro de las Lamentaciones, Ciudad Vieja.
-- Le mot « mood » au sens courant seulement (pas le concept STAYMAKOM) : « estado de ánimo », « ambiente » (ou une tournure naturelle selon la phrase).`,
+- « mood » dans un texte courant : « estado de ánimo », « según cómo quieras sentirte », « ambiente » (tournure la plus naturelle selon la phrase).`,
   ru: `- Russe naturel, tel qu'un rédacteur de voyage russophone l'écrirait (pas de calque de l'anglais).
 - S'adresser au lecteur avec « вы » (forme de politesse et pluriel), sans majuscule, partout.
 - Noms de lieux d'usage courant, en cyrillique : Тель-Авив, Иерусалим, Галилея, Мёртвое море, Галилейское море (Кинерет), Негев, Голанские высоты, Хайфа, Эйлат, Акко, Яффо, Назарет, Цфат, Город Давида, Стена Плача, Старый город.
-- Pas de tiret long, même là où le russe l'emploie d'habitude : remplace-le par une virgule, deux-points ou une reformulation (ex. « Израиль не страна двух городов »).
-- Le mot « mood » au sens courant seulement (pas le concept STAYMAKOM) : « настроение », « атмосфера » (ou une tournure naturelle selon la phrase).`,
+- Pas de tiret long, même là où le russe l'emploie d'habitude (« Север — это… ») : reformule la phrase pour qu'elle reste grammaticalement correcte sans tiret (« На севере вас ждут… », « Израиль не страна двух городов »). Ne remplace jamais simplement le tiret par une virgule (« Север, это… » est faux).
+- « mood » dans un texte courant : « настроение » (ou « атмосфера » selon la phrase).
+- Jamais de mot en alphabet latin dans une phrase russe, sauf les noms de marque : STAYMAKOM, noms d'hôtels, de restaurants, de prestataires et partenaires, noms des moods (Mindful Reset...). « Путешествовать по mood » est interdit : « Путешествовать по настроению ».`,
   de: `- Allemand naturel et contemporain.
 - On s'adresse TOUJOURS au lecteur avec « du » (dich, dir, dein), même quand le texte parle d'un couple, d'une famille ou d'un groupe. Jamais « ihr » (euch, euer), jamais « Sie ».
 - Noms de lieux d'usage courant : Jerusalem, Tel Aviv, Galiläa, Totes Meer, See Genezareth, Negev, Golanhöhen, Haifa, Eilat, Akko, Jaffa, Nazareth, Safed, Davidstadt, Klagemauer, Altstadt.
-- Le mot « mood » au sens courant seulement (pas le concept STAYMAKOM) : « Stimmung » (ou une tournure naturelle selon la phrase).`,
+- « mood » dans un texte courant : « Stimmung » (ou une tournure naturelle selon la phrase).`,
 };
 
 /** Règles communes aux deux passes : ce qui ne doit jamais bouger. */
 const INVARIANTS = `- Les noms d'hôtels, de restaurants, de prestataires et partenaires, de bateaux, de produits, ainsi que « STAYMAKOM » et les noms des moods (Romantic Escape, Mindful Reset, Foody Discovery, Land of Stories, Family Fun, Sporty Break, Nature and Outdoor, Lone Traveler, Work Unplugged...) restent EXACTEMENT tels quels.
-- Le mot « mood » employé seul pour parler du concept STAYMAKOM reste « mood », en lettres latines, dans toutes les langues (en allemand avec majuscule : « Mood »). C'est le cas dès qu'on parle de voyager, choisir, explorer ou commencer « by mood », « through mood », « with mood », « per mood », ou des moods proposés par STAYMAKOM. Exemples : « Traveling by mood, not by map » → ES « Viajar por mood, no por mapa », RU « Путешествовать по mood, а не по карте », DE « Nach Mood reisen, nicht nach Karte » ; « When you start with mood » → ES « Cuando empiezas por el mood », RU « Когда вы начинаете с mood », DE « Wenn du mit dem Mood beginnst » ; « explore Israel through mood » → ES « a través del mood », RU « через mood », DE « über den Mood ». Les trois langues doivent faire le même choix dans un même texte.
-- Seulement quand « mood » a clairement son sens courant, sans lien avec le concept (l'humeur de quelqu'un, l'ambiance d'un lieu ou d'un moment : « a relaxed mood », « set the mood »), il se traduit naturellement (voir ci-dessous).
+- « Mood » reste en anglais UNIQUEMENT comme étiquette d'interface ou nom propre : la rubrique « Moods » du site et les noms des moods (Mindful Reset, Romantic Escape...). Dans un texte courant, le mot « mood » se traduit toujours naturellement (voir ci-dessous), y compris quand il parle de la façon de voyager STAYMAKOM. Exemples : « Traveling by mood, not by map » → ES « Viajar según cómo quieras sentirte, no según el mapa », RU « Путешествовать по настроению, а не по карте », DE « Nach Stimmung reisen, nicht nach Karte » ; « explore Israel through mood » → ES « a través de tu estado de ánimo », RU « через настроение », DE « über die Stimmung ».
 - Les noms de lieux géographiques et de sites historiques (villes, régions, mers, parcs nationaux, monuments : « City of David », « Western Wall »...) prennent leur nom d'usage courant dans la langue cible (voir ci-dessous). Si un lieu n'a pas de nom courant dans la langue cible, le garder tel quel.
 - Les prix, montants, devises, dates, heures, durées chiffrées, numéros de téléphone, adresses e-mail et liens restent identiques (seul le mot autour se traduit, ex. « 2 hours » devient l'équivalent naturel avec le même chiffre).
 - Le HTML (<p>, <strong>, <em>, <br>, <ul>, <li>, <a href="...">, <h2>, <h3>...) est conservé exactement : mêmes balises, même ordre, mêmes attributs. Seul le texte entre les balises change.
 - Les sauts de ligne sont conservés.
-- Jamais de tiret long (« — ») ni de tiret moyen utilisé comme tiret long (« – »), dans aucune langue : utilise une virgule, deux-points, des parenthèses ou reformule. (Le trait d'union des noms composés, ex. Тель-Авив, reste ; un intervalle comme « 2–3 » aussi.)
+- Jamais de tiret long (« — ») ni de tiret moyen utilisé comme tiret long (« – »), dans aucune langue : reformule la phrase pour qu'elle reste correcte sans tiret (une virgule, deux-points ou des parenthèses seulement si la phrase reste grammaticalement juste). (Le trait d'union des noms composés, ex. Тель-Авив, reste ; un intervalle comme « 2–3 » aussi.)
 - Une entrée de type liste (tableau JSON de textes) garde le même nombre d'éléments, dans le même ordre, chaque élément court.
 - Les titres SEO et méta-descriptions restent dans des longueurs comparables à l'anglais.`;
 
@@ -63,7 +63,8 @@ const REVIEW_EXAMPLES: Record<AutoLocale, string> = {
 - « Израиль плотный » : calque de « dense ». Reformuler (« в Израиле всё рядом », « Израиль насыщенный »).
 - « окружающей среде » au sens de « les lieux, l'endroit » : c'est « l'environnement écologique ». Dire « место », « обстановка ».
 - « Путешествовать… не требует усилий. Оно требует… » : sujet bancal (un infinitif repris par « оно »). Reformuler avec un vrai sujet (« Такое путешествие не требует… »).
-- « Север — это зелёные пейзажи » : le tiret long est interdit, même pour le tiret russe habituel. Reformuler (« На севере вас ждут зелёные пейзажи… », « Север означает… »).
+- « Север — это зелёные пейзажи » : le tiret long est interdit, même pour le tiret russe habituel, et le remplacer par une virgule (« Север, это… ») est une faute. Reformuler toute la phrase (« На севере вас ждут зелёные пейзажи… »).
+- Un mot en alphabet latin au milieu d'une phrase russe (« по mood ») : traduire (« по настроению »). Seuls STAYMAKOM et les noms d'hôtels, de partenaires et des moods restent en latin.
 - Chaînes de génitifs, ordre des mots calqué sur l'anglais, « является » en trop, aspect du verbe mal choisi.`,
   de: `- « Der Aufstieg bedeutungsvoller Aufenthalte » : calque de « The rise of ». Dire par exemple « Warum Reisen mit Bedeutung immer gefragter werden ».
 - « langsames Essen » pour « slow food » : garder « Slow Food » ou reformuler naturellement.
