@@ -5,7 +5,7 @@ type Lang = "en" | "fr" | "he";
 
 // Liste des médias qui ont parlé de STAYMAKOM — simple constante pour pouvoir
 // en ajouter facilement, sans logo (texte stylé uniquement).
-const PRESS_MENTIONS = ["i24NEWS", "Actualité Juive"];
+const PRESS_MENTIONS = ["i24NEWS", "The Jerusalem Post", "Actualité Juive"];
 
 const TEXTS: Record<Lang, { kicker: string; whatsapp: string }> = {
   fr: { kicker: "Ils parlent de nous", whatsapp: "Une question ? Notre équipe vous répond rapidement sur WhatsApp" },
@@ -35,7 +35,7 @@ export default function PressStrip({ lang }: { lang: Lang }) {
         <span className="text-[10px] sm:text-xs uppercase tracking-[0.18em] text-muted-foreground">
           {texts.kicker}
         </span>
-        <div className="flex items-baseline gap-6 sm:gap-10">
+        <div className="flex flex-wrap items-baseline justify-center gap-x-6 gap-y-1 sm:gap-x-10">
           {PRESS_MENTIONS.map((name) => (
             <span
               key={name}

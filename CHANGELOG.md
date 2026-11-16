@@ -4,6 +4,17 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 16/11/2026 : Accueil, ajout de « The Jerusalem Post » dans le bandeau presse
+
+### Ce qui a changé côté code
+- `src/components/PressStrip.tsx` : « The Jerusalem Post » ajouté à la liste des médias (entre i24NEWS et Actualité Juive). Les noms passent à la ligne proprement sur petit écran au lieu de déborder.
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Le Jerusalem Post a parlé de Staymakom : on l'affiche dans le bandeau « As seen in » de la page d'accueil.
+
 ---
 
 ## 16/11/2026 : Horaires spécifiques à certaines dates (expériences standalone)
