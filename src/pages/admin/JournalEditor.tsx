@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
+import { AutoTranslateButton } from "@/components/admin/AutoTranslateButton";
 import { ArrowLeft, Save, Eye, EyeOff, Clock, FileText, Check, CalendarIcon, Send, AlertTriangle } from "lucide-react";
 import { generateSlug, cn } from "@/lib/utils";
 import { Block, calculateReadingTime, mirrorBlocks } from "@/components/admin/journal/types";
@@ -419,6 +420,7 @@ const JournalEditor = () => {
           </div>
         </div>
         <div className="flex gap-2">
+          <AutoTranslateButton entityType="journal_post" entityId={id} />
           <Button variant="outline" size="sm" onClick={() => setIsPreviewMode(true)}>
             <Eye className="w-4 h-4 mr-2" />
             Preview

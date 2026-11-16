@@ -38,6 +38,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AutoTranslateButton } from "@/components/admin/AutoTranslateButton";
 import { draftSaveStatus, formStatusLabel } from "@/lib/archive/status";
 import { useFormArchiveToggle } from "@/lib/archive/useFormArchiveToggle";
 import RichTextEditor from "@/components/ui/rich-text-editor";
@@ -3929,6 +3930,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
           canPublish={canPublish}
           busy={isSaving || heroImageUploading}
           archive={archiveToggle.archive}
+          secondaryActions={<AutoTranslateButton entityType="standalone_experience" entityId={currentExperienceId} />}
         />
 
         {/* Une proposition de prix d'un prestataire a été acceptée : le prix client reste à vérifier. */}

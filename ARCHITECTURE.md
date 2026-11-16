@@ -487,6 +487,14 @@ Tant que les conditions en vigueur ne sont pas acceptées, toutes ces adresses n
 - **Helper:** `getLocalizedField(obj, 'title', lang)` returns the right field
 - **Translations:** Static strings in `src/lib/translations.ts`
 
+### Traduction automatique ES / RU / DE (chantier du 16/11/2026, en cours)
+
+- **Principe :** pas de nouvelles colonnes. L'espagnol, le russe et l'allemand sont traduits automatiquement depuis l'anglais et rangés dans la table `content_translations` (une ligne = fiche + champ + langue, avec l'empreinte de l'anglais, statut `auto` / `reviewed`, drapeau `stale` « source modifiée »). Le site ne traduit jamais au chargement : il lira ces textes déjà stockés (étape 5, pas encore faite au 16/11).
+- **Ce qui se traduit :** carte unique `supabase/functions/_shared/translations/catalog.ts` (langues `AUTO_LOCALES`, tables, colonne anglaise source de chaque champ, règle « publié »). Reprise côté site par `src/constants/autoLocales.ts`. Ajouter une langue = une ligne dans `AUTO_LOCALES` + ses consignes dans `prompt.ts`.
+- **Fonction `translate-content` :** deux passes Claude Sonnet 5.5 par fiche et par langue (traduction, puis relecture « éditeur natif »), consignes dans `_shared/translations/prompt.ts`. Les articles du Journal (blocs JSON) ne transmettent que leurs textes (`blocks.ts`). Filet automatique contre les tirets longs. Une traduction `reviewed` n'est jamais écrasée (contrôlé dans la fonction SQL `save_auto_translations`) ; si l'anglais change, elle passe en `stale`.
+- **Déclenchement :** tâche planifiée `translate-content-nightly` (3 h heure d'Israël, passages qui s'enchaînent via `queue_translate_content_continuation`, verrou `begin_content_translation_run` contre les passages simultanés), créée en pause et activée par `docs/traductions/traduction-initiale.sql`. Bouton « Mettre à jour ES / RU / DE » (`src/components/admin/AutoTranslateButton.tsx`) dans la barre du haut des fiches expérience seule / bateau, expérience avec hôtel, hôtel, mood et article. Journal des passages : table `content_translation_runs` (requête prête : `docs/traductions/suivi.sql`).
+- **Ne pas confondre** avec `translate-text` (ancienne passerelle Lovable / Gemini, non utilisée ici) ni avec l'action `translate` de `generate-experience-draft` (FR vers EN / HE dans les formulaires).
+
 ---
 
 ## Design System

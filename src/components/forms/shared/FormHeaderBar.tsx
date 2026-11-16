@@ -29,6 +29,8 @@ interface FormHeaderBarProps {
   busy: boolean;
   /** Fiche déjà enregistrée : bouton Archiver / Désarchiver. Omis = pas de bouton (nouvelle fiche). */
   archive?: { archived: boolean; onToggle: () => void };
+  /** Boutons secondaires discrets, placés avant « Traduire tout » (ex. mise à jour ES / RU / DE). */
+  secondaryActions?: React.ReactNode;
 }
 
 // Barre du haut, collante : titre, statut, FR | EN | HE, Traduire tout,
@@ -48,6 +50,7 @@ export function FormHeaderBar({
   canPublish,
   busy,
   archive,
+  secondaryActions,
 }: FormHeaderBarProps) {
   return (
     <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b -mx-6 px-6 py-3 flex items-center justify-between flex-wrap gap-3">
@@ -89,6 +92,7 @@ export function FormHeaderBar({
             );
           })}
         </div>
+        {secondaryActions}
         <Button
           type="button"
           variant="outline"

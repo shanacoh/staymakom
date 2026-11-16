@@ -121,3 +121,6 @@ verify_jwt = false
 
 [functions.track-tickets-uploaded]
 verify_jwt = false
+
+[functions.translate-content]
+verify_jwt = false

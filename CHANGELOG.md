@@ -4,6 +4,57 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 16/11/2026 : Traduction automatique ES / RU / DE, étape 3 (tâche de nuit, bouton par fiche, lancement initial)
+
+### Ce qui a changé côté code
+- `src/components/admin/AutoTranslateButton.tsx` (nouveau) : bouton discret « Mettre à jour ES / RU / DE » qui traduit tout de suite la fiche ouverte (version publiée et enregistrée) et affiche le résultat (textes traduits, déjà à jour, fiche non publiée, traductions vérifiées à revoir).
+- `src/components/forms/shared/FormHeaderBar.tsx` : nouvel emplacement `secondaryActions` dans la barre du haut des formulaires.
+- Bouton ajouté dans : `StandaloneExperienceForm.tsx` (expériences seules et bateaux), `UnifiedExperience2Form.tsx` (expériences avec hôtel), `HotelEditor2.tsx`, `CategoryEditor.tsx` (moods), `JournalEditor.tsx`.
+- `supabase/functions/translate-content/index.ts` :
+  - 2e passe « relecture native » après chaque traduction (supprime les calques, corrige grammaire et tournures, sans changer le sens) ; si elle échoue, la traduction de la 1re passe est gardée et signalée dans le journal ;
+  - filet automatique : tout tiret long restant devient une virgule ;
+  - paramètres `only_after_israel_hour` (la tâche de nuit ne fait rien avant 3 h en Israël) et `continue_until_done` (relance un passage tant qu'il reste du travail et qu'il y a eu des progrès) ;
+  - passage « tout le site » exclusif : refusé si un autre est en cours.
+- `supabase/functions/_shared/translations/prompt.ts` : allemand toujours en « du » (jamais « ihr », jamais « Sie ») ; règle du mot « mood » (concept STAYMAKOM = « mood » dans toutes les langues, exemples par langue ; sens courant = estado de ánimo / настроение / Stimmung) ; consigne de relecture native avec les exemples de calques relevés par Shana (DE et RU).
+- `supabase/functions/_shared/translations/plan.ts` : `removeLongDashes` ; 3 tests de plus (20 au total).
+- `docs/traductions/traduction-initiale.sql` (nouveau) : à coller dans Supabase pour activer la tâche de nuit et lancer la traduction de tout le contenu publié.
+- `docs/traductions/suivi.sql` (nouveau) : requête de suivi (derniers passages, textes par langue).
+- `ARCHITECTURE.md` : section « Traduction automatique ES / RU / DE ».
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261116130000_translate_content_cron.sql` (appliquée via l'outil Supabase) : tâche planifiée `translate-content-nightly`, toutes les 20 min entre 00:00 et 01:40 UTC (couvre 3 h en Israël, heure d'été comme d'hiver).
+- Migration `supabase/migrations/20261116140000_translate_content_lock_and_chain.sql` (appliquée via l'outil Supabase) : fonctions `begin_content_translation_run` (ouvre un passage, verrou contre les passages simultanés) et `queue_translate_content_continuation` (relance la fonction depuis la base, avec le secret du coffre) ; la tâche de nuit passe par cette relance et est **en pause** jusqu'au lancement initial.
+- Données : les 2 fiches test retraduites avec les nouvelles règles.
+
+### Pourquoi ce changement
+- Que les nouvelles fiches et les modifications passent en ES / RU / DE chaque nuit sans action, avec un bouton pour forcer une fiche tout de suite, et une qualité de langue « native » (pas de traduction calquée sur l'anglais).
+
+---
+
+## 16/11/2026 : Traduction automatique ES / RU / DE, étapes 1 et 2 (base + fonction de traduction)
+
+### Ce qui a changé côté code
+- `supabase/functions/_shared/translations/catalog.ts` (nouveau) : la liste unique des langues automatiques (`AUTO_LOCALES` = es, ru, de) et la carte de tout ce qui se traduit, table par table, avec la vraie colonne anglaise source (`title` ou `title_en` selon les tables) et la règle « publié ». Volontairement exclus : noms d'hôtels, nom des moods, adresses.
+- `src/constants/autoLocales.ts` (nouveau) : reprend la liste des langues pour le site (une seule source, partagée avec le serveur).
+- `supabase/functions/_shared/translations/plan.ts` (nouveau) : la règle de décision champ par champ (traduire, ignorer, ou signaler « source modifiée ») et l'empreinte du texte anglais.
+- `supabase/functions/_shared/translations/blocks.ts` (nouveau) : pour les articles du Journal (enregistrés en blocs), seuls les textes sont envoyés à l'IA puis remis à leur place ; liens, identifiants et mise en page ne sont jamais touchés.
+- `supabase/functions/_shared/translations/prompt.ts` (nouveau) : consigne de traduction (voix STAYMAKOM, noms d'usage des lieux par langue, noms d'hôtels / partenaires / moods intacts, prix et dates intacts, aucun tiret long, tutoiement ES / DE, « вы » en russe).
+- `supabase/functions/translate-content/index.ts` (nouveau) : la fonction de traduction. Appelable par la tâche planifiée (secret `x-cron-secret`, sans connexion) ou par un admin. Modes `changed` / `all`, filtre par fiche, `dry_run` pour compter sans traduire. Un appel par fiche et par langue (les petites fiches sont regroupées), 4 en parallèle, arrêt propre avant la limite de temps avec le nombre de champs restants. Modèle Claude Sonnet 5.5 (`TRANSLATE_CONTENT_AI_MODEL` pour changer).
+- `supabase/config.toml` : `translate-content` sans vérification de jeton automatique (la fonction vérifie elle-même admin ou secret).
+- `src/lib/contentTranslations/plan.test.ts` (nouveau) : 17 tests (règle de décision, listes, articles en blocs, catalogue).
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261116120000_content_translations.sql`, appliquée via l'outil Supabase en 3 morceaux (`content_translations_table`, `content_translations_policies`, `content_translations_functions`) :
+  - table `content_translations` : un texte traduit par ligne (fiche, champ, langue), avec l'empreinte de l'anglais, le statut `auto` / `reviewed` et le drapeau `stale` (« source modifiée »). Lecture publique, écriture admins.
+  - fonctions `save_auto_translations` (n'écrase jamais une ligne `reviewed`, vérifié au moment de l'écriture) et `mark_reviewed_translations_stale`, réservées à la clé de service.
+  - table `content_translation_runs` : journal de chaque passage (traduits, ignorés, erreurs, restants).
+- Données : 2 fiches test traduites (expérience « Walking the Pilgrims' Footsteps » et article « How to travel Israel differently »), 63 lignes. Rien n'est encore affiché sur le site.
+
+### Pourquoi ce changement
+- Ouvrir le site en espagnol, russe et allemand sans rien saisir de plus : les textes sont traduits automatiquement depuis l'anglais, et les corrections faites à la main ne sont jamais écrasées.
+
+---
+
 ## 16/11/2026 : Accueil, ajout de « The Jerusalem Post » dans le bandeau presse
 
 ### Ce qui a changé côté code
