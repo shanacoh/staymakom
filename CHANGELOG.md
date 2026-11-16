@@ -6,6 +6,24 @@
 
 ---
 
+## 16/11/2026 : Horaires spécifiques à certaines dates (expériences standalone)
+
+### Ce qui a changé côté code
+- `src/lib/timeSlots.ts` : nouvelle règle `slotsForDate` (horaires de `session_labels[date].slots` s'ils existent, sinon `time_slots`) et type `SessionLabels`. Testée dans `src/lib/timeSlots.test.ts`.
+- `supabase/functions/_shared/time-slot.ts` : même règle côté serveur, à garder alignée avec le site.
+- `src/pages/StandaloneExperience.tsx` : le sélecteur d'horaire affiche les horaires de la date choisie ; si le client change de date, l'horaire choisi est oublié s'il n'existe pas ce jour-là.
+- `src/components/admin/CreateManualStandaloneBookingDialog.tsx` : saisie manuelle d'une réservation, même logique (liste selon la date, horaire remis à zéro si besoin).
+- `supabase/functions/process-standalone-payment`, `process-standalone-booking`, `create-standalone-manual-booking` : la vérification de l'horaire accepte les horaires propres à la date et refuse tout horaire hors de cette liste (ex. 19:15 le 07/12 pour Lit Up).
+- `src/components/forms/StandaloneExperienceForm.tsx`, `src/components/experience/EssentialsBlock.tsx` : type élargi seulement ; l'éditeur de libellés conservait déjà la clé `slots`.
+
+### Ce qui a changé côté base de données
+- Aucune migration : nouvelle clé optionnelle `slots` dans `session_labels` (jsonb), déjà remplie pour « Jerusalem Lit Up After Dark » (Hanoukka, 6 au 10/12).
+
+### Pourquoi ce changement
+- Certains partenaires changent d'horaires sur des dates précises (City of David pendant Hanoukka : 17h45 / 18h30 au lieu de 19h15 / 20h). Le client doit voir et ne pouvoir réserver que les bons horaires ce jour-là.
+
+---
+
 ## [2026-11-12] — Page de proposition « demande en mariage » à cocher
 
 > Statut : validé par Shana et mis en ligne le 12/11/2026, adresse `/proposal`.

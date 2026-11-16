@@ -22,7 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { CHANNEL_OPTIONS } from "@/components/admin/BookingsGrid/columnTypes";
-import { formatTimeSlot } from "@/lib/timeSlots";
+import { formatTimeSlot, slotsForDate } from "@/lib/timeSlots";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/components/admin/BookingsGrid/columnTypes";
 import { STANDALONE_EXPERIENCE_INTERNAL } from "@/lib/internalFields";
@@ -106,7 +106,7 @@ const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_experiences")
-        .select("id, title, currency, base_price, base_price_child, base_price_type, has_child_price, has_time_slots, time_slots, has_rate_options, min_party, max_party")
+        .select("id, title, currency, base_price, base_price_child, base_price_type, has_child_price, has_time_slots, time_slots, session_labels, has_rate_options, min_party, max_party")
         .eq("status", "published")
         .order("title");
       if (error) throw error;
@@ -116,6 +116,8 @@ const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom
   });
 
   const selectedExperience = publishedExperiences?.find((e) => e.id === manualForm.experience_id);
+  // Horaires du jour choisi : horaires propres à cette date s'il y en a, sinon les habituels.
+  const slotsForBookingDate = slotsForDate(selectedExperience?.time_slots, selectedExperience?.session_labels, manualForm.booking_date);
 
   // Prestataire de l'expérience choisie, pour proposer ses avoirs ouverts (réservation annulée
   // dont il a gardé l'argent).
@@ -338,7 +340,16 @@ const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom
             <Input
               type="date"
               value={manualForm.booking_date}
-              onChange={(e) => setManualForm((f) => ({ ...f, booking_date: e.target.value }))}
+              onChange={(e) => {
+                const booking_date = e.target.value;
+                const slots = slotsForDate(selectedExperience?.time_slots, selectedExperience?.session_labels, booking_date);
+                // Horaire déjà choisi oublié s'il n'existe pas à la nouvelle date (créneaux fixes uniquement).
+                setManualForm((f) => ({
+                  ...f,
+                  booking_date,
+                  time_slot: selectedExperience?.has_time_slots && f.time_slot && !slots.includes(f.time_slot) ? "" : f.time_slot,
+                }));
+              }}
             />
           </div>
 
@@ -364,7 +375,7 @@ const CreateManualStandaloneBookingDialog = ({ open, onOpenChange, duplicateFrom
                   <SelectValue placeholder="Choisir un créneau" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(selectedExperience.time_slots as string[])?.map((slot) => (
+                  {slotsForBookingDate.map((slot) => (
                     <SelectItem key={slot} value={slot}>{formatTimeSlot(slot)}</SelectItem>
                   ))}
                 </SelectContent>

@@ -17,3 +17,15 @@ export function formatTimeSlot(slot: string | null | undefined, lang: string = "
   if (!moment) return slot;
   return moment[lang === "fr" || lang === "he" ? lang : "en"];
 }
+
+/**
+ * Horaires acceptés pour une date : ceux de `session_labels[date].slots` s'ils existent
+ * (ex. horaires spéciaux pendant Hanoukka), sinon les horaires habituels `time_slots`.
+ * Même règle que src/lib/timeSlots.ts (site) : les garder alignées.
+ */
+export function slotsForDate(timeSlots: unknown, sessionLabels: unknown, date: string | null | undefined): string[] {
+  const labels = sessionLabels && typeof sessionLabels === 'object' ? (sessionLabels as Record<string, any>) : null;
+  const dateSlots = date && labels ? labels[date]?.slots : undefined;
+  if (Array.isArray(dateSlots) && dateSlots.length > 0) return dateSlots;
+  return Array.isArray(timeSlots) ? (timeSlots as string[]) : [];
+}

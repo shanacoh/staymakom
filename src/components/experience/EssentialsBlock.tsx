@@ -35,7 +35,7 @@ interface EssentialsExperience {
   schedule_note_fr?: string | null;
   schedule_note_he?: string | null;
   essentials_private_on_request?: boolean | null;
-  session_labels?: Record<string, { en?: string; fr?: string; he?: string }> | null;
+  session_labels?: import("@/lib/timeSlots").SessionLabels | null;
   city?: string | null;
   city_fr?: string | null;
   city_he?: string | null;

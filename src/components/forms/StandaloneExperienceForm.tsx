@@ -42,7 +42,7 @@ import { draftSaveStatus, formStatusLabel } from "@/lib/archive/status";
 import { useFormArchiveToggle } from "@/lib/archive/useFormArchiveToggle";
 import RichTextEditor from "@/components/ui/rich-text-editor";
 import { generateSlug, buildImageFileName, cn } from "@/lib/utils";
-import { TIME_SLOT_MOMENTS, formatTimeSlot, sortTimeSlots } from "@/lib/timeSlots";
+import { TIME_SLOT_MOMENTS, formatTimeSlot, sortTimeSlots, type SessionLabels } from "@/lib/timeSlots";
 import { PriceCalculator } from "@/components/forms/standalone/PriceCalculator";
 import { Separator } from "@/components/ui/separator";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -452,7 +452,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
   // Libellés personnalisés par date (ex. "Session du jeudi"), bloc "L'essentiel"
   // du sprint 4 — un texte par langue, non lié à react-hook-form (même
   // fonctionnement que practicalInfo / availableDays).
-  const [sessionLabels, setSessionLabels] = useState<Record<string, { en?: string; fr?: string; he?: string }>>({});
+  // Libellé par date (+ éventuels horaires propres à la date, clé `slots`, conservée telle quelle).
+  const [sessionLabels, setSessionLabels] = useState<SessionLabels>({});
 
   // Annulation par modèles (sprint 5B, étape 3) — "custom" affiche le champ
   // texte libre ; les autres valeurs remplissent les 3 langues d'un coup.
