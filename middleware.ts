@@ -1,4 +1,5 @@
 import { next, rewrite } from "@vercel/functions";
+import { isHiddenLocale, isLocale, publicLocales } from "./src/lib/locale";
 
 // Robots que Google/Meta/etc. utilisent pour lire le contenu avant de l'indexer
 // ou d'en générer un aperçu (WhatsApp, Facebook, Twitter/X, Slack, LinkedIn...).
@@ -13,6 +14,14 @@ export default function middleware(request: Request) {
   const url = new URL(request.url);
   const target = new URL("/api/bot-meta", url);
   target.searchParams.set("path", url.pathname);
+
+  // Langue demandée (?lang=) et langues à annoncer à Google, d'après l'interrupteur unique
+  // src/config/languages.json (le guichet robots n'a ainsi rien à relire lui-même).
+  const requested = url.searchParams.get("lang");
+  const lang = isLocale(requested) ? requested : "en";
+  target.searchParams.set("lang", lang);
+  target.searchParams.set("locales", publicLocales().join(","));
+  if (isHiddenLocale(lang)) target.searchParams.set("hidden", "1");
   return rewrite(target);
 }
 

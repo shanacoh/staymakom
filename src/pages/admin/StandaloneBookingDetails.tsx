@@ -23,6 +23,7 @@ import { format, parseISO } from "date-fns";
 import CreateManualStandaloneBookingDialog from "@/components/admin/CreateManualStandaloneBookingDialog";
 import EditStandaloneBookingDialog from "@/components/admin/EditStandaloneBookingDialog";
 import PracticalInfoWhatsAppCard from "@/components/admin/PracticalInfoWhatsAppCard";
+import BookingTicketsCard from "@/components/admin/BookingTicketsCard";
 import { trackReviewRequestSent } from "@/lib/analytics";
 import { formatTimeSlot } from "@/lib/timeSlots";
 
@@ -45,7 +46,7 @@ export default function AdminStandaloneBookingDetails() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("standalone_bookings")
-        .select("*, standalone_experiences(title, slug, address, has_time_slots, deposit_type, deposit_amount)")
+        .select("*, standalone_experiences(title, slug, address, has_time_slots, deposit_type, deposit_amount, requires_entry_ticket)")
         .eq("id", bookingId!)
         .single();
       if (error) throw error;
@@ -393,6 +394,13 @@ export default function AdminStandaloneBookingDetails() {
 
       {/* Bateaux : parcours à part, pas d'infos pratiques ici */}
       {!booking.is_cancelled && booking.product_type !== "boat" && <PracticalInfoWhatsAppCard booking={booking} />}
+
+      {/* Billets d'entrée du prestataire, transmis au client tels quels */}
+      <BookingTicketsCard
+        booking={booking}
+        requiresEntryTicket={booking.standalone_experiences?.requires_entry_ticket === true}
+        bookingQueryKey={["admin-standalone-booking-details", bookingId]}
+      />
 
       {/* Alerte remboursement à effectuer */}
       {booking.payment_status === "refund_pending" && (

@@ -45,15 +45,34 @@ async function fetchSlugs(table, params = '') {
 
 const today = new Date().toISOString().split('T')[0];
 
+// Langues annoncées à Google. Anglais, français et hébreu sont toujours publics ;
+// espagnol, russe et allemand seulement quand l'interrupteur unique
+// src/config/languages.json est activé (mêmes listes que src/lib/locale.ts).
+const WRITTEN_LOCALES = ['en', 'fr', 'he'];
+const AUTO_LOCALES = ['es', 'ru', 'de'];
+const languagesConfig = JSON.parse(readFileSync(join(ROOT, 'src', 'config', 'languages.json'), 'utf-8'));
+const PUBLIC_LOCALES = languagesConfig.autoLocalesPublic === true
+  ? [...WRITTEN_LOCALES, ...AUTO_LOCALES]
+  : WRITTEN_LOCALES;
+
+// Une page = une adresse par langue, chacune listant toutes ses sœurs
+// (balises xhtml:link), comme demandé par Google pour les sites multilingues.
 function urlEntry(loc, priority, changefreq) {
-  return [
+  // Anglais = adresse nue ; autres langues = ?lang= (même règle que src/lib/locale.ts)
+  const withLang = (code) => (code === 'en' ? loc : `${loc}?lang=${code}`);
+  const alternates = [
+    ...PUBLIC_LOCALES.map(code => `    <xhtml:link rel="alternate" hreflang="${code}" href="${withLang(code)}"/>`),
+    `    <xhtml:link rel="alternate" hreflang="x-default" href="${withLang('en')}"/>`,
+  ];
+  return PUBLIC_LOCALES.map(code => [
     '  <url>',
-    `    <loc>${loc}</loc>`,
+    `    <loc>${withLang(code)}</loc>`,
+    ...alternates,
     `    <lastmod>${today}</lastmod>`,
     `    <changefreq>${changefreq}</changefreq>`,
     `    <priority>${priority}</priority>`,
     '  </url>',
-  ].join('\n');
+  ].join('\n')).join('\n');
 }
 
 const STATIC_PAGES = [
@@ -95,14 +114,14 @@ const entries = [
 
 const xml = [
   '<?xml version="1.0" encoding="UTF-8"?>',
-  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">',
   ...entries,
   '</urlset>',
 ].join('\n');
 
 writeFileSync(join(ROOT, 'public', 'sitemap.xml'), xml, 'utf-8');
 
-console.log(`✅ Sitemap généré : ${entries.length} URLs`);
+console.log(`✅ Sitemap généré : ${entries.length} pages × ${PUBLIC_LOCALES.length} langues (${PUBLIC_LOCALES.join(', ')})`);
 console.log(`   - ${STATIC_PAGES.length} pages statiques`);
 console.log(`   - ${categories.length} catégories`);
 console.log(`   - ${experiences.length} expériences`);

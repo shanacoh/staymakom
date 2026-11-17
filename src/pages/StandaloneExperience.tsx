@@ -64,7 +64,7 @@ import type { SelectedExtra } from "@/components/experience-test/ExtrasSection2"
 import { Users, Calendar, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fr, he } from "date-fns/locale";
-import { formatTimeSlot } from "@/lib/timeSlots";
+import { formatTimeSlot, slotsForDate, type SessionLabels } from "@/lib/timeSlots";
 import { ArchivedListingRedirect } from "@/components/ArchivedListingRedirect";
 
 // ---------------------------------------------------------------------------
@@ -136,7 +136,7 @@ interface StandaloneExperienceData {
   access_note_fr?: string | null;
   access_note_he?: string | null;
   hide_exact_address?: boolean | null;
-  session_labels?: Record<string, { en?: string; fr?: string; he?: string }> | null;
+  session_labels?: SessionLabels | null;
   essentials_private_on_request?: boolean | null;
   hero_highlight?: string | null;
   standalone_experience_price_variants?: { max_capacity: number | null; is_active: boolean | null }[] | null;
@@ -565,6 +565,17 @@ export default function StandaloneExperience() {
     return withIncludePhotos(orderedPhotos(cover, hero, gallery), includes);
   })();
 
+  // Horaires proposés pour la date choisie : horaires propres à cette date s'il y en a
+  // (ex. Hanoukka), sinon les horaires habituels de l'expérience.
+  const slotsForSelectedDate = slotsForDate(experience?.time_slots, experience?.session_labels, selectedDate);
+  const slotsKey = slotsForSelectedDate.join("|");
+
+  // Le client change de date : l'horaire déjà choisi est oublié s'il n'existe pas ce jour-là.
+  useEffect(() => {
+    if (selectedSlot && !slotsForSelectedDate.includes(selectedSlot)) setSelectedSlot("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slotsKey, selectedSlot]);
+
   // -------------------------------------------------------------------------
   // Loading state
   // -------------------------------------------------------------------------
@@ -897,14 +908,14 @@ export default function StandaloneExperience() {
         </div>
 
         {/* Créneaux horaires */}
-        {experience.has_time_slots && (experience.time_slots?.length ?? 0) > 0 && (
+        {experience.has_time_slots && slotsForSelectedDate.length > 0 && (
           <div className="space-y-2">
             <p className="flex items-center gap-1.5 text-sm font-semibold">
               <Clock className="h-3.5 w-3.5 text-[#ad1414]" />
               {lang === "he" ? "שעה" : lang === "fr" ? "Créneau" : "Time slot"}
             </p>
             <div className="grid grid-cols-3 gap-2">
-              {experience.time_slots!.map((slot) => (
+              {slotsForSelectedDate.map((slot) => (
                 <button
                   key={slot}
                   type="button"

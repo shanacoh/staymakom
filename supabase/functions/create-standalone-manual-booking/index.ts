@@ -7,6 +7,7 @@
 // l'email de confirmation.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { slotsForDate } from '../_shared/time-slot.ts';
 
 const ALLOWED_ORIGINS: (string | RegExp)[] = [
   'https://staymakom.com',
@@ -189,7 +190,7 @@ Deno.serve(async (req: Request) => {
     // ── Récupérer l'expérience du catalogue ───────────────────────────────────
     const { data: experience, error: expError } = await supabase
       .from('standalone_experiences')
-      .select('id, currency, min_party, max_party, has_time_slots, time_slots, has_rate_options')
+      .select('id, currency, min_party, max_party, has_time_slots, time_slots, session_labels, has_rate_options')
       .eq('id', experience_id)
       .single();
 
@@ -211,7 +212,8 @@ Deno.serve(async (req: Request) => {
 
     let validatedTimeSlot: string | null = null;
     if (experience.has_time_slots) {
-      const availableSlots: string[] = Array.isArray(experience.time_slots) ? experience.time_slots : [];
+      // Horaires propres à la date choisie s'il y en a (ex. Hanoukka), sinon les horaires habituels.
+      const availableSlots = slotsForDate(experience.time_slots, experience.session_labels, booking_date);
       if (!time_slot || !availableSlots.includes(time_slot)) {
         return new Response(JSON.stringify({ error: 'Créneau horaire invalide ou non sélectionné' }), {
           status: 400,

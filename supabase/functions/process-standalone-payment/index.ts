@@ -4,6 +4,9 @@
 // exactement l'ordre Revolut réellement créé. Ne touche pas à process-standalone-booking.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { slotsForDate } from '../_shared/time-slot.ts';
+import { loadSupplierPrices, supplierCostOf } from '../_shared/supplier-cost.ts';
+import { toClientLocale } from '../_shared/translations/catalog.ts';
 import { SITE_ORDER_METADATA } from '../_shared/revolut-order.ts';
 
 const ALLOWED_ORIGINS: (string | RegExp)[] = [
@@ -139,10 +142,13 @@ Deno.serve(async (req: Request) => {
       promo_code: promoCodePayload,
       gift_card: giftCardPayload,
       lang,
+      client_locale: clientLocaleRaw,
       special_requests: specialRequestsRaw,
     } = body;
 
     const preferredLang = ['fr', 'en', 'he'].includes(lang) ? lang : null;
+    // Langue de la page (es / ru / de compris) : badge dans le back-office.
+    const clientLocale = toClientLocale(clientLocaleRaw);
     // « Demandes particulières » saisies au checkout : texte libre, transmis tel quel au prestataire.
     const specialRequests = typeof specialRequestsRaw === 'string' && specialRequestsRaw.trim()
       ? specialRequestsRaw.trim().slice(0, 2000)
@@ -170,7 +176,7 @@ Deno.serve(async (req: Request) => {
     // ── Récupérer l'expérience ────────────────────────────────────────────────
     const { data: experience, error: expError } = await supabase
       .from('standalone_experiences')
-      .select('id, title, base_price, base_price_child, has_child_price, base_price_type, currency, min_party, max_party, has_time_slots, time_slots, has_rate_options, status')
+      .select('id, title, base_price, base_price_child, has_child_price, base_price_type, currency, min_party, max_party, has_time_slots, time_slots, session_labels, has_rate_options, status')
       .eq('id', experience_id)
       .single();
 
@@ -202,7 +208,8 @@ Deno.serve(async (req: Request) => {
     // ── Valider le créneau si applicable ─────────────────────────────────────
     let validatedTimeSlot: string | null = null;
     if (experience.has_time_slots) {
-      const availableSlots: string[] = Array.isArray(experience.time_slots) ? experience.time_slots : [];
+      // Horaires propres à la date choisie s'il y en a (ex. Hanoukka), sinon les horaires habituels.
+      const availableSlots = slotsForDate(experience.time_slots, experience.session_labels, booking_date);
       if (!time_slot || !availableSlots.includes(time_slot)) {
         return new Response(JSON.stringify({ success: false, error: 'Créneau horaire invalide ou non sélectionné' }), {
           status: 400,
@@ -268,6 +275,17 @@ Deno.serve(async (req: Request) => {
     }
     basePrice = basePrice + extrasTotal;
 
+    // ── Coût fournisseur (interne, jamais renvoyé au client) ─────────────────
+    // Les codes promo et cartes cadeaux réduisent notre marge, pas ce qu'on doit au prestataire.
+    const supplierCost = supplierCostOf({
+      adults,
+      children,
+      priceType: experience.base_price_type,
+      hasChildPrice: !!experience.has_child_price,
+      prices: await loadSupplierPrices(supabase, experience_id, selectedRateOption?.id ?? null),
+      hasExtras: extrasSnapshot.length > 0,
+    });
+
     // ── Appliquer le code promo (re-validé côté serveur) ─────────────────────
     let promoDiscount = 0;
     let validatedPromo: { id: string; code: string; discount_pct: number } | null = null;
@@ -320,11 +338,13 @@ Deno.serve(async (req: Request) => {
           booking_date, time_slot: validatedTimeSlot,
           party_size: totalParty, adults_count: adults, children_count: children,
           sell_price: 0,
+          supplier_cost: supplierCost,
           currency: experience.currency,
           status: 'confirmed', payment_status: 'paid',
           extras: extrasSnapshot.length > 0 ? extrasSnapshot : null,
           rate_option: selectedRateOption,
           preferred_lang: preferredLang,
+          client_locale: clientLocale,
           special_requests: specialRequests,
         }])
         .select('id, confirmation_token')
@@ -399,6 +419,7 @@ Deno.serve(async (req: Request) => {
         adults_count: adults,
         children_count: children,
         sell_price: sellPrice,
+        supplier_cost: supplierCost,
         currency: experience.currency,
         status: 'pending',
         payment_status: 'pending',
@@ -407,6 +428,7 @@ Deno.serve(async (req: Request) => {
         extras: extrasSnapshot.length > 0 ? extrasSnapshot : null,
         rate_option: selectedRateOption,
         preferred_lang: preferredLang,
+        client_locale: clientLocale,
         special_requests: specialRequests,
       }])
       .select('id, confirmation_token')

@@ -38,7 +38,8 @@ function buildBreadcrumbJsonLd(crumbs: BreadcrumbCrumb[]) {
 async function fetchOne(
   table: string,
   columns: string,
-  slug: string
+  slug: string,
+  lang: PageLang
 ): Promise<Record<string, any> | null> {
   if (!SUPABASE_URL || !SUPABASE_KEY) return null;
   const url = `${SUPABASE_URL}/rest/v1/${table}?select=${columns}&slug=eq.${encodeURIComponent(
@@ -49,7 +50,9 @@ async function fetchOne(
   });
   if (!res.ok) return null;
   const rows = await res.json();
-  return rows[0] || null;
+  const row = rows[0] || null;
+  if (row) await localizeRow(table, row, lang);
+  return row;
 }
 
 async function fetchMany(
@@ -64,6 +67,57 @@ async function fetchMany(
   });
   if (!res.ok) return [];
   return res.json();
+}
+
+// ---------------------------------------------------------------------------
+// Langue de la page (?lang=, transmise par middleware.ts)
+// ---------------------------------------------------------------------------
+
+type PageLang = "en" | "fr" | "he" | "es" | "ru" | "de";
+const AUTO_LANGS = new Set(["es", "ru", "de"]);
+const ALL_LANGS = new Set(["en", "fr", "he", "es", "ru", "de"]);
+
+// Table de la base → type de fiche dans content_translations
+// (même correspondance que supabase/functions/_shared/translations/catalog.ts).
+const ENTITY_BY_TABLE: Record<string, string> = {
+  experiences2: "experience2",
+  hotels2: "hotel2",
+  categories: "category",
+  journal_posts: "journal_post",
+  standalone_experiences: "standalone_experience",
+};
+
+async function sha256Hex(text: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Met les textes de la fiche dans la langue demandée :
+ * - français / hébreu : colonnes saisies dans le back-office (title_fr, seo_title_he...) ;
+ * - espagnol / russe / allemand : traductions automatiques, seulement si elles ont été
+ *   faites à partir du texte anglais actuel (sinon on garde l'anglais).
+ */
+async function localizeRow(table: string, row: Record<string, any>, lang: PageLang): Promise<void> {
+  if (lang === "fr" || lang === "he") {
+    for (const key of Object.keys(row)) {
+      if (/_(fr|he)$/.test(key)) continue;
+      const localized = row[`${key.replace(/_en$/, "")}_${lang}`];
+      if (typeof localized === "string" && localized.trim()) row[key] = localized;
+    }
+    return;
+  }
+  if (!AUTO_LANGS.has(lang) || !row.id || !ENTITY_BY_TABLE[table]) return;
+  const translations = await fetchMany(
+    "content_translations",
+    "field,text,source_hash",
+    `entity_type=eq.${ENTITY_BY_TABLE[table]}&entity_id=eq.${encodeURIComponent(row.id)}&locale=eq.${lang}`
+  );
+  for (const t of translations) {
+    const original = row[t.field];
+    if (typeof original !== "string" || !original.trim()) continue;
+    if ((await sha256Hex(original)) === t.source_hash) row[t.field] = t.text;
+  }
 }
 
 // Pour les expériences vendues avec une chambre d'hôtel ("bar_rate"), il n'y a
@@ -99,7 +153,7 @@ async function fetchAggregateRating(
   return { ratingValue: Math.round((sum / rows.length) * 10) / 10, reviewCount: rows.length };
 }
 
-async function resolveResource(pathname: string): Promise<ResourceMeta | null> {
+async function resolveResource(pathname: string, lang: PageLang): Promise<ResourceMeta | null> {
   // Accueil : le titre/la description générique d'index.html sont déjà bons,
   // on ajoute seulement la fiche d'identité de la marque pour Google.
   if (pathname === "/") {
@@ -155,8 +209,9 @@ async function resolveResource(pathname: string): Promise<ResourceMeta | null> {
   if (hotelMatch) {
     const row = await fetchOne(
       "hotels2",
-      "name,city,story,hero_image,og_image,seo_title_en,meta_description_en,latitude,longitude,slug",
-      hotelMatch[1]
+      "id,name,city,story,story_fr,story_he,hero_image,og_image,seo_title_en,seo_title_fr,seo_title_he,meta_description_en,meta_description_fr,meta_description_he,latitude,longitude,slug",
+      hotelMatch[1],
+      lang
     );
     if (!row) return null;
     return {
@@ -198,8 +253,9 @@ async function resolveResource(pathname: string): Promise<ResourceMeta | null> {
   if (experienceMatch) {
     const row = await fetchOne(
       "experiences2",
-      "id,title,subtitle,hero_image,base_price,currency,slug,pricing_model,room_net_rate,bar_rate_markup_value,bar_rate_markup_is_pct,experience_sell_fixed,experience_sell_per_person,min_party,categories(name,slug)",
-      experienceMatch[1]
+      "id,title,title_fr,title_he,subtitle,subtitle_fr,subtitle_he,hero_image,base_price,currency,slug,pricing_model,room_net_rate,bar_rate_markup_value,bar_rate_markup_is_pct,experience_sell_fixed,experience_sell_per_person,min_party,categories(name,slug)",
+      experienceMatch[1],
+      lang
     );
     if (!row) return null;
     const category = Array.isArray(row.categories) ? row.categories[0] : row.categories;
@@ -260,8 +316,9 @@ async function resolveResource(pathname: string): Promise<ResourceMeta | null> {
   if (categoryMatch) {
     const row = await fetchOne(
       "categories",
-      "name,intro_rich_text,og_image,hero_image,seo_title_en,meta_description_en,slug",
-      categoryMatch[1]
+      "id,name,name_fr,name_he,intro_rich_text,intro_rich_text_fr,intro_rich_text_he,og_image,hero_image,seo_title_en,seo_title_fr,seo_title_he,meta_description_en,meta_description_fr,meta_description_he,slug",
+      categoryMatch[1],
+      lang
     );
     if (!row) return null;
     return {
@@ -284,8 +341,9 @@ async function resolveResource(pathname: string): Promise<ResourceMeta | null> {
   if (journalMatch) {
     const row = await fetchOne(
       "journal_posts",
-      "title_en,excerpt_en,cover_image,og_image,seo_title_en,meta_description_en,published_at,slug",
-      journalMatch[1]
+      "id,title_en,title_he,excerpt_en,excerpt_he,cover_image,og_image,seo_title_en,seo_title_fr,seo_title_he,meta_description_en,meta_description_fr,meta_description_he,published_at,slug",
+      journalMatch[1],
+      lang
     );
     if (!row) return null;
     return {
@@ -316,8 +374,9 @@ async function resolveResource(pathname: string): Promise<ResourceMeta | null> {
   if (standaloneMatch) {
     const row = await fetchOne(
       "standalone_experiences",
-      "title,subtitle,hero_image,base_price,currency,slug,categories(name,slug)",
-      standaloneMatch[1]
+      "id,title,title_fr,title_he,subtitle,subtitle_fr,subtitle_he,hero_image,base_price,currency,slug,categories(name,slug)",
+      standaloneMatch[1],
+      lang
     );
     if (!row) return null;
     const category = Array.isArray(row.categories) ? row.categories[0] : row.categories;
@@ -374,8 +433,21 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function patchHtml(html: string, pathname: string, resource: ResourceMeta): string {
-  const canonicalUrl = `https://staymakom.com${pathname}`;
+interface LanguageInfo {
+  lang: PageLang;
+  /** Langues annoncées à Google (d'après l'interrupteur src/config/languages.json). */
+  publicLangs: string[];
+  /** Langue encore cachée : la page ne doit pas être indexée. */
+  hidden: boolean;
+}
+
+function patchHtml(html: string, pathname: string, resource: ResourceMeta | null, language: LanguageInfo): string {
+  const pageUrl = `https://staymakom.com${pathname}`;
+  // Anglais = adresse nue ; autres langues = adresse avec ?lang= (même règle que src/lib/locale.ts)
+  const urlFor = (code: string) => (code === "en" ? pageUrl : `${pageUrl}?lang=${code}`);
+  const canonicalUrl = urlFor(language.lang);
+  html = html.replace(/<html lang="[^"]*"/, `<html lang="${language.lang}"${language.lang === "he" ? ' dir="rtl"' : ""}`);
+  resource = resource || {};
   const safeTitle = resource.title ? escapeHtml(resource.title) : undefined;
   const safeDescription = resource.description ? escapeHtml(resource.description) : undefined;
   const safeImage = resource.image ? escapeHtml(resource.image) : undefined;
@@ -423,6 +495,11 @@ function patchHtml(html: string, pathname: string, resource: ResourceMeta): stri
   }
 
   const extras = [`<link rel="canonical" href="${canonicalUrl}" />`];
+  for (const code of language.publicLangs) {
+    extras.push(`<link rel="alternate" hreflang="${code}" href="${urlFor(code)}" />`);
+  }
+  extras.push(`<link rel="alternate" hreflang="x-default" href="${urlFor("en")}" />`);
+  if (language.hidden) extras.push(`<meta name="robots" content="noindex, follow" />`);
   for (const block of resource.jsonLdBlocks || []) {
     const jsonLd = JSON.stringify(block).replace(/</g, "\\u003c");
     extras.push(`<script type="application/ld+json">${jsonLd}</script>`);
@@ -434,6 +511,12 @@ function patchHtml(html: string, pathname: string, resource: ResourceMeta): stri
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const pathname = typeof req.query.path === "string" ? req.query.path : "/";
+  const requestedLang = typeof req.query.lang === "string" ? req.query.lang : "en";
+  const lang = (ALL_LANGS.has(requestedLang) ? requestedLang : "en") as PageLang;
+  const publicLangs = (typeof req.query.locales === "string" ? req.query.locales : "en,fr,he")
+    .split(",")
+    .filter((code) => ALL_LANGS.has(code));
+  const language: LanguageInfo = { lang, publicLangs, hidden: req.query.hidden === "1" };
 
   const protocol = (req.headers["x-forwarded-proto"] as string) || "https";
   const host = req.headers.host;
@@ -449,10 +532,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const resource = await resolveResource(pathname);
-    if (resource) {
-      html = patchHtml(html, pathname, resource);
-    }
+    const resource = await resolveResource(pathname, lang);
+    html = patchHtml(html, pathname, resource, language);
   } catch {
     // En cas d'erreur de récupération des données, on sert la page générique
     // plutôt que de renvoyer une erreur au robot.

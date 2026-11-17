@@ -58,6 +58,7 @@ import {
 } from "@/lib/reservations/actions";
 import { buildCellUpdate, type EntryColumnKey } from "@/lib/reservations/entryGrid";
 import { useIncompletePracticalInfo } from "@/lib/reservations/practicalInfoAlerts";
+import { useTicketsToSend } from "@/lib/reservations/ticketAlerts";
 import { applyToolbarFilters, computeKpis, isRequest, matchesTab } from "@/lib/reservations/rules";
 import { groupByUrgency, matchesFocus } from "@/lib/reservations/attention";
 import type { ChoiceUpdate } from "@/lib/reservations/productChoice";
@@ -141,6 +142,7 @@ const AdminReservations = () => {
 
   const { data: rows, isLoading, error } = useReservationRows();
   const { data: incompletePracticalInfo } = useIncompletePracticalInfo();
+  const { data: ticketsToSend } = useTicketsToSend();
   const { data: unfinishedPayments } = useUnfinishedPayments();
   const { data: deletedReservations } = useDeletedReservations();
   const { data: requestArchives } = useRequestArchives();
@@ -525,6 +527,7 @@ const AdminReservations = () => {
               onAction={handleAction}
               onOpen={openRow}
               incompletePracticalInfo={incompletePracticalInfo}
+              ticketsToSend={ticketsToSend}
               {...dossierLinesProps}
             />
           ) : (

@@ -8,6 +8,7 @@ Disallow: /cart
 Disallow: /auth
 Disallow: /booking/confirmation/
 Disallow: /standalone-booking/confirmation/
+Disallow: /billet/
 Disallow: /standalone-checkout
 
 Sitemap: https://staymakom.com/sitemap.xml

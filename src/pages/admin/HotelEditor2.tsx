@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { toast } from "sonner";
+import { AutoTranslateButton } from "@/components/admin/AutoTranslateButton";
 import { ArrowLeft, Loader2, MapPin, Sparkles, Image as ImageIcon, Save, Star, Car, Dumbbell, Waves, Users, Landmark, Droplets, Archive, ArchiveRestore } from "lucide-react";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { draftSaveStatus } from "@/lib/archive/status";
@@ -672,6 +673,7 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
           {hotelId && <StatusBadge status={archiveToggle.status || "draft"} />}
         </div>
         <div className="flex gap-2">
+          <AutoTranslateButton entityType="hotel2" entityId={hotelId} />
           {archiveToggle.archive && (
             <Button type="button" variant="outline" onClick={archiveToggle.archive.onToggle} disabled={saveMutation.isPending}>
               {archiveToggle.archive.archived ? <ArchiveRestore className="h-4 w-4 mr-2" /> : <Archive className="h-4 w-4 mr-2" />}

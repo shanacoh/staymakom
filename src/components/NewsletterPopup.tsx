@@ -180,7 +180,8 @@ export function NewsletterPopup({
     location.pathname.startsWith("/swipe/") ||
     location.pathname.startsWith("/checkout") ||
     location.pathname.startsWith("/standalone-checkout") ||
-    location.pathname.startsWith("/avis/")
+    location.pathname.startsWith("/avis/") ||
+    location.pathname.startsWith("/billet/")
   ) {
     return null;
   }

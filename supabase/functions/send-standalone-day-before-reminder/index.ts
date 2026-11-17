@@ -13,6 +13,10 @@
 //
 // Pas d'envoi en double : avant d'envoyer, la fonction pose la date d'envoi sur la réservation
 // seulement si elle était vide. Si elle n'obtient rien, quelqu'un d'autre s'en occupe déjà.
+// Billets d'entrée : si des billets existent, le rappel ajoute le bouton « Ouvrir mes billets » vers
+// la page billet (pas de pièce jointe). Si la fiche demande un billet et qu'il n'y en a aucun,
+// rien ne change côté client, mais Shana reçoit une alerte « Billet manquant pour demain ».
+//
 // Cette fonction ne touche ni au paiement ni au statut des réservations : elle ne fait que lire,
 // envoyer, et noter la date d'envoi.
 
@@ -22,6 +26,8 @@ import { loadPracticalInfo, SAMPLE_PRACTICAL_SOURCE } from '../_shared/practical
 import { getAdminEmail, isAdminEmail, isInternalCron } from '../_shared/internal-auth.ts';
 import { buildReminderEmail } from './template.ts';
 import { formatTimeSlot } from '../_shared/time-slot.ts';
+import { ticketPageUrl } from '../_shared/tickets/content.ts';
+import { alertMissingTickets } from './missing-tickets.ts';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 // 10 h : l'envoi. 11 h : rattrapage de ce qui a échoué à 10 h (les rappels déjà partis sont ignorés).
@@ -105,7 +111,7 @@ Deno.serve(async (req: Request) => {
     const tomorrow = nextDay(now.date);
     const { data: bookings, error } = await supabase
       .from('standalone_bookings')
-      .select('id, customer_name, customer_email, booking_date, time_slot, party_size, confirmation_token, custom_experience_title, custom_address, preferred_lang, created_at, standalone_experience_id, standalone_experiences(title, title_fr, title_he, address)')
+      .select('id, customer_name, customer_email, booking_date, time_slot, party_size, confirmation_token, custom_experience_title, custom_address, preferred_lang, created_at, standalone_experience_id, ticket_access_token, tickets_sent_at, booking_tickets(id), standalone_experiences(title, title_fr, title_he, address)')
       .eq('booking_date', tomorrow)
       .eq('status', 'confirmed')
       .eq('is_cancelled', false)
@@ -161,6 +167,9 @@ Deno.serve(async (req: Request) => {
           confirmationToken: booking.confirmation_token,
           address: booking.custom_address || experience?.address || undefined,
           practicalInfo,
+          ticketsUrl: booking.ticket_access_token && ((booking.booking_tickets ?? []).length > 0 || booking.tickets_sent_at)
+            ? ticketPageUrl(booking.ticket_access_token)
+            : undefined,
         });
         sent = await sendEmail(booking.customer_email, email.subject, email.html);
       } catch (sendError) {
@@ -176,8 +185,17 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    console.log('Rappels de la veille:', JSON.stringify(results));
-    return json({ success: true, ...results });
+    // Alerte interne : billets attendus mais absents pour demain. N'empêche jamais les rappels clients.
+    let missingTickets: Awaited<ReturnType<typeof alertMissingTickets>> | { error: string };
+    try {
+      missingTickets = await alertMissingTickets(supabase, tomorrow, sendEmail, dryRun);
+    } catch (alertError) {
+      console.error('Alerte billets manquants impossible:', alertError);
+      missingTickets = { error: (alertError as Error).message };
+    }
+
+    console.log('Rappels de la veille:', JSON.stringify(results), 'Billets manquants:', JSON.stringify(missingTickets));
+    return json({ success: true, ...results, missing_tickets: missingTickets });
   } catch (err) {
     console.error('send-standalone-day-before-reminder error:', err);
     return json({ error: 'Erreur interne', details: (err as Error).message }, 500);

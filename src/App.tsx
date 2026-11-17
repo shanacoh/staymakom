@@ -93,14 +93,19 @@ const ItineraireTsfat             = lazy(() => import("./pages/ItineraireTsfat")
 const HappyBirthdayMom             = lazy(() => import("./pages/HappyBirthdayMom"));
 const CarrieSafed                = lazy(() => import("./pages/CarrieSafed"));
 const ItineraireRebeca           = lazy(() => import("./pages/ItineraireRebeca"));
+const ItineraireJade             = lazy(() => import("./pages/ItineraireJade"));
 const LauraMerMorte              = lazy(() => import("./pages/LauraMerMorte"));
 const NP                         = lazy(() => import("./pages/NP"));
+const Ilona                      = lazy(() => import("./pages/Ilona"));
+const IlonaHotels                = lazy(() => import("./pages/IlonaHotels"));
+const DemandeMariage             = lazy(() => import("./pages/DemandeMariage"));
 const EL                         = lazy(() => import("./pages/EL"));
 const Vitrine                    = lazy(() => import("./pages/Vitrine"));
 const ItineraireChoix            = lazy(() => import("./pages/ItineraireChoix"));
 const StandaloneExperience       = lazy(() => import("./pages/StandaloneExperience"));
 const StandaloneCheckout         = lazy(() => import("./pages/StandaloneCheckout"));
 const StandaloneBookingConfirmation = lazy(() => import("./pages/StandaloneBookingConfirmation"));
+const BookingTicket = lazy(() => import("./pages/BookingTicket"));
 const PublicReviewForm           = lazy(() => import("./pages/PublicReviewForm"));
 const TailorMadeQuestionnaire    = lazy(() => import("./pages/TailorMadeQuestionnaire"));
 const AdminStandaloneBookingDetails = lazy(() => import("./pages/admin/StandaloneBookingDetails"));
@@ -260,8 +265,12 @@ const AppContent = () => {
           <Route path="/happy-birthday-mom" element={<HappyBirthdayMom />} />
           <Route path="/carrie-safed" element={<CarrieSafed />} />
           <Route path="/rebeca" element={<ItineraireRebeca />} />
+          <Route path="/jade" element={<ItineraireJade />} />
           <Route path="/laura-mer-morte" element={<LauraMerMorte />} />
           <Route path="/NP" element={<NP />} />
+          <Route path="/ilona" element={<Ilona />} />
+          <Route path="/ilona-hotels" element={<IlonaHotels />} />
+          <Route path="/proposal" element={<DemandeMariage />} />
           <Route path="/EL" element={<EL />} />
           <Route path="/partner-exp" element={<PartnerExp />} />
           <Route path="/partner-form" element={<PartnerForm />} />
@@ -292,6 +301,7 @@ const AppContent = () => {
           <Route path="/boat/:slug" element={<StandaloneExperience />} />
           <Route path="/standalone-checkout" element={<StandaloneCheckout />} />
           <Route path="/standalone-booking/confirmation/:token" element={<StandaloneBookingConfirmation />} />
+          <Route path="/billet/:token" element={<BookingTicket />} />
           <Route path="/avis/:token" element={<PublicReviewForm />} />
           <Route path="/tailor-questionnaire/:token" element={<TailorMadeQuestionnaire />} />
           <Route path="/swipe/:token" element={<SwipePublic />} />
@@ -419,7 +429,7 @@ const AppContent = () => {
         </Routes>
       </Suspense>
 
-      {showBanner && !isPartnerSpacePath(location.pathname) && (
+      {showBanner && !isPartnerSpacePath(location.pathname) && !location.pathname.startsWith("/billet/") && (
         <CookieConsent onAccept={acceptCookies} onDecline={declineCookies} />
       )}
       <NewsletterPopup />

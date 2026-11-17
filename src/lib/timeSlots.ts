@@ -27,3 +27,22 @@ export function formatTimeSlot(slot: string | null | undefined, lang: string = "
 export function sortTimeSlots(slots: string[]): string[] {
   return [...slots].sort((a, b) => (MOMENT_SORT_KEY[a] ?? a).localeCompare(MOMENT_SORT_KEY[b] ?? b));
 }
+
+/** Libellés par date d'une expérience (`session_labels`), avec horaires propres à la date en option. */
+export type SessionLabel = { en?: string; fr?: string; he?: string; slots?: string[] };
+export type SessionLabels = Record<string, SessionLabel>;
+
+/**
+ * Horaires proposés pour une date : ceux de `session_labels[date].slots` s'ils existent
+ * (ex. horaires spéciaux pendant Hanoukka), sinon les horaires habituels `time_slots`.
+ * Même règle que supabase/functions/_shared/time-slot.ts (serveur) : les garder alignées.
+ */
+export function slotsForDate(
+  timeSlots: string[] | null | undefined,
+  sessionLabels: SessionLabels | null | undefined,
+  date: string | null | undefined,
+): string[] {
+  const dateSlots = date ? sessionLabels?.[date]?.slots : undefined;
+  if (Array.isArray(dateSlots) && dateSlots.length > 0) return dateSlots;
+  return Array.isArray(timeSlots) ? timeSlots : [];
+}

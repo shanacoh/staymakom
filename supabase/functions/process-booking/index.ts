@@ -6,6 +6,7 @@
 //   - logs centralisés → débuggable depuis le dashboard Supabase
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { toClientLocale } from '../_shared/translations/catalog.ts';
 
 const ALLOWED_ORIGINS: (string | RegExp)[] = [
   'https://staymakom.com',
@@ -224,6 +225,8 @@ Deno.serve(async (req: Request) => {
       confirmation_token: confirmationToken,
       idempotency_key: idempotencyKey,
       preferred_lang: ['fr', 'en', 'he'].includes(body.lang) ? body.lang : null,
+      // Langue de la page (es / ru / de compris) : badge dans le back-office.
+      client_locale: toClientLocale(body.client_locale),
       revolut_order_id: body.revolutOrderId || null,
       payment_status: 'paid',
       paid_at: new Date().toISOString(),

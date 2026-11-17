@@ -4,6 +4,248 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 17/11/2026 : Traduction automatique, le site affiche les fiches en espagnol, russe et allemand (langues encore cachées)
+
+### Ce qui a changé côté code
+- `src/config/languages.json` (nouveau) : interrupteur unique `autoLocalesPublic`. À `false` (réglage actuel), les pages ES / RU / DE s'ouvrent avec `?lang=es`, `?lang=ru` ou `?lang=de` mais n'apparaissent ni dans le sélecteur de langue, ni dans les balises hreflang, ni dans le plan du site, et sont marquées « ne pas indexer ». À `true`, tout s'active d'un coup.
+- `src/lib/locale.ts` (nouveau) : liste des langues, langues publiques selon l'interrupteur, choix de la langue de la page.
+- `src/hooks/useLanguage.tsx` : accepte es / ru / de dans l'adresse ; renvoie `locale` (langue réelle) en plus de `lang` (langue des boutons et menus, anglais pour es / ru / de en attendant leur traduction) ; la langue de l'adresse est mémorisée pour les pages suivantes ; changer de langue vers ou depuis es / ru / de recharge la page.
+- `src/lib/contentTranslations/overlay.ts` et `translatingFetch.ts` (nouveaux), `src/integrations/supabase/client.ts` : en es / ru / de, les fiches lues dans la base reçoivent leurs textes traduits à la place de l'anglais (seulement si la traduction correspond à l'anglais actuel). Ville et région restent en anglais (elles servent aux filtres). Rien ne change dans le back-office ni dans les autres langues.
+- `src/lib/contentTranslations/overlay.test.ts` (nouveau) : 7 tests.
+- `src/components/V3Header.tsx` : le sélecteur de langue suit l'interrupteur.
+- `src/components/SEOHead.tsx` : adresse de référence (canonical) : l'anglais garde l'adresse nue, les autres langues portent leur `?lang=` ; hreflang limités aux langues publiques ; « ne pas indexer » sur une langue cachée.
+- `middleware.ts`, `api/bot-meta.ts` : le guichet robots (Google, WhatsApp...) reçoit enfin la langue demandée : titre, description, langue de la page, canonical et hreflang dans la bonne langue (français et hébreu inclus, qui étaient servis en anglais).
+- `generate-sitemap.mjs`, `public/sitemap.xml` : chaque page est listée dans chaque langue publique (anglais à l'adresse nue, français et hébreu avec `?lang=` : 357 adresses) avec ses langues sœurs.
+- `src/lib/contentTranslations/writeBack.ts` (nouveau, 4 tests) : depuis une page ES / RU / DE, tout ce que le site envoie (demande, réservation, email) repart avec les noms anglais des fiches (titre d'expérience, de bateau, options, extras) et la langue de la page (`client_locale`), pour les demandes de disponibilité et les fonctions `process-standalone-payment`, `process-booking`, `submit-tailor-made-request`.
+- `supabase/functions/process-standalone-payment`, `process-booking`, `submit-tailor-made-request` : enregistrent `client_locale` (à redéployer). Liste des langues valides : `SITE_LOCALES` / `toClientLocale` dans `_shared/translations/catalog.ts`.
+- `src/components/admin/ClientLocaleBadge.tsx` (nouveau) : badge « ES », « RU » ou « DE » à côté du nom du client dans la page Réservations et dans la fenêtre d'une demande (`ReservationsSummaryTable`, `EditStandaloneRequestDialog`, `src/lib/reservations/types.ts`, `queries.ts`, `actions.ts`).
+- `supabase/functions/_shared/translations/prompt.ts` : nouvelle consigne, un titre en majuscules n'est pas un nom propre et se traduit (en restant en majuscules). À redéployer avec `translate-content`.
+- `docs/traductions/retraduire-titres-restes-en-anglais.sql` (nouveau) : sur 318 textes identiques à l'anglais, 35 vrais oublis (titres, titres de partage et Google, « Paddleboard (x2) », 17 fiches) sont sauvegardés dans `backup_20261117.content_translations_identiques`, supprimés puis retraduits. Les 283 autres sont légitimes (noms d'hôtels, moods, villes au nom identique, étiquettes de test).
+- `docs/traductions/avant-d-allumer.md` (nouveau) : check-list avant d'allumer l'interrupteur (boutons et menus traduits, villes et régions traduites, zéro titre resté en anglais, relecture, demande test).
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261117100000_client_locale_demandes_reservations.sql` : nouvelle colonne `client_locale` (langue de la page d'où vient la demande : en, fr, he, es, ru, de) sur `standalone_bookings`, `standalone_experience_requests`, `bookings_hg` et `dossiers_voyage`, reprise à la fin de la vue `admin_reservations`. À ne pas confondre avec `preferred_lang` (langue des emails, toujours en / fr / he : un client venu d'une page russe reçoit ses emails en anglais). À appliquer avec `supabase db query --linked -f` (historique des migrations décalé), AVANT de redéployer les fonctions.
+- Le site lit la table `content_translations` existante (lecture publique déjà autorisée).
+
+### Pourquoi ce changement
+- Les 3 456 textes traduits le 16/11 n'étaient lus par aucune page. Shana veut pouvoir relire le site en espagnol, russe et allemand avant de l'ouvrir au public, sans que Google indexe des pages dont les boutons sont encore en anglais.
+- Le back-office doit rester en anglais pour les noms de fiches, tout en signalant qu'un client vient d'une page espagnole, russe ou allemande.
+
+---
+
+## 16/11/2026 : Réservations en ligne, le coût fournisseur s'enregistre tout seul
+
+### Ce qui a changé côté code
+- `supabase/functions/_shared/supplier-cost.ts` (nouveau) : calcule ce que STAYMAKOM doit au prestataire pour une réservation (prix fournisseur adulte × adultes + prix enfant × enfants, prix du forfait tel quel, ou prix fournisseur de l'option tarifaire choisie). Laisse le coût vide s'il manque un prix fournisseur ou si des extras ont été pris (leur coût fournisseur n'est pas connu).
+- `supabase/functions/process-standalone-payment/index.ts` : à la création d'une réservation payée en ligne (carte ou carte cadeau), le coût calculé est enregistré dans `supplier_cost`. Il n'est jamais renvoyé au client : seuls les admins lisent les réservations, et la page de confirmation ne lit pas ce champ. Les codes promo et cartes cadeaux ne changent pas ce coût (ils réduisent la marge). Si la lecture du prix échoue, le coût reste vide et le paiement passe normalement.
+- `src/lib/supplierCost.test.ts` (nouveau) : 5 tests du calcul.
+
+### Ce qui a changé côté base de données
+- Aucune migration. Données corrigées à la main (copie de sauvegarde dans `backup_20261116.standalone_bookings_couts`) :
+  - Sonja Inzlicht-Sprei (Jérusalem s'illumine, 05/11) : coût 62 ₪, prestataire marqué payé.
+  - Meryll Azourahana (paiement « correctif » de 3 ₪) : coût 0 ₪, rien à reverser.
+  - Tal Geissman (Tête à tête en mer, 24/08) : annulée, 500 ₪ d'acompte gardés, prestataire marqué comme déjà prévenu pour qu'aucun email automatique ne parte. L'avoir chez Simona reste à saisir par Shana quand le montant sera connu.
+- Noam Cohen (Survol, 10/07) laissé tel quel : le prix fournisseur de la fiche a changé depuis, coût réel à confirmer par Shana.
+
+### Pourquoi ce changement
+- Les réservations payées en ligne restaient « à surveiller » avec « Saisir le coût fournisseur », alors que la fiche connaît ce coût. Seules les réservations saisies à la main en avaient un.
+
+---
+
+## 16/11/2026 : Traduction automatique, correctifs du lancement initial (limite de calcul, lecture au-delà de 1 000 lignes)
+
+### Ce qui a changé côté code
+- `supabase/functions/translate-content/index.ts` : la lecture des traductions existantes se fait page par page (Supabase renvoie au plus 1 000 lignes par lecture ; au-delà, des textes déjà traduits semblaient manquants et étaient retraduits à chaque passage, ce qui a coûté des retraductions en double pendant le lancement initial avant d'être repéré et bloqué).
+- `supabase/functions/translate-content/index.ts` : les réponses de l'IA sont reçues d'un seul bloc et non plus au fil de l'eau (la lecture morceau par morceau de 4 réponses en parallèle épuisait les 2 secondes de calcul accordées par Supabase à chaque passage, qui s'arrêtait en « CPU Time exceeded ») ; au plus 12 lots par passage, la suite est enchaînée ; délai d'attente de l'IA porté à 5 minutes.
+
+### Ce qui a changé côté base de données
+- Aucun changement de structure. Données : traduction initiale terminée le 16/11 à 18 h 43 (heure d'Israël) : 3 456 textes (1 152 par langue). 2 textes russes gardaient un tiret long, signalés « À trancher » (Galilee Couple's Spa Ritual, article « Slow travel in Israel ») : phrases reformulées à la main à la demande de Shana (« На следующее утро вас ждёт полноценный завтрак-буфет с видом на озеро. » et « В Израиле контраст является частью и пейзажа, и культуры… »), passées en statut `reviewed` pour ne jamais être écrasées. Plus aucun tiret long dans les traductions. Passages interrompus et blocage manuel clôturés dans `content_translation_runs` avec une explication.
+
+### Pourquoi ce changement
+- Le lancement initial s'est arrêté au bout de 2 minutes (limite de calcul), puis faute de crédit Anthropic, puis a refait des traductions en double : les trois causes sont corrigées et la traduction initiale est complète.
+
+---
+
+## 16/11/2026 : Traduction automatique ES / RU / DE, étape 3 (tâche de nuit, bouton par fiche, lancement initial)
+
+### Ce qui a changé côté code
+- `src/components/admin/AutoTranslateButton.tsx` (nouveau) : bouton discret « Mettre à jour ES / RU / DE » qui traduit tout de suite la fiche ouverte (version publiée et enregistrée) et affiche le résultat (textes traduits, déjà à jour, fiche non publiée, traductions vérifiées à revoir).
+- `src/components/forms/shared/FormHeaderBar.tsx` : nouvel emplacement `secondaryActions` dans la barre du haut des formulaires.
+- Bouton ajouté dans : `StandaloneExperienceForm.tsx` (expériences seules et bateaux), `UnifiedExperience2Form.tsx` (expériences avec hôtel), `HotelEditor2.tsx`, `CategoryEditor.tsx` (moods), `JournalEditor.tsx`.
+- `supabase/functions/translate-content/index.ts` :
+  - 2e passe « relecture native » après chaque traduction (supprime les calques, corrige grammaire et tournures, sans changer le sens) ; si elle échoue, la traduction de la 1re passe est gardée et signalée dans le journal ;
+  - un tiret long laissé par l'IA n'est jamais corrigé automatiquement (une virgule crée des fautes, ex. « Север, это… ») : il est listé dans le journal du passage (« À trancher : tiret long dans… ») pour que Shana tranche ;
+  - paramètres `only_after_israel_hour` (la tâche de nuit ne fait rien avant 3 h en Israël) et `continue_until_done` (relance un passage tant qu'il reste du travail et qu'il y a eu des progrès) ;
+  - passage « tout le site » exclusif : refusé si un autre est en cours.
+- `supabase/functions/_shared/translations/prompt.ts` : allemand toujours en « du » (jamais « ihr », jamais « Sie ») ; règle du mot « mood » : reste en anglais uniquement comme étiquette (rubrique « Moods ») ou nom propre (Mindful Reset...), sinon traduit (estado de ánimo / según cómo quieras sentirte, настроение, Stimmung) ; en russe, aucun mot en alphabet latin hors noms de marque ; la relecture reformule les phrases pour éviter le tiret long ; consigne de relecture native avec les exemples de calques relevés par Shana (DE et RU).
+- `supabase/functions/_shared/translations/plan.ts` : `hasLongDash` (repère sans modifier) ; 2 tests de plus (19 au total).
+- `docs/traductions/traduction-initiale.sql` (nouveau) : à coller dans Supabase pour activer la tâche de nuit et lancer la traduction de tout le contenu publié.
+- `docs/traductions/suivi.sql` (nouveau) : requête de suivi (derniers passages, textes par langue).
+- `ARCHITECTURE.md` : section « Traduction automatique ES / RU / DE ».
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261116130000_translate_content_cron.sql` (appliquée via l'outil Supabase) : tâche planifiée `translate-content-nightly`, toutes les 20 min entre 00:00 et 01:40 UTC (couvre 3 h en Israël, heure d'été comme d'hiver).
+- Migration `supabase/migrations/20261116140000_translate_content_lock_and_chain.sql` (appliquée via l'outil Supabase) : fonctions `begin_content_translation_run` (ouvre un passage, verrou contre les passages simultanés) et `queue_translate_content_continuation` (relance la fonction depuis la base, avec le secret du coffre) ; la tâche de nuit passe par cette relance et est **en pause** jusqu'au lancement initial.
+- Données : les 2 fiches test retraduites avec les nouvelles règles.
+
+### Pourquoi ce changement
+- Que les nouvelles fiches et les modifications passent en ES / RU / DE chaque nuit sans action, avec un bouton pour forcer une fiche tout de suite, et une qualité de langue « native » (pas de traduction calquée sur l'anglais).
+
+---
+
+## 16/11/2026 : Traduction automatique ES / RU / DE, étapes 1 et 2 (base + fonction de traduction)
+
+### Ce qui a changé côté code
+- `supabase/functions/_shared/translations/catalog.ts` (nouveau) : la liste unique des langues automatiques (`AUTO_LOCALES` = es, ru, de) et la carte de tout ce qui se traduit, table par table, avec la vraie colonne anglaise source (`title` ou `title_en` selon les tables) et la règle « publié ». Volontairement exclus : noms d'hôtels, nom des moods, adresses.
+- `src/constants/autoLocales.ts` (nouveau) : reprend la liste des langues pour le site (une seule source, partagée avec le serveur).
+- `supabase/functions/_shared/translations/plan.ts` (nouveau) : la règle de décision champ par champ (traduire, ignorer, ou signaler « source modifiée ») et l'empreinte du texte anglais.
+- `supabase/functions/_shared/translations/blocks.ts` (nouveau) : pour les articles du Journal (enregistrés en blocs), seuls les textes sont envoyés à l'IA puis remis à leur place ; liens, identifiants et mise en page ne sont jamais touchés.
+- `supabase/functions/_shared/translations/prompt.ts` (nouveau) : consigne de traduction (voix STAYMAKOM, noms d'usage des lieux par langue, noms d'hôtels / partenaires / moods intacts, prix et dates intacts, aucun tiret long, tutoiement ES / DE, « вы » en russe).
+- `supabase/functions/translate-content/index.ts` (nouveau) : la fonction de traduction. Appelable par la tâche planifiée (secret `x-cron-secret`, sans connexion) ou par un admin. Modes `changed` / `all`, filtre par fiche, `dry_run` pour compter sans traduire. Un appel par fiche et par langue (les petites fiches sont regroupées), 4 en parallèle, arrêt propre avant la limite de temps avec le nombre de champs restants. Modèle Claude Sonnet 5.5 (`TRANSLATE_CONTENT_AI_MODEL` pour changer).
+- `supabase/config.toml` : `translate-content` sans vérification de jeton automatique (la fonction vérifie elle-même admin ou secret).
+- `src/lib/contentTranslations/plan.test.ts` (nouveau) : 17 tests (règle de décision, listes, articles en blocs, catalogue).
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261116120000_content_translations.sql`, appliquée via l'outil Supabase en 3 morceaux (`content_translations_table`, `content_translations_policies`, `content_translations_functions`) :
+  - table `content_translations` : un texte traduit par ligne (fiche, champ, langue), avec l'empreinte de l'anglais, le statut `auto` / `reviewed` et le drapeau `stale` (« source modifiée »). Lecture publique, écriture admins.
+  - fonctions `save_auto_translations` (n'écrase jamais une ligne `reviewed`, vérifié au moment de l'écriture) et `mark_reviewed_translations_stale`, réservées à la clé de service.
+  - table `content_translation_runs` : journal de chaque passage (traduits, ignorés, erreurs, restants).
+- Données : 2 fiches test traduites (expérience « Walking the Pilgrims' Footsteps » et article « How to travel Israel differently »), 63 lignes. Rien n'est encore affiché sur le site.
+
+### Pourquoi ce changement
+- Ouvrir le site en espagnol, russe et allemand sans rien saisir de plus : les textes sont traduits automatiquement depuis l'anglais, et les corrections faites à la main ne sont jamais écrasées.
+
+---
+
+## 16/11/2026 : Accueil, ajout de « The Jerusalem Post » dans le bandeau presse
+
+### Ce qui a changé côté code
+- `src/components/PressStrip.tsx` : « The Jerusalem Post » ajouté à la liste des médias (entre i24NEWS et Actualité Juive). Les noms passent à la ligne proprement sur petit écran au lieu de déborder.
+
+### Ce qui a changé côté base de données
+- Aucun changement.
+
+### Pourquoi ce changement
+- Le Jerusalem Post a parlé de Staymakom : on l'affiche dans le bandeau « As seen in » de la page d'accueil.
+
+---
+
+## 16/11/2026 : Horaires spécifiques à certaines dates (expériences standalone)
+
+### Ce qui a changé côté code
+- `src/lib/timeSlots.ts` : nouvelle règle `slotsForDate` (horaires de `session_labels[date].slots` s'ils existent, sinon `time_slots`) et type `SessionLabels`. Testée dans `src/lib/timeSlots.test.ts`.
+- `supabase/functions/_shared/time-slot.ts` : même règle côté serveur, à garder alignée avec le site.
+- `src/pages/StandaloneExperience.tsx` : le sélecteur d'horaire affiche les horaires de la date choisie ; si le client change de date, l'horaire choisi est oublié s'il n'existe pas ce jour-là.
+- `src/components/admin/CreateManualStandaloneBookingDialog.tsx` : saisie manuelle d'une réservation, même logique (liste selon la date, horaire remis à zéro si besoin).
+- `supabase/functions/process-standalone-payment`, `process-standalone-booking`, `create-standalone-manual-booking` : la vérification de l'horaire accepte les horaires propres à la date et refuse tout horaire hors de cette liste (ex. 19:15 le 07/12 pour Lit Up).
+- `src/components/forms/StandaloneExperienceForm.tsx`, `src/components/experience/EssentialsBlock.tsx` : type élargi seulement ; l'éditeur de libellés conservait déjà la clé `slots`.
+
+### Ce qui a changé côté base de données
+- Aucune migration : nouvelle clé optionnelle `slots` dans `session_labels` (jsonb), déjà remplie pour « Jerusalem Lit Up After Dark » (Hanoukka, 6 au 10/12).
+
+### Pourquoi ce changement
+- Certains partenaires changent d'horaires sur des dates précises (City of David pendant Hanoukka : 17h45 / 18h30 au lieu de 19h15 / 20h). Le client doit voir et ne pouvoir réserver que les bons horaires ce jour-là.
+
+---
+
+## [2026-11-12] — Page de proposition « demande en mariage » à cocher
+
+> Statut : validé par Shana et mis en ligne le 12/11/2026, adresse `/proposal`.
+
+### Ce qui a changé côté code
+- `src/pages/DemandeMariage.tsx` (créé) : page en français (client francophone) en cinq temps. Option A samedi soir (3 mises en scène : villa privée, plage, jardin), Option B vendredi après-midi (7 expériences), la célébration en famille (Shabbat chez soi ou en villa, dîner du samedi au restaurant ou dans un décor créé pour l'occasion), la révélation du voyage à New York (3 idées), puis un récapitulatif. Le client touche les cartes qui lui plaisent (cercle rouge coché), ajoute un mot libre (dates, invités...) et le bouton « Créer ma demande » ouvre WhatsApp avec sa sélection déjà écrite. Rien n'est enregistré sur le site.
+- `src/data/demandeMariage.ts` (créé) : le contenu de la page (titres, descriptions, photos). Photos reprises de nos fiches (bateau, cheval, pique-nique), de nos images, de photos fournies par Shana (villa, jardin) (Césarée, vignoble) et d'Unsplash pour le reste.
+- `src/App.tsx` : ajout de la route `/proposal`.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Un client prépare une demande en mariage en Israël suivie d'une surprise à New York : Shana veut lui présenter toutes les possibilités et qu'il choisisse ce sur quoi il veut un devis.
+
+---
+
+## [2026-11-06] — Page Jade : itinéraire de 8 jours (Jérusalem, Tel Aviv, options)
+
+> Statut : validé par Shana et mis en ligne le 06/11/2026, adresse `/jade`.
+
+### Ce qui a changé côté code
+- `src/pages/ItineraireJade.tsx` (créé) : copie de la page de Rebeca, adaptée au séjour de Jade du dimanche 8 au dimanche 15 novembre. Chaque jour affiche sa date. Le dernier chapitre présente deux façons de finir le séjour l'une sous l'autre (Option 1 : une journée hors de Tel Aviv puis une journée en mer ; Option 2 : deux jours à Six Senses dans le désert). Nouveau bloc « We take care of everything » : prise en charge à l'aéroport, taxis entre les étapes, hôtels, expériences, restaurants. Pas de bloc prix pour l'instant.
+- `src/data/itineraireJade.ts` (créé) : le contenu de la page (jours, options, services, questions à cocher envoyées sur WhatsApp).
+- `src/App.tsx` : ajout de la route `/jade`.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Shana envoie à Jade une proposition d'itinéraire sur le modèle de celle de Rebeca, en montrant clairement que Staymakom peut tout réserver et organiser (transferts compris).
+
+---
+
+## [2026-11-06] — Page Ilona : choix de l'hôtel selon la durée du séjour
+
+> Statut : validé par Shana et mis en ligne le 06/11/2026, adresse `/ilona-hotels`. La page `/ilona` (première proposition, les trois escapades) reste inchangée.
+
+### Ce qui a changé côté code
+- `src/pages/IlonaHotels.tsx` (créé) : page personnalisée en deux propositions. Si 2 nuits (ven. 27 → dim. 29 nov.) : Néguev, avec le glamping Jacob et Daroma. Si 1 nuit (sam. 28 → dim. 29 nov.) : Zikhron Yaakov, avec Hagafen 1884 et Gordonia. Chaque hôtel est présenté avec un nom d'ambiance (le vrai nom n'est pas affiché), un carrousel de 4 photos, des pastilles et le prix en shekels avec l'équivalent en euros. Une bulle « Activités à réserver » accompagne chaque option. Le bas de page précise que les prix sont hors TVA (18 % à régler sur place).
+- `src/pages/IlonaHotels.tsx` (retouche) : le grand titre de la photo d'en-tête et les noms d'hôtels posés sur les photos passent en blanc (le site met les titres en rouge par défaut, ce qui se lisait mal sur les photos).
+- `src/assets/ilona-hotels/` (créé) : les 16 photos des hôtels (sites officiels, base Staymakom et photos fournies par Shana).
+- `src/App.tsx` : ajout de la route `/ilona-hotels`.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Ilona s'intéresse au Néguev et à Zikhron Yaakov : Shana lui envoie le choix d'hôtel avec les prix (fixés par Shana en euros, hors TVA). L'itinéraire complet sera construit une fois l'hôtel réservé.
+
+---
+
+## [2026-11-02] — Billets d'entrée : transmettre au client le QR du prestataire
+
+> Statut : validé par Shana et en ligne le 03/11/2026 (envoi testé depuis le back-office en FR et HE). Base de données et 3 nouvelles fonctions serveur déjà en place ; l'email de confirmation et le rappel de la veille redéployés le 02/11/2026 avec le feu vert de Shana ; le site (back-office et page billet) part avec la mise en ligne de la branche `billets-entree`.
+
+### Ce qui a changé côté code
+- `supabase/functions/_shared/tickets/` (nouveau) : `content.ts` (reconnaître un fichier billet, textes EN / FR / HE, partagé avec le site), `load.ts` (lire une réservation et ses billets, liens signés), `email.ts` (email « Vos billets », minimaliste, images en pièce jointe intégrée « cid »).
+- `supabase/functions/_shared/amplitude.ts` (nouveau) : envoi d'événements Amplitude depuis le serveur (`tickets_uploaded`, `tickets_sent`, `ticket_page_viewed`).
+- `supabase/functions/send-booking-tickets/` (nouveau) : envoi de l'email « Vos billets » par un admin, pièces jointes originales (.pkpass avec le type Wallet), marqueur d'envoi, renvoi volontaire.
+- `supabase/functions/get-booking-tickets/` (nouveau) : données de la page billet à partir du jeton, liens signés de 30 minutes, rien si annulée ou remboursée.
+- `supabase/functions/track-tickets-uploaded/` (nouveau) : compte les billets déposés (relus en base) dans Amplitude.
+- `send-standalone-booking-confirmation` : seule modification, la ligne « Vos billets d'entrée vous seront envoyés séparément avant l'expérience » quand la fiche demande un billet.
+- `send-standalone-day-before-reminder` : bouton « Ouvrir mes billets » si des billets existent ; `missing-tickets.ts` (nouveau) envoie à Shana « Billet manquant pour demain » (une fois par réservation).
+- `src/pages/BookingTicket.tsx` (nouveau, route `/billet/:token`) + `src/components/tickets/` (rendu de la 1re page des PDF, bloc Infos pratiques) : page billet mobile, non indexée.
+- `src/components/admin/BookingTicketsCard.tsx` + `src/lib/tickets/adminTickets.ts` (nouveaux) : bloc « Billets d'entrée » de la fiche réservation (dépôt glisser-déposer, libellé, ordre, suppression, note, envoi / renvoi, lien vers la page billet).
+- `src/lib/reservations/ticketAlerts.ts` (nouveau) + `ReservationsSummaryTable.tsx` + `Reservations.tsx` : pastille « Billet à envoyer » dans la vue Réservations.
+- `StandaloneExperienceForm.tsx` : interrupteur « Billet d'entrée envoyé par le prestataire » (section 5. Après la réservation).
+- `MobileAppShell.tsx`, `NewsletterPopup.tsx`, `WhatsAppButton.tsx`, `App.tsx` (bandeau cookies) : rien ne s'affiche par-dessus la page billet.
+- `vercel.json` + `public/robots.txt` : `/billet/` jamais indexée ni mise en cache.
+- `package.json` : ajout de `pdfjs-dist` 4.10.38 (affichage des PDF sur téléphone, chargé seulement sur la page billet).
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261102120000_billets_entree.sql` (appliquée avec `supabase db query --linked -f`, donc absente de l'historique des migrations) :
+  - `standalone_experiences.requires_entry_ticket` (non par défaut) ;
+  - `standalone_bookings.ticket_note`, `tickets_sent_at`, `ticket_access_token` (unique), `ticket_missing_alert_sent_at` ;
+  - table `booking_tickets` (fichier, type pdf / image / pkpass, nom d'origine, libellé, ordre), admins seulement ;
+  - déclencheur qui crée le jeton de la page billet au premier billet ; fonction `reorder_booking_tickets` (ordre enregistré en une fois) ;
+  - bucket privé `booking-tickets` (15 Mo max, PDF / PNG / JPG / .pkpass), lecture et écriture admins seulement.
+
+### Pourquoi ce changement
+- Certains prestataires envoient un billet avec QR code après la réservation. Shana peut maintenant le déposer sur la réservation et l'envoyer au client tel quel, par email et sur une page billet à montrer à l'entrée.
+
+---
+
+## [2026-11-02] — Page personnalisée « Ilona » (3 escapades romantiques)
+
+### Ce qui a changé côté code
+- `src/pages/Ilona.tsx` (nouveau) : page d'une seule page pour la demande sur-mesure TM-1007 (30 ans du mari d'Ilona, 2 nuits en novembre). Trois escapades côte à côte sur ordinateur (Néguev, Zichron Yaakov et Césarée, Tsfat), chacune avec un titre de destination, un sous-titre et trois points, chacune avec un bouton WhatsApp pré-rempli, puis un bouton « On s'appelle ? ».
+- `src/assets/ilona-neguev.jpg`, `ilona-zichron.jpg`, `ilona-tsfat.jpg` (nouveaux) : photos fournies par Shana pour chaque escapade.
+- `src/App.tsx` : nouvelle adresse `/ilona`.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Répondre à la cliente avec un joli lien plutôt qu'un simple message, en reprenant le modèle des pages personnalisées existantes.
+
 ---
 
 ## [2026-11-02] Alertes paiement : distinguer « le site a planté » de « paiement reçu hors site »

@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { AutoTranslateButton } from "@/components/admin/AutoTranslateButton";
 import { ArrowLeft, Upload, X, Eye, Sparkles, RotateCcw } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -271,6 +272,7 @@ const CategoryEditor = () => {
           {isEditing && category?.status && <StatusBadge status={category.status} />}
         </div>
         <div className="flex gap-2">
+          {isEditing && <AutoTranslateButton entityType="category" entityId={id} />}
           {isEditing && category?.slug && (
             <Button type="button" variant="outline" size="sm" onClick={() => window.open(`/category/${category.slug}`, "_blank")}>
               <Eye className="w-4 h-4 mr-2" />

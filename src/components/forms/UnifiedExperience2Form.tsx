@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Save, Rocket, X, Upload, Loader2, ArrowLeft, Plus, ChevronUp, ChevronDown, Star, Image as ImageIcon, HelpCircle, Check, DollarSign, TrendingUp, Receipt, Percent, Building2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { AutoTranslateButton } from "@/components/admin/AutoTranslateButton";
 import { draftSaveStatus, formStatusLabel } from "@/lib/archive/status";
 import { useFormArchiveToggle } from "@/lib/archive/useFormArchiveToggle";
 import RichTextEditor from "@/components/ui/rich-text-editor";
@@ -1345,6 +1346,7 @@ export function UnifiedExperience2Form({
           canPublish={!!canPublish}
           busy={isSaving || heroImageUploading}
           archive={archiveToggle.archive}
+          secondaryActions={<AutoTranslateButton entityType="experience2" entityId={currentExperienceId} />}
         />
 
         {/* Générer avec l'IA */}

@@ -45,6 +45,7 @@ function row(overrides: Partial<ReservationRow>): ReservationRow {
     flagged: false,
     checkNote: null,
     phone: null,
+    clientLocale: null,
     nights: null,
     ...overrides,
   };

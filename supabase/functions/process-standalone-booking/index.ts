@@ -3,6 +3,7 @@
 // Ne touche pas à HyperGuest ni aux tables existantes (bookings_hg, experiences2).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { slotsForDate } from '../_shared/time-slot.ts';
 import { SITE_ORDER_METADATA } from '../_shared/revolut-order.ts';
 
 const ALLOWED_ORIGINS: (string | RegExp)[] = [
@@ -149,7 +150,7 @@ Deno.serve(async (req: Request) => {
     // ── Récupérer l'expérience ────────────────────────────────────────────────
     const { data: experience, error: expError } = await supabase
       .from('standalone_experiences')
-      .select('id, title, base_price, base_price_type, currency, min_party, max_party, has_time_slots, time_slots, lead_time_days, status')
+      .select('id, title, base_price, base_price_type, currency, min_party, max_party, has_time_slots, time_slots, session_labels, lead_time_days, status')
       .eq('id', experience_id)
       .single();
 
@@ -179,7 +180,8 @@ Deno.serve(async (req: Request) => {
 
     // ── Valider le créneau si applicable ─────────────────────────────────────
     if (experience.has_time_slots) {
-      const availableSlots: string[] = Array.isArray(experience.time_slots) ? experience.time_slots : [];
+      // Horaires propres à la date choisie s'il y en a (ex. Hanoukka), sinon les horaires habituels.
+      const availableSlots = slotsForDate(experience.time_slots, experience.session_labels, booking_date);
       if (!time_slot || !availableSlots.includes(time_slot)) {
         return new Response(JSON.stringify({ error: 'Créneau horaire invalide ou non sélectionné' }), {
           status: 400,
