@@ -143,7 +143,8 @@ function fmt(amount: number, _currency: string): string {
 export function BookingConfirmationDialog({ open, onClose, data, lang = "en" }: BookingConfirmationDialogProps) {
   const t = translations[lang];
   const navigate = useNavigate();
-  const { lang: currentLang } = useLanguage();
+  // Langue réelle de la page : la page de confirmation reste en es / ru / de si c'était le cas.
+  const { locale: currentLang } = useLanguage();
 
   if (!data) return null;
 

@@ -6,6 +6,8 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useLanguage } from "@/hooks/useLanguage";
+import { t } from "@/lib/translations";
 
 type Lang = "en" | "fr" | "he";
 
@@ -16,34 +18,6 @@ interface AccountBubbleProps {
   isTransparent?: boolean;
 }
 
-function getCopy(lang: Lang) {
-  switch (lang) {
-    case "fr":
-      return {
-        welcome: "Bienvenue chez",
-        brand: "STAYMAKOM",
-        subtitle: "Connectez-vous pour sauvegarder vos expériences préférées et accéder à votre compte.",
-        signIn: "Se connecter",
-        createAccount: "Créer un compte",
-      };
-    case "he":
-      return {
-        welcome: "ברוכים הבאים ל",
-        brand: "STAYMAKOM",
-        subtitle: "התחברו כדי לשמור חוויות אהובות ולגשת לחשבון שלכם.",
-        signIn: "התחברות",
-        createAccount: "יצירת חשבון",
-      };
-    default:
-      return {
-        welcome: "Welcome to",
-        brand: "STAYMAKOM",
-        subtitle: "Sign in to save your favorite experiences and access your account.",
-        signIn: "Sign In",
-        createAccount: "Create Account",
-      };
-  }
-}
 
 export default function AccountBubble({
   lang,
@@ -52,7 +26,15 @@ export default function AccountBubble({
   isTransparent = false,
 }: AccountBubbleProps) {
   const [open, setOpen] = useState(false);
-  const copy = getCopy(lang);
+  // Textes dans la langue de la page (y compris es / ru / de).
+  const { locale } = useLanguage();
+  const copy = {
+    welcome: t(locale, "accountWelcome"),
+    brand: "STAYMAKOM",
+    subtitle: t(locale, "accountSubtitle"),
+    signIn: t(locale, "accountSignIn"),
+    createAccount: t(locale, "accountCreate"),
+  };
   const isRTL = lang === "he";
 
   const handleSignIn = () => {

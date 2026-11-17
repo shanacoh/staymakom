@@ -293,7 +293,6 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
             <PhoneInput
               value={value.phone}
               onChange={(phone) => update("phone", phone)}
-              lang={lang}
               className="h-9"
               style={inputStyle}
             />

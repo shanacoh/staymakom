@@ -6,6 +6,7 @@
 import ExperienceCard from "@/components/ExperienceCard";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useLanguage } from "@/hooks/useLanguage";
+import { t } from "@/lib/translations";
 import { getStandaloneFromPrice } from "@/lib/standaloneFromPrice";
 import { getAutoBadgeTagsFromPracticalInfo, isKosherEditorialTag, normalizeLegacyPracticalInfo } from "@/lib/standaloneBadges";
 
@@ -14,11 +15,6 @@ import { getAutoBadgeTagsFromPracticalInfo, isKosherEditorialTag, normalizeLegac
 // que celui de la carte "Équipage" du formulaire admin. Ne plus la faire
 // dépendre des badges éditoriaux (standalone_experience_highlight_tags), qui
 // sont gérés séparément et peuvent se désynchroniser de l'interrupteur.
-const SKIPPER_INCLUDED = { en: "Skipper included", he: "סקיפר כלול", fr: "Skipper inclus" };
-const SKIPPER_CREW = { en: "Skipper + crew", he: "סקיפר + צוות", fr: "Skipper + équipier" };
-const SKIPPER_NOT_INCLUDED = { en: "Skipper not included", he: "סקיפר לא כלול", fr: "Skipper non inclus" };
-const UP_TO_GUESTS = { en: "Up to", he: "עד", fr: "Jusqu'à" };
-const GUESTS_SUFFIX = { en: "guests", he: "אורחים", fr: "pers." };
 
 interface StandaloneHighlightTagLink {
   tag_id: string;
@@ -86,7 +82,7 @@ export default function StandaloneExperienceCard({
   isBoat = false,
 }: StandaloneExperienceCardProps) {
   const { convert } = useCurrency();
-  const { lang } = useLanguage();
+  const { lang, locale } = useLanguage();
 
   // Pour un forfait (fixed), on affiche le prix "à partir de" = prix total / max participants.
   // Pour un prix par personne, on affiche directement le prix converti.
@@ -122,11 +118,11 @@ export default function StandaloneExperienceCard({
   // cet ordre et avec la même présentation sur toutes les cartes. Aucun autre tag
   // éditorial n'est affiché sur la carte (ex: Baignade possible, Yacht + speed
   // boat) : ces infos restent visibles dans la fiche détail, pas sur la grille.
-  const skipperLabel = experience.crew_included
-    ? SKIPPER_CREW[lang]
+  const skipperLabel: string = experience.crew_included
+    ? t(locale, "boatSkipperCrew")
     : experience.skipper_included
-    ? SKIPPER_INCLUDED[lang]
-    : SKIPPER_NOT_INCLUDED[lang];
+    ? t(locale, "boatSkipperIncluded")
+    : t(locale, "boatSkipperNotIncluded");
 
   // Certaines fiches ont un champ durée qui embarque une précision annexe après
   // une virgule (ex: "Forfait 4h, yacht + speed boat") — on ne garde que la
@@ -139,7 +135,7 @@ export default function StandaloneExperienceCard({
   const durationLabel = rawDuration?.split(",")[0].trim();
 
   const capacityLabel = experience.max_party
-    ? `${UP_TO_GUESTS[lang]} ${experience.max_party} ${GUESTS_SUFFIX[lang]}`
+    ? (t(locale, "boatUpToGuests")(experience.max_party) as string)
     : undefined;
 
   const fixedBadges = isBoat

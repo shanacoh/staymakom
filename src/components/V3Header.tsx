@@ -7,6 +7,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { cn } from "@/lib/utils";
 import { LOCALE_LABELS, publicLocales } from "@/lib/locale";
+import { t } from "@/lib/translations";
 import {
   Popover,
   PopoverContent,
@@ -99,10 +100,10 @@ const V3Header = ({ mode, setMode, showModeToggle = false }: V3HeaderProps) => {
                 <Moon className="h-3.5 w-3.5 flex-shrink-0 text-foreground" strokeWidth={1.5} />
                 <span className="flex-1 text-center">
                   <span className={cn("block font-bold uppercase tracking-wider text-foreground leading-[13px]", "text-[9px] sm:text-[10px]")}>
-                    {lang === "he" ? "עם" : lang === "fr" ? "Avec" : "With"}
+                    {t(locale, "modeWithHotel1")}
                   </span>
                   <span className={cn("block font-bold uppercase tracking-wider text-foreground leading-[13px]", "text-[9px] sm:text-[10px]")}>
-                    {lang === "he" ? "מלון" : lang === "fr" ? "Hôtel" : "Hotel"}
+                    {t(locale, "modeWithHotel2")}
                   </span>
                 </span>
                 <span className="w-3.5 flex-shrink-0" aria-hidden />
@@ -121,10 +122,10 @@ const V3Header = ({ mode, setMode, showModeToggle = false }: V3HeaderProps) => {
                 <Sun className="h-3.5 w-3.5 flex-shrink-0 text-foreground" strokeWidth={1.5} />
                 <span className="flex-1 text-center">
                   <span className={cn("block font-bold uppercase tracking-wider text-foreground leading-[13px]", "text-[9px] sm:text-[10px]")}>
-                    {lang === "he" ? "חוויות" : lang === "fr" ? "Expériences" : "Experience"}
+                    {t(locale, "modeExperienceOnly1")}
                   </span>
                   <span className={cn("block font-bold uppercase tracking-wider text-foreground leading-[13px]", "text-[9px] sm:text-[10px]")}>
-                    {lang === "he" ? "בלבד" : lang === "fr" ? "seules" : "Only"}
+                    {t(locale, "modeExperienceOnly2")}
                   </span>
                 </span>
                 <span className="w-3.5 flex-shrink-0" aria-hidden />
@@ -140,7 +141,7 @@ const V3Header = ({ mode, setMode, showModeToggle = false }: V3HeaderProps) => {
           {/* Globe — langue et devise, mobile ET desktop */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-[30px] w-[30px] rounded-full" aria-label="Langue et devise">
+              <Button variant="ghost" size="icon" className="h-[30px] w-[30px] rounded-full" aria-label={t(locale, "headerLanguageCurrencyAria")}>
                 <Globe className="h-[18px] w-[18px] text-foreground" strokeWidth={1.5} />
               </Button>
             </PopoverTrigger>
@@ -153,7 +154,7 @@ const V3Header = ({ mode, setMode, showModeToggle = false }: V3HeaderProps) => {
             >
               {/* Language */}
               <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-black/40 mb-2">
-                {lang === "he" ? "שפה" : lang === "fr" ? "Langue" : "Language"}
+                {t(locale, "headerLanguage")}
               </p>
               <div className="flex gap-1 mb-4">
                 {LANGUAGES.map(({ code, label }, idx) => (
@@ -181,7 +182,7 @@ const V3Header = ({ mode, setMode, showModeToggle = false }: V3HeaderProps) => {
 
               {/* Currency */}
               <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-black/40 mb-2">
-                {lang === "he" ? "מטבע" : lang === "fr" ? "Devise" : "Currency"}
+                {t(locale, "headerCurrency")}
               </p>
               <div className="flex gap-1">
                 {CURRENCIES.map(({ code, symbol }, idx) => (

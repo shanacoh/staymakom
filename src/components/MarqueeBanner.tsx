@@ -1,25 +1,16 @@
 import { useLanguage } from "@/hooks/useLanguage";
 import { cn } from "@/lib/utils";
+import { t } from "@/lib/translations";
 
 const MarqueeBanner = ({ className }: { className?: string }) => {
-  const { lang } = useLanguage();
+  const { lang, locale } = useLanguage();
   const isRTL = lang === 'he';
   
   // Create the formatted text with proper styling
-  const createContent = () => isRTL ? (
+  const createContent = () => (
     <>
-      <span className="font-normal">מלונות נבחרים.</span>
-      <span className="font-bold"> חוויות בלתי נשכחות.</span>
-    </>
-  ) : lang === 'fr' ? (
-    <>
-      <span className="font-normal">HÔTELS D'EXCEPTION.</span>
-      <span className="font-bold"> EXPÉRIENCES INOUBLIABLES.</span>
-    </>
-  ) : (
-    <>
-      <span className="font-normal">HANDPICKED HOTELS.</span>
-      <span className="font-bold"> UNFORGETTABLE EXPERIENCES.</span>
+      <span className="font-normal">{t(locale, "marqueeLine1")}</span>
+      <span className="font-bold"> {t(locale, "marqueeLine2")}</span>
     </>
   );
 

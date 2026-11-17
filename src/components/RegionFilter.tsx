@@ -8,19 +8,29 @@ import { NEAR_ME_RADIUS_KM, type Lang } from "@/lib/regions";
 import { regionChoice, zoneChoice, type RegionChoice, type RegionCounts } from "@/lib/regionList/filter";
 import { groupByZone, localizedName } from "@/lib/regionList/labels";
 import type { RegionList } from "@/lib/regionList/types";
+import { useLanguage } from "@/hooks/useLanguage";
+import { t } from "@/lib/translations";
+import type { Locale } from "@/lib/locale";
 
-const COPY: Record<Lang, { everywhere: string; nearMe: string; nearHint: string; locating: string }> = {
-  fr: { everywhere: "Partout en Israël", nearMe: "Autour de moi", nearHint: `Utilise votre position, à moins de ${NEAR_ME_RADIUS_KM} km`, locating: "Localisation en cours..." },
-  en: { everywhere: "Anywhere in Israel", nearMe: "Near me", nearHint: `Uses your location, within ${NEAR_ME_RADIUS_KM} km`, locating: "Locating..." },
-  he: { everywhere: "בכל הארץ", nearMe: "קרוב אליי", nearHint: `לפי המיקום שלכם, עד ${NEAR_ME_RADIUS_KM} ק״מ`, locating: "מאתר מיקום..." },
-};
+/** Textes fixes du filtre, dans la langue de la page (en, fr, he, es, ru, de). */
+const copyFor = (locale: Locale) => ({
+  everywhere: t(locale, "regionEverywhere") as string,
+  nearMe: t(locale, "regionNearMe") as string,
+  nearHint: t(locale, "regionNearHint")(NEAR_ME_RADIUS_KM) as string,
+  locating: t(locale, "regionLocating") as string,
+});
 
-export function regionChoiceLabel(choice: RegionChoice, lang: Lang, list: RegionList): string {
-  if (choice === null) return COPY[lang].everywhere;
-  if (choice === "near") return COPY[lang].nearMe;
+/**
+ * Libellé du choix en cours. `lang` sert aux noms de zones et régions (en, fr, he) ;
+ * `locale` aux textes fixes (« Partout en Israël »...), par défaut la même langue.
+ */
+export function regionChoiceLabel(choice: RegionChoice, lang: Lang, list: RegionList, locale: Locale = lang): string {
+  const copy = copyFor(locale);
+  if (choice === null) return copy.everywhere;
+  if (choice === "near") return copy.nearMe;
   const [kind, slug] = choice.split(":");
   const entry = kind === "zone" ? list.zones.find((z) => z.slug === slug) : list.regions.find((r) => r.slug === slug);
-  return entry ? localizedName(entry, lang) : COPY[lang].everywhere;
+  return entry ? localizedName(entry, lang) : copy.everywhere;
 }
 
 interface RegionFilterProps {
@@ -43,7 +53,8 @@ interface RegionFilterProps {
 export default function RegionFilter({ value, counts, regionList, lang, isLocating = false, onChange, onOpen }: RegionFilterProps) {
   const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
-  const copy = COPY[lang];
+  const { locale } = useLanguage();
+  const copy = copyFor(locale);
   const isRTL = lang === "he";
 
   const handleOpenChange = (next: boolean) => {
@@ -64,7 +75,7 @@ export default function RegionFilter({ value, counts, regionList, lang, isLocati
       )}
     >
       <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[#ad1414]" />
-      {isLocating ? copy.locating : regionChoiceLabel(value, lang, regionList)}
+      {isLocating ? copy.locating : regionChoiceLabel(value, lang, regionList, locale)}
       <ChevronDown className="h-3 w-3 text-muted-foreground" />
     </button>
   );

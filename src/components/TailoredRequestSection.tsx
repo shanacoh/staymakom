@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/hooks/useLanguage";
+import { t } from "@/lib/translations";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -15,7 +16,7 @@ interface TailoredRequestSectionProps {
 
 // Bandeau « Design my stay » de la page d'accueil. Le formulaire lui-même vit dans TailorMadeDialog.
 const TailoredRequestSection = ({ ctaClassName, heroImage, kickerClassName, ctaUnderlineClassName }: TailoredRequestSectionProps) => {
-  const { lang } = useLanguage();
+  const { lang, locale } = useLanguage();
   const isRTL = lang === "he";
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -27,12 +28,7 @@ const TailoredRequestSection = ({ ctaClassName, heroImage, kickerClassName, ctaU
     return () => window.removeEventListener("staymakom-open-design-my-stay", handler);
   }, []);
 
-  const getCopy = (en: string, he: string, fr: string = en) =>
-    lang === "he" ? he : lang === "fr" ? fr : en;
-
-  const perksEN = ["Tailor-made", "Authentic", "Best price guaranteed"];
-  const perksFR = ["Sur mesure", "Authentique", "Meilleur prix garanti"];
-  const perks = lang === "fr" ? perksFR : perksEN;
+  const perks: string[] = t(locale, "tailoredPerks");
 
   return (
     <>
@@ -46,30 +42,18 @@ const TailoredRequestSection = ({ ctaClassName, heroImage, kickerClassName, ctaU
         <div className="relative z-10 max-w-2xl mx-auto text-center px-4 space-y-4">
           {lang !== "he" && (
             <p className={cn("text-[11px] tracking-[0.25em] uppercase font-medium", kickerClassName ?? "text-white/55")}>
-              {lang === "fr" ? "VOS ENVIES. NOTRE SAVOIR-FAIRE." : "YOUR TRIP. YOUR RULES."}
+              {t(locale, "tailoredKicker")}
             </p>
           )}
           <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] leading-tight text-white">
-            {getCopy(
-              "Looking for something truly unique?",
-              "מחפשים משהו באמת ייחודי?",
-              "Une idée de séjour hors du commun ?"
-            )}
+            {t(locale, "tailoredTitle")}
           </h2>
           <div className="space-y-2">
             <p className="text-white/70 text-[13px] sm:text-sm max-w-lg mx-auto leading-relaxed">
-              {getCopy(
-                "Proposal, family vacation, long stay, special occasion, business getaway...",
-                "הצעת נישואין, חופשה משפחתית, שהות ארוכה, אירוע מיוחד, נסיעת עסקים...",
-                "Demande en mariage, vacances en famille, séjour prolongé, occasion spéciale, retraite professionnelle..."
-              )}
+              {t(locale, "tailoredOccasions")}
             </p>
             <p className="text-white text-[13px] sm:text-sm font-medium max-w-lg mx-auto">
-              {getCopy(
-                "Drop your idea, we handle everything.",
-                "שתפו אותנו ברעיון, אנחנו מטפלים בכל השאר.",
-                "Partagez votre idée, on s'occupe du reste."
-              )}
+              {t(locale, "tailoredDropIdea")}
             </p>
           </div>
           {lang !== "he" && (
@@ -98,7 +82,7 @@ const TailoredRequestSection = ({ ctaClassName, heroImage, kickerClassName, ctaU
               onClick={() => setDialogOpen(true)}
               className={cn("group relative", ctaClassName)}
             >
-              {getCopy("DESIGN MY STAY", "עצבו את השהייה שלכם", "CRÉER MON SÉJOUR")}
+              {t(locale, "tailoredCta")}
               <ArrowRight
                 className={cn(
                   "h-4 w-4 transition-transform group-hover:translate-x-1",

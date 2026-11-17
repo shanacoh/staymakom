@@ -132,7 +132,7 @@ function applyPublishedRules(query: Db, entity: TranslatableEntity) {
 
 async function fetchRows(db: Db, entityType: EntityType, filter: { ids?: string[]; parentIds?: string[] }): Promise<Row[]> {
   const entity: TranslatableEntity = TRANSLATABLE_ENTITIES[entityType];
-  const columns = ["id", ...entity.fields.map((f) => f.column)];
+  const columns = ["id", ...entity.fields.filter((f) => !f.manual).map((f) => f.column)];
   if (entity.parent) columns.push(entity.parent.foreignKey);
   const rows: Row[] = [];
   const PAGE = 500;
@@ -153,6 +153,7 @@ async function unitsForRow(entityType: EntityType, row: Row): Promise<SourceUnit
   const entity: TranslatableEntity = TRANSLATABLE_ENTITIES[entityType];
   const units: SourceUnit[] = [];
   for (const field of entity.fields) {
+    if (field.manual) continue; // traduction saisie à la main, jamais par la machine
     const source = normalizeSource(row[field.column], field.kind);
     if (source === null) continue;
     units.push({ entityType, entityId: row.id, field: field.column, kind: field.kind, source, hash: await hashSource(source) });

@@ -1,5 +1,7 @@
 import { WHATSAPP_NUMBER, buildWhatsappMessage, getWhatsappMessageVariant } from "@/constants/whatsapp";
 import { trackWhatsappClicked, identifyWhatsappClicked } from "@/lib/analytics";
+import { useLanguage } from "@/hooks/useLanguage";
+import { t } from "@/lib/translations";
 
 type Lang = "en" | "fr" | "he";
 
@@ -7,14 +9,11 @@ type Lang = "en" | "fr" | "he";
 // en ajouter facilement, sans logo (texte stylé uniquement).
 const PRESS_MENTIONS = ["i24NEWS", "The Jerusalem Post", "Actualité Juive"];
 
-const TEXTS: Record<Lang, { kicker: string; whatsapp: string }> = {
-  fr: { kicker: "Ils parlent de nous", whatsapp: "Une question ? Notre équipe vous répond rapidement sur WhatsApp" },
-  en: { kicker: "As seen in", whatsapp: "Questions? Our team replies quickly on WhatsApp" },
-  he: { kicker: "כתבו עלינו", whatsapp: "שאלה? הצוות שלנו עונה מהר בוואטסאפ" },
-};
-
 export default function PressStrip({ lang }: { lang: Lang }) {
-  const texts = TEXTS[lang] ?? TEXTS.en;
+  // Textes dans la langue de la page (y compris es / ru / de) ; le message WhatsApp pré-rempli,
+  // lu par l'équipe, reste dans la langue d'interface (en, fr, he).
+  const { locale } = useLanguage();
+  const texts = { kicker: t(locale, "pressKicker"), whatsapp: t(locale, "pressWhatsapp") };
 
   let entrySource: string | undefined;
   try {

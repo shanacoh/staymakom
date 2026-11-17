@@ -15,7 +15,7 @@ interface CategoryCardProps {
 }
 
 const CategoryCard = ({ category }: CategoryCardProps) => {
-  const { lang } = useLanguage();
+  const { lang, locale } = useLanguage();
   const title = getLocalizedField(category, 'name', lang) as string;
   const image = category.hero_image || '';
   
@@ -27,7 +27,7 @@ const CategoryCard = ({ category }: CategoryCardProps) => {
   
   return (
     <Link 
-      to={`/category/${category.slug}?lang=${lang}`}
+      to={`/category/${category.slug}?lang=${locale}`}
       className="group relative overflow-hidden rounded-xl shadow-soft hover:shadow-strong transition-smooth"
     >
       <div className="aspect-square relative">

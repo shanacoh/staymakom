@@ -367,7 +367,7 @@ export default function BoatAvailabilityPopup({ open, onOpenChange, boat }: Prop
               {/* Sur sa propre ligne : l'indicatif pays prend de la place à côté du numéro. */}
               <div className="space-y-1">
                 <label className="text-xs font-medium">{t.whatsapp} *</label>
-                <PhoneInput value={whatsapp} onChange={setWhatsapp} lang={lang} disabled={submitting} />
+                <PhoneInput value={whatsapp} onChange={setWhatsapp} disabled={submitting} />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-medium">{t.email}</label>

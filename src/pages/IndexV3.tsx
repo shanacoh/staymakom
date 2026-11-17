@@ -4,7 +4,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
 import { useLocalizedNavigation } from "@/hooks/useLocalizedNavigation";
-import { t } from "@/lib/translations";
+import { t, type UiKey } from "@/lib/translations";
 import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import { SEOHead } from "@/components/SEOHead";
@@ -97,7 +97,8 @@ const standalonePlace = (exp: any) => exp;
 /* ─── Composant ──────────────────────────────────────────────────────────── */
 const IndexV3 = () => {
   const navigate = useNavigate();
-  const { lang } = useLanguage();
+  const { lang, locale } = useLanguage();
+  const ui = (key: UiKey) => t(locale, key);
   const { getLocalizedPath } = useLocalizedNavigation();
   const isRTL = lang === "he";
   const queryClient = useQueryClient();
@@ -265,7 +266,7 @@ const IndexV3 = () => {
   // Sans filtre région, la home reste une sélection de 12 cartes. Avec un filtre, on montre tout ce qui correspond.
   const visibleList = regionChoice ? placedList : placedList.slice(0, 12);
   const distanceBadge = (km?: number) =>
-    km === undefined ? undefined : isRTL ? `${Math.max(1, Math.round(km))} ק״מ` : `${lang === "fr" ? "à " : ""}${Math.max(1, Math.round(km))} km`;
+    km === undefined ? undefined : t(locale, "distanceKm")(Math.max(1, Math.round(km)));
 
   const handleRegionChange = async (choice: RegionChoice) => {
     nearMe.clearProblem();
@@ -293,21 +294,21 @@ const IndexV3 = () => {
   };
 
   const nearMeProblemText = nearMe.problem && {
-    denied: isRTL ? "לא קיבלנו גישה למיקום. אפשר לבחור אזור מהרשימה." : lang === "fr" ? "Position non autorisée. Vous pouvez choisir une région dans la liste." : "Location not allowed. You can pick a region from the list.",
-    outside: isRTL ? "נראה שאתם לא בישראל כרגע. אפשר לבחור אזור מהרשימה." : lang === "fr" ? "Vous n'êtes pas en Israël pour l'instant. Choisissez une région dans la liste." : "You don't seem to be in Israel right now. Pick a region from the list.",
-    unavailable: isRTL ? "לא הצלחנו לאתר את המיקום. אפשר לבחור אזור מהרשימה." : lang === "fr" ? "Position introuvable. Vous pouvez choisir une région dans la liste." : "We couldn't find your location. You can pick a region from the list.",
+    denied: ui("homeNearMeDenied"),
+    outside: ui("homeNearMeOutside"),
+    unavailable: ui("homeNearMeUnavailable"),
   }[nearMe.problem];
 
   const regionEmptyState = (
     <div className="text-center py-10">
       <p className="text-muted-foreground text-sm mb-3">
-        {isRTL ? "אין חוויות מתאימות כרגע." : lang === "fr" ? "Aucune expérience ne correspond pour l'instant." : "No experience matches for now."}
+        {ui("homeNoMatch")}
       </p>
       <button
         onClick={() => { setSelectedCategory(null); setRegionChoice(null); }}
         className="text-sm underline underline-offset-4 text-primary"
       >
-        {isRTL ? "לכל החוויות" : lang === "fr" ? "Voir toutes les expériences" : "View all experiences"}
+        {ui("homeViewAll")}
       </button>
     </div>
   );
@@ -340,21 +341,14 @@ const IndexV3 = () => {
               STAYMAKOM
             </span>
             <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold uppercase tracking-[0.02em] leading-[1.15] mb-2 opacity-0 animate-hero-fade-up text-[#ad1414] text-center">
-              {isRTL ? (
-                <><span className="whitespace-nowrap">אל תבחר עיר,</span><br /><span className="whitespace-nowrap">בחר את הבריחה שלך</span></>
-              ) : (
-                <><span className="whitespace-nowrap">Don't choose a city,</span><br /><span className="whitespace-nowrap">choose your escape</span></>
-              )}
+              {/* Signature en anglais dans toutes les langues (lue de gauche à droite, même en hébreu) */}
+              <span dir="ltr" className="whitespace-nowrap">{t("en", "homeHeroTitle1")}</span><br /><span dir="ltr" className="whitespace-nowrap">{t("en", "homeHeroTitle2")}</span>
             </h1>
             <p
               className="font-sans not-italic text-[#ad1414] max-w-xl mx-auto opacity-0 animate-hero-fade-up text-xs sm:text-sm"
               style={{ animationDelay: "250ms" }}
             >
-              {isRTL
-                ? "הישראל שרוב האנשים לא מוצאים."
-                : lang === "fr"
-                  ? "Israël comme vous ne l'avez jamais vu."
-                  : "The Israel most people never find."}
+              {ui("homeHeroSubtitle")}
             </p>
             <div
               className="flex flex-wrap items-center justify-center gap-2 mt-4 opacity-0 animate-hero-fade-up"
@@ -374,7 +368,7 @@ const IndexV3 = () => {
                 }}
                 className="rounded-full bg-[#ad1414] text-white hover:bg-[#ad1414]/90 h-10 px-5 text-[13px] font-semibold shadow-none"
               >
-                {isRTL ? "מצאו חוויה" : lang === "fr" ? "Trouver une expérience" : "Find an experience"}
+                {ui("homeFindExperience")}
               </Button>
               <Button
                 variant="outline"
@@ -384,7 +378,7 @@ const IndexV3 = () => {
                 }}
                 className="rounded-full border-white/70 text-white bg-white/10 backdrop-blur-sm hover:bg-white/20 h-10 px-5 text-[13px] font-semibold shadow-none"
               >
-                {isRTL ? "בקשה מיוחדת" : lang === "fr" ? "Demande spéciale" : "Special request"}
+                {ui("homeSpecialRequest")}
               </Button>
             </div>
           </div>
@@ -396,20 +390,10 @@ const IndexV3 = () => {
           {/* Titre */}
           <div className="text-center px-4 mb-3">
             <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-1 leading-tight text-foreground">
-              {isRTL ? (
-                <>מלונות שנבחרו בקפידה.<br />חוויות בלתי נשכחות.</>
-              ) : lang === "fr" ? (
-                <>Hôtels d'exception.<br />Expériences inoubliables.</>
-              ) : (
-                <>Handpicked Hotels.<br />Unforgettable Experiences.</>
-              )}
+              {ui("homeCardsTitle1")}<br />{ui("homeCardsTitle2")}
             </h2>
             <p className="text-muted-foreground text-xs sm:text-sm">
-              {isRTL
-                ? "לכמה שעות, לילה, או חוויה מותאמת אישית."
-                : lang === "fr"
-                  ? "Pour quelques heures, une nuit ou une expérience sur mesure."
-                  : "For a few hours, a night or a tailor-made experience."}
+              {ui("homeCardsSubtitle")}
             </p>
           </div>
 
@@ -519,13 +503,12 @@ const IndexV3 = () => {
               <span className="text-[12.5px] text-muted-foreground">
                 {regionChoice && (
                   <>
-                    {placedList.length}{" "}
-                    {isRTL ? "חוויות" : lang === "fr" ? (placedList.length > 1 ? "expériences" : "expérience") : placedList.length > 1 ? "experiences" : "experience"}
+                    {t(locale, "homeResultsCount")(placedList.length)}
                     <button
                       onClick={() => handleRegionChange(null)}
                       className="mx-2 underline underline-offset-4 hover:text-foreground"
                     >
-                      {isRTL ? "ניקוי" : lang === "fr" ? "Effacer" : "Clear"}
+                      {ui("homeClear")}
                     </button>
                   </>
                 )}
@@ -574,7 +557,7 @@ const IndexV3 = () => {
               ) : (
                 <div className="text-center py-10">
                   <p className="text-muted-foreground text-sm">
-                    {isRTL ? "אין חוויות Experience Only עדיין." : lang === "fr" ? "Aucune expérience disponible pour l'instant." : "No standalone experiences available yet."}
+                    {ui("homeNoStandalone")}
                   </p>
                 </div>
               )
@@ -611,17 +594,17 @@ const IndexV3 = () => {
                       onClick={() => { trackViewAllExperiencesClicked("v3_grid"); navigate(getLocalizedPath("/experiences")); }}
                       className="inline-flex items-center gap-2 h-9 px-4 border border-border bg-white text-foreground text-[13px] font-semibold rounded-full hover:bg-muted transition-colors"
                     >
-                      {isRTL ? "לכל החוויות" : lang === "fr" ? "Voir toutes les expériences" : "View all experiences"}
+                      {ui("homeViewAll")}
                     </button>
                   </div>
                 </>
               ) : (
                 <div className="text-center py-10">
                   <p className="text-muted-foreground text-sm mb-3">
-                    {isRTL ? "אין חוויות בקטגוריה זו עדיין." : lang === "fr" ? "Aucune expérience pour cette catégorie." : "No experiences for this category yet."}
+                    {ui("homeNoCategoryExperiences")}
                   </p>
                   <button onClick={() => setSelectedCategory(null)} className="text-sm underline underline-offset-4 text-primary">
-                    {isRTL ? "הצג הכל" : lang === "fr" ? "Voir tout" : "Show all"}
+                    {ui("homeShowAll")}
                   </button>
                 </div>
               )
@@ -652,20 +635,14 @@ const IndexV3 = () => {
             </div>
             <div className={`space-y-3 ${isRTL ? "text-right md:order-1" : ""}`}>
               <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] leading-tight text-foreground">
-                {isRTL ? (
-                  <><span>מתנה מושלמת.</span><br /><span>מתנת הבריחה.</span></>
-                ) : lang === "fr" ? (
-                  <><span>Le cadeau parfait.</span><br /><span>Une évasion à offrir.</span></>
-                ) : (
-                  <><span>Perfect gift.</span><br /><span>The gift of escape.</span></>
-                )}
+                <span>{ui("homeGiftTitle1")}</span><br /><span>{ui("homeGiftTitle2")}</span>
               </h2>
               <p className="text-muted-foreground text-[13px] max-w-md">
-                {t(lang, "giftCardSectionDesc")}
+                {ui("giftCardSectionDesc")}
               </p>
               <Button asChild className="group rounded-full border border-border bg-transparent text-foreground hover:bg-foreground hover:text-background transition-colors duration-300 h-9 px-4 text-[13px] font-semibold shadow-none" onClick={() => trackGiftCardClicked("v3_page")}>
                 <Link to={getLocalizedPath("/gift-card")}>
-                  {t(lang, "giftCardSectionCTA")}
+                  {ui("giftCardSectionCTA")}
                   <ArrowRight
                     className={`h-3.5 w-3.5 transition-transform group-hover:translate-x-1 ${isRTL ? "mr-2 rotate-180 group-hover:-translate-x-1" : "ml-2"}`}
                   />
@@ -686,16 +663,12 @@ const IndexV3 = () => {
           </div>
           <div className="container max-w-3xl relative z-10 px-4 text-center">
             <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-3 text-white">
-              {isRTL
-                ? <><span>זה לא תיירות.</span><br /><span>זה משהו אחר.</span></>
-                : lang === "fr"
-                  ? <><span>Ce n'est pas du tourisme.</span><br /><span>C'est autre chose.</span></>
-                  : <><span>This is not tourism.</span><br /><span>This is something else.</span></>}
+              <span>{ui("homeNotTourism1")}</span><br /><span>{ui("homeNotTourism2")}</span>
             </h2>
             <div className="text-[11px] sm:text-xs md:text-sm leading-relaxed text-white/95 max-w-2xl mx-auto space-y-2">
-              <p>{t(lang, "handpickedP1")}</p>
-              <p>{t(lang, "handpickedP2")}</p>
-              <p>{t(lang, "handpickedP3")}</p>
+              <p>{ui("handpickedP1")}</p>
+              <p>{ui("handpickedP2")}</p>
+              <p>{ui("handpickedP3")}</p>
             </div>
           </div>
         </section>

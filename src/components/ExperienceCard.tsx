@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { t } from "@/lib/translations";
+import { highlightTagLabel } from "@/lib/standaloneBadges";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import AuthPromptDialog from "@/components/auth/AuthPromptDialog";
@@ -133,7 +134,7 @@ export default function ExperienceCard({
   fixedBadges,
   originalTotalPrice,
 }: ExperienceCardProps & { index?: number }) {
-  const { lang } = useLanguage();
+  const { lang, locale } = useLanguage();
   const { symbol: currencySymbol } = useCurrency();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -225,22 +226,15 @@ export default function ExperienceCard({
         setTimeout(() => setAnimateHeart(false), 400);
         
         // Show success toast
-        const messages = {
-          en: { title: "Added to favorites", desc: "You can find it in your account" },
-          fr: { title: "Ajouté aux favoris", desc: "Retrouvez-le dans votre compte" },
-          he: { title: "נוסף למועדפים", desc: "תוכל למצוא אותו בחשבון שלך" },
-        };
-        const msg = messages[lang] || messages.en;
-        toast.success(msg.title, { description: msg.desc });
+        toast.success(t(locale, "wishlistAdded"), { description: t(locale, "wishlistAddedDesc") });
       } else {
-        const removed = lang === 'he' ? 'הוסר מהמועדפים' : lang === 'fr' ? 'Retiré des favoris' : 'Removed from favorites';
-        toast.success(removed);
+        toast.success(t(locale, "wishlistRemoved"));
       }
       
       onWishlistToggle?.(experience.id, variables.isAdding);
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to update wishlist");
+      toast.error(error.message || t(locale, "wishlistError"));
     },
   });
 
@@ -271,7 +265,7 @@ export default function ExperienceCard({
       />
       
       <Link
-        to={`${linkPrefix}/${experience.slug}?lang=${lang}${linkSuffix ? `&${linkSuffix.replace(/^\?/, '')}` : ''}`}
+        to={`${linkPrefix}/${experience.slug}?lang=${locale}${linkSuffix ? `&${linkSuffix.replace(/^\?/, '')}` : ''}`}
         className="group block"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -296,7 +290,7 @@ export default function ExperienceCard({
           {badge && (
             <div className="absolute top-2.5 left-2.5">
               <span className="inline-block px-2 py-0.5 bg-white/95 backdrop-blur-sm rounded text-foreground text-[10px] font-semibold uppercase tracking-wider">
-                {badge === "NEW" ? t(lang, 'badgeNew') : badge === "ON SALE" ? t(lang, 'badgeOnSale') : badge === "POPULAR" ? t(lang, 'badgePopular') : badge}
+                {badge === "NEW" ? t(locale, 'badgeNew') : badge === "ON SALE" ? t(locale, 'badgeOnSale') : badge === "POPULAR" ? t(locale, 'badgePopular') : badge}
               </span>
             </div>
           )}
@@ -309,7 +303,7 @@ export default function ExperienceCard({
               "absolute top-2 right-2 sm:top-2.5 sm:right-2.5 p-1 sm:p-1.5 rounded-full bg-white/20 backdrop-blur-sm transition-all duration-300 hover:bg-white/40",
               isInWishlist ? 'opacity-100' : 'opacity-70 sm:opacity-0 sm:group-hover:opacity-100',
             )}
-            aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
+            aria-label={isInWishlist ? t(locale, "wishlistRemoveAria") : t(locale, "wishlistAddAria")}
           >
             <Heart
               className={cn(
@@ -354,7 +348,7 @@ export default function ExperienceCard({
                     key={tag.id}
                     className="inline-block whitespace-nowrap shrink-0 px-1.5 py-px bg-muted/60 rounded-full text-[9px] font-normal tracking-wide text-muted-foreground border border-border/40"
                   >
-                    {lang === 'he' && tag.label_he ? tag.label_he : lang === 'fr' && tag.label_fr ? tag.label_fr : tag.label_en}
+                    {highlightTagLabel(tag, locale)}
                   </span>
                 ))}
                 {highlightTags.length > maxTags && (
@@ -384,7 +378,7 @@ export default function ExperienceCard({
               <div className="flex items-baseline gap-1 flex-wrap">
                 <span className="font-bold text-sm text-foreground">{displaySymbol}{formatThousands(totalPrice)}</span>
                 <span className="text-[10px] text-muted-foreground">
-                  {lang === 'he' ? 'סה"כ' : lang === 'fr' ? 'total' : 'total'}
+                  {t(locale, "cardTotal")}
                 </span>
                 {originalTotalPrice && originalTotalPrice > totalPrice && (
                   <>
@@ -397,8 +391,7 @@ export default function ExperienceCard({
               </div>
               {displayPrice > 0 && (
                 <p className="text-[10px] text-muted-foreground">
-                  {lang === 'he' ? 'מ-' : lang === 'fr' ? 'à partir de' : 'from'} {displaySymbol}{formatThousands(displayPrice)}
-                  {lang === 'he' ? ' / לאדם' : lang === 'fr' ? ' / pers.' : ' / person'}
+                  {t(locale, "cardFrom")} {displaySymbol}{formatThousands(displayPrice)} {t(locale, "cardPerPerson")}
                 </p>
               )}
             </div>
@@ -415,7 +408,7 @@ export default function ExperienceCard({
               )}
               {showFromPrefix && (
                 <span className="text-[10px] text-muted-foreground/60">
-                  {lang === 'he' ? 'מ-' : lang === 'fr' ? 'à partir de' : 'from'}
+                  {t(locale, "cardFrom")}
                 </span>
               )}
               <span className="font-bold text-sm text-foreground">{displaySymbol}{displayPrice}</span>
@@ -423,7 +416,7 @@ export default function ExperienceCard({
                 <span className="text-[11px] text-muted-foreground line-through">{displaySymbol}{originalPrice}</span>
               )}
               <span className="text-[10px] text-muted-foreground">
-                {lang === 'he' ? '/ לאדם' : lang === 'fr' ? '/ pers.' : '/ person'}
+                {t(locale, "cardPerPerson")}
               </span>
               {discountPercent && (
                 <span className="inline-block ml-1 px-1.5 py-px bg-accent text-accent-foreground text-[9px] font-medium rounded">
@@ -450,7 +443,7 @@ export default function ExperienceCard({
                 <span className="text-[11px] text-muted-foreground line-through">{displaySymbol}{originalPrice}</span>
               )}
               <span className="text-[10px] text-muted-foreground">
-                {lang === 'he' ? '/ לילה ל-2 אנש׳' : lang === 'fr' ? '/ nuit · 2 pers.' : '/ night · 2 pers.'}
+                {t(locale, "cardPerNightTwoGuests")}
               </span>
               {discountPercent && (
                 <span className="inline-block ml-1 px-1.5 py-px bg-accent text-accent-foreground text-[9px] font-medium rounded">

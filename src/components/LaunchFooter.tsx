@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
 import { Instagram, Gift } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
+import { t } from "@/lib/translations";
 import { openNewsletterPopup } from "@/components/NewsletterPopup";
 
 const LaunchFooter = () => {
-  const { lang } = useLanguage();
+  const { lang, locale } = useLanguage();
   const isRTL = lang === "he";
 
   return (
@@ -23,11 +24,7 @@ const LaunchFooter = () => {
               className="group relative inline-flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/85 transition-all duration-200 ease-out hover:text-white"
             >
               <Gift className="h-3.5 w-3.5" />
-              {lang === "he"
-                ? "הירשם/י לניוזלטר"
-                : lang === "fr"
-                  ? "S'inscrire à la newsletter"
-                  : "Subscribe to our newsletter"}
+              {t(locale, "launchFooterNewsletter")}
             </button>
           </div>
         </div>
@@ -43,15 +40,15 @@ const LaunchFooter = () => {
           {/* Center: Links */}
           <div className="flex items-center gap-4 text-xs text-white/80">
             <Link to="/partners" className="hover:text-white transition-colors">
-              {lang === "he" ? "הפוך לשותף" : lang === "fr" ? "Je suis un hôtel" : "I'm a hotel"}
+              {t(locale, "menuImAHotel")}
             </Link>
             <span className="text-white/30">·</span>
             <Link to="/privacy" className="hover:text-white transition-colors">
-              {lang === "he" ? "פרטיות" : lang === "fr" ? "Confidentialité" : "Privacy"}
+              {t(locale, "launchFooterPrivacy")}
             </Link>
             <span className="text-white/30">·</span>
             <Link to="/terms" className="hover:text-white transition-colors">
-              {lang === "he" ? "תנאים" : lang === "fr" ? "Conditions" : "Terms"}
+              {t(locale, "launchFooterTerms")}
             </Link>
           </div>
 

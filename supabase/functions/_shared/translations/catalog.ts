@@ -49,6 +49,12 @@ export interface TranslatableField {
   /** Nom de la colonne anglaise source (c'est aussi la clé « field » enregistrée). */
   column: string;
   kind: FieldKind;
+  /**
+   * Traduction saisie à la main uniquement (ligne `reviewed` dans content_translations) :
+   * translate-content ne la produit jamais, le site l'affiche. Ex. le nom de la catégorie
+   * Bateaux « On the Water », alors que les noms des moods restent en anglais partout.
+   */
+  manual?: boolean;
 }
 
 /** Règle « visible sur le site » : colonne à comparer à une valeur. */
@@ -71,6 +77,7 @@ export interface TranslatableEntity {
 const t = (column: string): TranslatableField => ({ column, kind: "text" });
 const l = (column: string): TranslatableField => ({ column, kind: "list" });
 const b = (column: string): TranslatableField => ({ column, kind: "blocks" });
+const m = (column: string): TranslatableField => ({ column, kind: "text", manual: true });
 
 const SEO_EN = [t("seo_title_en"), t("meta_description_en"), t("og_title_en"), t("og_description_en")];
 
@@ -162,7 +169,7 @@ export const TRANSLATABLE_ENTITIES = {
     table: "categories",
     label: "Mood (catégorie)",
     published: [{ column: "status", equals: "published" }],
-    fields: [t("presentation_title"), t("intro_rich_text"), t("launch_description"), l("bullets"), ...SEO_EN],
+    fields: [t("presentation_title"), t("intro_rich_text"), t("launch_description"), l("bullets"), ...SEO_EN, m("name")],
   },
   journal_post: {
     table: "journal_posts",

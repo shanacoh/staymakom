@@ -6,10 +6,21 @@ l'indexation Google des pages en espagnol, russe et allemand.
 
 Ne l'allumer que lorsque **toutes** les cases sont cochées :
 
-- [ ] **Boutons et menus traduits** : tous les textes d'interface des pages publiques (accueil,
-      fiches, catégories, recherche, Journal, panneau de réservation, paiement, confirmation)
-      existent en ES / RU / DE dans `src/lib/translations.ts`. Aucun bouton en anglais sur une
-      page `?lang=ru`.
+- [ ] **Boutons et menus traduits** : tous les textes d'interface des pages publiques existent en
+      ES / RU / DE (`src/lib/uiTranslations/`). Aucun bouton en anglais sur une page `?lang=ru`.
+      Avancement (une ligne cochée = textes rapatriés dans `translations.ts` et traduits) :
+  - [x] Accueil, en-tête, menu, barre du bas (téléphone), pied de page, FAQ de l'accueil (17/11/2026)
+  - [x] Cartes d'expérience, d'hôtel et de bateau, badges calculés (casher, âge...) (17/11/2026)
+  - [x] Champ téléphone : messages et noms de pays (17/11/2026)
+  - [ ] Fiche expérience seule / bateau (`StandaloneExperience`, panneau de demande, pop-up bateau)
+  - [ ] Fiche expérience avec hôtel (`Experience2`, panneau de réservation, `LeadGuestForm`)
+  - [ ] Paiement et confirmation (`StandaloneCheckout`, `Checkout`, `BookingConfirmationDialog`,
+        pages de confirmation), fenêtre de connexion (`AuthPromptDialog`)
+  - [ ] Catégories, liste des expériences, recherche, vitrine bateaux (`/boat`)
+  - [ ] Journal, À propos, Contact, Carte cadeau, formulaire sur-mesure (`TailorMadeDialog`)
+  - [ ] Pages légales (conditions, confidentialité) : traduction relue, pas automatique
+  - [ ] Anciennes clés de `translations.ts` encore utilisées (`missingUiKeys("ru")` doit ne
+        renvoyer que des clés plus utilisées par le site)
 - [ ] **Villes et régions traduites** : elles s'affichent dans la langue de la page (Иерусалим,
       Jerusalén, Totes Meer...), sans casser les filtres ni le regroupement des lieux par région.
       Aujourd'hui elles restent volontairement en anglais (voir `NEVER_OVERLAID_FIELDS` dans

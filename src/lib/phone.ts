@@ -3,30 +3,44 @@
 // on retire le 0 national et on ajoute l'indicatif. C'est ce format que Revolut, HyperGuest et
 // les liens WhatsApp du back-office savent lire.
 
-// Indicatifs proposés, les plus fréquents d'abord.
-export const DIAL_CODES: { code: string; label: string }[] = [
-  { code: "+972", label: "🇮🇱 +972" },
-  { code: "+33", label: "🇫🇷 +33" },
-  { code: "+1", label: "🇺🇸 +1" },
-  { code: "+44", label: "🇬🇧 +44" },
-  { code: "+32", label: "🇧🇪 +32" },
-  { code: "+41", label: "🇨🇭 +41" },
-  { code: "+352", label: "🇱🇺 +352" },
-  { code: "+377", label: "🇲🇨 +377" },
-  { code: "+49", label: "🇩🇪 +49" },
-  { code: "+34", label: "🇪🇸 +34" },
-  { code: "+39", label: "🇮🇹 +39" },
-  { code: "+31", label: "🇳🇱 +31" },
-  { code: "+351", label: "🇵🇹 +351" },
-  { code: "+43", label: "🇦🇹 +43" },
-  { code: "+7", label: "🇷🇺 +7" },
-  { code: "+61", label: "🇦🇺 +61" },
-  { code: "+55", label: "🇧🇷 +55" },
-  { code: "+52", label: "🇲🇽 +52" },
-  { code: "+54", label: "🇦🇷 +54" },
-  { code: "+27", label: "🇿🇦 +27" },
-  { code: "+971", label: "🇦🇪 +971" },
+// Indicatifs proposés, les plus fréquents d'abord. `region` = code pays (ISO), sert à écrire le
+// nom du pays dans la langue de la page (voir countryName).
+export const DIAL_CODES: { code: string; label: string; region: string }[] = [
+  { code: "+972", label: "🇮🇱 +972", region: "IL" },
+  { code: "+33", label: "🇫🇷 +33", region: "FR" },
+  { code: "+1", label: "🇺🇸 +1", region: "US" },
+  { code: "+44", label: "🇬🇧 +44", region: "GB" },
+  { code: "+32", label: "🇧🇪 +32", region: "BE" },
+  { code: "+41", label: "🇨🇭 +41", region: "CH" },
+  { code: "+352", label: "🇱🇺 +352", region: "LU" },
+  { code: "+377", label: "🇲🇨 +377", region: "MC" },
+  { code: "+49", label: "🇩🇪 +49", region: "DE" },
+  { code: "+34", label: "🇪🇸 +34", region: "ES" },
+  { code: "+39", label: "🇮🇹 +39", region: "IT" },
+  { code: "+31", label: "🇳🇱 +31", region: "NL" },
+  { code: "+351", label: "🇵🇹 +351", region: "PT" },
+  { code: "+43", label: "🇦🇹 +43", region: "AT" },
+  { code: "+7", label: "🇷🇺 +7", region: "RU" },
+  { code: "+61", label: "🇦🇺 +61", region: "AU" },
+  { code: "+55", label: "🇧🇷 +55", region: "BR" },
+  { code: "+52", label: "🇲🇽 +52", region: "MX" },
+  { code: "+54", label: "🇦🇷 +54", region: "AR" },
+  { code: "+27", label: "🇿🇦 +27", region: "ZA" },
+  { code: "+971", label: "🇦🇪 +971", region: "AE" },
 ];
+
+/**
+ * Nom du pays dans la langue de la page (« Israël », « Израиль », « Spanien »...), écrit par le
+ * navigateur lui-même : aucune liste de noms à traduire ni à tenir à jour. Code pays si le
+ * navigateur ne sait pas faire.
+ */
+export function countryName(region: string, locale: string): string {
+  try {
+    return new Intl.DisplayNames([locale], { type: "region" }).of(region) ?? region;
+  } catch {
+    return region;
+  }
+}
 
 /** Indicatif proposé par défaut : la France pour le site en français, Israël sinon. */
 export function defaultDialCode(lang: string): string {

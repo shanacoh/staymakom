@@ -232,7 +232,7 @@ export default function StandaloneRequestPanel({
         </div>
         <div className="space-y-1.5">
           <label className="text-sm font-medium">{t.phone}</label>
-          <PhoneInput value={phone} onChange={setPhone} lang={lang} disabled={submitting} />
+          <PhoneInput value={phone} onChange={setPhone} disabled={submitting} />
         </div>
       </div>
 

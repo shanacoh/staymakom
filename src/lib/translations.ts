@@ -1,4 +1,10 @@
-// UI translations for the application
+// Textes d'interface du site public.
+// - Anglais, hébreu, français : ci-dessous.
+// - Espagnol, russe, allemand : src/lib/uiTranslations/ (un fichier par langue).
+// Une clé absente dans une langue s'affiche en anglais (jamais de texte vide).
+import type { Locale } from "@/lib/locale";
+import { AUTO_UI_TRANSLATIONS } from "@/lib/uiTranslations";
+
 export const translations = {
   en: {
     // Category page
@@ -378,6 +384,114 @@ export const translations = {
     giftCardSectionTitle: "Give the Gift of Escape",
     giftCardSectionDesc: "Make someone's day unforgettable with a gift card for our handpicked hotels and unique experiences.",
     giftCardSectionCTA: "Give an Escape",
+
+    // ── Textes d'interface rapatriés le 17/11/2026 (accueil, menus, pied de page, FAQ, cartes,
+    //    champ téléphone). Versions ES / RU / DE : src/lib/uiTranslations/. ──
+
+    // Accueil (titre du hero : signature STAYMAKOM, en anglais dans toutes les langues)
+    homeHeroTitle1: "Don't choose a city,",
+    homeHeroTitle2: "choose your escape",
+    homeHeroSubtitle: "The Israel most people never find.",
+    homeFindExperience: "Find an experience",
+    homeSpecialRequest: "Special request",
+    homeCardsTitle1: "Handpicked Hotels.",
+    homeCardsTitle2: "Unforgettable Experiences.",
+    homeCardsSubtitle: "For a few hours, a night or a tailor-made experience.",
+    homeResultsCount: (n: number) => `${n} ${n > 1 ? "experiences" : "experience"}`,
+    homeClear: "Clear",
+    homeNearMeDenied: "Location not allowed. You can pick a region from the list.",
+    homeNearMeOutside: "You don't seem to be in Israel right now. Pick a region from the list.",
+    homeNearMeUnavailable: "We couldn't find your location. You can pick a region from the list.",
+    homeNoMatch: "No experience matches for now.",
+    homeViewAll: "View all experiences",
+    homeNoStandalone: "No standalone experiences available yet.",
+    homeNoCategoryExperiences: "No experiences for this category yet.",
+    homeShowAll: "Show all",
+    homeGiftTitle1: "Perfect gift.",
+    homeGiftTitle2: "The gift of escape.",
+    homeNotTourism1: "This is not tourism.",
+    homeNotTourism2: "This is something else.",
+    distanceKm: (km: number) => `${km} km`,
+
+    // En-tête et menus
+    modeWithHotel1: "With",
+    modeWithHotel2: "Hotel",
+    modeExperienceOnly1: "Experience",
+    modeExperienceOnly2: "Only",
+    headerLanguage: "Language",
+    headerCurrency: "Currency",
+    headerLanguageCurrencyAria: "Language and currency",
+    menuOpenAria: "Open menu",
+    menuExploreEscapes: "Explore Escapes",
+    menuGiftAStay: "Gift a Stay",
+    menuImAHotel: "I'm a hotel",
+    menuAbout: "About",
+    menuContact: "Contact",
+    accountWelcome: "Welcome to",
+    accountSubtitle: "Sign in to save your favorite experiences and access your account.",
+    accountSignIn: "Sign In",
+    accountCreate: "Create Account",
+    navExplore: "Explore",
+    navSaved: "Saved",
+    navTrips: "Trips",
+    navAccount: "Account",
+
+    // Pied de page
+    launchFooterNewsletter: "Subscribe to our newsletter",
+    launchFooterPrivacy: "Privacy",
+    launchFooterTerms: "Terms",
+
+    // Bandeaux de l'accueil
+    marqueeLine1: "HANDPICKED HOTELS.",
+    marqueeLine2: "UNFORGETTABLE EXPERIENCES.",
+    tailoredKicker: "YOUR TRIP. YOUR RULES.",
+    tailoredTitle: "Looking for something truly unique?",
+    tailoredOccasions: "Proposal, family vacation, long stay, special occasion, business getaway...",
+    tailoredDropIdea: "Drop your idea, we handle everything.",
+    tailoredPerks: ["Tailor-made", "Authentic", "Best price guaranteed"],
+    tailoredCta: "DESIGN MY STAY",
+    pressKicker: "As seen in",
+    pressWhatsapp: "Questions? Our team replies quickly on WhatsApp",
+
+    // Filtre région
+    regionEverywhere: "Anywhere in Israel",
+    regionNearMe: "Near me",
+    regionNearHint: (km: number) => `Uses your location, within ${km} km`,
+    regionLocating: "Locating...",
+
+    // FAQ de l'accueil. Le texte entre [crochets] devient le lien qui ouvre le formulaire sur-mesure.
+    faqLabel: "Questions & Answers",
+    faqTitle: "Everything you need to know",
+    faqItems: [
+      { q: "Why book through STAYMAKOM?", a: ["STAYMAKOM is more than a hotel booking platform. We combine handpicked hotels with curated experiences in one seamless reservation, making it easier, more inspiring, and more effortless to plan your stay.", "Instead of spending hours searching for where to stay, what to do, and how to organize everything separately, STAYMAKOM brings everything together in one place. Our packages are designed to offer a smoother and more advantageous experience than booking each element individually."] },
+      { q: "Where are your experiences available?", a: ["We are currently focused on Israel, with experiences across Tel Aviv, Jerusalem, and many more destinations waiting to be discovered. Israel has so much more to offer beyond the usual routes, with a wide variety of places, atmospheres, and experiences across the country. We're continuously adding new destinations and inviting travelers to discover a different side of Israel."] },
+      { q: "Can I book an experience without staying overnight?", a: ["Yes. You can now book experiences on their own or as part of a hotel stay. Whether you're looking for a unique activity, a complete getaway, or both, STAYMAKOM lets you choose the option that suits your plans.", "Some experiences include exclusive benefits or special rates when booked together with a hotel, while others can be enjoyed independently."] },
+      { q: "Who are these experiences for?", a: ["STAYMAKOM is designed both for travelers visiting Israel and for locals looking to experience the country differently. Whether it's your first time discovering Israel or you've been spending every summer here for years, STAYMAKOM helps you explore beyond the usual plans and discover experiences you might not have found otherwise."] },
+      { q: "Do I need to plan everything myself?", a: ["No, that's exactly the point. Each experience is already thoughtfully designed for you, so you don't have to spend hours researching, coordinating, or booking multiple services separately. You simply choose, book, and enjoy."] },
+      { q: "Is it suitable for a special occasion?", a: ["Yes, our experiences are perfect for celebrating a special moment or simply taking time for yourself. If you have something specific in mind, you can also [submit a request] to design a fully tailored experience."] },
+      { q: "What if I want something more personalized?", a: ["If you're looking for something more specific, you can submit a request through our [Tailor-Made form]. We'll help you create a more personalized experience based on your occasion, preferences, and travel style."] },
+      { q: "Can I cancel or modify my booking?", a: ["Yes, cancellation and modification policies are clearly displayed before you confirm your booking. We work closely with our hotel partners to offer flexible conditions so you can book with confidence. You can also easily manage your booking directly from your customer account."] },
+    ],
+
+    // Cartes
+    cardTotal: "total",
+    cardFrom: "from",
+    cardPerPerson: "/ person",
+    cardPerNightTwoGuests: "/ night · 2 pers.",
+    wishlistAdded: "Added to favorites",
+    wishlistAddedDesc: "You can find it in your account",
+    wishlistRemoved: "Removed from favorites",
+    wishlistAddAria: "Add to wishlist",
+    wishlistRemoveAria: "Remove from wishlist",
+    wishlistError: "Failed to update wishlist",
+    boatSkipperIncluded: "Skipper included",
+    boatSkipperCrew: "Skipper + crew",
+    boatSkipperNotIncluded: "Skipper not included",
+    boatUpToGuests: (n: number) => `Up to ${n} guests`,
+
+    // Champ téléphone
+    phoneCountryAria: "Country code",
+    phoneCheck: "This number looks incomplete. Please check it so we can reach you on WhatsApp.",
   },
   he: {
     // Category page
@@ -757,6 +871,106 @@ export const translations = {
     giftCardSectionTitle: "תנו את מתנת הבריחה",
     giftCardSectionDesc: "הפכו את היום של מישהו לבלתי נשכח עם כרטיס מתנה למלונות הנבחרים ולחוויות הייחודיות שלנו.",
     giftCardSectionCTA: "שלחו כרטיס מתנה",
+
+    // ── Textes d'interface rapatriés le 17/11/2026 (voir le bloc anglais) ──
+
+    // Accueil
+    homeHeroSubtitle: "הישראל שרוב האנשים לא מוצאים.",
+    homeFindExperience: "מצאו חוויה",
+    homeSpecialRequest: "בקשה מיוחדת",
+    homeCardsTitle1: "מלונות שנבחרו בקפידה.",
+    homeCardsTitle2: "חוויות בלתי נשכחות.",
+    homeCardsSubtitle: "לכמה שעות, לילה, או חוויה מותאמת אישית.",
+    homeResultsCount: (n: number) => `${n} חוויות`,
+    homeClear: "ניקוי",
+    homeNearMeDenied: "לא קיבלנו גישה למיקום. אפשר לבחור אזור מהרשימה.",
+    homeNearMeOutside: "נראה שאתם לא בישראל כרגע. אפשר לבחור אזור מהרשימה.",
+    homeNearMeUnavailable: "לא הצלחנו לאתר את המיקום. אפשר לבחור אזור מהרשימה.",
+    homeNoMatch: "אין חוויות מתאימות כרגע.",
+    homeViewAll: "לכל החוויות",
+    homeNoStandalone: "אין חוויות Experience Only עדיין.",
+    homeNoCategoryExperiences: "אין חוויות בקטגוריה זו עדיין.",
+    homeShowAll: "הצג הכל",
+    homeGiftTitle1: "מתנה מושלמת.",
+    homeGiftTitle2: "מתנת הבריחה.",
+    homeNotTourism1: "זה לא תיירות.",
+    homeNotTourism2: "זה משהו אחר.",
+    distanceKm: (km: number) => `${km} ק״מ`,
+
+    // En-tête et menus
+    modeWithHotel1: "עם",
+    modeWithHotel2: "מלון",
+    modeExperienceOnly1: "חוויות",
+    modeExperienceOnly2: "בלבד",
+    headerLanguage: "שפה",
+    headerCurrency: "מטבע",
+    headerLanguageCurrencyAria: "שפה ומטבע",
+    menuOpenAria: "פתיחת התפריט",
+    menuExploreEscapes: "גלה חוויות",
+    menuGiftAStay: "כרטיס מתנה",
+    menuImAHotel: "הפוך לשותף",
+    menuAbout: "אודות",
+    menuContact: "צרו קשר",
+    accountWelcome: "ברוכים הבאים ל",
+    accountSubtitle: "התחברו כדי לשמור חוויות אהובות ולגשת לחשבון שלכם.",
+    accountSignIn: "התחברות",
+    accountCreate: "יצירת חשבון",
+    navExplore: "גלה",
+    navSaved: "שמור",
+    navTrips: "טיולים",
+    navAccount: "חשבון",
+
+    // Pied de page
+    launchFooterNewsletter: "הירשם/י לניוזלטר",
+    launchFooterPrivacy: "פרטיות",
+    launchFooterTerms: "תנאים",
+
+    // Bandeaux de l'accueil (pas de surtitre ni d'atouts sur le site en hébreu)
+    marqueeLine1: "מלונות נבחרים.",
+    marqueeLine2: "חוויות בלתי נשכחות.",
+    tailoredTitle: "מחפשים משהו באמת ייחודי?",
+    tailoredOccasions: "הצעת נישואין, חופשה משפחתית, שהות ארוכה, אירוע מיוחד, נסיעת עסקים...",
+    tailoredDropIdea: "שתפו אותנו ברעיון, אנחנו מטפלים בכל השאר.",
+    tailoredCta: "עצבו את השהייה שלכם",
+    pressKicker: "כתבו עלינו",
+    pressWhatsapp: "שאלה? הצוות שלנו עונה מהר בוואטסאפ",
+
+    // Filtre région
+    regionEverywhere: "בכל הארץ",
+    regionNearMe: "קרוב אליי",
+    regionNearHint: (km: number) => `לפי המיקום שלכם, עד ${km} ק״מ`,
+    regionLocating: "מאתר מיקום...",
+
+    // FAQ
+    faqLabel: "שאלות נפוצות",
+    faqTitle: "כל מה שרציתם לדעת",
+    faqItems: [
+      { q: "למה להזמין דרך STAYMAKOM?", a: ["STAYMAKOM היא הרבה יותר מפלטפורמת הזמנת מלונות. אנחנו משלבים מלונות נבחרים עם חוויות ייחודיות בהזמנה אחת פשוטה, כדי להפוך את החופשה שלכם לקלה, מעוררת השראה וללא התעסקות מיותרת.", "במקום לבזבז זמן על חיפוש, תכנון ותיאומים, הכל כבר מחכה לכם במקום אחד. החבילות שלנו נועדו להציע חוויה חלקה ומשתלמת יותר מהזמנה נפרדת של כל מרכיב."] },
+      { q: "איפה החוויות זמינות?", a: ["אנחנו כרגע מתמקדים בישראל, עם חוויות בתל אביב, ירושלים ויעדים רבים נוספים שממתינים לגילוי. לישראל יש הרבה יותר להציע מעבר למסלולים הרגילים — מגוון עשיר של מקומות, אווירות וחוויות לאורך כל הארץ. אנחנו ממשיכים להוסיף יעדים חדשים ומזמינים מטיילים לגלות צד אחר של ישראל."] },
+      { q: "האם אפשר להזמין חוויה בלי לינה במלון?", a: ["כן. עכשיו אפשר להזמין חוויה בפני עצמה או כחלק משהות במלון.", "בין אם אתם מחפשים פעילות מיוחדת, חופשה מלאה או שילוב של השניים – ב-STAYMAKOM תוכלו לבחור את האפשרות שמתאימה לכם.", "חלק מהחוויות כוללות הטבות או מחירים מיוחדים כאשר מזמינים אותן יחד עם מלון, בעוד שאחרות זמינות גם כהזמנה נפרדת."] },
+      { q: "למי החוויות מתאימות?", a: ["STAYMAKOM מיועדת הן למטיילים המגיעים לישראל והן למקומיים שרוצים לחוות את הארץ אחרת. בין אם זו הפעם הראשונה שאתם מגלים את ישראל, ובין אם אתם מבלים כל קיץ כאן כבר שנים — STAYMAKOM עוזרת לכם לחקור מעבר לתוכניות הרגילות ולגלות חוויות שאולי לא הייתם מוצאים בדרך אחרת."] },
+      { q: "האם צריך לתכנן הכל לבד?", a: ["לא, וזה בדיוק הרעיון. כל חוויה כבר נבנתה ותוכננה עבורכם, כך שאין צורך להשקיע שעות בחיפושים, תיאומים או הזמנות נפרדות. פשוט בוחרים, מזמינים ונהנים."] },
+      { q: "האם זה מתאים לאירוע מיוחד?", a: ["בהחלט. החוויות שלנו מושלמות לחגיגת רגע מיוחד או פשוט כדי לקחת זמן לעצמכם. אם יש לכם בקשה מסוימת, תוכלו גם [לשלוח פנייה] ליצירת חוויה מותאמת אישית."] },
+      { q: "מה אם אני רוצה משהו יותר מותאם אישית?", a: ["אם אתם מחפשים חוויה ספציפית יותר, תוכלו למלא את [טופס ה-Tailor-Made] שלנו. נעזור לכם ליצור חוויה מותאמת אישית לפי האירוע, ההעדפות וסגנון הטיול שלכם."] },
+      { q: "אפשר לבטל או לשנות את ההזמנה?", a: ["כן, תנאי הביטול והשינוי מוצגים בצורה ברורה לפני אישור ההזמנה. אנחנו עובדים בשיתוף פעולה עם שותפי המלון שלנו כדי להציע תנאים גמישים, שיאפשרו לכם להזמין בביטחון. ניתן גם לנהל את ההזמנה בקלות ישירות מחשבון הלקוח שלכם."] },
+    ],
+
+    // Cartes
+    cardTotal: 'סה"כ',
+    cardFrom: "מ-",
+    cardPerPerson: "/ לאדם",
+    cardPerNightTwoGuests: "/ לילה ל-2 אנש׳",
+    wishlistAdded: "נוסף למועדפים",
+    wishlistAddedDesc: "תוכל למצוא אותו בחשבון שלך",
+    wishlistRemoved: "הוסר מהמועדפים",
+    boatSkipperIncluded: "סקיפר כלול",
+    boatSkipperCrew: "סקיפר + צוות",
+    boatSkipperNotIncluded: "סקיפר לא כלול",
+    boatUpToGuests: (n: number) => `עד ${n} אורחים`,
+
+    // Champ téléphone
+    phoneCountryAria: "קידומת מדינה",
+    phoneCheck: "נראה שהמספר חסר. בדקו אותו כדי שנוכל ליצור קשר בוואטסאפ.",
   },
   fr: {
     // Category page
@@ -1136,12 +1350,124 @@ export const translations = {
     giftCardSectionTitle: "Offrez une évasion",
     giftCardSectionDesc: "Offrez à quelqu'un qui vous est cher la liberté de choisir son propre séjour d'exception.",
     giftCardSectionCTA: "Offrir une évasion",
+
+    // ── Textes d'interface rapatriés le 17/11/2026 (voir le bloc anglais) ──
+
+    // Accueil (titre du hero : signature en anglais dans toutes les langues, pas de clé ici)
+    homeHeroSubtitle: "Israël comme vous ne l'avez jamais vu.",
+    homeFindExperience: "Trouver une expérience",
+    homeSpecialRequest: "Demande spéciale",
+    homeCardsTitle1: "Hôtels d'exception.",
+    homeCardsTitle2: "Expériences inoubliables.",
+    homeCardsSubtitle: "Pour quelques heures, une nuit ou une expérience sur mesure.",
+    homeResultsCount: (n: number) => `${n} ${n > 1 ? "expériences" : "expérience"}`,
+    homeClear: "Effacer",
+    homeNearMeDenied: "Position non autorisée. Vous pouvez choisir une région dans la liste.",
+    homeNearMeOutside: "Vous n'êtes pas en Israël pour l'instant. Choisissez une région dans la liste.",
+    homeNearMeUnavailable: "Position introuvable. Vous pouvez choisir une région dans la liste.",
+    homeNoMatch: "Aucune expérience ne correspond pour l'instant.",
+    homeViewAll: "Voir toutes les expériences",
+    homeNoStandalone: "Aucune expérience disponible pour l'instant.",
+    homeNoCategoryExperiences: "Aucune expérience pour cette catégorie.",
+    homeShowAll: "Voir tout",
+    homeGiftTitle1: "Le cadeau parfait.",
+    homeGiftTitle2: "Une évasion à offrir.",
+    homeNotTourism1: "Ce n'est pas du tourisme.",
+    homeNotTourism2: "C'est autre chose.",
+    distanceKm: (km: number) => `à ${km} km`,
+
+    // En-tête et menus
+    modeWithHotel1: "Avec",
+    modeWithHotel2: "Hôtel",
+    modeExperienceOnly1: "Expériences",
+    modeExperienceOnly2: "seules",
+    headerLanguage: "Langue",
+    headerCurrency: "Devise",
+    headerLanguageCurrencyAria: "Langue et devise",
+    menuOpenAria: "Ouvrir le menu",
+    menuExploreEscapes: "Explorer les escapades",
+    menuGiftAStay: "Carte cadeau",
+    menuImAHotel: "Je suis un hôtel",
+    menuAbout: "À propos",
+    menuContact: "Contact",
+    accountWelcome: "Bienvenue chez",
+    accountSubtitle: "Connectez-vous pour sauvegarder vos expériences préférées et accéder à votre compte.",
+    accountSignIn: "Se connecter",
+    accountCreate: "Créer un compte",
+    navExplore: "Explorer",
+    navSaved: "Favoris",
+    navTrips: "Voyages",
+    navAccount: "Compte",
+
+    // Pied de page
+    launchFooterNewsletter: "S'inscrire à la newsletter",
+    launchFooterPrivacy: "Confidentialité",
+    launchFooterTerms: "Conditions",
+
+    // Bandeaux de l'accueil
+    marqueeLine1: "HÔTELS D'EXCEPTION.",
+    marqueeLine2: "EXPÉRIENCES INOUBLIABLES.",
+    tailoredKicker: "VOS ENVIES. NOTRE SAVOIR-FAIRE.",
+    tailoredTitle: "Une idée de séjour hors du commun ?",
+    tailoredOccasions: "Demande en mariage, vacances en famille, séjour prolongé, occasion spéciale, retraite professionnelle...",
+    tailoredDropIdea: "Partagez votre idée, on s'occupe du reste.",
+    tailoredPerks: ["Sur mesure", "Authentique", "Meilleur prix garanti"],
+    tailoredCta: "CRÉER MON SÉJOUR",
+    pressKicker: "Ils parlent de nous",
+    pressWhatsapp: "Une question ? Notre équipe vous répond rapidement sur WhatsApp",
+
+    // Filtre région
+    regionEverywhere: "Partout en Israël",
+    regionNearMe: "Autour de moi",
+    regionNearHint: (km: number) => `Utilise votre position, à moins de ${km} km`,
+    regionLocating: "Localisation en cours...",
+
+    // FAQ
+    faqLabel: "Questions fréquentes",
+    faqTitle: "Tout ce que vous voulez savoir",
+    faqItems: [
+      { q: "Pourquoi réserver via STAYMAKOM ?", a: ["STAYMAKOM, c'est bien plus qu'une plateforme de réservation d'hôtels. Nous combinons des hôtels soigneusement sélectionnés avec des expériences uniques, en une seule réservation simple, pour que votre séjour soit facile, inspirant et sans prise de tête.", "Au lieu de passer des heures à chercher, planifier et coordonner chaque élément séparément, tout est déjà réuni au même endroit. Nos formules sont pensées pour offrir une expérience plus fluide et plus avantageuse qu'une réservation à la carte."] },
+      { q: "Où sont disponibles vos expériences ?", a: ["Nous nous concentrons actuellement sur Israël, avec des expériences à Tel Aviv, Jérusalem et de nombreuses autres destinations qui n'attendent qu'à être découvertes. Israël a bien plus à offrir que les circuits habituels : une richesse de lieux, d'ambiances et de sensations à travers tout le pays. Nous enrichissons continuellement notre catalogue et invitons les voyageurs à découvrir un Israël autrement."] },
+      { q: "Puis-je réserver une expérience sans passer la nuit à l'hôtel ?", a: ["Oui. Vous pouvez désormais réserver une expérience seule ou l'associer à un séjour à l'hôtel. Que vous recherchiez simplement une activité, une escapade complète ou les deux, STAYMAKOM vous laisse choisir l'option qui correspond le mieux à vos envies.", "Certaines expériences proposent des avantages exclusifs ou des tarifs préférentiels lorsqu'elles sont réservées avec un hôtel, tandis que d'autres sont disponibles indépendamment."] },
+      { q: "À qui s'adressent ces expériences ?", a: ["STAYMAKOM s'adresse aussi bien aux voyageurs qui découvrent Israël qu'aux locaux qui souhaitent vivre leur pays autrement. Que ce soit votre première fois en Israël ou que vous y passiez chaque été depuis des années, STAYMAKOM vous aide à explorer au-delà des sentiers battus et à vivre des expériences que vous n'auriez peut-être pas trouvées autrement."] },
+      { q: "Dois-je tout organiser moi-même ?", a: ["Non, et c'est justement l'idée. Chaque expérience est déjà pensée et préparée pour vous, sans avoir à passer des heures à chercher, coordonner ou réserver plusieurs services séparément. Il suffit de choisir, réserver et profiter."] },
+      { q: "Est-ce adapté à une occasion spéciale ?", a: ["Absolument. Nos expériences sont parfaites pour marquer un moment unique ou simplement prendre du temps pour soi. Si vous avez quelque chose de particulier en tête, vous pouvez aussi [soumettre une demande] pour créer une expérience entièrement sur mesure."] },
+      { q: "Et si je veux quelque chose de plus personnalisé ?", a: ["Si vous cherchez quelque chose de plus spécifique, vous pouvez soumettre une demande via notre [formulaire sur mesure]. Nous vous aiderons à créer une expérience adaptée à votre occasion, vos préférences et votre style de voyage."] },
+      { q: "Puis-je annuler ou modifier ma réservation ?", a: ["Oui, les conditions d'annulation et de modification sont clairement indiquées avant de confirmer votre réservation. Nous travaillons en étroite collaboration avec nos hôtels partenaires pour proposer des conditions flexibles, afin que vous puissiez réserver en toute confiance. Vous pouvez également gérer facilement votre réservation directement depuis votre espace client."] },
+    ],
+
+    // Cartes
+    cardTotal: "total",
+    cardFrom: "à partir de",
+    cardPerPerson: "/ pers.",
+    cardPerNightTwoGuests: "/ nuit · 2 pers.",
+    wishlistAdded: "Ajouté aux favoris",
+    wishlistAddedDesc: "Retrouvez-le dans votre compte",
+    wishlistRemoved: "Retiré des favoris",
+    boatSkipperIncluded: "Skipper inclus",
+    boatSkipperCrew: "Skipper + équipier",
+    boatSkipperNotIncluded: "Skipper non inclus",
+    boatUpToGuests: (n: number) => `Jusqu'à ${n} pers.`,
+
+    // Champ téléphone
+    phoneCountryAria: "Indicatif pays",
+    phoneCheck: "Ce numéro semble incomplet. Vérifiez-le pour que l'on puisse vous joindre sur WhatsApp.",
   },
 };
 
 export type Language = 'en' | 'he' | 'fr';
+export type UiKey = keyof typeof translations.en;
+export type UiDictionary = Partial<typeof translations.en>;
 
-export const t = (lang: Language, key: keyof typeof translations.en): any => {
-  const langTranslations = translations[lang] ?? translations.en;
-  return (langTranslations as typeof translations.en)[key] ?? translations.en[key];
-};
+/** Dictionnaire d'une langue : écrit à la main (en, he, fr) ou traduit (es, ru, de). */
+function dictionaryOf(locale: Locale): UiDictionary {
+  if (locale === "en" || locale === "he" || locale === "fr") return translations[locale] as UiDictionary;
+  return AUTO_UI_TRANSLATIONS[locale] ?? {};
+}
+
+/** Texte d'interface dans la langue de la page, l'anglais si la clé n'est pas encore traduite. */
+export const t = (lang: Locale, key: UiKey): any => dictionaryOf(lang)[key] ?? translations.en[key];
+
+/** Clés anglaises encore absentes d'une langue (sert à la check-list avant d'allumer ES / RU / DE). */
+export const missingUiKeys = (locale: Locale): UiKey[] =>
+  (Object.keys(translations.en) as UiKey[]).filter((key) => !(key in dictionaryOf(locale)));

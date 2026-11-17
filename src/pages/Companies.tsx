@@ -37,7 +37,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export default function Companies() {
-  const { lang } = useLanguage();
+  const { lang, locale } = useLanguage();
   const isRTL = lang === 'he';
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -442,7 +442,7 @@ export default function Companies() {
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {t(lang, 'companiesConsentHelper')}{' '}
-                      <Link to={`/privacy${lang !== 'en' ? `?lang=${lang}` : ''}`} className="underline hover:text-foreground">
+                      <Link to={`/privacy${locale !== 'en' ? `?lang=${locale}` : ''}`} className="underline hover:text-foreground">
                         {t(lang, 'footerPrivacy')}
                       </Link>
                     </p>

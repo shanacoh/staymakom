@@ -10,7 +10,7 @@ interface OtherExperiencesProps {
 }
 
 const OtherExperiencesFromHotel = ({ hotelId, currentExperienceId, hotelName }: OtherExperiencesProps) => {
-  const { lang } = useLanguage();
+  const { lang, locale } = useLanguage();
 
   const { data: experiences, isLoading } = useQuery({
     queryKey: ["hotel-other-experiences", hotelId, currentExperienceId],
@@ -48,7 +48,7 @@ const OtherExperiencesFromHotel = ({ hotelId, currentExperienceId, hotelName }: 
           return (
             <a
               key={exp.id}
-              href={`/experience/${exp.slug}?lang=${lang}`}
+              href={`/experience/${exp.slug}?lang=${locale}`}
               className="group block space-y-1.5 sm:space-y-3"
             >
               {/* Image */}

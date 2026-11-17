@@ -4,6 +4,7 @@ import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useLanguage } from "@/hooks/useLanguage";
+import { t } from "@/lib/translations";
 
 interface LaunchHamburgerMenuProps {
   isScrolled?: boolean;
@@ -11,7 +12,7 @@ interface LaunchHamburgerMenuProps {
 
 const LaunchHamburgerMenu = ({ isScrolled = false }: LaunchHamburgerMenuProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { lang } = useLanguage();
+  const { lang, locale } = useLanguage();
   const isRTL = lang === "he";
 
   const handleNavClick = () => {
@@ -24,7 +25,7 @@ const LaunchHamburgerMenu = ({ isScrolled = false }: LaunchHamburgerMenuProps) =
         <Button
           variant="ghost"
           className={`h-[30px] w-[30px] p-0 rounded-full ${!isScrolled ? "text-white hover:bg-white/10" : "hover:bg-muted"}`}
-          aria-label="Open menu"
+          aria-label={t(locale, "menuOpenAria")}
         >
           <Menu className="h-[18px] w-[18px]" />
         </Button>
@@ -40,7 +41,7 @@ const LaunchHamburgerMenu = ({ isScrolled = false }: LaunchHamburgerMenuProps) =
             onClick={handleNavClick}
             className="px-4 py-3 text-[15px] text-foreground hover:bg-foreground/5 rounded-lg transition-colors"
           >
-            {isRTL ? "גלה חוויות" : lang === "fr" ? "Explorer les escapades" : "Explore Escapes"}
+            {t(locale, "menuExploreEscapes")}
           </Link>
 
           <Link
@@ -48,7 +49,7 @@ const LaunchHamburgerMenu = ({ isScrolled = false }: LaunchHamburgerMenuProps) =
             onClick={handleNavClick}
             className="px-4 py-3 text-[15px] text-foreground hover:bg-foreground/5 rounded-lg transition-colors"
           >
-            {isRTL ? "כרטיס מתנה" : lang === "fr" ? "Carte cadeau" : "Gift a Stay"}
+            {t(locale, "menuGiftAStay")}
           </Link>
 
           <Link
@@ -56,7 +57,7 @@ const LaunchHamburgerMenu = ({ isScrolled = false }: LaunchHamburgerMenuProps) =
             onClick={handleNavClick}
             className="px-4 py-3 text-[15px] text-foreground hover:bg-foreground/5 rounded-lg transition-colors"
           >
-            {isRTL ? "הפוך לשותף" : lang === "fr" ? "Je suis un hôtel" : "I'm a hotel"}
+            {t(locale, "menuImAHotel")}
           </Link>
 
           <Link
@@ -64,7 +65,7 @@ const LaunchHamburgerMenu = ({ isScrolled = false }: LaunchHamburgerMenuProps) =
             onClick={handleNavClick}
             className="px-4 py-3 text-[15px] text-foreground hover:bg-foreground/5 rounded-lg transition-colors"
           >
-            {isRTL ? "אודות" : lang === "fr" ? "À propos" : "About"}
+            {t(locale, "menuAbout")}
           </Link>
 
           <Link
@@ -72,7 +73,7 @@ const LaunchHamburgerMenu = ({ isScrolled = false }: LaunchHamburgerMenuProps) =
             onClick={handleNavClick}
             className="px-4 py-3 text-[15px] text-foreground hover:bg-foreground/5 rounded-lg transition-colors"
           >
-            {isRTL ? "צרו קשר" : "Contact"}
+            {t(locale, "menuContact")}
           </Link>
         </nav>
       </PopoverContent>

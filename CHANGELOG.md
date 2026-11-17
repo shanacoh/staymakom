@@ -4,6 +4,26 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 17/11/2026 : Textes d'interface en espagnol, russe et allemand (accueil, menus, pied de page, cartes, champ téléphone)
+
+### Ce qui a changé côté code
+- `src/lib/translations.ts` : nouvelles clés pour les textes qui étaient écrits en dur dans les composants (accueil, en-tête, menus, barre du bas, pied de page, bandeaux, FAQ, cartes, champ téléphone), en anglais, français et hébreu repris mot pour mot. `t()` accepte maintenant les 6 langues et retombe sur l'anglais pour une clé pas encore traduite ; nouvelle fonction `missingUiKeys()` qui liste ce qui reste à traduire.
+- `src/lib/uiTranslations/` (nouveau) : `es.ts`, `ru.ts`, `de.ts` (traductions de ces textes, « tú » / « вы » / « du », pas de tiret long), `index.ts`, et un test `uiTranslations.test.ts` (mêmes clés dans les 3 langues, liens de la FAQ conservés, pas de tiret long, pas de texte resté en anglais, pluriels russes).
+- `src/pages/IndexV3.tsx`, `V3Header`, `LaunchHamburgerMenu`, `MobileBottomNav`, `auth/AccountBubble`, `LaunchFooter`, `MarqueeBanner`, `TailoredRequestSection`, `PressStrip`, `RegionFilter`, `FAQSection` : lisent leurs textes dans `translations.ts` selon la langue réelle de la page. La FAQ est devenue une liste de questions / paragraphes ; le lien vers le formulaire sur-mesure s'écrit entre crochets.
+- `ExperienceCard`, `StandaloneExperienceCard` : prix (« от », « ab »...), favoris, bulles bateau traduits. `src/lib/standaloneBadges.ts` : badges calculés (casher, piscine, âge minimum, parking...) en 6 langues, nouvelle fonction `highlightTagLabel`.
+- `src/components/PhoneInput.tsx` et `src/lib/phone.ts` : message « numéro incomplet » dans la langue de la page, nom du pays affiché dans la liste des indicatifs (écrit par le navigateur, aucune liste à traduire). La propriété `lang` du champ a disparu (`LeadGuestForm`, `BoatAvailabilityPopup`, `StandaloneRequestPanel` mis à jour).
+- Liens internes (`ExperienceCard`, `CategoryCard`, `OtherExperiencesFromHotel`, `BookingConfirmationDialog`, `Companies`) : gardent la vraie langue de la page dans `?lang=`. Avant, un clic sur une carte depuis une page en russe ouvrait la fiche en anglais.
+- Changement visible en français et en hébreu : la barre du bas sur téléphone (Explore / Saved / Trips / Account), qui restait en anglais partout, est maintenant traduite (Explorer / Favoris / Voyages / Compte, et en hébreu).
+- Titre de l'accueil (« Don't choose a city, choose your escape ») : gardé en anglais dans toutes les langues comme signature, y compris en hébreu où il était traduit jusqu'ici. Sous-titre et boutons autour sont traduits.
+- `supabase/functions/_shared/translations/catalog.ts` : le nom des catégories devient un champ « saisi à la main » (`manual`) que la traduction automatique ne touche jamais (`translate-content/index.ts` l'ignore), pour que les noms des moods restent en anglais. Le site affiche la traduction quand elle existe.
+- `docs/traductions/avant-d-allumer.md` : avancement page par page des textes d'interface. `ARCHITECTURE.md` : paragraphe « Textes d'interface ».
+
+### Ce qui a changé côté base de données
+- `docs/traductions/categorie-bateaux-nom.sql` (appliqué le 17/11/2026) : 3 lignes dans `content_translations` pour le nom de la catégorie Bateaux « On the Water » : « Mar adentro » (es), « В открытое море » (ru), « Ab aufs Wasser » (de), statut `reviewed`. Français et hébreu existaient déjà (« Prendre le Large », « יוצאים לים »). Pas de migration de structure.
+
+### Pourquoi ce changement
+- Sur une page en espagnol, russe ou allemand, les fiches étaient traduites mais tous les boutons, menus et titres fixes restaient en anglais. C'est la première des étapes avant d'ouvrir ces langues au public.
+
 ## 17/11/2026 : Traduction automatique, le site affiche les fiches en espagnol, russe et allemand (langues encore cachées)
 
 ### Ce qui a changé côté code

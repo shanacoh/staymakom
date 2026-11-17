@@ -4,11 +4,12 @@ import { Compass, Heart, Luggage, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { useCartExists } from "@/hooks/useCart";
+import { useLanguage } from "@/hooks/useLanguage";
+import { t, type UiKey } from "@/lib/translations";
 
 interface NavItem {
   icon: React.ElementType;
-  labelEn: string;
-  labelHe: string;
+  label: UiKey;
   path: string;
   requiresAuth?: boolean;
   authContext?: "wishlist" | "bookings" | "account";
@@ -16,10 +17,10 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { icon: Compass, labelEn: "Explore", labelHe: "גלה", path: "/" },
-  { icon: Heart, labelEn: "Saved", labelHe: "שמור", path: "/account?tab=wishlist", requiresAuth: true, authContext: "wishlist" },
-  { icon: Luggage, labelEn: "Trips", labelHe: "טיולים", path: "/cart", showCartDot: true },
-  { icon: User, labelEn: "Account", labelHe: "חשבון", path: "/account", requiresAuth: true, authContext: "account" },
+  { icon: Compass, label: "navExplore", path: "/" },
+  { icon: Heart, label: "navSaved", path: "/account?tab=wishlist", requiresAuth: true, authContext: "wishlist" },
+  { icon: Luggage, label: "navTrips", path: "/cart", showCartDot: true },
+  { icon: User, label: "navAccount", path: "/account", requiresAuth: true, authContext: "account" },
 ];
 
 const MobileBottomNav = () => {
@@ -27,6 +28,7 @@ const MobileBottomNav = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const hasCart = useCartExists();
+  const { locale } = useLanguage();
 
   // ── État par défaut (en haut de page) : pastille flottante.
   //    Dès qu'on scrolle, elle se transforme en barre pleine largeur. ──
@@ -130,7 +132,7 @@ const MobileBottomNav = () => {
                   isScrolled ? "max-h-0 opacity-0 text-[10px]" : "max-h-4 opacity-100 text-[11px]"
                 )}
               >
-                {item.labelEn}
+                {t(locale, item.label)}
               </span>
             </button>
           );
