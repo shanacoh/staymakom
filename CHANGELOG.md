@@ -260,6 +260,8 @@
   - paiements d'essai des outils de test Revolut du back-office : ignorés.
 - `reconcile-standalone-bookings` : vérifie aussi le registre ; si 10 min après un paiement du site aucune réservation n'existe, email « 🚨 Réservation pas allée au bout ». Ne peut plus être lancé que par la tâche planifiée ou un admin. L'alerte « réservation bloquée depuis 2 h » est retirée : elle se déclenchait pour chaque client qui abandonne au moment de payer.
 - `src/config/automations.ts` : fiches des deux automatisations mises à jour.
+- Correction : Revolut renvoie l'état d'une commande en minuscules (« failed », « completed ») alors que le filet le comparait en majuscules, il ne reconnaissait donc aucun état. L'état est maintenant mis en majuscules à la lecture. Le même défaut existe dans `confirm-standalone-payment` (non corrigé ici) : la confirmation immédiate répond toujours « non confirmé », c'est le webhook qui confirme.
+- `process-standalone-booking` reçoit l'étiquette mais n'est pas redéployée : le site ne l'appelle plus.
 
 ### Ce qui a changé côté base de données
 - Migration `supabase/migrations/20261102120000_paiements_sans_reservation.sql` :

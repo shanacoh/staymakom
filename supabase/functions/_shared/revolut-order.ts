@@ -62,7 +62,9 @@ export async function fetchRevolutOrder(orderId: string): Promise<RevolutOrderSu
   }
   const data = await response.json();
   return {
-    state: data.state as string,
+    // Revolut renvoie l'état en minuscules (« failed », « completed ») : on le met en
+    // majuscules pour le comparer aux noms d'événements (COMPLETED, FAILED...).
+    state: String(data.state || '').toUpperCase(),
     // Revolut compte en centimes.
     amount: typeof data.amount === 'number' ? data.amount / 100 : null,
     currency: data.currency ?? null,
