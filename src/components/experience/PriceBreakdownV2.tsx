@@ -9,6 +9,7 @@ import { Loader2, Check } from "lucide-react";
 import type { PriceBreakdownV2 as PriceBreakdownType } from "@/types/experience2_addons";
 import { DualPrice } from "@/components/ui/DualPrice";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { uiGroup } from "@/lib/translations";
 
 interface PriceBreakdownV2Props {
   breakdown: PriceBreakdownType | null;
@@ -45,56 +46,6 @@ interface PriceBreakdownV2Props {
   promoPct?: number;
 }
 
-const translations = {
-  en: {
-    title: "PRICE BREAKDOWN",
-    yourStay: "Your stay",
-    included: "included",
-    optionalExtras: "Optional extras",
-    total: "TOTAL",
-    nights: "night",
-    nightsPlural: "nights",
-    guests: "guest",
-    guestsPlural: "guests",
-    noData: "Select a room and rate plan to see the price breakdown.",
-    vatTooltip: "Foreign visitors with a B/2 visa are exempt from VAT.\nIsraeli residents pay 18% VAT directly at the hotel upon check-in.\nThis amount is not collected by STAYMAKOM.",
-    giftCardLabel: "Gift card",
-    promoLabel: "Promo",
-    youPay: "YOU PAY",
-  },
-  he: {
-    title: "פירוט מחיר",
-    yourStay: "השהייה שלך",
-    included: "כלול",
-    optionalExtras: "תוספות",
-    total: 'סה"כ',
-    nights: "לילה",
-    nightsPlural: "לילות",
-    guests: "אורח",
-    guestsPlural: "אורחים",
-    noData: "בחר חדר ותכנית תעריף כדי לראות פירוט מחירים.",
-    vatTooltip: "מבקרים זרים עם אשרת B/2 פטורים ממע\"מ.\nתושבי ישראל משלמים 18% מע\"מ ישירות במלון בעת הצ'ק-אין.\nסכום זה אינו נגבה על ידי STAYMAKOM.",
-    giftCardLabel: "כרטיס מתנה",
-    promoLabel: "קוד הנחה",
-    youPay: "סך לתשלום",
-  },
-  fr: {
-    title: "DÉTAIL DU PRIX",
-    yourStay: "Votre séjour",
-    included: "inclus",
-    optionalExtras: "Extras optionnels",
-    total: "TOTAL",
-    nights: "nuit",
-    nightsPlural: "nuits",
-    guests: "voyageur",
-    guestsPlural: "voyageurs",
-    noData: "Sélectionnez une chambre et un plan tarifaire pour voir le détail du prix.",
-    vatTooltip: "Les visiteurs étrangers munis d'un visa B/2 sont exemptés de TVA.\nLes résidents israéliens paient 18% de TVA directement à l'hôtel lors du check-in.\nCe montant n'est pas perçu par STAYMAKOM.",
-    giftCardLabel: "Carte cadeau",
-    promoLabel: "Code promo",
-    youPay: "À PAYER",
-  },
-};
 
 function useFmt() {
   const { symbol, convert } = useCurrency();
@@ -127,7 +78,7 @@ export function PriceBreakdownV2({
   promoCode,
   promoPct,
 }: PriceBreakdownV2Props) {
-  const t = translations[lang];
+  const t = uiGroup("priceBreakdownV2Translations");
   const fmt = useFmt();
 
   if (isLoading) {

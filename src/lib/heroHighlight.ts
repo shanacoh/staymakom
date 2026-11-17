@@ -5,6 +5,7 @@
 import { normalizeLegacyPracticalInfo } from "@/lib/standaloneBadges";
 import { BOATS_CATEGORY_ID } from "@/lib/boatsCategory";
 import type { HeroKeyFact, HeroLang } from "@/lib/heroKeyFacts";
+import { t, uiRecord } from "@/lib/translations";
 
 export const HERO_HIGHLIGHT_TYPES = ["duration", "ages", "group", "kosher", "languages", "private"] as const;
 export type HeroHighlightType = (typeof HERO_HIGHLIGHT_TYPES)[number];
@@ -33,25 +34,24 @@ const CATEGORY_DEFAULTS: Record<string, HeroHighlightType> = {
 };
 
 const LABELS: Record<HeroHighlightType, Record<HeroLang, string>> = {
-  duration: { en: "Duration", fr: "Durée", he: "משך" },
-  ages: { en: "Ages", fr: "Âge", he: "גילאים" },
-  group: { en: "Group", fr: "Groupe", he: "קבוצה" },
-  kosher: { en: "Kosher", fr: "Kasher", he: "כשרות" },
-  languages: { en: "Languages", fr: "Langues", he: "שפות" },
-  private: { en: "Format", fr: "Format", he: "פורמט" },
+  duration: uiRecord("heroHighlightDuration"),
+  ages: uiRecord("heroHighlightAges"),
+  group: uiRecord("heroHighlightGroup"),
+  kosher: uiRecord("heroHighlightKosher"),
+  languages: uiRecord("heroHighlightLanguages"),
+  private: uiRecord("heroHighlightFormat"),
 };
 
-const pick = (lang: HeroLang, en: string, fr: string, he: string) => (lang === "he" ? he : lang === "fr" ? fr : en);
 
 /** « Tous âges », « Dès 6 ans », « Adultes uniquement », ou null si l'âge n'est pas renseigné. */
 export function formatAges(practicalInfo: unknown, lang: HeroLang): string | null {
   const raw = (practicalInfo ?? {}) as { adult_only?: unknown };
   const { kids } = normalizeLegacyPracticalInfo(practicalInfo);
-  if (kids.status === "no" || raw.adult_only === true) return pick(lang, "Adults only", "Adultes uniquement", "למבוגרים בלבד");
+  if (kids.status === "no" || raw.adult_only === true) return t(lang, "agesAdultsOnly");
   if (kids.status !== "yes") return null;
-  if (kids.from_age == null) return pick(lang, "All ages", "Tous âges", "לכל הגילאים");
+  if (kids.from_age == null) return t(lang, "agesAll");
   const age = kids.from_age;
-  return pick(lang, `From ${age} yrs`, `Dès ${age} ans`, `מגיל ${age}`);
+  return t(lang, "agesFrom")(age);
 }
 
 /** Capacité max : la plus haute des formules de prix actives, sinon max_party. */
@@ -71,19 +71,19 @@ const VALUE_BUILDERS: Record<HeroHighlightType, (e: HeroHighlightExperience, lan
   ages: (e, lang) => formatAges(e.practical_info, lang),
   group: (e, lang) => {
     const max = maxGroupSize(e);
-    return max ? pick(lang, `Up to ${max}`, `Jusqu'à ${max} pers.`, `עד ${max} משתתפים`) : null;
+    return max ? t(lang, "groupUpTo")(max) : null;
   },
   kosher: (e, lang) => {
     const { kosher } = normalizeLegacyPracticalInfo(e.practical_info);
-    if (kosher === "yes") return pick(lang, "Kosher", "Kasher", "כשר");
-    if (kosher === "no") return pick(lang, "Not kosher", "Non kasher", "לא כשר");
+    if (kosher === "yes") return t(lang, "kosherYes");
+    if (kosher === "no") return t(lang, "kosherNo");
     return null;
   },
   languages: (e) => {
     const codes = (e.languages ?? []).filter(Boolean);
     return codes.length > 0 ? codes.map((c) => c.toUpperCase()).join(" · ") : null;
   },
-  private: (_e, lang) => pick(lang, "Private", "Privé", "פרטי"),
+  private: (_e, lang) => t(lang, "formatPrivate"),
 };
 
 const isHeroHighlightType = (v: unknown): v is HeroHighlightType =>

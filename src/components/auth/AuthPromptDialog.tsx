@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { uiRecord, pageLocale, uiGroup } from "@/lib/translations";
 
 type Lang = "en" | "fr" | "he";
 
@@ -51,237 +52,55 @@ const signupSchema = z.object({
 /** Messages d'erreur précis par champ, pour remplacer le message générique
  *  "Vérifiez vos informations" qui n'explique pas d'où vient le problème. */
 const FIELD_ERROR_MESSAGES: Record<string, Record<Lang, string>> = {
-  firstName: {
-    fr: "Merci d'indiquer votre prénom.",
-    en: "Please enter your first name.",
-    he: "נא למלא שם פרטי.",
-  },
-  lastName: {
-    fr: "Merci d'indiquer votre nom.",
-    en: "Please enter your last name.",
-    he: "נא למלא שם משפחה.",
-  },
-  email: {
-    fr: "Cette adresse email n'est pas valide.",
-    en: "This email address isn't valid.",
-    he: "כתובת האימייל אינה תקינה.",
-  },
-  country: {
-    fr: "Merci de sélectionner votre nationalité.",
-    en: "Please select your nationality.",
-    he: "נא לבחור את הלאום שלך.",
-  },
-  password: {
-    fr: "Le mot de passe doit contenir au moins 6 caractères.",
-    en: "Your password must be at least 6 characters.",
-    he: "הסיסמה חייבת להכיל לפחות 6 תווים.",
-  },
+  firstName: uiRecord("authPromptDialogPleaseEnterYourFirstName"),
+  lastName: uiRecord("authPromptDialogPleaseEnterYourLastName"),
+  email: uiRecord("authPromptDialogThisEmailAddressIsnT"),
+  country: uiRecord("authPromptDialogPleaseSelectYourNationality"),
+  password: uiRecord("authPromptDialogYourPasswordMustBeAt"),
 };
 
 function getSignupErrorMessage(errors: z.ZodIssue[], lang: Lang, fallback: string): string {
   const firstField = errors[0]?.path[0] as string | undefined;
-  return (firstField && FIELD_ERROR_MESSAGES[firstField]?.[lang]) || fallback;
+  return (firstField && FIELD_ERROR_MESSAGES[firstField]?.[pageLocale()]) || fallback;
 }
 
 const COUNTRIES = [
-  { value: "IL", label: { en: "Israel", fr: "Israël", he: "ישראל" } },
-  { value: "FR", label: { en: "France", fr: "France", he: "צרפת" } },
-  { value: "US", label: { en: "United States", fr: "États-Unis", he: "ארה״ב" } },
-  { value: "GB", label: { en: "United Kingdom", fr: "Royaume-Uni", he: "בריטניה" } },
-  { value: "DE", label: { en: "Germany", fr: "Allemagne", he: "גרמניה" } },
-  { value: "IT", label: { en: "Italy", fr: "Italie", he: "איטליה" } },
-  { value: "ES", label: { en: "Spain", fr: "Espagne", he: "ספרד" } },
-  { value: "CA", label: { en: "Canada", fr: "Canada", he: "קנדה" } },
-  { value: "AU", label: { en: "Australia", fr: "Australie", he: "אוסטרליה" } },
-  { value: "OTHER", label: { en: "Other", fr: "Autre", he: "אחר" } },
+  { value: "IL", label: uiRecord("authPromptDialogIsrael") },
+  { value: "FR", label: uiRecord("authPromptDialogFrance") },
+  { value: "US", label: uiRecord("authPromptDialogUnitedStates") },
+  { value: "GB", label: uiRecord("authPromptDialogUnitedKingdom") },
+  { value: "DE", label: uiRecord("authPromptDialogGermany") },
+  { value: "IT", label: uiRecord("authPromptDialogItaly") },
+  { value: "ES", label: uiRecord("authPromptDialogSpain") },
+  { value: "CA", label: uiRecord("authPromptDialogCanada") },
+  { value: "AU", label: uiRecord("authPromptDialogAustralia") },
+  { value: "OTHER", label: uiRecord("authPromptDialogOther") },
 ];
 
 const INTERESTS = [
-  { id: "romantic", label: { en: "Romantic Escape", fr: "Escapade Romantique", he: "בריחה רומנטית" } },
-  { id: "nature", label: { en: "Nature & Outdoor", fr: "Nature & Plein Air", he: "טבע ושטח" } },
-  { id: "gastronomy", label: { en: "Foody Discovery", fr: "Découverte Culinaire", he: "גילוי קולינרי" } },
-  { id: "wellness", label: { en: "Mindful Reset", fr: "Reset Bien-être", he: "איפוס מודע" } },
-  { id: "family", label: { en: "Family Fun", fr: "Fun en Famille", he: "כיף משפחתי" } },
-  { id: "golden", label: { en: "Golden Age", fr: "Âge d'Or", he: "גיל הזהב" } },
-  { id: "active", label: { en: "Active Adventure", fr: "Aventure Active", he: "הרפתקה פעילה" } },
-  { id: "work", label: { en: "Work Unplugged", fr: "Travail Déconnecté", he: "עבודה מנותקת" } },
+  { id: "romantic", label: uiRecord("authPromptDialogRomanticEscape") },
+  { id: "nature", label: uiRecord("authPromptDialogNatureOutdoor") },
+  { id: "gastronomy", label: uiRecord("authPromptDialogFoodyDiscovery") },
+  { id: "wellness", label: uiRecord("authPromptDialogMindfulReset") },
+  { id: "family", label: uiRecord("authPromptDialogFamilyFun") },
+  { id: "golden", label: uiRecord("authPromptDialogGoldenAge") },
+  { id: "active", label: uiRecord("authPromptDialogActiveAdventure") },
+  { id: "work", label: uiRecord("authPromptDialogWorkUnplugged") },
 ];
 
 const REFERRAL_SOURCES = [
-  { id: "instagram", label: { en: "Instagram", fr: "Instagram", he: "אינסטגרם" } },
-  { id: "tiktok", label: { en: "TikTok", fr: "TikTok", he: "טיקטוק" } },
-  { id: "facebook", label: { en: "Facebook Ads", fr: "Publicité Facebook", he: "פרסומת פייסבוק" } },
-  { id: "google", label: { en: "Google", fr: "Google", he: "גוגל" } },
-  { id: "friend", label: { en: "Friend/Family", fr: "Ami/Famille", he: "חבר/משפחה" } },
-  { id: "press", label: { en: "Press/Blog", fr: "Presse/Blog", he: "עיתונות/בלוג" } },
-  { id: "other", label: { en: "Other", fr: "Autre", he: "אחר" } },
+  { id: "instagram", label: uiRecord("authPromptDialogInstagram") },
+  { id: "tiktok", label: uiRecord("authPromptDialogTiktok") },
+  { id: "facebook", label: uiRecord("authPromptDialogFacebookAds") },
+  { id: "google", label: uiRecord("authPromptDialogGoogle") },
+  { id: "friend", label: uiRecord("authPromptDialogFriendFamily") },
+  { id: "press", label: uiRecord("authPromptDialogPressBlog") },
+  { id: "other", label: uiRecord("authPromptDialogOther") },
 ];
 
-function copyFor(lang: Lang) {
-  switch (lang) {
-    case "fr":
-      return {
-        headers: {
-          favorites: {
-            title: "Sauvegarder dans vos favoris",
-            subtitle: "Connectez-vous pour sauvegarder vos expériences préférées.",
-          },
-          account: {
-            title: "Bon retour",
-            subtitle: "Connectez-vous pour accéder à votre compte.",
-          },
-          signup: {
-            title: "Rejoignez Staymakom",
-            subtitle: "Créez un compte pour accéder à des expériences exclusives.",
-          },
-        },
-        tabs: { login: "Connexion", signup: "Inscription" },
-        fields: {
-          firstName: "Prénom",
-          lastName: "Nom",
-          phone: "Téléphone (optionnel)",
-          email: "Email",
-          country: "Nationalité",
-          password: "Mot de passe",
-          interests: "Qu'est-ce qui vous intéresse ?",
-          referralSource: "Comment nous avez-vous connu ?",
-        },
-        actions: { login: "Continuer", signup: "Créer mon compte", sendReset: "Envoyer le lien" },
-        toasts: {
-          okLogin: "Connecté !",
-          okSignup: "Compte créé !",
-          invalid: "Vérifiez vos informations.",
-          resetSent: "Un lien de réinitialisation a été envoyé à votre email.",
-        },
-        legal: {
-          prefix: "En continuant, j'accepte les",
-          terms: "Conditions d'utilisation",
-          and: "et la",
-          privacy: "Politique de confidentialité",
-        },
-        marketing: "Je souhaite recevoir les offres exclusives, idées cadeaux et actualités Staymakom.",
-        toggle: {
-          noAccount: "Pas encore de compte ?",
-          hasAccount: "Déjà un compte ?",
-          signUp: "S'inscrire",
-          signIn: "Se connecter",
-        },
-        forgot: {
-          link: "Mot de passe oublié ?",
-          title: "Réinitialiser le mot de passe",
-          subtitle: "Entrez votre email et nous vous enverrons un lien.",
-          back: "Retour à la connexion",
-        },
-      };
-    case "he":
-      return {
-        headers: {
-          favorites: {
-            title: "שמרו לרשימת המועדפים",
-            subtitle: "התחברו לשמור חוויות שאהבתם.",
-          },
-          account: {
-            title: "ברוכים השבים",
-            subtitle: "התחברו לגשת לחשבון שלכם.",
-          },
-          signup: {
-            title: "הצטרפו ל-Staymakom",
-            subtitle: "צרו חשבון לגישה לחוויות בלעדיות.",
-          },
-        },
-        tabs: { login: "התחברות", signup: "הרשמה" },
-        fields: {
-          firstName: "שם פרטי",
-          lastName: "שם משפחה",
-          phone: "טלפון (אופציונלי)",
-          email: "אימייל",
-          country: "לאום",
-          password: "סיסמה",
-          interests: "מה מעניין אותך?",
-          referralSource: "איך שמעת עלינו?",
-        },
-        actions: { login: "המשך", signup: "צור חשבון", sendReset: "שלח קישור" },
-        toasts: {
-          okLogin: "התחברת!",
-          okSignup: "החשבון נוצר!",
-          invalid: "בדקו את הפרטים.",
-          resetSent: "קישור איפוס נשלח לאימייל שלך.",
-        },
-        legal: {
-          prefix: "בהמשך, אני מקבל/ת את",
-          terms: "תנאי השימוש",
-          and: "ומאשר/ת את",
-          privacy: "מדיניות הפרטיות",
-        },
-        marketing: "אני רוצה לקבל הצעות בלעדיות, רעיונות למתנות ועדכונים מ-Staymakom.",
-        toggle: {
-          noAccount: "אין לך חשבון?",
-          hasAccount: "כבר יש לך חשבון?",
-          signUp: "הרשמה",
-          signIn: "התחברות",
-        },
-        forgot: {
-          link: "שכחת סיסמה?",
-          title: "איפוס סיסמה",
-          subtitle: "הזן את האימייל שלך ונשלח לך קישור.",
-          back: "חזרה להתחברות",
-        },
-      };
-    default:
-      return {
-        headers: {
-          favorites: {
-            title: "Save to your wishlist",
-            subtitle: "Sign in to save experiences you love.",
-          },
-          account: {
-            title: "Welcome back",
-            subtitle: "Sign in to access your account.",
-          },
-          signup: {
-            title: "Join Staymakom",
-            subtitle: "Create an account to unlock exclusive experiences.",
-          },
-        },
-        tabs: { login: "Sign In", signup: "Sign Up" },
-        fields: {
-          firstName: "First Name",
-          lastName: "Last Name",
-          phone: "Phone (optional)",
-          email: "Email",
-          country: "Nationality",
-          password: "Password",
-          interests: "What interests you?",
-          referralSource: "How did you hear about us?",
-        },
-        actions: { login: "Continue", signup: "Create my account", sendReset: "Send link" },
-        toasts: {
-          okLogin: "Signed in!",
-          okSignup: "Account created!",
-          invalid: "Please check your details.",
-          resetSent: "A reset link has been sent to your email.",
-        },
-        legal: {
-          prefix: "By continuing, I accept the",
-          terms: "Terms of Use",
-          and: "and the",
-          privacy: "Privacy Policy",
-        },
-        marketing: "I'd like to receive exclusive offers, gift ideas and news from Staymakom.",
-        toggle: {
-          noAccount: "No account yet?",
-          hasAccount: "Already have an account?",
-          signUp: "Sign up",
-          signIn: "Sign in",
-        },
-        forgot: {
-          link: "Forgot password?",
-          title: "Reset your password",
-          subtitle: "Enter your email and we'll send you a link.",
-          back: "Back to sign in",
-        },
-      };
-  }
+// Textes : clés « authPromptDialog__… » de src/lib/translations.ts (et src/lib/uiTranslations/).
+function copyFor() {
+  return uiGroup("authPromptDialog");
 }
 
 export default function AuthPromptDialog({
@@ -292,7 +111,7 @@ export default function AuthPromptDialog({
   onSignupSuccess,
   context,
 }: Props) {
-  const c = useMemo(() => copyFor(lang), [lang]);
+  const c = useMemo(() => copyFor(), [lang]);
   const { signIn, signUp } = useAuth();
   const isRTL = lang === "he";
 
@@ -654,7 +473,7 @@ export default function AuthPromptDialog({
                     <SelectContent>
                       {COUNTRIES.map((c) => (
                         <SelectItem key={c.value} value={c.value}>
-                          {c.label[lang]}
+                          {c.label[pageLocale()]}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -712,7 +531,7 @@ export default function AuthPromptDialog({
                         )}
                       >
                         {selected && <Check className="h-3 w-3" />}
-                        {interest.label[lang]}
+                        {interest.label[pageLocale()]}
                       </button>
                     );
                   })}
@@ -739,7 +558,7 @@ export default function AuthPromptDialog({
                         )}
                       >
                         {selected && <Check className="h-3 w-3" />}
-                        {source.label[lang]}
+                        {source.label[pageLocale()]}
                       </button>
                     );
                   })}

@@ -14,6 +14,7 @@ import {
   Champagne, Bed, Cake, Drop, Leaf, HandHeart, Star,
   type Icon as PhosphorIcon,
 } from "@phosphor-icons/react";
+import { uiRecord, pageLocale } from "@/lib/translations";
 
 const iconNameMapping: Record<string, PhosphorIcon> = {
   Wine, Champagne, Car, Coffee, Flower, Flower2: Flower, Sparkles: Sparkle, Sparkle, Gift, Heart, Camera, Music: MusicNotes, MusicNotes, Bed, Cake, Drop, Droplets: Drop, Leaf, HandHeart, Star,
@@ -122,12 +123,12 @@ const ExtrasSection2 = ({
 
   const getText = (key: string) => {
     const texts: Record<string, Record<string, string>> = {
-      sectionTitle: { en: "Make it unforgettable", fr: "Rendez-le inoubliable", he: "הפכו את זה לבלתי נשכח" },
-      sectionIntro: { en: "Every escape can go a little further.", fr: "Chaque escapade peut aller plus loin.", he: "כל בריחה יכולה ללכת קצת יותר רחוק." },
-      add: { en: "Add", fr: "Ajouter", he: "הוסף" },
-      added: { en: "Added", fr: "Ajouté", he: "נוסף" },
+      sectionTitle: uiRecord("extrasSection2MakeItUnforgettable"),
+      sectionIntro: uiRecord("extrasSection2EveryEscapeCanGoA"),
+      add: uiRecord("extrasSection2Add"),
+      added: uiRecord("extrasSection2Added"),
     };
-    return texts[key]?.[lang] || texts[key]?.en || key;
+    return texts[key]?.[pageLocale()] || texts[key]?.en || key;
   };
 
   const displaySymbol = currencySymbol;

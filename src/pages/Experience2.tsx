@@ -49,6 +49,7 @@ import { useScrollDepth } from "@/hooks/useScrollDepth";
 import { MapPin, Moon } from "lucide-react";
 import { ArchivedListingRedirect } from "@/components/ArchivedListingRedirect";
 import { isArchived } from "@/lib/archive/status";
+import { tPage, uiGroup } from "@/lib/translations";
 
 function toProductLike(experience: any, primaryHotel: any): ProductLike {
   return {
@@ -70,7 +71,7 @@ export default function Experience2() {
   const { slug } = useParams<{ slug: string }>();
   const [searchParams] = useSearchParams();
   const isLaunch = searchParams.get("context") === "launch";
-  const { lang } = useLanguage();
+  const { lang, locale } = useLanguage();
   const regionLabelOf = useRegionLabel(lang);
   const { data: experience, isLoading, error } = useExperience2(slug || null);
   const footerRef = useRef<HTMLElement>(null);
@@ -111,55 +112,7 @@ export default function Experience2() {
     });
   }, []);
 
-  const t = {
-    en: {
-      notFound: "Experience not found",
-      notFoundDesc: "The experience you are looking for does not exist or is no longer available.",
-      notConfigured: "Hotel not configured",
-      notConfiguredDesc: "This experience is not yet available for booking.",
-      viewDates: "View availability",
-      yourJourney: "Your Journey",
-      nightsAt: "nights at",
-      night: "night",
-      nights: "nights",
-      step: "Step",
-    },
-    he: {
-      notFound: "החוויה לא נמצאה",
-      notFoundDesc: "החוויה שחיפשת אינה קיימת או שאינה זמינה יותר.",
-      notConfigured: "המלון לא מוגדר",
-      notConfiguredDesc: "חוויה זו אינה זמינה עדיין להזמנה.",
-      viewDates: "לתאריכים",
-      yourJourney: "המסלול שלך",
-      nightsAt: "לילות ב",
-      night: "לילה",
-      nights: "לילות",
-      step: "תחנה",
-    },
-    fr: {
-      notFound: "Expérience non trouvée",
-      notFoundDesc: "L'expérience que vous recherchez n'existe pas ou n'est plus disponible.",
-      notConfigured: "Hôtel non configuré",
-      notConfiguredDesc: "Cette expérience n'est pas encore disponible pour la réservation.",
-      viewDates: "Voir les disponibilités",
-      yourJourney: "Votre Parcours",
-      nightsAt: "nuits à",
-      night: "nuit",
-      nights: "nuits",
-      step: "Étape",
-    },
-  }[lang] || {
-    notFound: "Experience not found",
-    notFoundDesc: "The experience you are looking for does not exist or is no longer available.",
-    notConfigured: "Hotel not configured",
-    notConfiguredDesc: "This experience is not yet available for booking.",
-    viewDates: "View availability",
-    yourJourney: "Your Journey",
-    nightsAt: "nights at",
-    night: "night",
-    nights: "nights",
-    step: "Step",
-  };
+  const t = uiGroup("experience2");
 
   // ---------------------------------------------------------------------------
   // Multi-hotel parcours data (must be before any early return for hooks)
@@ -672,7 +625,7 @@ export default function Experience2() {
                 cancellation_policy_fr: (experience as any).cancellation_policy_fr,
                 cancellation_policy_he: experience.cancellation_policy_he,
               },
-              lang as "en" | "he" | "fr",
+              locale,
             )}
             // Mêmes réglages que l'encart prix du panneau de réservation et la barre du bas.
             experienceId={experience.id}
@@ -765,7 +718,7 @@ export default function Experience2() {
                 <div className="shrink-0 rounded-lg border border-border bg-muted/40 px-4 py-3 space-y-1.5">
                   <p className="text-xs font-medium flex items-center gap-1.5 text-foreground/80">
                     <span>📅</span>
-                    {lang === "he" ? "זמינות" : "Disponibilité"}
+                    {tPage("experience2Availability")}
                   </p>
                   <ul className="space-y-1">
                     {availabilityRules.map((rule) => {
@@ -832,7 +785,7 @@ export default function Experience2() {
                 <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 space-y-1.5">
                   <p className="text-xs font-medium flex items-center gap-1.5 text-foreground/80">
                     <span>📅</span>
-                    {lang === "he" ? "זמינות" : "Disponibilité"}
+                    {tPage("experience2Availability")}
                   </p>
                   <ul className="space-y-1">
                     {availabilityRules.map((rule) => {

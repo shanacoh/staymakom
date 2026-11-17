@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { COUNTRY_OPTIONS } from "@/components/experience/LeadGuestForm";
 import { AlertTriangle, CreditCard, Loader2, ShieldCheck } from "lucide-react";
 import type { Address, CountryCode, PaymentRequestInstance, RevolutCheckoutCardField, RevolutCheckoutInstance, RevolutPaymentsModuleInstance, ValidationError } from "@revolut/checkout";
+import { tPage, uiGroup } from "@/lib/translations";
 
 type BillingAddressForm = {
   countryCode: string;
@@ -26,50 +27,6 @@ const EMPTY_BILLING_ADDRESS: BillingAddressForm = {
 
 const ALL_BILLING_FIELDS: BillingAddressField[] = ["countryCode", "streetLine1", "city", "postcode"];
 
-const billingTranslations = {
-  en: {
-    billingTitle: "Billing address",
-    billingHint: "Required by the bank for card payment verification.",
-    country: "Country",
-    address: "Address",
-    city: "City",
-    postcode: "Postcode",
-    selectCountry: "Select a country",
-    required: "Required",
-    billingRequiredError: "Please fill in the required billing address fields.",
-    cardLoadTimeout: "Payment is taking too long to load. Please try again or contact us.",
-    paymentFailed: "Payment failed",
-    cardLoadFailed: "Failed to load card payment",
-  },
-  he: {
-    billingTitle: "כתובת לחיוב",
-    billingHint: "נדרש על ידי הבנק לאימות התשלום בכרטיס.",
-    country: "מדינה",
-    address: "כתובת",
-    city: "עיר",
-    postcode: "מיקוד",
-    selectCountry: "בחר מדינה",
-    required: "שדה חובה",
-    billingRequiredError: "יש למלא את שדות כתובת החיוב החובה.",
-    cardLoadTimeout: "טעינת התשלום נמשכת זמן רב מדי. נסו שוב או צרו איתנו קשר.",
-    paymentFailed: "התשלום נכשל",
-    cardLoadFailed: "טעינת התשלום בכרטיס נכשלה",
-  },
-  fr: {
-    billingTitle: "Adresse de facturation",
-    billingHint: "Demandée par la banque pour vérifier le paiement par carte.",
-    country: "Pays",
-    address: "Adresse",
-    city: "Ville",
-    postcode: "Code postal",
-    selectCountry: "Choisir un pays",
-    required: "Requis",
-    billingRequiredError: "Merci de remplir les champs obligatoires de facturation.",
-    cardLoadTimeout: "Le paiement met trop de temps à se charger. Merci de réessayer ou de nous contacter.",
-    paymentFailed: "Échec du paiement",
-    cardLoadFailed: "Échec du chargement du paiement par carte",
-  },
-};
 
 /** Délai max avant d'abandonner l'initialisation du champ carte Revolut et d'afficher
  *  une erreur visible, plutôt que de laisser un spinner tourner indéfiniment (cause
@@ -152,7 +109,7 @@ export default function RevolutPaymentWidget({
   const resolvedEnv = environment ?? (import.meta.env.VITE_REVOLUT_ENV === "production" ? "production" : "dev");
   const mode: "prod" | "sandbox" = resolvedEnv === "production" ? "prod" : "sandbox";
   const locale = lang === "he" ? "en" : lang;
-  const t = billingTranslations[lang];
+  const t = uiGroup("revolutPaymentWidgetBillingTranslations");
 
   useEffect(() => {
     billingAddressRef.current = billingAddress;
@@ -425,17 +382,9 @@ export default function RevolutPaymentWidget({
     });
   };
 
-  const cardLabel = lang === "he"
-    ? "תשלום בכרטיס"
-    : lang === "fr"
-      ? "Payer par carte"
-      : "Pay by card";
+  const cardLabel = tPage("revolutPaymentWidgetPayByCard");
 
-  const securedLabel = lang === "he"
-    ? "תשלום מאובטח באמצעות Revolut"
-    : lang === "fr"
-      ? "Paiement sécurisé par Revolut"
-      : "Secured by Revolut";
+  const securedLabel = tPage("revolutPaymentWidgetSecuredByRevolut");
 
   return (
     <div className="space-y-4">
@@ -447,7 +396,7 @@ export default function RevolutPaymentWidget({
       <div className={isRevolutPayAvailable || isGooglePayAvailable ? "flex items-center gap-3" : "hidden"}>
         <div className="h-px flex-1 bg-border" />
         <span className="text-xs text-muted-foreground">
-          {lang === "he" ? "או" : lang === "fr" ? "ou" : "or"}
+          {tPage("revolutPaymentWidgetOr")}
         </span>
         <div className="h-px flex-1 bg-border" />
       </div>

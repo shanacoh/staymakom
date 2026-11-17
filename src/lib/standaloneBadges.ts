@@ -221,7 +221,7 @@ export function getAutoBadgesFromPracticalInfo(
 
 // Libellé "Parking" pour une ligne de texte (différent des badges-chip ci-dessus) :
 // masqué si le statut n'a pas été renseigné.
-export function getParkingLabel(parking: PracticalBadgesInfo["parking"], lang: Language): string | null {
+export function getParkingLabel(parking: PracticalBadgesInfo["parking"], lang: Locale): string | null {
   if (parking.status !== "yes") return null;
   const base = parking.price_type === "paid" ? LABELS.parking_paid[lang] : LABELS.parking_free[lang];
   return parking.price_type === "paid" && parking.price_amount ? `${base} · ${parking.price_amount}` : base;

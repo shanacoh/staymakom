@@ -66,6 +66,8 @@ import { cn } from "@/lib/utils";
 import { fr, he } from "date-fns/locale";
 import { formatTimeSlot, slotsForDate, type SessionLabels } from "@/lib/timeSlots";
 import { ArchivedListingRedirect } from "@/components/ArchivedListingRedirect";
+import { tPage } from "@/lib/translations";
+import { dateFnsLocale } from "@/lib/dateFnsLocale";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -224,7 +226,7 @@ export default function StandaloneExperience() {
   const isLaunch = searchParams.get("context") === "launch";
   const isVitrineContext = searchParams.get("context") === "vitrine";
   const [showVitrineDialog, setShowVitrineDialog] = useState(false);
-  const { lang } = useLanguage();
+  const { lang, locale } = useLanguage();
   const regionLabelOf = useRegionLabel(lang);
   const footerRef = useRef<HTMLElement>(null);
   const reviewsRef = useRef<HTMLDivElement>(null);
@@ -631,12 +633,7 @@ export default function StandaloneExperience() {
   // -------------------------------------------------------------------------
 
   if (error || !experience) {
-    const notFoundMsg =
-      lang === "he"
-        ? { title: "החוויה לא נמצאה", desc: "החוויה שחיפשת אינה קיימת או שאינה זמינה יותר." }
-        : lang === "fr"
-        ? { title: "Expérience non trouvée", desc: "L'expérience que vous recherchez n'existe pas ou n'est plus disponible." }
-        : { title: "Experience not found", desc: "The experience you are looking for does not exist or is no longer available." };
+    const notFoundMsg = { title: tPage("standaloneExperienceNotFoundTitle"), desc: tPage("standaloneExperienceNotFoundDesc") };
 
     // Fiche archivée : redirection vers son mood ou sa région plutôt qu'une page vide.
     return (
@@ -705,10 +702,10 @@ export default function StandaloneExperience() {
     // ── Étape 1 : participants + date ────────────────────────────────────────
     const priceLabel =
       experience.base_price_type === "fixed"
-        ? lang === "he" ? "מחיר קבוע" : lang === "fr" ? "Prix forfaitaire" : "Fixed price"
+        ? tPage("standaloneExperienceFixedPrice")
         : experience.has_child_price
-        ? lang === "he" ? "לאדם" : lang === "fr" ? "/ adulte" : "/ adult"
-        : lang === "he" ? "לאדם" : lang === "fr" ? "/ personne" : "/ person";
+        ? tPage("standaloneExperienceAdult")
+        : tPage("standaloneExperiencePerson2");
 
     const canProceedStep1 =
       !!selectedDate &&
@@ -731,18 +728,10 @@ export default function StandaloneExperience() {
           {experience.base_price_type === "fixed" && (
             <div className="mt-2 space-y-1">
               <p className="text-sm text-muted-foreground">
-                {lang === "he"
-                  ? `עד ${experience.max_party} משתתפים`
-                  : lang === "fr"
-                  ? `jusqu'à ${experience.max_party} participants`
-                  : `up to ${experience.max_party} participants`}
+                {tPage("upToParticipants")(experience.max_party)}
               </p>
               <p className="text-sm font-semibold text-[#ad1414]">
-                {lang === "he"
-                  ? `${currencySymbol}${(experience.base_price / totalParty).toFixed(0)} לאדם עבור ${totalParty} משתתף${totalParty > 1 ? "ים" : ""}`
-                  : lang === "fr"
-                  ? `soit ${currencySymbol}${(experience.base_price / totalParty).toFixed(0)} / personne pour ${totalParty} participant${totalParty > 1 ? "s" : ""}`
-                  : `i.e. ${currencySymbol}${(experience.base_price / totalParty).toFixed(0)} / person for ${totalParty} participant${totalParty > 1 ? "s" : ""}`}
+                {tPage("pricePerPersonFor")(`${currencySymbol}${(experience.base_price / totalParty).toFixed(0)}`, totalParty)}
               </p>
             </div>
           )}
@@ -752,7 +741,7 @@ export default function StandaloneExperience() {
         <div className="space-y-3">
           <p className="flex items-center gap-1.5 text-sm font-semibold">
             <Users className="h-3.5 w-3.5 text-[#ad1414]" />
-            {lang === "he" ? "משתתפים" : lang === "fr" ? "Participants" : "Participants"}
+            {tPage("standaloneExperienceParticipants")}
           </p>
 
           {experience.has_child_price ? (
@@ -761,7 +750,7 @@ export default function StandaloneExperience() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm">
-                    {lang === "he" ? "מבוגרים" : lang === "fr" ? "Adultes" : "Adults"}
+                    {tPage("standaloneExperienceAdults")}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {currencySymbol}{experience.base_price.toFixed(0)} / pers.
@@ -798,7 +787,7 @@ export default function StandaloneExperience() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm">
-                    {lang === "he" ? "ילדים" : lang === "fr" ? "Enfants" : "Children"}
+                    {tPage("standaloneExperienceChildren")}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {currencySymbol}{(experience.base_price_child ?? 0).toFixed(0)} / pers.
@@ -835,7 +824,7 @@ export default function StandaloneExperience() {
             /* Compteur unique quand pas de tarif enfant différencié */
             <div className="flex items-center justify-between">
               <span className="text-sm">
-                {lang === "he" ? "משתתפים" : lang === "fr" ? "Participants" : "Participants"}
+                {tPage("standaloneExperienceParticipants")}
               </span>
               <div className="flex items-center gap-3">
                 <button
@@ -870,13 +859,13 @@ export default function StandaloneExperience() {
         <div className="space-y-1.5">
           <p className="flex items-center gap-1.5 text-sm font-semibold">
             <Calendar className="h-3.5 w-3.5 text-[#ad1414]" />
-            {lang === "he" ? "תאריך" : lang === "fr" ? "Date" : "Date"}
+            {tPage("standaloneExperienceDate")}
           </p>
           <div className="border rounded-lg overflow-hidden">
             <CalendarPicker
               mode="single"
               showOutsideDays
-              locale={lang === "fr" ? fr : lang === "he" ? he : undefined}
+              locale={dateFnsLocale(locale)}
               selected={selectedDate ? new Date(selectedDate + "T12:00:00") : undefined}
               onSelect={(date) => {
                 if (date) {
@@ -912,7 +901,7 @@ export default function StandaloneExperience() {
           <div className="space-y-2">
             <p className="flex items-center gap-1.5 text-sm font-semibold">
               <Clock className="h-3.5 w-3.5 text-[#ad1414]" />
-              {lang === "he" ? "שעה" : lang === "fr" ? "Créneau" : "Time slot"}
+              {tPage("standaloneExperienceTimeSlot")}
             </p>
             <div className="grid grid-cols-3 gap-2">
               {slotsForSelectedDate.map((slot) => (
@@ -941,7 +930,7 @@ export default function StandaloneExperience() {
         {experience.has_rate_options && (rateOptions?.length ?? 0) > 0 && (
           <div className="space-y-2">
             <p className="text-sm font-semibold">
-              {lang === "he" ? "בחר תפריט" : lang === "fr" ? "Choisissez une formule" : "Choose a formula"}
+              {tPage("standaloneExperienceChooseAFormula")}
             </p>
             <div className="space-y-2">
               {rateOptions!.map((option) => {
@@ -992,7 +981,7 @@ export default function StandaloneExperience() {
         {(experience.base_price_type !== "fixed" || extrasTotal > 0) && (
           <div className="border-t pt-3 flex items-center justify-between">
             <span className="text-sm text-muted-foreground">
-              {lang === "he" ? "סה\"כ" : lang === "fr" ? "Total" : "Total"}
+              {tPage("standaloneExperienceTotal")}
             </span>
             <span className="font-bold text-lg">
               {currencySymbol}{grandTotal.toFixed(0)}
@@ -1047,7 +1036,7 @@ export default function StandaloneExperience() {
           }}
           disabled={!canProceedStep1}
         >
-          {lang === "he" ? "המשך ←" : lang === "fr" ? "Continuer →" : "Continue →"}
+          {tPage("standaloneExperienceContinue")}
         </Button>
 
         {experience.cancellation_policy && (
@@ -1185,13 +1174,13 @@ export default function StandaloneExperience() {
                         ...experience,
                         price_variants: experience.standalone_experience_price_variants,
                       },
-                      lang as "en" | "he" | "fr",
+                      locale,
                     ),
                     cancellation_policy: experience.cancellation_policy,
                     cancellation_policy_fr: experience.cancellation_policy_fr,
                     cancellation_policy_he: experience.cancellation_policy_he,
                   },
-                  lang as "en" | "he" | "fr",
+                  locale,
                 )}
                 // Prix d'appel = tarif le plus bas proposé (ex. tarif enfant s'il est moins cher).
                 fromPrice={
@@ -1201,8 +1190,8 @@ export default function StandaloneExperience() {
                         amount: `${currencySymbol}${getStandaloneFromPrice(experience).toFixed(0)}`,
                         unit:
                           experience.base_price_type === "fixed"
-                            ? (lang === "he" ? "מחיר קבוע" : lang === "fr" ? "forfait" : "fixed")
-                            : (lang === "he" ? "לאדם" : lang === "fr" ? "/ pers." : "/ person"),
+                            ? (tPage("standaloneExperienceFixed"))
+                            : (tPage("standaloneExperiencePerson")),
                       }
                 }
                 onSeeDates={() => {
@@ -1333,7 +1322,7 @@ export default function StandaloneExperience() {
               <div className="flex flex-col min-w-0">
                 {experience.is_bookable === false ? (
                   <span className="text-base font-bold text-foreground whitespace-nowrap">
-                    {lang === "he" ? "לפי בקשה" : lang === "fr" ? "Sur demande" : "On request"}
+                    {tPage("standaloneExperienceOnRequest")}
                   </span>
                 ) : (
                   <>
@@ -1344,21 +1333,21 @@ export default function StandaloneExperience() {
                       <span className="text-sm text-muted-foreground whitespace-nowrap">
                         {experience.base_price_type === "fixed"
                           ? (lang === "fr" ? "forfait" : "fixed")
-                          : (lang === "he" ? "לאדם" : lang === "fr" ? "/ pers." : "/ person")}
+                          : (tPage("standaloneExperiencePerson"))}
                       </span>
                     </div>
                     <span className="text-[11px] text-muted-foreground">
                       {experience.base_price_type === "fixed"
-                        ? (lang === "he" ? `עד ${experience.max_party} משתתפים` : lang === "fr" ? `jusqu'à ${experience.max_party} participants` : `up to ${experience.max_party} participants`)
-                        : (lang === "he" ? `מינימום ${experience.min_party} משתתפים` : lang === "fr" ? `à partir de ${experience.min_party} participants` : `from ${experience.min_party} guests`)}
+                        ? tPage("upToParticipants")(experience.max_party)
+                        : tPage("fromParticipants")(experience.min_party)}
                     </span>
                   </>
                 )}
               </div>
               <span className="rounded-full bg-foreground text-background text-xs font-semibold px-5 py-2.5 shrink-0 ml-3 whitespace-nowrap">
                 {experience.is_bookable === false
-                  ? (lang === "he" ? "בקשה" : lang === "fr" ? "Demander" : "Request")
-                  : (lang === "he" ? "הזמן" : lang === "fr" ? "Réserver" : "Book")}
+                  ? (tPage("standaloneExperienceRequest"))
+                  : (tPage("standaloneExperienceBook"))}
               </span>
             </button>
           </div>

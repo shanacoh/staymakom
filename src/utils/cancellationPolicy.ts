@@ -1,3 +1,5 @@
+import { t } from "@/lib/translations";
+import type { Locale } from "@/lib/locale";
 /**
  * Cancellation Policy Analyzer
  * Parses raw HyperGuest cancellationPolicies[] and returns structured info
@@ -34,7 +36,8 @@ export interface CancellationAnalysis {
   detailLines: string[];
 }
 
-type Lang = "en" | "he" | "fr";
+/** Langue de la page (en, fr, he, es, ru, de). Textes : clés « cxl… » de src/lib/translations.ts. */
+type Lang = Locale;
 
 /**
  * Calculate the effective cancellation deadline.
@@ -75,7 +78,7 @@ function calcDeadline(
  * - Otherwise show date + time in 24h format
  */
 function formatDeadline(date: Date, lang: Lang): string {
-  const locale = lang === "he" ? "he-IL" : lang === "fr" ? "fr-FR" : "en-US";
+  const locale = t(lang, "dateLocale");
   const hours = date.getHours();
   const minutes = date.getMinutes();
   const isMidnight = hours === 0 && minutes === 0;
@@ -99,28 +102,18 @@ function formatDeadline(date: Date, lang: Lang): string {
 
   const timeStr = `${String(hours).padStart(2, "0")}h${minutes > 0 ? String(minutes).padStart(2, "0") : ""}`;
 
-  if (lang === "he") {
-    return `${dateStr} בשעה ${timeStr.replace("h", ":")}`;
-  }
-
-  return `${dateStr} à ${timeStr}`;
+  return t(lang, "cxlDateAtTime")(dateStr, timeStr, `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`);
 }
 
 function penaltyDescription(p: RawCancellationPolicy, lang: Lang): string {
   const amount = p.amount ?? 0;
   switch (p.penaltyType) {
     case "nights":
-      if (lang === "he") return `${amount} ${amount === 1 ? "לילה" : "לילות"} חיוב`;
-      if (lang === "fr") return `${amount} nuit${amount > 1 ? "s" : ""} de pénalité`;
-      return `${amount} night${amount > 1 ? "s" : ""} penalty`;
+      return t(lang, "cxlNightsPenalty")(amount);
     case "percent":
-      if (lang === "he") return `${amount}%`;
-      if (lang === "fr") return `${amount}%`;
       return `${amount}%`;
     case "currency":
-      if (lang === "he") return `${amount} חיוב`;
-      if (lang === "fr") return `${amount} de pénalité`;
-      return `${amount} penalty`;
+      return t(lang, "cxlAmountPenalty")(amount);
     default:
       return `${amount}`;
   }
@@ -131,17 +124,11 @@ function penaltyBadgeShort(p: RawCancellationPolicy, lang: Lang): string {
   const amount = p.amount ?? 0;
   switch (p.penaltyType) {
     case "nights":
-      if (lang === "he") return `חיוב ${amount} ${amount === 1 ? "לילה" : "לילות"}`;
-      if (lang === "fr") return `Pénalité : ${amount} nuit${amount > 1 ? "s" : ""}`;
-      return `${amount} night${amount > 1 ? "s" : ""} penalty`;
+      return t(lang, "cxlBadgeNights")(amount);
     case "percent":
-      if (lang === "he") return `קנס ${amount}%`;
-      if (lang === "fr") return `Pénalité : ${amount}%`;
-      return `${amount}% penalty`;
+      return t(lang, "cxlBadgeAmount")(`${amount}%`);
     case "currency":
-      if (lang === "he") return `קנס ${amount}`;
-      if (lang === "fr") return `Pénalité : ${amount}`;
-      return `${amount} penalty`;
+      return t(lang, "cxlBadgeAmount")(`${amount}`);
     default:
       return `${amount}`;
   }
@@ -150,15 +137,7 @@ function penaltyBadgeShort(p: RawCancellationPolicy, lang: Lang): string {
 /** Detailed line for tooltip: "More than X days before: Y% penalty" */
 function penaltyDetailLine(p: RawCancellationPolicy, lang: Lang): string {
   const days = p.daysBefore ?? 0;
-  const desc = penaltyDescription(p, lang);
-
-  if (lang === "he") {
-    return `יותר מ-${days} ימים לפני: ${desc}`;
-  }
-  if (lang === "fr") {
-    return `Plus de ${days} jour${days > 1 ? "s" : ""} avant : pénalité de ${desc}`;
-  }
-  return `More than ${days} day${days > 1 ? "s" : ""} before: ${desc} penalty`;
+  return t(lang, "cxlDetailLine")(days, penaltyDescription(p, lang));
 }
 
 export function analyzeCancellationPolicies(
@@ -187,9 +166,7 @@ export function analyzeCancellationPolicies(
 
   if (nonRefundable) {
     const text =
-      lang === "he" ? "ללא החזר" :
-      lang === "fr" ? "Non remboursable" :
-      "Non-refundable";
+      t(lang, "cancellationPolicyNonRefundable");
     return {
       isFreeCancellation: false,
       isNonRefundable: true,
@@ -250,15 +227,11 @@ export function analyzeCancellationPolicies(
   if (isFree && deadline) {
     const deadlineStr = formatDeadline(deadline, lang);
     badgeText =
-      lang === "he" ? `ביטול חינם עד ${deadlineStr}` :
-      lang === "fr" ? `Annulation gratuite jusqu'au ${deadlineStr}` :
-      `Free cancellation until ${deadlineStr}`;
+      t(lang, "cxlFreeUntil")(deadlineStr);
     summaryText = badgeText;
   } else if (isFree) {
     badgeText =
-      lang === "he" ? "ביטול חינם" :
-      lang === "fr" ? "Annulation gratuite" :
-      "Free cancellation";
+      t(lang, "cancellationPolicyFreeCancellation");
     summaryText = badgeText;
   } else if (penaltiesList.length > 0) {
     // Short badge: show first (most lenient / earliest) penalty only
@@ -270,9 +243,7 @@ export function analyzeCancellationPolicies(
     // Full summary for email/recap
     const penaltyStr = penaltiesList.map((p) => p.description).join("; ");
     summaryText =
-      lang === "he" ? `תנאי ביטול: ${penaltyStr}` :
-      lang === "fr" ? `Conditions d'annulation : ${penaltyStr}` :
-      `Cancellation terms: ${penaltyStr}`;
+      t(lang, "cxlTerms")(penaltyStr);
 
     // Detail lines for tooltip
     detailLines = sorted

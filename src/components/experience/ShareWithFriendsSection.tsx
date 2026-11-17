@@ -3,6 +3,7 @@ import { Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ShareDialog from "./ShareDialog";
 import { trackShareThisEscapeClicked } from "@/lib/analytics";
+import { pageLocale, uiRecord } from "@/lib/translations";
 
 interface ShareWithFriendsSectionProps {
   title: string;
@@ -13,24 +14,12 @@ const ShareWithFriendsSection = ({ title, lang }: ShareWithFriendsSectionProps) 
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   const getText = (key: string) => {
-    const texts: { [key: string]: { en: string; fr: string; he: string } } = {
-      prompt: {
-        en: "Know someone who'd love this?",
-        fr: "Quelqu'un aimerait cette expérience ?",
-        he: "מכירים מישהו שיאהב?"
-      },
-      sub: {
-        en: "Share this escape & make their day!",
-        fr: "Partagez cette escapade & faites-leur plaisir !",
-        he: "שתפו את הבריחה הזו & תשמחו אותם!"
-      },
-      shareBtn: {
-        en: "Share this escape",
-        fr: "Partager cette escapade",
-        he: "שתפו את הבריחה"
-      }
+    const texts: { [key: string]: Record<string, string> } = {
+      prompt: uiRecord("shareWithFriendsSectionKnowSomeoneWhoDLove"),
+      sub: uiRecord("shareWithFriendsSectionShareThisEscapeMakeTheir"),
+      shareBtn: uiRecord("shareWithFriendsSectionShareThisEscape")
     };
-    return texts[key]?.[lang] || texts[key]?.en || key;
+    return texts[key]?.[pageLocale()] || texts[key]?.en || key;
   };
 
   const handleShare = async () => {

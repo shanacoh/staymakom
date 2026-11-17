@@ -2,6 +2,7 @@ import { WHATSAPP_NUMBER, buildWhatsappMessageForExperience, getWhatsappMessageV
 import { trackWhatsappClicked, identifyWhatsappClicked } from "@/lib/analytics";
 import { useCurrentProduct } from "@/contexts/CurrentProductContext";
 import { cn } from "@/lib/utils";
+import { uiGroup } from "@/lib/translations";
 
 type Lang = "en" | "fr" | "he";
 
@@ -12,11 +13,6 @@ interface AskTeamProps {
   className?: string;
 }
 
-const TEXTS: Record<Lang, { question: string; cta: string }> = {
-  fr: { question: "Une question sur cette expérience ?", cta: "Écrivez-nous sur WhatsApp" },
-  en: { question: "Questions about this experience?", cta: "Message us on WhatsApp" },
-  he: { question: "שאלה על החוויה?", cta: "שלחו לנו הודעה בוואטסאפ" },
-};
 
 // Pastille de contact, sans prénom ni photo de personne : on parle toujours au nom de l'équipe.
 export default function AskTeam({ lang, placement, experienceTitle, className }: AskTeamProps) {
@@ -30,7 +26,7 @@ export default function AskTeam({ lang, placement, experienceTitle, className }:
   }
 
   const message = encodeURIComponent(buildWhatsappMessageForExperience(lang, entrySource, experienceTitle));
-  const texts = TEXTS[lang] ?? TEXTS.en;
+  const texts = uiGroup("askTeamTEXTS");
 
   const handleClick = () => {
     trackWhatsappClicked(

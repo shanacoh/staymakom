@@ -43,6 +43,7 @@ import {
 } from "../_shared/translations/plan.ts";
 import { buildReviewSystemPrompt, buildTranslationSystemPrompt } from "../_shared/translations/prompt.ts";
 import { extractBlockTexts, rebuildBlocks } from "../_shared/translations/blocks.ts";
+import { CostMeter, DEFAULT_COST_CAP_USD, callCostUsd } from "../_shared/translations/cost.ts";
 
 const ALLOWED_ORIGINS = [
   "https://staymakom.com",
@@ -285,7 +286,7 @@ function buildReviewMessage(units: SourceUnit[], drafts: Map<string, Draft>): st
 
 type ParsedEntry = { key: string; text: string; items: string[] };
 
-async function callClaude(client: Anthropic, model: string, system: string, content: string): Promise<Map<string, ParsedEntry>> {
+async function callClaude(client: Anthropic, model: string, system: string, content: string, meter: CostMeter): Promise<Map<string, ParsedEntry>> {
   // deno-lint-ignore no-explicit-any
   const response = await (client.beta.messages as any).create({
     model,
@@ -296,6 +297,8 @@ async function callClaude(client: Anthropic, model: string, system: string, cont
     system,
     messages: [{ role: "user", content }],
   });
+  // Coût réel de l'appel, compté avant toute vérification : il est dû même si la réponse est inutilisable.
+  meter.add(callCostUsd(model, response.model, response.usage ?? {}));
   if (response.stop_reason === "refusal") throw new Error("L'IA a refusé ce lot");
   if (response.stop_reason === "max_tokens") throw new Error("Réponse trop longue, coupée");
   // deno-lint-ignore no-explicit-any
@@ -336,13 +339,14 @@ async function translateJob(
   client: Anthropic,
   model: string,
   job: Job,
+  meter: CostMeter,
 ): Promise<{ ok: Map<string, string>; failed: string[]; notes: string[] }> {
   const failed: string[] = [];
   /** Remarques à relire, qui ne sont pas des erreurs (le texte est bien enregistré). */
   const notes: string[] = [];
   const label = (key: string) => `${key} (${job.locale})`;
 
-  const first = readDrafts(job.units, await callClaude(client, model, buildTranslationSystemPrompt(job.locale), buildTranslateMessage(job.units)));
+  const first = readDrafts(job.units, await callClaude(client, model, buildTranslationSystemPrompt(job.locale), buildTranslateMessage(job.units), meter));
   for (const [key, problem] of first.problems) failed.push(`${label(key)} : ${problem}`);
 
   let finals = first.drafts;
@@ -350,7 +354,7 @@ async function translateJob(
     try {
       const reviewed = readDrafts(
         job.units,
-        await callClaude(client, model, buildReviewSystemPrompt(job.locale), buildReviewMessage(job.units, first.drafts)),
+        await callClaude(client, model, buildReviewSystemPrompt(job.locale), buildReviewMessage(job.units, first.drafts), meter),
       );
       finals = new Map(first.drafts);
       for (const [key, value] of reviewed.drafts) if (first.drafts.has(key)) finals.set(key, value);
@@ -437,6 +441,44 @@ function israelHour(date: Date): number {
   return Number(hour);
 }
 
+const round4 = (usd: number) => Math.round(usd * 10_000) / 10_000;
+
+/** Email interne à Shana quand le plafond de coût arrête un passage (pas un email client). */
+async function sendCostCapEmail(info: {
+  capUsd: number;
+  spentUsd: number;
+  trigger: string;
+  remaining: number;
+  translated: number;
+  filter: Record<string, unknown>;
+}): Promise<void> {
+  const apiKey = Deno.env.get("RESEND_API_KEY");
+  if (!apiKey) {
+    console.error("translate-content : plafond atteint, email impossible (RESEND_API_KEY absente)");
+    return;
+  }
+  const by = { cron: "la tâche de nuit", admin: "le bouton « Mettre à jour ES / RU / DE »", script: "un script" }[info.trigger] ?? info.trigger;
+  const html = `<p>Bonjour Shana,</p>
+<p>La traduction automatique s'est arrêtée d'elle-même : le passage lancé par ${by} a atteint le plafond de sécurité de <strong>${info.capUsd.toFixed(2)} $</strong> (dépensé : ${info.spentUsd.toFixed(2)} $).</p>
+<p>Textes traduits avant l'arrêt : ${info.translated}. Textes restant à traduire : ${info.remaining}. Rien n'est perdu : ils seront repris au prochain passage.</p>
+<p>Détail : <code>${JSON.stringify(info.filter)}</code>. Le coût de chaque passage est dans docs/traductions/suivi.sql (requête 1).</p>`;
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: "StayMakom <reservations@staymakom.com>",
+        to: ["shana@staymakom.com"],
+        subject: `Traduction automatique arrêtée : plafond de ${info.capUsd.toFixed(2)} $ atteint`,
+        html,
+      }),
+    });
+    if (!response.ok) console.error("translate-content : email plafond refusé", response.status, await response.text());
+  } catch (error) {
+    console.error("translate-content : email plafond non envoyé", error);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders(req) });
   if (req.method !== "POST") return json(req, { error: "Méthode non autorisée" }, 405);
@@ -460,7 +502,9 @@ Deno.serve(async (req) => {
   }
   const mode: TranslationMode = body?.mode === "all" ? "all" : "changed";
   const dryRun = body?.dry_run === true;
-  const trigger = fromCron ? "cron" : body?.trigger === "script" ? "script" : "admin";
+  // Un script SQL appelle avec le secret de la tâche de nuit mais se déclare « script » : il est
+  // noté comme tel dans le journal (et dans l'email du plafond).
+  const trigger = body?.trigger === "script" ? "script" : fromCron ? "cron" : "admin";
 
   if (body?.entity_type !== undefined && !isEntityType(body.entity_type)) {
     return json(req, { error: `Type de fiche inconnu : ${body.entity_type}` }, 400);
@@ -481,6 +525,13 @@ Deno.serve(async (req) => {
   if (!apiKey && !dryRun) return json(req, { error: "Clé IA manquante : ANTHROPIC_API_KEY n'est pas configurée." }, 500);
 
   const continueUntilDone = fromCron && body?.continue_until_done === true;
+
+  // Plafond de sécurité : au-delà de COST_CAP_USD dépensés dans un même passage (relances de la
+  // tâche de nuit comprises), plus aucun lot n'est lancé et Shana reçoit un email.
+  const capUsd = Number(Deno.env.get("TRANSLATE_CONTENT_COST_CAP_USD")) || DEFAULT_COST_CAP_USD;
+  const alreadySpentUsd = fromCron && typeof body?.chain_cost_usd === "number" ? Math.max(0, body.chain_cost_usd) : 0;
+  const meter = new CostMeter(alreadySpentUsd, capUsd);
+  let capped = false;
   const filter = { entity_type: entityType, entity_id: entityId, locales, dry_run: dryRun, by: adminEmail };
 
   // Un passage sur tout le site est exclusif : s'il y en a déjà un en cours, on n'en lance pas un second.
@@ -560,7 +611,7 @@ Deno.serve(async (req) => {
       jobs,
       async (job) => {
         try {
-          const { ok, failed, notes } = await translateJob(client, model, job);
+          const { ok, failed, notes } = await translateJob(client, model, job, meter);
           const rows = job.units
             .filter((u) => ok.has(unitKey(u)))
             .map((u) => ({
@@ -588,6 +639,10 @@ Deno.serve(async (req) => {
       },
       () => {
         if (Date.now() - startedAt >= TIME_BUDGET_MS || startedJobs >= MAX_JOBS_PER_RUN) return false;
+        if (meter.reached) {
+          capped = true;
+          return false;
+        }
         startedJobs++;
         return true;
       },
@@ -595,6 +650,9 @@ Deno.serve(async (req) => {
     // Une fois le temps écoulé ou le nombre de lots atteint, tous les lots suivants sont sautés :
     // ce sont les derniers de la liste.
     stats.remaining = jobs.slice(jobs.length - notStarted).reduce((n, j) => n + j.units.length, 0);
+    // Les lots déjà en cours au moment où le plafond est atteint se terminent (quelques centimes au
+    // plus) : le passage compte alors comme arrêté par le plafond, même s'il ne restait rien.
+    if (meter.reached) capped = true;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     stats.errors++;
@@ -612,17 +670,31 @@ Deno.serve(async (req) => {
           errors: stats.errors,
           remaining: stats.remaining,
           error_details: stats.errorDetails.slice(0, 100),
+          cost_usd: round4(meter.usd),
+          chain_cost_usd: round4(meter.totalUsd),
+          cost_capped: capped,
         })
         .eq("id", runId);
     }
   }
 
-  console.log("translate-content :", JSON.stringify({ trigger, mode, ...stats, errorDetails: stats.errorDetails.length }));
+  if (capped) {
+    await sendCostCapEmail({ capUsd, spentUsd: meter.totalUsd, trigger, remaining: stats.remaining, translated: stats.translated, filter });
+  }
+
+  console.log("translate-content :", JSON.stringify({ trigger, mode, ...stats, errorDetails: stats.errorDetails.length, costUsd: round4(meter.usd), chainCostUsd: round4(meter.totalUsd), capped }));
 
   // Gros travail (traduction initiale, nuit chargée) : on relance un passage depuis la base pour
   // finir ce qui reste. Seulement s'il y a eu des progrès, pour ne jamais tourner en boucle sur une erreur.
-  if (continueUntilDone && stats.remaining > 0 && stats.translated > 0) {
-    const nextBody = { mode, continue_until_done: true, ...(entityType ? { entity_type: entityType } : {}), locales };
+  if (continueUntilDone && !capped && stats.remaining > 0 && stats.translated > 0) {
+    const nextBody = {
+      mode,
+      continue_until_done: true,
+      ...(entityType ? { entity_type: entityType } : {}),
+      locales,
+      chain_cost_usd: round4(meter.totalUsd), // le plafond compte toute la chaîne de relances
+      ...(trigger === "script" ? { trigger: "script" } : {}),
+    };
     const { error } = await db.rpc("queue_translate_content_continuation", { p_body: nextBody });
     if (error) console.error("translate-content : relance impossible", error.message);
   }
@@ -633,6 +705,9 @@ Deno.serve(async (req) => {
     stale_marked: stats.staleMarked,
     errors: stats.errors,
     remaining: stats.remaining,
+    cost_usd: round4(meter.usd),
+    chain_cost_usd: round4(meter.totalUsd),
+    capped,
     error_details: stats.errorDetails.slice(0, 20),
   }, stats.errors > 0 && stats.translated === 0 ? 500 : 200);
 });

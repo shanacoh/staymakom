@@ -1,6 +1,6 @@
+import type { Locale } from "@/lib/locale";
 import { useState } from "react";
 import { format } from "date-fns";
-import { fr, he } from "date-fns/locale";
 import { Clock, CalendarClock, MapPin, Users, Utensils, Globe, AlertCircle } from "lucide-react";
 import { getLocalizedField, type Language } from "@/hooks/useLanguage";
 import { normalizeLegacyPracticalInfo, getParkingLabel } from "@/lib/standaloneBadges";
@@ -11,6 +11,8 @@ import { WHATSAPP_NUMBER } from "@/constants/whatsapp";
 import { trackEssentialsExpanded } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import { formatTimeSlot } from "@/lib/timeSlots";
+import { tPage, uiRecord, pageLocale } from "@/lib/translations";
+import { dateFnsLocale } from "@/lib/dateFnsLocale";
 
 // Sous-ensemble des champs de l'expérience nécessaires au bloc "L'essentiel".
 // Tous optionnels : une fiche déjà publiée doit s'afficher sans erreur même
@@ -68,13 +70,13 @@ interface EssentialsBlockProps {
   compact?: boolean;
 }
 
-const LANGUAGE_NAMES: Record<string, Record<Language, string>> = {
-  fr: { en: "French", fr: "Français", he: "צרפתית" },
-  en: { en: "English", fr: "Anglais", he: "אנגלית" },
-  he: { en: "Hebrew", fr: "Hébreu", he: "עברית" },
-  ru: { en: "Russian", fr: "Russe", he: "רוסית" },
-  es: { en: "Spanish", fr: "Espagnol", he: "ספרדית" },
-  ar: { en: "Arabic", fr: "Arabe", he: "ערבית" },
+const LANGUAGE_NAMES: Record<string, Record<Locale, string>> = {
+  fr: uiRecord("essentialsBlockFrench"),
+  en: uiRecord("essentialsBlockEnglish"),
+  he: uiRecord("essentialsBlockHebrew"),
+  ru: uiRecord("essentialsBlockRussian"),
+  es: uiRecord("essentialsBlockSpanish"),
+  ar: uiRecord("essentialsBlockArabic"),
 };
 
 function toLocalDateStr(d: Date): string {
@@ -110,7 +112,7 @@ export default function EssentialsBlock({ experience, experienceTitle, lang, com
   const [expanded, setExpanded] = useState(false);
 
   const practicalInfo = normalizeLegacyPracticalInfo(experience.practical_info);
-  const dateLocale = lang === "fr" ? fr : lang === "he" ? he : undefined;
+  const dateLocale = dateFnsLocale(pageLocale());
 
   const leadTimeDays = experience.lead_time_days ?? 0;
   const minDate = new Date();
@@ -134,7 +136,7 @@ export default function EssentialsBlock({ experience, experienceTitle, lang, com
       return (
         <div className="space-y-1">
           <span>
-            {lang === "he" ? "תאריכים לפי בקשה" : lang === "fr" ? "Prochaines dates sur demande" : "Next dates on request"}
+            {tPage("essentialsBlockNextDatesOnRequest")}
           </span>
           {" "}
           <a
@@ -157,7 +159,7 @@ export default function EssentialsBlock({ experience, experienceTitle, lang, com
             const customLabel = experience.session_labels?.[dateStr]?.[lang];
             const timePart =
               experience.has_time_slots && (experience.time_slots?.length ?? 0) > 0
-                ? ` · ${formatTimeSlot(experience.time_slots![0], lang)}`
+                ? ` · ${formatTimeSlot(experience.time_slots![0], pageLocale())}`
                 : "";
             const pillText = customLabel ? `${customLabel} · ${formatted}${timePart}` : `${formatted}${timePart}`;
             return (
@@ -177,7 +179,7 @@ export default function EssentialsBlock({ experience, experienceTitle, lang, com
         )}
         {experience.essentials_private_on_request && (
           <p className="text-xs text-muted-foreground">
-            {lang === "he" ? "ניתן לבקש מושב פרטי" : lang === "fr" ? "Séance privée possible sur demande" : "Private session possible on request"}
+            {tPage("essentialsBlockPrivateSessionPossibleOnRequest")}
           </p>
         )}
       </div>
@@ -188,11 +190,11 @@ export default function EssentialsBlock({ experience, experienceTitle, lang, com
   const locationContent = (() => {
     const city = (getLocalizedField(experience, "city", lang) as string) || experience.city;
     const addressDisplay = experience.hide_exact_address
-      ? (lang === "he" ? "הכתובת המדויקת תישלח בעת ההזמנה" : lang === "fr" ? "Adresse exacte envoyée à la réservation" : "Exact address sent upon booking")
+      ? (tPage("essentialsBlockExactAddressSentUponBooking"))
       : (getLocalizedField(experience, "address", lang) as string) || experience.address;
     const mainLine = [city, addressDisplay].filter(Boolean).join(", ");
     const accessNote = (getLocalizedField(experience, "access_note", lang) as string) || experience.access_note;
-    const parkingLabel = getParkingLabel(practicalInfo.parking, lang);
+    const parkingLabel = getParkingLabel(practicalInfo.parking, pageLocale());
     if (!mainLine && !accessNote && !parkingLabel) return null;
     return (
       <div className="space-y-0.5">
@@ -210,24 +212,24 @@ export default function EssentialsBlock({ experience, experienceTitle, lang, com
     if (experience.category_id === BOATS_CATEGORY_ID) {
       const max = maxGroupSize({ max_party: experience.max_party, price_variants: experience.standalone_experience_price_variants });
       if (!max) return null;
-      return lang === "he" ? `עד ${max} משתתפים` : lang === "fr" ? `Jusqu'à ${max} personnes` : `Up to ${max} guests`;
+      return tPage("upToGuests")(max);
     }
-    return formatAges(experience.practical_info, lang);
+    return formatAges(experience.practical_info, pageLocale());
   })();
 
   // ── Ligne "Casher" (masquée si non renseigné ou « non concerné ») ─────────
   const kosherContent =
     practicalInfo.kosher === "yes"
-      ? (lang === "he" ? "כן" : lang === "fr" ? "Oui" : "Yes")
+      ? (tPage("essentialsBlockYes"))
       : practicalInfo.kosher === "no"
-      ? (lang === "he" ? "לא" : lang === "fr" ? "Non" : "No")
+      ? (tPage("essentialsBlockNo"))
       : null;
 
   // ── Ligne "Langue" ───────────────────────────────────────────────────────
   const languagesContent = (() => {
     const codes = experience.languages ?? [];
     if (codes.length === 0) return null;
-    return codes.map((code) => LANGUAGE_NAMES[code]?.[lang] ?? code).join(", ");
+    return codes.map((code) => LANGUAGE_NAMES[code]?.[pageLocale()] ?? code).join(", ");
   })();
 
   // ── Lignes restantes ─────────────────────────────────────────────────────
@@ -238,43 +240,43 @@ export default function EssentialsBlock({ experience, experienceTitle, lang, com
     {
       key: "duration",
       icon: Clock,
-      label: lang === "he" ? "משך" : lang === "fr" ? "Durée" : "Duration",
+      label: tPage("essentialsBlockDuration"),
       content: durationContent,
     },
     {
       key: "next_sessions",
       icon: CalendarClock,
-      label: lang === "he" ? "מועדים קרובים" : lang === "fr" ? "Prochaines séances" : "Next sessions",
+      label: tPage("essentialsBlockNextSessions"),
       content: nextSessionsContent,
     },
     {
       key: "location",
       icon: MapPin,
-      label: lang === "he" ? "מיקום" : lang === "fr" ? "Lieu" : "Location",
+      label: tPage("essentialsBlockLocation"),
       content: locationContent,
     },
     {
       key: "for_whom",
       icon: Users,
-      label: lang === "he" ? "למי מתאים" : lang === "fr" ? "Pour qui" : "For who",
+      label: tPage("essentialsBlockForWho"),
       content: forWhomContent,
     },
     {
       key: "kosher",
       icon: Utensils,
-      label: lang === "he" ? "כשר" : lang === "fr" ? "Casher" : "Kosher",
+      label: tPage("essentialsBlockKosher"),
       content: kosherContent,
     },
     {
       key: "languages",
       icon: Globe,
-      label: lang === "he" ? "שפה" : lang === "fr" ? "Langue" : "Language",
+      label: tPage("essentialsBlockLanguage"),
       content: languagesContent,
     },
     {
       key: "cancellation",
       icon: AlertCircle,
-      label: lang === "he" ? "מדיניות ביטול" : lang === "fr" ? "Annulation" : "Cancellation",
+      label: tPage("essentialsBlockCancellation"),
       content: cancellationContent,
     },
   ].filter((row) => row.content);
@@ -287,7 +289,7 @@ export default function EssentialsBlock({ experience, experienceTitle, lang, com
       dir={lang === "he" ? "rtl" : "ltr"}
     >
       <h2 className={cn("font-sans font-bold uppercase tracking-[0.03em] text-foreground", compact ? "text-xs mb-2" : "text-sm sm:text-base mb-3")}>
-        {lang === "he" ? "בקצרה" : lang === "fr" ? "L'essentiel" : "The essentials"}
+        {tPage("essentialsBlockTheEssentials")}
       </h2>
       <div className={cn("grid", compact ? "grid-cols-2 gap-x-3 gap-y-2" : "grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4")}>
         {rows.map((row, index) => {
@@ -315,7 +317,7 @@ export default function EssentialsBlock({ experience, experienceTitle, lang, com
           }}
           className="md:hidden mt-3 text-sm font-semibold text-[#ad1414] underline"
         >
-          {lang === "he" ? "הצג הכול" : lang === "fr" ? "Voir tout" : "See all"}
+          {tPage("essentialsBlockSeeAll")}
         </button>
       )}
     </section>

@@ -2,6 +2,7 @@ import { useExperienceIncludes } from "@/hooks/useExperienceIncludes";
 import { icons, Sparkles } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import DOMPurify from "dompurify";
+import { tPage } from "@/lib/translations";
 
 interface WhatsIncludedPhotos2Props {
   experienceId: string;
@@ -18,7 +19,7 @@ const WhatsIncludedPhotos2 = ({ experienceId, lang = "en", longCopy, source = "e
     return (
       <section className="py-6 border-b border-border" dir={lang === "he" ? "rtl" : "ltr"}>
         <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] text-foreground mb-3 break-words">
-          {lang === "he" ? "מה בתכנית" : lang === "fr" ? "Au programme" : "What's on the program"}
+          {tPage("whatsIncludedPhotos2WhatSOnTheProgram")}
         </h2>
         <div className="w-full overflow-hidden">
           <div
@@ -31,7 +32,7 @@ const WhatsIncludedPhotos2 = ({ experienceId, lang = "en", longCopy, source = "e
   }
 
   const heading =
-    lang === "he" ? "מה בתכנית" : lang === "fr" ? "Au programme" : "What's on the program";
+    tPage("whatsIncludedPhotos2WhatSOnTheProgram");
 
   const isImageUrl = (url?: string | null): boolean =>
     !!url && (url.startsWith("http://") || url.startsWith("https://"));

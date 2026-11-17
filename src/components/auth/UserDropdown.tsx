@@ -1,3 +1,4 @@
+import type { Locale } from "@/lib/locale";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { User as AuthUser } from "@supabase/supabase-js";
@@ -9,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Separator } from "@/components/ui/separator";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/contexts/AuthContext";
+import { uiRecord, pageLocale, uiGroup } from "@/lib/translations";
 
 interface UserDropdownProps {
   user: AuthUser;
@@ -23,49 +25,11 @@ const TIER_ICONS: Record<string, string> = {
   elite: "👑",
 };
 
-const TIER_LABELS: Record<string, { en: string; he: string; fr: string }> = {
-  explorer: { en: "Explorer", he: "חוקר", fr: "Explorateur" },
-  traveler: { en: "Traveler", he: "מטייל", fr: "Voyageur" },
-  adventurer: { en: "Adventurer", he: "הרפתקן", fr: "Aventurier" },
-  elite: { en: "Elite", he: "עילית", fr: "Elite" },
-};
-
-const getCopy = (lang: string) => {
-  if (lang === "he") {
-    return {
-      myFavorites: "המועדפים שלי",
-      myBookings: "ההזמנות שלי",
-      myGiftCards: "כרטיסי המתנה שלי",
-      myAccount: "החשבון שלי",
-      signOut: "התנתקות",
-      dashboard: "לוח בקרה",
-      hotelDashboard: "לוח בקרת מלון",
-      points: "נק׳",
-    };
-  }
-  if (lang === "fr") {
-    return {
-      myFavorites: "Mes favoris",
-      myBookings: "Mes réservations",
-      myGiftCards: "Mes cartes cadeaux",
-      myAccount: "Mon compte",
-      signOut: "Déconnexion",
-      // Textes réservés au back office : on les laisse en anglais (demande explicite).
-      dashboard: "Dashboard",
-      hotelDashboard: "Hotel Dashboard",
-      points: "pts",
-    };
-  }
-  return {
-    myFavorites: "My Favorites",
-    myBookings: "My Bookings",
-    myGiftCards: "My Gift Cards",
-    myAccount: "My Account",
-    signOut: "Sign Out",
-    dashboard: "Dashboard",
-    hotelDashboard: "Hotel Dashboard",
-    points: "pts",
-  };
+const TIER_LABELS: Record<string, Record<Locale, string>> = {
+  explorer: uiRecord("userDropdownExplorer"),
+  traveler: uiRecord("userDropdownTraveler"),
+  adventurer: uiRecord("userDropdownAdventurer"),
+  elite: uiRecord("userDropdownElite"),
 };
 
 const UserDropdown = ({ user, isTransparent, onSignOut }: UserDropdownProps) => {
@@ -73,7 +37,8 @@ const UserDropdown = ({ user, isTransparent, onSignOut }: UserDropdownProps) => 
   const navigate = useNavigate();
   const { lang } = useLanguage();
   const { role } = useAuth();
-  const copy = getCopy(lang);
+  // Textes : clés « userDropdown__… » (le tableau de bord reste en anglais : espace équipe).
+  const copy = uiGroup("userDropdown");
 
   // Fetch user profile data
   const { data: profile } = useQuery({
@@ -165,7 +130,7 @@ const UserDropdown = ({ user, isTransparent, onSignOut }: UserDropdownProps) => 
               <p className="font-semibold text-foreground truncate">{displayName}</p>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-xs font-medium text-primary">
-                  {TIER_ICONS[tier]} {TIER_LABELS[tier]?.[lang as "en" | "he" | "fr"] || TIER_LABELS[tier]?.en}
+                  {TIER_ICONS[tier]} {TIER_LABELS[tier]?.[pageLocale()] || TIER_LABELS[tier]?.en}
                 </span>
                 <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
                   <Star className="h-3 w-3 fill-amber-400 text-amber-400" />

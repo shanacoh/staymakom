@@ -1,34 +1,12 @@
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/hooks/useLanguage";
+import { uiGroup } from "@/lib/translations";
 
 interface CookieConsentProps {
   onAccept: () => void;
   onDecline: () => void;
 }
 
-const texts = {
-  en: {
-    kicker: "Your privacy",
-    message: "We use cookies to improve your experience and analyze site traffic.",
-    learnMore: "Learn more",
-    accept: "Accept",
-    decline: "Decline",
-  },
-  fr: {
-    kicker: "Votre confidentialité",
-    message: "Nous utilisons des cookies pour améliorer votre expérience et analyser le trafic.",
-    learnMore: "En savoir plus",
-    accept: "Accepter",
-    decline: "Refuser",
-  },
-  he: {
-    kicker: "הפרטיות שלך",
-    message: "אנו משתמשים בעוגיות כדי לשפר את החוויה שלכם ולנתח את התנועה באתר.",
-    learnMore: "למידע נוסף",
-    accept: "אישור",
-    decline: "סירוב",
-  },
-};
 
 const CookieConsent = ({ onAccept, onDecline }: CookieConsentProps) => {
   let lang: "en" | "fr" | "he" = "en";
@@ -39,7 +17,7 @@ const CookieConsent = ({ onAccept, onDecline }: CookieConsentProps) => {
     // fallback to en if outside router
   }
 
-  const t = texts[lang] || texts.en;
+  const t = uiGroup("cookieConsentTexts");
   const isRTL = lang === "he";
 
   return (

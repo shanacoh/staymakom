@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { PhoneInput } from "@/components/PhoneInput";
 import { repairStoredPhone } from "@/lib/phone";
+import { uiGroup } from "@/lib/translations";
 
 export interface LeadGuestData {
   title: "MR" | "MS" | "MRS" | "";
@@ -65,50 +66,6 @@ interface LeadGuestFormProps {
   requireCountry?: boolean;
 }
 
-const translations = {
-  en: {
-    title: "Guest Information",
-    nationality: "Nationality",
-    firstName: "First name",
-    lastName: "Last name",
-    email: "Email",
-    phone: "Phone",
-    optional: "optional",
-    autoFilled: "Auto-filled from your account",
-    required: "Required",
-    invalidEmail: "Invalid email",
-    streetAddress: "Address",
-    selectCountry: "Select a country",
-  },
-  he: {
-    title: "פרטי האורח",
-    nationality: "אזרחות",
-    firstName: "שם פרטי",
-    lastName: "שם משפחה",
-    email: "אימייל",
-    phone: "טלפון",
-    optional: "לא חובה",
-    autoFilled: "מילוי אוטומטי מהחשבון שלך",
-    required: "שדה חובה",
-    invalidEmail: "כתובת אימייל לא תקינה",
-    streetAddress: "כתובת",
-    selectCountry: "בחר מדינה",
-  },
-  fr: {
-    title: "Informations voyageur",
-    nationality: "Nationalité",
-    firstName: "Prénom",
-    lastName: "Nom",
-    email: "Email",
-    phone: "Téléphone",
-    optional: "facultatif",
-    autoFilled: "Pré-rempli depuis votre compte",
-    required: "Requis",
-    invalidEmail: "Email invalide",
-    streetAddress: "Adresse",
-    selectCountry: "Choisir un pays",
-  },
-};
 
 function isValidEmail(e: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
@@ -124,7 +81,7 @@ const inputStyle = {
 };
 
 export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false, requireAddress = true, requireCountry = true }: LeadGuestFormProps) {
-  const t = translations[lang];
+  const t = uiGroup("leadGuestFormTranslations");
   const { user } = useAuth();
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});

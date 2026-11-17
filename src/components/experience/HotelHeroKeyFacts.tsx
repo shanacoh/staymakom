@@ -3,6 +3,7 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import type { AvailabilityRule } from "@/lib/availabilityUtils";
 import type { HeroKeyFact, HeroLang } from "@/lib/heroKeyFacts";
 import HeroKeyFacts from "@/components/experience/HeroKeyFacts";
+import { tPage } from "@/lib/translations";
 
 interface HotelHeroKeyFactsProps {
   facts: HeroKeyFact[];
@@ -48,8 +49,8 @@ const HotelHeroKeyFacts = ({
   // d'une nuit comme celui du séjour entier.
   const unit =
     minNights <= 1
-      ? lang === "he" ? "/ לשהייה" : lang === "fr" ? "/ séjour" : "/ stay"
-      : lang === "he" ? "/ ללילה" : lang === "fr" ? "/ nuit" : "/ night";
+      ? tPage("hotelHeroKeyFactsStay")
+      : tPage("hotelHeroKeyFactsNight");
 
   return (
     <HeroKeyFacts

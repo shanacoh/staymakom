@@ -4,27 +4,24 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { ReviewRow } from "@/hooks/useReviewsSummary";
 import { trackReviewsBlockScrolled } from "@/lib/analytics";
+import { tPage, uiRecord, pageLocale } from "@/lib/translations";
 
 type SortOption = "recent" | "top_rated";
 type Lang = "fr" | "en" | "he";
 
 const T: Record<string, Record<Lang, string>> = {
-  title: { fr: "Avis", en: "Reviews", he: "ביקורות" },
-  reviewsWord: { fr: "avis", en: "reviews", he: "ביקורות" },
-  verified: { fr: "Avis vérifié", en: "Verified review", he: "ביקורת מאומתת" },
-  sortRecent: { fr: "Plus récents", en: "Most recent", he: "החדשים ביותר" },
-  sortTop: { fr: "Mieux notés", en: "Top rated", he: "המדורגים ביותר" },
-  staffReply: { fr: "Réponse de STAYMAKOM", en: "Reply from STAYMAKOM", he: "תגובת STAYMAKOM" },
-  collectionNotice: {
-    fr: "Avis collectés auprès de nos clients après leur expérience, publiés uniquement avec leur accord.",
-    en: "Reviews collected from our customers after their experience, published only with their consent.",
-    he: "ביקורות שנאספו מלקוחותינו לאחר החוויה, מתפרסמות רק בהסכמתן.",
-  },
-  showAll: { fr: "Afficher les {n} avis", en: "Show all {n} reviews", he: "הצג את כל {n} הביקורות" },
+  title: uiRecord("reviewsBlockReviews2"),
+  reviewsWord: uiRecord("reviewsBlockReviews"),
+  verified: uiRecord("reviewsBlockVerifiedReview"),
+  sortRecent: uiRecord("reviewsBlockMostRecent"),
+  sortTop: uiRecord("reviewsBlockTopRated"),
+  staffReply: uiRecord("reviewsBlockReplyFromStaymakom"),
+  collectionNotice: uiRecord("reviewsBlockReviewsCollectedFromOurCustomers"),
+  showAll: uiRecord("reviewsBlockShowAllNReviews"),
 };
 
 function t(key: keyof typeof T, lang: Lang) {
-  return T[key][lang] || T[key].en;
+  return T[key][pageLocale()] || T[key].en;
 }
 
 function displayName(firstName: string, lastInitial: string | null) {
@@ -34,7 +31,7 @@ function displayName(firstName: string, lastInitial: string | null) {
 function formatMonthYear(dateStr: string | null, lang: Lang) {
   if (!dateStr) return "";
   const d = new Date(dateStr);
-  return d.toLocaleDateString(lang === "he" ? "he-IL" : lang === "fr" ? "fr-FR" : "en-US", {
+  return d.toLocaleDateString(tPage("dateLocale"), {
     month: "long",
     year: "numeric",
   });

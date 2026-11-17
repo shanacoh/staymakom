@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { tPage } from "@/lib/translations";
 
 interface SaveForLaterButtonProps {
   experienceId: string;
@@ -26,12 +27,12 @@ export function SaveForLaterButton({
   const queryClient = useQueryClient();
 
   const t = {
-    add: lang === "he" ? "שמור למועדפים" : lang === "fr" ? "Ajouter aux favoris" : "Save to favorites",
-    saved: lang === "he" ? "שמור במועדפים" : lang === "fr" ? "Enregistré" : "Saved",
-    loginRequired: lang === "he" ? "יש להתחבר תחילה" : lang === "fr" ? "Connectez-vous d'abord" : "Please log in first",
-    added: lang === "he" ? "נוסף למועדפים" : lang === "fr" ? "Ajouté aux favoris" : "Added to favorites",
-    removed: lang === "he" ? "הוסר מהמועדפים" : lang === "fr" ? "Retiré des favoris" : "Removed from favorites",
-    error: lang === "he" ? "שגיאה" : lang === "fr" ? "Erreur" : "Error",
+    add: tPage("saveForLaterButtonSaveToFavorites"),
+    saved: tPage("saveForLaterButtonSaved"),
+    loginRequired: tPage("saveForLaterButtonPleaseLogInFirst"),
+    added: tPage("saveForLaterButtonAddedToFavorites"),
+    removed: tPage("saveForLaterButtonRemovedFromFavorites"),
+    error: tPage("saveForLaterButtonError"),
   };
 
   const { data: wishlistStatus } = useQuery({

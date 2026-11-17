@@ -12,13 +12,17 @@ Ne l'allumer que lorsque **toutes** les cases sont cochées :
   - [x] Accueil, en-tête, menu, barre du bas (téléphone), pied de page, FAQ de l'accueil (17/11/2026)
   - [x] Cartes d'expérience, d'hôtel et de bateau, badges calculés (casher, âge...) (17/11/2026)
   - [x] Champ téléphone : messages et noms de pays (17/11/2026)
-  - [ ] Fiche expérience seule / bateau (`StandaloneExperience`, panneau de demande, pop-up bateau)
-  - [ ] Fiche expérience avec hôtel (`Experience2`, panneau de réservation, `LeadGuestForm`)
-  - [ ] Paiement et confirmation (`StandaloneCheckout`, `Checkout`, `BookingConfirmationDialog`,
-        pages de confirmation), fenêtre de connexion (`AuthPromptDialog`)
+  - [x] Fiche expérience seule / bateau (`StandaloneExperience`, panneau de demande, pop-up bateau) (17/11/2026)
+  - [x] Fiche expérience avec hôtel (`Experience2`, panneau de réservation, `LeadGuestForm`) (17/11/2026)
+  - [x] Paiement et confirmation (`StandaloneCheckout`, `Checkout`, `BookingConfirmationDialog`,
+        pages de confirmation), fenêtre de connexion (`AuthPromptDialog`), menu du compte,
+        bandeau cookies, conditions d'annulation hôtel, calendriers et dates (17/11/2026)
   - [ ] Catégories, liste des expériences, recherche, vitrine bateaux (`/boat`)
   - [ ] Journal, À propos, Contact, Carte cadeau, formulaire sur-mesure (`TailorMadeDialog`)
-  - [ ] Pages légales (conditions, confidentialité) : traduction relue, pas automatique
+  - [ ] Pages légales (conditions, confidentialité, cookies, mentions légales) : traduction
+        automatique + mention en tête, dans chaque langue : « En cas de divergence, la version
+        anglaise fait foi » (décision de Shana du 17/11/2026)
+  - [ ] Espace client (`/account` : mes réservations, favoris, cartes cadeaux)
   - [ ] Anciennes clés de `translations.ts` encore utilisées (`missingUiKeys("ru")` doit ne
         renvoyer que des clés plus utilisées par le site)
 - [ ] **Villes et régions traduites** : elles s'affichent dans la langue de la page (Иерусалим,
@@ -37,6 +41,13 @@ where encode(sha256(convert_to(text, 'UTF8')), 'hex') = source_hash
 order by entity_type, texte, locale;
 ```
 
+- [ ] **Options payantes des fiches avec hôtel** (« Late Check-out », « Wine in Room »...) : elles
+      viennent de `hotel2_extras`, ajoutée à la carte le 17/11/2026 (entité `hotel2_extra`).
+      Vérifier qu'elles sont traduites après `docs/traductions/traduire-options-hotels.sql`.
+- [ ] **Emails client dans la langue du client** (ES / RU / DE) : confirmation de réservation,
+      billets, « demande reçue » (expérience, bateau, sur-mesure). Les fonctions d'envoi lisent
+      `client_locale` (déjà enregistrée sur la réservation ou la demande) au lieu de `preferred_lang`
+      (en / fr / he), avec le même habillage que l'email de confirmation de référence.
 - [ ] **Relecture** : une fiche de chaque type relue par un lecteur natif dans chaque langue.
 - [ ] **Demande test** depuis une page `?lang=ru` : dans le back-office, la demande affiche le
       nom anglais de l'expérience et le badge « RU ».

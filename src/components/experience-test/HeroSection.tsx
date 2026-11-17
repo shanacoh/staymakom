@@ -48,6 +48,7 @@ import AuthPromptDialog from "@/components/auth/AuthPromptDialog";
 import HeartBurst from "@/components/ui/HeartBurst";
 import LocationPopover from "@/components/experience/LocationPopover";
 import { trackPhotoGalleryClicked, trackGalleryOpened, trackGalleryPhotoViewed } from "@/lib/analytics";
+import { tPage, uiGroup } from "@/lib/translations";
 
 interface Review {
   id: string;
@@ -205,15 +206,11 @@ const HeroSection = ({
         setAnimateHeart(true);
         setShowBurst(true);
         setTimeout(() => setAnimateHeart(false), 400);
-        const messages = {
-          en: { title: "Added to favorites", desc: "You can find it in your account" },
-          fr: { title: "Ajouté aux favoris", desc: "Retrouvez-le dans votre compte" },
-          he: { title: "נוסף למועדפים", desc: "תוכל למצוא אותו בחשבון שלך" },
-        };
-        const msg = messages[lang] || messages.en;
+
+        const msg = uiGroup("heroSectionMessages");
         toast.success(msg.title, { description: msg.desc });
       } else {
-        const removed = lang === 'he' ? 'הוסר מהמועדפים' : lang === 'fr' ? 'Retiré des favoris' : 'Removed from favorites';
+        const removed = tPage("heroSectionRemovedFromFavorites");
         toast.success(removed);
       }
     },
@@ -240,7 +237,7 @@ const HeroSection = ({
             onClick={onScrollToReviews}
             className="text-muted-foreground underline hover:text-foreground transition-colors"
           >
-            {reviewsCount} {lang === 'he' ? 'ביקורות' : lang === 'en' ? 'reviews' : 'avis'}
+            {reviewsCount} {tPage("reviewsWord")}
           </button>
         </div>
       );
@@ -248,7 +245,7 @@ const HeroSection = ({
     return (
       <div className="flex items-center gap-1.5 text-xs text-cta-foreground/60 uppercase tracking-wider font-medium">
         <Sparkles className="h-3.5 w-3.5" />
-        <span>{lang === 'he' ? 'נבחר ע״י STAYMAKOM' : lang === 'fr' ? 'Sélectionné par STAYMAKOM' : 'Curated by STAYMAKOM'}</span>
+        <span>{tPage("heroSectionCuratedByStaymakom")}</span>
       </div>
     );
   };
@@ -359,7 +356,7 @@ const HeroSection = ({
           </div>
           <div className={isMobile ? "text-center" : ""}>
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              {lang === 'he' ? 'מתארחים ב' : lang === 'fr' ? 'Hébergé à' : 'Hosted at'}
+              {tPage("heroSectionHostedAt")}
             </p>
             <p className="text-sm font-medium text-foreground break-words">{hotelName}</p>
             <LocationPopover
@@ -387,7 +384,7 @@ const HeroSection = ({
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
                   <Link to={isLaunch ? "/launch" : getLocalizedPath("/")}>
-                    {lang === 'he' ? 'בית' : lang === 'fr' ? 'Accueil' : 'Home'}
+                    {tPage("heroSectionHome")}
                   </Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
@@ -403,8 +400,8 @@ const HeroSection = ({
                         }
                       >
                         {experienceMode === 'stay'
-                          ? (lang === 'he' ? 'עם מלון' : lang === 'fr' ? 'Avec Hôtel' : 'With Hotel')
-                          : (lang === 'he' ? 'חוויה בלבד' : lang === 'fr' ? 'Expérience Seule' : 'Experience Only')}
+                          ? (tPage("heroSectionWithHotel"))
+                          : (tPage("heroSectionExperienceOnly"))}
                       </Link>
                     </BreadcrumbLink>
                   </BreadcrumbItem>

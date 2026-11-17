@@ -23,6 +23,8 @@ import { Users, Calendar, CheckCircle2 } from "lucide-react";
 import { fr, he } from "date-fns/locale";
 import { ReassuranceLine } from "@/components/reviews/ReassuranceLine";
 import { PhoneInput } from "@/components/PhoneInput";
+import { tPage, pageLocale } from "@/lib/translations";
+import { dateFnsLocale } from "@/lib/dateFnsLocale";
 
 interface StandaloneRequestPanelProps {
   experienceId: string;
@@ -80,34 +82,26 @@ export default function StandaloneRequestPanel({
   const [errorMsg, setErrorMsg] = useState("");
 
   const t = {
-    title: lang === "he" ? "בקשת תאריכים" : lang === "fr" ? "Demande de dates" : "Request dates",
+    title: tPage("standaloneRequestPanelRequestDates"),
     intro:
-      lang === "he"
-        ? "החוויה הזו אינה זמינה להזמנה מיידית. השאירו פרטים ונחזור אליכם עם התאריכים הזמינים."
-        : lang === "fr"
-        ? "Cette expérience n'est pas réservable directement en ligne. Laissez-nous vos coordonnées, nous revenons vers vous avec les disponibilités."
-        : "This experience can't be booked instantly. Leave your details and we'll get back to you with availability.",
-    cta: lang === "he" ? "בקשת הזמנה" : lang === "fr" ? "Demander la réservation" : "Request availability",
-    participants: lang === "he" ? "משתתפים" : lang === "fr" ? "Participants" : "Participants",
-    date: lang === "he" ? "תאריך רצוי (אופציונלי)" : lang === "fr" ? "Date souhaitée (facultatif)" : "Preferred date (optional)",
-    firstName: lang === "he" ? "שם פרטי" : lang === "fr" ? "Prénom" : "First name",
-    lastName: lang === "he" ? "שם משפחה" : lang === "fr" ? "Nom" : "Last name",
+      tPage("standaloneRequestPanelThisExperienceCanTBe"),
+    cta: tPage("standaloneRequestPanelRequestAvailability"),
+    participants: tPage("standaloneRequestPanelParticipants"),
+    date: tPage("standaloneRequestPanelPreferredDateOptional"),
+    firstName: tPage("standaloneRequestPanelFirstName"),
+    lastName: tPage("standaloneRequestPanelLastName"),
     email: "Email",
-    phone: lang === "he" ? "טלפון (אופציונלי)" : lang === "fr" ? "Téléphone (facultatif)" : "Phone (optional)",
-    message: lang === "he" ? "הודעה (אופציונלי)" : lang === "fr" ? "Message (facultatif)" : "Message (optional)",
-    submit: lang === "he" ? "שליחת הבקשה" : lang === "fr" ? "Envoyer ma demande" : "Send my request",
-    sending: lang === "he" ? "שולח…" : lang === "fr" ? "Envoi…" : "Sending…",
+    phone: tPage("standaloneRequestPanelPhoneOptional"),
+    message: tPage("standaloneRequestPanelMessageOptional"),
+    submit: tPage("standaloneRequestPanelSendMyRequest"),
+    sending: tPage("standaloneRequestPanelSending"),
     missingFields:
-      lang === "he" ? "יש למלא שם ואימייל" : lang === "fr" ? "Merci de renseigner votre prénom, nom et email" : "Please fill in your first name, last name and email",
+      tPage("standaloneRequestPanelPleaseFillInYourFirst"),
     error:
-      lang === "he" ? "שגיאה בשליחת הבקשה, נסו שוב" : lang === "fr" ? "Une erreur est survenue, merci de réessayer" : "Something went wrong, please try again",
-    successTitle: lang === "he" ? "הבקשה נשלחה!" : lang === "fr" ? "Demande envoyée !" : "Request sent!",
+      tPage("standaloneRequestPanelSomethingWentWrongPleaseTry"),
+    successTitle: tPage("standaloneRequestPanelRequestSent"),
     successBody:
-      lang === "he"
-        ? "קיבלנו את בקשתכם ונחזור אליכם תוך 24 עד 48 שעות."
-        : lang === "fr"
-        ? "Nous avons bien reçu votre demande et revenons vers vous sous 24 à 48h."
-        : "We've received your request and will get back to you within 24–48h.",
+      tPage("standaloneRequestPanelWeVeReceivedYourRequest"),
   };
 
   const handleSubmit = async () => {
@@ -276,7 +270,7 @@ export default function StandaloneRequestPanel({
             mode="single"
             showOutsideDays
             className="w-full p-3"
-            locale={lang === "fr" ? fr : lang === "he" ? he : undefined}
+            locale={dateFnsLocale(pageLocale())}
             selected={selectedDate ? new Date(selectedDate + "T12:00:00") : undefined}
             onSelect={(date) => setSelectedDate(date ? toLocalDateStr(date) : "")}
             disabled={isDateUnavailable}

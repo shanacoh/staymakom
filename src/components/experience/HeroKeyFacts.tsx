@@ -1,4 +1,5 @@
 import type { HeroKeyFact, HeroLang } from "@/lib/heroKeyFacts";
+import { tPage } from "@/lib/translations";
 
 interface HeroKeyFactsProps {
   facts: HeroKeyFact[];
@@ -41,7 +42,7 @@ const HeroKeyFacts = ({ facts, fromPrice, onSeeDates, lang, minVisibleFacts = 2 
 
       {fromPrice && (
         <p className="text-[13px] text-muted-foreground">
-          {lang === "he" ? "החל מ-" : lang === "fr" ? "À partir de " : "From "}
+          {tPage("heroKeyFactsFrom")}
           <span className="text-xl font-bold text-foreground">{fromPrice.amount}</span>
           {" "}{fromPrice.unit}
         </p>
@@ -53,7 +54,7 @@ const HeroKeyFacts = ({ facts, fromPrice, onSeeDates, lang, minVisibleFacts = 2 
           onClick={onSeeDates}
           className="rounded-full bg-[#ad1414] px-[22px] py-2.5 text-[13px] font-bold text-white hover:bg-[#9a1212] transition-colors"
         >
-          {lang === "he" ? "לתאריכים" : lang === "fr" ? "Voir les dates" : "View dates"}
+          {tPage("heroKeyFactsViewDates")}
         </button>
       )}
     </div>

@@ -8,6 +8,7 @@ import {
   type Icon as PhosphorIcon,
 } from "@phosphor-icons/react";
 import type { SelectedExtra } from "./ExtrasSection2";
+import { uiRecord, pageLocale } from "@/lib/translations";
 
 const keywordMapping: Array<{ keywords: string[]; icon: PhosphorIcon }> = [
   { keywords: ["wine", "vin", "יין"], icon: Wine },
@@ -79,12 +80,12 @@ const StandaloneExtrasSection = ({
   const currencySymbol = currency === "USD" ? "$" : currency === "EUR" ? "€" : "₪";
 
   const texts: Record<string, Record<string, string>> = {
-    sectionTitle: { en: "Make it unforgettable", fr: "Rendez-le inoubliable", he: "הפכו את זה לבלתי נשכח" },
-    sectionIntro: { en: "Every escape can go a little further.", fr: "Chaque escapade peut aller plus loin.", he: "כל בריחה יכולה ללכת קצת יותר רחוק." },
-    add: { en: "Add", fr: "Ajouter", he: "הוסף" },
-    added: { en: "Added", fr: "Ajouté", he: "נוסף" },
+    sectionTitle: uiRecord("standaloneExtrasSectionMakeItUnforgettable"),
+    sectionIntro: uiRecord("standaloneExtrasSectionEveryEscapeCanGoA"),
+    add: uiRecord("standaloneExtrasSectionAdd"),
+    added: uiRecord("standaloneExtrasSectionAdded"),
   };
-  const t = (key: string) => texts[key]?.[lang] || texts[key]?.en || key;
+  const t = (key: string) => texts[key]?.[pageLocale()] || texts[key]?.en || key;
 
   return (
     <section className="py-6 border-b border-border" dir={lang === "he" ? "rtl" : "ltr"}>

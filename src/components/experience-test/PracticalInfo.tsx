@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Users, Clock, MapPin, Calendar, AlertCircle, Accessibility, Sun, Globe, Timer } from "lucide-react";
 import { icons } from "lucide-react";
 import { getLocalizedField, type Language } from "@/hooks/useLanguage";
+import { tPage } from "@/lib/translations";
 
 interface Experience {
   id: string;
@@ -52,43 +53,43 @@ const PracticalInfo = ({ experience, lang = "en" }: PracticalInfoProps) => {
   const defaultItems = [
     {
       icon: "Clock",
-      label: lang === "he" ? "משך" : lang === "fr" ? "Durée" : "Duration",
+      label: tPage("practicalInfoDuration"),
       value: getLocalizedField(experience, "duration", lang) as string || experience.duration,
     },
     {
       icon: "Users",
-      label: lang === "he" ? "גודל קבוצה" : lang === "fr" ? "Taille du groupe" : "Group size",
+      label: tPage("practicalInfoGroupSize"),
       value: experience.min_party && experience.max_party
-        ? `${experience.min_party} – ${experience.max_party} ${lang === "he" ? "אנשים" : lang === "fr" ? "personnes" : "guests"}`
+        ? `${experience.min_party} – ${experience.max_party} ${tPage("practicalInfoGuests")}`
         : null,
     },
     {
       icon: "Timer",
-      label: lang === "he" ? "זמן הזמנה מראש" : lang === "fr" ? "Réservation à l'avance" : "Booking lead time",
+      label: tPage("practicalInfoBookingLeadTime"),
       value: experience.lead_time_days && experience.lead_time_days > 0
-        ? (lang === "he" ? `${experience.lead_time_days} ימים מראש` : lang === "fr" ? `${experience.lead_time_days} jours à l'avance` : `${experience.lead_time_days} days in advance`)
+        ? tPage("daysInAdvance")(experience.lead_time_days)
         : null,
     },
     {
       icon: "Calendar",
-      label: lang === "he" ? "צ'ק-אין / צ'ק-אאוט" : lang === "fr" ? "Arrivée / Départ" : "Check-in / Check-out",
+      label: tPage("practicalInfoCheckInCheckOut"),
       value: experience.checkin_time && experience.checkout_time
         ? `${experience.checkin_time} – ${experience.checkout_time}`
         : null,
     },
     {
       icon: "MapPin",
-      label: lang === "he" ? "מיקום" : lang === "fr" ? "Lieu" : "Location",
+      label: tPage("practicalInfoLocation"),
       value: getLocalizedField(experience, "address", lang) as string || experience.address,
     },
     {
       icon: "Accessibility",
-      label: lang === "he" ? "נגישות" : lang === "fr" ? "Accessibilité" : "Accessibility",
+      label: tPage("practicalInfoAccessibility"),
       value: getLocalizedField(experience, "accessibility_info", lang) as string || experience.accessibility_info,
     },
     {
       icon: "AlertCircle",
-      label: lang === "he" ? "מדיניות ביטול" : lang === "fr" ? "Conditions d'annulation" : "Cancellation policy",
+      label: tPage("practicalInfoCancellationPolicy"),
       value: getLocalizedField(experience, "cancellation_policy", lang) as string || experience.cancellation_policy,
     },
   ].filter(item => item.value);
@@ -114,7 +115,7 @@ const PracticalInfo = ({ experience, lang = "en" }: PracticalInfoProps) => {
   return (
     <section className="py-6 border-b border-border">
       <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] text-foreground mb-5">
-        {lang === "he" ? "חשוב לדעת" : lang === "fr" ? "Bon à savoir" : "Things to know"}
+        {tPage("practicalInfoThingsToKnow")}
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

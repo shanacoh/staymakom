@@ -45,6 +45,7 @@ import {
   identifyLead,
 } from "@/lib/analytics";
 import { formatTimeSlot } from "@/lib/timeSlots";
+import { tPage, uiGroup, uiRecord, pageLocale } from "@/lib/translations";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -142,113 +143,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
   const navigate = useNavigate();
   const lang = state.lang;
 
-  const t = {
-    en: {
-      step2Title: "Guest information",
-      step3Title: "Review & confirm",
-      back: "Back",
-      next: "Continue",
-      pay: "CONFIRM & PAY",
-      guestInfo: "Guest information",
-      bookingDetails: "Booking details",
-      guestDetails: "Guest details",
-      date: "Date",
-      timeSlot: "Time slot",
-      formula: "Formula",
-      participants: "Participants",
-      total: "Total",
-      firstName: "First name *",
-      lastName: "Last name *",
-      email: "Email *",
-      phone: "Phone *",
-      specialRequests: "Special requests",
-      specialRequestsPlaceholder: "Write any special requests here (optional)...",
-      giftCard: "Have a gift card?",
-      giftCardPlaceholder: "MK–XXXX–XXXX",
-      promoCode: "Have a promo code?",
-      promoCodePlaceholder: "Enter your code",
-      apply: "APPLY",
-      backToSelection: "Back to selection",
-      secureCheckout: "Secure checkout",
-      paymentFailed: "Payment failed",
-      paymentFailedMsg: "The payment did not go through. Please try again.",
-      paymentConfirmed: "Payment confirmed. Your booking is being created...",
-      securePayment: "Secure payment",
-      securePaymentDesc: "Choose a payment method and complete your booking. Secured by Revolut.",
-      preparingPayment: "Preparing payment...",
-      selection: "Selection",
-    },
-    he: {
-      step2Title: "פרטי אורח",
-      step3Title: "סיכום ואישור",
-      back: "חזרה",
-      next: "המשך",
-      pay: "שלם והזמן",
-      guestInfo: "פרטי לקוח",
-      bookingDetails: "פרטי ההזמנה",
-      guestDetails: "פרטי לקוח",
-      date: "תאריך",
-      timeSlot: "שעה",
-      formula: "תפריט",
-      participants: "משתתפים",
-      total: "סה\"כ",
-      firstName: "שם פרטי *",
-      lastName: "שם משפחה *",
-      email: "אימייל *",
-      phone: "טלפון *",
-      specialRequests: "בקשות מיוחדות",
-      specialRequestsPlaceholder: "כתוב כאן בקשות מיוחדות (אופציונלי)...",
-      giftCard: "יש לך כרטיס מתנה?",
-      giftCardPlaceholder: "MK–XXXX–XXXX",
-      promoCode: "יש לך קוד פרומו?",
-      promoCodePlaceholder: "הכנס את הקוד שלך",
-      apply: "החל",
-      backToSelection: "חזרה לבחירה",
-      secureCheckout: "הזמנה מאובטחת",
-      paymentFailed: "התשלום נכשל",
-      paymentFailedMsg: "התשלום לא הושלם. אנא נסה שוב.",
-      paymentConfirmed: "התשלום אושר. ההזמנה שלך נוצרת...",
-      securePayment: "תשלום מאובטח",
-      securePaymentDesc: "בחר אמצעי תשלום והשלם את ההזמנה. התשלום מתבצע באמצעות Revolut.",
-      preparingPayment: "מכין תשלום...",
-      selection: "בחירה",
-    },
-    fr: {
-      step2Title: "Informations client",
-      step3Title: "Vérification & confirmation",
-      back: "Retour",
-      next: "Continuer",
-      pay: "PAYER & RÉSERVER",
-      guestInfo: "Informations client",
-      bookingDetails: "Détails de la réservation",
-      guestDetails: "Informations client",
-      date: "Date",
-      timeSlot: "Créneau",
-      formula: "Formule",
-      participants: "Participants",
-      total: "Total",
-      firstName: "Prénom *",
-      lastName: "Nom *",
-      email: "Email *",
-      phone: "Téléphone *",
-      specialRequests: "Demandes spéciales",
-      specialRequestsPlaceholder: "Écrivez vos demandes spéciales ici (optionnel)...",
-      giftCard: "Vous avez une carte cadeau ?",
-      giftCardPlaceholder: "MK–XXXX–XXXX",
-      promoCode: "Vous avez un code promo ?",
-      promoCodePlaceholder: "Entrez votre code",
-      apply: "APPLIQUER",
-      backToSelection: "Retour à la sélection",
-      secureCheckout: "Réservation sécurisée",
-      paymentFailed: "Le paiement a échoué",
-      paymentFailedMsg: "Le paiement n'a pas été finalisé. Réessayez.",
-      paymentConfirmed: "Paiement confirmé. Votre réservation est en cours de création...",
-      securePayment: "Paiement sécurisé",
-      securePaymentDesc: "Choisissez un moyen de paiement et finalisez votre réservation. Paiement sécurisé par Revolut.",
-      preparingPayment: "Préparation du paiement...",
-      selection: "Sélection",
-    },
-  }[lang];
+  const t = uiGroup("standaloneCheckout");
 
   // ── Auth & States ────────────────────────────────────────────────────────
   const { user } = useAuth();
@@ -312,22 +207,15 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
 
   const dateLabel = state.selectedDate
     ? new Date(state.selectedDate + "T12:00:00").toLocaleDateString(
-        lang === "he" ? "he-IL" : lang === "fr" ? "fr-FR" : "en-US",
+        tPage("dateLocale"),
         { weekday: "long", day: "numeric", month: "long", year: "numeric" },
       )
     : "";
 
-  const adultsLabel =
-    lang === "he" ? `${state.adults} מבוגר${state.adults > 1 ? "ים" : ""}` :
-    lang === "fr" ? `${state.adults} adulte${state.adults > 1 ? "s" : ""}` :
-    `${state.adults} adult${state.adults > 1 ? "s" : ""}`;
+  const adultsLabel: string = tPage("countAdults")(state.adults);
 
-  const childrenLabel =
-    state.children > 0
-      ? lang === "he" ? `، ${state.children} ילד${state.children > 1 ? "ים" : ""}` :
-        lang === "fr" ? `, ${state.children} enfant${state.children > 1 ? "s" : ""}` :
-        `, ${state.children} child${state.children > 1 ? "ren" : ""}`
-      : "";
+  const childrenLabel: string =
+    state.children > 0 ? `${tPage("listSeparator")}${tPage("countChildren")(state.children)}` : "";
 
   const stepLabels = [t.step2Title, t.step3Title];
 
@@ -406,21 +294,21 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
       });
       if (error || !data) {
         trackGiftCardFailed("rpc_error");
-        setGiftCardError(lang === "he" ? "לא ניתן לאמת את הכרטיס. נסה שוב." : lang === "fr" ? "Impossible de valider la carte. Réessayez." : "Unable to validate the card. Please try again.");
+        setGiftCardError(tPage("standaloneCheckoutUnableToValidateTheCard"));
         return;
       }
       type GiftCardResult = { valid: boolean; error?: string; id?: string; code?: string; amount?: number; amount_used?: number; available_balance?: number; currency?: string };
       const result = data as GiftCardResult;
       if (!result.valid) {
         const msgs: Record<string, Record<string, string>> = {
-          not_found: { en: "Gift card not found. Check the code and try again.", he: "כרטיס מתנה לא נמצא. בדוק את הקוד ונסה שוב.", fr: "Carte cadeau introuvable. Vérifiez le code." },
-          invalid_status: { en: "This gift card cannot be used.", he: "לא ניתן להשתמש בכרטיס מתנה זה.", fr: "Cette carte cadeau n'est pas utilisable." },
-          expired: { en: "This gift card has expired.", he: "כרטיס המתנה פג תוקפו.", fr: "Cette carte cadeau a expiré." },
-          no_balance: { en: "This gift card has no remaining balance.", he: "אין יתרה בכרטיס מתנה זה.", fr: "Cette carte cadeau n'a plus de solde." },
+          not_found: uiRecord("standaloneCheckoutGiftCardNotFoundCheck"),
+          invalid_status: uiRecord("standaloneCheckoutThisGiftCardCannotBe"),
+          expired: uiRecord("standaloneCheckoutThisGiftCardHasExpired"),
+          no_balance: uiRecord("standaloneCheckoutThisGiftCardHasNo"),
         };
         const key = result.error || "not_found";
         trackGiftCardFailed(key);
-        setGiftCardError(msgs[key]?.[lang] || msgs.not_found.en);
+        setGiftCardError(msgs[key]?.[pageLocale()] || msgs.not_found.en);
         return;
       }
       const appliedAmount = Math.min(result.available_balance!, Math.max(0, state.totalPrice - promoDiscount));
@@ -433,7 +321,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
       setGiftCardCode("");
     } catch {
       trackGiftCardFailed("exception");
-      setGiftCardError(lang === "he" ? "שגיאה בבדיקת הכרטיס." : lang === "fr" ? "Erreur lors de la vérification." : "Error validating card.");
+      setGiftCardError(tPage("standaloneCheckoutErrorValidatingCard"));
     } finally {
       setIsValidatingGiftCard(false);
     }
@@ -442,7 +330,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
   const handleApplyPromo = useCallback(async () => {
     if (!promoCodeValue.trim()) return;
     if (!leadGuest.email.trim()) {
-      setPromoError(lang === "he" ? "הזן/י קודם את האימייל שלך" : lang === "fr" ? "Renseigne d'abord ton email" : "Enter your email first");
+      setPromoError(tPage("standaloneCheckoutEnterYourEmailFirst"));
       return;
     }
     setIsValidatingPromo(true);
@@ -454,7 +342,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
       });
       if (error || !data) {
         trackPromoCodeFailed(promoCodeValue.trim().toUpperCase(), "rpc_error");
-        setPromoError(lang === "he" ? "לא ניתן לאמת את הקוד. נסה שוב." : lang === "fr" ? "Impossible de valider le code. Réessayez." : "Unable to validate the code. Please try again.");
+        setPromoError(tPage("standaloneCheckoutUnableToValidateTheCode"));
         return;
       }
       type PromoResult = {
@@ -469,17 +357,17 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
       const result = data as PromoResult;
       if (!result.valid) {
         const msgs: Record<string, Record<string, string>> = {
-          not_found: { en: "Promo code not found.", he: "קוד הנחה לא נמצא.", fr: "Code promo introuvable." },
-          inactive: { en: "This code is no longer active.", he: "קוד זה לא פעיל יותר.", fr: "Ce code n'est plus actif." },
-          not_yet_valid: { en: "This code is not valid yet.", he: "הקוד עדיין לא תקף.", fr: "Code pas encore valide." },
-          expired: { en: "This code has expired.", he: "תוקף הקוד פג.", fr: "Ce code a expiré." },
-          max_uses_reached: { en: "This code has reached its maximum number of uses.", he: "הקוד הגיע למספר השימושים המרבי.", fr: "Code arrivé au nombre maximum d'utilisations." },
-          already_used_by_email: { en: "You've already used this code.", he: "כבר השתמשת בקוד זה.", fr: "Tu as déjà utilisé ce code." },
-          invalid_input: { en: "Invalid code or email.", he: "קוד או אימייל לא תקינים.", fr: "Code ou email invalide." },
+          not_found: uiRecord("standaloneCheckoutPromoCodeNotFound"),
+          inactive: uiRecord("standaloneCheckoutThisCodeIsNoLonger"),
+          not_yet_valid: uiRecord("standaloneCheckoutThisCodeIsNotValid"),
+          expired: uiRecord("standaloneCheckoutThisCodeHasExpired"),
+          max_uses_reached: uiRecord("standaloneCheckoutThisCodeHasReachedIts"),
+          already_used_by_email: uiRecord("standaloneCheckoutYouVeAlreadyUsedThis"),
+          invalid_input: uiRecord("standaloneCheckoutInvalidCodeOrEmail"),
         };
         const key = result.error || "not_found";
         trackPromoCodeFailed(promoCodeValue.trim().toUpperCase(), key);
-        setPromoError(msgs[key]?.[lang] || msgs.not_found.en);
+        setPromoError(msgs[key]?.[pageLocale()] || msgs.not_found.en);
         return;
       }
       trackPromoCodeApplied(result.code!, Number(result.discount_amount ?? 0));
@@ -493,7 +381,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
       setPromoCodeValue("");
     } catch {
       trackPromoCodeFailed(promoCodeValue.trim().toUpperCase(), "exception");
-      setPromoError(lang === "he" ? "שגיאה באימות הקוד." : lang === "fr" ? "Erreur lors de la vérification." : "Error validating code.");
+      setPromoError(tPage("standaloneCheckoutErrorValidatingCode"));
     } finally {
       setIsValidatingPromo(false);
     }
@@ -535,7 +423,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
         },
       });
       if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || (lang === "he" ? "לא ניתן ליצור את ההזמנה." : lang === "fr" ? "Impossible de créer la réservation." : "Unable to create the booking."));
+      if (!data?.success) throw new Error(data?.error || (tPage("standaloneCheckoutUnableToCreateTheBooking2")));
       // Cas carte cadeau couvre 100% : pas de widget Revolut, on va directement à la confirmation
       if (user) saveProfileFields(user.id, leadGuest).catch(() => {/* non-bloquant */});
       if (data.no_payment_required) {
@@ -557,8 +445,8 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
       setPaymentDialogOpen(true);
     } catch (err: any) {
       setPaymentStatus("failed");
-      setPaymentErrorMessage(err.message || (lang === "he" ? "לא ניתן ליצור את ההזמנה." : lang === "fr" ? "Impossible de créer la réservation." : "Unable to create the booking."));
-      toast.error(err.message || (lang === "he" ? "לא ניתן ליצור את ההזמנה. נסה/י שוב." : lang === "fr" ? "Impossible de créer la réservation. Réessayez." : "Unable to create the booking. Please try again."));
+      setPaymentErrorMessage(err.message || (tPage("standaloneCheckoutUnableToCreateTheBooking2")));
+      toast.error(err.message || (tPage("standaloneCheckoutUnableToCreateTheBooking")));
     } finally {
       setIsBookingLoading(false);
     }
@@ -586,9 +474,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
       // non-blocking
     }
     toast.success(
-      lang === "he" ? "התשלום התקבל! יוצר את ההזמנה..." :
-      lang === "fr" ? "Paiement reçu ! Création de la réservation..." :
-      "Payment received! Creating your booking...",
+      tPage("standaloneCheckoutPaymentReceivedCreatingYourBooking"),
     );
     navigate(`/standalone-booking/confirmation/${bookingToken}`);
   }, [bookingToken, navigate, lang]);
@@ -621,9 +507,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
     setPaymentDialogOpen(false);
     abandonPendingBooking();
     toast.info(
-      lang === "he" ? "התשלום בוטל" :
-      lang === "fr" ? "Paiement annulé" :
-      "Payment cancelled",
+      tPage("standaloneCheckoutPaymentCancelled"),
     );
   }, [lang, abandonPendingBooking]);
 
@@ -639,7 +523,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
       )}
       <div className="p-4">
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
-          {lang === "fr" ? "Votre réservation" : lang === "he" ? "ההזמנה שלך" : "Your booking"}
+          {tPage("standaloneCheckoutYourBooking")}
         </p>
         <p className="text-sm font-semibold leading-snug mb-3">{expTitle}</p>
         <Separator className="mb-3" />
@@ -651,7 +535,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
           {state.selectedSlot && (
             <div className="flex justify-between gap-2">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5 shrink-0">{t.timeSlot}</span>
-              <span className="text-xs font-medium">{formatTimeSlot(state.selectedSlot, lang)}</span>
+              <span className="text-xs font-medium">{formatTimeSlot(state.selectedSlot, pageLocale())}</span>
             </div>
           )}
           {state.selectedRateOptionLabel && (
@@ -790,10 +674,10 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                       <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                       <div>
                         <p className="text-sm font-medium leading-snug">
-                          {lang === "fr" ? "Remplissez vos infos en un clic" : lang === "he" ? "מלא את הפרטים בלחיצה אחת" : "Fill in your details instantly"}
+                          {tPage("standaloneCheckoutFillInYourDetailsInstantly")}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {lang === "fr" ? "Connectez-vous ou créez un compte pour gagner du temps à chaque réservation." : lang === "he" ? "התחבר או צור חשבון כדי לחסוך זמן בכל הזמנה." : "Sign in or create an account to save time on every booking."}
+                          {tPage("standaloneCheckoutSignInOrCreateAn")}
                         </p>
                       </div>
                     </div>
@@ -805,7 +689,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                         style={{ borderRadius: "999px", border: "1px solid #e9e6e1" }}
                         onClick={() => setAuthDialog({ open: true, tab: "login", context: "account" })}
                       >
-                        {lang === "fr" ? "Se connecter" : lang === "he" ? "התחבר" : "Sign in"}
+                        {tPage("standaloneCheckoutSignIn")}
                       </Button>
                       <Button
                         size="sm"
@@ -813,7 +697,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                         style={{ borderRadius: "999px" }}
                         onClick={() => setAuthDialog({ open: true, tab: "signup", context: "signup" })}
                       >
-                        {lang === "fr" ? "Créer un compte" : lang === "he" ? "צור חשבון" : "Create account"}
+                        {tPage("standaloneCheckoutCreateAccount")}
                       </Button>
                     </div>
                   </div>
@@ -854,7 +738,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                         className="text-xs text-muted-foreground underline ml-3"
                         onClick={() => setAppliedGiftCard(null)}
                       >
-                        {lang === "fr" ? "Retirer" : lang === "he" ? "הסר" : "Remove"}
+                        {tPage("standaloneCheckoutRemove")}
                       </button>
                     </div>
                   ) : (
@@ -896,7 +780,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                         className="text-xs text-muted-foreground underline ml-3"
                         onClick={() => setAppliedPromo(null)}
                       >
-                        {lang === "fr" ? "Retirer" : lang === "he" ? "הסר" : "Remove"}
+                        {tPage("standaloneCheckoutRemove")}
                       </button>
                     </div>
                   ) : (
@@ -981,7 +865,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                   {state.selectedSlot && (
                     <div>
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{t.timeSlot}</p>
-                      <p className="text-sm font-medium">{formatTimeSlot(state.selectedSlot, lang)}</p>
+                      <p className="text-sm font-medium">{formatTimeSlot(state.selectedSlot, pageLocale())}</p>
                     </div>
                   )}
                   <div>
@@ -1049,7 +933,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                       variant="outline"
                       onClick={() => { setPaymentStatus("idle"); setPaymentErrorMessage(null); }}
                     >
-                      {lang === "he" ? "נסה שוב" : lang === "fr" ? "Réessayer" : "Try again"}
+                      {tPage("standaloneCheckoutTryAgain")}
                     </Button>
                   </AlertDescription>
                 </Alert>
@@ -1123,7 +1007,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
       {/* Footer sécurité */}
       <div className="border-t border-border py-4 text-center">
         <p className="text-xs text-muted-foreground">
-          🔒 {lang === "he" ? "הזמנה מאובטחת · לא תחויבו עד לאישור" : lang === "fr" ? "Réservation sécurisée · Aucun débit avant confirmation" : "Secure booking · No charge until confirmed"}
+          🔒 {tPage("standaloneCheckoutSecureBookingNoChargeUntil")}
         </p>
       </div>
 

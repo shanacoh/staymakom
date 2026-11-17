@@ -4,6 +4,7 @@ import { MapPin, Star, Wifi, Car, Coffee, UtensilsCrossed, Waves, TreePine, Cloc
 import { getLocalizedField, type Language } from "@/hooks/useLanguage";
 import { useRegionLabel } from "@/lib/regionList/queries";
 import LocationPopover from "@/components/experience/LocationPopover";
+import { tPage } from "@/lib/translations";
 
 interface Hotel {
   id: string;
@@ -70,14 +71,14 @@ const YourStaySection = ({ hotel, lang = "en" }: YourStaySectionProps) => {
     });
   }
   if (hotel.check_in_time) {
-    const checkInLabel = lang === "he" ? "צ'ק-אין" : lang === "fr" ? "Arrivée" : "Check-in";
+    const checkInLabel = tPage("yourStaySectionCheckIn");
     infoChips.push({
       icon: <DoorOpen className="h-3.5 w-3.5" />,
       label: `${checkInLabel} ${hotel.check_in_time}`,
     });
   }
   if (hotel.check_out_time) {
-    const checkOutLabel = lang === "he" ? "צ'ק-אאוט" : lang === "fr" ? "Départ" : "Check-out";
+    const checkOutLabel = tPage("yourStaySectionCheckOut");
     infoChips.push({
       icon: <Clock className="h-3.5 w-3.5" />,
       label: `${checkOutLabel} ${hotel.check_out_time}`,
@@ -96,14 +97,10 @@ const YourStaySection = ({ hotel, lang = "en" }: YourStaySectionProps) => {
         {/* Section Header */}
         <div>
           <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] text-foreground mb-1">
-            {lang === "he" ? "המלון שלך" : lang === "fr" ? "Votre hébergement" : "Your stay"}
+            {tPage("yourStaySectionYourStay")}
           </h2>
           <p className="text-muted-foreground text-sm">
-            {lang === "he" 
-              ? "החוויה כוללת לינה במלון הזה" 
-              : lang === "fr" 
-              ? "Cette expérience inclut un séjour dans cet établissement"
-              : "This experience includes a stay at this property"}
+            {tPage("yourStaySectionThisExperienceIncludesAStay")}
           </p>
         </div>
 
@@ -143,7 +140,7 @@ const YourStaySection = ({ hotel, lang = "en" }: YourStaySectionProps) => {
                   size="sm"
                   className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30"
                 >
-                  {lang === "he" ? "לפרופיל" : lang === "fr" ? "Voir plus" : "View property"}
+                  {tPage("yourStaySectionViewProperty")}
                 </Button>
               </Link>
             </div>

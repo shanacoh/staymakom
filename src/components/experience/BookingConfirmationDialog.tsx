@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/hooks/useLanguage";
 import { DualPrice } from "@/components/ui/DualPrice";
 import { getBoardTypeLabel } from "@/services/hyperguest";
+import { tPage, uiGroup } from "@/lib/translations";
 
 export interface BookingConfirmationData {
   hgBookingId: string;
@@ -58,90 +59,13 @@ interface BookingConfirmationDialogProps {
   lang?: "en" | "he" | "fr";
 }
 
-const translations = {
-  en: {
-    confirmed: "Booking Confirmed!",
-    confirmedSub: "Your experience has been booked successfully.",
-    pending: "Booking Submitted",
-    pendingSub: "Your booking is subject to hotel confirmation. You will be notified of the status.",
-    ref: "Reference",
-    hgRef: "Confirmation #",
-    hotel: "Hotel",
-    room: "Room",
-    board: "Board",
-    dates: "Dates",
-    guests: "Guests",
-    price: "Total price",
-    youPaid: "You paid",
-    giftCardLabel: "Gift card",
-    promoLabel: "Promo",
-    remarks: "Important notices",
-    specialRequests: "Your special requests",
-    close: "Close",
-    copyRef: "Copy reference",
-    nights: "nights",
-    taxesAtHotel: "To pay at the hotel (taxes & fees)",
-    vatNote: "Prices do not include VAT. Israeli residents are subject to 18% VAT payable at the hotel. Tourists with an entry permit (B/2, B/3, or B/4) and a valid foreign passport are not subject to VAT. Please make sure to keep the entry permit received upon arrival, as it may be required to confirm eligibility. If exemption cannot be validated at check-in, VAT will be charged accordingly.",
-    viewConfirmation: "View my confirmation",
-  },
-  he: {
-    confirmed: "!ההזמנה אושרה",
-    confirmedSub: "החוויה שלך הוזמנה בהצלחה.",
-    pending: "ההזמנה נשלחה",
-    pendingSub: "הזמנה זו כפופה לאישור המלון. תקבל/י עדכון על הסטטוס.",
-    ref: "מספר הפניה",
-    hgRef: "מספר אישור",
-    hotel: "מלון",
-    room: "חדר",
-    board: "ארוחות",
-    dates: "תאריכים",
-    guests: "אורחים",
-    price: "מחיר כולל",
-    youPaid: "שילמת",
-    giftCardLabel: "כרטיס מתנה",
-    promoLabel: "קוד הנחה",
-    remarks: "הערות חשובות",
-    specialRequests: "הבקשות המיוחדות שלך",
-    close: "סגור",
-    copyRef: "העתק מספר הפניה",
-    nights: "לילות",
-    taxesAtHotel: "לתשלום במלון (מסים ועמלות)",
-    vatNote: "המחירים אינם כוללים מע״מ. אזרחי ותושבי ישראל חייבים במע״מ בשיעור של 18%, אשר ישולם במלון. תיירים המחזיקים בדרכון זר ובאשרת כניסה (B/2, B/3 או B/4) אינם חייבים במע״מ; יש לשמור את אישור הכניסה שניתן בעת ההגעה, שכן ייתכן ויידרש לצורך אימות הזכאות. במידה ולא ניתן לאשר את הפטור במעמד הצ'ק-אין, יחויב המע״מ בהתאם.",
-    viewConfirmation: "צפה באישור שלי",
-  },
-  fr: {
-    confirmed: "Réservation confirmée !",
-    confirmedSub: "Votre expérience a été réservée avec succès.",
-    pending: "Réservation soumise",
-    pendingSub: "Cette réservation est soumise à confirmation par l'hôtel. Vous serez notifié du statut.",
-    ref: "Référence",
-    hgRef: "N° de confirmation",
-    hotel: "Hôtel",
-    room: "Chambre",
-    board: "Pension",
-    dates: "Dates",
-    guests: "Voyageurs",
-    price: "Prix total",
-    youPaid: "Vous avez payé",
-    giftCardLabel: "Carte cadeau",
-    promoLabel: "Code promo",
-    remarks: "Remarques importantes",
-    specialRequests: "Vos demandes spéciales",
-    close: "Fermer",
-    copyRef: "Copier la référence",
-    nights: "nuits",
-    taxesAtHotel: "À régler sur place (taxes et frais)",
-    vatNote: "Les prix n'incluent pas la TVA. Les résidents israéliens sont soumis à 18% de TVA payable à l'hôtel. Les touristes détenteurs d'un passeport étranger valide et d'un permis d'entrée (B/2, B/3 ou B/4) sont exonérés de TVA. Veuillez conserver le permis d'entrée reçu à l'arrivée, car il peut être demandé pour confirmer votre éligibilité. Si l'exonération ne peut être validée au moment du check-in, la TVA sera facturée en conséquence.",
-    viewConfirmation: "Voir ma confirmation",
-  },
-};
 
 function fmt(amount: number, _currency: string): string {
   return `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export function BookingConfirmationDialog({ open, onClose, data, lang = "en" }: BookingConfirmationDialogProps) {
-  const t = translations[lang];
+  const t = uiGroup("bookingConfirmationDialogTranslations");
   const navigate = useNavigate();
   // Langue réelle de la page : la page de confirmation reste en es / ru / de si c'était le cas.
   const { locale: currentLang } = useLanguage();
@@ -324,7 +248,7 @@ export function BookingConfirmationDialog({ open, onClose, data, lang = "en" }: 
             }}
             className="w-full"
           >
-            {lang === "he" ? "ההזמנות שלי" : lang === "fr" ? "Mes réservations" : "My Bookings"}
+            {tPage("bookingConfirmationDialogMyBookings")}
           </Button>
         </div>
       </DialogContent>

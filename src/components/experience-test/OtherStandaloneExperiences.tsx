@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import ExperienceCard from "@/components/ExperienceCard";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { tPage } from "@/lib/translations";
 
 interface OtherStandaloneExperiencesProps {
   currentExperienceId: string;
@@ -75,7 +76,7 @@ const OtherStandaloneExperiences = ({ currentExperienceId, categoryId, lang = "e
 
   if (!experiences || experiences.length === 0) return null;
 
-  const title = lang === "he" ? "חוויות נוספות" : lang === "fr" ? "Autres expériences" : "Other experiences";
+  const title = tPage("otherStandaloneExperiencesOtherExperiences");
 
   return (
     <section className="py-6 min-w-0 overflow-x-hidden w-full">

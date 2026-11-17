@@ -165,6 +165,15 @@ export const TRANSLATABLE_ENTITIES = {
       ...SEO_EN,
     ],
   },
+  hotel2_extra: {
+    // Options payantes affichées sur les fiches avec hôtel (« Late Check-out », « Wine in Room »...),
+    // reliées aux fiches par experience2_extras.
+    table: "hotel2_extras",
+    label: "Option payante (hôtel)",
+    published: [{ column: "is_available", equals: true }],
+    parent: { entityType: "hotel2", foreignKey: "hotel_id" },
+    fields: [t("name")],
+  },
   category: {
     table: "categories",
     label: "Mood (catégorie)",

@@ -3,6 +3,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { resizedImageUrl } from "@/lib/imageUrl";
 import { cn } from "@/lib/utils";
+import { tPage } from "@/lib/translations";
 
 interface HeroPhotoCarouselProps {
   /** Couverture puis galerie, dans l'ordre d'affichage. */
@@ -73,7 +74,7 @@ const HeroPhotoCarousel = ({
     );
   }
 
-  const seeAllLabel = lang === "he" ? "הצג הכל" : lang === "fr" ? "Voir tout" : "View all";
+  const seeAllLabel = tPage("heroPhotoCarouselViewAll");
   const arrowClass =
     "absolute top-1/2 -translate-y-1/2 z-10 h-9 w-9 rounded-full bg-white text-foreground shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity";
 
@@ -116,7 +117,7 @@ const HeroPhotoCarousel = ({
             type="button"
             onClick={scrollPrev}
             className={cn(arrowClass, "left-3")}
-            aria-label={lang === "he" ? "התמונה הקודמת" : lang === "fr" ? "Photo précédente" : "Previous photo"}
+            aria-label={tPage("heroPhotoCarouselPreviousPhoto")}
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -124,7 +125,7 @@ const HeroPhotoCarousel = ({
             type="button"
             onClick={scrollNext}
             className={cn(arrowClass, "right-3")}
-            aria-label={lang === "he" ? "התמונה הבאה" : lang === "fr" ? "Photo suivante" : "Next photo"}
+            aria-label={tPage("heroPhotoCarouselNextPhoto")}
           >
             <ChevronRight className="h-5 w-5" />
           </button>

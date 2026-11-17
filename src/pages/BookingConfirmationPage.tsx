@@ -20,102 +20,8 @@ import { toast } from "sonner";
 import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import { SEOHead } from "@/components/SEOHead";
+import { pageLocale, tPage, uiGroup } from "@/lib/translations";
 
-const t = {
-  en: {
-    title: "Your experience is booked!",
-    cancelledTitle: "Booking cancelled",
-    cancelledSub: (email: string) => `A cancellation confirmation has been sent to ${email}`,
-    cancelledOn: "Cancelled on",
-    emailSent: (email: string) => `A confirmation email has been sent to ${email}`,
-    notFound: "Booking not found",
-    notFoundDesc: "This confirmation link is invalid or has expired.",
-    backHome: "Back to Home",
-    myBookings: "My bookings",
-    ref: "Staymakom Reference",
-    hgRef: "Confirmation #",
-    hotel: "Hotel",
-    room: "Room",
-    board: "Board",
-    dates: "Dates",
-    guests: "Guests",
-    nights: "nights",
-    totalPaid: "Total paid online",
-    taxesAtHotel: "taxes & fees at hotel",
-    specialRequests: "Your special requests",
-    remarks: "Important information",
-    onRequest: "Your booking is pending hotel confirmation. You will be notified by email.",
-    freeCancelLong: (date: string) => `You can cancel for free until ${date}. After that date, fees may apply.`,
-    nonRefundableLong: "This booking is non-refundable.",
-    vatNote: "Prices do not include VAT. Israeli residents are subject to 18% VAT payable at the hotel. Tourists with an entry permit (B/2, B/3, or B/4) and a valid foreign passport are not subject to VAT. Please make sure to keep the entry permit received upon arrival, as it may be required to confirm eligibility. If exemption cannot be validated at check-in, VAT will be charged accordingly.",
-    resendEmail: "Resend confirmation email",
-    resendSuccess: "Confirmation email sent!",
-    resendError: "Error sending email",
-    loading: "Loading...",
-  },
-  he: {
-    title: "!החוויה שלך הוזמנה",
-    cancelledTitle: "ההזמנה בוטלה",
-    cancelledSub: (email: string) => `אישור ביטול נשלח אל ${email}`,
-    cancelledOn: "בוטלה בתאריך",
-    emailSent: (email: string) => `מייל אישור נשלח אל ${email}`,
-    notFound: "הזמנה לא נמצאה",
-    notFoundDesc: "קישור אישור זה אינו תקין או שפג תוקפו.",
-    backHome: "חזרה לדף הבית",
-    myBookings: "ההזמנות שלי",
-    ref: "מספר הפניה Staymakom",
-    hgRef: "מספר אישור",
-    hotel: "מלון",
-    room: "חדר",
-    board: "ארוחות",
-    dates: "תאריכים",
-    guests: "אורחים",
-    nights: "לילות",
-    totalPaid: "סה\"כ שולם אונליין",
-    taxesAtHotel: "מסים ועמלות במלון",
-    specialRequests: "הבקשות המיוחדות שלך",
-    remarks: "מידע חשוב",
-    onRequest: "הזמנתך ממתינה לאישור המלון. תקבל/י עדכון במייל.",
-    freeCancelLong: (date: string) => `ניתן לבטל בחינם עד ${date}. לאחר מכן עלולים לחול דמי ביטול.`,
-    nonRefundableLong: "הזמנה זו אינה ניתנת להחזר.",
-    vatNote: "המחירים אינם כוללים מע״מ. אזרחי ותושבי ישראל חייבים במע״מ בשיעור של 18%, אשר ישולם במלון. תיירים המחזיקים בדרכון זר ובאשרת כניסה (B/2, B/3 או B/4) אינם חייבים במע״מ; יש לשמור את אישור הכניסה שניתן בעת ההגעה, שכן ייתכן ויידרש לצורך אימות הזכאות. במידה ולא ניתן לאשר את הפטור במעמד הצ'ק-אין, יחויב המע״מ בהתאם.",
-    resendEmail: "שלח מחדש את אישור ההזמנה",
-    resendSuccess: "!אישור נשלח בהצלחה",
-    resendError: "שגיאה בשליחת המייל",
-    loading: "...טוען",
-  },
-  fr: {
-    title: "Votre expérience est réservée !",
-    cancelledTitle: "Réservation annulée",
-    cancelledSub: (email: string) => `Une confirmation d'annulation a été envoyée à ${email}`,
-    cancelledOn: "Annulée le",
-    emailSent: (email: string) => `Un email de confirmation a été envoyé à ${email}`,
-    notFound: "Réservation introuvable",
-    notFoundDesc: "Ce lien de confirmation est invalide ou a expiré.",
-    backHome: "Retour à l'accueil",
-    myBookings: "Mes réservations",
-    ref: "Référence Staymakom",
-    hgRef: "N° de confirmation",
-    hotel: "Hôtel",
-    room: "Chambre",
-    board: "Pension",
-    dates: "Dates",
-    guests: "Voyageurs",
-    nights: "nuits",
-    totalPaid: "Total payé en ligne",
-    taxesAtHotel: "taxes et frais à l'hôtel",
-    specialRequests: "Vos demandes spéciales",
-    remarks: "Informations importantes",
-    onRequest: "Votre réservation est en attente de confirmation par l'hôtel. Vous serez notifié par email.",
-    freeCancelLong: (date: string) => `Vous pouvez annuler gratuitement jusqu'au ${date}. Après cette date, des frais s'appliquent.`,
-    nonRefundableLong: "Cette réservation n'est pas remboursable.",
-    vatNote: "Les prix n'incluent pas la TVA. Les résidents israéliens sont soumis à 18% de TVA payable à l'hôtel. Les touristes détenteurs d'un passeport étranger valide et d'un permis d'entrée (B/2, B/3 ou B/4) sont exonérés de TVA. Veuillez conserver le permis d'entrée reçu à l'arrivée, car il peut être demandé pour confirmer votre éligibilité. Si l'exonération ne peut être validée au moment du check-in, la TVA sera facturée en conséquence.",
-    resendEmail: "Renvoyer l'email de confirmation",
-    resendSuccess: "Email de confirmation renvoyé !",
-    resendError: "Erreur lors de l'envoi",
-    loading: "Chargement...",
-  },
-};
 
 function fmt(amount: number, _currency: string): string {
   return `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -123,14 +29,14 @@ function fmt(amount: number, _currency: string): string {
 
 function formatDate(dateStr: string, lang: string): string {
   const date = new Date(dateStr);
-  const locale = lang === "he" ? "he-IL" : lang === "fr" ? "fr-FR" : "en-US";
+  const locale = tPage("dateLocale");
   return date.toLocaleDateString(locale, { weekday: "short", year: "numeric", month: "long", day: "numeric" });
 }
 
 export default function BookingConfirmationPage() {
   const { token } = useParams<{ token: string }>();
   const { lang } = useLanguage();
-  const labels = t[lang] || t.en;
+  const labels = uiGroup("bookingConfirmationPage");
 
   const { data: booking, isLoading, error } = useQuery({
     queryKey: ["booking-confirmation", token],
@@ -179,7 +85,7 @@ export default function BookingConfirmationPage() {
 
   const copyRef = (ref: string) => {
     navigator.clipboard.writeText(ref);
-    toast.success(lang === "he" ? "הועתק!" : lang === "fr" ? "Copié !" : "Copied!");
+    toast.success(tPage("bookingConfirmationPageCopied"));
   };
 
   if (isLoading) {
@@ -224,7 +130,7 @@ export default function BookingConfirmationPage() {
   const cancellationPolicies = hgRaw?.rooms?.[0]?.ratePlans?.[0]?.cancellationPolicies 
     || hgRaw?.cancellationPolicies 
     || null;
-  const cancellation = analyzeCancellationPolicies(cancellationPolicies, booking.checkin, lang);
+  const cancellation = analyzeCancellationPolicies(cancellationPolicies, booking.checkin, pageLocale());
 
   // Extract display taxes from raw data
   const displayTaxes = hgRaw?.rooms?.[0]?.ratePlans?.[0]?.prices?.display?.taxes 
@@ -425,7 +331,7 @@ export default function BookingConfirmationPage() {
                         {cancellation.effectiveDeadline && (
                           <p className="text-xs text-muted-foreground pl-5">
                             {labels.freeCancelLong(cancellation.effectiveDeadline.toLocaleDateString(
-                              lang === "he" ? "he-IL" : lang === "fr" ? "fr-FR" : "en-US",
+                              tPage("dateLocale"),
                               { year: "numeric", month: "long", day: "numeric" }
                             ))}
                           </p>
@@ -459,7 +365,7 @@ export default function BookingConfirmationPage() {
               )}
               <Badge variant={isCancelled ? "destructive" : isConfirmed ? "default" : "secondary"} className="text-xs">
                 {isCancelled ? (
-                  <><XCircle className="h-3 w-3 mr-1" />{lang === "he" ? "בוטל" : lang === "fr" ? "Annulé" : "Cancelled"}</>
+                  <><XCircle className="h-3 w-3 mr-1" />{tPage("bookingConfirmationPageCancelled")}</>
                 ) : isConfirmed ? (
                   <><Check className="h-3 w-3 mr-1" />{booking.hg_status}</>
                 ) : (

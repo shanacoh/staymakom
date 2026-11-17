@@ -3,6 +3,7 @@ import { Check } from "lucide-react";
 import { ShareNetwork, EnvelopeSimple, MessengerLogo, WhatsappLogo } from "@phosphor-icons/react";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { trackShareClicked } from "@/lib/analytics";
+import { uiGroup } from "@/lib/translations";
 
 interface ShareDialogProps {
   open: boolean;
@@ -16,35 +17,9 @@ const ShareDialog = ({ open, onOpenChange, url, title, lang }: ShareDialogProps)
   const isRTL = lang === 'he';
   // Extract slug from url for analytics
   const slug = url.split('/experience/')[1]?.split('?')[0] || '';
-  
-  const translations = {
-    en: {
-      shareTitle: "Share this experience",
-      shareDescription: "Share via WhatsApp, Messenger, or Email",
-      copied: "Copied",
-      email: "Email",
-      messenger: "Messenger",
-      whatsapp: "WhatsApp",
-    },
-    he: {
-      shareTitle: "שתפו את החוויה",
-      shareDescription: "שתפו דרך וואטסאפ, מסנג'ר או אימייל",
-      copied: "הועתק",
-      email: "אימייל",
-      messenger: "מסנג'ר",
-      whatsapp: "וואטסאפ",
-    },
-    fr: {
-      shareTitle: "Partager cette expérience",
-      shareDescription: "Partager via WhatsApp, Messenger ou Email",
-      copied: "Copié",
-      email: "Email",
-      messenger: "Messenger",
-      whatsapp: "WhatsApp",
-    },
-  };
 
-  const t = translations[lang];
+
+  const t = uiGroup("shareDialogTranslations");
 
   const truncatedUrl = url.length > 30 ? url.substring(0, 30) + '...' : url;
 

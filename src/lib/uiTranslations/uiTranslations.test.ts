@@ -8,17 +8,35 @@ const AUTO = ["es", "ru", "de"] as const;
 /** Tous les textes d'une valeur (chaîne, liste, FAQ, fonction appelée avec 2). */
 function textsOf(value: unknown): string[] {
   if (typeof value === "string") return [value];
-  if (typeof value === "function") return textsOf((value as (n: number) => unknown)(2));
+  if (typeof value === "function") return textsOf((value as (a: number, b: number, c: number) => unknown)(2, 2, 2));
   if (Array.isArray(value)) return value.flatMap(textsOf);
   if (value && typeof value === "object") return Object.values(value).flatMap(textsOf);
   return [];
 }
 
 describe("textes d'interface ES / RU / DE", () => {
-  it("les trois langues traduisent exactement les mêmes clés", () => {
-    const keys = (l: (typeof AUTO)[number]) => Object.keys(AUTO_UI_TRANSLATIONS[l]).sort();
-    expect(keys("ru")).toEqual(keys("es"));
-    expect(keys("de")).toEqual(keys("es"));
+  it("les trois langues traduisent les mêmes clés (sauf mots qui restent identiques à l'anglais)", () => {
+    // Une langue peut garder le texte anglais tel quel (« Total », « Hotel »...) : la clé est alors
+    // absente de son fichier et l'anglais s'affiche. Toute autre différence est un oubli.
+    const sameAsEnglish: Record<(typeof AUTO)[number], string[]> = {
+      es: ["Email", "Email *", "Email (optional)", "Total", "TOTAL", "Error", "Hotel", "Kosher", "No", "Israel", "Australia", "pts"],
+      ru: [],
+      de: ["Hotel", "Israel", "Format", "All inclusive", "Elite", "optional", "Check-in", "Check-out", "Check-in / Check-out"],
+    };
+    const all = new Set(AUTO.flatMap((l) => Object.keys(AUTO_UI_TRANSLATIONS[l])));
+    for (const l of AUTO) {
+      const missing = [...all].filter(
+        (k) => !(k in AUTO_UI_TRANSLATIONS[l]) && !sameAsEnglish[l].includes(translations.en[k as UiKey] as string),
+      );
+      expect(missing, l).toEqual([]);
+    }
+  });
+
+  it("russe : pas d'alphabet latin hors noms de marque", () => {
+    const brands = /STAYMAKOM|WhatsApp|Messenger|Revolut|Apple Maps|Google Maps|Waze|Facebook|\{n\}|ru-RU|ILS|B\/[234]/g;
+    for (const [key, value] of Object.entries(AUTO_UI_TRANSLATIONS.ru)) {
+      for (const text of textsOf(value)) expect(text.replace(brands, ""), `ru.${key}`).not.toMatch(/[A-Za-z]/);
+    }
   });
 
   it("chaque clé traduite a la même forme que l'anglais (texte, liste, fonction, FAQ)", () => {
@@ -44,7 +62,7 @@ describe("textes d'interface ES / RU / DE", () => {
   });
 
   it("aucun tiret long, et pas d'anglais oublié (texte identique à l'anglais)", () => {
-    const allowedSame = new Set(["total", "Spa", "Hotel", "POPULAR"]);
+    const allowedSame = new Set(["total", "Spa", "Hotel", "POPULAR", "Kosher", "No"]);
     for (const l of AUTO) {
       for (const [key, value] of Object.entries(AUTO_UI_TRANSLATIONS[l])) {
         for (const text of textsOf(value)) expect(text, `${l}.${key}`).not.toMatch(/—/);

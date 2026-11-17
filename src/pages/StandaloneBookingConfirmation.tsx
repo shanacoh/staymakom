@@ -18,79 +18,16 @@ import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import { SEOHead } from "@/components/SEOHead";
 import { formatTimeSlot } from "@/lib/timeSlots";
+import { tPage, uiGroup } from "@/lib/translations";
 
 // ─── Translations ─────────────────────────────────────────────────────────────
 
-const T = {
-  en: {
-    confirmed: "Your experience is booked!",
-    cancelled: "Booking cancelled",
-    notFound: "Booking not found",
-    notFoundDesc: "This confirmation link is invalid or has expired.",
-    emailSent: (email: string) => `A confirmation email has been sent to ${email}`,
-    experience: "Experience",
-    date: "Date",
-    time: "Time",
-    guests: "Guests",
-    totalPaid: "Total paid",
-    meetingPoint: "Meeting point",
-    goodToKnow: "Good to know",
-    ref: "Reference",
-    backHome: "Back to Home",
-    copyRef: "Copy reference",
-    copied: "Copied!",
-    loading: "Loading...",
-    person: "person",
-    persons: "persons",
-  },
-  he: {
-    confirmed: "!החוויה שלך הוזמנה",
-    cancelled: "ההזמנה בוטלה",
-    notFound: "הזמנה לא נמצאה",
-    notFoundDesc: "קישור אישור זה אינו תקין או שפג תוקפו.",
-    emailSent: (email: string) => `מייל אישור נשלח אל ${email}`,
-    experience: "חוויה",
-    date: "תאריך",
-    time: "שעה",
-    guests: "משתתפים",
-    totalPaid: "שולם",
-    meetingPoint: "נקודת מפגש",
-    goodToKnow: "טוב לדעת",
-    ref: "מספר הפניה",
-    backHome: "חזרה לדף הבית",
-    copyRef: "העתק מספר הפניה",
-    copied: "הועתק!",
-    loading: "טוען...",
-    person: "משתתף",
-    persons: "משתתפים",
-  },
-  fr: {
-    confirmed: "Votre expérience est réservée !",
-    cancelled: "Réservation annulée",
-    notFound: "Réservation introuvable",
-    notFoundDesc: "Ce lien de confirmation est invalide ou a expiré.",
-    emailSent: (email: string) => `Un email de confirmation a été envoyé à ${email}`,
-    experience: "Expérience",
-    date: "Date",
-    time: "Créneau",
-    guests: "Participants",
-    totalPaid: "Montant payé",
-    meetingPoint: "Point de rendez-vous",
-    goodToKnow: "Bon à savoir",
-    ref: "Référence",
-    backHome: "Retour à l'accueil",
-    copyRef: "Copier la référence",
-    copied: "Copié !",
-    loading: "Chargement...",
-    person: "personne",
-    persons: "personnes",
-  },
-};
+// Textes : clés « standaloneBookingConfirmation__… » de src/lib/translations.ts.
 
 function formatDateDisplay(dateStr: string, lang: string): string {
   try {
     const date = new Date(dateStr);
-    return date.toLocaleDateString(lang === "he" ? "he-IL" : lang === "fr" ? "fr-FR" : "en-US", {
+    return date.toLocaleDateString(tPage("dateLocale"), {
       weekday: "long", year: "numeric", month: "long", day: "numeric",
     });
   } catch {
@@ -103,7 +40,7 @@ function formatDateDisplay(dateStr: string, lang: string): string {
 export default function StandaloneBookingConfirmation() {
   const { token } = useParams<{ token: string }>();
   const { lang } = useLanguage();
-  const t = T[lang as "en" | "he" | "fr"] || T.en;
+  const t = uiGroup("standaloneBookingConfirmation");
   const isRTL = lang === "he";
 
   const { data: booking, isLoading } = useQuery({

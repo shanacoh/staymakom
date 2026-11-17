@@ -21,11 +21,12 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { cn } from "@/lib/utils";
 import { CalendarIcon, Minus, Plus, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
-import { fr as frLocale, he as heLocale } from "date-fns/locale";
 import { isLastMinuteDate, toLocalDateStr } from "@/lib/boatAvailability";
 import { WHATSAPP_NUMBER } from "@/constants/whatsapp";
 import { PhoneInput } from "@/components/PhoneInput";
 import { trackRequestClicked, type ProductLike } from "@/lib/analytics";
+import { tPage, uiRecord, pageLocale } from "@/lib/translations";
+import { dateFnsLocale } from "@/lib/dateFnsLocale";
 
 type PriceVariant = {
   id: string;
@@ -50,23 +51,23 @@ interface Props {
 }
 
 const DURATION_OPTIONS = [
-  { minutes: 60, label: { en: "1h", fr: "1h", he: "שעה" } },
-  { minutes: 90, label: { en: "1h30", fr: "1h30", he: "שעה וחצי" } },
-  { minutes: 120, label: { en: "2h", fr: "2h", he: "שעתיים" } },
-  { minutes: 180, label: { en: "3h", fr: "3h", he: "3 שעות" } },
-  { minutes: 240, label: { en: "4h", fr: "4h", he: "4 שעות" } },
+  { minutes: 60, label: uiRecord("boatAvailabilityPopup1h") },
+  { minutes: 90, label: uiRecord("boatAvailabilityPopup1h30") },
+  { minutes: 120, label: uiRecord("boatAvailabilityPopup2h") },
+  { minutes: 180, label: uiRecord("boatAvailabilityPopup3h") },
+  { minutes: 240, label: uiRecord("boatAvailabilityPopup4h") },
 ];
 
 const TIME_PERIODS = [
-  { value: "morning", label: { en: "Morning", fr: "Matin", he: "בוקר" } },
-  { value: "afternoon", label: { en: "Afternoon", fr: "Après-midi", he: "צהריים" } },
-  { value: "sunset", label: { en: "Sunset", fr: "Coucher de soleil", he: "שקיעה" } },
-  { value: "precise", label: { en: "Precise time", fr: "Heure précise", he: "שעה מדויקת" } },
+  { value: "morning", label: uiRecord("boatAvailabilityPopupMorning") },
+  { value: "afternoon", label: uiRecord("boatAvailabilityPopupAfternoon") },
+  { value: "sunset", label: uiRecord("boatAvailabilityPopupSunset") },
+  { value: "precise", label: uiRecord("boatAvailabilityPopupPreciseTime") },
 ] as const;
 
 export default function BoatAvailabilityPopup({ open, onOpenChange, boat }: Props) {
   const { lang } = useLanguage();
-  const l = lang as "en" | "fr" | "he";
+  const l = pageLocale();
 
   const availableDurations = boat
     ? DURATION_OPTIONS.filter((opt) => boat.price_variants.some((v) => v.duration_minutes === opt.minutes))
@@ -106,42 +107,30 @@ export default function BoatAvailabilityPopup({ open, onOpenChange, boat }: Prop
   };
 
   const t = {
-    title: lang === "he" ? "בדיקת זמינות" : lang === "fr" ? "Vérifier une disponibilité" : "Check availability",
-    departure: lang === "he" ? "יציאה מ" : lang === "fr" ? "Départ" : "Departure",
-    any: lang === "he" ? "לא משנה" : lang === "fr" ? "Peu importe" : "No preference",
-    persons: lang === "he" ? "מספר אנשים" : lang === "fr" ? "Nombre de personnes" : "Number of people",
-    duration: lang === "he" ? "משך" : lang === "fr" ? "Durée" : "Duration",
-    date: lang === "he" ? "תאריך (אופציונלי)" : lang === "fr" ? "Date (facultatif)" : "Date (optional)",
-    time: lang === "he" ? "שעה מועדפת" : lang === "fr" ? "Heure souhaitée" : "Preferred time",
-    preciseTimePlaceholder: lang === "he" ? "לדוגמה 14:30" : lang === "fr" ? "Ex : 14h30" : "E.g. 2:30pm",
-    firstName: lang === "he" ? "שם פרטי" : lang === "fr" ? "Prénom" : "First name",
+    title: tPage("boatAvailabilityPopupCheckAvailability"),
+    departure: tPage("boatAvailabilityPopupDeparture"),
+    any: tPage("boatAvailabilityPopupNoPreference"),
+    persons: tPage("boatAvailabilityPopupNumberOfPeople"),
+    duration: tPage("boatAvailabilityPopupDuration"),
+    date: tPage("boatAvailabilityPopupDateOptional"),
+    time: tPage("boatAvailabilityPopupPreferredTime"),
+    preciseTimePlaceholder: tPage("boatAvailabilityPopupEG230pm"),
+    firstName: tPage("boatAvailabilityPopupFirstName"),
     whatsapp: "WhatsApp",
-    email: lang === "he" ? "אימייל (אופציונלי)" : lang === "fr" ? "Email (facultatif)" : "Email (optional)",
+    email: tPage("boatAvailabilityPopupEmailOptional"),
     disclaimer:
-      lang === "he"
-        ? "אין צורך לשלם עכשיו. נבדוק זמינות מול הסקיפר, ולאחר מכן מקדמה של 500 ₪ תבטיח את היציאה שלכם."
-        : lang === "fr"
-        ? "Rien à payer maintenant. On confirme la dispo avec le skipper, puis un acompte de 500 ₪ bloque votre sortie."
-        : "Nothing to pay now. We confirm availability with the skipper, then a 500 ₪ deposit locks in your outing.",
-    submit: lang === "he" ? "שליחת הבקשה" : lang === "fr" ? "Envoyer ma demande" : "Send my request",
-    sending: lang === "he" ? "שולח…" : lang === "fr" ? "Envoi…" : "Sending…",
-    missing: lang === "he" ? "יש למלא שם פרטי ומספר וואטסאפ" : lang === "fr" ? "Merci de renseigner votre prénom et votre WhatsApp" : "Please fill in your first name and WhatsApp number",
-    genericError: lang === "he" ? "שגיאה, נסו שוב" : lang === "fr" ? "Une erreur est survenue, merci de réessayer" : "Something went wrong, please try again",
+      tPage("boatAvailabilityPopupNothingToPayNowWe"),
+    submit: tPage("boatAvailabilityPopupSendMyRequest"),
+    sending: tPage("boatAvailabilityPopupSending"),
+    missing: tPage("boatAvailabilityPopupPleaseFillInYourFirst"),
+    genericError: tPage("boatAvailabilityPopupSomethingWentWrongPleaseTry"),
     lastMinuteBanner:
-      lang === "he"
-        ? "רגע אחרון: נבדוק ישירות מול הסקיפר."
-        : lang === "fr"
-        ? "Dernière minute : on vérifie en direct avec le skipper."
-        : "Last minute: we'll check directly with the skipper.",
-    successTitle: lang === "he" ? "הבקשה נשלחה!" : lang === "fr" ? "Demande envoyée !" : "Request sent!",
+      tPage("boatAvailabilityPopupLastMinuteWeLlCheck"),
+    successTitle: tPage("boatAvailabilityPopupRequestSent"),
     successBody:
-      lang === "he"
-        ? "נחזור אליכם עם התשובה מהסקיפר בהקדם."
-        : lang === "fr"
-        ? "On revient vers vous avec la réponse du skipper au plus vite."
-        : "We'll get back to you with the skipper's answer as soon as possible.",
-    continueWhatsapp: lang === "he" ? "המשך בוואטסאפ" : lang === "fr" ? "Continuer sur WhatsApp" : "Continue on WhatsApp",
-    ref: lang === "he" ? "מספר בקשה" : lang === "fr" ? "Référence" : "Reference",
+      tPage("boatAvailabilityPopupWeLlGetBackTo"),
+    continueWhatsapp: tPage("boatAvailabilityPopupContinueOnWhatsapp"),
+    ref: tPage("boatAvailabilityPopupReference"),
   };
 
   const isUrgent = date ? isLastMinuteDate(date) : false;
@@ -216,7 +205,7 @@ export default function BoatAvailabilityPopup({ open, onOpenChange, boat }: Prop
   const whatsappMessage = (() => {
     if (!result) return "";
     const ref = result.requestId.slice(0, 8).toUpperCase();
-    const boatPart = boat ? boat.title : `${preferredCity === "any" ? (lang === "fr" ? "Tel Aviv ou Herzliya" : "Tel Aviv or Herzliya") : preferredCity}`;
+    const boatPart = boat ? boat.title : `${preferredCity === "any" ? (tPage("boatAvailabilityPopupTelAvivOrHerzliya")) : preferredCity}`;
     const dateLabel = date || (lang === "fr" ? "date à définir" : "date to confirm");
     if (lang === "fr") {
       return `Bonjour, je viens de faire une demande sur STAYMAKOM (réf. ${ref}) : ${boatPart}, ${durationLabel(durationMinutes)}, ${persons} personnes, ${dateLabel}.`;
@@ -316,7 +305,7 @@ export default function BoatAvailabilityPopup({ open, onOpenChange, boat }: Prop
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="rounded-full h-9 gap-2 w-fit">
                     <CalendarIcon className="h-3.5 w-3.5" />
-                    {date ? format(new Date(date + "T12:00:00"), "d MMM", { locale: lang === "fr" ? frLocale : lang === "he" ? heLocale : undefined }) : "—"}
+                    {date ? format(new Date(date + "T12:00:00"), "d MMM", { locale: dateFnsLocale(l) }) : "—"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -324,7 +313,7 @@ export default function BoatAvailabilityPopup({ open, onOpenChange, boat }: Prop
                     mode="single"
                     selected={date ? new Date(date + "T12:00:00") : undefined}
                     onSelect={(d) => setDate(d ? toLocalDateStr(d) : "")}
-                    locale={lang === "fr" ? frLocale : lang === "he" ? heLocale : undefined}
+                    locale={dateFnsLocale(l)}
                   />
                 </PopoverContent>
               </Popover>

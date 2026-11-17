@@ -38,6 +38,8 @@ import { ReassuranceLine } from "@/components/reviews/ReassuranceLine";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useCustomerNationality } from "@/hooks/useCustomerNationality";
 import { DateRange } from "react-day-picker";
+import { dateFnsLocale } from "@/lib/dateFnsLocale";
+import { pageLocale, tPage, uiGroup } from "@/lib/translations";
 
 interface DateOption {
   id: string;
@@ -109,68 +111,7 @@ export function BookingPanel2({
   const { symbol: currencySymbol, convert } = useCurrency();
   const customerNationality = useCustomerNationality();
 
-  const t = {
-    en: {
-      title: "Book this experience",
-      dates: "Dates",
-      guests: "Number of guests",
-      adults: "Adults",
-      children: "Children (2-12)",
-      infants: "Infants (0-1)",
-      childAge: "Age",
-      selectDates: "Select dates",
-      noHyperguest: "This experience is not available for online booking yet.",
-      error: "Error loading availability. Please try again.",
-      next: "Book this stay",
-      onRequestWarning: "This booking is subject to hotel confirmation. You will be notified of the status.",
-      showMore: "Show more dates ↓",
-      bestRate: "● Best rate",
-      enhanceTitle: "ENHANCE YOUR STAY",
-      perPerson: "per person",
-      perNight: "per night",
-      perStay: "per stay",
-    },
-    he: {
-      title: "הזמן חוויה זו",
-      dates: "תאריכים",
-      guests: "מספר אורחים",
-      adults: "מבוגרים",
-      children: "ילדים (2-12)",
-      infants: "תינוקות (0-1)",
-      childAge: "גיל",
-      selectDates: "בחר תאריכים",
-      noHyperguest: "חוויה זו אינה זמינה עדיין להזמנה מקוונת.",
-      error: "שגיאה בטעינת הזמינות. אנא נסה שוב.",
-      next: "הזמן שהייה זו",
-      onRequestWarning: "הזמנה זו כפופה לאישור המלון. תקבל/י עדכון על הסטטוס.",
-      showMore: "הצג עוד תאריכים ↓",
-      bestRate: "● הכי משתלם",
-      enhanceTitle: "שדרגו את השהייה",
-      perPerson: "לאדם",
-      perNight: "ללילה",
-      perStay: "לשהייה",
-    },
-    fr: {
-      title: "Réserver cette expérience",
-      dates: "Dates",
-      guests: "Nombre de voyageurs",
-      adults: "Adultes",
-      children: "Enfants (2-12 ans)",
-      infants: "Bébés (0-1 an)",
-      childAge: "Âge",
-      selectDates: "Sélectionnez des dates",
-      noHyperguest: "Cette expérience n'est pas encore disponible pour la réservation en ligne.",
-      error: "Erreur lors de la récupération des disponibilités. Veuillez réessayer.",
-      next: "Réserver ce séjour",
-      onRequestWarning: "Cette réservation est soumise à confirmation par l'hôtel. Vous serez notifié du statut.",
-      showMore: "Voir plus de dates ↓",
-      bestRate: "● Meilleur tarif",
-      enhanceTitle: "AMÉLIOREZ VOTRE SÉJOUR",
-      perPerson: "par pers.",
-      perNight: "par nuit",
-      perStay: "par séjour",
-    },
-  }[lang];
+  const t = uiGroup("bookingPanel2");
 
   // ── State ──
   useQuery({
@@ -605,10 +546,10 @@ export function BookingPanel2({
               window.location.href = `/contact?subject=Stay Request: ${experienceTitle}&experience=${experienceSlug}`;
             }}
           >
-            {lang === 'he' ? 'בקשו שהייה זו' : lang === 'fr' ? 'Demander ce séjour' : 'Request this stay'}
+            {tPage("bookingPanel2RequestThisStay")}
           </Button>
           <p className="text-xs text-center text-muted-foreground">
-            {lang === 'he' ? 'נאשר זמינות תוך 24 שעות' : lang === 'fr' ? 'Nous confirmerons la disponibilité sous 24h' : "We'll confirm availability within 24h"}
+            {tPage("bookingPanel2WeLlConfirmAvailabilityWithin")}
           </p>
           <VitrineBookingBlockedDialog
             open={showVitrineDialog}
@@ -628,9 +569,9 @@ export function BookingPanel2({
   // Guests label for collapsed view
   const guestsLabel = (() => {
     const parts: string[] = [];
-    parts.push(`${adults} ${adults === 1 ? (lang === 'he' ? 'מבוגר' : lang === 'fr' ? 'adulte' : 'adult') : (lang === 'he' ? 'מבוגרים' : lang === 'fr' ? 'adultes' : 'adults')}`);
+    parts.push(`${adults} ${adults === 1 ? (tPage("bookingPanel2Adult")) : (tPage("bookingPanel2Adults"))}`);
     if (childrenAges.length > 0) {
-      parts.push(`${childrenAges.length} ${lang === 'he' ? 'ילדים' : lang === 'fr' ? 'enfants' : 'children'}`);
+      parts.push(`${childrenAges.length} ${tPage("bookingPanel2Children")}`);
     }
     return parts.join(', ');
   })();
@@ -693,7 +634,7 @@ export function BookingPanel2({
                         <div key={idx} className="flex items-center gap-2">
                           <Baby className="h-3.5 w-3.5 text-muted-foreground" />
                           <span className="text-xs text-muted-foreground w-16">
-                            {age < 2 ? (lang === "he" ? "תינוק" : lang === "fr" ? "Bébé" : "Infant") : (lang === "he" ? `ילד ${idx + 1}` : lang === "fr" ? `Enfant ${idx + 1}` : `Child ${idx + 1}`)}
+                            {age < 2 ? (tPage("bookingPanel2Infant")) : tPage("childNumber")(idx + 1)}
                           </span>
                           <Select
                             value={String(age)}
@@ -709,7 +650,7 @@ export function BookingPanel2({
                             <SelectContent>
                               {Array.from({ length: 13 }, (_, i) => (
                                 <SelectItem key={i} value={String(i)}>
-                                  {i} {lang === "he" ? "שנים" : lang === "fr" ? "ans" : i === 1 ? "yr" : "yrs"}
+                                  {tPage("ageYears")(i)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -746,8 +687,8 @@ export function BookingPanel2({
                 )}
               >
                 {n} {n === 1
-                  ? (lang === "he" ? "לילה" : lang === "fr" ? "nuit" : "night")
-                  : (lang === "he" ? "לילות" : lang === "fr" ? "nuits" : "nights")
+                  ? (tPage("bookingPanel2Night"))
+                  : (tPage("bookingPanel2Nights"))
                 }
               </button>
             ))}
@@ -761,7 +702,7 @@ export function BookingPanel2({
                   selectedTab === "pick" ? "border-primary bg-primary/5 font-medium" : "border-border"
                 )}
               >
-                {lang === "he" ? "בחר תאריכים" : lang === "fr" ? "Choisir" : "Pick dates"}
+                {tPage("bookingPanel2PickDates")}
               </button>
             )}
           </div>
@@ -772,12 +713,12 @@ export function BookingPanel2({
               {isLoadingDates && (
                 <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  {lang === "he" ? "בודק זמינות..." : lang === "fr" ? "Vérification des disponibilités..." : "Checking availability..."}
+                  {tPage("bookingPanel2CheckingAvailability")}
                 </div>
               )}
               {!isLoadingDates && displayQuickDates.length === 0 && (
                 <p className="text-sm text-muted-foreground py-4 text-center">
-                  {lang === "he" ? "אין תאריכים זמינים כרגע" : lang === "fr" ? "Aucune date disponible pour le moment" : "No available dates at the moment"}
+                  {tPage("bookingPanel2NoAvailableDatesAtThe")}
                 </p>
               )}
               {!isLoadingDates && displayQuickDates.length > 0 && (
@@ -791,7 +732,7 @@ export function BookingPanel2({
                       const isBest = isBestRateSlot(opt);
                       const checkinStr = (opt.checkin instanceof Date ? opt.checkin : new Date(opt.checkin as string)).toISOString().split('T')[0];
                       const policies = opt.cheapestCancellationPolicies ?? selectedRatePlan?.cancellationPolicies ?? null;
-                      const cancellation = analyzeCancellationPolicies(policies, checkinStr, lang);
+                      const cancellation = analyzeCancellationPolicies(policies, checkinStr, pageLocale());
                       return (
                         <label
                           key={opt.id}
@@ -809,8 +750,8 @@ export function BookingPanel2({
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {opt.nights} {opt.nights === 1
-                                ? (lang === "he" ? "לילה" : lang === "fr" ? "nuit" : "night")
-                                : (lang === "he" ? "לילות" : lang === "fr" ? "nuits" : "nights")
+                                ? (tPage("bookingPanel2Night"))
+                                : (tPage("bookingPanel2Nights"))
                               }
                             </p>
                             {cancellation.badgeText && (
@@ -834,7 +775,7 @@ export function BookingPanel2({
                             {opt.cheapestPrice != null && (
                               <>
                                 <p className="text-[10px] text-muted-foreground">
-                                  {lang === "he" ? "מ-" : lang === "fr" ? "à partir de" : "from"}
+                                  {tPage("bookingPanel2From")}
                                 </p>
                                 {isBarRateLoading ? (
                                   <span className="text-sm font-semibold text-muted-foreground">—</span>
@@ -884,7 +825,7 @@ export function BookingPanel2({
             >
               <Calendar
                 mode="range"
-                locale={lang === "fr" ? fr : lang === "he" ? he : undefined}
+                locale={dateFnsLocale(pageLocale())}
                 defaultMonth={calendarDefaultMonth}
                 selected={dateRange as DateRange}
                 onSelect={(range) => {
@@ -1053,7 +994,7 @@ export function BookingPanel2({
             <Separator />
             <div className="flex items-center gap-2 text-sm font-medium">
               <Sparkles className="h-4 w-4 text-primary" />
-              {lang === "he" ? "תוספות נבחרות" : lang === "fr" ? "Extras sélectionnés" : "Selected extras"}
+              {tPage("bookingPanel2SelectedExtras")}
             </div>
             {(panelExtras ?? []).filter(e => (panelQuantities[e.id] || 0) > 0).map((extra) => {
               const name = lang === "he" ? extra.name_he || extra.name : extra.name;
@@ -1066,7 +1007,7 @@ export function BookingPanel2({
               );
             })}
             <div className="flex justify-between text-sm font-medium pt-1 border-t border-border">
-              <span>{lang === "he" ? "סה\"כ תוספות" : lang === "fr" ? "Total extras" : "Extras total"}</span>
+              <span>{tPage("bookingPanel2ExtrasTotal")}</span>
               <DualPrice amount={panelExtrasTotal} currency={currency} inline className="text-sm" />
             </div>
           </div>
@@ -1078,7 +1019,7 @@ export function BookingPanel2({
             <Separator />
             <div className="flex justify-between items-center">
               <span className="text-sm font-bold" style={{ color: '#1A1814' }}>
-                {lang === "he" ? 'סה"כ' : "Total"}
+                {tPage("bookingPanel2Total")}
               </span>
               <div className="flex items-center gap-1.5">
                 <DualPrice amount={displayTotal} currency={priceBreakdown.currency} inline className="text-lg font-bold" />
@@ -1092,9 +1033,7 @@ export function BookingPanel2({
                       fontFamily: 'Inter, sans-serif',
                       fontSize: '12px',
                     }}>
-                      {lang === "he"
-                        ? "מבקרים זרים עם אשרת B/2 פטורים ממע\"מ.\nתושבי ישראל משלמים 18% מע\"מ ישירות במלון בעת הצ'ק-אין.\nסכום זה אינו נגבה על ידי STAYMAKOM."
-                        : "Foreign visitors with a B/2 visa are exempt from VAT.\nIsraeli residents pay 18% VAT directly at the hotel upon check-in.\nThis amount is not collected by STAYMAKOM."}
+                      {tPage("bookingPanel2ForeignVisitorsWithAB")}
                     </div>
                   </div>
                 </div>
@@ -1123,11 +1062,7 @@ export function BookingPanel2({
         <ReassuranceLine lang={lang} />
 
         <p className="text-[11px] text-muted-foreground text-center leading-snug">
-          {lang === "he"
-            ? "כל התשלומים מתבצעים בשקלים (₪). המחירים המוצגים במטבע אחר הם להמחשה בלבד לפי שער החליפין הנוכחי. הסכום הסופי בשקלים הוא המחייב."
-            : lang === "fr"
-            ? "Tous les paiements sont effectués en shekels (₪). Les prix affichés dans une autre devise sont indicatifs, basés sur le taux de change actuel. Le montant final en shekels fait foi."
-            : "All payments are processed in Israeli Shekels (₪). Prices shown in other currencies are approximate, based on the current exchange rate. The final amount in ILS is binding."}
+          {tPage("bookingPanel2AllPaymentsAreProcessedIn")}
         </p>
 
         {/* Save for later */}

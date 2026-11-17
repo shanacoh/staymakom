@@ -24,6 +24,7 @@ import { resizedImageUrl } from "@/lib/imageUrl";
 import { trackExperienceViewed, trackRequestClicked, type ProductLike } from "@/lib/analytics";
 import { useSetCurrentProduct } from "@/contexts/CurrentProductContext";
 import { BOAT_MEETING_POINTS } from "@/lib/boatAvailability";
+import { tPage } from "@/lib/translations";
 
 interface BoatDetailModalProps {
   boatId: string | null;
@@ -144,16 +145,16 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
     : [];
 
   const t = {
-    maxParty: lang === "he" ? `עד ${boat?.max_party} אורחים` : lang === "fr" ? `${boat?.max_party} personnes max` : `Up to ${boat?.max_party} guests`,
-    includedTitle: lang === "he" ? "מה כלול" : lang === "fr" ? "Inclus dans la sortie" : "What's included",
-    extrasTitle: lang === "he" ? "תוספות זמינות" : lang === "fr" ? "Extras disponibles" : "Available extras",
-    add: lang === "he" ? "הוסף" : lang === "fr" ? "Ajouter" : "Add",
-    added: lang === "he" ? "נוסף" : lang === "fr" ? "Ajouté" : "Added",
-    fromLabel: lang === "he" ? "החל מ" : lang === "fr" ? "À partir de" : "From",
-    total: lang === "he" ? "סה\"כ עם התוספות" : lang === "fr" ? "Total avec options" : "Total with options",
-    cta: lang === "he" ? "שליחת הבקשה" : lang === "fr" ? "Envoyer ma demande" : "Send my request",
-    meetingPoint: lang === "he" ? "נקודת מפגש" : lang === "fr" ? "Point de rendez-vous" : "Meeting point",
-    openMaps: lang === "he" ? "פתח ב-Maps" : lang === "fr" ? "Ouvrir dans Maps" : "Open in Maps",
+    maxParty: tPage("boatMaxGuests")(boat?.max_party),
+    includedTitle: tPage("boatDetailModalWhatSIncluded"),
+    extrasTitle: tPage("boatDetailModalAvailableExtras"),
+    add: tPage("boatDetailModalAdd"),
+    added: tPage("boatDetailModalAdded"),
+    fromLabel: tPage("boatDetailModalFrom"),
+    total: tPage("boatDetailModalTotalWithOptions"),
+    cta: tPage("boatDetailModalSendMyRequest"),
+    meetingPoint: tPage("boatDetailModalMeetingPoint"),
+    openMaps: tPage("boatDetailModalOpenInMaps"),
   };
 
   const toggleExtra = (extraId: string) => {
@@ -411,7 +412,7 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
       <>
         <Sheet open={!!boatId} onOpenChange={(open) => !open && onClose()}>
           <SheetContent side="bottom" hideCloseButton className="h-[92vh] rounded-t-2xl p-0 flex flex-col overflow-hidden">
-            <VisuallyHidden.Root><SheetTitle>{title || (lang === "he" ? "סירה" : lang === "fr" ? "Bateau" : "Boat")}</SheetTitle></VisuallyHidden.Root>
+            <VisuallyHidden.Root><SheetTitle>{title || (tPage("boatDetailModalBoat"))}</SheetTitle></VisuallyHidden.Root>
             <div className="relative flex-1 min-h-0 overflow-y-auto">
               {closeButton}
               {body}
@@ -428,7 +429,7 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
     <>
       <Dialog open={!!boatId} onOpenChange={(open) => !open && onClose()}>
         <DialogContent hideCloseButton className="max-w-3xl max-h-[90vh] rounded-2xl p-0 flex flex-col overflow-hidden">
-          <VisuallyHidden.Root><DialogTitle>{title || (lang === "he" ? "סירה" : lang === "fr" ? "Bateau" : "Boat")}</DialogTitle></VisuallyHidden.Root>
+          <VisuallyHidden.Root><DialogTitle>{title || (tPage("boatDetailModalBoat"))}</DialogTitle></VisuallyHidden.Root>
           <div className="relative flex-1 min-h-0 overflow-y-auto">
             {closeButton}
             {body}

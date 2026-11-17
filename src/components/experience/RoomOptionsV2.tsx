@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { calculateFromPrice, computeBarRateRoomPrice, extractNetBar } from "@/hooks/useExperience2Price";
 import type { PricingConfig } from "@/types/experience2_addons";
+import { uiGroup } from "@/lib/translations";
 
 interface RoomRatePlan {
   ratePlanId: number;
@@ -108,23 +109,7 @@ export function RoomOptionsV2({
     typeof preferredBoardType === "string" && preferredBoardType.trim() !== ""
       ? preferredBoardType.toUpperCase()
       : null;
-  const t = {
-    en: {
-      title: "Room type",
-      noRooms: "No rooms available for these dates",
-      onRequest: "Subject to confirmation",
-    },
-    he: {
-      title: "סוג חדר",
-      noRooms: "אין חדרים זמינים לתאריכים אלה",
-      onRequest: "בכפוף לאישור",
-    },
-    fr: {
-      title: "Type de chambre",
-      noRooms: "Aucune chambre disponible pour ces dates",
-      onRequest: "Confirmation sous réserve",
-    },
-  }[lang];
+  const t = uiGroup("roomOptionsV2");
 
   const rooms: Room[] = useMemo(() => {
     if (!searchResult) return [];

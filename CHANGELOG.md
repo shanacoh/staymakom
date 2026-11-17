@@ -4,6 +4,37 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 17/11/2026 : Traduction automatique, plafond de 2 $ par passage et options payantes des hôtels
+
+### Ce qui a changé côté code
+- `supabase/functions/_shared/translations/cost.ts` (nouveau) : coût réel de chaque appel à l'IA (prix publics par modèle, modèle inconnu compté au plus cher) et compteur par passage. Testé dans `src/lib/contentTranslations/cost.test.ts`.
+- `supabase/functions/translate-content/index.ts` : au-delà de 2 $ dans un même passage (tâche de nuit avec ses relances, bouton « Mettre à jour ES / RU / DE », scripts), plus aucun lot n'est lancé, pas de relance, et un email interne part vers Shana. Le coût est enregistré à chaque passage. Un script SQL est noté « script » dans le journal (et plus « cron »).
+- `supabase/functions/_shared/translations/catalog.ts` : nouvelle entité `hotel2_extra` (table `hotel2_extras`, champ `name`). C'était la cause des options payantes restées en anglais (« Late Check-out »...) : le site les lit dans cette table, qui n'avait jamais été ajoutée à la carte. `experience2_addons`, elle, ne concerne que des fiches en brouillon (normal qu'elle soit vide).
+- `docs/traductions/suivi.sql` : coût de chaque passage, total cumulé, arrêt par le plafond, coût par mois. `docs/traductions/traduire-options-hotels.sql` (nouveau) : lance une fois la traduction des options payantes des hôtels.
+- `docs/traductions/avant-d-allumer.md` : ajout des emails client dans la langue du client (ES / RU / DE via `client_locale`) et des pages légales (traduction automatique + « la version anglaise fait foi »).
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261117120000_cout_traduction_auto.sql` : trois colonnes dans `content_translation_runs` : `cost_usd` (coût du passage en dollars), `chain_cost_usd` (total de la chaîne de relances), `cost_capped` (passage arrêté par le plafond). À appliquer avant de déployer `translate-content`.
+
+### Pourquoi ce changement
+- Shana veut une limite de dépense sûre sur la traduction automatique, avec le coût réel visible pour chaque passage, et des options payantes hôtel traduites.
+
+## 17/11/2026 : Textes d'interface en espagnol, russe et allemand, partie 2 (fiches, réservation, paiement, confirmation, connexion)
+
+### Ce qui a changé côté code
+- `src/lib/translations.ts` : environ 600 textes sortis des composants (fiche expérience seule et bateau, demande de disponibilité, fiche avec hôtel, panneau de réservation hôtel, pages de paiement, confirmations, fenêtre de connexion / inscription, menu du compte, bandeau cookies), en anglais, français et hébreu repris mot pour mot. Nouvelles fonctions `tPage`, `uiGroup`, `uiRecord`, `pageLocale` (voir ARCHITECTURE.md, « Rapatriement automatique »).
+- `src/lib/uiTranslations/es.ts`, `ru.ts`, `de.ts` : leurs traductions (lots A et B). Test `uiTranslations.test.ts` renforcé (mêmes clés dans les 3 langues, pas d'alphabet latin en russe hors marques).
+- `src/lib/heroKeyFacts.ts`, `src/lib/heroHighlight.ts`, `src/utils/cancellationPolicy.ts` : textes en 6 langues, la langue reste un paramètre (les pages leur passent la langue réelle). `src/lib/timeSlots.ts` : Matin / Après-midi en 6 langues.
+- `src/lib/dateFnsLocale.ts` (nouveau) : calendriers et dates dans la langue de la page (espagnol, russe, allemand compris).
+- Une quarantaine de composants modifiés (StandaloneExperience, StandaloneCheckout, StandaloneBookingConfirmation, Experience2, Checkout, BookingConfirmationPage, BookingPanel2, BookingConfirmationDialog, AuthPromptDialog, UserDropdown, BoatDetailModal, BoatAvailabilityPopup, StandaloneRequestPanel, EssentialsBlock, HeroSection, LeadGuestForm, RevolutPaymentWidget, PriceBreakdownV2, CookieConsent...) : ils lisent leurs textes dans `translations.ts`. Aucun calcul de prix, de paiement ou d'enregistrement n'a changé.
+- Correction visible en anglais : le bouton « Disponibilité » de la fiche avec hôtel s'affichait en français sur le site anglais ; il affiche maintenant « Availability ».
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Deuxième étape des textes d'interface avant d'ouvrir l'espagnol, le russe et l'allemand : tout le parcours de réservation (fiche, demande, paiement, confirmation, connexion) s'affiche maintenant dans la langue de la page.
+
 ## 17/11/2026 : Textes d'interface en espagnol, russe et allemand (accueil, menus, pied de page, cartes, champ téléphone)
 
 ### Ce qui a changé côté code

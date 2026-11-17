@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { useFromPrice } from "@/hooks/useExperience2Price";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import type { AvailabilityRule } from "@/lib/availabilityUtils";
+import { tPage } from "@/lib/translations";
 
 interface StickyPriceBarProps {
   experienceId: string;
@@ -77,15 +78,15 @@ const StickyPriceBar = ({
           <div className="flex flex-col min-w-0">
             <div className="flex items-baseline gap-1.5">
               <span className="text-base font-bold text-foreground whitespace-nowrap">
-                {lang === 'he' ? `מ-${symbol}${displayPrice}` : lang === 'fr' ? `à partir de ${symbol}${displayPrice}` : `from ${symbol}${displayPrice}`}
+                {tPage("priceFrom")(`${symbol}${displayPrice}`)}
               </span>
             </div>
             <span className="text-[11px] text-muted-foreground">
-              {lang === 'he' ? 'הכי משתלם · ל-2 אנשים' : lang === 'fr' ? 'Meilleur tarif · 2 personnes' : 'Best rate · 2 guests'}
+              {tPage("stickyPriceBarBestRate2Guests")}
             </span>
           </div>
           <span className="rounded-full bg-foreground text-background text-xs font-semibold px-5 py-2.5 shrink-0 ml-3 whitespace-nowrap">
-            {lang === 'he' ? 'הזמן' : lang === 'fr' ? 'Réserver' : 'Book'}
+            {tPage("stickyPriceBarBook")}
           </span>
         </button>
       </div>

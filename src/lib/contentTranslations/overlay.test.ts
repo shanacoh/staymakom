@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyTranslations, collectTargets, parseEmbeds, type TranslationRow } from "./overlay";
+import { applyTranslations, collectTargets, entityTypeForTable, parseEmbeds, type TranslationRow } from "./overlay";
 import { hashSource } from "../../../supabase/functions/_shared/translations/plan";
 
 const ID = "11111111-1111-1111-1111-111111111111";
@@ -62,5 +62,11 @@ describe("applyTranslations", () => {
     const translations = [await row("subtitle", "B", "Б")];
     await applyTranslations(collectTargets(data, "standalone_experiences", new Map()), () => translations);
     expect("subtitle" in data).toBe(false);
+  });
+});
+
+describe("tables traduites", () => {
+  it("les options payantes des hôtels (hotel2_extras) sont traduites sur le site", () => {
+    expect(entityTypeForTable("hotel2_extras")).toBe("hotel2_extra");
   });
 });

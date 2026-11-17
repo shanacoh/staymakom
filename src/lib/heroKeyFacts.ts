@@ -4,8 +4,11 @@
 
 import { CANCELLATION_TEMPLATES, type CancellationTemplateId } from "@/constants/cancellationTemplates";
 import { normalizeBoardPreference, type BoardType } from "@/lib/boardTypePreference";
+import { t, uiRecord } from "@/lib/translations";
+import type { Locale } from "@/lib/locale";
 
-export type HeroLang = "en" | "fr" | "he";
+/** Langue de la page (en, fr, he, es, ru, de). */
+export type HeroLang = Locale;
 
 export interface HeroKeyFact {
   key: string;
@@ -20,11 +23,11 @@ interface CancellationTexts {
   cancellation_policy_he?: string | null;
 }
 
-const hours = (n: string, lang: HeroLang) => (lang === "he" ? `${n} שעות` : `${n} h`);
-const days = (n: string, lang: HeroLang) =>
-  lang === "he" ? `${n} ימים` : lang === "fr" ? `${n} j` : `${n} days`;
+// Textes dans src/lib/translations.ts, dans la langue reçue (en, fr, he, es, ru, de).
+const hours = (n: string, lang: HeroLang): string => t(lang, "durationHours")(n);
+const days = (n: string, lang: HeroLang): string => t(lang, "durationDays")(n);
 const nonRefundable = (lang: HeroLang) =>
-  lang === "he" ? "ללא החזר" : lang === "fr" ? "Non remboursable" : "Non-refundable";
+  t(lang, "heroKeyFactsNonRefundable");
 
 const TEMPLATE_SUMMARY: Record<Exclude<CancellationTemplateId, "custom">, (lang: HeroLang) => string> = {
   free_48h: (lang) => hours("48", lang),
@@ -66,17 +69,15 @@ export function summarizeCancellation(texts: CancellationTexts, lang: HeroLang):
 /** « 2 nuits » (nombre de nuits minimum du séjour). */
 export function formatMinNights(minNights: number | null | undefined, lang: HeroLang): string | null {
   if (!minNights || minNights <= 0) return null;
-  if (lang === "he") return minNights === 1 ? "לילה אחד" : `${minNights} לילות`;
-  if (lang === "fr") return `${minNights} nuit${minNights > 1 ? "s" : ""}`;
-  return `${minNights} night${minNights > 1 ? "s" : ""}`;
+  return t(lang, "minNights")(minNights);
 }
 
 const BOARD_SHORT_LABELS: Record<BoardType, Record<HeroLang, string>> = {
-  RO: { fr: "Sans repas", en: "Room only", he: "לינה בלבד" },
-  BB: { fr: "Petit-déj.", en: "Breakfast", he: "ארוחת בוקר" },
-  HB: { fr: "Demi-pension", en: "Half board", he: "חצי פנסיון" },
-  FB: { fr: "Pension complète", en: "Full board", he: "פנסיון מלא" },
-  AI: { fr: "Tout inclus", en: "All inclusive", he: "הכל כלול" },
+  RO: uiRecord("heroKeyFactsRoomOnly"),
+  BB: uiRecord("heroKeyFactsBreakfast"),
+  HB: uiRecord("heroKeyFactsHalfBoard"),
+  FB: uiRecord("heroKeyFactsFullBoard"),
+  AI: uiRecord("heroKeyFactsAllInclusive"),
 };
 
 /** Libellé court de la pension de la fiche (null si aucune pension n'est renseignée). */
@@ -86,9 +87,9 @@ export function formatBoard(boardType: unknown, lang: HeroLang): string | null {
 }
 
 const LABELS = {
-  cancellation: { fr: "Annulation", en: "Cancellation", he: "ביטול" },
-  stay: { fr: "Séjour", en: "Stay", he: "שהייה" },
-  board: { fr: "Pension", en: "Board", he: "פנסיון" },
+  cancellation: uiRecord("heroKeyFactsCancellation"),
+  stay: uiRecord("heroKeyFactsStay"),
+  board: uiRecord("heroKeyFactsBoard"),
 } as const;
 
 /** Expérience seule : case choisie par getHeroHighlight (lib/heroHighlight) / Annulation. */

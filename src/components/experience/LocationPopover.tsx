@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { MapPin } from "lucide-react";
+import { tPage } from "@/lib/translations";
 
 interface LocationPopoverProps {
   city?: string;
@@ -55,9 +56,9 @@ const LocationPopover = ({
     : `https://maps.apple.com/?q=${query}`;
 
   const options = [
-    { icon: "🗺", label: lang === "he" ? "פתח ב-Google Maps" : lang === "fr" ? "Ouvrir dans Google Maps" : "Open in Google Maps", url: googleUrl },
-    { icon: "🚗", label: lang === "he" ? "פתח ב-Waze" : lang === "fr" ? "Ouvrir dans Waze" : "Open in Waze", url: wazeUrl },
-    { icon: "🍎", label: lang === "he" ? "פתח ב-Apple Maps" : lang === "fr" ? "Ouvrir dans Apple Maps" : "Open in Apple Maps", url: appleUrl },
+    { icon: "🗺", label: tPage("locationPopoverOpenInGoogleMaps"), url: googleUrl },
+    { icon: "🚗", label: tPage("locationPopoverOpenInWaze"), url: wazeUrl },
+    { icon: "🍎", label: tPage("locationPopoverOpenInAppleMaps"), url: appleUrl },
   ];
 
   return (

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Navigation } from "lucide-react";
 import { trackMapGetThereClicked } from "@/lib/analytics";
+import { tPage } from "@/lib/translations";
 
 interface LocationMapProps {
   latitude: number | null;
@@ -118,8 +119,8 @@ const LocationMap = ({
   const appleMapsUrl = `https://maps.apple.com/?daddr=${latitude},${longitude}`;
   const wazeUrl = `https://waze.com/ul?ll=${latitude},${longitude}&navigate=yes`;
 
-  const getThereLabel = lang === "he" ? "הגעה" : lang === "fr" ? "S'y rendre" : "Get there";
-  const twoFingerMsg = lang === "he" ? "השתמש בשתי אצבעות להזזת המפה" : lang === "fr" ? "Utilisez deux doigts pour déplacer la carte" : "Use two fingers to move the map";
+  const getThereLabel = tPage("locationMapGetThere");
+  const twoFingerMsg = tPage("locationMapUseTwoFingersToMove");
 
   return (
     <section className="pb-6">
