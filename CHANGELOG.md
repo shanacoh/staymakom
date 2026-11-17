@@ -6,6 +6,30 @@
 
 ---
 
+## [2026-11-02] Alertes paiement : distinguer « le site a planté » de « paiement reçu hors site »
+
+### Ce qui a changé côté code
+- `supabase/functions/_shared/revolut-order.ts` (nouveau) : lit une commande chez Revolut et dit d'où elle vient (créée par le site ou lien fait à la main dans Revolut Business), via l'étiquette `metadata.source = 'staymakom-site'` et, pour les commandes plus anciennes, leur libellé.
+- `revolut-payment`, `process-standalone-payment`, `process-standalone-booking`, `create-booking-payment-link` : chaque commande créée par le site porte désormais cette étiquette.
+- `revolut-webhook` : quand aucune réservation ne correspond à une commande :
+  - paiement échoué ou commande expirée : plus aucun email (aucun argent reçu) ;
+  - paiement reçu par un lien fait à la main dans Revolut : un seul email « 💰 Paiement reçu par lien Revolut (hors site) » ;
+  - paiement fait sur le site : pas d'email tout de suite (la réservation hôtel s'enregistre quelques secondes après le paiement), inscription au registre pour le filet de sécurité ;
+  - paiements d'essai des outils de test Revolut du back-office : ignorés.
+- `reconcile-standalone-bookings` : vérifie aussi le registre ; si 10 min après un paiement du site aucune réservation n'existe, email « 🚨 Réservation pas allée au bout ». Ne peut plus être lancé que par la tâche planifiée ou un admin. L'alerte « réservation bloquée depuis 2 h » est retirée : elle se déclenchait pour chaque client qui abandonne au moment de payer.
+- `src/config/automations.ts` : fiches des deux automatisations mises à jour.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261102120000_paiements_sans_reservation.sql` :
+  - table `revolut_unmatched_payments` : une ligne par paiement reçu sans réservation (origine site / hors site, montant, client, statut à vérifier / alerte envoyée / rattaché). Une seule ligne par commande, donc un seul email même si Revolut prévient deux fois ;
+  - tâche planifiée `reconcile-standalone-bookings-10min` : le filet de sécurité n'était lancé par rien jusque-là.
+- Au premier passage, le filet passe en « annulée » les anciennes tentatives dont le paiement a échoué chez Revolut (des lignes d'août restées « en attente »). Elles étaient déjà exclues des chiffres.
+
+### Pourquoi ce changement
+- Shana recevait « 🚨 Paiement reçu sans réservation correspondante » pour des paiements échoués et pour ses propres liens Revolut, sans pouvoir distinguer une vraie panne. Désormais : 🚨 = un client a payé sur le site et n'a pas de réservation, 💰 = paiement reçu hors site, rien = pas d'argent reçu.
+
+---
+
 ## [2026-11-01] — Réservations : bouton « Réserver chez le prestataire » (WhatsApp rédigé)
 
 > Statut : en test, pas encore validé par Shana. Ne pas mettre en ligne avant d'avoir appliqué la migration.

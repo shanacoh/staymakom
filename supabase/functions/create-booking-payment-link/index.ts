@@ -8,6 +8,7 @@
 // Admin uniquement : appelé depuis un écran protégé du back-office.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SITE_ORDER_METADATA } from '../_shared/revolut-order.ts';
 
 const ALLOWED_ORIGINS: (string | RegExp)[] = [
   'https://staymakom.com',
@@ -56,6 +57,7 @@ async function createRevolutOrder(params: {
       full_name: params.customerName,
       phone: params.customerPhone || undefined,
     },
+    metadata: { ...SITE_ORDER_METADATA },
   };
   const response = await fetch(`${getRevolutBaseUrl()}/orders`, {
     method: 'POST',

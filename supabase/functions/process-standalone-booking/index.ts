@@ -3,6 +3,7 @@
 // Ne touche pas à HyperGuest ni aux tables existantes (bookings_hg, experiences2).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SITE_ORDER_METADATA } from '../_shared/revolut-order.ts';
 
 const ALLOWED_ORIGINS: (string | RegExp)[] = [
   'https://staymakom.com',
@@ -76,6 +77,7 @@ async function createRevolutOrder(params: {
       date_of_birth: params.customerBirthDate || undefined,
     },
     metadata: {
+      ...SITE_ORDER_METADATA,
       booking_type: 'standalone_experience',
       booking_id: params.bookingId,
       customer_name: params.customerName,

@@ -4,6 +4,7 @@
 // exactement l'ordre Revolut réellement créé. Ne touche pas à process-standalone-booking.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SITE_ORDER_METADATA } from '../_shared/revolut-order.ts';
 
 const ALLOWED_ORIGINS: (string | RegExp)[] = [
   'https://staymakom.com',
@@ -76,6 +77,7 @@ async function createRevolutOrder(params: {
       phone: params.customerPhone || undefined,
       date_of_birth: params.customerBirthDate || undefined,
     },
+    metadata: { ...SITE_ORDER_METADATA },
   };
 
   const response = await fetch(`${getRevolutBaseUrl()}/orders`, {

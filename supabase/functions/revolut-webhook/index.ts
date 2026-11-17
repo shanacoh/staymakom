@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { fetchRevolutOrder, type RevolutOrderSummary } from '../_shared/revolut-order.ts';
 
 /**
  * Envoie une alerte email à l'admin. Remplace les `console.error` muets par
@@ -22,6 +23,85 @@ async function sendAdminAlertEmail(subject: string, html: string): Promise<void>
   } catch (err) {
     console.error('Admin alert email failed to send:', err);
   }
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+}
+
+function formatAmount(amount: number | null, currency: string | null): string {
+  if (amount === null) return 'montant inconnu';
+  const symbols: Record<string, string> = { ILS: '₪', USD: '$', EUR: '€', GBP: '£' };
+  return `${symbols[currency || ''] || `${currency || ''} `}${amount}`;
+}
+
+/**
+ * Un paiement a réussi mais aucune réservation ne lui correspond. On l'inscrit au registre
+ * (une seule ligne par commande, même si Revolut prévient deux fois), puis :
+ *  - lien de paiement fait à la main dans Revolut (« hors site ») : email d'information tout de suite ;
+ *  - commande créée par le site : rien tout de suite, car la réservation hôtel s'enregistre
+ *    quelques secondes APRÈS le paiement. Le filet de sécurité (reconcile-standalone-bookings)
+ *    revérifie 10 minutes plus tard et n'alerte que si la réservation n'est toujours pas là.
+ * Renvoie une réponse d'erreur si l'inscription a échoué (Revolut réessaiera), sinon null.
+ */
+// deno-lint-ignore no-explicit-any
+async function recordUnmatchedPayment(supabase: any, orderId: string): Promise<Response | null> {
+  let order: RevolutOrderSummary | null = null;
+  try {
+    order = await fetchRevolutOrder(orderId);
+  } catch (err) {
+    // Revolut injoignable : origine inconnue, on la traite comme une commande du site pour que
+    // le filet de sécurité la revérifie et alerte en cas de doute.
+    console.error(`Could not read Revolut order ${orderId}:`, err);
+  }
+
+  if (order?.isAdminTest) {
+    console.log(`Paid admin test order ${orderId} without booking: expected, nothing to do`);
+    return null;
+  }
+
+  const origin = order && !order.isSiteOrder ? 'hors_site' : 'site';
+  const { data: inserted, error } = await supabase
+    .from('revolut_unmatched_payments')
+    .upsert({
+      order_id: orderId,
+      origin,
+      amount: order?.amount ?? null,
+      currency: order?.currency ?? null,
+      description: order?.description ?? null,
+      customer_name: order?.customerName ?? null,
+      customer_email: order?.customerEmail ?? null,
+    }, { onConflict: 'order_id', ignoreDuplicates: true })
+    .select('order_id');
+
+  if (error) {
+    console.error(`Failed to record unmatched payment ${orderId}:`, error);
+    return new Response(JSON.stringify({ error: 'Database update failed' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const isFirstNotice = (inserted || []).length > 0;
+  console.log(`Unmatched paid order ${orderId} recorded (origin=${origin}, first notice=${isFirstNotice})`);
+
+  if (isFirstNotice && origin === 'hors_site' && order) {
+    await sendAdminAlertEmail(
+      `💰 Paiement reçu par lien Revolut (hors site) : ${formatAmount(order.amount, order.currency)}${order.description ? `, ${order.description}` : ''}`,
+      `<div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:24px;background:#fff;border-radius:8px;border:1px solid #eee;">
+        <h2 style="color:#1A1814;margin:0 0 8px;">💰 Paiement reçu hors du site</h2>
+        <p style="color:#555;margin:0 0 16px;">Ce paiement vient d'un lien créé directement dans Revolut Business, pas depuis le site. Aucune réservation n'y est reliée, c'est normal. <b>Rien n'a planté.</b></p>
+        <table style="width:100%;border-collapse:collapse;">
+          <tr><td style="padding:8px 0;color:#888;font-size:13px;">Montant</td><td style="padding:8px 0;font-weight:700;">${formatAmount(order.amount, order.currency)}</td></tr>
+          <tr><td style="padding:8px 0;color:#888;font-size:13px;">Description</td><td style="padding:8px 0;">${escapeHtml(order.description || 'non indiquée')}</td></tr>
+          <tr><td style="padding:8px 0;color:#888;font-size:13px;">Client</td><td style="padding:8px 0;">${escapeHtml(order.customerName || 'non indiqué')} (${escapeHtml(order.customerEmail || 'email non indiqué')})</td></tr>
+        </table>
+        <p style="color:#555;margin:16px 0 0;">Si ce paiement correspond à une réservation, pense à la saisir ou à la mettre à jour dans le back-office.</p>
+        <a href="https://staymakom.com/admin/bookings" style="display:inline-block;margin-top:16px;background:#ad1414;color:#fff;text-decoration:none;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:700;">Ouvrir les réservations</a>
+      </div>`,
+    );
+  }
+  return null;
 }
 
 /**
@@ -362,35 +442,14 @@ Deno.serve(async (req) => {
       }
 
       if (!matched) {
-        // ⚠️ ORPHAN PAYMENT : un paiement a réussi côté Revolut mais aucune réservation
-        // (hôtel ou standalone) associée en base. Le frontend a probablement planté entre
-        // la création de l'ordre Revolut et l'insert de la réservation. Le client a été
-        // débité mais n'a pas sa résa.
-        console.error('🚨 ORPHAN_PAYMENT_DETECTED 🚨', JSON.stringify({
-          orderId,
-          eventType,
-          paymentStatus,
-          revolutPaymentId: event.data?.payments?.[0]?.id,
-          paymentMethod: event.data?.payments?.[0]?.payment_method?.type,
-          customerEmail: event.data?.customer?.email,
-          customerName: event.data?.customer?.full_name,
-          totalAmount: event.data?.total_amount,
-          currency: event.data?.currency,
-          merchantOrderRef: event.data?.merchant_order_ext_ref,
-          completedAt: event.data?.completed_at || event.completed_at,
-          fullEvent: event,
-          message: 'A Revolut payment succeeded but no matching bookings_hg or standalone_bookings row exists. Frontend likely crashed before creating the booking. Manual reconciliation required.',
-        }, null, 2));
-
-        await sendAdminAlertEmail(
-          `🚨 Paiement reçu sans réservation correspondante — commande ${orderId}`,
-          `<div style="font-family:Arial,sans-serif;padding:16px;">
-            <p>Revolut a confirmé un événement <b>${eventType}</b> pour la commande <b>${orderId}</b>, mais aucune réservation (hôtel ou expérience seule) ne correspond à cette commande.</p>
-            <p>Client : ${event.data?.customer?.full_name || '—'} (${event.data?.customer?.email || '—'})</p>
-            <p>Montant : ${event.data?.total_amount ?? '—'} ${event.data?.currency ?? ''}</p>
-            <p><b>Le client a peut-être été débité sans avoir de réservation visible.</b> Vérifier manuellement dans Revolut et contacter le client si besoin.</p>
-          </div>`,
-        );
+        if (paymentStatus !== 'paid') {
+          // Paiement échoué, annulé ou commande expirée sans réservation en face : aucun
+          // argent n'a été reçu, il n'y a rien à signaler.
+          console.log(`No booking for ${eventType} on order ${orderId}: no money received, nothing to do`);
+        } else {
+          const response = await recordUnmatchedPayment(supabase, orderId);
+          if (response) return response;
+        }
       }
     }
 
