@@ -21,7 +21,7 @@ export async function fetchRequestForAction(requestId: string) {
   const { data, error } = await db
     .from("standalone_experience_requests")
     .select(
-      "id, experience_id, customer_name, customer_email, customer_phone, requested_date, adults, children, party_max, message, internal_notes, status, source, desired_time_period, desired_time_value, requested_duration_minutes, preferred_city, sent_to_provider_at, provider_responded_at, standalone_experiences(title)",
+      "id, experience_id, customer_name, customer_email, customer_phone, requested_date, adults, children, party_max, message, internal_notes, status, source, desired_time_period, desired_time_value, requested_duration_minutes, preferred_city, sent_to_provider_at, provider_responded_at, client_locale, standalone_experiences(title)",
     )
     .eq("id", requestId)
     .single();

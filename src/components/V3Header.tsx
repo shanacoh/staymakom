@@ -6,6 +6,7 @@ import LaunchHamburgerMenu from "@/components/LaunchHamburgerMenu";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { cn } from "@/lib/utils";
+import { LOCALE_LABELS, publicLocales } from "@/lib/locale";
 import {
   Popover,
   PopoverContent,
@@ -22,11 +23,9 @@ interface V3HeaderProps {
   showModeToggle?: boolean;
 }
 
-const LANGUAGES = [
-  { code: "en" as const, label: "EN" },
-  { code: "fr" as const, label: "FR" },
-  { code: "he" as const, label: "עב" },
-];
+// Langues proposées : suit l'interrupteur unique src/config/languages.json
+// (espagnol / russe / allemand n'apparaissent que lorsqu'il est activé).
+const LANGUAGES = publicLocales().map((code) => ({ code, label: LOCALE_LABELS[code] }));
 
 const CURRENCIES = [
   { code: "USD" as const, symbol: "$" },
@@ -43,7 +42,7 @@ const BLOB_SHAPES = [
 const V3Header = ({ mode, setMode, showModeToggle = false }: V3HeaderProps) => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const { lang, setLanguage } = useLanguage();
+  const { lang, locale, setLanguage } = useLanguage();
   const { displayCurrency, setDisplayCurrency } = useCurrency();
   const [authDialog, setAuthDialog] = useState<{ open: boolean; tab: "login" | "signup"; context: "favorites" | "account" | "signup" }>({ open: false, tab: "login", context: "account" });
 
@@ -163,10 +162,10 @@ const V3Header = ({ mode, setMode, showModeToggle = false }: V3HeaderProps) => {
                     onClick={() => setLanguage(code)}
                     className={cn(
                       "relative flex-1 py-1.5 text-[11px] font-semibold transition-colors duration-200",
-                      lang === code ? "text-[#ad1414]" : "text-black hover:text-black/70"
+                      locale === code ? "text-[#ad1414]" : "text-black hover:text-black/70"
                     )}
                   >
-                    {lang === code && (
+                    {locale === code && (
                       <span
                         aria-hidden
                         className={cn(

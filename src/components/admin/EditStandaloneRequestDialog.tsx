@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
+import ClientLocaleBadge from "@/components/admin/ClientLocaleBadge";
 import { toast } from "sonner";
 
 const REQUESTS_QUERY_KEY = ["admin-standalone-experience-requests"];
@@ -88,7 +89,10 @@ const EditStandaloneRequestDialog = ({ open, onOpenChange, request }: Props) => 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Modifier la demande</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            Modifier la demande
+            <ClientLocaleBadge locale={request?.client_locale} />
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
           {request?.standalone_experiences?.title && (

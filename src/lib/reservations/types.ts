@@ -59,6 +59,8 @@ export interface ReservationRow {
   supplierRefundAmount: number | null;
   supplierCreditOpen: boolean;
   phone: string | null;
+  // Langue de la page d'où vient la demande ou la réservation (en, fr, he, es, ru, de), si connue.
+  clientLocale: string | null;
   // Nuits d'un hôtel (vide pour les autres lignes).
   nights: number | null;
   // Marquée « à vérifier » (clic droit dans la Saisie), avec sa note éventuelle.

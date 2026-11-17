@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useLanguage } from "@/hooks/useLanguage";
+import { isHiddenLocale, localizedUrl, publicLocales } from "@/lib/locale";
 
 const BASE_URL = "https://staymakom.com";
 
@@ -46,7 +47,7 @@ export function SEOHead({
   fallbackTitle = "Staymakom - Curated Boutique Experiences in Israel",
   fallbackDescription = "Discover unique boutique hotels and immersive experiences across Israel. From desert escapes to vineyard retreats, find your perfect getaway.",
 }: SEOHeadProps) {
-  const { lang } = useLanguage();
+  const { lang, locale } = useLanguage();
 
   useEffect(() => {
     // Determine the correct values based on language
@@ -113,34 +114,45 @@ export function SEOHead({
       updateMetaTag("twitter:image", ogImage);
     }
 
-    // Canonical : URL propre sans paramètre ?lang=
-    const canonicalPath = window.location.pathname;
-    const canonicalUrl = `${BASE_URL}${canonicalPath}`;
-    const updateLinkTag = (rel: string, href: string, hreflang?: string) => {
-      const selector = hreflang
-        ? `link[rel="${rel}"][hreflang="${hreflang}"]`
-        : `link[rel="${rel}"][hreflang=""]`;
-      let el = document.querySelector<HTMLLinkElement>(
-        hreflang ? selector : `link[rel="canonical"]`
-      );
+    // Canonical : l'anglais garde l'adresse nue, les autres langues portent leur ?lang=
+    const pageUrl = `${BASE_URL}${window.location.pathname}`;
+    const setLink = (selector: string, attrs: Record<string, string>) => {
+      let el = document.head.querySelector<HTMLLinkElement>(selector);
       if (!el) {
         el = document.createElement("link");
-        el.setAttribute("rel", rel);
-        if (hreflang) el.setAttribute("hreflang", hreflang);
         document.head.appendChild(el);
       }
-      el.setAttribute("href", href);
+      for (const [name, value] of Object.entries(attrs)) el.setAttribute(name, value);
     };
+    setLink('link[rel="canonical"]', { rel: "canonical", href: localizedUrl(pageUrl, locale) });
 
-    updateLinkTag("canonical", canonicalUrl);
+    // Hreflang : on annonce à Google uniquement les langues publiques (l'interrupteur
+    // src/config/languages.json décide si espagnol / russe / allemand en font partie).
+    const announced = new Set<string>([...publicLocales(), "x-default"]);
+    document.head.querySelectorAll<HTMLLinkElement>('link[rel="alternate"][hreflang]').forEach((el) => {
+      if (!announced.has(el.getAttribute("hreflang") || "")) el.remove();
+    });
+    for (const code of publicLocales()) {
+      setLink(`link[rel="alternate"][hreflang="${code}"]`, { rel: "alternate", hreflang: code, href: localizedUrl(pageUrl, code) });
+    }
+    setLink('link[rel="alternate"][hreflang="x-default"]', { rel: "alternate", hreflang: "x-default", href: localizedUrl(pageUrl, "en") });
 
-    // Hreflang : indiquer à Google les 3 versions linguistiques
-    updateLinkTag("alternate", `${canonicalUrl}?lang=en`, "en");
-    updateLinkTag("alternate", `${canonicalUrl}?lang=he`, "he");
-    updateLinkTag("alternate", `${canonicalUrl}?lang=fr`, "fr");
-    updateLinkTag("alternate", `${canonicalUrl}?lang=en`, "x-default");
+    // Langue encore cachée : la page reste consultable mais Google ne doit pas l'indexer.
+    const robots = document.head.querySelector('meta[name="robots"][data-hidden-locale]');
+    if (isHiddenLocale(locale)) {
+      if (!robots) {
+        const el = document.createElement("meta");
+        el.setAttribute("name", "robots");
+        el.setAttribute("content", "noindex, follow");
+        el.setAttribute("data-hidden-locale", "true");
+        document.head.appendChild(el);
+      }
+    } else {
+      robots?.remove();
+    }
   }, [
     lang,
+    locale,
     title,
     titleEn,
     titleHe,

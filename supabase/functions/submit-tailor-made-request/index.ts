@@ -6,6 +6,7 @@
 // enregistrée et le client voit sa confirmation.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { toClientLocale } from '../_shared/translations/catalog.ts';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 const NOTIFY_EMAIL = 'shana@staymakom.com';
@@ -272,6 +273,18 @@ Deno.serve(async (req: Request) => {
     if (error || !data?.id) {
       console.error('create_tailor_made_request failed:', error);
       return json({ success: false, error: 'Failed to save request' }, 500);
+    }
+
+    // Langue de la page (es / ru / de compris), pour le badge du back-office. Enregistrée à
+    // part car create_tailor_made_request ne la connaît pas : si cette écriture échoue, la
+    // demande est bien enregistrée, seul le badge manque.
+    const clientLocale = toClientLocale(body?.client_locale);
+    if (clientLocale) {
+      const { error: localeError } = await supabase
+        .from('dossiers_voyage')
+        .update({ client_locale: clientLocale })
+        .eq('id', data.id);
+      if (localeError) console.error('client_locale non enregistrée (non bloquant):', localeError);
     }
 
     try {

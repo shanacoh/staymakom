@@ -7,6 +7,7 @@
 
 import { Fragment, useState } from "react";
 import { format, parseISO } from "date-fns";
+import ClientLocaleBadge from "@/components/admin/ClientLocaleBadge";
 import {
   AlertTriangle,
   ArrowDownLeft,
@@ -205,6 +206,7 @@ function SummaryRow({
             ) : (
               <span className="truncate font-medium">{row.client}</span>
             )}
+            <ClientLocaleBadge locale={row.clientLocale} />
           </div>
           <div className="truncate text-xs text-muted-foreground">
             {row.product} · {row.channelLabel}

@@ -6,6 +6,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { slotsForDate } from '../_shared/time-slot.ts';
 import { loadSupplierPrices, supplierCostOf } from '../_shared/supplier-cost.ts';
+import { toClientLocale } from '../_shared/translations/catalog.ts';
 
 const ALLOWED_ORIGINS: (string | RegExp)[] = [
   'https://staymakom.com',
@@ -139,10 +140,13 @@ Deno.serve(async (req: Request) => {
       promo_code: promoCodePayload,
       gift_card: giftCardPayload,
       lang,
+      client_locale: clientLocaleRaw,
       special_requests: specialRequestsRaw,
     } = body;
 
     const preferredLang = ['fr', 'en', 'he'].includes(lang) ? lang : null;
+    // Langue de la page (es / ru / de compris) : badge dans le back-office.
+    const clientLocale = toClientLocale(clientLocaleRaw);
     // « Demandes particulières » saisies au checkout : texte libre, transmis tel quel au prestataire.
     const specialRequests = typeof specialRequestsRaw === 'string' && specialRequestsRaw.trim()
       ? specialRequestsRaw.trim().slice(0, 2000)
@@ -338,6 +342,7 @@ Deno.serve(async (req: Request) => {
           extras: extrasSnapshot.length > 0 ? extrasSnapshot : null,
           rate_option: selectedRateOption,
           preferred_lang: preferredLang,
+          client_locale: clientLocale,
           special_requests: specialRequests,
         }])
         .select('id, confirmation_token')
@@ -421,6 +426,7 @@ Deno.serve(async (req: Request) => {
         extras: extrasSnapshot.length > 0 ? extrasSnapshot : null,
         rate_option: selectedRateOption,
         preferred_lang: preferredLang,
+          client_locale: clientLocale,
         special_requests: specialRequests,
       }])
       .select('id, confirmation_token')

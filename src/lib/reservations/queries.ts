@@ -35,6 +35,7 @@ interface AdminReservationViewRow {
   type: ReservationType;
   status: ReservationStatus;
   client: string;
+  client_locale: string | null;
   product: string;
   partner: string | null;
   service_date: string | null;
@@ -123,6 +124,7 @@ function toReservationRow(row: AdminReservationViewRow): ReservationRow {
     supplierRefundAmount: toNumber(row.supplier_refund_amount),
     supplierCreditOpen: row.supplier_credit_open ?? false,
     phone: row.phone,
+    clientLocale: row.client_locale ?? null,
     nights: row.nights,
     flagged: false,
     checkNote: null,

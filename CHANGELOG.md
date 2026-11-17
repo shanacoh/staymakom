@@ -4,6 +4,35 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 17/11/2026 : Traduction automatique, le site affiche les fiches en espagnol, russe et allemand (langues encore cachées)
+
+### Ce qui a changé côté code
+- `src/config/languages.json` (nouveau) : interrupteur unique `autoLocalesPublic`. À `false` (réglage actuel), les pages ES / RU / DE s'ouvrent avec `?lang=es`, `?lang=ru` ou `?lang=de` mais n'apparaissent ni dans le sélecteur de langue, ni dans les balises hreflang, ni dans le plan du site, et sont marquées « ne pas indexer ». À `true`, tout s'active d'un coup.
+- `src/lib/locale.ts` (nouveau) : liste des langues, langues publiques selon l'interrupteur, choix de la langue de la page.
+- `src/hooks/useLanguage.tsx` : accepte es / ru / de dans l'adresse ; renvoie `locale` (langue réelle) en plus de `lang` (langue des boutons et menus, anglais pour es / ru / de en attendant leur traduction) ; la langue de l'adresse est mémorisée pour les pages suivantes ; changer de langue vers ou depuis es / ru / de recharge la page.
+- `src/lib/contentTranslations/overlay.ts` et `translatingFetch.ts` (nouveaux), `src/integrations/supabase/client.ts` : en es / ru / de, les fiches lues dans la base reçoivent leurs textes traduits à la place de l'anglais (seulement si la traduction correspond à l'anglais actuel). Ville et région restent en anglais (elles servent aux filtres). Rien ne change dans le back-office ni dans les autres langues.
+- `src/lib/contentTranslations/overlay.test.ts` (nouveau) : 7 tests.
+- `src/components/V3Header.tsx` : le sélecteur de langue suit l'interrupteur.
+- `src/components/SEOHead.tsx` : adresse de référence (canonical) : l'anglais garde l'adresse nue, les autres langues portent leur `?lang=` ; hreflang limités aux langues publiques ; « ne pas indexer » sur une langue cachée.
+- `middleware.ts`, `api/bot-meta.ts` : le guichet robots (Google, WhatsApp...) reçoit enfin la langue demandée : titre, description, langue de la page, canonical et hreflang dans la bonne langue (français et hébreu inclus, qui étaient servis en anglais).
+- `generate-sitemap.mjs`, `public/sitemap.xml` : chaque page est listée dans chaque langue publique (anglais à l'adresse nue, français et hébreu avec `?lang=` : 357 adresses) avec ses langues sœurs.
+- `src/lib/contentTranslations/writeBack.ts` (nouveau, 4 tests) : depuis une page ES / RU / DE, tout ce que le site envoie (demande, réservation, email) repart avec les noms anglais des fiches (titre d'expérience, de bateau, options, extras) et la langue de la page (`client_locale`), pour les demandes de disponibilité et les fonctions `process-standalone-payment`, `process-booking`, `submit-tailor-made-request`.
+- `supabase/functions/process-standalone-payment`, `process-booking`, `submit-tailor-made-request` : enregistrent `client_locale` (à redéployer). Liste des langues valides : `SITE_LOCALES` / `toClientLocale` dans `_shared/translations/catalog.ts`.
+- `src/components/admin/ClientLocaleBadge.tsx` (nouveau) : badge « ES », « RU » ou « DE » à côté du nom du client dans la page Réservations et dans la fenêtre d'une demande (`ReservationsSummaryTable`, `EditStandaloneRequestDialog`, `src/lib/reservations/types.ts`, `queries.ts`, `actions.ts`).
+- `supabase/functions/_shared/translations/prompt.ts` : nouvelle consigne, un titre en majuscules n'est pas un nom propre et se traduit (en restant en majuscules). À redéployer avec `translate-content`.
+- `docs/traductions/retraduire-titres-restes-en-anglais.sql` (nouveau) : sur 318 textes identiques à l'anglais, 35 vrais oublis (titres, titres de partage et Google, « Paddleboard (x2) », 17 fiches) sont sauvegardés dans `backup_20261117.content_translations_identiques`, supprimés puis retraduits. Les 283 autres sont légitimes (noms d'hôtels, moods, villes au nom identique, étiquettes de test).
+- `docs/traductions/avant-d-allumer.md` (nouveau) : check-list avant d'allumer l'interrupteur (boutons et menus traduits, villes et régions traduites, zéro titre resté en anglais, relecture, demande test).
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261117100000_client_locale_demandes_reservations.sql` : nouvelle colonne `client_locale` (langue de la page d'où vient la demande : en, fr, he, es, ru, de) sur `standalone_bookings`, `standalone_experience_requests`, `bookings_hg` et `dossiers_voyage`, reprise à la fin de la vue `admin_reservations`. À ne pas confondre avec `preferred_lang` (langue des emails, toujours en / fr / he : un client venu d'une page russe reçoit ses emails en anglais). À appliquer avec `supabase db query --linked -f` (historique des migrations décalé), AVANT de redéployer les fonctions.
+- Le site lit la table `content_translations` existante (lecture publique déjà autorisée).
+
+### Pourquoi ce changement
+- Les 3 456 textes traduits le 16/11 n'étaient lus par aucune page. Shana veut pouvoir relire le site en espagnol, russe et allemand avant de l'ouvrir au public, sans que Google indexe des pages dont les boutons sont encore en anglais.
+- Le back-office doit rester en anglais pour les noms de fiches, tout en signalant qu'un client vient d'une page espagnole, russe ou allemande.
+
+---
+
 ## 16/11/2026 : Réservations en ligne, le coût fournisseur s'enregistre tout seul
 
 ### Ce qui a changé côté code

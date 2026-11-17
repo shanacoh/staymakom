@@ -24,6 +24,20 @@ export function isAutoLocale(value: unknown): value is AutoLocale {
   return typeof value === "string" && (AUTO_LOCALES as readonly string[]).includes(value);
 }
 
+/** Toutes les langues du site : saisies à la main (en, fr, he) + traduites automatiquement. */
+export const SITE_LOCALES = ["en", "fr", "he", ...AUTO_LOCALES] as const;
+export type SiteLocale = (typeof SITE_LOCALES)[number];
+
+/**
+ * Langue de la page d'où vient une demande ou une réservation (colonne client_locale).
+ * Renvoie null pour une valeur inconnue : la réservation passe quand même, sans badge.
+ */
+export function toClientLocale(value: unknown): SiteLocale | null {
+  return typeof value === "string" && (SITE_LOCALES as readonly string[]).includes(value)
+    ? (value as SiteLocale)
+    : null;
+}
+
 /**
  * « text » : un texte (HTML simple possible).
  * « list » : une liste de textes courts.

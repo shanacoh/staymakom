@@ -1,66 +1,76 @@
 import { useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
 import { trackLanguageSwitched } from "@/lib/analytics";
+import {
+  interfaceLanguage,
+  isAutoLocale,
+  isLocale,
+  resolveLocale,
+  storeLocale,
+  type Locale,
+  type WrittenLocale,
+} from "@/lib/locale";
 
-export type Language = "en" | "he" | "fr";
-
-const STORAGE_KEY = "preferredLang";
-const VALID_LANGS: Language[] = ["en", "he", "fr"];
-
-const detectInitialLanguage = (): Language => {
-  // 1. Préférence déjà sauvegardée (visite précédente)
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved && VALID_LANGS.includes(saved as Language)) return saved as Language;
-
-  // 2. Langue configurée dans le navigateur/appareil
-  const browserLang = (navigator.language || "").split("-")[0].toLowerCase();
-  if (browserLang === "fr") return "fr";
-  if (browserLang === "he" || browserLang === "iw") return "he"; // "iw" = ancien code hébreu
-  return "en";
-};
+/**
+ * Langue des textes d'interface (en, he, fr). En espagnol / russe / allemand, l'interface
+ * reste en anglais tant que ses textes ne sont pas traduits ; le contenu des fiches, lui,
+ * arrive déjà traduit (voir src/lib/contentTranslations/translatingFetch.ts).
+ */
+export type Language = WrittenLocale;
+export type { Locale };
 
 export const useLanguage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const urlLang = searchParams.get("lang");
-  // Si l'URL a un paramètre de langue valide, on l'utilise ; sinon on détecte
-  const lang: Language = (urlLang && VALID_LANGS.includes(urlLang as Language))
-    ? (urlLang as Language)
-    : detectInitialLanguage();
+  // Langue réelle de la page (en, he, fr, es, ru, de)
+  const locale: Locale = resolveLocale(`?${searchParams.toString()}`);
+  // Langue des textes d'interface
+  const lang: Language = interfaceLanguage(locale);
 
-  // Au premier chargement sans paramètre ?lang=, on écrit la langue détectée dans l'URL
   useEffect(() => {
-    if (!searchParams.get("lang")) {
-      const detected = detectInitialLanguage();
+    const urlLang = searchParams.get("lang");
+    if (isLocale(urlLang)) {
+      // Langue présente dans l'adresse : on la retient pour les pages suivantes
+      // (beaucoup de liens internes ne recopient pas ?lang=).
+      storeLocale(urlLang);
+    } else {
+      // Au premier chargement sans ?lang=, on écrit la langue détectée dans l'adresse
       setSearchParams((prev) => {
         const params = new URLSearchParams(prev);
-        params.set("lang", detected);
+        params.set("lang", locale);
         return params;
-      }, { replace: true }); // replace:true pour ne pas polluer l'historique du navigateur
+      }, { replace: true }); // replace : ne pas polluer l'historique du navigateur
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Set html dir and lang attributes based on language
+  // Sens d'écriture et langue déclarée de la page
   useEffect(() => {
     const html = document.documentElement;
-    if (lang === "he") {
-      html.setAttribute("dir", "rtl");
-      html.setAttribute("lang", "he");
-      document.body.style.direction = "rtl";
-    } else {
-      html.setAttribute("dir", "ltr");
-      html.setAttribute("lang", lang === "fr" ? "fr" : "en");
-      document.body.style.direction = "ltr";
-    }
-  }, [lang]);
+    const rtl = locale === "he";
+    html.setAttribute("dir", rtl ? "rtl" : "ltr");
+    html.setAttribute("lang", locale);
+    document.body.style.direction = rtl ? "rtl" : "ltr";
+  }, [locale]);
 
-  const setLanguage = (newLang: Language) => {
-    trackLanguageSwitched(lang, newLang);
-    localStorage.setItem(STORAGE_KEY, newLang); // mémoriser le choix pour les visites suivantes
+  const setLanguage = (next: Locale) => {
+    if (next === locale) return;
+    trackLanguageSwitched(locale, next);
+    storeLocale(next); // mémoriser le choix pour les visites suivantes
+
+    // Les fiches déjà chargées contiennent les textes traduits de la langue en cours :
+    // en entrant dans (ou en sortant d') une langue traduite automatiquement, on recharge
+    // la page pour relire les fiches dans la bonne langue.
+    if (isAutoLocale(locale) || isAutoLocale(next)) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("lang", next);
+      window.location.assign(url.toString());
+      return;
+    }
+
     setSearchParams((prev) => {
       const params = new URLSearchParams(prev);
-      params.set("lang", newLang);
+      params.set("lang", next);
       return params;
     });
   };
@@ -69,7 +79,7 @@ export const useLanguage = () => {
     setLanguage(lang === "en" ? "he" : "en");
   };
 
-  return { lang, setLanguage, toggleLanguage };
+  return { lang, locale, setLanguage, toggleLanguage };
 };
 
 // Helper to get localized field value
