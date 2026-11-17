@@ -248,6 +248,21 @@
 
 ---
 
+## [2026-11-17] Paiements : numéros de téléphone locaux et confirmation immédiate
+
+### Ce qui a changé côté code
+- `supabase/functions/_shared/revolut-order.ts` : nouvelle fonction `toRevolutPhone` qui ne transmet à Revolut qu'un numéro au format international (espaces, tirets et préfixe « 00 » nettoyés). Un numéro mal formé (ex. « +0541234567 », ce que produit le formulaire quand le client tape un numéro local) n'est plus envoyé à Revolut ; il reste enregistré sur la réservation.
+- `revolut-payment` (paiement hôtel), `process-standalone-payment` (paiement expérience), `create-booking-payment-link` (liens acompte/solde) : utilisent ce nettoyage. Avant, Revolut refusait toute la commande et le client ne pouvait pas payer.
+- `confirm-standalone-payment` : l'état renvoyé par Revolut (« completed », en minuscules) est mis en majuscules. La confirmation immédiate après paiement fonctionne enfin au lieu de répondre toujours « non confirmé » (c'était le webhook qui confirmait à sa place).
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Test du 17/11 : une commande hôtel avec un numéro local était refusée par Revolut. Le défaut touchait aussi les expériences, Revolut ayant durci sa vérification depuis septembre.
+
+---
+
 ## [2026-11-02] Alertes paiement : distinguer « le site a planté » de « paiement reçu hors site »
 
 ### Ce qui a changé côté code

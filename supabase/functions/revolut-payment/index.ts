@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { SITE_ORDER_METADATA } from '../_shared/revolut-order.ts';
+import { SITE_ORDER_METADATA, toRevolutPhone } from '../_shared/revolut-order.ts';
 
 const ALLOWED_ORIGINS: (string | RegExp)[] = [
   'https://staymakom.com',
@@ -106,7 +106,7 @@ async function createOrder(body: Record<string, unknown>, envOverride?: string) 
     customer: {
       email: customerEmail || undefined,
       full_name: customerName || undefined,
-      phone: customerPhone || undefined,
+      phone: toRevolutPhone(customerPhone),
       date_of_birth: customerBirthDate || undefined,
     },
     metadata: { ...SITE_ORDER_METADATA },

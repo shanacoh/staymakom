@@ -7,7 +7,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { slotsForDate } from '../_shared/time-slot.ts';
 import { loadSupplierPrices, supplierCostOf } from '../_shared/supplier-cost.ts';
 import { toClientLocale } from '../_shared/translations/catalog.ts';
-import { SITE_ORDER_METADATA } from '../_shared/revolut-order.ts';
+import { SITE_ORDER_METADATA, toRevolutPhone } from '../_shared/revolut-order.ts';
 
 const ALLOWED_ORIGINS: (string | RegExp)[] = [
   'https://staymakom.com',
@@ -77,7 +77,7 @@ async function createRevolutOrder(params: {
     customer: {
       email: params.customerEmail,
       full_name: params.customerName,
-      phone: params.customerPhone || undefined,
+      phone: toRevolutPhone(params.customerPhone),
       date_of_birth: params.customerBirthDate || undefined,
     },
     metadata: { ...SITE_ORDER_METADATA },

@@ -108,7 +108,9 @@ async function getRevolutOrderState(orderId: string): Promise<string> {
     throw new Error(`Revolut get-order failed: ${response.status} — ${errorText}`);
   }
   const data = await response.json();
-  return data.state as string;
+  // Revolut renvoie l'état en minuscules (« completed ») : on le met en majuscules pour le
+  // comparer à COMPLETED / AUTHORISED, sinon la confirmation immédiate échoue toujours.
+  return String(data.state || '').toUpperCase();
 }
 
 Deno.serve(async (req: Request) => {

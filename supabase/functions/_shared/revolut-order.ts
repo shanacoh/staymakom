@@ -21,6 +21,20 @@ export type RevolutOrderSummary = {
   isAdminTest: boolean;
 };
 
+/**
+ * Téléphone à transmettre à Revolut, ou undefined. Revolut refuse toute la commande si le
+ * numéro n'est pas au format international (ex. « +0541234567 », produit par le formulaire
+ * quand le client tape un numéro local). Le pays n'est pas deviné : un numéro mal formé
+ * n'est simplement pas envoyé, il reste enregistré sur la réservation.
+ */
+export function toRevolutPhone(raw: unknown): string | undefined {
+  if (typeof raw !== 'string') return undefined;
+  let phone = raw.replace(/[\s\-().]/g, '');
+  if (phone.startsWith('+00')) phone = '+' + phone.slice(3);
+  else if (phone.startsWith('00')) phone = '+' + phone.slice(2);
+  return /^\+[1-9]\d{6,14}$/.test(phone) ? phone : undefined;
+}
+
 function getEnvMode(): 'production' | 'dev' {
   const raw = (Deno.env.get('REVOLUT_ENVIRONMENT') || Deno.env.get('ENVIRONMENT') || '').trim().toLowerCase();
   return ['production', 'prod', 'live'].includes(raw) ? 'production' : 'dev';
