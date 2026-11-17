@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Users, Calendar, CheckCircle2 } from "lucide-react";
 import { fr, he } from "date-fns/locale";
 import { ReassuranceLine } from "@/components/reviews/ReassuranceLine";
+import { PhoneInput } from "@/components/PhoneInput";
 
 interface StandaloneRequestPanelProps {
   experienceId: string;
@@ -231,7 +232,7 @@ export default function StandaloneRequestPanel({
         </div>
         <div className="space-y-1.5">
           <label className="text-sm font-medium">{t.phone}</label>
-          <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} disabled={submitting} />
+          <PhoneInput value={phone} onChange={setPhone} lang={lang} disabled={submitting} />
         </div>
       </div>
 

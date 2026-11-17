@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { User, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { PhoneInput } from "@/components/PhoneInput";
+import { repairStoredPhone } from "@/lib/phone";
 
 export interface LeadGuestData {
   title: "MR" | "MS" | "MRS" | "";
@@ -75,8 +77,6 @@ const translations = {
     autoFilled: "Auto-filled from your account",
     required: "Required",
     invalidEmail: "Invalid email",
-    invalidPhone: "Use international format, e.g. +972 XX XXX XXXX",
-    phonePlaceholder: "+972 XX XXX XXXX",
     streetAddress: "Address",
     selectCountry: "Select a country",
   },
@@ -91,8 +91,6 @@ const translations = {
     autoFilled: "מילוי אוטומטי מהחשבון שלך",
     required: "שדה חובה",
     invalidEmail: "כתובת אימייל לא תקינה",
-    invalidPhone: "השתמש בפורמט בינלאומי, לדוג׳ XXXX XXX XX 972+",
-    phonePlaceholder: "+972 XX XXX XXXX",
     streetAddress: "כתובת",
     selectCountry: "בחר מדינה",
   },
@@ -107,8 +105,6 @@ const translations = {
     autoFilled: "Pré-rempli depuis votre compte",
     required: "Requis",
     invalidEmail: "Email invalide",
-    invalidPhone: "Format international, ex : +972 XX XXX XXXX",
-    phonePlaceholder: "+972 XX XXX XXXX",
     streetAddress: "Adresse",
     selectCountry: "Choisir un pays",
   },
@@ -118,18 +114,8 @@ function isValidEmail(e: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 }
 
-function isValidPhone(p: string): boolean {
-  return /^\+?\d[\d\s-]{7,}$/.test(p.trim());
-}
-
-/** Normalize phone: strip spaces/dashes, ensure starts with + */
-function normalizePhone(p: string): string {
-  let cleaned = p.replace(/[\s\-()]/g, "");
-  if (cleaned && !cleaned.startsWith("+") && cleaned.length >= 8) {
-    cleaned = "+" + cleaned;
-  }
-  return cleaned;
-}
+/** Numéro au format international ; répare les anciens numéros enregistrés (« +054… »). */
+const normalizePhone = repairStoredPhone;
 
 const inputStyle = {
   backgroundColor: '#faf8f6',
@@ -155,7 +141,6 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
       address: requireAddress && (show || touched.address) && !value.address.trim() ? t.required : null,
       email: (show || touched.email) && !value.email.trim() ? t.required 
            : (show || touched.email) && !isValidEmail(value.email) ? t.invalidEmail : null,
-      phone: (show || touched.phone) && value.phone.trim() && !isValidPhone(value.phone) ? t.invalidPhone : null,
     };
   }, [value, touched, showErrors, t, requireAddress, requireCountry]);
 
@@ -304,20 +289,14 @@ export function LeadGuestForm({ value, onChange, lang = "en", showErrors = false
           </div>
           <div className="space-y-1">
             <Label className="text-xs">{t.phone} <span className="text-muted-foreground">({t.optional})</span></Label>
-            <Input
-              type="tel"
+            {/* Indicatif + numéro ; un numéro douteux affiche un message sans bloquer la réservation. */}
+            <PhoneInput
               value={value.phone}
-              onChange={(e) => update("phone", e.target.value)}
-              onBlur={() => {
-                markTouched("phone");
-                const normalized = normalizePhone(value.phone);
-                if (normalized !== value.phone) update("phone", normalized);
-              }}
-              className={`h-9 ${errors.phone ? "border-destructive" : ""}`}
+              onChange={(phone) => update("phone", phone)}
+              lang={lang}
+              className="h-9"
               style={inputStyle}
-              placeholder={t.phonePlaceholder}
             />
-            <FieldError msg={errors.phone} />
           </div>
         </div>
       </CardContent>
@@ -352,8 +331,7 @@ export function isLeadGuestComplete(
     g.firstName.trim() !== "" &&
     g.lastName.trim() !== "" &&
     (!requireAddress || g.address.trim() !== "") &&
-    isValidEmail(g.email) &&
-    (!g.phone.trim() || isValidPhone(g.phone))
+    isValidEmail(g.email)
   );
 }
 

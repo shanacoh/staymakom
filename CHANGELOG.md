@@ -248,6 +248,23 @@
 
 ---
 
+## [2026-11-17] Téléphone client : sélecteur de pays et numéro toujours au format international
+
+### Ce qui a changé côté code
+- `src/lib/phone.ts` (nouveau) : liste commune des indicatifs, composition « indicatif + numéro sans le 0 national » (« 054… » avec Israël devient « +97254… », « 06… » avec la France devient « +336… », l'Italie garde son 0), vérification douce, réparation des anciens numéros « +05X… » pour les liens WhatsApp. Tests dans `src/lib/phone.test.ts`.
+- `src/components/PhoneInput.tsx` (nouveau) : champ indicatif + numéro, Israël par défaut, France si le site est en français. Un numéro douteux affiche un message sous le champ sans bloquer l'envoi. Toujours affiché de gauche à droite, même en hébreu.
+- Champ utilisé dans : `LeadGuestForm.tsx` (réservations d'hôtel et d'expérience ; un numéro mal formé ne bloque plus la réservation), `BoatAvailabilityPopup.tsx` (demandes bateau, le numéro passe sur sa propre ligne), `StandaloneRequestPanel.tsx` (demandes de dates).
+- `src/lib/tailorMade/form.ts` : le formulaire sur-mesure garde son sélecteur mais utilise la liste et la composition communes (son indicatif par défaut reste +1 en anglais).
+- `src/lib/reservations/whatsapp.ts` et `src/pages/admin/StandaloneBookingDetails.tsx` : tous les boutons WhatsApp du back-office (réservations, demandes, dossiers, liens de paiement, demande d'avis) utilisent le numéro réparé.
+
+### Ce qui a changé côté base de données
+- Rien dans ce lot (la correction des anciens numéros est faite à part, après validation de la liste par Shana).
+
+### Pourquoi ce changement
+- Les clients tapaient leur numéro sans indicatif ; il était enregistré « +054… », illisible pour Revolut et pour WhatsApp.
+
+---
+
 ## [2026-11-17] Paiements : numéros de téléphone locaux et confirmation immédiate
 
 ### Ce qui a changé côté code

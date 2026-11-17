@@ -3,14 +3,15 @@
 
 import { format, parseISO } from "date-fns";
 import { WHATSAPP_NUMBER } from "@/constants/whatsapp";
+import { whatsAppDigits } from "@/lib/phone";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 // wa.me exige un numéro sans espaces ni "+" — construit un message pré-rempli
 // pour que l'admin n'ait qu'à cliquer "Envoyer" sur WhatsApp Web/mobile.
+// Les anciens numéros mal enregistrés (« +054… ») sont réparés au passage (« 97254… »).
 export function buildWhatsAppLink(phone: string, text: string): string {
-  const digits = phone.replace(/[^\d]/g, "");
-  return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+  return `https://wa.me/${whatsAppDigits(phone)}?text=${encodeURIComponent(text)}`;
 }
 
 export function durationLabel(minutes: number | null): string {

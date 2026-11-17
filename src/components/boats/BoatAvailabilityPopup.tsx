@@ -24,6 +24,7 @@ import { format } from "date-fns";
 import { fr as frLocale, he as heLocale } from "date-fns/locale";
 import { isLastMinuteDate, toLocalDateStr } from "@/lib/boatAvailability";
 import { WHATSAPP_NUMBER } from "@/constants/whatsapp";
+import { PhoneInput } from "@/components/PhoneInput";
 import { trackRequestClicked, type ProductLike } from "@/lib/analytics";
 
 type PriceVariant = {
@@ -359,15 +360,14 @@ export default function BoatAvailabilityPopup({ open, onOpenChange, boat }: Prop
             </div>
 
             <div className="space-y-3 pt-2 border-t">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <label className="text-xs font-medium">{t.firstName} *</label>
-                  <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} disabled={submitting} />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium">{t.whatsapp} *</label>
-                  <Input type="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} disabled={submitting} placeholder="+972..." />
-                </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium">{t.firstName} *</label>
+                <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} disabled={submitting} />
+              </div>
+              {/* Sur sa propre ligne : l'indicatif pays prend de la place à côté du numéro. */}
+              <div className="space-y-1">
+                <label className="text-xs font-medium">{t.whatsapp} *</label>
+                <PhoneInput value={whatsapp} onChange={setWhatsapp} lang={lang} disabled={submitting} />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-medium">{t.email}</label>

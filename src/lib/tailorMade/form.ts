@@ -5,6 +5,7 @@
 
 import { MACRO_REGIONS, type Lang, type MacroRegion } from "@/lib/regions";
 import type { VisitSource } from "@/lib/tailorMade/visitSource";
+import { composePhone } from "@/lib/phone";
 
 type Labels = Record<Lang, string>;
 export interface Option<T extends string = string> {
@@ -56,30 +57,8 @@ export const LANGUAGES: Option<Lang>[] = [
   { value: "he", label: { fr: "עברית", en: "עברית", he: "עברית" } },
 ];
 
-// Indicatifs proposés pour le numéro WhatsApp, les plus fréquents d'abord.
-export const DIAL_CODES: { code: string; label: string }[] = [
-  { code: "+972", label: "🇮🇱 +972" },
-  { code: "+33", label: "🇫🇷 +33" },
-  { code: "+1", label: "🇺🇸 +1" },
-  { code: "+44", label: "🇬🇧 +44" },
-  { code: "+32", label: "🇧🇪 +32" },
-  { code: "+41", label: "🇨🇭 +41" },
-  { code: "+352", label: "🇱🇺 +352" },
-  { code: "+377", label: "🇲🇨 +377" },
-  { code: "+49", label: "🇩🇪 +49" },
-  { code: "+34", label: "🇪🇸 +34" },
-  { code: "+39", label: "🇮🇹 +39" },
-  { code: "+31", label: "🇳🇱 +31" },
-  { code: "+351", label: "🇵🇹 +351" },
-  { code: "+43", label: "🇦🇹 +43" },
-  { code: "+61", label: "🇦🇺 +61" },
-  { code: "+55", label: "🇧🇷 +55" },
-  { code: "+52", label: "🇲🇽 +52" },
-  { code: "+54", label: "🇦🇷 +54" },
-  { code: "+27", label: "🇿🇦 +27" },
-  { code: "+971", label: "🇦🇪 +971" },
-  { code: "+212", label: "🇲🇦 +212" },
-];
+// Indicatifs proposés pour le numéro WhatsApp : liste commune à tous les formulaires du site.
+export { DIAL_CODES } from "@/lib/phone";
 
 const DEFAULT_DIAL_CODE: Record<Lang, string> = { fr: "+33", en: "+1", he: "+972" };
 
@@ -159,7 +138,7 @@ export function upcomingMonths(lang: Lang, from: Date = new Date()): { value: st
 
 /** Numéro complet avec indicatif, sans espaces ni zéro initial (« 06 12… » devient « +33612… »). */
 export function fullPhone(form: Pick<TailorMadeForm, "dialCode" | "phone">): string {
-  return form.dialCode + form.phone.replace(/\D/g, "").replace(/^0+/, "");
+  return composePhone(form.dialCode, form.phone);
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

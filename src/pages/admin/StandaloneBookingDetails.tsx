@@ -26,6 +26,7 @@ import PracticalInfoWhatsAppCard from "@/components/admin/PracticalInfoWhatsAppC
 import BookingTicketsCard from "@/components/admin/BookingTicketsCard";
 import { trackReviewRequestSent } from "@/lib/analytics";
 import { formatTimeSlot } from "@/lib/timeSlots";
+import { buildWhatsAppLink } from "@/lib/reservations/whatsapp";
 
 export default function AdminStandaloneBookingDetails() {
   const { bookingId } = useParams();
@@ -106,10 +107,9 @@ export default function AdminStandaloneBookingDetails() {
 
   const sendPaymentLinkOnWhatsApp = (checkoutUrl: string, kind: string) => {
     if (!booking?.customer_phone) return;
-    const digits = booking.customer_phone.replace(/[^\d]/g, "");
     const label = kind === "deposit" ? "l'acompte" : "le solde";
     const text = `Bonjour ${booking.customer_name}, voici le lien pour régler ${label} de votre réservation "${booking.standalone_experiences?.title || ""}" : ${checkoutUrl}`;
-    window.open(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`, "_blank");
+    window.open(buildWhatsAppLink(booking.customer_phone, text), "_blank");
   };
 
   const { data: existingReviewRequest } = useQuery({
@@ -140,10 +140,9 @@ export default function AdminStandaloneBookingDetails() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["admin-standalone-booking-review-request", bookingId] });
       trackReviewRequestSent("standalone_bookings", "whatsapp", "en");
-      const digits = (booking.customer_phone || "").replace(/[^\d]/g, "");
       const link = `https://staymakom.com/avis/${data.token}`;
       const text = `Bonjour ${booking.customer_name}, merci encore pour votre réservation "${booking.standalone_experiences?.title || ""}" ! Pourriez-vous nous laisser un avis ? ${link}`;
-      window.open(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`, "_blank");
+      window.open(buildWhatsAppLink(booking.customer_phone || "", text), "_blank");
     },
     onError: (error: any) => toast.error("Impossible de créer la demande d'avis", { description: error.message }),
   });
