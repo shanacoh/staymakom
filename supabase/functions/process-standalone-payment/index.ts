@@ -426,7 +426,7 @@ Deno.serve(async (req: Request) => {
         extras: extrasSnapshot.length > 0 ? extrasSnapshot : null,
         rate_option: selectedRateOption,
         preferred_lang: preferredLang,
-          client_locale: clientLocale,
+        client_locale: clientLocale,
         special_requests: specialRequests,
       }])
       .select('id, confirmation_token')
