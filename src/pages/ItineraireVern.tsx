@@ -136,12 +136,12 @@ function VariantsChoice({ chapter }: { chapter: Chapter }) {
   );
 }
 
-function Milestone({ label, title, description }: { label: string; title: string; description: string }) {
+function Milestone({ label, title, description }: { label: string; title: string; description?: string }) {
   return (
     <div className="mx-auto max-w-5xl px-5 py-8 text-center">
       <p className="font-sans text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{label}</p>
       <p className="mt-1.5 font-sans text-sm font-bold uppercase tracking-[0.06em] text-foreground">{title}</p>
-      <p className="mt-1 font-sans text-[13px] text-foreground/70">{description}</p>
+      {description && <p className="mt-1 font-sans text-[13px] text-foreground/70">{description}</p>}
     </div>
   );
 }

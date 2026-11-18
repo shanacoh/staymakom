@@ -72,7 +72,7 @@ export type Chapter = {
 export const ARRIVAL = {
   label: "Friday 8 January",
   title: "From Tel Aviv to Jerusalem",
-  description: "We pick you up at your Tel Aviv hotel and drive you up to Jerusalem, about an hour away.",
+  description: "About an hour from Tel Aviv up to Jerusalem.",
 };
 
 export const CHAPTERS: Chapter[] = [
@@ -325,7 +325,6 @@ export const CHAPTERS: Chapter[] = [
 export const DEPARTURE = {
   label: "Friday 15 January",
   title: "Off to Ben Gurion",
-  description: "Your driver picks you up at your hotel for your morning flight. The airport is 20 minutes away.",
 };
 
 /** Phrase juste avant le bouton WhatsApp : la suite, et les frais d'organisation. */
@@ -362,7 +361,7 @@ export const OPTION_QUESTIONS: OptionQuestion[] = [
   },
   {
     title: "Getting around",
-    choices: ["A private driver for the whole week", "A private driver between stops only", "A rental car"],
+    choices: ["Private drivers", "A rental car", "No need"],
   },
   {
     title: "Guides",
