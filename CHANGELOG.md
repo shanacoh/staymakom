@@ -4,6 +4,20 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 18/11/2026 : Page de proposition pour Sharon (/sharon), 50 ans de mariage dans le Sud
+
+### Ce qui a changé côté code
+- `src/pages/PropositionSharon.tsx` (nouveau) : page one-off en anglais. Trois destinations (Néguev, Eilat, mer Morte), chacune avec sa température de février, un bouton « I like this destination », 4 cartes d'hôtel (3 photos qui défilent, prix en shekels + estimation en euros, bouton « I like this one ») et une carte d'activités douces (mobilité réduite, casher). Partie 4 « Next steps » : une case libre et un bouton « Schedule a call » qui ouvre WhatsApp avec les destinations et hôtels aimés. Mention « VAT (18%) to be added » et taux de conversion indicatif (3,5 ₪ pour 1 €, constante `ILS_PER_EUR` dans la page).
+- `src/data/propositionSharon.ts` (nouveau) : tout le contenu de la page (hôtels, prix, photos, activités). Les vrais noms des hôtels ne sont pas affichés (noms d'ambiance, comme la page Ilona) mais sont gardés dans `realName` pour s'y retrouver. Prix = prix donnés par Shana + 250 ₪.
+- `src/assets/sharon-hotels/` (nouveau) : 30 photos d'hôtels (extérieur, chambre, une autre vue). Sources : notre base (Beresheet, Kedma, Oasis), site officiel Isrotel (Kayma, Nevo, Noga), Hotels.com (Orchid, Queen of Sheba, Yam Suf, The Herbert). Jacob et Daroma réutilisent les photos de `src/assets/ilona-hotels/`.
+- `src/App.tsx` : nouvelle adresse `/sharon`.
+
+### Ce qui a changé côté base de données
+- Rien. La page est statique et n'enregistre rien.
+
+### Pourquoi ce changement
+- Demande sur-mesure de Sharon : 50 ans de mariage, du 7 au 9 février 2027, 2 adultes, casher, mobilité réduite, « somewhere not too cold ». La page lui propose des hôtels dans les trois régions les plus chaudes en février et l'invite à caler un appel pour organiser le week-end.
+
 ## 18/11/2026 : Page itinéraire de Vern (/vern), une semaine de Jérusalem au désert
 
 ### Ce qui a changé côté code
