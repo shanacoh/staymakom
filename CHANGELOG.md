@@ -7,7 +7,7 @@
 ## 18/11/2026 : Page itinéraire de Vern (/vern), une semaine de Jérusalem au désert
 
 ### Ce qui a changé côté code
-- `src/pages/ItineraireVern.tsx` et `src/data/itineraireVern.ts` (nouveaux) : page itinéraire privée de Vern, du 8 au 15 janvier, en anglais, reprise de la page de Jade. Jérusalem (Shabbat, Yad Vashem, Knesset, une case « Your pick » avec plusieurs idées le 10 janvier), les collines et la mer Morte, l'Arava, puis un jour 7 au choix résumé dans un seul bandeau (option 1 Mitzpe Ramon, option 2 le sud après le 7 octobre). Pas de bloc « We take care of everything ». Crédit photo en pied de page.
+- `src/pages/ItineraireVern.tsx` et `src/data/itineraireVern.ts` (nouveaux) : page itinéraire privée de Vern, du 8 au 15 janvier, en anglais, reprise de la page de Jade. Jérusalem (Shabbat, Yad Vashem, Knesset, une case « Your pick » avec plusieurs idées le 10 janvier), les collines et la mer Morte, l'Arava, puis un jour 7 au choix résumé dans un seul bandeau (option 1 Mitzpe Ramon, option 2 le sud après le 7 octobre). Pas de bloc « We take care of everything ». Crédit photo en pied de page. Aucun chauffeur annoncé (arrivée, départ) tant que Vern n'a pas choisi ; question « Getting around » : Private drivers, A rental car, No need, ou à discuter.
 - `src/App.tsx` : nouvelle adresse `/vern`.
 - `src/components/itinerary/OptionsChecklist.tsx` : deux réglages facultatifs, une case commentaire libre (ajoutée au message WhatsApp) et une phrase juste avant le bouton. Les autres pages itinéraire ne les utilisent pas et ne changent pas.
 - `src/assets/itineraires/knesset.webp` (nouveau) : photo de la Knesset, « Knesset front side - 2022 » par Clema12, Wikimedia Commons, licence CC BY-SA 4.0 (l'auteur doit être cité, d'où la mention en pied de page).
