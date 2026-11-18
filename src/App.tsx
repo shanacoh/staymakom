@@ -94,6 +94,7 @@ const HappyBirthdayMom             = lazy(() => import("./pages/HappyBirthdayMom
 const CarrieSafed                = lazy(() => import("./pages/CarrieSafed"));
 const ItineraireRebeca           = lazy(() => import("./pages/ItineraireRebeca"));
 const ItineraireJade             = lazy(() => import("./pages/ItineraireJade"));
+const ItineraireVern             = lazy(() => import("./pages/ItineraireVern"));
 const LauraMerMorte              = lazy(() => import("./pages/LauraMerMorte"));
 const NP                         = lazy(() => import("./pages/NP"));
 const Ilona                      = lazy(() => import("./pages/Ilona"));
@@ -266,6 +267,7 @@ const AppContent = () => {
           <Route path="/carrie-safed" element={<CarrieSafed />} />
           <Route path="/rebeca" element={<ItineraireRebeca />} />
           <Route path="/jade" element={<ItineraireJade />} />
+          <Route path="/vern" element={<ItineraireVern />} />
           <Route path="/laura-mer-morte" element={<LauraMerMorte />} />
           <Route path="/NP" element={<NP />} />
           <Route path="/ilona" element={<Ilona />} />
