@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Loader2, BookOpen, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { tPage } from "@/lib/translations";
 
 interface RecommendedJournalProps {
   userId?: string;
@@ -45,10 +46,10 @@ export default function RecommendedJournal({ userId, limit = 3 }: RecommendedJou
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <BookOpen className="h-5 w-5 text-accent" />
-          <h3 className="font-serif text-xl text-foreground">From the Journal</h3>
+          <h3 className="font-serif text-xl text-foreground">{tPage("recommendedJournal__title")}</h3>
         </div>
         <Button variant="ghost" size="sm" onClick={() => navigate("/journal")} className="gap-1">
-          View all
+          {tPage("recommendedJournal__viewAll")}
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>

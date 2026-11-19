@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { useLanguage } from "@/hooks/useLanguage";
+import { dateFnsLocale } from "@/lib/dateFnsLocale";
 import {
   Calendar,
   Heart,
@@ -31,6 +33,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { tPage } from "@/lib/translations";
 
 const TIER_CONFIG = {
   explorer: { label: "Explorer", emoji: "🧭", nextLabel: "Traveler", nextPoints: 500, min: 0 },
@@ -39,24 +42,27 @@ const TIER_CONFIG = {
   circle: { label: "Circle", emoji: "💎", nextLabel: null, nextPoints: null, min: 3000 },
 };
 
-const HOW_TO_EARN: Record<string, string> = {
-  explorer: "Book experiences to earn points — 1 USD spent = 1 point, 4 NIS = 1 point. Reach 500 points to unlock Traveler.",
-  traveler: "Keep booking! You need 1,500 points total to reach Insider.",
-  insider: "You're almost at the top. Reach 3,000 points to join Circle.",
-  circle: "You've reached the highest tier. Every booking continues to earn points.",
-};
+// Comment gagner des points, selon le palier (clés mobileAccountHome__earn…).
+const HOW_TO_EARN = {
+  explorer: "mobileAccountHome__earnExplorer",
+  traveler: "mobileAccountHome__earnTraveler",
+  insider: "mobileAccountHome__earnInsider",
+  circle: "mobileAccountHome__earnCircle",
+} as const;
 
+// Mêmes paliers et avantages que AccountHeader (clés accountHeader__…), noms en anglais partout.
 const ALL_TIERS = [
-  { key: "explorer", label: "Explorer", range: "0 – 499 pts", benefits: ["Access to all public experiences", "Earn 1 point per USD spent", "Save favorites & build wishlists"] },
-  { key: "traveler", label: "Traveler", range: "500 – 1,499 pts", benefits: ["Early access to limited experiences", "Member-only opportunities", "Exclusive seasonal offers"] },
-  { key: "insider", label: "Insider", range: "1,500 – 2,999 pts", benefits: ["Priority reservations", "Curated insider recommendations", "Seasonal perks & surprises"] },
-  { key: "circle", label: "Circle", range: "3,000+ pts", benefits: ["Private concierge service", "Bespoke itineraries", "Invitation-only events"] },
-];
+  { key: "explorer", label: "Explorer", min: 0, max: 499, benefits: ["accountHeader__benefitPublicAccess", "accountHeader__benefitEarnPoints", "accountHeader__benefitWishlists"] },
+  { key: "traveler", label: "Traveler", min: 500, max: 1499, benefits: ["accountHeader__benefitEarlyAccess", "accountHeader__benefitMemberOnly", "accountHeader__benefitSeasonalOffers"] },
+  { key: "insider", label: "Insider", min: 1500, max: 2999, benefits: ["accountHeader__benefitPriority", "accountHeader__benefitInsiderTips", "accountHeader__benefitPerks"] },
+  { key: "circle", label: "Circle", min: 3000, max: null, benefits: ["accountHeader__benefitConcierge", "accountHeader__benefitBespoke", "accountHeader__benefitEvents"] },
+] as const;
 
 export default function MobileAccountHome() {
   const [tierSheetOpen, setTierSheetOpen] = useState(false);
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { locale } = useLanguage();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["user-profile-header", user?.id],
@@ -99,7 +105,7 @@ export default function MobileAccountHome() {
     );
   }
 
-  const displayName = profile?.display_name || user?.email?.split("@")[0] || "Member";
+  const displayName = profile?.display_name || user?.email?.split("@")[0] || tPage("accountHeader__member");
   const initials = displayName
     .split(" ")
     .map((n: string) => n.charAt(0))
@@ -110,7 +116,7 @@ export default function MobileAccountHome() {
   const tierConfig = TIER_CONFIG[tier] || TIER_CONFIG.explorer;
   const progress = profile?.membership_progress || 0;
   const memberSince = profile?.created_at
-    ? format(new Date(profile.created_at), "MMM yyyy")
+    ? format(new Date(profile.created_at), "MMM yyyy", { locale: dateFnsLocale(locale) })
     : "";
 
   const nextPoints = tierConfig.nextPoints;
@@ -123,32 +129,32 @@ export default function MobileAccountHome() {
   const menuItems = [
     {
       icon: Calendar,
-      label: "My Bookings",
+      label: tPage("account__tabBookings"),
       onClick: () => navigate("/account?tab=bookings"),
     },
     {
       icon: Heart,
-      label: "Saved Escapes",
+      label: tPage("account__tabWishlist"),
       onClick: () => navigate("/account?tab=wishlist"),
     },
     {
       icon: Gift,
-      label: "Gift Cards",
+      label: tPage("account__tabGiftCards"),
       onClick: () => navigate("/account?tab=giftcards"),
     },
     {
       icon: User,
-      label: "Personal Information",
+      label: tPage("account__tabProfile"),
       onClick: () => navigate("/account?tab=profile"),
     },
     {
       icon: Globe,
-      label: "Language & Currency",
-      onClick: () => toast.info("Use the language switcher in the header bar."),
+      label: tPage("mobileAccountHome__languageCurrency"),
+      onClick: () => toast.info(tPage("mobileAccountHome__useLanguageSwitcher")),
     },
     {
       icon: MessageCircle,
-      label: "Help & Support",
+      label: tPage("accountSidebar__helpSupport"),
       onClick: () => navigate("/contact"),
     },
   ];
@@ -173,7 +179,7 @@ export default function MobileAccountHome() {
           {displayName}
         </h1>
         <p className="text-xs text-muted-foreground mt-0.5">
-          {tierConfig.label} · Since {memberSince}
+          {tierConfig.label} · {tPage("mobileAccountHome__since")(memberSince)}
         </p>
         <button
           onClick={() => setTierSheetOpen(true)}
@@ -190,7 +196,7 @@ export default function MobileAccountHome() {
           <div className="flex items-center justify-between mb-1.5">
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-muted-foreground">
-                {progress} / {nextPoints} pts
+                {tPage("mobileAccountHome__progress")(progress, nextPoints)}
               </span>
               <TooltipProvider delayDuration={0}>
                 <Tooltip>
@@ -200,7 +206,7 @@ export default function MobileAccountHome() {
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-[220px] text-xs leading-relaxed">
-                    {HOW_TO_EARN[tier] || HOW_TO_EARN.explorer}
+                    {tPage(HOW_TO_EARN[tier] || HOW_TO_EARN.explorer)}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -216,7 +222,7 @@ export default function MobileAccountHome() {
             />
           </div>
           <p className="text-[11px] text-muted-foreground">
-            {remaining} pts to unlock {tierConfig.nextLabel}
+            {tPage("mobileAccountHome__toUnlock")(remaining, tierConfig.nextLabel)}
           </p>
         </div>
       )}
@@ -245,7 +251,7 @@ export default function MobileAccountHome() {
           className="w-full flex items-center gap-3.5 py-[14px] text-left transition-colors active:bg-muted/40"
         >
           <LogOut className="h-5 w-5 text-destructive/70 flex-shrink-0" />
-          <span className="flex-1 text-[15px] text-destructive/80">Sign Out</span>
+          <span className="flex-1 text-[15px] text-destructive/80">{tPage("accountSidebar__signOut")}</span>
         </button>
       </div>
     </div>
@@ -254,7 +260,7 @@ export default function MobileAccountHome() {
       <Sheet open={tierSheetOpen} onOpenChange={setTierSheetOpen}>
         <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] overflow-y-auto">
           <SheetHeader className="pb-4">
-            <SheetTitle className="font-serif text-xl text-center">STAYMAKOM Club Tiers</SheetTitle>
+            <SheetTitle className="font-serif text-xl text-center">{tPage("accountHeader__clubTiers")}</SheetTitle>
           </SheetHeader>
           <div className="space-y-4 pb-6">
             {ALL_TIERS.map((t) => {
@@ -273,17 +279,17 @@ export default function MobileAccountHome() {
                       <span className="font-serif text-base text-foreground">{t.label}</span>
                       {isActive && (
                         <span className="text-[10px] font-medium tracking-wider uppercase bg-foreground text-background px-2 py-0.5 rounded-full">
-                          Current
+                          {tPage("accountHeader__current")}
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-muted-foreground">{t.range}</span>
+                    <span className="text-xs text-muted-foreground">{tPage("accountHeader__pointsRange")(t.min, t.max)}</span>
                   </div>
                   <ul className="space-y-1">
                     {t.benefits.map((b, i) => (
                       <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
                         <span className="text-foreground/50 mt-0.5">•</span>
-                        {b}
+                        {tPage(b)}
                       </li>
                     ))}
                   </ul>

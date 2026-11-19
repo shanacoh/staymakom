@@ -8,12 +8,14 @@ import { CheckCircle2, Copy, Mail } from "lucide-react";
 import { toast } from "sonner";
 import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
+import { uiGroup } from "@/lib/translations";
 
 export default function GiftCardConfirmation() {
   const [searchParams] = useSearchParams();
   const code = searchParams.get("code");
   const type = searchParams.get("type");
   const [copied, setCopied] = useState(false);
+  const t = uiGroup("giftCardConfirmation");
 
   const { data: giftCard, isLoading } = useQuery({
     queryKey: ["gift-card", code],
@@ -34,7 +36,7 @@ export default function GiftCardConfirmation() {
     if (code) {
       navigator.clipboard.writeText(code);
       setCopied(true);
-      toast.success("Gift code copied to clipboard!");
+      toast.success(t.copiedToast);
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -42,7 +44,7 @@ export default function GiftCardConfirmation() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
+        <p className="text-muted-foreground">{t.loading}</p>
       </div>
     );
   }
@@ -52,10 +54,10 @@ export default function GiftCardConfirmation() {
       <div className="min-h-screen bg-background">
         <V3Header />
         <div className="container max-w-2xl mx-auto px-4 py-20 text-center">
-          <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold mb-4">Gift card not found</h1>
-          <p className="text-muted-foreground mb-8">The gift card code could not be found.</p>
+          <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold mb-4">{t.notFoundTitle}</h1>
+          <p className="text-muted-foreground mb-8">{t.notFoundText}</p>
           <Button asChild>
-            <Link to="/gift-card">Create a Gift Card</Link>
+            <Link to="/gift-card">{t.createGiftCard}</Link>
           </Button>
         </div>
         <LaunchFooter />
@@ -73,24 +75,24 @@ export default function GiftCardConfirmation() {
             <CheckCircle2 className="h-10 w-10 text-primary" />
           </div>
           <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold">
-            Your Staymakom Gift Card has been sent!
+            {t.sentTitle}
           </h1>
           <p className="text-xl text-muted-foreground">
             {type === "amount" 
-              ? "The recipient will receive an email with their gift card and instructions to redeem it."
-              : "The recipient will receive an email with their curated experience and booking details."}
+              ? t.sentTextAmount
+              : t.sentTextExperience}
           </p>
         </div>
 
         <Card className="shadow-medium mb-8">
           <CardHeader className="text-center">
-            <CardTitle>Gift Card Details</CardTitle>
-            <CardDescription>Share this code with the recipient</CardDescription>
+            <CardTitle>{t.detailsTitle}</CardTitle>
+            <CardDescription>{t.detailsSubtitle}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="bg-muted rounded-lg p-6 text-center space-y-4">
               <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                Gift Card Code
+                {t.codeLabel}
               </p>
               <p className="font-mono text-2xl md:text-3xl font-bold text-primary break-all">
                 {code}
@@ -101,7 +103,7 @@ export default function GiftCardConfirmation() {
                 className="w-full sm:w-auto"
               >
                 <Copy className="h-4 w-4 mr-2" />
-                {copied ? "Copied!" : "Copy Code"}
+                {copied ? t.copied : t.copyCode}
               </Button>
             </div>
 
@@ -109,9 +111,9 @@ export default function GiftCardConfirmation() {
               <div className="flex items-start gap-3">
                 <Mail className="h-5 w-5 text-primary mt-0.5" />
                 <div>
-                  <p className="font-medium">Email Confirmation Sent</p>
+                  <p className="font-medium">{t.emailSentTitle}</p>
                   <p className="text-sm text-muted-foreground">
-                    Both you and the recipient will receive email confirmations with all the details.
+                    {t.emailSentText}
                   </p>
                 </div>
               </div>
@@ -119,9 +121,9 @@ export default function GiftCardConfirmation() {
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="h-5 w-5 text-primary mt-0.5" />
                 <div>
-                  <p className="font-medium">Valid for 12 Months</p>
+                  <p className="font-medium">{t.validTitle}</p>
                   <p className="text-sm text-muted-foreground">
-                    The gift card can be redeemed anytime within the next year.
+                    {t.validText}
                   </p>
                 </div>
               </div>
@@ -130,17 +132,16 @@ export default function GiftCardConfirmation() {
         </Card>
 
         <div className="bg-muted/30 rounded-lg p-8 text-center space-y-4">
-          <h3 className="font-sans text-xl font-semibold">What happens next?</h3>
+          <h3 className="font-sans text-xl font-semibold">{t.nextTitle}</h3>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            The recipient will receive an email with their unique gift code and instructions on how to redeem it. 
-            They can browse all available experiences and book their perfect stay whenever they're ready.
+            {t.nextText}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
             <Button asChild variant="outline">
-              <Link to="/">Back to Home</Link>
+              <Link to="/">{t.backHome}</Link>
             </Button>
             <Button asChild>
-              <Link to="/gift-card">Send Another Gift</Link>
+              <Link to="/gift-card">{t.sendAnother}</Link>
             </Button>
           </div>
         </div>

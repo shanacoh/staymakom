@@ -5,38 +5,20 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 type Lang = "en" | "fr" | "he";
+import { uiGroup } from "@/lib/translations";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface OAuthButtonsProps {
   lang?: Lang;
   disabled?: boolean;
 }
 
-function getCopy(lang: Lang) {
-  switch (lang) {
-    case "fr":
-      return {
-        google: "Continuer avec Google",
-        or: "ou",
-        googleError: "Échec de la connexion avec Google",
-      };
-    case "he":
-      return {
-        google: "המשך עם גוגל",
-        or: "או",
-        googleError: "ההתחברות עם Google נכשלה",
-      };
-    default:
-      return {
-        google: "Continue with Google",
-        or: "or",
-        googleError: "Failed to connect with Google",
-      };
-  }
-}
 
-export default function OAuthButtons({ lang = "en", disabled = false }: OAuthButtonsProps) {
+// La prop lang est conservée pour compatibilité, la langue suit toujours la page.
+export default function OAuthButtons({ disabled = false }: OAuthButtonsProps) {
+  useLanguage();
   const [loadingGoogle, setLoadingGoogle] = useState(false);
-  const copy = getCopy(lang);
+  const copy = uiGroup("oauthButtons");
 
   const handleGoogleSignIn = async () => {
     setLoadingGoogle(true);

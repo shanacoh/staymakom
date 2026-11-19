@@ -15,18 +15,20 @@ import OnboardingFlow from "@/components/auth/OnboardingFlow";
 
 import heroImage from "@/assets/hero-road-desert.jpg";
 import { Heart } from "lucide-react";
+import { tPage } from "@/lib/translations";
 
-const loginSchema = z.object({
-  email: z.string().email({ message: "Invalid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+// Messages de validation dans la langue de la page (fonctions : la langue est lue à l'envoi).
+const loginSchema = () => z.object({
+  email: z.string().email({ message: tPage("authPage__invalidEmail") }),
+  password: z.string().min(6, { message: tPage("authPage__passwordMin") }),
 });
 
-const signupSchema = z.object({
-  email: z.string().email({ message: "Invalid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+const signupSchema = () => z.object({
+  email: z.string().email({ message: tPage("authPage__invalidEmail") }),
+  password: z.string().min(6, { message: tPage("authPage__passwordMin") }),
   displayName: z.string().optional(),
   tosAccepted: z.boolean().refine(val => val === true, {
-    message: "You must accept the terms of service",
+    message: tPage("authPage__mustAcceptTerms"),
   }),
 });
 
@@ -69,11 +71,11 @@ const Auth = () => {
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
+      toast.error(tPage("authPage__passwordMin"));
       return;
     }
     if (newPassword !== newPasswordConfirm) {
-      toast.error("Passwords do not match");
+      toast.error(tPage("authPage__passwordsDontMatch"));
       return;
     }
     setUpdatingPassword(true);
@@ -82,11 +84,11 @@ const Auth = () => {
       if (error) {
         toast.error(error.message);
       } else {
-        toast.success("Password updated successfully!");
+        toast.success(tPage("authPage__passwordUpdated"));
         navigate("/account?tab=bookings");
       }
     } catch {
-      toast.error("Something went wrong");
+      toast.error(tPage("authPage__somethingWrong"));
     } finally {
       setUpdatingPassword(false);
     }
@@ -100,12 +102,12 @@ const Auth = () => {
 
     if (isLocked) {
       const remainingMin = Math.ceil((lockedUntil! - Date.now()) / 60000);
-      toast.error(`Too many attempts. Try again in ${remainingMin} minute(s).`);
+      toast.error(tPage("authPage__tooManyAttempts")(remainingMin));
       return;
     }
     
     try {
-      const validated = loginSchema.parse(loginData);
+      const validated = loginSchema().parse(loginData);
       setLoading(true);
 
       const { error } = await signIn(validated.email, validated.password);
@@ -117,14 +119,14 @@ const Auth = () => {
         if (newAttempts >= MAX_ATTEMPTS) {
           setLockedUntil(Date.now() + LOCK_DURATION);
           setLoginAttempts(0);
-          toast.error("Account temporarily locked. Try again in 5 minutes.");
+          toast.error(tPage("authPage__accountLocked"));
         } else {
-          toast.error("Invalid email or password");
+          toast.error(tPage("authPage__invalidCredentials"));
         }
       } else {
         setLoginAttempts(0);
         setLockedUntil(null);
-        toast.success("Welcome back!");
+        toast.success(tPage("authPage__welcomeBack"));
         navigate("/account?tab=bookings");
       }
     } catch (err) {
@@ -147,7 +149,7 @@ const Auth = () => {
     setErrors({});
 
     try {
-      const validated = signupSchema.parse(signupData);
+      const validated = signupSchema().parse(signupData);
       setLoading(true);
 
       const { error, data } = await signUp(
@@ -158,11 +160,11 @@ const Auth = () => {
 
       if (error) {
         if (error.message.includes("already registered")) {
-          toast.success("If this email is registered, you will receive a confirmation. Please check your inbox.");
+          toast.success(tPage("authPage__ifRegistered"));
         } else if (error.message.includes("Email not confirmed")) {
-          toast.info("Please check your inbox for a confirmation email.");
+          toast.info(tPage("authPage__checkInbox"));
         } else if (error.message.includes("User not found")) {
-          toast.error("Invalid email or password");
+          toast.error(tPage("authPage__invalidCredentials"));
         } else {
           toast.error(error.message);
         }
@@ -172,7 +174,7 @@ const Auth = () => {
         const userId = data?.user?.id || null;
         setNewUserId(userId);
         setShowOnboarding(true);
-        toast.success("Account created! Let's complete your profile.");
+        toast.success(tPage("authPage__accountCreated"));
       }
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -193,7 +195,7 @@ const Auth = () => {
     e.preventDefault();
     
     if (!resetEmail || !z.string().email().safeParse(resetEmail).success) {
-      toast.error("Please enter a valid email address");
+      toast.error(tPage("authPage__invalidEmail"));
       return;
     }
 
@@ -206,12 +208,12 @@ const Auth = () => {
       if (error) {
         toast.error(error.message);
       } else {
-        toast.success("Password reset email sent! Check your inbox.");
+        toast.success(tPage("authPage__resetSent"));
         setForgotPasswordMode(false);
         setResetEmail("");
       }
     } catch (err) {
-      toast.error("Something went wrong. Please try again.");
+      toast.error(tPage("authPage__somethingWrongRetry"));
     } finally {
       setResetLoading(false);
     }
@@ -223,16 +225,16 @@ const Auth = () => {
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="w-full max-w-md space-y-6">
           <div className="text-center space-y-2">
-            <h1 className="font-bold text-lg sm:text-2xl md:text-[28px]">Set New Password</h1>
-            <p className="text-muted-foreground">Enter your new password below</p>
+            <h1 className="font-bold text-lg sm:text-2xl md:text-[28px]">{tPage("authPage__setNewPassword")}</h1>
+            <p className="text-muted-foreground">{tPage("authPage__enterNewPassword")}</p>
           </div>
           <form onSubmit={handleUpdatePassword} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="new-password">New Password</Label>
+              <Label htmlFor="new-password">{tPage("authPage__newPassword")}</Label>
               <Input
                 id="new-password"
                 type="password"
-                placeholder="Min. 6 characters"
+                placeholder={tPage("authPage__min6")}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
@@ -240,11 +242,11 @@ const Auth = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Label htmlFor="confirm-password">{tPage("authPage__confirmPassword")}</Label>
               <Input
                 id="confirm-password"
                 type="password"
-                placeholder="Repeat your password"
+                placeholder={tPage("authPage__repeatPassword")}
                 value={newPasswordConfirm}
                 onChange={(e) => setNewPasswordConfirm(e.target.value)}
                 required
@@ -253,9 +255,9 @@ const Auth = () => {
             </div>
             <Button type="submit" className="w-full" disabled={updatingPassword}>
               {updatingPassword ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Updating...</>
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {tPage("authPage__updating")}</>
               ) : (
-                "Update Password"
+                tPage("authPage__updatePassword")
               )}
             </Button>
           </form>
@@ -279,7 +281,7 @@ const Auth = () => {
           className="absolute top-5 left-5 z-10 flex items-center gap-1.5 text-white/80 hover:text-white transition-colors text-xs font-semibold uppercase tracking-[0.1em]"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Back
+          {tPage("authPage__back")}
         </Link>
 
         {/* Centered card */}
@@ -291,9 +293,9 @@ const Auth = () => {
               <Heart className="h-6 w-6 text-[#ad1414]" />
             </div>
             <h1 className="font-sans text-lg font-bold uppercase tracking-[-0.02em] text-foreground mb-1">
-              Welcome to STAYMAKOM
+              {tPage("authPage__welcome")}
             </h1>
-            <p className="text-xs text-muted-foreground">Your journey begins here</p>
+            <p className="text-xs text-muted-foreground">{tPage("authPage__journeyBegins")}</p>
           </div>
 
           {/* Card body */}
@@ -305,14 +307,14 @@ const Auth = () => {
                   <div className="w-10 h-10 mx-auto bg-[#ad1414]/10 rounded-full flex items-center justify-center mb-3">
                     <Mail className="h-5 w-5 text-[#ad1414]" />
                   </div>
-                  <h3 className="font-sans text-sm font-bold uppercase tracking-[-0.02em] text-foreground">Reset your password</h3>
-                  <p className="text-xs text-muted-foreground">Enter your email and we'll send you a reset link</p>
+                  <h3 className="font-sans text-sm font-bold uppercase tracking-[-0.02em] text-foreground">{tPage("authPage__resetTitle")}</h3>
+                  <p className="text-xs text-muted-foreground">{tPage("authPage__resetText")}</p>
                 </div>
 
                 <form onSubmit={handleForgotPassword} className="space-y-3">
                   <div className="space-y-1">
-                    <Label htmlFor="reset-email" className="text-xs font-semibold uppercase tracking-[0.10em]">Email</Label>
-                    <Input id="reset-email" type="email" placeholder="your@email.com" value={resetEmail}
+                    <Label htmlFor="reset-email" className="text-xs font-semibold uppercase tracking-[0.10em]">{tPage("authPage__email")}</Label>
+                    <Input id="reset-email" type="email" placeholder={tPage("authPage__emailPlaceholder")} value={resetEmail}
                       onChange={(e) => setResetEmail(e.target.value)} disabled={resetLoading}
                       className="h-11 rounded-xl bg-muted/50 border-border/50 text-sm" />
                   </div>
@@ -322,13 +324,13 @@ const Auth = () => {
                     <span className="relative inline-flex items-center gap-2">
                       <span aria-hidden className="absolute inset-x-0 bottom-0.5 h-3 rounded-[60%_40%_70%_30%/40%_60%_30%_70%] -rotate-1 bg-[#ad1414]/40" />
                       {resetLoading && <Loader2 className="relative h-4 w-4 animate-spin" />}
-                      <span className="relative text-sm font-semibold uppercase tracking-[0.12em] text-foreground">Send Reset Link</span>
+                      <span className="relative text-sm font-semibold uppercase tracking-[0.12em] text-foreground">{tPage("authPage__sendResetLink")}</span>
                     </span>
                   </button>
 
                   <button type="button" onClick={() => setForgotPasswordMode(false)}
                     className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors pt-1">
-                    <ArrowLeft className="h-3 w-3" /> Back to Sign In
+                    <ArrowLeft className="h-3 w-3" /> {tPage("authPage__backToSignIn")}
                   </button>
                 </form>
               </div>
@@ -338,11 +340,11 @@ const Auth = () => {
                 <TabsList className="grid w-full grid-cols-2 mb-4 p-1 bg-muted/60 rounded-full h-10">
                   <TabsTrigger value="login"
                     className="rounded-full text-xs font-semibold data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
-                    Sign In
+                    {tPage("authPage__signInTab")}
                   </TabsTrigger>
                   <TabsTrigger value="signup"
                     className="rounded-full text-xs font-semibold data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
-                    Sign Up
+                    {tPage("authPage__signUpTab")}
                   </TabsTrigger>
                 </TabsList>
 
@@ -352,15 +354,15 @@ const Auth = () => {
 
                   <form onSubmit={handleLogin} className="space-y-3">
                     <div className="space-y-1">
-                      <Label htmlFor="login-email" className="text-xs font-semibold uppercase tracking-[0.10em]">Email</Label>
-                      <Input id="login-email" type="email" placeholder="your@email.com"
+                      <Label htmlFor="login-email" className="text-xs font-semibold uppercase tracking-[0.10em]">{tPage("authPage__email")}</Label>
+                      <Input id="login-email" type="email" placeholder={tPage("authPage__emailPlaceholder")}
                         value={loginData.email} onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                         disabled={loading} className="h-11 rounded-xl bg-muted/50 border-border/50 text-sm" />
                       {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
                     </div>
 
                     <div className="space-y-1">
-                      <Label htmlFor="login-password" className="text-xs font-semibold uppercase tracking-[0.10em]">Password</Label>
+                      <Label htmlFor="login-password" className="text-xs font-semibold uppercase tracking-[0.10em]">{tPage("authPage__password")}</Label>
                       <div className="relative">
                         <Input id="login-password" type={showPassword ? "text" : "password"} placeholder="••••••••"
                           value={loginData.password} onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
@@ -376,7 +378,7 @@ const Auth = () => {
                     <div className="flex justify-end">
                       <button type="button" onClick={() => setForgotPasswordMode(true)}
                         className="text-xs text-[#ad1414] hover:opacity-80 transition-opacity">
-                        Forgot password?
+                        {tPage("authPage__forgotPassword")}
                       </button>
                     </div>
 
@@ -387,23 +389,23 @@ const Auth = () => {
                         <span aria-hidden className="absolute inset-x-0 bottom-0.5 h-3 rounded-[60%_40%_70%_30%/40%_60%_30%_70%] -rotate-1 bg-[#ad1414]/40" />
                         {loading && <Loader2 className="relative h-4 w-4 animate-spin" />}
                         <span className="relative text-sm font-semibold uppercase tracking-[0.12em] text-foreground">
-                          {isLocked ? "Locked..." : "Sign In"}
+                          {isLocked ? tPage("authPage__locked") : tPage("authPage__signIn")}
                         </span>
                       </span>
                     </button>
 
                     {isLocked && (
                       <p className="text-xs text-destructive text-center">
-                        Too many attempts. Try again in {Math.ceil((lockedUntil! - Date.now()) / 60000)} minute(s).
+                        {tPage("authPage__tooManyAttempts")(Math.ceil((lockedUntil! - Date.now()) / 60000))}
                       </p>
                     )}
                   </form>
 
                   <p className="text-center text-xs text-muted-foreground pt-2">
-                    Don't have an account?{" "}
+                    {tPage("authPage__noAccount")}{" "}
                     <button type="button" onClick={() => setActiveTab("signup")}
                       className="text-[#ad1414] font-medium hover:underline">
-                      Sign up
+                      {tPage("authPage__signUpLink")}
                     </button>
                   </p>
                 </TabsContent>
@@ -415,23 +417,23 @@ const Auth = () => {
                   <form onSubmit={handleSignup} className="space-y-3">
                     <div className="space-y-1">
                       <Label htmlFor="signup-name" className="text-xs font-semibold uppercase tracking-[0.10em]">
-                        Display Name <span className="text-muted-foreground normal-case">(Optional)</span>
+                        {tPage("authPage__displayName")} <span className="text-muted-foreground normal-case">{tPage("authPage__optional")}</span>
                       </Label>
-                      <Input id="signup-name" type="text" placeholder="John Doe"
+                      <Input id="signup-name" type="text" placeholder={tPage("contactJohnDoe")}
                         value={signupData.displayName} onChange={(e) => setSignupData({ ...signupData, displayName: e.target.value })}
                         disabled={loading} className="h-11 rounded-xl bg-muted/50 border-border/50 text-sm" />
                     </div>
 
                     <div className="space-y-1">
-                      <Label htmlFor="signup-email" className="text-xs font-semibold uppercase tracking-[0.10em]">Email</Label>
-                      <Input id="signup-email" type="email" placeholder="your@email.com"
+                      <Label htmlFor="signup-email" className="text-xs font-semibold uppercase tracking-[0.10em]">{tPage("authPage__email")}</Label>
+                      <Input id="signup-email" type="email" placeholder={tPage("authPage__emailPlaceholder")}
                         value={signupData.email} onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
                         disabled={loading} className="h-11 rounded-xl bg-muted/50 border-border/50 text-sm" />
                       {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
                     </div>
 
                     <div className="space-y-1">
-                      <Label htmlFor="signup-password" className="text-xs font-semibold uppercase tracking-[0.10em]">Password</Label>
+                      <Label htmlFor="signup-password" className="text-xs font-semibold uppercase tracking-[0.10em]">{tPage("authPage__password")}</Label>
                       <div className="relative">
                         <Input id="signup-password" type={showPassword ? "text" : "password"} placeholder="••••••••"
                           value={signupData.password} onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
@@ -449,10 +451,10 @@ const Auth = () => {
                         onCheckedChange={(checked) => setSignupData({ ...signupData, tosAccepted: checked as boolean })}
                         disabled={loading} className="mt-0.5" />
                       <label htmlFor="tos" className="text-xs leading-relaxed text-muted-foreground">
-                        I accept the{" "}
-                        <Link to="/terms" className="text-[#ad1414] hover:underline">terms of service</Link>
-                        {" "}and{" "}
-                        <Link to="/privacy" className="text-[#ad1414] hover:underline">privacy policy</Link>
+                        {tPage("authPage__iAccept")}{" "}
+                        <Link to="/terms" className="text-[#ad1414] hover:underline">{tPage("authPage__termsOfService")}</Link>
+                        {tPage("authPage__and")}
+                        <Link to="/privacy" className="text-[#ad1414] hover:underline">{tPage("authPage__privacyPolicy")}</Link>
                       </label>
                     </div>
                     {errors.tosAccepted && <p className="text-xs text-destructive">{errors.tosAccepted}</p>}
@@ -462,15 +464,15 @@ const Auth = () => {
                       className="w-full rounded-full bg-foreground text-background text-xs font-bold uppercase tracking-widest py-3 hover:bg-foreground/90 transition-colors"
                       disabled={loading}>
                       {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Create Account
+                      {tPage("authPage__createAccount")}
                     </Button>
                   </form>
 
                   <p className="text-center text-xs text-muted-foreground pt-2">
-                    Already have an account?{" "}
+                    {tPage("authPage__haveAccount")}{" "}
                     <button type="button" onClick={() => setActiveTab("login")}
                       className="text-[#ad1414] font-medium hover:underline">
-                      Sign in
+                      {tPage("authPage__signInLink")}
                     </button>
                   </p>
                 </TabsContent>

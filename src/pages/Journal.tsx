@@ -8,9 +8,11 @@ import { Link } from "react-router-dom";
 import { Calendar, ArrowRight } from "lucide-react";
 import { format } from "date-fns";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
+import { dateFnsLocale } from "@/lib/dateFnsLocale";
+import { tPage } from "@/lib/translations";
 
 const Journal = () => {
-  const { lang } = useLanguage();
+  const { lang, locale } = useLanguage();
   const { data: posts, isLoading } = useQuery({
     queryKey: ["journal-posts"],
     queryFn: async () => {
@@ -35,9 +37,9 @@ const Journal = () => {
 
       <main className="max-w-6xl mx-auto px-6 py-12 pt-24">
         <div className="text-center mb-10">
-          <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold mb-4">Journal</h1>
+          <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold mb-4">{tPage("journalPageTitle")}</h1>
           <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-xl mx-auto">
-            Stories, places, and insights from extraordinary stays across Israel
+            {tPage("journalSubtitle")}
           </p>
         </div>
 
@@ -96,7 +98,7 @@ const Journal = () => {
                       {featuredPost.published_at && (
                         <span className="text-xs text-white/80 flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
-                          {format(new Date(featuredPost.published_at), "MMM d, yyyy")}
+                          {format(new Date(featuredPost.published_at), "MMM d, yyyy", { locale: dateFnsLocale(locale) })}
                         </span>
                       )}
                     </div>
@@ -112,7 +114,7 @@ const Journal = () => {
                       </p>
                     )}
                     <span className="inline-flex items-center gap-1 text-[#ad1414] text-sm font-medium group-hover:gap-2 transition-all">
-                      Read the story <ArrowRight className="w-4 h-4" />
+                      {tPage("journalReadTheStory")} <ArrowRight className="w-4 h-4" />
                     </span>
                   </div>
                 </div>
@@ -142,7 +144,7 @@ const Journal = () => {
                           {post.published_at && (
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Calendar className="w-3 h-3" />
-                              {format(new Date(post.published_at), "MMM d, yyyy")}
+                              {format(new Date(post.published_at), "MMM d, yyyy", { locale: dateFnsLocale(locale) })}
                             </div>
                           )}
                         </div>
@@ -164,7 +166,7 @@ const Journal = () => {
         ) : (
           <div className="text-center py-12">
             <p className="text-base text-muted-foreground">
-              No articles published yet. Check back soon!
+              {tPage("journalNoArticlesYet")}
             </p>
           </div>
         )}

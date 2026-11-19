@@ -23,6 +23,8 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { analyzeCancellationPolicies } from "@/utils/cancellationPolicy";
 import { formatTimeSlot } from "@/lib/timeSlots";
+import { dateFnsLocale } from "@/lib/dateFnsLocale";
+import { tPage } from "@/lib/translations";
 
 interface MyStaymakomSectionProps {
   userId?: string;
@@ -31,7 +33,7 @@ interface MyStaymakomSectionProps {
 export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { lang } = useLanguage();
+  const { lang, locale } = useLanguage();
   const isHebrew = lang === "he";
   const isFrench = lang === "fr";
   const { symbol, convert } = useCurrency();
@@ -240,13 +242,13 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
       return true;
     },
     onSuccess: () => {
-      toast.success(isHebrew ? "ההזמנה בוטלה בהצלחה" : isFrench ? "Réservation annulée avec succès" : "Booking cancelled successfully");
+      toast.success(tPage("myStaymakomSectionBookingCancelledSuccessfully"));
       queryClient.invalidateQueries({ queryKey: ["my-bookings-hg"] });
       setCancellingBookingId(null);
       setSimulationResult(null);
     },
     onError: (error: any) => {
-      toast.error(isHebrew ? "שגיאה בביטול ההזמנה" : isFrench ? `Échec de l'annulation: ${error.message}` : `Cancellation failed: ${error.message}`);
+      toast.error(tPage("myStaymakom__cancellationFailed")(error.message));
       setCancellingBookingId(null);
       setSimulationResult(null);
     },
@@ -260,16 +262,16 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
 
   const getStatusBadge = (status: string, isCancelled: boolean) => {
     if (isCancelled) {
-      return <Badge variant="destructive">{isHebrew ? "בוטל" : isFrench ? "Annulé" : "Cancelled"}</Badge>;
+      return <Badge variant="destructive">{tPage("myStaymakomSectionCancelled")}</Badge>;
     }
-    const statusConfig: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string; labelHe: string; labelFr: string }> = {
-      pending: { variant: "outline", label: "Pending", labelHe: "ממתין", labelFr: "En attente" },
-      confirmed: { variant: "default", label: "Confirmed", labelHe: "מאושר", labelFr: "Confirmé" },
-      cancelled: { variant: "destructive", label: "Cancelled", labelHe: "בוטל", labelFr: "Annulé" },
-      pendingreview: { variant: "secondary", label: "Under Review", labelHe: "בבדיקה", labelFr: "En cours d'examen" },
+    const statusConfig: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string }> = {
+      pending: { variant: "outline", label: tPage("myStaymakom__statusPending") },
+      confirmed: { variant: "default", label: tPage("myStaymakom__statusConfirmed") },
+      cancelled: { variant: "destructive", label: tPage("myStaymakom__statusCancelled") },
+      pendingreview: { variant: "secondary", label: tPage("myStaymakom__statusUnderReview") },
     };
-    const config = statusConfig[status?.toLowerCase()] || { variant: "outline" as const, label: status, labelHe: status, labelFr: status };
-    return <Badge variant={config.variant}>{isHebrew ? config.labelHe : isFrench ? config.labelFr : config.label}</Badge>;
+    const config = statusConfig[status?.toLowerCase()] || { variant: "outline" as const, label: status };
+    return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   const getTimeBadge = (checkinDate: string) => {
@@ -279,7 +281,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
     if (isPast(checkin)) {
       return (
         <Badge variant="secondary" className="bg-muted text-muted-foreground">
-          {isHebrew ? "הסתיים" : isFrench ? "Terminé" : "Completed"}
+          {tPage("myStaymakomSectionCompleted")}
         </Badge>
       );
     }
@@ -290,7 +292,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
       return (
         <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
           <Plane className="h-3 w-3 mr-1" />
-          {isHebrew ? "היום!" : isFrench ? "Aujourd'hui !" : "Today!"}
+          {tPage("myStaymakomSectionToday")}
         </Badge>
       );
     }
@@ -299,7 +301,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
       return (
         <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">
           <Clock className="h-3 w-3 mr-1" />
-          {isHebrew ? `בעוד ${daysUntil} ימים` : isFrench ? `Dans ${daysUntil} jour${daysUntil > 1 ? "s" : ""}` : `In ${daysUntil} day${daysUntil > 1 ? "s" : ""}`}
+          {tPage("myStaymakom__inDays")(daysUntil)}
         </Badge>
       );
     }
@@ -307,7 +309,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
     return (
       <Badge variant="outline" className="text-muted-foreground">
         <Clock className="h-3 w-3 mr-1" />
-        {isHebrew ? `בעוד ${daysUntil} ימים` : isFrench ? `Dans ${daysUntil} jours` : `In ${daysUntil} days`}
+        {tPage("myStaymakom__inDays")(daysUntil)}
       </Badge>
     );
   };
@@ -364,7 +366,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
         : isFrench
         ? (b.standalone_experiences?.title_fr || b.standalone_experiences?.title)
         : (b.standalone_experiences?.title || "Experience"),
-      hotelName: isHebrew ? "חוויה בלבד" : isFrench ? "Expérience uniquement" : "Experience only",
+      hotelName: tPage("myStaymakomSectionExperienceOnly"),
       hotelCity: "",
       checkin: b.booking_date,
       checkout: b.booking_date,
@@ -374,7 +376,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
       currency: b.currency,
       status: b.status,
       isCancelled: b.is_cancelled ?? false,
-      roomName: b.time_slot ? `🕐 ${formatTimeSlot(b.time_slot, lang)}` : null,
+      roomName: b.time_slot ? `🕐 ${formatTimeSlot(b.time_slot, locale)}` : null,
       hgBookingId: null,
       slug: null,
       heroImage: b.standalone_experiences?.hero_image || null,
@@ -388,18 +390,14 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
     if (isSimulating) {
       return {
         loading: true,
-        message: isHebrew ? "מחשב עמלות ביטול..." : isFrench ? "Calcul des frais d'annulation..." : "Calculating cancellation fees...",
+        message: tPage("myStaymakomSectionCalculatingCancellationFees"),
       };
     }
 
     if (simulationError) {
       return {
         loading: false,
-        message: isHebrew
-          ? "לא ניתן לחשב את עמלות הביטול. ייתכנו עמלות ביטול בהתאם למדיניות המלון."
-          : isFrench
-          ? "Impossible de calculer les frais d'annulation. Des frais peuvent s'appliquer selon la politique de l'hôtel."
-          : "Could not calculate cancellation fees. Cancellation fees may apply depending on the hotel's policy.",
+        message: tPage("myStaymakomSectionCouldNotCalculateCancellationFees"),
         isWarning: true,
       };
     }
@@ -412,7 +410,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
       if (penalty === 0 || simulationResult.freeCancellation) {
         return {
           loading: false,
-          message: isHebrew ? "ביטול חינם — ללא עמלות" : isFrench ? "Annulation gratuite — aucun frais" : "Free cancellation — no fees",
+          message: tPage("myStaymakomSectionFreeCancellationNoFees"),
           isFree: true,
         };
       }
@@ -421,11 +419,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
 
       return {
         loading: false,
-        message: isHebrew
-          ? `עמלת ביטול: ${penaltyDisplay}`
-          : isFrench
-          ? `Frais d'annulation : ${penaltyDisplay}`
-          : `Cancellation fee: ${penaltyDisplay}`,
+        message: tPage("myStaymakom__cancellationFee")(penaltyDisplay),
         hasPenalty: true,
         penalty,
         refund,
@@ -458,8 +452,8 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
             }`}
           >
             {filter === "upcoming"
-              ? isHebrew ? "עתידיות" : isFrench ? "À venir" : "Upcoming"
-              : isHebrew ? "עברו" : isFrench ? "Passées" : "Past"}
+              ? tPage("myStaymakomSectionUpcoming")
+              : tPage("myStaymakomSectionPast")}
           </button>
         ))}
       </div>
@@ -472,9 +466,9 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{isHebrew ? "כל ההזמנות" : isFrench ? "Toutes les réservations" : "All Bookings"}</SelectItem>
-            <SelectItem value="upcoming">{isHebrew ? "עתידיות" : isFrench ? "À venir" : "Upcoming"}</SelectItem>
-            <SelectItem value="past">{isHebrew ? "עברו" : isFrench ? "Passées" : "Past"}</SelectItem>
+            <SelectItem value="all">{tPage("myStaymakomSectionAllBookings")}</SelectItem>
+            <SelectItem value="upcoming">{tPage("myStaymakomSectionUpcoming")}</SelectItem>
+            <SelectItem value="past">{tPage("myStaymakomSectionPast")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -486,13 +480,13 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
           <div className="md:hidden flex flex-col items-center justify-center pt-20 text-center px-6">
             <Calendar className="h-10 w-10 text-muted-foreground/40 mb-4" />
             <p className="text-[15px] text-foreground mb-1">
-              {isHebrew ? "אין הזמנות עדיין." : isFrench ? "Aucune réservation." : "No escapes booked yet."}
+              {tPage("myStaymakomSectionNoEscapesBookedYet")}
             </p>
             <button
               onClick={() => navigate("/launch")}
               className="text-sm text-muted-foreground underline underline-offset-2"
             >
-              {isHebrew ? "גלו חוויות" : isFrench ? "Explorer" : "Explore experiences"}
+              {tPage("myStaymakomSectionExploreExperiences2")}
             </button>
           </div>
           {/* Desktop empty state */}
@@ -503,20 +497,16 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
                   <Calendar className="h-10 w-10 text-[hsl(var(--cta-foreground))]" />
                 </div>
                 <div>
-                  <h3 className="text-xl mb-2">{isHebrew ? "אין הזמנות" : isFrench ? "Aucune réservation" : "No bookings found"}</h3>
+                  <h3 className="text-xl mb-2">{tPage("myStaymakomSectionNoBookingsFound")}</h3>
                   <p className="text-foreground max-w-sm mx-auto">
-                    {isHebrew
-                      ? "גלו את החוויות המיוחדות שלנו והזמינו את ההרפתקה הבאה שלכם!"
-                      : isFrench
-                      ? "Découvrez nos expériences uniques et réservez votre prochaine aventure !"
-                      : "Start exploring our curated experiences and book your next adventure!"}
+                    {tPage("myStaymakomSectionStartExploringOurCuratedExperiences")}
                   </p>
                 </div>
                 <button onClick={() => navigate("/")} className="inline-flex items-center justify-center hover:opacity-80 transition-opacity">
                   <span className="relative inline-block">
                     <span aria-hidden className="absolute inset-x-0 bottom-0.5 h-3 rounded-[60%_40%_70%_30%/40%_60%_30%_70%] -rotate-1 bg-[#ad1414]/40" />
                     <span className="relative text-sm font-semibold uppercase tracking-[0.12em] text-foreground">
-                      {isHebrew ? "גלו חוויות" : isFrench ? "Découvrir les expériences" : "Explore Experiences"}
+                      {tPage("myStaymakomSectionExploreExperiences")}
                     </span>
                   </span>
                 </button>
@@ -583,14 +573,14 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
                       <div className="flex items-center gap-2 col-span-2">
                         <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
                         <div className="text-sm">
-                          <p className="text-muted-foreground text-xs">{isHebrew ? "תאריך" : isFrench ? "Date" : "Date"}</p>
-                          <p className="font-medium">{format(parseISO(booking.checkin), "MMM d, yyyy")}</p>
+                          <p className="text-muted-foreground text-xs">{tPage("myStaymakomSectionDate")}</p>
+                          <p className="font-medium">{format(parseISO(booking.checkin), "MMM d, yyyy", { locale: dateFnsLocale(locale) })}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                         <div className="text-sm">
-                          <p className="text-muted-foreground text-xs">{isHebrew ? "אורחים" : isFrench ? "Personnes" : "Guests"}</p>
+                          <p className="text-muted-foreground text-xs">{tPage("myStaymakomSectionGuests2")}</p>
                           <p className="font-medium">{booking.partySize}</p>
                         </div>
                       </div>
@@ -600,21 +590,21 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                         <div className="text-sm min-w-0">
-                          <p className="text-muted-foreground text-xs">{isHebrew ? "צ'ק-אין" : isFrench ? "Arrivée" : "Check-in"}</p>
-                          <p className="font-medium truncate">{format(parseISO(booking.checkin), "MMM d, yyyy")}</p>
+                          <p className="text-muted-foreground text-xs">{tPage("myStaymakomSectionCheckIn")}</p>
+                          <p className="font-medium truncate">{format(parseISO(booking.checkin), "MMM d, yyyy", { locale: dateFnsLocale(locale) })}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                         <div className="text-sm min-w-0">
-                          <p className="text-muted-foreground text-xs">{isHebrew ? "צ'ק-אאוט" : isFrench ? "Départ" : "Check-out"}</p>
-                          <p className="font-medium truncate">{format(parseISO(booking.checkout), "MMM d, yyyy")}</p>
+                          <p className="text-muted-foreground text-xs">{tPage("myStaymakomSectionCheckOut")}</p>
+                          <p className="font-medium truncate">{format(parseISO(booking.checkout), "MMM d, yyyy", { locale: dateFnsLocale(locale) })}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                         <div className="text-sm">
-                          <p className="text-muted-foreground text-xs">{isHebrew ? "אורחים" : isFrench ? "Voyageurs" : "Guests"}</p>
+                          <p className="text-muted-foreground text-xs">{tPage("myStaymakomSectionGuests")}</p>
                           <p className="font-medium">{booking.partySize}</p>
                         </div>
                       </div>
@@ -634,7 +624,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
 
                   <div className="flex justify-between items-center pt-4 border-t gap-4">
                     <div>
-                      <p className="text-xs text-muted-foreground">{isHebrew ? "סה\"כ" : "Total"}</p>
+                      <p className="text-xs text-muted-foreground">{tPage("myStaymakomSectionTotal")}</p>
                       <p className="text-xl font-bold">
                         {symbol}{Number(convert(booking.totalPrice ?? 0)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </p>
@@ -647,11 +637,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
                           size="sm"
                           onClick={() => {
                             toast.info(
-                              isHebrew
-                                ? "כדי לשנות את ההזמנה, בטל את ההזמנה הנוכחית וצור חדשה."
-                                : isFrench
-                                ? "Pour modifier votre réservation, annulez-la et créez-en une nouvelle."
-                                : "To modify your booking, cancel the current one and create a new one.",
+                              tPage("myStaymakomSectionToModifyYourBookingCancel"),
                               { duration: 6000 }
                             );
                             if ((booking as any).slug) {
@@ -660,7 +646,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
                           }}
                         >
                           <Pencil className="h-4 w-4 mr-1" />
-                          {isHebrew ? "שינוי" : isFrench ? "Modifier" : "Modify"}
+                          {tPage("myStaymakomSectionModify")}
                         </Button>
                       )}
                       {showCancel && (
@@ -676,7 +662,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
                           ) : (
                             <X className="h-4 w-4 mr-1" />
                           )}
-                          {isHebrew ? "ביטול" : isFrench ? "Annuler" : "Cancel"}
+                          {tPage("myStaymakomSectionCancel")}
                         </Button>
                       )}
                       {isStandalone && (booking as any).confirmationToken && (
@@ -685,7 +671,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
                           size="sm"
                           onClick={() => navigate(`/standalone-booking/confirmation/${(booking as any).confirmationToken}`)}
                         >
-                          {isHebrew ? "צפה" : isFrench ? "Voir" : "View"}
+                          {tPage("myStaymakomSectionView")}
                           <ChevronRight className="ml-1 h-4 w-4" />
                         </Button>
                       )}
@@ -695,7 +681,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
                           size="sm"
                           onClick={() => navigate(booking.type === "v2" ? `/experience2/${booking.slug}` : `/experience/${booking.slug}`)}
                         >
-                          {isHebrew ? "צפה" : isFrench ? "Voir" : "View"}
+                          {tPage("myStaymakomSectionView")}
                           <ChevronRight className="ml-1 h-4 w-4" />
                         </Button>
                       )}
@@ -704,7 +690,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
 
                   {booking.hgBookingId && (
                     <p className="text-xs text-muted-foreground mt-2">
-                      {isHebrew ? "מספר הזמנה:" : "Ref:"} {booking.hgBookingId}
+                      {tPage("myStaymakomSectionRef")} {booking.hgBookingId}
                     </p>
                   )}
                 </CardContent>
@@ -726,16 +712,12 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-destructive" />
-              {isHebrew ? "ביטול הזמנה" : isFrench ? "Annuler la réservation" : "Cancel Booking"}
+              {tPage("myStaymakomSectionCancelBooking")}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3">
                 <p>
-                  {isHebrew
-                    ? "האם אתה בטוח שברצונך לבטל הזמנה זו? פעולה זו אינה ניתנת לביטול."
-                    : isFrench
-                    ? "Êtes-vous sûr de vouloir annuler cette réservation ? Cette action est irréversible."
-                    : "Are you sure you want to cancel this booking? This action cannot be undone."}
+                  {tPage("myStaymakomSectionAreYouSureYouWant")}
                 </p>
                 {/* ✅ #4: Simulation result display */}
                 {(() => {
@@ -773,7 +755,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={cancelMutation.isPending}>
-              {isHebrew ? "שמור את ההזמנה" : isFrench ? "Garder ma réservation" : "Keep my booking"}
+              {tPage("myStaymakomSectionKeepMyBooking")}
             </AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -787,7 +769,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
               {cancelMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
-              {isHebrew ? "כן, בטל הזמנה" : isFrench ? "Oui, annuler" : "Yes, Cancel Booking"}
+              {tPage("myStaymakomSectionYesCancelBooking")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

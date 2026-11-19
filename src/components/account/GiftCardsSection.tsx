@@ -6,55 +6,18 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/hooks/useLanguage";
 import { format, isAfter, parseISO } from "date-fns";
+import { uiGroup } from "@/lib/translations";
 
 interface GiftCardsSectionProps {
   userId: string;
   userEmail?: string;
 }
 
-const getCopy = (lang: string) => {
-  if (lang === "he") {
-    return {
-      title: "כרטיסי המתנה שלי",
-      subtitle: "כרטיסים שקיבלת או שלחת",
-      noGiftCards: "אין לך עדיין כרטיסי מתנה",
-      noGiftCardsDesc: "כשתרכוש או תקבל כרטיס מתנה, הוא יופיע כאן.",
-      buyGiftCard: "קנה כרטיס מתנה",
-      sent: "נשלח",
-      received: "התקבל",
-      redeemed: "מומש",
-      expired: "פג תוקף",
-      pending: "ממתין",
-      scheduled: "מתוזמן",
-      validUntil: "בתוקף עד",
-      from: "מאת",
-      to: "אל",
-      code: "קוד",
-    };
-  }
-  return {
-    title: "My Gift Cards",
-    subtitle: "Cards you've received or sent",
-    noGiftCards: "No gift cards yet",
-    noGiftCardsDesc: "When you purchase or receive a gift card, it will appear here.",
-    buyGiftCard: "Buy a Gift Card",
-    sent: "Sent",
-    received: "Received",
-    redeemed: "Redeemed",
-    expired: "Expired",
-    pending: "Pending",
-    scheduled: "Scheduled",
-    validUntil: "Valid until",
-    from: "From",
-    to: "To",
-    code: "Code",
-  };
-};
 
 const getStatusBadge = (
   status: string,
   expiresAt: string,
-  copy: ReturnType<typeof getCopy>
+  copy: Record<string, string>
 ) => {
   const isExpired = isAfter(new Date(), parseISO(expiresAt));
 
@@ -100,7 +63,7 @@ const getStatusBadge = (
 
 const GiftCardsSection = ({ userId, userEmail }: GiftCardsSectionProps) => {
   const { lang } = useLanguage();
-  const copy = getCopy(lang);
+  const copy = uiGroup("giftCardsSection");
 
   // Fetch gift cards where user is sender or recipient
   const { data: giftCards, isLoading } = useQuery({

@@ -8,8 +8,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, ChevronRight, ChevronLeft, Sparkles, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { tPage } from "@/lib/translations";
+import { useLanguage } from "@/hooks/useLanguage";
+import { countryName } from "@/lib/phone";
+import type { Locale } from "@/lib/locale";
 
-type Lang = "en" | "fr" | "he";
+type Lang = Locale;
 
 interface OnboardingFlowProps {
   open: boolean;
@@ -35,6 +39,73 @@ const REFERRAL_SOURCES = [
   { id: "blog", labelEn: "Blog / Article", labelFr: "Blog / Article", labelHe: "בלוג / כתבה", icon: "📰" },
   { id: "other", labelEn: "Other", labelFr: "Autre", labelHe: "אחר", icon: "🌐" },
 ];
+
+// Libellés espagnol / russe / allemand des centres d'intérêt et des sources (les pays, eux,
+// viennent du navigateur via countryName).
+const AUTO_INTEREST_LABELS: Record<string, Record<"es" | "ru" | "de", string>> = {
+  "romantic": {
+    "es": "Romántico",
+    "ru": "Романтика",
+    "de": "Romantik"
+  },
+  "nature": {
+    "es": "Naturaleza y aventura",
+    "ru": "Природа и приключения",
+    "de": "Natur und Abenteuer"
+  },
+  "gastronomy": {
+    "es": "Gastronomía",
+    "ru": "Гастрономия",
+    "de": "Kulinarik"
+  },
+  "wellness": {
+    "es": "Bienestar y spa",
+    "ru": "Велнес и спа",
+    "de": "Wellness und Spa"
+  },
+  "family": {
+    "es": "Familia",
+    "ru": "Семья",
+    "de": "Familie"
+  },
+  "golden_age": {
+    "es": "Edad dorada",
+    "ru": "Золотой возраст",
+    "de": "Goldenes Alter"
+  }
+};
+const AUTO_REFERRAL_LABELS: Record<string, Record<"es" | "ru" | "de", string>> = {
+  "instagram": {
+    "es": "Instagram",
+    "ru": "Instagram",
+    "de": "Instagram"
+  },
+  "tiktok": {
+    "es": "TikTok",
+    "ru": "TikTok",
+    "de": "TikTok"
+  },
+  "ads": {
+    "es": "Publicidad en línea",
+    "ru": "Реклама в интернете",
+    "de": "Online-Werbung"
+  },
+  "friend": {
+    "es": "Recomendación de un amigo",
+    "ru": "Совет друга",
+    "de": "Empfehlung von Freunden"
+  },
+  "blog": {
+    "es": "Blog / artículo",
+    "ru": "Блог / статья",
+    "de": "Blog / Artikel"
+  },
+  "other": {
+    "es": "Otro",
+    "ru": "Другое",
+    "de": "Andere"
+  }
+};
 
 const COUNTRIES = [
   { code: "IL", labelEn: "Israel", labelFr: "Israël", labelHe: "ישראל" },
@@ -98,6 +169,66 @@ function getCopy(lang: Lang) {
         finish: "להתחיל את ההרפתקה",
         skip: "לדלג",
       };
+    case "es":
+      return {
+        step1Title: "Bienvenido a STAYMAKOM",
+        step1Subtitle: "Cuéntanos un poco sobre ti",
+        firstName: "Nombre",
+        lastName: "Apellidos",
+        phone: "Teléfono (opcional)",
+        nationality: "Nacionalidad",
+        selectCountry: "Elige tu país",
+        birthdate: "Fecha de nacimiento (opcional)",
+        step2Title: "¿Qué tipo de experiencias te interesan?",
+        step2Subtitle: "Elige todas las que quieras (opcional)",
+        step3Title: "¿Cómo nos conociste?",
+        step3Subtitle: "Nos ayuda a atenderte mejor (opcional)",
+        specifyOther: "Especifica...",
+        next: "Siguiente",
+        back: "Atrás",
+        finish: "Empezar la aventura",
+        skip: "Saltar",
+      };
+    case "ru":
+      return {
+        step1Title: "Добро пожаловать в STAYMAKOM",
+        step1Subtitle: "Расскажите немного о себе",
+        firstName: "Имя",
+        lastName: "Фамилия",
+        phone: "Телефон (необязательно)",
+        nationality: "Гражданство",
+        selectCountry: "Выберите страну",
+        birthdate: "Дата рождения (необязательно)",
+        step2Title: "Какие впечатления вам интересны?",
+        step2Subtitle: "Выберите всё, что вам подходит (необязательно)",
+        step3Title: "Как вы о нас узнали?",
+        step3Subtitle: "Это поможет нам лучше вас обслуживать (необязательно)",
+        specifyOther: "Уточните...",
+        next: "Далее",
+        back: "Назад",
+        finish: "Начать приключение",
+        skip: "Пропустить",
+      };
+    case "de":
+      return {
+        step1Title: "Willkommen bei STAYMAKOM",
+        step1Subtitle: "Erzähl uns ein bisschen von dir",
+        firstName: "Vorname",
+        lastName: "Nachname",
+        phone: "Telefon (optional)",
+        nationality: "Staatsangehörigkeit",
+        selectCountry: "Wähle dein Land",
+        birthdate: "Geburtsdatum (optional)",
+        step2Title: "Welche Erlebnisse interessieren dich?",
+        step2Subtitle: "Wähle alles, was zu dir passt (optional)",
+        step3Title: "Wie hast du von uns erfahren?",
+        step3Subtitle: "Das hilft uns, dich besser zu beraten (optional)",
+        specifyOther: "Bitte angeben...",
+        next: "Weiter",
+        back: "Zurück",
+        finish: "Das Abenteuer beginnen",
+        skip: "Überspringen",
+      };
     default:
       return {
         step1Title: "Welcome to STAYMAKOM",
@@ -121,7 +252,9 @@ function getCopy(lang: Lang) {
   }
 }
 
-export default function OnboardingFlow({ open, onComplete, userId, lang = "en" }: OnboardingFlowProps) {
+// La langue suit toujours la page (la prop lang est ignorée : certains appels ne la passaient pas).
+export default function OnboardingFlow({ open, onComplete, userId }: OnboardingFlowProps) {
+  const { locale: lang } = useLanguage();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const copy = getCopy(lang);
@@ -179,29 +312,36 @@ export default function OnboardingFlow({ open, onComplete, userId, lang = "en" }
 
       if (customerError) throw customerError;
 
-      toast.success(lang === "fr" ? "Profil mis à jour !" : lang === "he" ? "הפרופיל עודכן!" : "Profile updated!");
+      toast.success(tPage("onboardingFlowProfileUpdated"));
       onComplete();
     } catch (error: any) {
       
-      toast.error(error.message || "Failed to save profile");
+      toast.error(error.message || tPage("onboarding__saveFailed"));
     } finally {
       setLoading(false);
     }
   };
 
   const getInterestLabel = (interest: typeof INTEREST_CATEGORIES[0]) => {
+    const auto = AUTO_INTEREST_LABELS[interest.id]?.[lang as "es" | "ru" | "de"];
+    if (auto) return auto;
     if (lang === "fr") return interest.labelFr;
     if (lang === "he") return interest.labelHe;
     return interest.labelEn;
   };
 
   const getReferralLabel = (source: typeof REFERRAL_SOURCES[0]) => {
+    const auto = AUTO_REFERRAL_LABELS[source.id]?.[lang as "es" | "ru" | "de"];
+    if (auto) return auto;
     if (lang === "fr") return source.labelFr;
     if (lang === "he") return source.labelHe;
     return source.labelEn;
   };
 
   const getCountryLabel = (c: typeof COUNTRIES[0]) => {
+    if (lang === "es" || lang === "ru" || lang === "de") {
+      return c.code === "OTHER" ? tPage("onboarding__otherCountry") : countryName(c.code, lang);
+    }
     if (lang === "fr") return c.labelFr;
     if (lang === "he") return c.labelHe;
     return c.labelEn;

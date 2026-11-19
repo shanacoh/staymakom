@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import ExperienceCard from "@/components/ExperienceCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { tPage } from "@/lib/translations";
 
 interface WishlistSectionProps {
   userId?: string;
@@ -94,11 +95,11 @@ export default function WishlistSection({ userId }: WishlistSectionProps) {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Removed from wishlist");
+      toast.success(tPage("wishlist__removed"));
       queryClient.invalidateQueries({ queryKey: ["wishlist", userId] });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to remove from wishlist");
+      toast.error(error.message || tPage("wishlist__removeFailed"));
     },
   });
 
@@ -123,12 +124,12 @@ export default function WishlistSection({ userId }: WishlistSectionProps) {
       return (
         <div className="flex flex-col items-center justify-center pt-24 text-center px-6">
           <Heart className="h-10 w-10 text-muted-foreground/40 mb-4" />
-          <p className="text-[15px] text-foreground mb-1">Nothing saved yet.</p>
+          <p className="text-[15px] text-foreground mb-1">{tPage("wishlist__nothingSaved")}</p>
           <button
             onClick={() => navigate("/launch")}
             className="text-sm text-muted-foreground underline underline-offset-2"
           >
-            Start exploring →
+            {tPage("wishlist__startExploring")} →
           </button>
         </div>
       );
@@ -137,15 +138,15 @@ export default function WishlistSection({ userId }: WishlistSectionProps) {
     return (
       <div className="text-center py-16">
         <Heart className="h-10 w-10 text-muted-foreground/40 mx-auto mb-4" />
-        <h3 className="font-serif text-xl mb-2">Your wishlist is empty</h3>
+        <h3 className="font-serif text-xl mb-2">{tPage("wishlist__emptyTitle")}</h3>
         <p className="text-muted-foreground max-w-sm mx-auto mb-4">
-          Explore our curated experiences and save your favorites to plan your next extraordinary getaway.
+          {tPage("wishlist__emptyText")}
         </p>
         <button
           onClick={() => navigate("/launch")}
           className="text-sm text-muted-foreground underline underline-offset-2"
         >
-          Discover experiences →
+          {tPage("wishlist__discover")} →
         </button>
       </div>
     );

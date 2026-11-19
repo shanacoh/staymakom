@@ -10,6 +10,7 @@ import { ArrowLeft, CheckCircle, Loader2, MessageCircle, Minus, Plus } from "luc
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
+import { t as tFor, tPage } from "@/lib/translations";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,7 @@ import {
   emptyForm,
   isStepComplete,
   toPayload,
+  optionLabel,
   upcomingMonths,
   type FormStep,
   type TailorMadeForm,
@@ -108,9 +110,8 @@ const Counter = ({
 );
 
 const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
-  const { lang } = useLanguage();
+  const { lang, locale } = useLanguage();
   const isRTL = lang === "he";
-  const t = (en: string, he: string, fr: string) => (lang === "he" ? he : lang === "fr" ? fr : en);
 
   const [form, setForm] = useState<TailorMadeForm>(() => emptyForm(lang));
   const [step, setStep] = useState<FormStep>(1);
@@ -128,7 +129,7 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const months = useMemo(() => upcomingMonths(lang), [lang]);
+  const months = useMemo(() => upcomingMonths(locale), [locale]);
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const set = (patch: Partial<TailorMadeForm>) => setForm((prev) => ({ ...prev, ...patch }));
   const toggle = <T extends string>(list: T[], value: T): T[] =>
@@ -137,7 +138,7 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
   const setChildren = (children: number) =>
     set({ children, childrenAges: Array.from({ length: children }, (_, i) => form.childrenAges[i] ?? "") });
 
-  const steps = [t("The stay", "השהייה", "Le séjour"), t("Your wishes", "הרצונות שלכם", "Vos envies"), t("You", "אתם", "Vous")];
+  const steps = [tPage("tailorMadeTheStay"), tPage("tailorMadeYourWishes"), tPage("tailorMadeYou")];
   const complete = isStepComplete(step, form);
 
   const submit = async () => {
@@ -157,7 +158,7 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
       if (form.email.trim()) identifyLead(form.email.trim());
       setReference(data.reference);
     } catch {
-      toast.error(t("Something went wrong. Please try again.", "שגיאה, נסו שנית.", "Une erreur s'est produite. Veuillez réessayer."));
+      toast.error(tPage("tailorMadeSomethingWentWrongPleaseTry"));
     } finally {
       setSubmitting(false);
     }
@@ -175,11 +176,7 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
   };
 
   const whatsappLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    t(
-      `Hello Staymakom, I just sent my tailor-made request (ref. ${reference}).`,
-      `שלום Staymakom, שלחתי עכשיו בקשה לטיול בהתאמה אישית (מספר ${reference}).`,
-      `Bonjour Staymakom, je viens d'envoyer ma demande de voyage sur mesure (réf. ${reference}).`,
-    ),
+    tFor(lang, "tailorMadeWhatsappMessage")(reference),
   )}`;
 
   return (
@@ -189,14 +186,10 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
           <div className="text-center py-8 space-y-5 animate-in fade-in duration-500">
             <CheckCircle className="h-12 w-12 text-foreground mx-auto" />
             <DialogTitle className="font-sans text-2xl font-bold tracking-[-0.02em]">
-              {t(
-                "Our team will write to you on WhatsApp within 24h",
-                "הצוות שלנו יכתוב לכם בוואטסאפ תוך 24 שעות",
-                "Notre équipe vous écrit sur WhatsApp sous 24h",
-              )}
+              {tPage("tailorMadeOurTeamWillWriteTo")}
             </DialogTitle>
             <p className="text-sm text-muted-foreground">
-              {t("Your request reference:", "מספר הבקשה שלכם:", "Référence de votre demande :")}{" "}
+              {tPage("tailorMadeYourRequestReference")}{" "}
               <span className="font-semibold text-foreground" dir="ltr">{reference}</span>
             </p>
             <a
@@ -206,19 +199,19 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
               className="inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-background transition-opacity hover:opacity-85"
             >
               <MessageCircle className="h-4 w-4" />
-              {t("Write to us on WhatsApp", "כתבו לנו בוואטסאפ", "Nous écrire sur WhatsApp")}
+              {tPage("tailorMadeWriteToUsOnWhatsapp")}
             </a>
           </div>
         ) : (
           <>
             <DialogHeader>
               <DialogTitle className="font-sans text-xl font-bold tracking-[-0.02em]">
-                {t("Tell us about your dream stay", "ספרו לנו על השהייה החלומית שלכם", "Parlez-nous de votre séjour idéal")}
+                {tPage("tailorMadeTellUsAboutYourDream")}
               </DialogTitle>
             </DialogHeader>
 
             {/* Barre de progression */}
-            <ol className="grid grid-cols-3 gap-2 pt-1" aria-label={t("Progress", "התקדמות", "Progression")}>
+            <ol className="grid grid-cols-3 gap-2 pt-1" aria-label={tPage("tailorMadeProgress")}>
               {steps.map((label, i) => (
                 <li key={label} aria-current={step === i + 1 ? "step" : undefined}>
                   <div className={cn("h-1 rounded-full transition-colors", i + 1 <= step ? "bg-foreground" : "bg-border")} />
@@ -233,10 +226,10 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
               {step === 1 && (
                 <>
                   <div>
-                    <label className={fieldLabel}>{t("What kind of stay?", "איזה סוג שהייה?", "Quel type de séjour ?")} *</label>
+                    <label className={fieldLabel}>{tPage("tailorMadeWhatKindOfStay")} *</label>
                     <div className="flex flex-wrap gap-2">
                       {STAY_TYPES.map((o) => (
-                        <Bubble key={o.value} label={o.label[lang]} active={form.stayType === o.value} onClick={() => set({ stayType: o.value })} />
+                        <Bubble key={o.value} label={optionLabel(o, locale)} active={form.stayType === o.value} onClick={() => set({ stayType: o.value })} />
                       ))}
                     </div>
                     {form.stayType === "autre" ? (
@@ -244,7 +237,7 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
                         autoFocus
                         value={form.stayTypeOther}
                         onChange={(e) => set({ stayTypeOther: e.target.value })}
-                        placeholder={t("Tell us more…", "ספרו לנו עוד…", "Dites-nous en plus…")}
+                        placeholder={tPage("tailorMadeTellUsMore")}
                         className={cn("mt-3", cardInput)}
                         maxLength={200}
                       />
@@ -254,21 +247,21 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
                         onClick={() => set({ stayType: "autre" })}
                         className="mt-3 text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
                       >
-                        {t("Other", "אחר", "Autre")}
+                        {tPage("tailorMadeOther")}
                       </button>
                     )}
                   </div>
 
                   <div>
-                    <label className={fieldLabel}>{t("When?", "מתי?", "Quand ?")} *</label>
+                    <label className={fieldLabel}>{tPage("tailorMadeWhen")} *</label>
                     <div className="mb-3 flex flex-wrap gap-2">
-                      <Bubble label={t("Exact dates", "תאריכים מדויקים", "Dates précises")} active={form.datesMode === "precises"} onClick={() => set({ datesMode: "precises" })} />
-                      <Bubble label={t("Flexible dates", "תאריכים גמישים", "Dates flexibles")} active={form.datesMode === "flexibles"} onClick={() => set({ datesMode: "flexibles" })} />
+                      <Bubble label={tPage("tailorMadeExactDates")} active={form.datesMode === "precises"} onClick={() => set({ datesMode: "precises" })} />
+                      <Bubble label={tPage("tailorMadeFlexibleDates")} active={form.datesMode === "flexibles"} onClick={() => set({ datesMode: "flexibles" })} />
                     </div>
                     {form.datesMode === "precises" ? (
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <span className="mb-1 block text-xs text-muted-foreground">{t("From", "מ", "Du")}</span>
+                          <span className="mb-1 block text-xs text-muted-foreground">{tPage("tailorMadeFrom")}</span>
                           <Input
                             type="date"
                             min={today}
@@ -278,7 +271,7 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
                           />
                         </div>
                         <div>
-                          <span className="mb-1 block text-xs text-muted-foreground">{t("To", "עד", "Au")}</span>
+                          <span className="mb-1 block text-xs text-muted-foreground">{tPage("tailorMadeTo")}</span>
                           <Input type="date" min={form.dateStart || today} value={form.dateEnd} onChange={(e) => set({ dateEnd: e.target.value })} className={cardInput} />
                         </div>
                       </div>
@@ -286,7 +279,7 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
                       <div className="grid gap-3 sm:grid-cols-2">
                         <Select value={form.month} onValueChange={(month) => set({ month })}>
                           <SelectTrigger className={cardInput}>
-                            <SelectValue placeholder={t("Which month?", "איזה חודש?", "Quel mois ?")} />
+                            <SelectValue placeholder={tPage("tailorMadeWhichMonth")} />
                           </SelectTrigger>
                           <SelectContent>
                             {months.map((m) => (
@@ -294,20 +287,20 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
                             ))}
                           </SelectContent>
                         </Select>
-                        <Counter label={t("Nights", "לילות", "Nuits")} value={form.nights} min={1} max={MAX_NIGHTS} onChange={(nights) => set({ nights })} />
+                        <Counter label={tPage("tailorMadeNights")} value={form.nights} min={1} max={MAX_NIGHTS} onChange={(nights) => set({ nights })} />
                       </div>
                     )}
                   </div>
 
                   <div>
-                    <label className={fieldLabel}>{t("Who is travelling?", "מי נוסע?", "Qui voyage ?")} *</label>
+                    <label className={fieldLabel}>{tPage("tailorMadeWhoIsTravelling")} *</label>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <Counter label={t("Adults", "מבוגרים", "Adultes")} value={form.adults} min={1} max={MAX_ADULTS} onChange={(adults) => set({ adults })} />
-                      <Counter label={t("Children", "ילדים", "Enfants")} value={form.children} min={0} max={MAX_CHILDREN} onChange={setChildren} />
+                      <Counter label={tPage("tailorMadeAdults")} value={form.adults} min={1} max={MAX_ADULTS} onChange={(adults) => set({ adults })} />
+                      <Counter label={tPage("tailorMadeChildren")} value={form.children} min={0} max={MAX_CHILDREN} onChange={setChildren} />
                     </div>
                     {form.children > 0 && (
                       <div className="mt-3">
-                        <span className="mb-1 block text-xs text-muted-foreground">{t("Children's ages", "גילאי הילדים", "Âges des enfants")}</span>
+                        <span className="mb-1 block text-xs text-muted-foreground">{tPage("tailorMadeChildrenSAges")}</span>
                         <div className="flex flex-wrap gap-2">
                           {form.childrenAges.map((age, i) => (
                             <Select
@@ -315,8 +308,8 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
                               value={age}
                               onValueChange={(value) => set({ childrenAges: form.childrenAges.map((a, j) => (j === i ? value : a)) })}
                             >
-                              <SelectTrigger className={cn("w-[92px]", cardInput)} aria-label={`${t("Child", "ילד", "Enfant")} ${i + 1}`}>
-                                <SelectValue placeholder={t("Age", "גיל", "Âge")} />
+                              <SelectTrigger className={cn("w-[92px]", cardInput)} aria-label={`${tPage("tailorMadeChild")} ${i + 1}`}>
+                                <SelectValue placeholder={tPage("tailorMadeAge")} />
                               </SelectTrigger>
                               <SelectContent>
                                 {Array.from({ length: 18 }, (_, n) => (
@@ -335,31 +328,31 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
               {step === 2 && (
                 <>
                   <div>
-                    <label className={fieldLabel}>{t("Total budget, flights excluded", "תקציב כולל, ללא טיסות", "Budget total, hors vols")} *</label>
+                    <label className={fieldLabel}>{tPage("tailorMadeTotalBudgetFlightsExcluded")} *</label>
                     <div className="flex flex-wrap gap-2">
                       {BUDGETS.map((o) => (
-                        <Bubble key={o.value} label={o.label[lang]} active={form.budget === o.value} onClick={() => set({ budget: o.value })} />
+                        <Bubble key={o.value} label={optionLabel(o, locale)} active={form.budget === o.value} onClick={() => set({ budget: o.value })} />
                       ))}
                     </div>
                   </div>
 
                   <div>
                     <label className={fieldLabel}>
-                      {t("Your moods", "האווירה שלכם", "Vos envies")}
+                      {tPage("tailorMadeYourMoods")}
                       <span className="ms-1 normal-case tracking-normal font-normal text-muted-foreground/60">
-                        ({t("optional", "אופציונלי", "facultatif")})
+                        ({tPage("tailorMadeOptional")})
                       </span>
                     </label>
                     <div className="flex flex-wrap gap-2">
                       {MOODS.map((o) => (
-                        <Bubble key={o.value} label={o.label[lang]} active={form.moods.includes(o.value)} onClick={() => set({ moods: toggle(form.moods, o.value) })} />
+                        <Bubble key={o.value} label={optionLabel(o, locale)} active={form.moods.includes(o.value)} onClick={() => set({ moods: toggle(form.moods, o.value) })} />
                       ))}
                     </div>
                     {form.moods.includes("autre") && (
                       <Input
                         value={form.moodOther}
                         onChange={(e) => set({ moodOther: e.target.value })}
-                        placeholder={t("Tell us more…", "ספרו לנו עוד…", "Dites-nous en plus…")}
+                        placeholder={tPage("tailorMadeTellUsMore")}
                         className={cn("mt-3", cardInput)}
                         maxLength={200}
                       />
@@ -367,18 +360,18 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
                   </div>
 
                   <div>
-                    <label className={fieldLabel}>{t("Which regions?", "אילו אזורים?", "Quelles régions ?")} *</label>
+                    <label className={fieldLabel}>{tPage("tailorMadeWhichRegions")} *</label>
                     <div className="flex flex-wrap gap-2">
                       {REGIONS.map((o) => (
                         <Bubble
                           key={o.value}
-                          label={o.label[lang]}
+                          label={optionLabel(o, locale)}
                           active={!form.surpriseMe && form.regions.includes(o.value)}
                           onClick={() => set({ surpriseMe: false, regions: toggle(form.surpriseMe ? [] : form.regions, o.value) })}
                         />
                       ))}
                       <Bubble
-                        label={t("Surprise me", "תפתיעו אותי", "Surprenez-moi")}
+                        label={tPage("tailorMadeSurpriseMe")}
                         active={form.surpriseMe}
                         onClick={() => set({ surpriseMe: !form.surpriseMe, regions: [] })}
                       />
@@ -386,12 +379,12 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
                   </div>
 
                   <div>
-                    <label className={fieldLabel}>{t("Anything we should plan for?", "משהו שכדאי שנדע?", "Des contraintes à prévoir ?")}</label>
+                    <label className={fieldLabel}>{tPage("tailorMadeAnythingWeShouldPlanFor")}</label>
                     <div className="flex flex-wrap gap-2">
                       {CONSTRAINTS.map((o) => (
                         <Bubble
                           key={o.value}
-                          label={o.label[lang]}
+                          label={optionLabel(o, locale)}
                           active={form.constraints.includes(o.value)}
                           onClick={() => set({ constraints: toggle(form.constraints, o.value) })}
                         />
@@ -400,25 +393,25 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
                     <Input
                       value={form.constraintOther}
                       onChange={(e) => set({ constraintOther: e.target.value })}
-                      placeholder={t("Other (allergies, mobility…)", "אחר (אלרגיות, ניידות…)", "Autre (allergies, mobilité…)")}
+                      placeholder={tPage("tailorMadeOtherAllergiesMobility")}
                       className={cn("mt-3", cardInput)}
                       maxLength={300}
                     />
                   </div>
 
                   <div>
-                    <label className={fieldLabel}>{t("First trip to Israel?", "טיול ראשון בישראל?", "Premier voyage en Israël ?")} *</label>
+                    <label className={fieldLabel}>{tPage("tailorMadeFirstTripToIsrael")} *</label>
                     <div className="flex flex-wrap gap-2">
-                      <Bubble label={t("Yes", "כן", "Oui")} active={form.firstTrip === true} onClick={() => set({ firstTrip: true })} />
-                      <Bubble label={t("No", "לא", "Non")} active={form.firstTrip === false} onClick={() => set({ firstTrip: false })} />
+                      <Bubble label={tPage("tailorMadeYes")} active={form.firstTrip === true} onClick={() => set({ firstTrip: true })} />
+                      <Bubble label={tPage("tailorMadeNo")} active={form.firstTrip === false} onClick={() => set({ firstTrip: false })} />
                     </div>
                   </div>
 
                   <div>
                     <label className={fieldLabel}>
-                      {t("Tell us more", "ספרו לנו עוד", "Dites-nous en plus")}
+                      {tPage("tailorMadeTellUsMore3")}
                       <span className="ms-1 normal-case tracking-normal font-normal text-muted-foreground/60">
-                        ({t("optional", "אופציונלי", "facultatif")})
+                        ({tPage("tailorMadeOptional")})
                       </span>
                     </label>
                     <Textarea
@@ -435,7 +428,7 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
               {step === 3 && (
                 <>
                   <div>
-                    <label className={fieldLabel}>{t("First name", "שם פרטי", "Prénom")} *</label>
+                    <label className={fieldLabel}>{tPage("tailorMadeFirstName")} *</label>
                     <Input value={form.firstName} onChange={(e) => set({ firstName: e.target.value })} autoComplete="given-name" className={cardInput} maxLength={80} />
                   </div>
 
@@ -444,7 +437,7 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
                     {/* Un numéro se lit toujours de gauche à droite, même en hébreu. */}
                     <div className="flex gap-2" dir="ltr">
                       <Select value={form.dialCode} onValueChange={(dialCode) => set({ dialCode })}>
-                        <SelectTrigger className={cn("w-[120px] shrink-0", cardInput)} aria-label={t("Country code", "קידומת מדינה", "Indicatif pays")}>
+                        <SelectTrigger className={cn("w-[120px] shrink-0", cardInput)} aria-label={tPage("tailorMadeCountryCode")}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -469,17 +462,17 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
                     <label className={fieldLabel}>
                       Email
                       <span className="ms-1 normal-case tracking-normal font-normal text-muted-foreground/60">
-                        ({t("optional", "אופציונלי", "facultatif")})
+                        ({tPage("tailorMadeOptional")})
                       </span>
                     </label>
                     <Input type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} autoComplete="email" className={cardInput} maxLength={255} />
                   </div>
 
                   <div>
-                    <label className={fieldLabel}>{t("Preferred language", "שפה מועדפת", "Langue préférée")}</label>
+                    <label className={fieldLabel}>{tPage("tailorMadePreferredLanguage")}</label>
                     <div className="flex flex-wrap gap-2">
                       {LANGUAGES.map((o) => (
-                        <Bubble key={o.value} label={o.label[lang]} active={form.language === o.value} onClick={() => set({ language: o.value })} />
+                        <Bubble key={o.value} label={optionLabel(o, locale)} active={form.language === o.value} onClick={() => set({ language: o.value })} />
                       ))}
                     </div>
                   </div>
@@ -494,7 +487,7 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
                     className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
                   >
                     <ArrowLeft className={cn("h-3.5 w-3.5", isRTL && "rotate-180")} />
-                    {t("Back", "חזרה", "Retour")}
+                    {tPage("tailorMadeBack")}
                   </button>
                 ) : (
                   <span />
@@ -509,9 +502,9 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
                     {submitting ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : step === 3 ? (
-                      t("Send my request", "שלחו את הבקשה שלי", "Envoyer ma demande")
+                      tPage("tailorMadeSendMyRequest")
                     ) : (
-                      t("Continue", "המשך", "Continuer")
+                      tPage("tailorMadeContinue")
                     )}
                   </button>
                 </div>
@@ -519,17 +512,13 @@ const TailorMadeDialog = ({ open, onOpenChange }: Props) => {
 
               {step === 3 && (
                 <p className="text-[10px] text-muted-foreground/60 text-center leading-relaxed">
-                  {t(
-                    "By sending this form you agree to be contacted by Staymakom, to receive our travel ideas from time to time, and accept our ",
-                    "בשליחת טופס זה אתם מסכימים ש-Staymakom תיצור איתכם קשר ותשלח לכם מדי פעם רעיונות לחופשות, ומקבלים את ",
-                    "En envoyant ce formulaire, vous acceptez d'être contacté par Staymakom, de recevoir de temps en temps nos idées de séjours, ainsi que nos ",
-                  )}
+                  {tPage("tailorMadeBySendingThisFormYou")}
                   <Link to="/terms" className="underline underline-offset-2 hover:text-foreground/60">
-                    {t("Terms", "התנאים", "Conditions d'utilisation")}
+                    {tPage("tailorMadeTerms")}
                   </Link>
-                  {t(" and ", " ו", " et notre ")}
+                  {tPage("tailorMadeAnd")}
                   <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground/60">
-                    {t("Privacy Policy", "מדיניות הפרטיות", "Politique de confidentialité")}
+                    {tPage("tailorMadePrivacyPolicy")}
                   </Link>
                   .
                 </p>

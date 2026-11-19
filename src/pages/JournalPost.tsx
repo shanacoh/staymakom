@@ -12,12 +12,14 @@ import { format } from "date-fns";
 import NotFound from "./NotFound";
 import DOMPurify from "dompurify";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
+import { dateFnsLocale } from "@/lib/dateFnsLocale";
 import { Block } from "@/components/admin/journal/types";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthPromptDialog from "@/components/auth/AuthPromptDialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { trackJournalArticleViewed, trackCtaClickedFromJournal } from "@/lib/analytics";
+import { tPage } from "@/lib/translations";
 
 // Reading progress bar
 function ReadingProgressBar() {
@@ -47,7 +49,7 @@ function ReadingProgressBar() {
 
 // Embedded Experience Card Component
 function EmbeddedExperienceCard({ experienceId }: { experienceId: string }) {
-  const { lang } = useLanguage();
+  const { lang, locale } = useLanguage();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
@@ -114,7 +116,7 @@ function EmbeddedExperienceCard({ experienceId }: { experienceId: string }) {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["wishlist-status", experienceId, user?.id] });
       queryClient.invalidateQueries({ queryKey: ["wishlist"] });
-      toast.success(variables.isAdding ? (lang === "he" ? "נוסף למועדפים" : "Added to favorites") : (lang === "he" ? "הוסר מהמועדפים" : "Removed from favorites"));
+      toast.success(variables.isAdding ? (tPage("journalPostAddedToFavorites")) : (tPage("journalPostRemovedFromFavorites")));
     },
   });
 
@@ -203,7 +205,7 @@ function EmbeddedExperienceCard({ experienceId }: { experienceId: string }) {
 
 const JournalPost = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { lang } = useLanguage();
+  const { lang, locale } = useLanguage();
 
   useEffect(() => { if (slug) trackJournalArticleViewed(slug); }, [slug]);
 
@@ -509,7 +511,7 @@ const JournalPost = () => {
         <Link to="/journal">
           <Button variant="ghost" className="mb-8">
             <ArrowLeft className={`w-4 h-4 ${isRTL ? "ml-2 rotate-180" : "mr-2"}`} />
-            {isRTL ? "חזרה ליומן" : "Back to Journal"}
+            {tPage("journalPostBackToJournal")}
           </Button>
         </Link>
 
@@ -522,7 +524,7 @@ const JournalPost = () => {
             {post.published_at && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="w-4 h-4" />
-                {format(new Date(post.published_at), "MMMM d, yyyy")}
+                {format(new Date(post.published_at), "MMMM d, yyyy", { locale: dateFnsLocale(locale) })}
               </div>
             )}
           </div>
@@ -544,7 +546,7 @@ const JournalPost = () => {
           {/* Author */}
           {post.author_name && (
             <p className="text-lg mb-12" style={{ color: "#8A8580" }}>
-              {isRTL ? `מאת ${post.author_name}` : `By ${post.author_name}`}
+              {tPage("journalPostByAuthor")(post.author_name)}
             </p>
           )}
 
@@ -622,17 +624,17 @@ const JournalPost = () => {
                   color: "#1A1814",
                 }}
               >
-                Ready to experience it?
+                {tPage("journalPostReadyToExperienceIt")}
               </h3>
               <p className="mb-6" style={{ fontSize: "15px", color: "#8A8580" }}>
-                Discover our handpicked escapes across Israel.
+                {tPage("journalPostDiscoverOurEscapes")}
               </p>
               <Link
                 to="/experiences"
                 className="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium text-white transition-colors hover:opacity-90"
                 style={{ backgroundColor: "#1A1814", borderRadius: 0 }}
               >
-                Explore experiences <ArrowRight className="w-4 h-4" />
+                {tPage("journalPostExploreExperiences")} <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </div>
@@ -650,7 +652,7 @@ const JournalPost = () => {
                 color: "#1A1814",
               }}
             >
-              More from the Journal
+              {tPage("journalPostMoreFromTheJournal")}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {relatedPosts.slice(0, 2).map((rp: any) => (

@@ -18,7 +18,7 @@ import cardBg1 from "@/assets/desert-journey.jpg";
 import cardBg2 from "@/assets/desert-kiosk-hero.png";
 import cardBg3 from "@/assets/coming-soon-road.png";
 import { useLanguage } from "@/hooks/useLanguage";
-import { t } from "@/lib/translations";
+import { tPage } from "@/lib/translations";
 import { useLocalizedNavigation } from "@/hooks/useLocalizedNavigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
@@ -32,10 +32,10 @@ const AMOUNTS_ILS = [500, 1000, 1800, 2500];
 const MAX_MESSAGE = 150;
 
 const CARD_BACKGROUNDS = [
-  { id: "desert", src: cardBg1, label: "Desert" },
-  { id: "pool", src: cardBg2, label: "Pool" },
-  { id: "road", src: cardBg3, label: "Road" },
-];
+  { id: "desert", src: cardBg1, labelKey: "giftCardDesignDesert" },
+  { id: "pool", src: cardBg2, labelKey: "giftCardDesignPool" },
+  { id: "road", src: cardBg3, labelKey: "giftCardDesignRoad" },
+] as const;
 
 const CURRENCY_SYMBOLS: Record<Currency, string> = { ILS: "₪" };
 
@@ -136,7 +136,7 @@ export default function GiftCard() {
   const [senderName, setSenderName] = useState("");
   const [senderEmail, setSenderEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedBg, setSelectedBg] = useState(CARD_BACKGROUNDS[0].id);
+  const [selectedBg, setSelectedBg] = useState<string>(CARD_BACKGROUNDS[0].id);
 
   // Boutons préréglés : montants en ILS (ce qui sera stocké), affichage converti.
   const amounts = AMOUNTS_ILS;
@@ -173,18 +173,14 @@ export default function GiftCard() {
 
     if (!amount || amount <= 0) {
       toast.error(
-        lang === "he"
-          ? "אנא בחרו או הזינו סכום תקין"
-          : "Please select or enter a valid amount"
+        tPage("giftCardPleaseSelectOrEnterA")
       );
       return;
     }
 
     if (!senderName || !senderEmail) {
       toast.error(
-        lang === "he"
-          ? "אנא מלאו את כל השדות הנדרשים"
-          : "Please fill in all required fields"
+        tPage("giftCardPleaseFillInAllRequired")
       );
       return;
     }
@@ -192,17 +188,13 @@ export default function GiftCard() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(senderEmail)) {
       toast.error(
-        lang === "he"
-          ? "אנא הזינו אימייל שולח תקין"
-          : "Please enter a valid email"
+        tPage("giftCardPleaseEnterAValidEmail")
       );
       return;
     }
     if (recipientEmail && !emailRegex.test(recipientEmail)) {
       toast.error(
-        lang === "he"
-          ? "אנא הזינו אימייל נמען תקין"
-          : "Please enter a valid recipient email"
+        tPage("giftCardPleaseEnterAValidRecipient")
       );
       return;
     }
@@ -258,16 +250,12 @@ export default function GiftCard() {
         getLocalizedPath(`/gift-card/confirmation?code=${code}&type=amount`)
       );
       toast.success(
-        lang === "he"
-          ? "כרטיס המתנה נוצר בהצלחה!"
-          : "Gift card created successfully!"
+        tPage("giftCardGiftCardCreatedSuccessfully")
       );
     } catch (error) {
       
       toast.error(
-        lang === "he"
-          ? "יצירת כרטיס המתנה נכשלה. אנא נסו שוב."
-          : "Failed to create gift card. Please try again."
+        tPage("giftCardFailedToCreateGiftCard")
       );
     } finally {
       setIsSubmitting(false);
@@ -291,16 +279,16 @@ export default function GiftCard() {
         <div className="absolute inset-0 bg-black/15" />
         <div className="relative z-10 text-center px-4 sm:px-6 max-w-3xl mx-auto" dir={isRTL ? "rtl" : "ltr"}>
           <span className="block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-white mb-4 opacity-0 animate-hero-fade-up">
-            {lang === "he" ? "כרטיס מתנה" : lang === "fr" ? "CARTE CADEAU" : "GIFT CARD"}
+            {tPage("giftCardGiftCard")}
           </span>
           <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold uppercase tracking-[0.02em] leading-[1.15] mb-3 opacity-0 animate-hero-fade-up text-white text-center">
-            {t(lang, "giftCardHeroTitle")}
+            {tPage("giftCardHeroTitle")}
           </h1>
           <p
             className="font-sans not-italic text-white max-w-xl mx-auto opacity-0 animate-hero-fade-up text-xs sm:text-base md:text-lg"
             style={{ animationDelay: "250ms" }}
           >
-            {t(lang, "giftCardHeroSubtitle")}
+            {tPage("giftCardHeroSubtitle")}
           </p>
         </div>
       </section>
@@ -323,7 +311,7 @@ export default function GiftCard() {
             {/* Background chooser */}
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground text-center">
-                {lang === "he" ? "בחרו עיצוב" : "Choose a design"}
+                {tPage("giftCardChooseADesign")}
               </p>
               <div className="flex justify-center gap-2">
                 {CARD_BACKGROUNDS.map((bg) => (
@@ -337,7 +325,7 @@ export default function GiftCard() {
                         : "border-transparent opacity-60 hover:opacity-100"
                     )}
                   >
-                    <img src={bg.src} alt={bg.label} className="w-full h-full object-cover" />
+                    <img src={bg.src} alt={tPage(bg.labelKey)} className="w-full h-full object-cover" />
                     {selectedBg === bg.id && (
                       <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                         <Check className="h-4 w-4 text-white" />
@@ -349,9 +337,7 @@ export default function GiftCard() {
             </div>
 
             <p className="text-center text-xs text-muted-foreground">
-              {lang === "he"
-                ? "תצוגה מקדימה — מתעדכנת בזמן אמת"
-                : "Preview, updates as you go !"}
+              {tPage("giftCardPreviewUpdatesAsYouGo")}
             </p>
           </div>
 
@@ -361,30 +347,18 @@ export default function GiftCard() {
             <div className="mb-4 rounded-[10px] border-[1.5px] border-border bg-secondary/30 px-4 py-3">
               <p className="text-sm font-medium text-foreground">
                 {displayCurrency === "ILS"
-                  ? lang === "he"
-                    ? "מטבע: ש״ח (NIS)"
-                    : lang === "fr"
-                      ? "Devise : Shekel israélien (₪)"
-                      : "Currency: Israeli Shekel (₪)"
-                  : lang === "he"
-                    ? `תצוגה: דולר ($) — ההנפקה בש״ח (₪)`
-                    : lang === "fr"
-                      ? `Affichage en dollar ($) — émise en shekels (₪)`
-                      : `Displayed in dollars ($) — issued in shekels (₪)`}
+                  ? tPage("giftCardCurrencyIsraeliShekel")
+                  : tPage("giftCardDisplayedInDollars")}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                {lang === "he"
-                  ? "כל כרטיסי המתנה מונפקים בש״ח, המטבע של בתי המלון."
-                  : lang === "fr"
-                    ? "Toutes les cartes cadeaux sont émises en shekels, la devise des hôtels."
-                    : "All gift cards are issued in shekels, the currency of the hotels."}
+                {tPage("giftCardAllGiftCardsAreIssued")}
               </p>
             </div>
 
             {/* ── Section 1: Amount ── */}
             <div>
               <Label className={labelClass}>
-                {lang === "he" ? "בחרו סכום" : "Select amount"}
+                {tPage("giftCardSelectAmountLbl")}
               </Label>
               <div className="grid grid-cols-2 gap-2 mt-3">
                 {amounts.map((amt) => {
@@ -421,9 +395,9 @@ export default function GiftCard() {
               {/* Custom amount — saisie en devise visiteur, conversion à la sauvegarde */}
               <div className="mt-4 space-y-1.5">
                 <Label htmlFor="custom-amount" className={labelClass}>
-                  {lang === "he" ? "סכום אחר" : "Another amount"}
+                  {tPage("giftCardAnotherAmount")}
                   <span className="text-[11px] font-normal text-muted-foreground ml-2">
-                    ({lang === "he" ? `ב${displaySymbol}` : `in ${displaySymbol}`})
+                    ({tPage("giftCardInCurrency")(displaySymbol)})
                   </span>
                 </Label>
                 <div className="relative">
@@ -438,11 +412,7 @@ export default function GiftCard() {
                   <Input
                     id="custom-amount"
                     type="number"
-                    placeholder={
-                      lang === "he"
-                        ? `למשל ${displaySymbol}${displayCurrency === "ILS" ? "400" : "100"}`
-                        : `e.g. ${displaySymbol}${displayCurrency === "ILS" ? "400" : "100"}`
-                    }
+                    placeholder={tPage("giftCardAmountExample")(`${displaySymbol}${displayCurrency === "ILS" ? "400" : "100"}`)}
                     value={customAmount}
                     onChange={(e) => {
                       setCustomAmount(e.target.value);
@@ -453,11 +423,7 @@ export default function GiftCard() {
                 </div>
                 {customAmount && customAmountAsILS != null && customAmountAsILS > 0 && displayCurrency !== "ILS" && (
                   <p className="text-[11px] text-muted-foreground">
-                    {lang === "he"
-                      ? `הכרטיס יונפק ב-${storedSymbol}${Math.round(customAmountAsILS).toLocaleString("en-US")}`
-                      : lang === "fr"
-                        ? `Carte émise en ${storedSymbol}${Math.round(customAmountAsILS).toLocaleString("en-US")}`
-                        : `Card issued for ${storedSymbol}${Math.round(customAmountAsILS).toLocaleString("en-US")}`}
+                    {tPage("giftCardIssuedFor")(`${storedSymbol}${Math.round(customAmountAsILS).toLocaleString("en-US")}`)}
                   </p>
                 )}
               </div>
@@ -468,14 +434,14 @@ export default function GiftCard() {
             {/* ── Section 2: Recipient Name ── */}
             <div className="space-y-1.5">
               <Label htmlFor="recipient-name" className={labelClass}>
-                {lang === "he" ? "למי זה?" : "Who is this for?"}
+                {tPage("giftCardWhoIsThisFor")}
               </Label>
               <Input
                 id="recipient-name"
                 value={recipientName}
                 onChange={(e) => setRecipientName(e.target.value)}
                 placeholder={
-                  lang === "he" ? "שם הנמען (אופציונלי)" : "Recipient name (optional)"
+                  tPage("giftCardRecipientNameOptional")
                 }
                 className={inputClass}
               />
@@ -486,7 +452,7 @@ export default function GiftCard() {
             {/* ── Section 3: Recipient Email (optional) ── */}
             <div className="space-y-1.5">
               <Label htmlFor="recipient-email" className={labelClass}>
-                {lang === "he" ? "שליחה למייל" : "Send to email"}
+                {tPage("giftCardSendToEmail")}
               </Label>
               <Input
                 id="recipient-email"
@@ -494,16 +460,12 @@ export default function GiftCard() {
                 value={recipientEmail}
                 onChange={(e) => setRecipientEmail(e.target.value)}
                 placeholder={
-                  lang === "he"
-                    ? "אימייל הנמען (אופציונלי)"
-                    : "Recipient email (optional)"
+                  tPage("giftCardRecipientEmailOptional")
                 }
                 className={inputClass}
               />
               <p className="text-xs text-muted-foreground">
-                {lang === "he"
-                  ? "השאירו ריק כדי לשתף בעצמכם דרך קישור"
-                  : "Leave empty to share via link yourself"}
+                {tPage("giftCardLeaveEmptyToShareVia")}
               </p>
             </div>
 
@@ -512,14 +474,12 @@ export default function GiftCard() {
             {/* ── Section 4: Message ── */}
             <div className="space-y-1.5">
               <Label htmlFor="message" className={labelClass}>
-                {lang === "he" ? "הודעה אישית" : "Personal message"}
+                {tPage("giftCardPersonalMessage")}
               </Label>
               <Textarea
                 id="message"
                 placeholder={
-                  lang === "he"
-                    ? "כתבו הודעה אישית (אופציונלי)"
-                    : "Write a personal message (optional)"
+                  tPage("giftCardWriteAPersonalMessageOptional")
                 }
                 maxLength={MAX_MESSAGE}
                 value={message}
@@ -539,11 +499,11 @@ export default function GiftCard() {
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
                   <Label htmlFor="sender-name" className={labelClass}>
-                    {lang === "he" ? "השם שלך" : "Your name"} *
+                    {tPage("giftCardYourNameLbl")} *
                   </Label>
                   {isLoggedIn && (
                     <span className="text-[11px] text-muted-foreground">
-                      {lang === "he" ? "מהחשבון שלך" : "From your account"}
+                      {tPage("giftCardFromYourAccount")}
                     </span>
                   )}
                 </div>
@@ -563,11 +523,11 @@ export default function GiftCard() {
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
                   <Label htmlFor="sender-email" className={labelClass}>
-                    {lang === "he" ? "האימייל שלך" : "Your email"} *
+                    {tPage("giftCardYourEmailLbl")} *
                   </Label>
                   {isLoggedIn && (
                     <span className="text-[11px] text-muted-foreground">
-                      {lang === "he" ? "מהחשבון שלך" : "From your account"}
+                      {tPage("giftCardFromYourAccount")}
                     </span>
                   )}
                 </div>
@@ -594,12 +554,8 @@ export default function GiftCard() {
                 disabled={isSubmitting}
               >
                 {isSubmitting
-                  ? lang === "he"
-                    ? "מעבד..."
-                    : "Processing..."
-                  : lang === "he"
-                    ? "שלח כרטיס מתנה"
-                    : "Send Gift Card"}
+                  ? tPage("giftCardProcessingLbl")
+                  : tPage("giftCardSendGiftCard")}
               </Button>
             </div>
           </div>
@@ -609,35 +565,35 @@ export default function GiftCard() {
         <section className="max-w-2xl mx-auto mt-16 mb-8 border-t border-border/40 pt-10" dir={isRTL ? "rtl" : "ltr"}>
           <div className="text-center mb-7">
             <p className="text-[10px] sm:text-xs uppercase tracking-[0.18em] text-[#a83c3c] mb-2">
-              {lang === "he" ? "שאלות נפוצות" : lang === "fr" ? "Questions fréquentes" : "Questions & Answers"}
+              {tPage("giftCardQuestionsAnswers")}
             </p>
             <h2 className="font-sans text-sm sm:text-base font-bold uppercase text-foreground tracking-[0.03em]">
-              {lang === "he" ? "כל מה שרציתם לדעת" : lang === "fr" ? "Tout ce que vous voulez savoir" : "Everything you need to know"}
+              {tPage("giftCardEverythingYouNeedToKnow")}
             </h2>
           </div>
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="item-1" className="border-b border-border/50 last:border-b-0">
               <AccordionTrigger className="text-sm sm:text-base font-medium text-left hover:no-underline text-foreground hover:text-[#a83c3c] py-4 [&[data-state=open]]:text-[#a83c3c] transition-colors duration-200 text-start">
-                {t(lang, "giftCardFaq1Q")}
+                {tPage("giftCardFaq1Q")}
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground text-sm leading-relaxed pb-5">
-                {t(lang, "giftCardFaq1A")}
+                {tPage("giftCardFaq1A")}
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-2" className="border-b border-border/50 last:border-b-0">
               <AccordionTrigger className="text-sm sm:text-base font-medium text-left hover:no-underline text-foreground hover:text-[#a83c3c] py-4 [&[data-state=open]]:text-[#a83c3c] transition-colors duration-200 text-start">
-                {t(lang, "giftCardFaq2Q")}
+                {tPage("giftCardFaq2Q")}
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground text-sm leading-relaxed pb-5">
-                {t(lang, "giftCardFaq2A")}
+                {tPage("giftCardFaq2A")}
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-3" className="border-b border-border/50 last:border-b-0">
               <AccordionTrigger className="text-sm sm:text-base font-medium text-left hover:no-underline text-foreground hover:text-[#a83c3c] py-4 [&[data-state=open]]:text-[#a83c3c] transition-colors duration-200 text-start">
-                {t(lang, "giftCardFaq3Q")}
+                {tPage("giftCardFaq3Q")}
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground text-sm leading-relaxed pb-5">
-                {t(lang, "giftCardFaq3A")}
+                {tPage("giftCardFaq3A")}
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -654,12 +610,8 @@ export default function GiftCard() {
             disabled={isSubmitting}
           >
             {isSubmitting
-              ? lang === "he"
-                ? "מעבד..."
-                : "Processing..."
-              : lang === "he"
-                ? "שלח כרטיס מתנה"
-                : "Send Gift Card"}
+              ? tPage("giftCardProcessingLbl")
+              : tPage("giftCardSendGiftCard")}
           </Button>
         </div>
       </div>

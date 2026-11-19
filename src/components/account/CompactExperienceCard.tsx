@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import AuthPromptDialog from "@/components/auth/AuthPromptDialog";
+import { tPage } from "@/lib/translations";
 
 interface Experience {
   id: string;
@@ -53,7 +54,7 @@ export default function CompactExperienceCard({
   const toggleWishlist = useMutation({
     mutationFn: async () => {
       if (!userId) {
-        throw new Error("Please sign in to save favorites");
+        throw new Error(tPage("wishlist__signInToSave"));
       }
 
       if (isInWishlist) {
@@ -78,7 +79,7 @@ export default function CompactExperienceCard({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["wishlist-ids", userId] });
       queryClient.invalidateQueries({ queryKey: ["wishlist", userId] });
-      toast.success(isInWishlist ? "Removed from wishlist" : "Added to wishlist");
+      toast.success(isInWishlist ? tPage("wishlist__removed") : tPage("wishlist__added"));
     },
     onError: (error: Error) => {
       toast.error(error.message);

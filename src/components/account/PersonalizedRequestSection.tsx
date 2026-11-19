@@ -12,6 +12,7 @@ import { Sparkles, Send, Mail, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLanguage } from "@/hooks/useLanguage";
+import { tPage, uiGroup } from "@/lib/translations";
 
 interface PersonalizedRequestSectionProps {
   userName?: string;
@@ -19,50 +20,6 @@ interface PersonalizedRequestSectionProps {
   contactEmail?: string;
 }
 
-const getCopy = (lang: string) => {
-  if (lang === "he") {
-    return {
-      title: "יש לך בקשה מיוחדת?",
-      subtitle: "הצוות שלנו כאן כדי לארגן את החוויה המושלמת שלך",
-      requestType: "סוג הבקשה",
-      message: "ההודעה שלך",
-      messagePlaceholder: "ספר/י לנו על הבקשה המיוחדת שלך...",
-      send: "שלח בקשה",
-      sending: "שולח...",
-      orContact: "או צור קשר:",
-      success: "הבקשה נשלחה בהצלחה! ניצור איתך קשר בקרוב.",
-      error: "לא ניתן לשלוח את הבקשה. נסה שוב.",
-      types: {
-        dietary: "צרכים תזונתיים",
-        accessibility: "נגישות",
-        celebration: "אירוע מיוחד",
-        custom: "חוויה מותאמת אישית",
-        group: "הזמנה קבוצתית",
-        other: "אחר",
-      },
-    };
-  }
-  return {
-    title: "Have a special request?",
-    subtitle: "Our team is here to arrange your perfect experience",
-    requestType: "Request type",
-    message: "Your message",
-    messagePlaceholder: "Tell us about your special request...",
-    send: "Send request",
-    sending: "Sending...",
-    orContact: "Or contact us:",
-    success: "Request sent successfully! We'll be in touch soon.",
-    error: "Unable to send request. Please try again.",
-    types: {
-      dietary: "Dietary requirements",
-      accessibility: "Accessibility needs",
-      celebration: "Special celebration",
-      custom: "Custom experience",
-      group: "Group booking",
-      other: "Other",
-    },
-  };
-};
 
 export default function PersonalizedRequestSection({
   userName,
@@ -70,7 +27,7 @@ export default function PersonalizedRequestSection({
   contactEmail = "shana@staymakom.com",
 }: PersonalizedRequestSectionProps) {
   const { lang } = useLanguage();
-  const copy = getCopy(lang);
+  const copy = uiGroup("personalizedRequest");
   
   const [requestType, setRequestType] = useState<string>("");
   const [message, setMessage] = useState("");
@@ -78,7 +35,7 @@ export default function PersonalizedRequestSection({
 
   const handleSubmit = async () => {
     if (!requestType || !message.trim()) {
-      toast.error("Please fill in all fields");
+      toast.error(tPage("giftCardPleaseFillInAllRequired"));
       return;
     }
 

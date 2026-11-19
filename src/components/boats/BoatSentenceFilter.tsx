@@ -11,7 +11,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { toLocalDateStr } from "@/lib/boatAvailability";
 import { format } from "date-fns";
-import { fr as frLocale, he as heLocale } from "date-fns/locale";
+import { dateFnsLocale } from "@/lib/dateFnsLocale";
+import { tPage, uiGroup } from "@/lib/translations";
 
 export type CityFilter = "any" | "Tel Aviv" | "Herzliya";
 export type DurationBucket = "2h" | "3h" | "4h" | "other";
@@ -52,66 +53,21 @@ function Pill({ active, onClick, children }: { active: boolean; onClick: () => v
   );
 }
 
-const FAQ_ITEMS: { q: Record<"en" | "fr" | "he", string>; a: Record<"en" | "fr" | "he", string> }[] = [
-  {
-    q: { fr: "Le skipper est inclus ?", en: "Is the skipper included?", he: "הסקיפר כלול?" },
-    a: {
-      fr: "Oui, sur tous les bateaux. Vous n'avez rien à piloter, juste à profiter.",
-      en: "Yes, on every boat. You don't drive anything, just enjoy.",
-      he: "כן, בכל הסירות. אתם לא מפעילים כלום, רק נהנים.",
-    },
-  },
-  {
-    q: { fr: "Qu'est-ce qui est inclus ?", en: "What's included?", he: "מה כלול?" },
-    a: {
-      fr: "Soft drinks, enceinte bluetooth et baignade au large dès que la mer le permet. Les enfants sont les bienvenus, gilets à bord.",
-      en: "Soft drinks, bluetooth speaker, and swimming stops when the sea allows. Kids welcome, life jackets on board.",
-      he: "שתייה קלה, רמקול בלוטות' וטבילה בים כשהתנאים מאפשרים. ילדים בברכה, אפודי הצלה על הסירה.",
-    },
-  },
-  {
-    q: { fr: "On peut apporter à boire et à manger ?", en: "Can we bring food and drinks?", he: "אפשר להביא אוכל ושתייה?" },
-    a: {
-      fr: "Bien sûr, alcool compris. On vous demande simplement de garder le bateau propre.",
-      en: "Of course, alcohol included. We just ask you to keep the boat clean.",
-      he: "בטח, גם אלכוהול. רק נבקש לשמור על הסירה נקייה.",
-    },
-  },
-  {
-    q: { fr: "On peut être une personne de plus ?", en: "Can we add one more person?", he: "אפשר להוסיף עוד אדם?" },
-    a: {
-      fr: "Non : la capacité maximale est fixée par l'autorisation de navigation du bateau, et chaque passager compte, bébés compris.",
-      en: "No: the maximum capacity is set by the boat's navigation permit, and every passenger counts, babies included.",
-      he: "לא: התפוסה המקסימלית נקבעת על ידי רישיון השיט של הסירה, וכל נוסע נספר, כולל תינוקות.",
-    },
-  },
-];
+// Questions fréquentes : textes dans translations.ts (boatFaq…), traduits dans chaque langue.
+const FAQ_ITEMS = [
+  { q: "boatFaqSkipperQ", a: "boatFaqSkipperA" },
+  { q: "boatFaqIncludedQ", a: "boatFaqIncludedA" },
+  { q: "boatFaqFoodQ", a: "boatFaqFoodA" },
+  { q: "boatFaqExtraPersonQ", a: "boatFaqExtraPersonA" },
+] as const;
 
 export default function BoatSentenceFilter({ value, onChange }: Props) {
-  const { lang } = useLanguage();
-  const l = lang as "en" | "fr" | "he";
+  const { locale } = useLanguage();
   const set = <K extends keyof BoatFilterState>(key: K, val: BoatFilterState[K]) => onChange({ ...value, [key]: val });
 
-  const t = {
-    eyebrow: "STAYMAKOM · BATEAUX",
-    title: l === "he" ? "כמה, מתי, כמה זמן. אנחנו מוצאים לכם סירה." : l === "fr" ? "Combien, quand, combien de temps. On trouve ton bateau." : "How many, when, how long. We'll find your boat.",
-    subtitle: l === "he" ? "כל השאר (בננה, פדל, עוגת יומולדת...) סוגרים ביחד בוואטסאפ." : l === "fr" ? "Tout le reste (bouée, paddle, gâteau d'anniversaire...), on le règle ensemble sur WhatsApp." : "Everything else (tube, paddle, birthday cake...) we sort out together on WhatsApp.",
-    weAre: l === "he" ? "אנחנו" : l === "fr" ? "On est" : "We are",
-    departFrom: l === "he" ? "יוצאים מ" : l === "fr" ? "on part de" : "leaving from",
-    any: l === "he" ? "לא משנה" : l === "fr" ? "peu importe" : "no preference",
-    forDuration: l === "he" ? "ל" : l === "fr" ? "pour" : "for",
-    other: l === "he" ? "אחר" : l === "fr" ? "autre" : "other",
-    todayTomorrow: l === "he" ? "היום או מחר" : l === "fr" ? "aujourd'hui ou demain" : "today or tomorrow",
-    thisWeek: l === "he" ? "השבוע" : l === "fr" ? "dans la semaine" : "this week",
-    later: l === "he" ? "מאוחר יותר" : l === "fr" ? "plus tard" : "later",
-    daytime: l === "he" ? "ביום" : l === "fr" ? "en journée" : "daytime",
-    sunset: l === "he" ? "בשקיעה" : l === "fr" ? "au sunset" : "at sunset",
-    faqTitle: l === "he" ? "שאלות נפוצות" : l === "fr" ? "Questions les plus fréquentes" : "Frequently asked questions",
-    policy: l === "he" ? "ניתן לביטול והחזר עד 72 שעות לפני היציאה. ואם הים סוער מדי, נדחה או נחזיר." : l === "fr" ? "Annulable et remboursable jusqu'à 72h avant la sortie. Et si la mer est trop agitée, on décale ou on rembourse." : "Cancellable and refundable up to 72h before departure. If the sea is too rough, we reschedule or refund.",
-    pickDate: l === "he" ? "בחירת תאריך" : l === "fr" ? "choisir une date" : "pick a date",
-  };
+  const t = uiGroup("boatSentenceFilter");
 
-  const dateLocale = l === "fr" ? frLocale : l === "he" ? heLocale : undefined;
+  const dateLocale = dateFnsLocale(locale);
 
   return (
     <div className="h-full overflow-y-auto px-5 py-6 space-y-6 bg-[#FAF6EF]">
@@ -185,8 +141,8 @@ export default function BoatSentenceFilter({ value, onChange }: Props) {
         <div className="space-y-2">
           {FAQ_ITEMS.map((item, i) => (
             <div key={i} className="rounded-xl border bg-white p-3">
-              <p className="text-sm font-semibold text-foreground">{item.q[l]}</p>
-              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{item.a[l]}</p>
+              <p className="text-sm font-semibold text-foreground">{tPage(item.q)}</p>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{tPage(item.a)}</p>
             </div>
           ))}
         </div>

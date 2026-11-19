@@ -23,6 +23,7 @@ import BoatSentenceFilter, { type BoatFilterState } from "@/components/boats/Boa
 import { WHATSAPP_NUMBER } from "@/constants/whatsapp";
 import { format } from "date-fns";
 import { fr as frLocale } from "date-fns/locale";
+import { tPage } from "@/lib/translations";
 
 type PriceVariant = {
   id: string;
@@ -79,12 +80,8 @@ const Boats = () => {
     return isValidCity ? { ...DEFAULT_FILTER, city: cityParam } : DEFAULT_FILTER;
   });
 
-  const pageTitle = isRTL ? "יוצאים לים" : lang === "fr" ? "Prendre le large" : "On the water";
-  const pageDescription = isRTL
-    ? "גלו את מבחר הסירות הנבחר שלנו ברחבי ישראל."
-    : lang === "fr"
-      ? "Découvrez notre sélection de bateaux soigneusement choisis à travers Israël."
-      : "Explore Israel from the sea with our handpicked collection of boats.";
+  const pageTitle = tPage("boatsOnTheWater");
+  const pageDescription = tPage("boatsExploreIsraelFromTheSea");
 
   useEffect(() => {
     trackListingViewed("boats");
@@ -134,15 +131,14 @@ const Boats = () => {
   }, [boats, filter]);
 
   const t = {
-    resultsCount: (n: number) =>
-      isRTL ? `${n} סירות זמינות` : lang === "fr" ? `${n} bateau${n > 1 ? "x" : ""} disponible${n > 1 ? "s" : ""}` : `${n} boat${n > 1 ? "s" : ""} available`,
-    resultsHint: isRTL ? "תארו את הטיול משמאל, הבחירה מתעדכנת" : lang === "fr" ? "Décris ta sortie à gauche, la sélection s'ajuste" : "Describe your outing on the left, the selection updates",
-    upTo: isRTL ? "עד" : lang === "fr" ? "jusqu'à" : "up to",
-    people: isRTL ? "אנשים" : lang === "fr" ? "pers." : "people",
-    ourPick: isRTL ? "הבחירה שלנו" : lang === "fr" ? "Notre choix" : "Our pick",
-    from: isRTL ? "החל מ" : lang === "fr" ? "dès" : "from",
-    whatsappCta: isRTL ? "בקשה בוואטסאפ" : lang === "fr" ? "Demander sur WhatsApp" : "Ask on WhatsApp",
-    empty: isRTL ? "אין סירה בקריטריונים האלה כרגע, נסו לשנות." : lang === "fr" ? "Aucun bateau ne correspond à ces critères pour l'instant, essayez d'ajuster." : "No boat matches these criteria yet, try adjusting them.",
+    resultsCount: tPage("boatsResultsCount") as (n: number) => string,
+    resultsHint: tPage("boatsDescribeYourOutingOnThe"),
+    upTo: tPage("boatsUpTo"),
+    people: tPage("boatsPeople"),
+    ourPick: tPage("boatsOurPick"),
+    from: tPage("boatsFrom"),
+    whatsappCta: tPage("boatsAskOnWhatsapp"),
+    empty: tPage("boatsNoBoatMatchesTheseCriteria"),
   };
 
   const dateBucketLabel = (bucket: BoatFilterState["dateBucket"], specificDate?: string | null) => {

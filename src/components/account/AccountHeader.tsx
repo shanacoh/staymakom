@@ -5,12 +5,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { ChevronRight } from "lucide-react";
+import { useLanguage } from "@/hooks/useLanguage";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { tPage } from "@/lib/translations";
 
 interface AccountHeaderProps {
   userId?: string;
@@ -48,51 +50,18 @@ const TIER_CONFIG = {
   },
 };
 
+// Paliers du club : les noms (Explorer, Traveler...) restent en anglais dans toutes les langues,
+// les avantages sont traduits (clés accountHeader__benefit…).
 const ALL_TIERS = [
-  {
-    key: "explorer",
-    label: "Explorer",
-    range: "0 – 499 pts",
-    benefits: [
-      "Access to all public experiences",
-      "Earn 1 point per USD spent",
-      "Save favorites & build wishlists",
-    ],
-  },
-  {
-    key: "traveler",
-    label: "Traveler",
-    range: "500 – 1,499 pts",
-    benefits: [
-      "Early access to limited experiences",
-      "Member-only opportunities",
-      "Exclusive seasonal offers",
-    ],
-  },
-  {
-    key: "insider",
-    label: "Insider",
-    range: "1,500 – 2,999 pts",
-    benefits: [
-      "Priority reservations",
-      "Curated insider recommendations",
-      "Seasonal perks & surprises",
-    ],
-  },
-  {
-    key: "circle",
-    label: "Circle",
-    range: "3,000+ pts",
-    benefits: [
-      "Private concierge service",
-      "Bespoke itineraries",
-      "Invitation-only events",
-    ],
-  },
-];
+  { key: "explorer", label: "Explorer", min: 0, max: 499, benefits: ["accountHeader__benefitPublicAccess", "accountHeader__benefitEarnPoints", "accountHeader__benefitWishlists"] },
+  { key: "traveler", label: "Traveler", min: 500, max: 1499, benefits: ["accountHeader__benefitEarlyAccess", "accountHeader__benefitMemberOnly", "accountHeader__benefitSeasonalOffers"] },
+  { key: "insider", label: "Insider", min: 1500, max: 2999, benefits: ["accountHeader__benefitPriority", "accountHeader__benefitInsiderTips", "accountHeader__benefitPerks"] },
+  { key: "circle", label: "Circle", min: 3000, max: null, benefits: ["accountHeader__benefitConcierge", "accountHeader__benefitBespoke", "accountHeader__benefitEvents"] },
+] as const;
 
 export default function AccountHeader({ userId, userEmail }: AccountHeaderProps) {
   const [tierSheetOpen, setTierSheetOpen] = useState(false);
+  useLanguage();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["user-profile-header", userId],
@@ -125,7 +94,7 @@ export default function AccountHeader({ userId, userEmail }: AccountHeaderProps)
     );
   }
 
-  const displayName = profile?.display_name || userEmail?.split("@")[0] || "Member";
+  const displayName = profile?.display_name || userEmail?.split("@")[0] || tPage("accountHeader__member");
   const tier = (profile?.loyalty_tier as keyof typeof TIER_CONFIG) || "explorer";
   const tierConfig = TIER_CONFIG[tier] || TIER_CONFIG.explorer;
   const progress = profile?.membership_progress || 0;
@@ -169,7 +138,7 @@ export default function AccountHeader({ userId, userEmail }: AccountHeaderProps)
         {nextPoints && (
           <div className="flex items-center gap-3">
             <span className="text-white/60 text-[11px]" style={{ fontFamily: "Inter, sans-serif" }}>
-              {remaining.toLocaleString()} pts to {tierConfig.nextLabel}
+              {tPage("accountHeader__pointsTo")(remaining.toLocaleString(), tierConfig.nextLabel)}
             </span>
             <div className="w-[200px]">
               <div className="h-[3px] w-full bg-white/15 rounded-full overflow-hidden">
@@ -187,7 +156,7 @@ export default function AccountHeader({ userId, userEmail }: AccountHeaderProps)
       <Sheet open={tierSheetOpen} onOpenChange={setTierSheetOpen}>
         <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] overflow-y-auto">
           <SheetHeader className="pb-4">
-            <SheetTitle className="font-serif text-xl text-center">STAYMAKOM Club Tiers</SheetTitle>
+            <SheetTitle className="font-serif text-xl text-center">{tPage("accountHeader__clubTiers")}</SheetTitle>
           </SheetHeader>
 
           <div className="space-y-4 pb-6">
@@ -207,17 +176,17 @@ export default function AccountHeader({ userId, userEmail }: AccountHeaderProps)
                       <span className="font-serif text-base text-foreground">{t.label}</span>
                       {isActive && (
                         <span className="text-[10px] font-medium tracking-wider uppercase bg-foreground text-background px-2 py-0.5 rounded-full">
-                          Current
+                          {tPage("accountHeader__current")}
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-muted-foreground">{t.range}</span>
+                    <span className="text-xs text-muted-foreground">{tPage("accountHeader__pointsRange")(t.min, t.max)}</span>
                   </div>
                   <ul className="space-y-1">
                     {t.benefits.map((b, i) => (
                       <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
                         <span className="text-foreground/50 mt-0.5">•</span>
-                        {b}
+                        {tPage(b)}
                       </li>
                     ))}
                   </ul>

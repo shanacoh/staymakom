@@ -18,13 +18,15 @@ import AccountSidebar from "@/components/account/AccountSidebar";
 import OnboardingFlow from "@/components/auth/OnboardingFlow";
 import MobileAccountHome from "@/components/account/MobileAccountHome";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { tPage } from "@/lib/translations";
 
-const MOBILE_TAB_TITLES: Record<string, string> = {
-  bookings: "My Bookings",
-  wishlist: "Saved Escapes",
-  giftcards: "Gift Cards",
-  profile: "Personal Information",
-};
+// Titres des onglets sur téléphone (clés account__tab… de translations.ts).
+const MOBILE_TAB_TITLES = {
+  bookings: "account__tabBookings",
+  wishlist: "account__tabWishlist",
+  giftcards: "account__tabGiftCards",
+  profile: "account__tabProfile",
+} as const;
 
 const ALLOWED_TABS = ["wishlist", "bookings", "giftcards", "profile"] as const;
 type AccountTab = (typeof ALLOWED_TABS)[number];
@@ -100,7 +102,8 @@ const Account = () => {
   // === MOBILE LAYOUT ===
   if (isMobile) {
     const mobileTab = effectiveTab;
-    const pageTitle = MOBILE_TAB_TITLES[mobileTab] || "Account";
+    const titleKey = MOBILE_TAB_TITLES[mobileTab as keyof typeof MOBILE_TAB_TITLES];
+    const pageTitle = titleKey ? tPage(titleKey) : tPage("account__title");
 
     return (
       <div className="min-h-screen pb-24">
@@ -110,7 +113,7 @@ const Account = () => {
             <button
               onClick={() => navigate("/account?tab=bookings")}
               className="flex items-center justify-center w-11 h-11"
-              aria-label="Back"
+              aria-label={tPage("account__back")}
             >
               <ChevronLeft className="h-5 w-5 text-foreground" />
             </button>
@@ -143,8 +146,8 @@ const Account = () => {
             <WishlistSection userId={user.id} />
             <RecommendedExperiences
               userId={user.id}
-              title="You might also like"
-              subtitle="Based on your favorites and interests"
+              title={tPage("account__youMightAlsoLike")}
+              subtitle={tPage("account__basedOnFavorites")}
               compact
               limit={4}
             />
@@ -160,8 +163,8 @@ const Account = () => {
             <MyStaymakomSection userId={user.id} />
             <RecommendedExperiences
               userId={user.id}
-              title="Your next adventure awaits"
-              subtitle="Discover more extraordinary experiences"
+              title={tPage("account__nextAdventure")}
+              subtitle={tPage("account__discoverMore")}
               compact
               limit={4}
             />

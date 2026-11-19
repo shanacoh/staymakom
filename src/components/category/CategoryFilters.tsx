@@ -6,9 +6,11 @@ import { Calendar } from "@/components/ui/calendar";
 import { SlidersHorizontal, MapPin, Calendar as CalendarIcon, ArrowUpDown } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { useLanguage } from "@/hooks/useLanguage";
+import { dateFnsLocale } from "@/lib/dateFnsLocale";
 import { cn } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
+import { tPage } from "@/lib/translations";
 
 interface CategoryFiltersProps {
   onFilterChange?: (filters: FilterState) => void;
@@ -26,13 +28,15 @@ export interface FilterState {
 }
 
 const sortOptions = [
-  { value: "recommended", label: "Recommended" },
-  { value: "price_asc", label: "Price: Low to High" },
-  { value: "price_desc", label: "Price: High to Low" },
-  { value: "duration", label: "Duration" },
-];
+  { value: "recommended", labelKey: "categoryFiltersRecommended" },
+  { value: "price_asc", labelKey: "categoryFiltersPriceLowToHigh" },
+  { value: "price_desc", labelKey: "categoryFiltersPriceHighToLow" },
+  { value: "duration", labelKey: "categoryFiltersDuration" },
+] as const;
 
 const CategoryFilters = ({ onFilterChange, onShowMapToggle, showMap = false, className }: CategoryFiltersProps) => {
+  const { locale } = useLanguage();
+  const dateLocale = dateFnsLocale(locale);
   const [filters, setFilters] = useState<FilterState>({
     sortBy: "recommended",
     priceRange: [0, 1000],
@@ -70,7 +74,7 @@ const CategoryFilters = ({ onFilterChange, onShowMapToggle, showMap = false, cla
                 variant="ghost"
                 size="icon"
                 className="h-9 w-9 rounded-full bg-muted/50 hover:bg-muted"
-                title="Sort"
+                title={tPage("categoryFiltersSort")}
               >
                 <ArrowUpDown className="h-4 w-4" />
               </Button>
@@ -87,7 +91,7 @@ const CategoryFilters = ({ onFilterChange, onShowMapToggle, showMap = false, cla
                       filters.sortBy === option.value && "bg-muted font-medium"
                     )}
                   >
-                    {option.label}
+                    {tPage(option.labelKey)}
                   </button>
                 ))}
               </div>
@@ -101,16 +105,16 @@ const CategoryFilters = ({ onFilterChange, onShowMapToggle, showMap = false, cla
                 variant="ghost"
                 size="icon"
                 className="h-9 w-9 rounded-full bg-muted/50 hover:bg-muted"
-                title="Filters"
+                title={tPage("categoryFiltersFilters")}
               >
                 <SlidersHorizontal className="h-4 w-4" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80" align="start">
               <div className="space-y-4">
-                <h3 className="font-semibold text-lg">Filter experiences</h3>
+                <h3 className="font-semibold text-lg">{tPage("categoryFiltersFilterExperiences")}</h3>
                 <div>
-                  <label className="text-sm font-medium mb-3 block">Budget (per person)</label>
+                  <label className="text-sm font-medium mb-3 block">{tPage("categoryFiltersBudgetPerPerson")}</label>
                   <Slider
                     min={0}
                     max={1000}
@@ -126,7 +130,7 @@ const CategoryFilters = ({ onFilterChange, onShowMapToggle, showMap = false, cla
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-3 block">Number of guests</label>
+                  <label className="text-sm font-medium mb-3 block">{tPage("categoryFiltersNumberOfGuests")}</label>
                   <Select
                     value={filters.partySize.toString()}
                     onValueChange={(value) => handleFilterUpdate("partySize", parseInt(value))}
@@ -137,7 +141,7 @@ const CategoryFilters = ({ onFilterChange, onShowMapToggle, showMap = false, cla
                     <SelectContent>
                       {[1, 2, 3, 4, 5, 6].map((size) => (
                         <SelectItem key={size} value={size.toString()}>
-                          {size} {size === 1 ? "guest" : "guests"}
+                          {tPage("categoryFiltersGuestCount")(size)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -158,7 +162,7 @@ const CategoryFilters = ({ onFilterChange, onShowMapToggle, showMap = false, cla
                 ? "bg-foreground text-background hover:bg-foreground/90" 
                 : "bg-muted/50 hover:bg-muted"
             )}
-            title={showMap ? "Hide map" : "Show map"}
+            title={showMap ? tPage("categoryFiltersHideMap") : tPage("categoryFiltersShowMap")}
           >
             <MapPin className="h-4 w-4" />
           </Button>
@@ -184,17 +188,17 @@ const CategoryFilters = ({ onFilterChange, onShowMapToggle, showMap = false, cla
                   {dateRange?.from ? (
                     dateRange.to ? (
                       <>
-                        {format(dateRange.from, "d MMM", { locale: fr })} -{" "}
-                        {format(dateRange.to, "d MMM", { locale: fr })}
+                        {format(dateRange.from, "d MMM", { locale: dateLocale })} -{" "}
+                        {format(dateRange.to, "d MMM", { locale: dateLocale })}
                       </>
                     ) : (
-                      format(dateRange.from, "d MMM yyyy", { locale: fr })
+                      format(dateRange.from, "d MMM yyyy", { locale: dateLocale })
                     )
                   ) : (
-                    <span className="hidden sm:inline">Select dates</span>
+                    <span className="hidden sm:inline">{tPage("categoryFiltersSelectDates")}</span>
                   )}
                   <span className="sm:hidden">
-                    {dateRange?.from ? "" : "Dates"}
+                    {dateRange?.from ? "" : tPage("categoryFiltersDates")}
                   </span>
                 </span>
               </Button>
@@ -208,7 +212,7 @@ const CategoryFilters = ({ onFilterChange, onShowMapToggle, showMap = false, cla
                 onSelect={handleDateRangeChange}
                 numberOfMonths={2}
                 disabled={(date) => date < new Date()}
-                locale={fr}
+                locale={dateLocale}
                 className={cn("p-3 pointer-events-auto")}
               />
             </PopoverContent>

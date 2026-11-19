@@ -4,6 +4,37 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 19/11/2026 : Traduction ES / RU / DE, session 3 : pages restantes et espace client
+
+### Ce qui a changé côté code
+- `src/lib/translations.ts` et `src/lib/uiTranslations/{es,ru,de}.ts` : environ 400 nouveaux textes (anglais, français, hébreu, espagnol, russe, allemand) pour les pages catégories (filtres, tri, dates), `/experiences`, la vitrine bateaux (`/boat`, filtre en phrase et sa FAQ), le Journal et ses articles, À propos, Contact, Carte cadeau et sa page de confirmation, la page 404, la fenêtre newsletter, le bouton « Continuer avec Google », le formulaire sur-mesure, le questionnaire d'accueil, la page de connexion `/auth` (entièrement en anglais jusqu'ici, même en français et en hébreu) et tout l'espace client (`/account` : réservations, favoris, cartes cadeaux, profil, paliers du club). Les textes existants de ces pages sans version ES / RU / DE (À propos, Contact, FAQ de la carte cadeau...) sont traduits.
+- Les composants de ces pages lisent la langue réelle de la page (`tPage`, `uiGroup`) au lieu de la langue d'interface ; les dates (Journal, filtres, réservations, mois du formulaire sur-mesure) suivent la langue de la page.
+- `src/lib/tailorMade/form.ts` : libellés espagnol / russe / allemand des choix du formulaire sur-mesure (`optionLabel`), mois dans la langue de la page. Le message WhatsApp pré-rempli reste dans la langue d'interface (lu par l'équipe).
+- `src/components/auth/OnboardingFlow.tsx` : suit toujours la langue de la page (il s'affichait en anglais dans l'espace client même en français ou en hébreu), pays écrits par le navigateur en ES / RU / DE.
+- Changements visibles en français et en hébreu : ces pages étaient en partie restées en anglais (espace client, carte cadeau, page de confirmation de la carte cadeau, Journal, page de connexion...), elles sont maintenant traduites. Les pages légales restent inchangées dans toutes les langues (Shana met d'abord à jour le texte anglais). Le petit titre au-dessus du filtre bateaux affichait « BATEAUX » (en français) sur tous les sites : il est maintenant dans la langue de la page.
+- Tests : `uiTranslations.test.ts` accepte quelques noms propres (Google, Staymakom, paliers du club).
+- `src/lib/tailorMade/form.ts` : indicatif téléphone par défaut du formulaire sur-mesure aligné sur le reste du site (+33 en français, +972 partout ailleurs, au lieu de +1 en anglais).
+- `docs/traductions/avant-d-allumer.md` : avancement mis à jour. `docs/traductions/problemes-hors-traduction.md` (nouveau) : problèmes repérés pendant le chantier, non corrigés (consigne de Shana du 19/11/2026).
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Troisième étape avant d'ouvrir l'espagnol, le russe et l'allemand : toutes les pages publiques restantes et l'espace client s'affichent dans la langue du visiteur. Les langues restent cachées tant que l'interrupteur n'est pas allumé.
+
+## 19/11/2026 : Mise en ligne de la traduction ES / RU / DE (sessions 1 et 2), options hôtel traduites
+
+### Ce qui a changé côté code
+- Branche `traductions-auto` intégrée à main (après intégration des pages Sharon et Vern), fonction `translate-content` redéployée (plafond de 2 $ et coût de chaque passage).
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261117120000_cout_traduction_auto.sql` appliquée : colonnes `cost_usd`, `chain_cost_usd`, `cost_capped` sur `content_translation_runs`.
+- `docs/traductions/traduire-options-hotels.sql` lancé : 294 options payantes (celles des 29 hôtels publiés) traduites en ES / RU / DE, 882 traductions, coût réel 0,88 $.
+- Nettoyage des tests : 3 réservations « TEST TRADUCTIONS » et compte de test supprimés (copies dans le schéma `backup_20261118`) ; 3 paniers abandonnés d'octobre passés en « annulés » (copie dans `backup_20261119`).
+
+### Pourquoi ce changement
+- Rendre visibles en production les textes d'interface traduits (langues toujours cachées tant que l'interrupteur est éteint) et traduire les options payantes des hôtels.
+
 ## 18/11/2026 : Page de proposition pour Sharon (/sharon), 50 ans de mariage dans le Sud
 
 ### Ce qui a changé côté code

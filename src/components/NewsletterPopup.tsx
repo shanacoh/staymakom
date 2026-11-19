@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { isSitePauseActive } from "@/config/sitePause";
 import { trackNewsletterPopupShown, trackNewsletterPopupClosed, trackNewsletterSubscribed, identifyLead } from "@/lib/analytics";
 import { isPartnerSpacePath } from "@/lib/partner/logic";
+import { uiGroup } from "@/lib/translations";
 /**
  * Popup d'inscription newsletter (plus de code promo — retiré le 2026-08-13).
  *
@@ -38,50 +39,6 @@ interface NewsletterPopupProps {
   delayMs?: number;
 }
 
-const translations = {
-  en: {
-    kicker: "Newsletter",
-    title: "Be the first to know",
-    description: "Sign up to hear about news and surprises before anyone else.",
-    emailPlaceholder: "Your email",
-    submit: "Sign up",
-    submitting: "Signing up…",
-    successKicker: "Welcome to STAYMAKOM",
-    successTitle: "You're in!",
-    successDescription: "You'll be the first to hear about our news and surprises.",
-    close: "Maybe later",
-    invalidEmail: "Please enter a valid email",
-    error: "Something went wrong. Please try again.",
-  },
-  fr: {
-    kicker: "Newsletter",
-    title: "Sois parmi les premiers informés",
-    description: "Inscris-toi pour être informé en avant-première de nos actualités et de nos surprises.",
-    emailPlaceholder: "Ton email",
-    submit: "Je m'inscris",
-    submitting: "Inscription…",
-    successKicker: "Bienvenue chez STAYMAKOM",
-    successTitle: "C'est fait !",
-    successDescription: "Tu seras parmi les premiers informés de nos actualités et de nos surprises.",
-    close: "Plus tard",
-    invalidEmail: "Email invalide",
-    error: "Une erreur est survenue. Réessaye.",
-  },
-  he: {
-    kicker: "ניוזלטר",
-    title: "היו הראשונים לדעת",
-    description: "הירשם/י כדי לשמוע לפני כולם על חדשות והפתעות.",
-    emailPlaceholder: "האימייל שלך",
-    submit: "הרשמה",
-    submitting: "נרשם/ת...",
-    successKicker: "ברוך/ה הבא/ה ל-STAYMAKOM",
-    successTitle: "נרשמת בהצלחה!",
-    successDescription: "תהיו הראשונים לשמוע על החדשות וההפתעות שלנו.",
-    close: "אולי מאוחר יותר",
-    invalidEmail: "אימייל לא תקין",
-    error: "משהו השתבש. נסה/י שוב.",
-  },
-};
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -90,7 +47,7 @@ export function NewsletterPopup({
 }: NewsletterPopupProps) {
   const { lang } = useLanguage();
   const location = useLocation();
-  const t = translations[lang as keyof typeof translations] || translations.en;
+  const t = uiGroup("newsletterPopup");
   const isRTL = lang === "he";
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");

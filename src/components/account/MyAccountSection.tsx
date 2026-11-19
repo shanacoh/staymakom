@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import MarketingOptInDialog from "./MarketingOptInDialog";
+import { tPage } from "@/lib/translations";
 
 interface MyAccountSectionProps {
   userId?: string;
@@ -77,7 +78,7 @@ export default function MyAccountSection({ userId, userEmail, mobile }: MyAccoun
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!userId || !customer?.id) throw new Error("User not found");
+      if (!userId || !customer?.id) throw new Error(tPage("myAccount__userNotFound"));
       const { error: customerError } = await supabase
         .from("customers")
         .update({
@@ -98,12 +99,12 @@ export default function MyAccountSection({ userId, userEmail, mobile }: MyAccoun
       if (profileError) throw profileError;
     },
     onSuccess: () => {
-      toast.success("Profile updated successfully");
+      toast.success(tPage("myAccount__profileUpdated"));
       queryClient.invalidateQueries({ queryKey: ["customer", userId] });
       queryClient.invalidateQueries({ queryKey: ["user-profile", userId] });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to update profile");
+      toast.error(error.message || tPage("myAccount__profileUpdateFailed"));
     },
   });
 
@@ -142,7 +143,7 @@ export default function MyAccountSection({ userId, userEmail, mobile }: MyAccoun
       <>
         <form onSubmit={handleSubmit} className="space-y-5 pt-2">
           <div className="space-y-1.5">
-            <Label htmlFor="first_name" className="text-xs text-muted-foreground uppercase tracking-wider">First Name *</Label>
+            <Label htmlFor="first_name" className="text-xs text-muted-foreground uppercase tracking-wider">{tPage("myAccount__firstName")}</Label>
             <Input
               id="first_name"
               value={formData.first_name}
@@ -153,7 +154,7 @@ export default function MyAccountSection({ userId, userEmail, mobile }: MyAccoun
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="last_name" className="text-xs text-muted-foreground uppercase tracking-wider">Last Name *</Label>
+            <Label htmlFor="last_name" className="text-xs text-muted-foreground uppercase tracking-wider">{tPage("myAccount__lastName")}</Label>
             <Input
               id="last_name"
               value={formData.last_name}
@@ -164,7 +165,7 @@ export default function MyAccountSection({ userId, userEmail, mobile }: MyAccoun
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-xs text-muted-foreground uppercase tracking-wider">Email</Label>
+            <Label htmlFor="email" className="text-xs text-muted-foreground uppercase tracking-wider">{tPage("myAccount__email")}</Label>
             <Input
               id="email"
               type="email"
@@ -175,7 +176,7 @@ export default function MyAccountSection({ userId, userEmail, mobile }: MyAccoun
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="phone" className="text-xs text-muted-foreground uppercase tracking-wider">Phone</Label>
+            <Label htmlFor="phone" className="text-xs text-muted-foreground uppercase tracking-wider">{tPage("myAccount__phone")}</Label>
             <Input
               id="phone"
               type="tel"
@@ -187,7 +188,7 @@ export default function MyAccountSection({ userId, userEmail, mobile }: MyAccoun
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="birthdate" className="text-xs text-muted-foreground uppercase tracking-wider">Date of Birth</Label>
+            <Label htmlFor="birthdate" className="text-xs text-muted-foreground uppercase tracking-wider">{tPage("myAccount__birthdate")}</Label>
             <Input
               id="birthdate"
               type="date"
@@ -198,7 +199,7 @@ export default function MyAccountSection({ userId, userEmail, mobile }: MyAccoun
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="city" className="text-xs text-muted-foreground uppercase tracking-wider">City</Label>
+            <Label htmlFor="city" className="text-xs text-muted-foreground uppercase tracking-wider">{tPage("myAccount__city")}</Label>
             <Input
               id="city"
               value={formData.city}
@@ -209,7 +210,7 @@ export default function MyAccountSection({ userId, userEmail, mobile }: MyAccoun
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="country" className="text-xs text-muted-foreground uppercase tracking-wider">Country</Label>
+            <Label htmlFor="country" className="text-xs text-muted-foreground uppercase tracking-wider">{tPage("myAccount__country")}</Label>
             <Input
               id="country"
               value={formData.country}
@@ -224,10 +225,10 @@ export default function MyAccountSection({ userId, userEmail, mobile }: MyAccoun
             <div className="flex items-center justify-between">
               <div className="flex-1 space-y-0.5">
                 <Label htmlFor="marketing_optin" className="text-sm font-medium">
-                  Newsletter & Marketing
+                  {tPage("myAccount__newsletter")}
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Exclusive experiences, early releases & special deals
+                  {tPage("myAccount__newsletterText")}
                 </p>
               </div>
               <Switch
@@ -244,7 +245,7 @@ export default function MyAccountSection({ userId, userEmail, mobile }: MyAccoun
             disabled={saveMutation.isPending}
             className="w-full h-12 mt-6 rounded-lg bg-foreground text-background text-[15px] font-medium disabled:opacity-50 transition-colors active:bg-foreground/80"
           >
-            {saveMutation.isPending ? "Saving…" : "Save Changes"}
+            {saveMutation.isPending ? tPage("myAccount__saving") : tPage("myAccount__saveChanges")}
           </button>
         </form>
 
@@ -262,13 +263,13 @@ export default function MyAccountSection({ userId, userEmail, mobile }: MyAccoun
     <>
       <form onSubmit={handleSubmit} className="space-y-8">
         <div>
-          <h3 className="text-lg font-serif text-foreground mb-1">Personal Information</h3>
-          <p className="text-sm text-muted-foreground mb-6">Manage your account details</p>
+          <h3 className="text-lg font-serif text-foreground mb-1">{tPage("myAccount__title")}</h3>
+          <p className="text-sm text-muted-foreground mb-6">{tPage("myAccount__subtitle")}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-x-8 gap-y-5">
           <div className="space-y-1.5">
-            <Label htmlFor="first_name" className="text-xs text-muted-foreground uppercase tracking-wider">First Name *</Label>
+            <Label htmlFor="first_name" className="text-xs text-muted-foreground uppercase tracking-wider">{tPage("myAccount__firstName")}</Label>
             <Input
               id="first_name"
               value={formData.first_name}
@@ -278,7 +279,7 @@ export default function MyAccountSection({ userId, userEmail, mobile }: MyAccoun
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="last_name" className="text-xs text-muted-foreground uppercase tracking-wider">Last Name *</Label>
+            <Label htmlFor="last_name" className="text-xs text-muted-foreground uppercase tracking-wider">{tPage("myAccount__lastName")}</Label>
             <Input
               id="last_name"
               value={formData.last_name}
@@ -290,7 +291,7 @@ export default function MyAccountSection({ userId, userEmail, mobile }: MyAccoun
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="email" className="text-xs text-muted-foreground uppercase tracking-wider">Email</Label>
+          <Label htmlFor="email" className="text-xs text-muted-foreground uppercase tracking-wider">{tPage("myAccount__email")}</Label>
           <Input
             id="email"
             type="email"
@@ -299,13 +300,13 @@ export default function MyAccountSection({ userId, userEmail, mobile }: MyAccoun
             className="border-0 border-b border-border rounded-none px-0 focus-visible:ring-0 opacity-50 h-10"
           />
           <p className="text-[11px] text-muted-foreground">
-            Email is linked to your authentication account
+            {tPage("myAccount__emailLinked")}
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-x-8 gap-y-5">
           <div className="space-y-1.5">
-            <Label htmlFor="phone" className="text-xs text-muted-foreground uppercase tracking-wider">Phone</Label>
+            <Label htmlFor="phone" className="text-xs text-muted-foreground uppercase tracking-wider">{tPage("myAccount__phone")}</Label>
             <Input
               id="phone"
               type="tel"
@@ -316,7 +317,7 @@ export default function MyAccountSection({ userId, userEmail, mobile }: MyAccoun
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="birthdate" className="text-xs text-muted-foreground uppercase tracking-wider">Date of Birth</Label>
+            <Label htmlFor="birthdate" className="text-xs text-muted-foreground uppercase tracking-wider">{tPage("myAccount__birthdate")}</Label>
             <Input
               id="birthdate"
               type="date"
@@ -329,7 +330,7 @@ export default function MyAccountSection({ userId, userEmail, mobile }: MyAccoun
 
         <div className="grid grid-cols-2 gap-x-8 gap-y-5">
           <div className="space-y-1.5">
-            <Label htmlFor="city" className="text-xs text-muted-foreground uppercase tracking-wider">City</Label>
+            <Label htmlFor="city" className="text-xs text-muted-foreground uppercase tracking-wider">{tPage("myAccount__city")}</Label>
             <Input
               id="city"
               value={formData.city}
@@ -339,7 +340,7 @@ export default function MyAccountSection({ userId, userEmail, mobile }: MyAccoun
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="country" className="text-xs text-muted-foreground uppercase tracking-wider">Country</Label>
+            <Label htmlFor="country" className="text-xs text-muted-foreground uppercase tracking-wider">{tPage("myAccount__country")}</Label>
             <Input
               id="country"
               value={formData.country}
@@ -355,10 +356,10 @@ export default function MyAccountSection({ userId, userEmail, mobile }: MyAccoun
           <div className="flex items-center justify-between">
             <div className="flex-1 space-y-0.5">
               <Label htmlFor="marketing_optin" className="text-sm font-medium">
-                Newsletter & Marketing
+                {tPage("myAccount__newsletter")}
               </Label>
               <p className="text-xs text-muted-foreground">
-                Exclusive experiences, early releases & special deals
+                {tPage("myAccount__newsletterText")}
               </p>
             </div>
             <Switch
@@ -376,7 +377,7 @@ export default function MyAccountSection({ userId, userEmail, mobile }: MyAccoun
             disabled={saveMutation.isPending}
             className="h-11 px-8 rounded-lg bg-foreground text-background text-[14px] font-medium disabled:opacity-50 transition-colors hover:bg-foreground/90"
           >
-            {saveMutation.isPending ? "Saving…" : "Save Changes"}
+            {saveMutation.isPending ? tPage("myAccount__saving") : tPage("myAccount__saveChanges")}
           </button>
         </div>
       </form>

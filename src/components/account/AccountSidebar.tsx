@@ -4,38 +4,19 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { uiGroup } from "@/lib/translations";
 
 interface AccountSidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
 }
 
-const getCopy = (lang: string) => {
-  if (lang === "he") {
-    return {
-      wishlist: "מועדפים",
-      bookings: "הזמנות",
-      giftCards: "כרטיסי מתנה",
-      myAccount: "החשבון שלי",
-      helpSupport: "עזרה ותמיכה",
-      signOut: "התנתק",
-    };
-  }
-  return {
-    wishlist: "Saved Escapes",
-    bookings: "My Bookings",
-    giftCards: "Gift Cards",
-    myAccount: "Personal Information",
-    helpSupport: "Help & Support",
-    signOut: "Sign Out",
-  };
-};
 
 export default function AccountSidebar({ activeTab, onTabChange }: AccountSidebarProps) {
-  const { lang } = useLanguage();
+  useLanguage();
   const { signOut } = useAuth();
   const navigate = useNavigate();
-  const copy = getCopy(lang);
+  const copy = uiGroup("accountSidebar");
 
   const navItems = [
     { id: "bookings", icon: Calendar, label: copy.bookings },

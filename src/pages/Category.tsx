@@ -21,7 +21,7 @@ import { trackCategoryPageViewed } from "@/lib/analytics";
 import { SEOHead } from "@/components/SEOHead";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumbJsonLd";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
-import { t } from "@/lib/translations";
+import { tPage } from "@/lib/translations";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -296,9 +296,9 @@ const Category = () => {
         <V3Header />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-muted-foreground mb-4">{t(lang, 'categoryNotFound')}</p>
+            <p className="text-muted-foreground mb-4">{tPage('categoryNotFound')}</p>
             <Button asChild>
-              <Link to="/">{t(lang, 'backToHome')}</Link>
+              <Link to="/">{tPage('backToHome')}</Link>
             </Button>
           </div>
         </main>
@@ -350,7 +350,7 @@ const Category = () => {
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link to="/">{lang === 'he' ? 'בית' : lang === 'fr' ? 'Accueil' : 'Home'}</Link>
+                  <Link to="/">{tPage("categoryHome")}</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
@@ -360,8 +360,8 @@ const Category = () => {
                     <BreadcrumbLink asChild>
                       <Link to={`/category/${slug}?mode=${mode}`}>
                         {mode === 'stay'
-                          ? (lang === 'he' ? 'עם מלון' : lang === 'fr' ? 'Avec Hôtel' : 'With Hotel')
-                          : (lang === 'he' ? 'חוויה בלבד' : lang === 'fr' ? 'Expérience Seule' : 'Experience Only')}
+                          ? (tPage("categoryWithHotel"))
+                          : (tPage("categoryExperienceOnly"))}
                       </Link>
                     </BreadcrumbLink>
                   </BreadcrumbItem>
@@ -517,10 +517,10 @@ const Category = () => {
             <div>
               <div className="mb-4">
                 <h2 className="text-xl font-bold mb-1">
-                  {t(lang, 'experiencesAvailable')(mode === "stay" ? filteredExperiences.length : filteredStandalone.length)}
+                  {tPage('experiencesAvailable')(mode === "stay" ? filteredExperiences.length : filteredStandalone.length)}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  {t(lang, 'discoverExtraordinaryStays')}
+                  {tPage('discoverExtraordinaryStays')}
                 </p>
               </div>
 
@@ -530,7 +530,7 @@ const Category = () => {
                 </div>
               ) : (mode === "stay" ? filteredExperiences : filteredStandalone).length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-muted-foreground mb-4">{t(lang, 'noExperiencesMatch')}</p>
+                  <p className="text-muted-foreground mb-4">{tPage('noExperiencesMatch')}</p>
                   <Button
                     variant="outline"
                     onClick={() => setFilters({
@@ -539,7 +539,7 @@ const Category = () => {
                       partySize: 1
                     })}
                   >
-                    {t(lang, 'resetFilters')}
+                    {tPage('resetFilters')}
                   </Button>
                 </div>
               ) : mode === "stay" ? (

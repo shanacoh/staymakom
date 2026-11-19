@@ -15,7 +15,7 @@ import { Mail, Instagram } from "lucide-react";
 import contactHero from "@/assets/contact-hero-new.jpg";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
-import { t } from "@/lib/translations";
+import { tPage } from "@/lib/translations";
 
 const formSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100),
@@ -51,7 +51,7 @@ const Contact = () => {
     }
   });
 
-  const subjectLabels = t(lang, 'contactSubjectLabels') as Record<string, string>;
+  const subjectLabels = tPage('contactSubjectLabels') as Record<string, string>;
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
@@ -78,10 +78,10 @@ const Contact = () => {
 
       setShowSuccess(true);
       form.reset();
-      toast.success(lang === 'he' ? "ההודעה נשלחה בהצלחה!" : "Message sent successfully!");
+      toast.success(tPage("contactMessageSentSuccessfully"));
     } catch (error) {
       
-      toast.error(lang === 'he' ? "משהו השתבש. אנא נסו שוב." : "Something went wrong. Please try again.");
+      toast.error(tPage("contactSomethingWentWrongPleaseTry"));
     } finally {
       setIsSubmitting(false);
     }
@@ -100,10 +100,10 @@ const Contact = () => {
         <div className="absolute inset-0 bg-black/15" />
         <div className="relative z-10 text-center px-4 sm:px-6 max-w-3xl mx-auto" dir={isRTL ? 'rtl' : 'ltr'}>
           <span className="block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-white mb-4 opacity-0 animate-hero-fade-up">
-            CONTACT
+            {tPage("contactHeroTitle")}
           </span>
           <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold uppercase tracking-[0.02em] leading-[1.15] mb-3 opacity-0 animate-hero-fade-up text-white text-center">
-            {lang === 'he' ? 'בואו נדבר.' : lang === 'fr' ? 'PARLONS-EN.' : "LET'S TALK."}
+            {tPage("contactLetSTalk")}
           </h1>
         </div>
       </section>
@@ -112,16 +112,16 @@ const Contact = () => {
         {/* Contact Text */}
         <section className="text-center mb-12">
           <p className="text-base text-foreground/70 leading-[1.8] max-w-[680px] mx-auto">
-            {t(lang, 'contactIntro1')}
+            {tPage('contactIntro1')}
           </p>
           <p className="text-base text-foreground/70 leading-[1.8] max-w-[680px] mx-auto mt-4">
-            {t(lang, 'contactIntro2')}
+            {tPage('contactIntro2')}
           </p>
         </section>
 
         {/* Contact Form */}
         <section className="max-w-[560px] mx-auto mb-16">
-          <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground text-center mb-8">GET IN TOUCH</p>
+          <p className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground text-center mb-8">{tPage("contactGetInTouch")}</p>
           {showSuccess ? (
             <div className="bg-muted p-8 text-center border border-border">
               <div className="mb-4 text-foreground">
@@ -129,9 +129,9 @@ const Contact = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="font-sans text-sm sm:text-base mb-3 uppercase tracking-[0.03em]">{t(lang, 'contactThankYou')}</h3>
+              <h3 className="font-sans text-sm sm:text-base mb-3 uppercase tracking-[0.03em]">{tPage('contactThankYou')}</h3>
               <p className="text-sm text-muted-foreground mb-6">
-                {t(lang, 'contactThankYouDesc')}
+                {tPage('contactThankYouDesc')}
               </p>
               <Button 
                 variant="outline" 
@@ -139,7 +139,7 @@ const Contact = () => {
                 onClick={() => setShowSuccess(false)}
                 className="border-foreground text-foreground hover:bg-foreground hover:text-background"
               >
-                {t(lang, 'contactSendAnother')}
+                {tPage('contactSendAnother')}
               </Button>
             </div>
           ) : (
@@ -147,10 +147,10 @@ const Contact = () => {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                 <FormField control={form.control} name="name" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs uppercase tracking-[0.1em] text-foreground/70 mb-1.5 block">{t(lang, 'contactYourName')} *</FormLabel>
+                    <FormLabel className="text-xs uppercase tracking-[0.1em] text-foreground/70 mb-1.5 block">{tPage('contactYourName')} *</FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder={lang === 'he' ? "ישראל ישראלי" : "John Doe"} 
+                        placeholder={tPage("contactJohnDoe")} 
                         {...field}
                         className="bg-muted border-border rounded-sm py-3.5 px-4 text-sm focus:border-foreground focus:ring-0"
                       />
@@ -161,7 +161,7 @@ const Contact = () => {
 
                 <FormField control={form.control} name="email" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs uppercase tracking-[0.1em] text-foreground/70 mb-1.5 block">{t(lang, 'contactEmail')} *</FormLabel>
+                    <FormLabel className="text-xs uppercase tracking-[0.1em] text-foreground/70 mb-1.5 block">{tPage('contactEmail')} *</FormLabel>
                     <FormControl>
                       <Input 
                         type="email" 
@@ -176,11 +176,11 @@ const Contact = () => {
 
                 <FormField control={form.control} name="subject" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs uppercase tracking-[0.1em] text-foreground/70 mb-1.5 block">{t(lang, 'contactSubject')} *</FormLabel>
+                    <FormLabel className="text-xs uppercase tracking-[0.1em] text-foreground/70 mb-1.5 block">{tPage('contactSubject')} *</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger className="bg-muted border-border rounded-sm py-3.5 px-4 text-sm focus:border-foreground focus:ring-0">
-                          <SelectValue placeholder={lang === 'he' ? "בחרו נושא" : "Select a subject"} />
+                          <SelectValue placeholder={tPage("contactSelectASubject")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -197,10 +197,10 @@ const Contact = () => {
 
                 <FormField control={form.control} name="message" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs uppercase tracking-[0.1em] text-foreground/70 mb-1.5 block">{t(lang, 'contactMessage')} *</FormLabel>
+                    <FormLabel className="text-xs uppercase tracking-[0.1em] text-foreground/70 mb-1.5 block">{tPage('contactMessage')} *</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder={t(lang, 'contactMessagePlaceholder')} 
+                        placeholder={tPage('contactMessagePlaceholder')} 
                         className="min-h-[100px] bg-muted border-border rounded-sm py-3.5 px-4 text-sm focus:border-foreground focus:ring-0 resize-none"
                         {...field} 
                       />
@@ -214,7 +214,7 @@ const Contact = () => {
                   disabled={isSubmitting} 
                   className="w-full bg-[#ad1414] hover:bg-[#ad1414]/90 text-white text-[13px] font-semibold uppercase tracking-wide py-3 px-8 rounded-full h-auto"
                 >
-                  {isSubmitting ? t(lang, 'contactSending') : t(lang, 'contactSendMessage')}
+                  {isSubmitting ? tPage('contactSending') : tPage('contactSendMessage')}
                 </Button>
               </form>
             </Form>
@@ -223,7 +223,7 @@ const Contact = () => {
 
         {/* Direct Contact Info */}
         <section className="text-center border-t border-border pt-10">
-          <h3 className="font-sans text-xl mb-6">{t(lang, 'contactDirectTitle')}</h3>
+          <h3 className="font-sans text-xl mb-6">{tPage('contactDirectTitle')}</h3>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-muted-foreground text-sm">
             {settings?.contact_email && (
               <a href={`mailto:${settings.contact_email}`} className="flex items-center gap-2 hover:text-foreground transition-colors">

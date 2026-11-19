@@ -11,6 +11,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { tPage } from "@/lib/translations";
 
 interface MarketingOptInDialogProps {
   open: boolean;
@@ -27,17 +28,17 @@ export default function MarketingOptInDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Stay in the loop?</DialogTitle>
+          <DialogTitle>{tPage("marketingOptIn__title")}</DialogTitle>
           <DialogDescription>
-            Would you like to receive occasional emails about new experiences, special offers, and travel tips?
+            {tPage("marketingOptIn__text")}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex gap-2 sm:justify-end">
           <Button variant="outline" onClick={() => { onConfirm(false); onOpenChange(false); }}>
-            No thanks
+            {tPage("marketingOptIn__no")}
           </Button>
           <Button onClick={() => { onConfirm(true); onOpenChange(false); }}>
-            Yes, keep me updated
+            {tPage("marketingOptIn__yes")}
           </Button>
         </DialogFooter>
       </DialogContent>

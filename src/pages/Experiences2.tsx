@@ -8,6 +8,7 @@ import Experience2CardWithPrice from "@/components/Experience2CardWithPrice";
 import ExperienceCardSkeleton from "@/components/ExperienceCardSkeleton";
 import { useLanguage } from "@/hooks/useLanguage";
 import { SEOHead } from "@/components/SEOHead";
+import { tPage } from "@/lib/translations";
 
 const Experiences2 = () => {
   const { lang } = useLanguage();
@@ -75,10 +76,8 @@ const Experiences2 = () => {
   return (
     <div className="min-h-screen flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
       <SEOHead
-        titleEn="All Experiences | Staymakom"
-        titleHe="כל החוויות | Staymakom"
-        descriptionEn="Discover all our curated hotel experiences across Israel"
-        descriptionHe="גלו את כל חוויות המלון האצורות שלנו ברחבי ישראל"
+        title={tPage("seoExperiencesTitle")}
+        description={tPage("seoExperiencesDescription")}
       />
       <V3Header />
       
@@ -87,12 +86,10 @@ const Experiences2 = () => {
         <section className="bg-muted py-12 sm:py-16 md:py-20">
           <div className="container px-4 text-center">
             <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold tracking-[-0.02em] mb-4">
-              {lang === 'he' ? 'כל החוויות' : 'All Experiences'}
+              {tPage("experiences2AllExperiences")}
             </h1>
             <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
-              {lang === 'he' 
-                ? 'גלו את מבחר החוויות האצורות שלנו במלונות הבוטיק הטובים ביותר בישראל' 
-                : 'Discover our curated selection of experiences at the finest boutique hotels across Israel'
+              {tPage("experiences2DiscoverOurCuratedSelectionOf")
               }
             </p>
           </div>
@@ -127,7 +124,7 @@ const Experiences2 = () => {
           ) : (
             <div className="text-center py-12">
               <p className="text-muted-foreground">
-                {lang === 'he' ? 'אין חוויות זמינות כרגע' : 'No experiences available at the moment'}
+                {tPage("experiences2NoExperiencesAvailableAtThe")}
               </p>
             </div>
           )}

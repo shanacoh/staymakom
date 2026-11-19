@@ -6,33 +6,13 @@ import LaunchFooter from "@/components/LaunchFooter";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { useLanguage } from "@/hooks/useLanguage";
 import heroImage from "@/assets/hero-road-desert.jpg";
-
-const COPY = {
-  en: {
-    eyebrow: "Lost in the desert",
-    title: "This page went\non its own escape.",
-    sub: "The Israel most people never find… including this page.",
-    cta: "Back to home",
-  },
-  fr: {
-    eyebrow: "Perdu dans le désert",
-    title: "Cette page est\npartie en escapade.",
-    sub: "L'Israël que la plupart des gens ne trouvent pas… cette page non plus.",
-    cta: "Retour à l'accueil",
-  },
-  he: {
-    eyebrow: "אבוד במדבר",
-    title: "הדף הזה ברח\nלחופשה משלו.",
-    sub: "הישראל שרוב האנשים לא מוצאים… כולל הדף הזה.",
-    cta: "חזרה לדף הבית",
-  },
-};
+import { uiGroup } from "@/lib/translations";
 
 const NotFound = () => {
   const [mode, setMode] = useState<"stay" | "live">("live");
   const { lang } = useLanguage();
   const isRTL = lang === "he";
-  const copy = COPY[lang] ?? COPY.en;
+  const copy = uiGroup("notFound");
 
   return (
     <div
