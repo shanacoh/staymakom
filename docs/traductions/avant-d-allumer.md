@@ -72,3 +72,5 @@ soumettre le plan du site dans Google Search Console.
 > Format des titres SEO des fiches expérience : « Titre | Ville », la ville une seule fois (décision de
 > Shana du 19/11/2026). Les titres en « Titre, Ville | Ville » ont été corrigés le 19/11/2026 (anglais,
 > français, hébreu et traductions). Requête de contrôle : `docs/traductions/titres-ville-en-double.sql`.
+> Un titre où la ville fait naturellement partie du titre (« Zip Line Over the Old City of Jerusalem |
+> Jerusalem ») reste tel quel (décision du 19/11/2026).
