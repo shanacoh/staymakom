@@ -1,4 +1,4 @@
 {
   "_explication": "INTERRUPTEUR UNIQUE des langues traduites automatiquement (espagnol, russe, allemand). false = langues cachées : pages accessibles en ajoutant ?lang=es, ?lang=ru ou ?lang=de à l'adresse, mais absentes du sélecteur de langue, des balises hreflang, du plan du site, et marquées « ne pas indexer » pour Google. true = tout s'active ensemble (sélecteur + hreflang + plan du site + indexation). Lu par le site (src/lib/locale.ts), le guichet robots (api/bot-meta.ts) et le plan du site (generate-sitemap.mjs). AVANT DE PASSER À true : cocher la check-list docs/traductions/avant-d-allumer.md.",
-  "autoLocalesPublic": false
+  "autoLocalesPublic": true
 }

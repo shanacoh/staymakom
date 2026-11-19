@@ -4,6 +4,19 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 19/11/2026 : Espagnol, russe et allemand ouverts au public (interrupteur allumé)
+
+### Ce qui a changé côté code
+- `src/config/languages.json` : `autoLocalesPublic` passe à `true`. En une fois : ES / RU / DE apparaissent dans le sélecteur de langue, les pages les annoncent à Google (balises hreflang, aussi pour les robots via `middleware.ts` et `api/bot-meta.ts`), elles ne sont plus marquées « ne pas indexer », et le plan du site les inclut.
+- `public/sitemap.xml` : régénéré (714 adresses, chacune avec ses 6 langues et la version par défaut).
+- `docs/traductions/avant-d-allumer.md` : date d'allumage notée.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Décision de Shana : ouvrir l'espagnol, le russe et l'allemand au public et à Google. Les pages légales restent en anglais dans ces langues pour l'instant.
+
 ## 19/11/2026 : Titres SEO au format « Titre | Ville » (ville une seule fois)
 
 ### Ce qui a changé côté code

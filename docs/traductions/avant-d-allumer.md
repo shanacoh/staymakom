@@ -1,3 +1,6 @@
+> **INTERRUPTEUR ALLUMÉ le 19/11/2026** à la demande de Shana (`autoLocalesPublic: true`) : espagnol, russe et
+> allemand visibles dans le sélecteur, annoncés à Google (hreflang) et présents dans le plan du site.
+
 # Avant d'allumer l'interrupteur ES / RU / DE
 
 L'interrupteur est `autoLocalesPublic` dans `src/config/languages.json`. Le passer à `true`
