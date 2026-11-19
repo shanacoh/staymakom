@@ -68,6 +68,7 @@ import { formatTimeSlot, slotsForDate, type SessionLabels } from "@/lib/timeSlot
 import { ArchivedListingRedirect } from "@/components/ArchivedListingRedirect";
 import { tPage } from "@/lib/translations";
 import { dateFnsLocale } from "@/lib/dateFnsLocale";
+import { tPlace } from "@/lib/placeNames";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -227,7 +228,7 @@ export default function StandaloneExperience() {
   const isVitrineContext = searchParams.get("context") === "vitrine";
   const [showVitrineDialog, setShowVitrineDialog] = useState(false);
   const { lang, locale } = useLanguage();
-  const regionLabelOf = useRegionLabel(lang);
+  const regionLabelOf = useRegionLabel(locale);
   const footerRef = useRef<HTMLElement>(null);
   const reviewsRef = useRef<HTMLDivElement>(null);
   const includedRef = useRef<HTMLDivElement>(null);
@@ -464,7 +465,7 @@ export default function StandaloneExperience() {
   // Derived data
   // -------------------------------------------------------------------------
 
-  const locCity = lang === "he" ? experience?.city_he || experience?.city : lang === "fr" ? experience?.city_fr || experience?.city : experience?.city;
+  const locCity = tPlace(lang === "he" ? experience?.city_he || experience?.city : lang === "fr" ? experience?.city_fr || experience?.city : experience?.city);
   const locRegion = regionLabelOf(experience);
 
   const categoryName = experience?.categories

@@ -30,7 +30,7 @@ export function regionChoiceLabel(choice: RegionChoice, lang: Lang, list: Region
   if (choice === "near") return copy.nearMe;
   const [kind, slug] = choice.split(":");
   const entry = kind === "zone" ? list.zones.find((z) => z.slug === slug) : list.regions.find((r) => r.slug === slug);
-  return entry ? localizedName(entry, lang) : copy.everywhere;
+  return entry ? localizedName(entry, locale) : copy.everywhere;
 }
 
 interface RegionFilterProps {
@@ -115,7 +115,7 @@ export default function RegionFilter({ value, counts, regionList, lang, isLocati
             className={cn(optionClass(value === zoneChoice(zone.slug)), "font-semibold")}
             onClick={() => choose(zoneChoice(zone.slug))}
           >
-            {localizedName(zone, lang)}
+            {localizedName(zone, locale)}
             <span className="text-[11.5px] font-normal text-muted-foreground">{counts.zones[zone.slug]}</span>
           </button>
           {/* Une zone qui ne contient qu'une région du même nom (Tel Aviv-Jaffa) n'est pas répétée en dessous. */}
@@ -126,7 +126,7 @@ export default function RegionFilter({ value, counts, regionList, lang, isLocati
               className={cn(optionClass(value === regionChoice(r.slug)), "ps-6")}
               onClick={() => choose(regionChoice(r.slug))}
             >
-              {localizedName(r, lang)}
+              {localizedName(r, locale)}
               <span className="text-[11.5px] font-normal text-muted-foreground">{counts.regions[r.slug]}</span>
             </button>
           ))}

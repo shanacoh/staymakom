@@ -42,8 +42,8 @@ function toProductLike(hotel: any): ProductLike {
 
 const Hotel = () => {
   const { slug } = useParams<{slug: string;}>();
-  const { lang } = useLanguage();
-  const regionLabelOf = useRegionLabel(lang);
+  const { lang, locale } = useLanguage();
+  const regionLabelOf = useRegionLabel(locale);
 
   const { data: hotel, isLoading: hotelLoading } = useQuery({
     queryKey: ["hotel2", slug],

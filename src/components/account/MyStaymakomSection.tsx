@@ -25,6 +25,7 @@ import { analyzeCancellationPolicies } from "@/utils/cancellationPolicy";
 import { formatTimeSlot } from "@/lib/timeSlots";
 import { dateFnsLocale } from "@/lib/dateFnsLocale";
 import { tPage } from "@/lib/translations";
+import { tPlace } from "@/lib/placeNames";
 
 interface MyStaymakomSectionProps {
   userId?: string;
@@ -323,7 +324,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
       type: "v2" as const,
       title: isHebrew ? b.experiences2?.title_he || b.experiences2?.title : b.experiences2?.title || "Experience",
       hotelName: isHebrew ? b.hotels2?.name_he || b.hotels2?.name : b.hotels2?.name || "",
-      hotelCity: isHebrew ? b.hotels2?.city_he || b.hotels2?.city : b.hotels2?.city || "",
+      hotelCity: tPlace(isHebrew ? b.hotels2?.city_he || b.hotels2?.city : b.hotels2?.city) || "",
       checkin: b.checkin,
       checkout: b.checkout,
       nights: b.nights,
@@ -343,7 +344,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
       type: "v1" as const,
       title: b.experiences?.title || "Experience",
       hotelName: b.hotels?.name || "",
-      hotelCity: b.hotels?.city || "",
+      hotelCity: tPlace(b.hotels?.city) || "",
       checkin: b.checkin,
       checkout: b.checkout,
       nights: differenceInDays(parseISO(b.checkout), parseISO(b.checkin)),

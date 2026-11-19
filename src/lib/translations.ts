@@ -1608,6 +1608,15 @@ export const translations = {
     journalReadTheStory: "Read the story",
     contactHeroTitle: "CONTACT",
     contactGetInTouch: "GET IN TOUCH",
+
+    // ── Session 4 : catégories des articles du Journal ──
+    journalCategory__stories: "Stories",
+    journalCategory__places: "Places",
+    journalCategory__guides: "Guides",
+    journalCategory__foodWine: "Food & Wine",
+    journalCategory__slowTravel: "Slow Travel",
+    journalCategory__behindTheScenes: "Behind the Scenes",
+    journalCategory__people: "People",
   },
   he: {
     // Category page
@@ -3200,6 +3209,15 @@ export const translations = {
     journalReadTheStory: "לקריאת הכתבה",
     contactHeroTitle: "צור קשר",
     contactGetInTouch: "כתבו לנו",
+
+    // ── Session 4 : catégories des articles du Journal ──
+    journalCategory__stories: "סיפורים",
+    journalCategory__places: "מקומות",
+    journalCategory__guides: "מדריכים",
+    journalCategory__foodWine: "אוכל ויין",
+    journalCategory__slowTravel: "טיול איטי",
+    journalCategory__behindTheScenes: "מאחורי הקלעים",
+    journalCategory__people: "אנשים",
   },
   fr: {
     // Category page
@@ -4789,6 +4807,15 @@ export const translations = {
     journalReadTheStory: "Lire l'article",
     contactHeroTitle: "CONTACT",
     contactGetInTouch: "NOUS ÉCRIRE",
+
+    // ── Session 4 : catégories des articles du Journal ──
+    journalCategory__stories: "Récits",
+    journalCategory__places: "Lieux",
+    journalCategory__guides: "Guides",
+    journalCategory__foodWine: "Gastronomie & vin",
+    journalCategory__slowTravel: "Voyage lent",
+    journalCategory__behindTheScenes: "Coulisses",
+    journalCategory__people: "Portraits",
   },
 };
 

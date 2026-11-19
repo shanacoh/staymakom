@@ -5,6 +5,7 @@ import { getLocalizedField, type Language } from "@/hooks/useLanguage";
 import { useRegionLabel } from "@/lib/regionList/queries";
 import LocationPopover from "@/components/experience/LocationPopover";
 import { tPage } from "@/lib/translations";
+import { pageLocale } from "@/lib/translations";
 
 interface Hotel {
   id: string;
@@ -48,7 +49,7 @@ const AMENITY_ICONS: Record<string, React.ReactNode> = {
 };
 
 const YourStaySection = ({ hotel, lang = "en" }: YourStaySectionProps) => {
-  const regionLabelOf = useRegionLabel(lang);
+  const regionLabelOf = useRegionLabel(pageLocale());
   if (!hotel) return null;
 
   const name = getLocalizedField(hotel, "name", lang) as string || hotel.name;

@@ -15,6 +15,7 @@ import ExperienceCardSkeleton from "@/components/ExperienceCardSkeleton";
 const MultiPinMap = lazy(() => import("@/components/experience/MultiPinMap"));
 import { cn } from "@/lib/utils";
 import { Compass, Heart, Leaf, Users, Wine, Sparkles, ArrowRight, type LucideIcon } from "lucide-react";
+import { tPlace } from "@/lib/placeNames";
 
 /* ─── Catégories V3 — ordre et labels fixes ─────────────────────────────── */
 const V3_CATEGORIES = [
@@ -42,8 +43,8 @@ const FEATURED_AFTER = 4;
 
 const LaunchExperiences = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { lang } = useLanguage();
-  const regionLabelOf = useRegionLabel(lang);
+  const { lang, locale } = useLanguage();
+  const regionLabelOf = useRegionLabel(locale);
   const isRTL = lang === "he";
   const queryClient = useQueryClient();
 
@@ -365,7 +366,7 @@ const LaunchExperiences = () => {
         seen.add(exp.id);
         pins.push({
           id: exp.id,
-          name: isRTL ? exp.city_he || exp.city : exp.city,
+          name: tPlace(isRTL ? exp.city_he || exp.city : exp.city),
           latitude: exp.latitude,
           longitude: exp.longitude,
           experienceSlug: exp.slug,

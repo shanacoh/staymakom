@@ -8,7 +8,9 @@
 // rappel de la veille) et par le back-office (message WhatsApp prêt à envoyer).
 // Règle : un champ vide n'apparaît jamais. Si tout est vide, il n'y a pas de bloc du tout.
 
-export type PracticalLang = "en" | "fr" | "he";
+// en / fr / he : colonnes écrites à la main. es / ru / de : langue de la page de réservation
+// (client_locale) ; les textes de la fiche arrivent déjà traduits (voir translations/translateRow.ts).
+export type PracticalLang = "en" | "fr" | "he" | "es" | "ru" | "de";
 
 export const STAYMAKOM_WHATSAPP_URL = "https://wa.me/972555009910";
 
@@ -56,14 +58,19 @@ export interface PracticalInfo {
 }
 
 export function normalizeLang(value: unknown): PracticalLang {
-  return value === "fr" || value === "he" ? value : "en";
+  return value === "fr" || value === "he" || value === "es" || value === "ru" || value === "de" ? value : "en";
+}
+
+/** Vrai pour les langues traduites automatiquement (pas de colonnes _es / _ru / _de en base). */
+export function isAutoLang(lang: PracticalLang): lang is "es" | "ru" | "de" {
+  return lang === "es" || lang === "ru" || lang === "de";
 }
 
 const clean = (value: unknown): string => (typeof value === "string" ? value.trim() : "");
 
 // Texte dans la langue du client ; à défaut la version anglaise, puis n'importe quelle version remplie.
 function localized(source: Record<string, unknown>, base: string, lang: PracticalLang): string {
-  const own = clean(source[lang === "en" ? base : `${base}_${lang}`]);
+  const own = clean(source[lang === "en" || isAutoLang(lang) ? base : `${base}_${lang}`]);
   return own || clean(source[base]) || clean(source[`${base}_fr`]) || clean(source[`${base}_he`]);
 }
 
@@ -122,6 +129,48 @@ const LABELS: Record<PracticalLang, {
     maps: "פתיחה ב-Google Maps",
     question: "יש שאלה? הצוות שלנו עונה בוואטסאפ",
     questionLink: "לכתוב לנו",
+  },
+  es: {
+    title: "Información práctica",
+    meetingPoint: "Punto de encuentro",
+    address: "Dirección",
+    access: "Cómo llegar",
+    arrival: "Llegada",
+    arrive: (m) => `Llega ${m} minutos antes, por favor.`,
+    knowBefore: "Bueno saber",
+    contingency: "Tiempo o imprevistos",
+    waze: "Abrir en Waze",
+    maps: "Abrir en Google Maps",
+    question: "¿Tienes una pregunta? Nuestro equipo te responde por WhatsApp",
+    questionLink: "Escríbenos",
+  },
+  ru: {
+    title: "Полезная информация",
+    meetingPoint: "Место встречи",
+    address: "Адрес",
+    access: "Как добраться",
+    arrival: "Прибытие",
+    arrive: (m) => `Пожалуйста, приходите за ${m} минут до начала.`,
+    knowBefore: "Полезно знать",
+    contingency: "Погода и изменения",
+    waze: "Открыть в Waze",
+    maps: "Открыть в Google Maps",
+    question: "Есть вопрос? Наша команда ответит в WhatsApp",
+    questionLink: "Написать нам",
+  },
+  de: {
+    title: "Praktische Infos",
+    meetingPoint: "Treffpunkt",
+    address: "Adresse",
+    access: "Anreise",
+    arrival: "Ankunft",
+    arrive: (m) => `Bitte sei ${m} Minuten vorher da.`,
+    knowBefore: "Gut zu wissen",
+    contingency: "Wetter oder Änderungen",
+    waze: "In Waze öffnen",
+    maps: "In Google Maps öffnen",
+    question: "Eine Frage? Unser Team antwortet auf WhatsApp",
+    questionLink: "Schreib uns",
   },
 };
 
@@ -257,7 +306,7 @@ export function renderPracticalInfoLines(info: PracticalInfo | null): string[] {
   return lines;
 }
 
-const DATE_LOCALES: Record<PracticalLang, string> = { en: "en-US", fr: "fr-FR", he: "he-IL" };
+const DATE_LOCALES: Record<PracticalLang, string> = { en: "en-US", fr: "fr-FR", he: "he-IL", es: "es-ES", ru: "ru-RU", de: "de-DE" };
 
 /** Date de la prestation (yyyy-MM-dd) écrite en toutes lettres dans la langue du client. */
 export function formatBookingDate(dateStr: string, lang: PracticalLang): string {
@@ -268,8 +317,8 @@ export function formatBookingDate(dateStr: string, lang: PracticalLang): string 
 
 // Créneau « moment de la journée » (codes neutres, mêmes valeurs que _shared/time-slot.ts).
 const SLOT_MOMENTS: Record<string, Record<PracticalLang, string>> = {
-  morning: { en: "in the morning", fr: "le matin", he: "בבוקר" },
-  afternoon: { en: "in the afternoon", fr: "l'après-midi", he: "אחר הצהריים" },
+  morning: { en: "in the morning", fr: "le matin", he: "בבוקר", es: "por la mañana", ru: "утром", de: "am Vormittag" },
+  afternoon: { en: "in the afternoon", fr: "l'après-midi", he: "אחר הצהריים", es: "por la tarde", ru: "днём", de: "am Nachmittag" },
 };
 
 /** « at 10:00 » pour une heure, « in the morning » pour un moment de la journée. */
@@ -277,7 +326,7 @@ function slotPhrase(slot: string | null | undefined, lang: PracticalLang): strin
   const value = clean(slot);
   if (!value) return "";
   if (SLOT_MOMENTS[value]) return ` ${SLOT_MOMENTS[value][lang]}`;
-  const at: Record<PracticalLang, string> = { en: "at", fr: "à", he: "בשעה" };
+  const at: Record<PracticalLang, string> = { en: "at", fr: "à", he: "בשעה", es: "a las", ru: "в", de: "um" };
   return ` ${at[lang]} ${value}`;
 }
 
@@ -304,16 +353,25 @@ export function buildClientWhatsAppMessage(booking: ClientMessageBooking, info: 
     en: `Hi ${name}, here is the practical info for "${title}", ${date}${time}.`,
     fr: `Bonjour ${name}, voici les infos pratiques pour « ${title} », ${date}${time}.`,
     he: `היי ${name}, הנה המידע השימושי עבור "${title}", ${date}${time}.`,
+    es: `Hola ${name}, aquí tienes la información práctica de «${title}», ${date}${time}.`,
+    ru: `Здравствуйте, ${name}! Вот полезная информация о «${title}», ${date}${time}.`,
+    de: `Hallo ${name}, hier sind die praktischen Infos zu „${title}“, ${date}${time}.`,
   };
   const introWithoutInfo: Record<PracticalLang, string> = {
     en: `Hi ${name}, a quick reminder of your booking "${title}", ${date}${time}.`,
     fr: `Bonjour ${name}, un petit rappel de votre réservation « ${title} », ${date}${time}.`,
     he: `היי ${name}, תזכורת קטנה להזמנה "${title}", ${date}${time}.`,
+    es: `Hola ${name}, un pequeño recordatorio de tu reserva «${title}», ${date}${time}.`,
+    ru: `Здравствуйте, ${name}! Напоминаем о вашем бронировании «${title}», ${date}${time}.`,
+    de: `Hallo ${name}, eine kurze Erinnerung an deine Buchung „${title}“, ${date}${time}.`,
   };
   const outro: Record<PracticalLang, string> = {
     en: "A question? Our team answers right here.\nThe Staymakom team",
     fr: "Une question ? Notre équipe vous répond ici.\nL'équipe Staymakom",
     he: "יש שאלה? הצוות שלנו עונה כאן.\nצוות Staymakom",
+    es: "¿Tienes una pregunta? Nuestro equipo te responde aquí.\nEl equipo de Staymakom",
+    ru: "Есть вопрос? Наша команда ответит здесь.\nКоманда Staymakom",
+    de: "Eine Frage? Unser Team antwortet dir direkt hier.\nDein Staymakom-Team",
   };
 
   return [lines.length ? intro[lang] : introWithoutInfo[lang], ...lines, outro[lang]].join("\n");

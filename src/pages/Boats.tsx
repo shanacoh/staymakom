@@ -24,6 +24,7 @@ import { WHATSAPP_NUMBER } from "@/constants/whatsapp";
 import { format } from "date-fns";
 import { fr as frLocale } from "date-fns/locale";
 import { tPage } from "@/lib/translations";
+import { tPlace } from "@/lib/placeNames";
 
 type PriceVariant = {
   id: string;
@@ -272,7 +273,7 @@ const Boats = () => {
                           <button type="button" onClick={() => setSelectedBoatId(boat.id)} className="text-left">
                             <p className="font-semibold text-sm text-foreground">{title}</p>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              {[boat.city, allDurations.join(", ")].filter(Boolean).join(" · ")}
+                              {[tPlace(boat.city), allDurations.join(", ")].filter(Boolean).join(" · ")}
                             </p>
                           </button>
                           {/* Toujours rendue (même vide) : garde la même hauteur de carte à carte,

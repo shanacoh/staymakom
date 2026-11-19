@@ -28,14 +28,15 @@ Ne l'allumer que lorsque **toutes** les cases sont cochées :
         d'accueil) (19/11/2026)
   - [x] Recherche : pas de page de recherche sur le site actuel (l'assistant de recherche IA n'existe que
         sur l'ancienne page `/home`, non visible des clients) ; le tri et les filtres des catégories sont traduits
-  - [ ] Étiquette de catégorie des articles du Journal (« STORIES »...) : vient de la base
-        (`journal_posts.category`), reste en anglais sur une page traduite
+  - [x] Étiquette de catégorie des articles du Journal (« STORIES »...) : traduite à l'affichage
+        (`src/lib/journalCategories.ts`), aussi en français et en hébreu (19/11/2026)
   - [ ] Anciennes clés de `translations.ts` encore utilisées (`missingUiKeys("ru")` doit ne
         renvoyer que des clés plus utilisées par le site)
-- [ ] **Villes et régions traduites** : elles s'affichent dans la langue de la page (Иерусалим,
-      Jerusalén, Totes Meer...), sans casser les filtres ni le regroupement des lieux par région.
-      Aujourd'hui elles restent volontairement en anglais (voir `NEVER_OVERLAID_FIELDS` dans
-      `src/lib/contentTranslations/overlay.ts`).
+- [x] **Villes et régions traduites** (19/11/2026) : elles s'affichent dans la langue de la page
+      (Иерусалим, Jerusalén, Totes Meer...) grâce au dictionnaire `src/lib/placeNames.ts`, appliqué
+      seulement à l'affichage : les filtres et le regroupement par région utilisent toujours le nom
+      anglais. Un nouveau lieu absent du dictionnaire s'affiche en anglais : vérifier avec
+      `docs/traductions/lieux-publies.sql` et l'ajouter.
 - [ ] **Zéro titre resté en anglais** : la requête ci-dessous ne renvoie que des noms propres
       (hôtels, partenaires, moods, STAYMAKOM, villes au nom identique).
 
@@ -51,10 +52,12 @@ order by entity_type, texte, locale;
 - [x] **Options payantes des fiches avec hôtel** (« Late Check-out », « Wine in Room »...) : elles
       viennent de `hotel2_extras`, ajoutée à la carte le 17/11/2026 (entité `hotel2_extra`).
       Traduites le 19/11/2026 : 294 options des 29 hôtels publiés, coût 0,88 $.
-- [ ] **Emails client dans la langue du client** (ES / RU / DE) : confirmation de réservation,
-      billets, « demande reçue » (expérience, bateau, sur-mesure). Les fonctions d'envoi lisent
-      `client_locale` (déjà enregistrée sur la réservation ou la demande) au lieu de `preferred_lang`
-      (en / fr / he), avec le même habillage que l'email de confirmation de référence.
+- [x] **Emails client dans la langue du client** (ES / RU / DE, 19/11/2026) : confirmation
+      d'expérience, confirmation hôtel, billets (email et page billet), rappel de la veille, accusé
+      de réception du formulaire Contact. Langue = `client_locale` de la réservation, sinon
+      `preferred_lang`. Textes des fiches traduits via `_shared/translations/translateRow.ts` (seulement
+      si la traduction correspond à l'anglais actuel). Il n'existe pas d'email « demande reçue » pour
+      les demandes d'expérience, de bateau ou sur-mesure (voir problemes-hors-traduction.md).
 - [ ] **Relecture** : une fiche de chaque type relue par un lecteur natif dans chaque langue.
 - [ ] **Demande test** depuis une page `?lang=ru` : dans le back-office, la demande affiche le
       nom anglais de l'expérience et le badge « RU ».

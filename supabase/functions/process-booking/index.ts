@@ -7,6 +7,8 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { toClientLocale } from '../_shared/translations/catalog.ts';
+import { customerEmailLang, isAutoEmailLang } from '../_shared/email-lang.ts';
+import { translateRow } from '../_shared/translations/translateRow.ts';
 
 const ALLOWED_ORIGINS: (string | RegExp)[] = [
   'https://staymakom.com',
@@ -347,11 +349,19 @@ Deno.serve(async (req: Request) => {
 
     // 5. Email de confirmation (non-bloquant)
     try {
+      // Réservation faite depuis une page en espagnol, russe ou allemand : email dans cette langue,
+      // avec le titre de l'expérience traduit (le site a renvoyé le titre anglais, pour le back-office).
+      const emailLang = customerEmailLang(body.client_locale, body.lang);
+      let emailTitle = body.experienceTitle || '';
+      if (isAutoEmailLang(emailLang) && body.experienceId && emailTitle) {
+        const translated = await translateRow(adminClient, 'experience2', { id: body.experienceId, title: emailTitle }, emailLang);
+        emailTitle = (translated?.title as string) || emailTitle;
+      }
       await adminClient.functions.invoke('send-booking-confirmation', {
         body: {
           to: body.email,
           guestName: body.guestName,
-          experienceTitle: body.experienceTitle || '',
+          experienceTitle: emailTitle,
           hotelName: body.hotelName || '',
           roomName: body.roomName || '',
           boardType: body.boardType || 'RO',
@@ -365,7 +375,7 @@ Deno.serve(async (req: Request) => {
           hgBookingId,
           remarks: body.remarks || [],
           specialRequests: body.specialRequests || '',
-          lang: body.lang || 'en',
+          lang: emailLang,
           displayTaxesTotal: body.displayTaxesTotal ?? 0,
           confirmationToken,
           cancellationPolicy: body.cancellationPolicy || null,

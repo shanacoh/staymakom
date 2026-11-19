@@ -1,7 +1,8 @@
 // Lecture côté serveur des infos pratiques d'une fiche expérience.
 // Le contact du jour J n'est pas lu ici : il est interne à l'équipe et n'est jamais envoyé au client.
 
-import { buildPracticalInfo, PRACTICAL_INFO_COLUMNS, type PracticalInfo, type PracticalInfoSource } from "./content.ts";
+import { buildPracticalInfo, isAutoLang, normalizeLang, PRACTICAL_INFO_COLUMNS, type PracticalInfo, type PracticalInfoSource } from "./content.ts";
+import { translateRow } from "../translations/translateRow.ts";
 
 // deno-lint-ignore no-explicit-any
 type ServiceClient = any;
@@ -16,12 +17,17 @@ export async function loadPracticalInfo(
 
   const { data, error } = await serviceClient
     .from("standalone_experiences")
-    .select(PRACTICAL_INFO_COLUMNS)
+    .select(`id, ${PRACTICAL_INFO_COLUMNS}`)
     .eq("id", experienceId)
     .maybeSingle();
   if (error) throw error;
 
-  return buildPracticalInfo(data as PracticalInfoSource | null, lang);
+  // Espagnol, russe, allemand : point de rendez-vous, accès, « à savoir »... traduits (si à jour).
+  const normalized = normalizeLang(lang);
+  const source = isAutoLang(normalized)
+    ? await translateRow(serviceClient, "standalone_experience", data as Record<string, unknown> | null, normalized)
+    : data;
+  return buildPracticalInfo(source as PracticalInfoSource | null, normalized);
 }
 
 /** Infos pratiques de démonstration, pour montrer le rendu d'une fiche complète sans rien écrire en base. */

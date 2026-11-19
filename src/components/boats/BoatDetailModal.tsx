@@ -25,6 +25,7 @@ import { trackExperienceViewed, trackRequestClicked, type ProductLike } from "@/
 import { useSetCurrentProduct } from "@/contexts/CurrentProductContext";
 import { BOAT_MEETING_POINTS } from "@/lib/boatAvailability";
 import { tPage } from "@/lib/translations";
+import { tPlace } from "@/lib/placeNames";
 
 interface BoatDetailModalProps {
   boatId: string | null;
@@ -132,8 +133,8 @@ const BoatDetailModal = ({ boatId, onClose }: BoatDetailModalProps) => {
   // "Sortie en mer" / "Sport nautique" — pas une vraie catégorie DB (category_id
   // doit rester "Bateaux" pour le filtrage /admin/boats et /boat), donc on
   // réutilise le champ région, libre et inutilisé par ailleurs pour ce module.
-  const regionLabel = localized(boat?.region, boat?.region_fr, boat?.region_he);
-  const cityLabel = localized(boat?.city, boat?.city_fr, boat?.city_he);
+  const regionLabel = tPlace(localized(boat?.region, boat?.region_fr, boat?.region_he));
+  const cityLabel = tPlace(localized(boat?.city, boat?.city_fr, boat?.city_he));
   const durationLabel = localized(boat?.duration, boat?.duration_fr, boat?.duration_he);
 
   const photos: string[] = boat

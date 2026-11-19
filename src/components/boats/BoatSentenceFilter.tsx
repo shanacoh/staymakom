@@ -13,6 +13,7 @@ import { toLocalDateStr } from "@/lib/boatAvailability";
 import { format } from "date-fns";
 import { dateFnsLocale } from "@/lib/dateFnsLocale";
 import { tPage, uiGroup } from "@/lib/translations";
+import { tPlace } from "@/lib/placeNames";
 
 export type CityFilter = "any" | "Tel Aviv" | "Herzliya";
 export type DurationBucket = "2h" | "3h" | "4h" | "other";
@@ -93,8 +94,8 @@ export default function BoatSentenceFilter({ value, onChange }: Props) {
         </div>
 
         <div className="flex flex-wrap gap-1.5">
-          <Pill active={value.city === "Tel Aviv"} onClick={() => set("city", "Tel Aviv")}>Tel Aviv</Pill>
-          <Pill active={value.city === "Herzliya"} onClick={() => set("city", "Herzliya")}>Herzliya</Pill>
+          <Pill active={value.city === "Tel Aviv"} onClick={() => set("city", "Tel Aviv")}>{tPlace("Tel Aviv")}</Pill>
+          <Pill active={value.city === "Herzliya"} onClick={() => set("city", "Herzliya")}>{tPlace("Herzliya")}</Pill>
           <Pill active={value.city === "any"} onClick={() => set("city", "any")}>{t.any}</Pill>
         </div>
 

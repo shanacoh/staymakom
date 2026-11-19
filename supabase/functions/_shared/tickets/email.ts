@@ -88,7 +88,7 @@ ${imagesHtml}
           ${booking.token ? `
           <tr>
             <td align="center" style="padding:0 0 20px;">
-              <a href="${ticketPageUrl(booking.token)}" style="display:inline-block;background:${BRAND_RED};color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:999px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;">${t.openTickets}</a>
+              <a href="${ticketPageUrl(booking.token)}${lang === "es" || lang === "ru" || lang === "de" ? `?lang=${lang}` : ""}" style="display:inline-block;background:${BRAND_RED};color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:999px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;">${t.openTickets}</a>
             </td>
           </tr>` : ""}
           ${booking.tickets.length > 0 ? `

@@ -4,6 +4,28 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 19/11/2026 : Traduction ES / RU / DE, session 4 : villes et régions, catégories du Journal, emails client
+
+### Ce qui a changé côté code
+- `src/lib/placeNames.ts` (nouveau) : dictionnaire relu des villes, régions et zones en espagnol, russe et allemand (une seule orthographe par lieu), appliqué uniquement à l'affichage. Les données, les filtres et le regroupement par région gardent le nom anglais.
+- `src/hooks/useLanguage.tsx` (`getLocalizedField`), `src/lib/regionList/labels.ts` et `queries.ts`, `RegionFilter`, fiches (`Experience2`, `StandaloneExperience`, `Hotel`, `YourStaySection`), cartes, bateaux (`Boats`, `BoatSentenceFilter`, `BoatDetailModal`, `BoatAvailabilityPopup`), espace client, `JournalPost`, `LaunchExperiences` : ville et région affichées dans la langue de la page. `src/lib/regions.ts` : grandes régions du formulaire sur-mesure en es / ru / de.
+- `src/lib/journalCategories.ts` (nouveau) : catégories des articles du Journal (« Stories »...) traduites à l'affichage dans les six langues ; `Journal`, `JournalPost`, `RecommendedJournal` l'utilisent.
+- Emails client dans la langue de la page de réservation (espagnol, russe, allemand) :
+  - `supabase/functions/_shared/email-lang.ts` (nouveau) : choix de la langue (`client_locale`, sinon `preferred_lang`).
+  - `supabase/functions/_shared/translations/translateRow.ts` (nouveau) : textes des fiches traduits côté serveur (titre, point de rendez-vous, « à savoir »...), seulement si la traduction correspond à l'anglais actuel.
+  - `_shared/practical-info/content.ts` et `load.ts`, `_shared/tickets/content.ts`, `load.ts` et `email.ts`, `_shared/time-slot.ts` : infos pratiques, billets, créneaux et dates en es / ru / de.
+  - `send-standalone-booking-confirmation`, `send-standalone-day-before-reminder` (et `template.ts`), `send-booking-confirmation`, `process-booking` (langue et titre traduit transmis à l'email hôtel), `send-contact-request` : textes en es / ru / de, même habillage qu'avant. Les liens des emails gardent la langue (`?lang=`).
+  - `src/pages/Checkout.tsx` : le résumé d'annulation de l'email hôtel est calculé dans la langue de la page. `src/pages/Contact.tsx` : envoie la langue de la page.
+  - Changement visible en français : l'accusé de réception du formulaire Contact, jusqu'ici en anglais, part en français.
+- Tests : `src/lib/placeNames.test.ts`, `src/lib/contentTranslations/emails.test.ts`.
+- `docs/traductions/lieux-publies.sql` (nouveau) : liste les lieux affichés sur le site, pour repérer ceux qui manquent au dictionnaire.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Dernières étapes avant d'ouvrir l'espagnol, le russe et l'allemand : les noms de lieux et les catégories du Journal s'affichent dans la langue du visiteur, et un client qui réserve depuis une page traduite reçoit ses emails (confirmation, billets, rappel) dans sa langue.
+
 ## 19/11/2026 : Traduction ES / RU / DE, session 3 : pages restantes et espace client
 
 ### Ce qui a changé côté code

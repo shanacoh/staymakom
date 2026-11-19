@@ -1,10 +1,16 @@
-import type { Lang, Region, RegionFields, RegionList, RegionZone } from "./types";
+import type { Region, RegionFields, RegionList, RegionZone } from "./types";
+import type { Locale } from "@/lib/locale";
+import { placeName } from "@/lib/placeNames";
+
+// Langue d'affichage : en / fr / he lisent leurs colonnes, es / ru / de traduisent le nom
+// anglais à l'affichage (placeNames.ts). Les données gardent toujours le nom anglais.
+type Lang = Locale;
 
 /** Le nom d'une région ou d'une zone dans la langue demandée. */
 export function localizedName(entry: { name: string; name_fr: string; name_he: string }, lang: Lang): string {
   if (lang === "fr") return entry.name_fr || entry.name;
   if (lang === "he") return entry.name_he || entry.name;
-  return entry.name;
+  return placeName(entry.name, lang);
 }
 
 /** La région reliée à une fiche, ou null si la fiche n'en a pas (ou si la région n'existe plus). */
@@ -16,7 +22,7 @@ export function linkedRegion(fields: RegionFields | null | undefined, list: Regi
 /** L'ancien texte libre de région, dans la langue demandée. */
 export function legacyRegionText(fields: RegionFields | null | undefined, lang: Lang): string | null {
   if (!fields) return null;
-  const text = lang === "fr" ? fields.region_fr || fields.region : lang === "he" ? fields.region_he || fields.region : fields.region;
+  const text = lang === "fr" ? fields.region_fr || fields.region : lang === "he" ? fields.region_he || fields.region : placeName(fields.region, lang);
   return text?.trim() || null;
 }
 

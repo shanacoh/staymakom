@@ -1163,4 +1163,13 @@ export const es: UiDictionary = {
   journalReadTheStory: "Leer el artículo",
   contactHeroTitle: "CONTACTO",
   contactGetInTouch: "ESCRÍBENOS",
+
+  // ── Session 4 : catégories des articles du Journal ──
+  journalCategory__stories: "Historias",
+  journalCategory__places: "Lugares",
+  journalCategory__guides: "Guías",
+  journalCategory__foodWine: "Gastronomía y vino",
+  journalCategory__slowTravel: "Viajar sin prisa",
+  journalCategory__behindTheScenes: "Entre bastidores",
+  journalCategory__people: "Personas",
 };

@@ -537,10 +537,11 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
       const currentSession = await supabase.auth.getSession();
       const currentUserId = currentSession.data.session?.user?.id || null;
 
+      // Résumé d'annulation de l'email : dans la langue de la page (espagnol, russe, allemand compris).
       const emailCancellation = analyzeCancellationPolicies(
         state.selectedRatePlan?.cancellationPolicies,
         checkIn,
-        lang,
+        pageLocale(),
       );
       const taxBreakdown = extractTaxBreakdown(state.selectedRatePlan);
       const STAYMAKOM_VAT_TEXT = "Taxes are not included. Israeli citizens and residents need to pay an 18% VAT at check-in in accordance with Israeli regulations. Tourists holding a valid foreign passport and an entry permit (B/2, B/3, or B/4) are exempt from VAT. Please make sure to keep the entry permit received at the airport upon arrival, as it may be required to confirm eligibility. If exemption cannot be validated at check-in, VAT will be charged accordingly.";

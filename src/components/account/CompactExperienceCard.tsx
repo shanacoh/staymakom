@@ -10,6 +10,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import AuthPromptDialog from "@/components/auth/AuthPromptDialog";
 import { tPage } from "@/lib/translations";
+import { tPlace } from "@/lib/placeNames";
 
 interface Experience {
   id: string;
@@ -49,7 +50,7 @@ export default function CompactExperienceCard({
 
   const image = (experience as any).thumbnail_image || experience.hero_image || experience.photos?.[0] || experience.hotels?.hero_image;
   const hotelName = experience.hotels?.name || "";
-  const city = experience.hotels?.city || "";
+  const city = tPlace(experience.hotels?.city) || "";
 
   const toggleWishlist = useMutation({
     mutationFn: async () => {

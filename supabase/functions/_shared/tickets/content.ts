@@ -1,6 +1,6 @@
 // Billets d'entrée envoyés par le prestataire : le seul endroit qui décide comment on reconnaît un
 // fichier billet et comment on en parle au client (email « Vos billets », page billet, confirmation,
-// rappel de la veille), en anglais, français et hébreu.
+// rappel de la veille), en anglais, français, hébreu, espagnol, russe et allemand.
 //
 // Fichier sans aucune dépendance : lu par les fonctions serveur et par le site (page /billet/<jeton>,
 // back-office). On ne génère jamais de billet : on transmet le fichier du prestataire tel quel.
@@ -115,6 +115,60 @@ export const TICKET_TEXTS: Record<PracticalLang, {
     unavailableTitle: "הכרטיס הזה כבר לא זמין",
     unavailableBody: "אם נראה לכם שזו טעות, הצוות שלנו עונה בוואטסאפ.",
   },
+  es: {
+    eyebrow: "Tus entradas",
+    subject: (title, date) => `Tus entradas · ${title}, ${date}`,
+    guests: (count) => `${count} participante${count === 1 ? "" : "s"}`,
+    openTickets: "Abrir mis entradas",
+    showCode: "Muestra este código en la entrada, en tu móvil o impreso.",
+    attached: "Tus entradas también van adjuntas a este correo.",
+    question: "¿Tienes una pregunta? Nuestro equipo te responde por WhatsApp",
+    questionLink: "Escríbenos",
+    confirmationNotice: "Te enviaremos tus entradas por separado antes de la experiencia.",
+    brightnessTip: "Consejo: sube el brillo de la pantalla en la entrada.",
+    downloadPdf: "Descargar el PDF",
+    addToWallet: "Añadir a Apple Wallet",
+    openFile: "Abrir el archivo",
+    loading: "Cargando tu entrada…",
+    unavailableTitle: "Esta entrada ya no está disponible",
+    unavailableBody: "Si crees que es un error, nuestro equipo te responde por WhatsApp.",
+  },
+  ru: {
+    eyebrow: "Ваши билеты",
+    subject: (title, date) => `Ваши билеты · ${title}, ${date}`,
+    guests: (count) => `${count} чел.`,
+    openTickets: "Открыть билеты",
+    showCode: "Покажите этот код на входе, с телефона или в распечатанном виде.",
+    attached: "Билеты также приложены к этому письму.",
+    question: "Есть вопрос? Наша команда ответит в WhatsApp",
+    questionLink: "Написать нам",
+    confirmationNotice: "Входные билеты мы пришлём вам отдельно до начала впечатления.",
+    brightnessTip: "Совет: на входе увеличьте яркость экрана.",
+    downloadPdf: "Скачать PDF",
+    addToWallet: "Добавить в Apple Wallet",
+    openFile: "Открыть файл",
+    loading: "Загружаем билет…",
+    unavailableTitle: "Этот билет больше недоступен",
+    unavailableBody: "Если вы считаете, что это ошибка, наша команда ответит в WhatsApp.",
+  },
+  de: {
+    eyebrow: "Deine Tickets",
+    subject: (title, date) => `Deine Tickets · ${title}, ${date}`,
+    guests: (count) => `${count} ${count === 1 ? "Person" : "Personen"}`,
+    openTickets: "Meine Tickets öffnen",
+    showCode: "Zeig diesen Code am Eingang, auf dem Handy oder ausgedruckt.",
+    attached: "Deine Tickets sind auch an diese E-Mail angehängt.",
+    question: "Eine Frage? Unser Team antwortet auf WhatsApp",
+    questionLink: "Schreib uns",
+    confirmationNotice: "Deine Eintrittskarten schicken wir dir vor dem Erlebnis separat.",
+    brightnessTip: "Tipp: Dreh am Eingang die Bildschirmhelligkeit hoch.",
+    downloadPdf: "PDF herunterladen",
+    addToWallet: "Zu Apple Wallet hinzufügen",
+    openFile: "Datei öffnen",
+    loading: "Ticket wird geladen…",
+    unavailableTitle: "Dieses Ticket ist nicht mehr verfügbar",
+    unavailableBody: "Wenn du glaubst, dass das ein Fehler ist, antwortet unser Team auf WhatsApp.",
+  },
 };
 
 /** « date · heure · participants », en sautant ce qui est vide. */
@@ -123,7 +177,7 @@ export function ticketSummaryLine(parts: { date: string; time?: string | null; p
   return [parts.date, parts.time || "", guests].filter((part) => part.trim() !== "").join(" · ");
 }
 
-const SHORT_DATE_LOCALES: Record<PracticalLang, string> = { en: "en-US", fr: "fr-FR", he: "he-IL" };
+const SHORT_DATE_LOCALES: Record<PracticalLang, string> = { en: "en-US", fr: "fr-FR", he: "he-IL", es: "es-ES", ru: "ru-RU", de: "de-DE" };
 
 /** Date courte pour l'objet de l'email (ex. « 12 novembre »). */
 export function formatShortDate(dateStr: string, lang: PracticalLang): string {

@@ -1,10 +1,12 @@
 // Lecture côté serveur d'une réservation et de ses billets d'entrée (clé de service).
 // Sert à l'email « Vos billets » et à la page billet : les deux montrent exactement les mêmes infos.
 
-import { formatBookingDate, normalizeLang, type PracticalInfo, type PracticalLang } from "../practical-info/content.ts";
+import { formatBookingDate, isAutoLang, normalizeLang, type PracticalInfo, type PracticalLang } from "../practical-info/content.ts";
 import { loadPracticalInfo } from "../practical-info/load.ts";
 import { formatTimeSlot } from "../time-slot.ts";
 import { TICKETS_BUCKET, type TicketFileType } from "./content.ts";
+import { customerEmailLang } from "../email-lang.ts";
+import { translateRow } from "../translations/translateRow.ts";
 
 // deno-lint-ignore no-explicit-any
 type ServiceClient = any;
@@ -37,9 +39,9 @@ export interface TicketBooking {
 }
 
 const BOOKING_COLUMNS =
-  "id, customer_email, booking_date, time_slot, party_size, preferred_lang, status, is_cancelled, payment_status, " +
+  "id, customer_email, booking_date, time_slot, party_size, preferred_lang, client_locale, status, is_cancelled, payment_status, " +
   "ticket_note, ticket_access_token, tickets_sent_at, custom_experience_title, standalone_experience_id, " +
-  "standalone_experiences(title, title_fr, title_he), " +
+  "standalone_experiences(id, title, title_fr, title_he), " +
   "booking_tickets(id, storage_path, file_type, mime_type, original_name, label, position, created_at)";
 
 /** Réservation et billets, par identifiant (back-office) ou par jeton de page billet (client). `null` si inconnue. */
@@ -54,8 +56,12 @@ export async function loadTicketBooking(
   if (error) throw error;
   if (!data) return null;
 
-  const lang = normalizeLang(data.preferred_lang);
-  const experience = data.standalone_experiences as { title?: string; title_fr?: string; title_he?: string } | null;
+  // Réservation faite depuis une page en espagnol, russe ou allemand : billets dans cette langue.
+  const lang = normalizeLang(customerEmailLang(data.client_locale, data.preferred_lang));
+  const experienceRow = data.standalone_experiences as { id?: string; title?: string; title_fr?: string; title_he?: string } | null;
+  const experience = isAutoLang(lang)
+    ? ((await translateRow(serviceClient, "standalone_experience", experienceRow as Record<string, unknown> | null, lang)) as typeof experienceRow)
+    : experienceRow;
   const localizedTitle = lang === "fr" ? experience?.title_fr : lang === "he" ? experience?.title_he : experience?.title;
   // deno-lint-ignore no-explicit-any
   const rows = ((data.booking_tickets ?? []) as any[]).sort((a, b) => a.position - b.position || a.created_at.localeCompare(b.created_at));

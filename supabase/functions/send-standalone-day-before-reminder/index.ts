@@ -21,7 +21,9 @@
 // envoyer, et noter la date d'envoi.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { buildPracticalInfo, normalizeLang, type PracticalInfo } from '../_shared/practical-info/content.ts';
+import { buildPracticalInfo, isAutoLang, normalizeLang, type PracticalInfo } from '../_shared/practical-info/content.ts';
+import { customerEmailLang } from '../_shared/email-lang.ts';
+import { translateRow } from '../_shared/translations/translateRow.ts';
 import { loadPracticalInfo, SAMPLE_PRACTICAL_SOURCE } from '../_shared/practical-info/load.ts';
 import { getAdminEmail, isAdminEmail, isInternalCron } from '../_shared/internal-auth.ts';
 import { buildReminderEmail } from './template.ts';
@@ -111,7 +113,7 @@ Deno.serve(async (req: Request) => {
     const tomorrow = nextDay(now.date);
     const { data: bookings, error } = await supabase
       .from('standalone_bookings')
-      .select('id, customer_name, customer_email, booking_date, time_slot, party_size, confirmation_token, custom_experience_title, custom_address, preferred_lang, created_at, standalone_experience_id, ticket_access_token, tickets_sent_at, booking_tickets(id), standalone_experiences(title, title_fr, title_he, address)')
+      .select('id, customer_name, customer_email, booking_date, time_slot, party_size, confirmation_token, custom_experience_title, custom_address, preferred_lang, client_locale, created_at, standalone_experience_id, ticket_access_token, tickets_sent_at, booking_tickets(id), standalone_experiences(id, title, title_fr, title_he, address)')
       .eq('booking_date', tomorrow)
       .eq('status', 'confirmed')
       .eq('is_cancelled', false)
@@ -148,8 +150,12 @@ Deno.serve(async (req: Request) => {
 
       let sent = { ok: false } as { ok: boolean; details?: string };
       try {
-        const lang = normalizeLang(booking.preferred_lang);
-        const experience = booking.standalone_experiences as unknown as { title?: string; title_fr?: string; title_he?: string; address?: string } | null;
+        // Réservation faite depuis une page en espagnol, russe ou allemand : rappel dans cette langue.
+        const lang = normalizeLang(customerEmailLang(booking.client_locale, booking.preferred_lang));
+        const experienceRow = booking.standalone_experiences as unknown as { id?: string; title?: string; title_fr?: string; title_he?: string; address?: string } | null;
+        const experience = isAutoLang(lang)
+          ? ((await translateRow(supabase, 'standalone_experience', experienceRow as Record<string, unknown> | null, lang)) as typeof experienceRow)
+          : experienceRow;
         const localizedTitle = lang === 'fr' ? experience?.title_fr : lang === 'he' ? experience?.title_he : experience?.title;
         let practicalInfo: PracticalInfo | null = null;
         try {
@@ -168,7 +174,7 @@ Deno.serve(async (req: Request) => {
           address: booking.custom_address || experience?.address || undefined,
           practicalInfo,
           ticketsUrl: booking.ticket_access_token && ((booking.booking_tickets ?? []).length > 0 || booking.tickets_sent_at)
-            ? ticketPageUrl(booking.ticket_access_token)
+            ? `${ticketPageUrl(booking.ticket_access_token)}${isAutoLang(lang) ? `?lang=${lang}` : ''}`
             : undefined,
         });
         sent = await sendEmail(booking.customer_email, email.subject, email.html);

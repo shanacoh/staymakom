@@ -43,7 +43,11 @@ const handler = async (req: Request): Promise<Response> => {
     const { name, email, subject, message, language = 'en', preview }: ContactRequest & { preview?: boolean } = await req.json();
     console.log("Processing contact request from:", email);
 
-    const isHebrew = language === 'he';
+    // Accusé de réception dans la langue de la page (es / ru / de compris).
+    type AckLang = 'en' | 'fr' | 'he' | 'es' | 'ru' | 'de';
+    const ackLang: AckLang = (['en', 'fr', 'he', 'es', 'ru', 'de'] as const).includes(language as AckLang) ? (language as AckLang) : 'en';
+    const pick = (texts: Record<AckLang, string>): string => texts[ackLang];
+    const isHebrew = ackLang === 'he';
 
     // Email to Staymakom team
     const teamEmailHtml = `
@@ -164,38 +168,32 @@ const handler = async (req: Request): Promise<Response> => {
             <td style="background: linear-gradient(135deg, #1a1a1a 0%, #333333 100%); padding: 40px; text-align: center;">
               <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 300; letter-spacing: 2px;">STAYMAKOM</h1>
               <p style="color: #c9a87c; margin: 10px 0 0; font-size: 14px; letter-spacing: 1px;">
-                ${isHebrew ? 'יותר משהייה, זו חוויה' : 'MORE THAN A STAY, IT\'S AN EXPERIENCE'}
+                ${pick({ en: "MORE THAN A STAY, IT'S AN EXPERIENCE", fr: "PLUS QU'UN SÉJOUR, C'EST UNE EXPÉRIENCE", he: "יותר משהייה, זו חוויה", es: "MÁS QUE UNA ESTANCIA, UNA EXPERIENCIA", ru: "БОЛЬШЕ, ЧЕМ ПРОСТО ОТДЫХ: НАСТОЯЩЕЕ ВПЕЧАТЛЕНИЕ", de: "MEHR ALS EIN AUFENTHALT, EIN ERLEBNIS" })}
               </p>
             </td>
           </tr>
           <tr>
             <td style="padding: 40px;">
               <h2 style="color: #1a1a1a; margin: 0 0 20px; font-size: 24px; font-weight: 500;">
-                ${isHebrew ? `שלום ${escapeHTML(name)},` : `Hello ${escapeHTML(name)},`}
+                ${pick({ en: `Hello ${escapeHTML(name)},`, fr: `Bonjour ${escapeHTML(name)},`, he: `שלום ${escapeHTML(name)},`, es: `Hola, ${escapeHTML(name)}:`, ru: `Здравствуйте, ${escapeHTML(name)}!`, de: `Hallo ${escapeHTML(name)},` })}
               </h2>
               <p style="color: #666666; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
-                ${isHebrew 
-                  ? 'תודה שפנית אלינו! קיבלנו את ההודעה שלך ונחזור אליך בהקדם האפשרי.'
-                  : 'Thank you for reaching out! We\'ve received your message and will get back to you as soon as possible.'
-                }
+                ${pick({ en: "Thank you for reaching out! We've received your message and will get back to you as soon as possible.", fr: "Merci de nous avoir écrit ! Nous avons bien reçu votre message et vous répondrons au plus vite.", he: "תודה שפנית אלינו! קיבלנו את ההודעה שלך ונחזור אליך בהקדם האפשרי.", es: "¡Gracias por escribirnos! Hemos recibido tu mensaje y te responderemos lo antes posible.", ru: "Спасибо, что написали нам! Мы получили ваше сообщение и ответим как можно скорее.", de: "Danke für deine Nachricht! Wir haben sie erhalten und melden uns so schnell wie möglich." })}
               </p>
               <div style="background-color: #f9f9f6; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
                 <p style="color: #999999; font-size: 12px; margin: 0 0 10px; text-transform: uppercase; letter-spacing: 1px;">
-                  ${isHebrew ? 'ההודעה שלך:' : 'Your message:'}
+                  ${pick({ en: "Your message:", fr: "Votre message :", he: "ההודעה שלך:", es: "Tu mensaje:", ru: "Ваше сообщение:", de: "Deine Nachricht:" })}
                 </p>
                 <p style="color: #1a1a1a; font-size: 14px; line-height: 1.6; margin: 0; white-space: pre-wrap;">${escapeHTML(message)}</p>
               </div>
               <p style="color: #666666; font-size: 16px; line-height: 1.6;">
-                ${isHebrew 
-                  ? 'בינתיים, אתם מוזמנים לגלות את החוויות שלנו.'
-                  : 'In the meantime, feel free to explore our experiences.'
-                }
+                ${pick({ en: "In the meantime, feel free to explore our experiences.", fr: "En attendant, n'hésitez pas à découvrir nos expériences.", he: "בינתיים, אתם מוזמנים לגלות את החוויות שלנו.", es: "Mientras tanto, descubre nuestras experiencias.", ru: "А пока вы можете познакомиться с нашими впечатлениями.", de: "In der Zwischenzeit kannst du unsere Erlebnisse entdecken." })}
               </p>
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 30px;">
                 <tr>
                   <td align="center">
-                    <a href="https://staymakom.com" style="display: inline-block; background-color: #c9a87c; color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 4px; font-size: 14px; font-weight: 600; letter-spacing: 1px;">
-                      ${isHebrew ? 'גלה חוויות' : 'DISCOVER EXPERIENCES'}
+                    <a href="https://staymakom.com${ackLang === 'es' || ackLang === 'ru' || ackLang === 'de' ? `/?lang=${ackLang}` : ''}" style="display: inline-block; background-color: #c9a87c; color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 4px; font-size: 14px; font-weight: 600; letter-spacing: 1px;">
+                      ${pick({ en: "DISCOVER EXPERIENCES", fr: "DÉCOUVRIR LES EXPÉRIENCES", he: "גלה חוויות", es: "DESCUBRIR EXPERIENCIAS", ru: "СМОТРЕТЬ ВПЕЧАТЛЕНИЯ", de: "ERLEBNISSE ENTDECKEN" })}
                     </a>
                   </td>
                 </tr>
@@ -205,7 +203,7 @@ const handler = async (req: Request): Promise<Response> => {
           <tr>
             <td style="background-color: #f9f9f6; padding: 30px; text-align: center; border-top: 1px solid #eeeeee;">
               <p style="color: #999999; font-size: 12px; margin: 0;">
-                © ${new Date().getFullYear()} Staymakom. ${isHebrew ? 'כל הזכויות שמורות.' : 'All rights reserved.'}
+                © ${new Date().getFullYear()} Staymakom. ${pick({ en: "All rights reserved.", fr: "Tous droits réservés.", he: "כל הזכויות שמורות.", es: "Todos los derechos reservados.", ru: "Все права защищены.", de: "Alle Rechte vorbehalten." })}
               </p>
             </td>
           </tr>
@@ -219,7 +217,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (preview) {
       return new Response(
-        JSON.stringify({ html: confirmationEmailHtml, subject: isHebrew ? "קיבלנו את ההודעה שלך! 💫" : "We received your message! 💫" }),
+        JSON.stringify({ html: confirmationEmailHtml, subject: pick({ en: "We received your message! 💫", fr: "Nous avons bien reçu votre message ! 💫", he: "קיבלנו את ההודעה שלך! 💫", es: "¡Hemos recibido tu mensaje! 💫", ru: "Мы получили ваше сообщение! 💫", de: "Wir haben deine Nachricht erhalten! 💫" }) }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
@@ -235,7 +233,7 @@ const handler = async (req: Request): Promise<Response> => {
         from: "Staymakom <noreply@staymakom.com>",
         to: [email],
         reply_to: "shana@staymakom.com",
-        subject: isHebrew ? "קיבלנו את ההודעה שלך! 💫" : "We received your message! 💫",
+        subject: pick({ en: "We received your message! 💫", fr: "Nous avons bien reçu votre message ! 💫", he: "קיבלנו את ההודעה שלך! 💫", es: "¡Hemos recibido tu mensaje! 💫", ru: "Мы получили ваше сообщение! 💫", de: "Wir haben deine Nachricht erhalten! 💫" }),
         html: confirmationEmailHtml,
       }),
     });

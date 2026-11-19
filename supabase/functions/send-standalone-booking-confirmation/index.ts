@@ -32,6 +32,8 @@ import { getAdminEmail, isAdminEmail, isInternalCron } from '../_shared/internal
 import { notifyProviderOfBooking } from '../_shared/partner/booking-notice.ts';
 import { formatTimeSlot } from '../_shared/time-slot.ts';
 import { TICKET_TEXTS } from '../_shared/tickets/content.ts';
+import { customerEmailLang, isAutoEmailLang } from '../_shared/email-lang.ts';
+import { translateRow } from '../_shared/translations/translateRow.ts';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 
@@ -152,6 +154,66 @@ const TEXTS: Record<PracticalLang, {
     cta: 'לצפייה בהזמנה',
     contact: 'יש שאלה? אפשר להשיב למייל הזה או לכתוב לנו אל',
   },
+  es: {
+    subject: (title) => `✓ Tu experiencia está confirmada: ${title}`,
+    pageTitle: 'Confirmación de reserva · Staymakom',
+    eyebrow: 'Experiencia',
+    banner: '✓ Reserva confirmada',
+    bannerSub: '¡Tenemos muchas ganas de recibirte!',
+    dear: 'Hola',
+    intro: 'Tu experiencia está confirmada. Estos son los detalles de tu reserva:',
+    experience: 'Experiencia',
+    bookingRef: 'Referencia:',
+    date: 'Fecha',
+    time: 'Hora',
+    guestsLabel: 'Participantes',
+    guests: (count) => `${count} persona${count === 1 ? '' : 's'}`,
+    total: 'Total',
+    meetingPoint: 'Punto de encuentro',
+    goodToKnow: 'Bueno saber',
+    cta: 'Ver mi reserva',
+    contact: '¿Tienes una pregunta? Responde a este correo o escríbenos a',
+  },
+  ru: {
+    subject: (title) => `✓ Ваше впечатление подтверждено: ${title}`,
+    pageTitle: 'Подтверждение бронирования · Staymakom',
+    eyebrow: 'Впечатление',
+    banner: '✓ Бронирование подтверждено',
+    bannerSub: 'Будем рады видеть вас!',
+    dear: 'Здравствуйте,',
+    intro: 'Ваше впечатление подтверждено. Детали бронирования:',
+    experience: 'Впечатление',
+    bookingRef: 'Номер бронирования:',
+    date: 'Дата',
+    time: 'Время',
+    guestsLabel: 'Участники',
+    guests: (count) => `${count} чел.`,
+    total: 'Итого',
+    meetingPoint: 'Место встречи',
+    goodToKnow: 'Полезно знать',
+    cta: 'Открыть бронирование',
+    contact: 'Есть вопрос? Ответьте на это письмо или напишите нам:',
+  },
+  de: {
+    subject: (title) => `✓ Dein Erlebnis ist bestätigt: ${title}`,
+    pageTitle: 'Buchungsbestätigung · Staymakom',
+    eyebrow: 'Erlebnis',
+    banner: '✓ Buchung bestätigt',
+    bannerSub: 'Wir freuen uns auf dich!',
+    dear: 'Hallo',
+    intro: 'Dein Erlebnis ist bestätigt. Hier sind deine Buchungsdetails:',
+    experience: 'Erlebnis',
+    bookingRef: 'Buchungsnummer:',
+    date: 'Datum',
+    time: 'Uhrzeit',
+    guestsLabel: 'Teilnehmende',
+    guests: (count) => `${count} ${count === 1 ? 'Person' : 'Personen'}`,
+    total: 'Gesamt',
+    meetingPoint: 'Treffpunkt',
+    goodToKnow: 'Gut zu wissen',
+    cta: 'Meine Buchung ansehen',
+    contact: 'Fragen? Antworte auf diese E-Mail oder schreib uns an',
+  },
 };
 
 function buildEmailHtml(params: {
@@ -183,7 +245,9 @@ function buildEmailHtml(params: {
   // Quand le bloc Infos pratiques dit déjà où aller, la ligne « Meeting Point » de la carte ferait doublon.
   const address = hasLocation(params.practicalInfo ?? null) ? undefined : params.address;
 
-  const confirmationUrl = `https://staymakom.com/standalone-booking/confirmation/${confirmationToken}`;
+  // Langues traduites automatiquement : la page de confirmation s'ouvre dans la même langue.
+  const langParam = lang === 'es' || lang === 'ru' || lang === 'de' ? `?lang=${lang}` : '';
+  const confirmationUrl = `https://staymakom.com/standalone-booking/confirmation/${confirmationToken}${langParam}`;
   const heroImageUrl = 'https://uqeipzfdhyjkjzvqbkeu.supabase.co/storage/v1/object/public/NL/email/confirmation-hero-desert-road.jpg';
   const brandRed = '#ad1414';
 
@@ -337,7 +401,8 @@ ${params.requiresEntryTicket ? `
 // Champ d'une fiche dans la langue du client ; à défaut, la version anglaise.
 function localizedField(row: Record<string, unknown> | null, base: string, lang: PracticalLang): string {
   if (!row) return '';
-  const own = lang === 'en' ? row[base] : row[`${base}_${lang}`];
+  // es / ru / de : la fiche a déjà été traduite (translateRow), le texte est dans la colonne de base.
+  const own = lang === 'en' || lang === 'es' || lang === 'ru' || lang === 'de' ? row[base] : row[`${base}_${lang}`];
   return ((own as string) || (row[base] as string) || '').trim();
 }
 
@@ -453,7 +518,7 @@ Deno.serve(async (req: Request) => {
     // En mode aperçu sans token, on prend la réservation la plus récente pour montrer un rendu réel.
     const bookingQuery = supabase
       .from('standalone_bookings')
-      .select('id, customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, confirmation_token, custom_experience_title, custom_address, custom_regulations, status, is_cancelled, product_type, preferred_lang, standalone_experience_id, standalone_experiences(title, title_fr, title_he, address, address_fr, address_he, requires_entry_ticket)');
+      .select('id, customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, confirmation_token, custom_experience_title, custom_address, custom_regulations, status, is_cancelled, product_type, preferred_lang, client_locale, standalone_experience_id, standalone_experiences(id, title, title_fr, title_he, address, address_fr, address_he, requires_entry_ticket)');
     const { data: booking, error: bookingError } = confirmation_token
       ? await bookingQuery.eq('confirmation_token', confirmation_token).single()
       : await bookingQuery.order('created_at', { ascending: false }).limit(1).single();
@@ -462,8 +527,12 @@ Deno.serve(async (req: Request) => {
       return json({ error: 'Réservation introuvable' }, 404);
     }
 
-    const lang = normalizeLang(booking.preferred_lang);
-    const experience = booking.standalone_experiences as unknown as Record<string, string | null> | null;
+    // Réservation faite depuis une page en espagnol, russe ou allemand : email dans cette langue.
+    const lang = customerEmailLang(booking.client_locale, booking.preferred_lang);
+    const experienceRow = booking.standalone_experiences as unknown as Record<string, string | null> | null;
+    const experience = isAutoEmailLang(lang)
+      ? ((await translateRow(supabase, 'standalone_experience', experienceRow, lang)) ?? null)
+      : experienceRow;
     const experienceTitle = localizedField(experience, 'title', lang) || booking.custom_experience_title || '';
 
     // Infos pratiques : seulement pour une expérience (pas un bateau) confirmée et non annulée.

@@ -72,6 +72,54 @@ const TEXTS: Record<PracticalLang, {
     cta: 'לצפייה בהזמנה',
     contact: 'יש שאלה? אפשר להשיב למייל הזה או לכתוב לנו אל',
   },
+  es: {
+    subject: (title) => `Recordatorio: tu experiencia es mañana, ${title}`,
+    eyebrow: 'Experiencia',
+    banner: '⏰ Nos vemos mañana',
+    bannerSub: 'Aquí tienes todo lo que necesitas para el día.',
+    dear: (name) => `Hola <strong>${name}</strong>:`,
+    intro: 'Tu experiencia es mañana. Te dejamos un pequeño recordatorio:',
+    experience: 'Experiencia',
+    date: 'Fecha',
+    time: 'Hora',
+    guests: (count) => `${count} persona${count === 1 ? '' : 's'}`,
+    guestsLabel: 'Participantes',
+    address: 'Punto de encuentro',
+    cta: 'Ver mi reserva',
+    contact: '¿Tienes una pregunta? Responde a este correo o escríbenos a',
+  },
+  ru: {
+    subject: (title) => `Напоминание: ваше впечатление завтра, ${title}`,
+    eyebrow: 'Впечатление',
+    banner: '⏰ До завтра',
+    bannerSub: 'Всё, что нужно знать на этот день.',
+    dear: (name) => `Здравствуйте, <strong>${name}</strong>!`,
+    intro: 'Ваше впечатление уже завтра. Короткое напоминание:',
+    experience: 'Впечатление',
+    date: 'Дата',
+    time: 'Время',
+    guests: (count) => `${count} чел.`,
+    guestsLabel: 'Участники',
+    address: 'Место встречи',
+    cta: 'Открыть бронирование',
+    contact: 'Есть вопрос? Ответьте на это письмо или напишите нам:',
+  },
+  de: {
+    subject: (title) => `Erinnerung: Dein Erlebnis ist morgen, ${title}`,
+    eyebrow: 'Erlebnis',
+    banner: '⏰ Bis morgen',
+    bannerSub: 'Hier ist alles, was du für den Tag brauchst.',
+    dear: (name) => `Hallo <strong>${name}</strong>,`,
+    intro: 'Dein Erlebnis ist morgen. Hier eine kurze Erinnerung:',
+    experience: 'Erlebnis',
+    date: 'Datum',
+    time: 'Uhrzeit',
+    guests: (count) => `${count} ${count === 1 ? 'Person' : 'Personen'}`,
+    guestsLabel: 'Teilnehmende',
+    address: 'Treffpunkt',
+    cta: 'Meine Buchung ansehen',
+    contact: 'Fragen? Antworte auf diese E-Mail oder schreib uns an',
+  },
 };
 
 export interface ReminderEmailParams {
@@ -96,7 +144,8 @@ export function buildReminderEmail(params: ReminderEmailParams): { subject: stri
   const align = rtl ? 'right' : 'left';
   const address = hasLocation(practicalInfo) ? undefined : params.address;
 
-  const confirmationUrl = `https://staymakom.com/standalone-booking/confirmation/${confirmationToken}`;
+  const langParam = lang === 'es' || lang === 'ru' || lang === 'de' ? `?lang=${lang}` : '';
+  const confirmationUrl = `https://staymakom.com/standalone-booking/confirmation/${confirmationToken}${langParam}`;
   const heroImageUrl = 'https://uqeipzfdhyjkjzvqbkeu.supabase.co/storage/v1/object/public/NL/email/confirmation-hero-desert-road.jpg';
   const brandRed = '#ad1414';
   const label = `margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#999;text-align:${align};`;

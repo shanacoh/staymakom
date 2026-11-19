@@ -11,13 +11,14 @@ export type MacroRegion = "tlv" | "jlm" | "gal" | "car" | "neg" | "eil";
 
 export type Lang = "en" | "fr" | "he";
 
-export const MACRO_REGIONS: ReadonlyArray<{ code: MacroRegion; label: Record<Lang, string> }> = [
-  { code: "tlv", label: { fr: "Tel Aviv et la côte", en: "Tel Aviv & the coast", he: "תל אביב והחוף" } },
-  { code: "jlm", label: { fr: "Jérusalem", en: "Jerusalem", he: "ירושלים" } },
-  { code: "gal", label: { fr: "Galilée et Golan", en: "Galilee & Golan", he: "הגליל והגולן" } },
-  { code: "car", label: { fr: "Carmel et Haïfa", en: "Carmel & Haifa", he: "הכרמל וחיפה" } },
-  { code: "neg", label: { fr: "Néguev et mer Morte", en: "Negev & Dead Sea", he: "הנגב וים המלח" } },
-  { code: "eil", label: { fr: "Eilat et Arava", en: "Eilat & Arava", he: "אילת והערבה" } },
+// Libellés en / fr / he, plus es / ru / de pour les langues traduites automatiquement.
+export const MACRO_REGIONS: ReadonlyArray<{ code: MacroRegion; label: Record<Lang, string> & Partial<Record<"es" | "ru" | "de", string>> }> = [
+  { code: "tlv", label: { fr: "Tel Aviv et la côte", en: "Tel Aviv & the coast", he: "תל אביב והחוף", es: "Tel Aviv y la costa", ru: "Тель-Авив и побережье", de: "Tel Aviv & die Küste" } },
+  { code: "jlm", label: { fr: "Jérusalem", en: "Jerusalem", he: "ירושלים", es: "Jerusalén", ru: "Иерусалим", de: "Jerusalem" } },
+  { code: "gal", label: { fr: "Galilée et Golan", en: "Galilee & Golan", he: "הגליל והגולן", es: "Galilea y Golán", ru: "Галилея и Голаны", de: "Galiläa & Golan" } },
+  { code: "car", label: { fr: "Carmel et Haïfa", en: "Carmel & Haifa", he: "הכרמל וחיפה", es: "Carmelo y Haifa", ru: "Кармель и Хайфа", de: "Karmel & Haifa" } },
+  { code: "neg", label: { fr: "Néguev et mer Morte", en: "Negev & Dead Sea", he: "הנגב וים המלח", es: "Néguev y mar Muerto", ru: "Негев и Мёртвое море", de: "Negev & Totes Meer" } },
+  { code: "eil", label: { fr: "Eilat et Arava", en: "Eilat & Arava", he: "אילת והערבה", es: "Eilat y Arava", ru: "Эйлат и Арава", de: "Eilat & Arava" } },
 ];
 
 /** Rayon de « Autour de moi ». */

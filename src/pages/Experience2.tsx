@@ -50,6 +50,7 @@ import { MapPin, Moon } from "lucide-react";
 import { ArchivedListingRedirect } from "@/components/ArchivedListingRedirect";
 import { isArchived } from "@/lib/archive/status";
 import { tPage, uiGroup } from "@/lib/translations";
+import { tPlace } from "@/lib/placeNames";
 
 function toProductLike(experience: any, primaryHotel: any): ProductLike {
   return {
@@ -72,7 +73,7 @@ export default function Experience2() {
   const [searchParams] = useSearchParams();
   const isLaunch = searchParams.get("context") === "launch";
   const { lang, locale } = useLanguage();
-  const regionLabelOf = useRegionLabel(lang);
+  const regionLabelOf = useRegionLabel(locale);
   const { data: experience, isLoading, error } = useExperience2(slug || null);
   const footerRef = useRef<HTMLElement>(null);
   const reviewsRef = useRef<HTMLDivElement>(null);
@@ -357,7 +358,7 @@ export default function Experience2() {
   const title = lang === "he" ? experience.title_he || experience.title : lang === "fr" ? (experience as any).title_fr || experience.title : experience.title;
   const subtitle = lang === "he" ? experience.subtitle_he || experience.subtitle : lang === "fr" ? (experience as any).subtitle_fr || experience.subtitle : experience.subtitle;
   const primaryHotelName = lang === "he" ? primaryHotel?.name_he || primaryHotel?.name : primaryHotel?.name;
-  const city = lang === "he" ? primaryHotel?.city_he || primaryHotel?.city : primaryHotel?.city;
+  const city = tPlace(lang === "he" ? primaryHotel?.city_he || primaryHotel?.city : primaryHotel?.city);
   const region = regionLabelOf(primaryHotel);
   const categoryName = lang === "he" ? category?.name_he || category?.name : lang === "fr" ? (category as any)?.name_fr || category?.name : category?.name;
   const longCopy = lang === "he" ? experience.long_copy_he || experience.long_copy : lang === "fr" ? (experience as any).long_copy_fr || experience.long_copy : experience.long_copy;
@@ -420,7 +421,7 @@ export default function Experience2() {
           <div className="space-y-6">
             {parcoursHotels.map((ph, idx) => {
               const hotelName = lang === "he" ? ph.hotel?.name_he || ph.hotel?.name : ph.hotel?.name;
-              const hotelCity = lang === "he" ? ph.hotel?.city_he || ph.hotel?.city : ph.hotel?.city;
+              const hotelCity = tPlace(lang === "he" ? ph.hotel?.city_he || ph.hotel?.city : ph.hotel?.city);
               const notes = lang === "he" ? ph.notes_he || ph.notes : ph.notes;
 
               return (

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Loader2, BookOpen, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { tPage } from "@/lib/translations";
+import { journalCategoryLabel } from "@/lib/journalCategories";
 
 interface RecommendedJournalProps {
   userId?: string;
@@ -71,7 +72,7 @@ export default function RecommendedJournal({ userId, limit = 3 }: RecommendedJou
             </div>
 
             <span className="text-xs font-medium text-accent uppercase tracking-wider">
-              {post.category}
+              {journalCategoryLabel(post.category)}
             </span>
 
             <h4 className="font-serif text-lg text-foreground mt-1 mb-2 group-hover:text-primary transition-colors line-clamp-2">

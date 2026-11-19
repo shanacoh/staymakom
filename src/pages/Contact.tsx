@@ -15,7 +15,7 @@ import { Mail, Instagram } from "lucide-react";
 import contactHero from "@/assets/contact-hero-new.jpg";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
-import { tPage } from "@/lib/translations";
+import { pageLocale, tPage } from "@/lib/translations";
 
 const formSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100),
@@ -71,7 +71,8 @@ const Contact = () => {
           email: data.email,
           subject: subjectLabels[data.subject],
           message: data.message,
-          language: lang
+          // Langue de la page : l'accusé de réception part dans cette langue (es / ru / de compris).
+          language: pageLocale()
         }
       });
       

@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
 import { dateFnsLocale } from "@/lib/dateFnsLocale";
 import { tPage } from "@/lib/translations";
+import { journalCategoryLabel } from "@/lib/journalCategories";
 
 const Journal = () => {
   const { lang, locale } = useLanguage();
@@ -93,7 +94,7 @@ const Journal = () => {
                   <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
                     <div className="flex items-center gap-3 mb-3">
                       <span className="inline-block px-3 py-1 text-[11px] font-medium uppercase tracking-[0.1em] rounded-full bg-muted text-foreground">
-                        {featuredPost.category}
+                        {journalCategoryLabel(featuredPost.category)}
                       </span>
                       {featuredPost.published_at && (
                         <span className="text-xs text-white/80 flex items-center gap-1">
@@ -139,7 +140,7 @@ const Journal = () => {
                       <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="inline-block px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.1em] rounded-full bg-muted text-foreground">
-                            {post.category}
+                            {journalCategoryLabel(post.category)}
                           </span>
                           {post.published_at && (
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">

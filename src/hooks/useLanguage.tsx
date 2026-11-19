@@ -10,6 +10,7 @@ import {
   type Locale,
   type WrittenLocale,
 } from "@/lib/locale";
+import { tPlace } from "@/lib/placeNames";
 
 /**
  * Langue des textes d'interface (en, he, fr). En espagnol / russe / allemand, l'interface
@@ -82,6 +83,8 @@ export const useLanguage = () => {
   return { lang, locale, setLanguage, toggleLanguage };
 };
 
+const PLACE_FIELDS = new Set(["city", "region"]);
+
 // Helper to get localized field value
 export const getLocalizedField = <T extends Record<string, any>>(
   obj: T | null | undefined,
@@ -109,6 +112,9 @@ export const getLocalizedField = <T extends Record<string, any>>(
   // Fall back to base field (English) - check both patterns
   // Pattern 1: base field name (e.g., "title")
   if (fieldName in obj && obj[fieldName] != null) {
+    // Villes et régions : restent en anglais dans les données (repères des filtres), traduites
+    // seulement ici, à l'affichage, pour l'espagnol, le russe et l'allemand (voir placeNames.ts).
+    if (PLACE_FIELDS.has(fieldName) && typeof obj[fieldName] === "string") return tPlace(obj[fieldName]);
     return obj[fieldName];
   }
   

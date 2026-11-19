@@ -2,9 +2,9 @@
 // ("morning" / "afternoon"), traduit ici pour les emails et messages.
 // Même table que src/lib/timeSlots.ts (site) : les garder alignées.
 
-const TIME_SLOT_MOMENTS: Record<string, Record<"en" | "fr" | "he", string>> = {
-  morning: { en: "Morning", fr: "Matin", he: "בוקר" },
-  afternoon: { en: "Afternoon", fr: "Après-midi", he: "אחר הצהריים" },
+const TIME_SLOT_MOMENTS: Record<string, Record<"en" | "fr" | "he" | "es" | "ru" | "de", string>> = {
+  morning: { en: "Morning", fr: "Matin", he: "בוקר", es: "Mañana", ru: "Утро", de: "Vormittag" },
+  afternoon: { en: "Afternoon", fr: "Après-midi", he: "אחר הצהריים", es: "Tarde", ru: "День", de: "Nachmittag" },
 };
 
 export function isMomentSlot(slot: string | null | undefined): boolean {
@@ -15,7 +15,7 @@ export function formatTimeSlot(slot: string | null | undefined, lang: string = "
   if (!slot) return "";
   const moment = TIME_SLOT_MOMENTS[slot];
   if (!moment) return slot;
-  return moment[lang === "fr" || lang === "he" ? lang : "en"];
+  return moment[lang === "fr" || lang === "he" || lang === "es" || lang === "ru" || lang === "de" ? lang : "en"];
 }
 
 /**

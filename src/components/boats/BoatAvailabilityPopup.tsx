@@ -27,6 +27,7 @@ import { PhoneInput } from "@/components/PhoneInput";
 import { trackRequestClicked, type ProductLike } from "@/lib/analytics";
 import { tPage, uiRecord, pageLocale } from "@/lib/translations";
 import { dateFnsLocale } from "@/lib/dateFnsLocale";
+import { tPlace } from "@/lib/placeNames";
 
 type PriceVariant = {
   id: string;
@@ -234,7 +235,7 @@ export default function BoatAvailabilityPopup({ open, onOpenChange, boat }: Prop
         ) : (
           <div className="space-y-4">
             {boat && (
-              <p className="text-sm font-medium">{boat.title}{boat.city ? ` · ${boat.city}` : ""}</p>
+              <p className="text-sm font-medium">{boat.title}{boat.city ? ` · ${tPlace(boat.city)}` : ""}</p>
             )}
 
             {!boat && (

@@ -1171,4 +1171,13 @@ export const de: UiDictionary = {
   journalReadTheStory: "Artikel lesen",
   contactHeroTitle: "KONTAKT",
   contactGetInTouch: "SCHREIB UNS",
+
+  // ── Session 4 : catégories des articles du Journal ──
+  journalCategory__stories: "Geschichten",
+  journalCategory__places: "Orte",
+  journalCategory__guides: "Reiseführer",
+  journalCategory__foodWine: "Essen & Wein",
+  journalCategory__slowTravel: "Langsam reisen",
+  journalCategory__behindTheScenes: "Hinter den Kulissen",
+  journalCategory__people: "Menschen",
 };

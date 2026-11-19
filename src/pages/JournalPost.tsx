@@ -20,6 +20,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { trackJournalArticleViewed, trackCtaClickedFromJournal } from "@/lib/analytics";
 import { tPage } from "@/lib/translations";
+import { tPlace } from "@/lib/placeNames";
+import { journalCategoryLabel } from "@/lib/journalCategories";
 
 // Reading progress bar
 function ReadingProgressBar() {
@@ -153,7 +155,7 @@ function EmbeddedExperienceCard({ experienceId }: { experienceId: string }) {
   const hotel = experience.hotels as any;
   const title = lang === "he" ? experience.title_he || experience.title : experience.title;
   const hotelName = lang === "he" ? hotel?.name_he || hotel?.name : hotel?.name;
-  const city = lang === "he" ? hotel?.city_he || hotel?.city : hotel?.city;
+  const city = tPlace(lang === "he" ? hotel?.city_he || hotel?.city : hotel?.city);
   const imageUrl = (experience as any).thumbnail_image || experience.hero_image || hotel?.hero_image;
 
   return (
@@ -519,7 +521,7 @@ const JournalPost = () => {
           {/* Category & Date */}
           <div className="flex items-center gap-3 mb-6">
             <span className="inline-block px-3 py-1 text-[11px] font-medium uppercase tracking-[0.1em] rounded-full bg-muted text-foreground">
-              {post.category}
+              {journalCategoryLabel(post.category)}
             </span>
             {post.published_at && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -665,7 +667,7 @@ const JournalPost = () => {
                     />
                   </div>
                   <span className="inline-block px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.1em] rounded-full bg-muted text-foreground mb-2">
-                    {rp.category}
+                    {journalCategoryLabel(rp.category)}
                   </span>
                   <h4 className="font-serif text-lg group-hover:text-primary transition-colors line-clamp-2">
                     {getLocalizedField(rp, "title", lang) || rp.title_en}

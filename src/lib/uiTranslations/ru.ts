@@ -1196,4 +1196,13 @@ export const ru: UiDictionary = {
   journalReadTheStory: "Читать статью",
   contactHeroTitle: "КОНТАКТЫ",
   contactGetInTouch: "НАПИСАТЬ НАМ",
+
+  // ── Session 4 : catégories des articles du Journal ──
+  journalCategory__stories: "Истории",
+  journalCategory__places: "Места",
+  journalCategory__guides: "Путеводители",
+  journalCategory__foodWine: "Еда и вино",
+  journalCategory__slowTravel: "Неспешные путешествия",
+  journalCategory__behindTheScenes: "За кулисами",
+  journalCategory__people: "Люди",
 };

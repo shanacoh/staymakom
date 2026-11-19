@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { regionLabel } from "./labels";
 import { EMPTY_REGION_LIST, type Lang, type RegionFields, type RegionList } from "./types";
+import type { Locale } from "@/lib/locale";
 
 export const REGION_LIST_QUERY_KEY = ["region-list"] as const;
 
@@ -48,7 +49,7 @@ export function useRegionList(): RegionList {
 }
 
 /** Donne la fonction « nom de région à afficher pour cette fiche », dans la langue du site. */
-export function useRegionLabel(lang: Lang): (fields: RegionFields | null | undefined) => string | null {
+export function useRegionLabel(lang: Lang | Locale): (fields: RegionFields | null | undefined) => string | null {
   const list = useRegionList();
   return useCallback((fields) => regionLabel(fields, lang, list), [lang, list]);
 }
