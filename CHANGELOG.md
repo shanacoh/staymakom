@@ -4,6 +4,34 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 18/11/2026 : Page de proposition pour Sharon (/sharon), 50 ans de mariage dans le Sud
+
+### Ce qui a changé côté code
+- `src/pages/PropositionSharon.tsx` (nouveau) : page one-off en anglais. Trois destinations (Néguev, Eilat, mer Morte), chacune avec sa température de février, un bouton « I like this destination », 4 cartes d'hôtel (3 photos qui défilent, prix en shekels + estimation en euros, bouton « I like this one ») et une carte d'activités douces (mobilité réduite, casher). Partie 4 « Next steps » : une case libre et un bouton « Schedule a call » qui ouvre WhatsApp avec les destinations et hôtels aimés. Mention « VAT (18%) to be added » et taux de conversion indicatif (3,5 ₪ pour 1 €, constante `ILS_PER_EUR` dans la page).
+- `src/data/propositionSharon.ts` (nouveau) : tout le contenu de la page (hôtels, prix, photos, activités). Les vrais noms des hôtels ne sont pas affichés (noms d'ambiance, comme la page Ilona) mais sont gardés dans `realName` pour s'y retrouver. Prix = prix donnés par Shana + 250 ₪.
+- `src/assets/sharon-hotels/` (nouveau) : 30 photos d'hôtels (extérieur, chambre, une autre vue). Sources : notre base (Beresheet, Kedma, Oasis), site officiel Isrotel (Kayma, Nevo, Noga), Hotels.com (Orchid, Queen of Sheba, Yam Suf, The Herbert). Jacob et Daroma réutilisent les photos de `src/assets/ilona-hotels/`.
+- `src/App.tsx` : nouvelle adresse `/sharon`.
+
+### Ce qui a changé côté base de données
+- Rien. La page est statique et n'enregistre rien.
+
+### Pourquoi ce changement
+- Demande sur-mesure de Sharon : 50 ans de mariage, du 7 au 9 février 2027, 2 adultes, casher, mobilité réduite, « somewhere not too cold ». La page lui propose des hôtels dans les trois régions les plus chaudes en février et l'invite à caler un appel pour organiser le week-end.
+
+## 18/11/2026 : Page itinéraire de Vern (/vern), une semaine de Jérusalem au désert
+
+### Ce qui a changé côté code
+- `src/pages/ItineraireVern.tsx` et `src/data/itineraireVern.ts` (nouveaux) : page itinéraire privée de Vern, du 8 au 15 janvier, en anglais, reprise de la page de Jade. Jérusalem (Shabbat, Yad Vashem, Knesset, une case « Your pick » avec plusieurs idées le 10 janvier), les collines et la mer Morte, l'Arava, puis un jour 7 au choix résumé dans un seul bandeau (option 1 Mitzpe Ramon, option 2 le sud après le 7 octobre). Pas de bloc « We take care of everything ». Crédit photo en pied de page. Aucun chauffeur annoncé (arrivée, départ) tant que Vern n'a pas choisi ; question « Getting around » : Private drivers, A rental car, No need, ou à discuter.
+- `src/App.tsx` : nouvelle adresse `/vern`.
+- `src/components/itinerary/OptionsChecklist.tsx` : deux réglages facultatifs, une case commentaire libre (ajoutée au message WhatsApp) et une phrase juste avant le bouton. Les autres pages itinéraire ne les utilisent pas et ne changent pas.
+- `src/assets/itineraires/knesset.webp` (nouveau) : photo de la Knesset, « Knesset front side - 2022 » par Clema12, Wikimedia Commons, licence CC BY-SA 4.0 (l'auteur doit être cité, d'où la mention en pied de page).
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Vern, voyageur seul déjà à Tel Aviv du 3 au 7 janvier, veut découvrir le pays (histoire, politique, entreprise) du 8 au 15 janvier. La page lui présente un premier parcours, il coche ses choix, ajoute ses commentaires et les envoie sur WhatsApp. Elle annonce aussi les frais d'organisation de 150 $ si le voyage se poursuit.
+
 ## 17/11/2026 : Traduction automatique, plafond de 2 $ par passage et options payantes des hôtels
 
 ### Ce qui a changé côté code

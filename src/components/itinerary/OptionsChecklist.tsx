@@ -14,14 +14,19 @@ type Props = {
   undecidedChoice: string;
   /** Première ligne du message WhatsApp, avant les réponses cochées. */
   whatsappIntro: string;
+  /** Si renseigné, une case commentaire libre apparaît avant le bouton, avec ce titre. */
+  commentLabel?: string;
+  /** Phrase affichée juste avant le bouton (ex. conditions pour la suite). */
+  noteBeforeButton?: string;
 };
 
 /**
  * Questions à cases à cocher en fin de page itinéraire.
  * Rien n'est enregistré sur le site : les réponses partent dans un message WhatsApp pré-rempli.
  */
-export function OptionsChecklist({ questions, undecidedChoice, whatsappIntro }: Props) {
+export function OptionsChecklist({ questions, undecidedChoice, whatsappIntro, commentLabel, noteBeforeButton }: Props) {
   const [checked, setChecked] = useState<Record<string, string[]>>({});
+  const [comment, setComment] = useState("");
 
   const toggle = (question: string, choice: string) =>
     setChecked((current) => {
@@ -37,7 +42,7 @@ export function OptionsChecklist({ questions, undecidedChoice, whatsappIntro }: 
     .map((q) => `${q.title}: ${checked[q.title].join(", ")}`);
 
   const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    [whatsappIntro, ...answers].join("\n")
+    [whatsappIntro, ...answers, ...(comment.trim() ? [`${commentLabel}: ${comment.trim()}`] : [])].join("\n")
   )}`;
 
   return (
@@ -76,6 +81,29 @@ export function OptionsChecklist({ questions, undecidedChoice, whatsappIntro }: 
           </fieldset>
         ))}
       </div>
+
+      {commentLabel && (
+        <div className="mt-6 text-left">
+          <label
+            htmlFor="itinerary-comment"
+            className="font-sans text-sm font-bold uppercase tracking-[0.06em] text-foreground"
+          >
+            {commentLabel}
+          </label>
+          <textarea
+            id="itinerary-comment"
+            value={comment}
+            onChange={(event) => setComment(event.target.value)}
+            rows={4}
+            placeholder="Anything you'd like us to know or change..."
+            className="mt-3 w-full resize-y rounded-lg border border-border bg-white px-3 py-2.5 font-sans text-[13px] text-foreground placeholder:text-foreground/40 focus:border-[#ad1414] focus:outline-none"
+          />
+        </div>
+      )}
+
+      {noteBeforeButton && (
+        <p className="mt-5 font-sans text-[13px] font-medium leading-relaxed text-foreground">{noteBeforeButton}</p>
+      )}
 
       <a
         href={whatsappUrl}
