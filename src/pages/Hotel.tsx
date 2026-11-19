@@ -14,7 +14,7 @@ import { resizedImageUrl } from "@/lib/imageUrl";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumbJsonLd";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
 import { trackedRegionName, useRegionLabel } from "@/lib/regionList/queries";
-import { t } from "@/lib/translations";
+import { t, tPage } from "@/lib/translations";
 import LocationMap from "@/components/experience-test/LocationMap";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArchivedListingRedirect } from "@/components/ArchivedListingRedirect";
@@ -155,7 +155,7 @@ const Hotel = () => {
         <div className="min-h-screen flex flex-col">
           <V3Header />
           <main className="flex-1 flex items-center justify-center">
-            <p className="text-muted-foreground">{t(lang, 'hotelNotFound')}</p>
+            <p className="text-muted-foreground">{tPage('hotelNotFound')}</p>
           </main>
           <LaunchFooter />
         </div>
@@ -181,9 +181,9 @@ const Hotel = () => {
   const infoChips = [
   hotel.star_rating && { icon: Star, label: "★".repeat(hotel.star_rating) },
   hotel.property_type && { icon: Home, label: hotel.property_type },
-  hotel.number_of_rooms && { icon: DoorOpen, label: `${hotel.number_of_rooms} rooms` },
-  hotel.check_in_time && { icon: Clock, label: `Check-in ${hotel.check_in_time}` },
-  hotel.check_out_time && { icon: Clock, label: `Check-out ${hotel.check_out_time}` },
+  hotel.number_of_rooms && { icon: DoorOpen, label: tPage("hotelRoomsCount")(hotel.number_of_rooms) },
+  hotel.check_in_time && { icon: Clock, label: tPage("hotelCheckInAt")(hotel.check_in_time) },
+  hotel.check_out_time && { icon: Clock, label: tPage("hotelCheckOutAt")(hotel.check_out_time) },
   address && { icon: MapPin, label: address }].
   filter(Boolean) as {icon: any;label: string;}[];
 
@@ -262,7 +262,7 @@ const Hotel = () => {
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link to="/">{lang === 'he' ? 'בית' : lang === 'fr' ? 'Accueil' : 'Home'}</Link>
+                  <Link to="/">{tPage("hotelHome")}</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
@@ -318,7 +318,7 @@ const Hotel = () => {
               {/* Story */}
               {story &&
               <div>
-                  <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">{t(lang, 'ourStory')}</h2>
+                  <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">{tPage('ourStory')}</h2>
                   <p className="text-lg text-muted-foreground leading-relaxed whitespace-pre-line">
                     {story}
                   </p>
@@ -328,7 +328,7 @@ const Hotel = () => {
               {/* Highlights */}
               {highlights && highlights.length > 0 &&
               <div>
-                  <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">{t(lang, 'highlights')}</h2>
+                  <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">{tPage('highlights')}</h2>
                   <ul className="space-y-3">
                     {highlights.map((highlight, index) =>
                   <li key={index} className="flex items-start gap-3">
@@ -344,7 +344,7 @@ const Hotel = () => {
               {descriptionRoom &&
               <div>
                   <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">
-                    {lang === "he" ? "על החדרים" : lang === "fr" ? "Les chambres" : "About the Rooms"}
+                    {tPage("hotelAboutTheRooms")}
                   </h2>
                   <p className="text-lg text-muted-foreground leading-relaxed whitespace-pre-line">
                     {descriptionRoom}
@@ -356,7 +356,7 @@ const Hotel = () => {
               {descriptionLocation &&
               <div>
                   <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">
-                    {lang === "he" ? "מיקום" : lang === "fr" ? "Emplacement" : "Location"}
+                    {tPage("hotelLocation")}
                   </h2>
                   <p className="text-lg text-muted-foreground leading-relaxed whitespace-pre-line">
                     {descriptionLocation}
@@ -368,7 +368,7 @@ const Hotel = () => {
               {roomCapacities && Array.isArray(roomCapacities) && roomCapacities.length > 0 &&
               <div>
                   <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">
-                    {lang === "he" ? "סוגי חדרים" : lang === "fr" ? "Types de chambres" : "Room Types"}
+                    {tPage("hotelRoomTypes")}
                   </h2>
                   <div className="grid gap-4">
                     {roomCapacities.map((room, i) =>
@@ -378,11 +378,11 @@ const Hotel = () => {
                           {room.maxAdultsNumber != null &&
                       <span className="flex items-center gap-1">
                               <Users className="h-3.5 w-3.5" />
-                              {room.maxAdultsNumber} {lang === "he" ? "מבוגרים" : lang === "fr" ? "adultes" : "adults"}
+                              {room.maxAdultsNumber} {tPage("hotelAdults")}
                             </span>
                       }
                           {room.maxOccupancy != null &&
-                      <span>max {room.maxOccupancy}</span>
+                      <span>{tPage("hotelMaxOccupancy")(room.maxOccupancy)}</span>
                       }
                           {room.roomSize != null &&
                       <span>{room.roomSize} m²</span>
@@ -411,7 +411,7 @@ const Hotel = () => {
 
                   return (
                     <div>
-                      <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">{t(lang, 'amenities')}</h2>
+                      <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">{tPage('amenities')}</h2>
                       <div className="space-y-6">
                         {Object.entries(byCategory).map(([category, facilities]) =>
                         <div key={category}>
@@ -434,7 +434,7 @@ const Hotel = () => {
                 if (amenities && amenities.length > 0) {
                   return (
                     <div>
-                      <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">{t(lang, 'amenities')}</h2>
+                      <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">{tPage('amenities')}</h2>
                       <div className="grid grid-cols-2 gap-4">
                         {amenities.map((amenity, index) =>
                         <div key={index} className="flex items-center gap-2">
@@ -454,7 +454,7 @@ const Hotel = () => {
               {(hotel.cancellation_policy || hotel.min_stay || hotel.max_stay) &&
               <div>
                   <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">
-                    {lang === "he" ? "מדיניות ביטול" : lang === "fr" ? "Politique d'annulation" : "Cancellation Policy"}
+                    {tPage("hotelCancellationPolicy")}
                   </h2>
                   <div className="space-y-4">
                     {hotel.cancellation_policy &&
@@ -465,21 +465,17 @@ const Hotel = () => {
                     {(hotel.min_stay || hotel.max_stay) &&
                   <div className="p-4 rounded-lg border bg-muted/30">
                         <h3 className="font-semibold mb-2">
-                          {lang === "he" ? "משך שהייה" : lang === "fr" ? "Durée de séjour" : "Length of Stay"}
+                          {tPage("hotelLengthOfStay")}
                         </h3>
                         <div className="flex gap-4 text-muted-foreground">
                           {hotel.min_stay &&
                       <span>
-                              {lang === "he" ? `מינימום ${hotel.min_stay} לילות` :
-                        lang === "fr" ? `Minimum ${hotel.min_stay} nuits` :
-                        `Minimum ${hotel.min_stay} night${hotel.min_stay > 1 ? 's' : ''}`}
+                              {tPage("hotelMinStay")(hotel.min_stay)}
                             </span>
                       }
                           {hotel.max_stay &&
                       <span>
-                              {lang === "he" ? `מקסימום ${hotel.max_stay} לילות` :
-                        lang === "fr" ? `Maximum ${hotel.max_stay} nuits` :
-                        `Maximum ${hotel.max_stay} night${hotel.max_stay > 1 ? 's' : ''}`}
+                              {tPage("hotelMaxStay")(hotel.max_stay)}
                             </span>
                       }
                         </div>
@@ -493,7 +489,7 @@ const Hotel = () => {
               {hotel.extra_conditions &&
               <div>
                   <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">
-                    {lang === "he" ? "תנאים כלליים / הערות" : lang === "fr" ? "Conditions générales / remarques" : "General Conditions / Remarks"}
+                    {tPage("hotelGeneralConditionsRemarks")}
                   </h2>
                   <div className="p-4 rounded-lg border bg-amber-50 border-amber-200">
                     <p className="text-amber-700 whitespace-pre-line text-sm">{hotel.extra_conditions}</p>
@@ -504,7 +500,7 @@ const Hotel = () => {
               {/* Photo Gallery */}
               {displayPhotos.length > 0 &&
               <div>
-                  <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">{t(lang, 'gallery')}</h2>
+                  <h2 className="font-sans text-sm sm:text-base font-bold uppercase tracking-[0.03em] mb-4">{tPage('gallery')}</h2>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {displayPhotos.map((photo, index) =>
                   <div key={index} className="aspect-square rounded-lg overflow-hidden">
@@ -577,7 +573,7 @@ const Hotel = () => {
               <Card>
                   <CardContent className="p-6 space-y-3">
                     <h3 className="font-sans text-sm font-bold uppercase tracking-[0.03em]">
-                      {lang === "he" ? "כרטיסים מקובלים" : lang === "fr" ? "Cartes acceptées" : "Accepted Cards"}
+                      {tPage("hotelAcceptedCards")}
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       {supportedCards.map((card, i) =>
@@ -594,7 +590,7 @@ const Hotel = () => {
               {!experiencesLoading && experiences && experiences.length > 0 &&
               <Card>
                   <CardContent className="p-6">
-                    <h3 className="font-sans text-sm font-bold uppercase tracking-[0.03em] mb-4">{t(lang, 'experiences')}</h3>
+                    <h3 className="font-sans text-sm font-bold uppercase tracking-[0.03em] mb-4">{tPage('experiences')}</h3>
                     <div className="space-y-3">
                       {experiences.map((exp) => {
                       const expTitle = getLocalizedField(exp, 'title', lang) as string || exp.title;
@@ -606,8 +602,8 @@ const Hotel = () => {
                           
                             <p className="font-medium">{expTitle}</p>
                             <p className="text-sm text-muted-foreground mt-1">
-                              {t(lang, 'fromPrice')} ${exp.base_price}
-                              {exp.base_price_type === "per_person" && ` ${t(lang, 'perPersonLabel')}`}
+                              {tPage('fromPrice')} ${exp.base_price}
+                              {exp.base_price_type === "per_person" && ` ${tPage('perPersonLabel')}`}
                             </p>
                           </Link>);
 

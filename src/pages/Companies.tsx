@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { trackCompaniesPageViewed } from "@/lib/analytics";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,23 +18,24 @@ import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import corporateHero from "@/assets/corporate-hero.jpg";
 import { useLanguage } from "@/hooks/useLanguage";
-import { t } from "@/lib/translations";
+import { tPage } from "@/lib/translations";
 import { Link } from "react-router-dom";
 
-const formSchema = z.object({
-  fullName: z.string().trim().min(2, "Name must be at least 2 characters").max(100, "Name must be less than 100 characters"),
-  companyName: z.string().trim().min(1, "Company name is required").max(100, "Company name must be less than 100 characters"),
-  email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
-  phone: z.string().trim().min(1, "Phone is required").max(50, "Phone must be less than 50 characters"),
+// Messages d'erreur dans la langue de la page : le schéma est construit dans le composant.
+const buildFormSchema = () => z.object({
+  fullName: z.string().trim().min(2, tPage("companiesErrName")).max(100, tPage("companiesErrTooLong")(100)),
+  companyName: z.string().trim().min(1, tPage("companiesErrCompany")).max(100, tPage("companiesErrTooLong")(100)),
+  email: z.string().trim().email(tPage("companiesErrEmail")).max(255, tPage("companiesErrTooLong")(255)),
+  phone: z.string().trim().min(1, tPage("companiesErrPhone")).max(50, tPage("companiesErrTooLong")(50)),
   requestType: z.enum(["corporate_retreat", "team_building", "employee_reward", "corporate_gift_cards", "customized_incentive", "not_sure"]),
   mainObjective: z.enum(["team_bonding", "celebration", "motivation", "leadership", "client_partner", "other"]),
   groupSize: z.enum(["5-10", "10-25", "25-50", "50+"]),
-  preferredDates: z.string().trim().max(200, "Preferred dates must be less than 200 characters").optional(),
-  message: z.string().trim().max(1000, "Message must be less than 1000 characters").optional(),
-  consent: z.literal(true, { errorMap: () => ({ message: "You must agree to continue" }) })
+  preferredDates: z.string().trim().max(200, tPage("companiesErrTooLong")(200)).optional(),
+  message: z.string().trim().max(1000, tPage("companiesErrTooLong")(1000)).optional(),
+  consent: z.literal(true, { errorMap: () => ({ message: tPage("companiesErrConsent") }) })
 });
 
-type FormData = z.infer<typeof formSchema>;
+type FormData = z.infer<ReturnType<typeof buildFormSchema>>;
 
 export default function Companies() {
   const { lang, locale } = useLanguage();
@@ -43,6 +44,8 @@ export default function Companies() {
   const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => { trackCompaniesPageViewed(); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const formSchema = useMemo(() => buildFormSchema(), [locale]);
 
   const {
     register,
@@ -106,18 +109,15 @@ export default function Companies() {
       }, 5000);
     } catch (error) {
       
-      toast.error(lang === 'he' 
-        ? "שליחת הבקשה נכשלה. אנא נסו שוב או צרו קשר ישירות shana@staymakom.com"
-        : "Failed to send request. Please try again or contact us directly at shana@staymakom.com"
-      );
+      toast.error(tPage("companiesSendFailed"));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const requestTypeLabels = t(lang, 'companiesRequestTypeLabels') as Record<string, string>;
-  const mainObjectiveOptions = t(lang, 'companiesMainObjectiveOptions') as Record<string, string>;
-  const groupSizeOptions = t(lang, 'companiesGroupSizeOptions') as Record<string, string>;
+  const requestTypeLabels = tPage('companiesRequestTypeLabels') as Record<string, string>;
+  const mainObjectiveOptions = tPage('companiesMainObjectiveOptions') as Record<string, string>;
+  const groupSizeOptions = tPage('companiesGroupSizeOptions') as Record<string, string>;
 
   return (
     <div className="min-h-screen bg-white">
@@ -125,17 +125,17 @@ export default function Companies() {
       
       {/* Hero Section */}
       <section className="relative h-[380px] overflow-hidden">
-        <img src={corporateHero} alt="Team retreat moment" className="absolute inset-0 w-full h-full object-cover" />
+        <img src={corporateHero} alt={tPage("companiesHeroAlt")} className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-black/45" />
         
         <div className="relative h-full flex items-center justify-center text-center px-6">
           <div className="max-w-3xl space-y-4" dir={isRTL ? 'rtl' : 'ltr'}>
             <p className="font-sans text-[11px] uppercase tracking-[0.15em] text-white/70">STAYMAKOM</p>
             <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold text-white uppercase tracking-tight leading-[1.15]">
-              {t(lang, 'companiesHeroTitle')}
+              {tPage('companiesHeroTitle')}
             </h1>
             <p className="text-sm md:text-base text-white/80 font-light max-w-2xl mx-auto">
-              {t(lang, 'companiesHeroSubtitle')}
+              {tPage('companiesHeroSubtitle')}
             </p>
             
             <div className="pt-4">
@@ -143,7 +143,7 @@ export default function Companies() {
                 onClick={() => scrollToForm()} 
                 className="bg-[#ad1414] text-white font-sans text-[13px] font-semibold uppercase tracking-wide px-6 py-2.5 rounded-full hover:bg-[#ad1414]/90 transition-colors"
               >
-                {t(lang, 'companiesSendRequest')}
+                {tPage('companiesSendRequest')}
               </button>
             </div>
           </div>
@@ -154,29 +154,29 @@ export default function Companies() {
         {/* What We Offer Section */}
         <section>
           <p className="font-sans text-[11px] uppercase tracking-[0.15em] text-muted-foreground text-center mb-3">STAYMAKOM</p>
-          <h2 className="font-sans text-sm sm:text-base font-bold text-center mb-6 uppercase text-foreground tracking-[0.03em]">{t(lang, 'companiesWhatWeOffer')}</h2>
+          <h2 className="font-sans text-sm sm:text-base font-bold text-center mb-6 uppercase text-foreground tracking-[0.03em]">{tPage('companiesWhatWeOffer')}</h2>
           
           <div className="grid md:grid-cols-3 gap-6">
             <div className="border border-border rounded-lg bg-transparent p-6 space-y-3">
               <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-3">
                 <Gift className="h-5 w-5 text-[#ad1414]" />
               </div>
-              <h3 className="font-sans text-lg font-bold text-foreground">{t(lang, 'companiesCorporateGiftTitle')}</h3>
+              <h3 className="font-sans text-lg font-bold text-foreground">{tPage('companiesCorporateGiftTitle')}</h3>
               <p className="text-sm text-foreground/70 leading-relaxed">
-                {t(lang, 'companiesCorporateGiftDesc')}
+                {tPage('companiesCorporateGiftDesc')}
               </p>
               <ul className="space-y-1.5 text-sm text-foreground/70">
                 <li className="flex items-start gap-2">
                   <span className="text-[#ad1414] mt-0.5">•</span>
-                  <span>{t(lang, 'companiesCorporateGiftItem1')}</span>
+                  <span>{tPage('companiesCorporateGiftItem1')}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-[#ad1414] mt-0.5">•</span>
-                  <span>{t(lang, 'companiesCorporateGiftItem2')}</span>
+                  <span>{tPage('companiesCorporateGiftItem2')}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-[#ad1414] mt-0.5">•</span>
-                  <span>{t(lang, 'companiesCorporateGiftItem3')}</span>
+                  <span>{tPage('companiesCorporateGiftItem3')}</span>
                 </li>
               </ul>
             </div>
@@ -185,12 +185,12 @@ export default function Companies() {
               <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-3">
                 <Users className="h-5 w-5 text-[#ad1414]" />
               </div>
-              <h3 className="font-sans text-lg font-bold text-foreground">{t(lang, 'companiesTeamBuildingTitle')}</h3>
+              <h3 className="font-sans text-lg font-bold text-foreground">{tPage('companiesTeamBuildingTitle')}</h3>
               <p className="text-sm text-foreground/70 leading-relaxed">
-                {t(lang, 'companiesTeamBuildingDesc1')}
+                {tPage('companiesTeamBuildingDesc1')}
               </p>
               <p className="text-sm text-foreground/70 leading-relaxed">
-                {t(lang, 'companiesTeamBuildingDesc2')}
+                {tPage('companiesTeamBuildingDesc2')}
               </p>
             </div>
 
@@ -198,12 +198,12 @@ export default function Companies() {
               <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-3">
                 <Sparkles className="h-5 w-5 text-[#ad1414]" />
               </div>
-              <h3 className="font-sans text-lg font-bold text-foreground">{t(lang, 'companiesIncentivesTitle')}</h3>
+              <h3 className="font-sans text-lg font-bold text-foreground">{tPage('companiesIncentivesTitle')}</h3>
               <p className="text-sm text-foreground/70 leading-relaxed">
-                {t(lang, 'companiesIncentivesDesc1')}
+                {tPage('companiesIncentivesDesc1')}
               </p>
               <p className="text-sm text-foreground/70 leading-relaxed">
-                {t(lang, 'companiesIncentivesDesc2')}
+                {tPage('companiesIncentivesDesc2')}
               </p>
             </div>
           </div>
@@ -211,16 +211,16 @@ export default function Companies() {
 
         {/* Why MAKOM Section */}
         <section className="bg-muted rounded-lg p-8">
-          <h2 className="font-sans text-sm sm:text-base font-bold text-center mb-5 uppercase text-foreground tracking-[0.03em]">{t(lang, 'companiesWhyStaymakom')}</h2>
+          <h2 className="font-sans text-sm sm:text-base font-bold text-center mb-5 uppercase text-foreground tracking-[0.03em]">{tPage('companiesWhyStaymakom')}</h2>
           
           <div className="grid md:grid-cols-3 gap-6 max-w-3xl mx-auto">
             <div className="text-center space-y-2">
               <div className="w-12 h-12 rounded-full bg-white/60 flex items-center justify-center mx-auto mb-3">
                 <Sparkles className="h-6 w-6 text-[#ad1414]" />
               </div>
-              <h3 className="font-semibold text-sm text-foreground">{t(lang, 'companiesUnique')}</h3>
+              <h3 className="font-semibold text-sm text-foreground">{tPage('companiesUnique')}</h3>
               <p className="text-xs text-muted-foreground">
-                {t(lang, 'companiesUniqueDesc')}
+                {tPage('companiesUniqueDesc')}
               </p>
             </div>
             
@@ -228,9 +228,9 @@ export default function Companies() {
               <div className="w-12 h-12 rounded-full bg-white/60 flex items-center justify-center mx-auto mb-3">
                 <CheckCircle2 className="h-6 w-6 text-[#ad1414]" />
               </div>
-              <h3 className="font-semibold text-sm text-foreground">{t(lang, 'companiesFlexible')}</h3>
+              <h3 className="font-semibold text-sm text-foreground">{tPage('companiesFlexible')}</h3>
               <p className="text-xs text-muted-foreground">
-                {t(lang, 'companiesFlexibleDesc')}
+                {tPage('companiesFlexibleDesc')}
               </p>
             </div>
             
@@ -238,9 +238,9 @@ export default function Companies() {
               <div className="w-12 h-12 rounded-full bg-white/60 flex items-center justify-center mx-auto mb-3">
                 <Gift className="h-6 w-6 text-[#ad1414]" />
               </div>
-              <h3 className="font-semibold text-sm text-foreground">{t(lang, 'companiesSeamless')}</h3>
+              <h3 className="font-semibold text-sm text-foreground">{tPage('companiesSeamless')}</h3>
               <p className="text-xs text-muted-foreground">
-                {t(lang, 'companiesSeamlessDesc')}
+                {tPage('companiesSeamlessDesc')}
               </p>
             </div>
           </div>
@@ -248,16 +248,16 @@ export default function Companies() {
 
         {/* How It Works Section */}
         <section>
-          <h2 className="font-sans text-sm sm:text-base font-bold text-center mb-5 uppercase text-foreground tracking-[0.03em]">{t(lang, 'companiesHowItWorks')}</h2>
+          <h2 className="font-sans text-sm sm:text-base font-bold text-center mb-5 uppercase text-foreground tracking-[0.03em]">{tPage('companiesHowItWorks')}</h2>
           
           <div className="grid md:grid-cols-3 gap-6 max-w-3xl mx-auto mb-8">
             <div className="text-center space-y-3">
               <div className="w-12 h-12 rounded-full bg-foreground text-background flex items-center justify-center text-xl font-bold mx-auto">
                 1
               </div>
-              <h3 className="font-semibold text-sm text-foreground">{t(lang, 'companiesStep1')}</h3>
+              <h3 className="font-semibold text-sm text-foreground">{tPage('companiesStep1')}</h3>
               <p className="text-xs text-muted-foreground">
-                {t(lang, 'companiesStep1Desc')}
+                {tPage('companiesStep1Desc')}
               </p>
             </div>
             
@@ -265,9 +265,9 @@ export default function Companies() {
               <div className="w-12 h-12 rounded-full bg-foreground text-background flex items-center justify-center text-xl font-bold mx-auto">
                 2
               </div>
-              <h3 className="font-semibold text-sm text-foreground">{t(lang, 'companiesStep2')}</h3>
+              <h3 className="font-semibold text-sm text-foreground">{tPage('companiesStep2')}</h3>
               <p className="text-xs text-muted-foreground">
-                {t(lang, 'companiesStep2Desc')}
+                {tPage('companiesStep2Desc')}
               </p>
             </div>
             
@@ -275,9 +275,9 @@ export default function Companies() {
               <div className="w-12 h-12 rounded-full bg-foreground text-background flex items-center justify-center text-xl font-bold mx-auto">
                 3
               </div>
-              <h3 className="font-semibold text-sm text-foreground">{t(lang, 'companiesStep3')}</h3>
+              <h3 className="font-semibold text-sm text-foreground">{tPage('companiesStep3')}</h3>
               <p className="text-xs text-muted-foreground">
-                {t(lang, 'companiesStep3Desc')}
+                {tPage('companiesStep3Desc')}
               </p>
             </div>
           </div>
@@ -287,7 +287,7 @@ export default function Companies() {
               onClick={() => scrollToForm("corporate_gift_cards")}
               className="bg-transparent border border-border text-foreground font-sans text-[13px] font-semibold uppercase tracking-wide px-6 py-2.5 rounded-full hover:bg-muted transition-colors"
             >
-              {t(lang, 'companiesRequestGiftCards')}
+              {tPage('companiesRequestGiftCards')}
             </button>
           </div>
         </section>
@@ -297,10 +297,10 @@ export default function Companies() {
           <div className="max-w-lg mx-auto">
             <p className="font-sans text-[11px] uppercase tracking-[0.15em] text-muted-foreground text-center mb-3">STAYMAKOM</p>
             <h2 className="font-sans text-sm sm:text-base font-bold text-center mb-3 uppercase text-foreground tracking-[0.03em]">
-              {t(lang, 'companiesFormTitle')}
+              {tPage('companiesFormTitle')}
             </h2>
             <p className="text-center text-sm text-muted-foreground mb-8">
-              {t(lang, 'companiesFormSubtitle')}
+              {tPage('companiesFormSubtitle')}
             </p>
 
             {showSuccess ? (
@@ -308,15 +308,15 @@ export default function Companies() {
                 <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto">
                   <CheckCircle2 className="h-6 w-6 text-[#ad1414]" />
                 </div>
-                <h3 className="font-semibold text-lg text-foreground">{t(lang, 'companiesThankYou')}</h3>
+                <h3 className="font-semibold text-lg text-foreground">{tPage('companiesThankYou')}</h3>
                 <p className="text-sm text-muted-foreground">
-                  {t(lang, 'companiesThankYouDesc')}
+                  {tPage('companiesThankYouDesc')}
                 </p>
                 <button 
                   onClick={() => setShowSuccess(false)} 
                   className="bg-transparent border border-border text-foreground font-sans text-[13px] font-semibold uppercase tracking-wide px-6 py-2.5 rounded-full hover:bg-muted transition-colors"
                 >
-                  {t(lang, 'companiesSendAnother')}
+                  {tPage('companiesSendAnother')}
                 </button>
               </div>
             ) : (
@@ -324,35 +324,35 @@ export default function Companies() {
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <label htmlFor="fullName" className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{t(lang, 'companiesFullName')} *</label>
-                      <input id="fullName" {...register("fullName")} placeholder={t(lang, 'companiesFullNamePlaceholder') as string} className="w-full bg-muted border border-border rounded-sm px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
+                      <label htmlFor="fullName" className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{tPage('companiesFullName')} *</label>
+                      <input id="fullName" {...register("fullName")} placeholder={tPage('companiesFullNamePlaceholder') as string} className="w-full bg-muted border border-border rounded-sm px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
                       {errors.fullName && <p className="text-xs text-destructive">{errors.fullName.message}</p>}
                     </div>
 
                     <div className="space-y-1.5">
-                      <label htmlFor="companyName" className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{t(lang, 'companiesCompanyName')} *</label>
-                      <input id="companyName" {...register("companyName")} placeholder={t(lang, 'companiesCompanyNamePlaceholder') as string} className="w-full bg-muted border border-border rounded-sm px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
+                      <label htmlFor="companyName" className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{tPage('companiesCompanyName')} *</label>
+                      <input id="companyName" {...register("companyName")} placeholder={tPage('companiesCompanyNamePlaceholder') as string} className="w-full bg-muted border border-border rounded-sm px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
                       {errors.companyName && <p className="text-xs text-destructive">{errors.companyName.message}</p>}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <label htmlFor="email" className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{t(lang, 'companiesWorkEmail')} *</label>
-                      <input id="email" type="email" {...register("email")} placeholder={t(lang, 'companiesEmailPlaceholder') as string} className="w-full bg-muted border border-border rounded-sm px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
+                      <label htmlFor="email" className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{tPage('companiesWorkEmail')} *</label>
+                      <input id="email" type="email" {...register("email")} placeholder={tPage('companiesEmailPlaceholder') as string} className="w-full bg-muted border border-border rounded-sm px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
                       {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
                     </div>
 
                     <div className="space-y-1.5">
-                      <label htmlFor="phone" className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{t(lang, 'companiesPhone')} *</label>
+                      <label htmlFor="phone" className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{tPage('companiesPhone')} *</label>
                       <input id="phone" {...register("phone")} placeholder="+972 XX XXX XXXX" className="w-full bg-muted border border-border rounded-sm px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
-                      <p className="text-xs text-muted-foreground">{t(lang, 'companiesPhoneHelper')}</p>
+                      <p className="text-xs text-muted-foreground">{tPage('companiesPhoneHelper')}</p>
                       {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{t(lang, 'companiesRequestType')} *</label>
+                    <label className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{tPage('companiesRequestType')} *</label>
                     <RadioGroup value={requestType} onValueChange={value => setValue("requestType", value as any)} className="space-y-1">
                       {Object.entries(requestTypeLabels).map(([value, label]) => (
                         <div key={value} className={`flex items-center ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'}`}>
@@ -367,14 +367,14 @@ export default function Companies() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{t(lang, 'companiesMainObjective')} *</label>
+                    <label className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{tPage('companiesMainObjective')} *</label>
                     <Controller
                       name="mainObjective"
                       control={control}
                       render={({ field }) => (
                         <Select onValueChange={field.onChange} value={field.value}>
                           <SelectTrigger className="bg-muted border-border rounded-sm h-12 text-sm">
-                            <SelectValue placeholder={t(lang, 'companiesMainObjectivePlaceholder') as string} />
+                            <SelectValue placeholder={tPage('companiesMainObjectivePlaceholder') as string} />
                           </SelectTrigger>
                           <SelectContent>
                             {Object.entries(mainObjectiveOptions).map(([value, label]) => (
@@ -389,14 +389,14 @@ export default function Companies() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <label className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{t(lang, 'companiesGroupSize')} *</label>
+                      <label className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{tPage('companiesGroupSize')} *</label>
                       <Controller
                         name="groupSize"
                         control={control}
                         render={({ field }) => (
                           <Select onValueChange={field.onChange} value={field.value}>
                             <SelectTrigger className="bg-muted border-border rounded-sm h-12 text-sm">
-                              <SelectValue placeholder={t(lang, 'companiesGroupSizePlaceholder') as string} />
+                              <SelectValue placeholder={tPage('companiesGroupSizePlaceholder') as string} />
                             </SelectTrigger>
                             <SelectContent>
                               {Object.entries(groupSizeOptions).map(([value, label]) => (
@@ -410,15 +410,15 @@ export default function Companies() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label htmlFor="preferredDates" className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{t(lang, 'companiesPreferredDates')}</label>
-                      <input id="preferredDates" {...register("preferredDates")} placeholder={t(lang, 'companiesPreferredDatesPlaceholder') as string} className="w-full bg-muted border border-border rounded-sm px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
+                      <label htmlFor="preferredDates" className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{tPage('companiesPreferredDates')}</label>
+                      <input id="preferredDates" {...register("preferredDates")} placeholder={tPage('companiesPreferredDatesPlaceholder') as string} className="w-full bg-muted border border-border rounded-sm px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
                       {errors.preferredDates && <p className="text-xs text-destructive">{errors.preferredDates.message}</p>}
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label htmlFor="message" className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{t(lang, 'companiesAdditionalInfo')}</label>
-                    <textarea id="message" {...register("message")} placeholder={t(lang, 'companiesAdditionalInfoPlaceholder') as string} className="w-full min-h-[80px] bg-muted border border-border rounded-sm px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
+                    <label htmlFor="message" className="font-sans text-[12px] uppercase tracking-[0.1em] text-foreground/70 block mb-1.5">{tPage('companiesAdditionalInfo')}</label>
+                    <textarea id="message" {...register("message")} placeholder={tPage('companiesAdditionalInfoPlaceholder') as string} className="w-full min-h-[80px] bg-muted border border-border rounded-sm px-4 py-3.5 font-sans text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors" />
                     {errors.message && <p className="text-xs text-destructive">{errors.message.message}</p>}
                   </div>
 
@@ -437,13 +437,13 @@ export default function Companies() {
                         )}
                       />
                       <label htmlFor="consent" className="font-normal text-sm leading-snug cursor-pointer text-foreground">
-                        {t(lang, 'companiesConsent')}
+                        {tPage('companiesConsent')}
                       </label>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {t(lang, 'companiesConsentHelper')}{' '}
+                      {tPage('companiesConsentHelper')}{' '}
                       <Link to={`/privacy${locale !== 'en' ? `?lang=${locale}` : ''}`} className="underline hover:text-foreground">
-                        {t(lang, 'footerPrivacy')}
+                        {tPage('footerPrivacy')}
                       </Link>
                     </p>
                     {errors.consent && <p className="text-xs text-destructive">{errors.consent.message}</p>}
@@ -455,10 +455,10 @@ export default function Companies() {
                       className="w-full bg-[#ad1414] text-white font-sans text-[13px] font-semibold uppercase tracking-wide py-3 rounded-full hover:bg-[#ad1414]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
                       disabled={isSubmitting}
                     >
-                      {isSubmitting ? t(lang, 'companiesSending') : t(lang, 'companiesSubmitButton')}
+                      {isSubmitting ? tPage('companiesSending') : tPage('companiesSubmitButton')}
                     </button>
                     <p className="text-xs text-muted-foreground text-center">
-                      {t(lang, 'companiesSubmitHelper')}
+                      {tPage('companiesSubmitHelper')}
                     </p>
                   </div>
                 </form>

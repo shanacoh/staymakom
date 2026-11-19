@@ -4,6 +4,20 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 19/11/2026 : Traduction ES / RU / DE, vérifications avant l'interrupteur (titres restés en anglais, anciennes clés)
+
+### Ce qui a changé côté code
+- `src/pages/Companies.tsx` (page Entreprises, `/companies`) : lit ses textes dans la langue de la page ; ses 63 textes traduits en espagnol, russe et allemand ; messages d'erreur du formulaire et message d'échec d'envoi traduits dans les six langues (le formulaire est construit dans le composant).
+- `src/pages/Hotel.tsx` (page hôtel, `/hotel/...`) : titres (« Notre histoire », « Équipements », « Galerie »...), nombre de chambres, heures d'arrivée et de départ, durée de séjour, capacité des chambres et intitulés traduits ; également complétés en français et en hébreu là où ils étaient en anglais.
+- `src/lib/translations.ts`, `src/lib/uiTranslations/{es,ru,de}.ts` : clés correspondantes. `uiTranslations.test.ts` : « Highlights » accepté tel quel en allemand, adresse email acceptée en russe.
+- `docs/traductions/avant-d-allumer.md` : vérifications 4 et 5 cochées. `docs/traductions/problemes-hors-traduction.md` : noms de chambres fournis par HyperGuest.
+
+### Ce qui a changé côté base de données
+- Pas de migration. Données : 9 traductions de titres corrigées à la main dans `content_translations` et marquées « reviewed » (jamais réécrites par la traduction de nuit) : 6 titres allemands restés en anglais (catamarans, yacht privé, « JAPAN TASTE », vélo jet lag), le titre SEO russe « Jet Lag Bike Tour », le titre de partage russe « Vines Among the Dunes » et la fin anglaise d'un titre SEO russe. Copie avant modification dans `backup_20261119.content_translations_titres`.
+
+### Pourquoi ce changement
+- Deux vérifications de la check-list avant d'ouvrir l'espagnol, le russe et l'allemand : plus aucun titre traduit identique à l'anglais, et plus aucun texte d'interface encore en anglais sur les pages publiques accessibles.
+
 ## 19/11/2026 : Traduction ES / RU / DE, session 4 : villes et régions, catégories du Journal, emails client
 
 ### Ce qui a changé côté code

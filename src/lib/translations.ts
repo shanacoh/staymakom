@@ -1617,6 +1617,35 @@ export const translations = {
     journalCategory__slowTravel: "Slow Travel",
     journalCategory__behindTheScenes: "Behind the Scenes",
     journalCategory__people: "People",
+
+    // ── Vérification 5 : page Entreprises (erreurs du formulaire) ──
+    companiesErrName: "Name must be at least 2 characters",
+    companiesErrCompany: "Company name is required",
+    companiesErrEmail: "Invalid email address",
+    companiesErrPhone: "Phone is required",
+    companiesErrTooLong: (max: number) => `Must be less than ${max} characters`,
+    companiesErrConsent: "You must agree to continue",
+    companiesSendFailed: "Failed to send request. Please try again or contact us directly at shana@staymakom.com",
+    companiesHeroAlt: "Team retreat moment",
+
+    // ── Vérification 5 : page hôtel ──
+    hotelAcceptedCards: "Accepted Cards",
+    hotelGeneralConditionsRemarks: "General Conditions / Remarks",
+    hotelLengthOfStay: "Length of Stay",
+    hotelCancellationPolicy: "Cancellation Policy",
+    hotelAdults: "adults",
+    hotelRoomTypes: "Room Types",
+    hotelLocation: "Location",
+    hotelAboutTheRooms: "About the Rooms",
+    hotelHome: "Home",
+    hotelRoomsCount: (n: number) => `${n} rooms`,
+    hotelCheckInAt: (time: string) => `Check-in ${time}`,
+    hotelCheckOutAt: (time: string) => `Check-out ${time}`,
+    hotelMinStay: (n: number) => `Minimum ${n} night${n > 1 ? "s" : ""}`,
+    hotelMaxStay: (n: number) => `Maximum ${n} night${n > 1 ? "s" : ""}`,
+
+    // ── Vérification 5 : capacité des chambres ──
+    hotelMaxOccupancy: (n: number) => `max ${n}`,
   },
   he: {
     // Category page
@@ -3218,6 +3247,35 @@ export const translations = {
     journalCategory__slowTravel: "טיול איטי",
     journalCategory__behindTheScenes: "מאחורי הקלעים",
     journalCategory__people: "אנשים",
+
+    // ── Vérification 5 : page Entreprises (erreurs du formulaire) ──
+    companiesErrName: "השם חייב להכיל לפחות 2 תווים",
+    companiesErrCompany: "שם החברה הוא שדה חובה",
+    companiesErrEmail: "כתובת אימייל לא תקינה",
+    companiesErrPhone: "מספר טלפון הוא שדה חובה",
+    companiesErrTooLong: (max: number) => `עד ${max} תווים`,
+    companiesErrConsent: "יש לאשר כדי להמשיך",
+    companiesSendFailed: "שליחת הבקשה נכשלה. אנא נסו שוב או צרו קשר ישירות shana@staymakom.com",
+    companiesHeroAlt: "רגע של צוות בנופש",
+
+    // ── Vérification 5 : page hôtel ──
+    hotelAcceptedCards: "כרטיסים מקובלים",
+    hotelGeneralConditionsRemarks: "תנאים כלליים / הערות",
+    hotelLengthOfStay: "משך שהייה",
+    hotelCancellationPolicy: "מדיניות ביטול",
+    hotelAdults: "מבוגרים",
+    hotelRoomTypes: "סוגי חדרים",
+    hotelLocation: "מיקום",
+    hotelAboutTheRooms: "על החדרים",
+    hotelHome: "בית",
+    hotelRoomsCount: (n: number) => `${n} חדרים`,
+    hotelCheckInAt: (time: string) => `צ'ק-אין ${time}`,
+    hotelCheckOutAt: (time: string) => `צ'ק-אאוט ${time}`,
+    hotelMinStay: (n: number) => `מינימום ${n} לילות`,
+    hotelMaxStay: (n: number) => `מקסימום ${n} לילות`,
+
+    // ── Vérification 5 : capacité des chambres ──
+    hotelMaxOccupancy: (n: number) => `max ${n}`,
   },
   fr: {
     // Category page
@@ -4816,6 +4874,35 @@ export const translations = {
     journalCategory__slowTravel: "Voyage lent",
     journalCategory__behindTheScenes: "Coulisses",
     journalCategory__people: "Portraits",
+
+    // ── Vérification 5 : page Entreprises (erreurs du formulaire) ──
+    companiesErrName: "Le nom doit contenir au moins 2 caractères",
+    companiesErrCompany: "Le nom de l'entreprise est obligatoire",
+    companiesErrEmail: "Adresse email invalide",
+    companiesErrPhone: "Le téléphone est obligatoire",
+    companiesErrTooLong: (max: number) => `${max} caractères maximum`,
+    companiesErrConsent: "Vous devez accepter pour continuer",
+    companiesSendFailed: "L'envoi a échoué. Veuillez réessayer ou nous écrire directement à shana@staymakom.com",
+    companiesHeroAlt: "Moment d'équipe en séminaire",
+
+    // ── Vérification 5 : page hôtel ──
+    hotelAcceptedCards: "Cartes acceptées",
+    hotelGeneralConditionsRemarks: "Conditions générales / remarques",
+    hotelLengthOfStay: "Durée de séjour",
+    hotelCancellationPolicy: "Politique d'annulation",
+    hotelAdults: "adultes",
+    hotelRoomTypes: "Types de chambres",
+    hotelLocation: "Emplacement",
+    hotelAboutTheRooms: "Les chambres",
+    hotelHome: "Accueil",
+    hotelRoomsCount: (n: number) => `${n} chambres`,
+    hotelCheckInAt: (time: string) => `Arrivée ${time}`,
+    hotelCheckOutAt: (time: string) => `Départ ${time}`,
+    hotelMinStay: (n: number) => `Minimum ${n} nuits`,
+    hotelMaxStay: (n: number) => `Maximum ${n} nuits`,
+
+    // ── Vérification 5 : capacité des chambres ──
+    hotelMaxOccupancy: (n: number) => `max ${n}`,
   },
 };
 

@@ -4,7 +4,7 @@ L'interrupteur est `autoLocalesPublic` dans `src/config/languages.json`. Le pass
 active en une fois : le sélecteur de langue, les balises hreflang, le plan du site et
 l'indexation Google des pages en espagnol, russe et allemand.
 
-Ne l'allumer que lorsque **toutes** les cases sont cochées :
+Ne l'allumer que lorsque **toutes** les cases sont cochées (sauf les pages légales, voir plus bas), et seulement à la demande de Shana :
 
 - [ ] **Boutons et menus traduits** : tous les textes d'interface des pages publiques existent en
       ES / RU / DE (`src/lib/uiTranslations/`). Aucun bouton en anglais sur une page `?lang=ru`.
@@ -22,22 +22,26 @@ Ne l'allumer que lorsque **toutes** les cases sont cochées :
         fenêtre newsletter (19/11/2026)
   - [ ] Pages légales (conditions, confidentialité, annulation, cookies, mentions légales) :
         traduction automatique + mention en tête, dans chaque langue : « En cas de divergence, la
-        version anglaise fait foi » (décision de Shana du 17/11/2026). EN ATTENTE : Shana met d'abord
-        à jour le texte anglais (décision du 19/11/2026), les pages restent telles quelles d'ici là
+        version anglaise fait foi » (décision de Shana du 17/11/2026). NE BLOQUE PAS l'interrupteur
+        (décision du 19/11/2026) : en espagnol, russe et allemand elles restent en anglais pour l'instant,
+        traduction après la mise à jour du texte anglais par Shana
   - [x] Espace client (`/account` : mes réservations, favoris, cartes cadeaux, profil, questionnaire
         d'accueil) (19/11/2026)
   - [x] Recherche : pas de page de recherche sur le site actuel (l'assistant de recherche IA n'existe que
         sur l'ancienne page `/home`, non visible des clients) ; le tri et les filtres des catégories sont traduits
   - [x] Étiquette de catégorie des articles du Journal (« STORIES »...) : traduite à l'affichage
         (`src/lib/journalCategories.ts`), aussi en français et en hébreu (19/11/2026)
-  - [ ] Anciennes clés de `translations.ts` encore utilisées (`missingUiKeys("ru")` doit ne
-        renvoyer que des clés plus utilisées par le site)
+  - [x] Anciennes clés de `translations.ts` encore utilisées (vérifié le 19/11/2026) : page
+        Entreprises (`/companies`), page hôtel (`/hotel/...`) traduites. Les clés encore sans russe sont
+        soit volontairement identiques (noms des moods, marques, « 2h », titre de l'accueil), soit
+        utilisées seulement par d'anciennes pages plus accessibles (`/home`, `/hotel-old`,
+        `/experiences-old`, ancien en-tête et ancien pied de page) ou par le back-office
 - [x] **Villes et régions traduites** (19/11/2026) : elles s'affichent dans la langue de la page
       (Иерусалим, Jerusalén, Totes Meer...) grâce au dictionnaire `src/lib/placeNames.ts`, appliqué
       seulement à l'affichage : les filtres et le regroupement par région utilisent toujours le nom
       anglais. Un nouveau lieu absent du dictionnaire s'affiche en anglais : vérifier avec
       `docs/traductions/lieux-publies.sql` et l'ajouter.
-- [ ] **Zéro titre resté en anglais** : la requête ci-dessous ne renvoie que des noms propres
+- [x] **Zéro titre resté en anglais** (vérifié le 19/11/2026 : 6 titres allemands et 3 titres russes corrigés à la main, marqués « reviewed ») : la requête ci-dessous ne renvoie que des noms propres
       (hôtels, partenaires, moods, STAYMAKOM, villes au nom identique).
 
 ```sql
@@ -64,3 +68,6 @@ order by entity_type, texte, locale;
 
 Après l'allumage : redéployer le site (le plan du site se régénère à la construction), puis
 soumettre le plan du site dans Google Search Console.
+
+> Format des titres SEO des fiches expérience : « Titre, Ville | Ville » est voulu (décision de Shana du
+> 19/11/2026), ce n'est pas une erreur de saisie.
