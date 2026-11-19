@@ -4,6 +4,17 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 19/11/2026 : Titres SEO au format « Titre | Ville » (ville une seule fois)
+
+### Ce qui a changé côté code
+- `docs/traductions/avant-d-allumer.md` : note sur le format des titres SEO corrigée (« Titre | Ville »). `docs/traductions/titres-ville-en-double.sql` (nouveau) : requête de contrôle.
+
+### Ce qui a changé côté base de données
+- Pas de migration. Données : 6 fiches expérience (`standalone_experiences.seo_title_en`, `seo_title_fr`, `seo_title_he`) passées de « Titre, Ville | Ville » à « Titre | Ville » (visite whisky, chemin des pèlerins, accord vin et chocolat, dégustation whisky et fromage, journée héritage chrétien, dégustation dans une cave familiale). Leurs traductions espagnol / russe / allemand corrigées de la même façon, rattachées au nouveau texte anglais et marquées « reviewed ». Copies avant modification dans `backup_20261119.standalone_experiences_titres_seo` et `backup_20261119.content_translations_titres`.
+
+### Pourquoi ce changement
+- Le format voulu pour les titres SEO des fiches expérience est « Titre | Ville » : la ville était répétée deux fois sur ces fiches.
+
 ## 19/11/2026 : Traduction ES / RU / DE, vérifications avant l'interrupteur (titres restés en anglais, anciennes clés)
 
 ### Ce qui a changé côté code

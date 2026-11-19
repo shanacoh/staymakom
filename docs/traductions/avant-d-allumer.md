@@ -69,5 +69,6 @@ order by entity_type, texte, locale;
 Après l'allumage : redéployer le site (le plan du site se régénère à la construction), puis
 soumettre le plan du site dans Google Search Console.
 
-> Format des titres SEO des fiches expérience : « Titre, Ville | Ville » est voulu (décision de Shana du
-> 19/11/2026), ce n'est pas une erreur de saisie.
+> Format des titres SEO des fiches expérience : « Titre | Ville », la ville une seule fois (décision de
+> Shana du 19/11/2026). Les titres en « Titre, Ville | Ville » ont été corrigés le 19/11/2026 (anglais,
+> français, hébreu et traductions). Requête de contrôle : `docs/traductions/titres-ville-en-double.sql`.
