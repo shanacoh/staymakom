@@ -264,6 +264,10 @@ Deno.serve(async (req) => {
         const standaloneUpdateData: Record<string, unknown> = { payment_status: paymentStatus };
         if (paymentStatus === 'paid') {
           standaloneUpdateData.status = 'confirmed';
+          // Le client a pu fermer la fenêtre de paiement (réservation marquée abandonnée par
+          // cancel-standalone-pending-payment) puis payer quand même : elle n'est plus annulée.
+          standaloneUpdateData.is_cancelled = false;
+          standaloneUpdateData.cancelled_at = null;
         } else if (paymentStatus === 'refunded') {
           standaloneUpdateData.status = 'cancelled';
           standaloneUpdateData.is_cancelled = true;

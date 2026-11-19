@@ -182,7 +182,9 @@ Deno.serve(async (req: Request) => {
     // par le webhook entre-temps (ex: déjà 'paid', ou 'refund_pending' après annulation express).
     const { data: updatedRows, error: updateError } = await supabase
       .from('standalone_bookings')
-      .update({ status: 'confirmed', payment_status: 'paid' })
+      // is_cancelled remis à faux : le client a pu fermer la fenêtre de paiement (réservation
+      // marquée abandonnée) puis payer quand même juste après.
+      .update({ status: 'confirmed', payment_status: 'paid', is_cancelled: false, cancelled_at: null })
       .eq('id', booking.id)
       .eq('payment_status', 'pending')
       .select('id');

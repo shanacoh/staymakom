@@ -4,6 +4,33 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 19/11/2026 : Paniers abandonnés fermés automatiquement (réservations d'expérience jamais payées)
+
+### Ce qui a changé côté code
+- `supabase/functions/_shared/revolut-order.ts` : nouvelle fonction `cancelRevolutOrder` qui ferme chez Revolut une commande jamais payée (le client ne peut plus la payer ensuite).
+- `supabase/functions/reconcile-standalone-bookings/index.ts` : le filet de sécurité (toutes les 10 min) ferme les paniers restés impayés plus de 24 h. Il annule d'abord la commande chez Revolut, puis seulement si Revolut accepte, passe la réservation en « annulée » avec une note interne. Avant, ces paniers restaient « en attente » à vie, car Revolut n'expire jamais ces commandes.
+- `supabase/functions/revolut-webhook/index.ts`, `confirm-standalone-payment/index.ts`, `reconcile-standalone-bookings/index.ts` : quand un paiement est reçu, la réservation n'est plus marquée annulée (`is_cancelled` remis à faux). Ce cas arrive quand un client ferme la fenêtre de paiement puis paie quand même juste après.
+- `supabase/functions/cancel-standalone-pending-payment` : code inchangé, déployé pour la première fois (le site l'appelait déjà quand le client ferme la fenêtre de paiement, elle répondait « introuvable »).
+
+### Ce qui a changé côté base de données
+- Aucune migration. Données : les 3 paniers abandonnés d'octobre (Katharina Renner, Alexander Labowitz x2, jamais débités) passés en « annulés » avec une note, copie avant modification dans `backup_20261119.standalone_bookings_paniers_octobre`.
+
+### Pourquoi ce changement
+- Le back-office se remplissait de fausses réservations « en attente » : chaque client qui abandonne au moment de payer en laissait une, pour toujours.
+
+## 19/11/2026 : Mise en ligne de la traduction ES / RU / DE (sessions 1 et 2), options hôtel traduites
+
+### Ce qui a changé côté code
+- Branche `traductions-auto` intégrée à main (après intégration des pages Sharon et Vern), fonction `translate-content` redéployée (plafond de 2 $ et coût de chaque passage).
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261117120000_cout_traduction_auto.sql` appliquée : colonnes `cost_usd`, `chain_cost_usd`, `cost_capped` sur `content_translation_runs`.
+- `docs/traductions/traduire-options-hotels.sql` lancé : 294 options payantes (celles des 29 hôtels publiés) traduites en ES / RU / DE, 882 traductions, coût réel 0,88 $.
+- Nettoyage des tests : 3 réservations « TEST TRADUCTIONS » supprimées et compte de test supprimé, copies dans le schéma `backup_20261118`.
+
+### Pourquoi ce changement
+- Rendre visibles en production les textes d'interface traduits (langues toujours cachées tant que l'interrupteur est éteint) et traduire les options payantes des hôtels.
+
 ## 18/11/2026 : Page de proposition pour Sharon (/sharon), 50 ans de mariage dans le Sud
 
 ### Ce qui a changé côté code

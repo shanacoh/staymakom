@@ -89,3 +89,23 @@ export async function fetchRevolutOrder(orderId: string): Promise<RevolutOrderSu
     isAdminTest: /live payment test|debug test/i.test(String(data.description || '')),
   };
 }
+
+/**
+ * Annule chez Revolut une commande jamais payée : le client ne peut plus la payer ensuite.
+ * Renvoie vrai si Revolut a accepté. Revolut refuse si un paiement est en cours ou déjà fait :
+ * on ne touche alors à rien, le passage suivant relira l'état réel de la commande.
+ */
+export async function cancelRevolutOrder(orderId: string): Promise<boolean> {
+  const response = await fetch(`${getRevolutBaseUrl()}/orders/${orderId}/cancel`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${getSecretKey()}`,
+      'Revolut-Api-Version': '2024-09-01',
+    },
+  });
+  if (!response.ok) {
+    console.error(`Revolut cancel-order refusé pour ${orderId}: ${response.status} ${await response.text()}`);
+    return false;
+  }
+  return true;
+}

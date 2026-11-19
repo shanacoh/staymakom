@@ -8,8 +8,10 @@
 //    revérifie l'état réel de la commande auprès de Revolut :
 //      - payé/autorisé côté Revolut  → réservation confirmée
 //      - échoué/annulé côté Revolut  → réservation marquée annulée (paiement jamais abouti)
-//      - pas encore payé             → laissée telle quelle : le client n'a pas (encore) payé,
-//        ce n'est pas une panne. Revolut finit par expirer la commande, qui passe alors en échec.
+//      - pas encore payé             → laissée telle quelle pendant 24 h : le client peut encore payer.
+//      - toujours pas payé après 24 h → panier abandonné : la commande est annulée chez Revolut
+//        (le client ne peut plus la payer), puis la réservation est marquée annulée. Revolut,
+//        lui, n'expire jamais ces commandes : sans cela, elles resteraient « en attente » à vie.
 //
 // 2. Paiements du site restés sans réservation (registre revolut_unmatched_payments, rempli
 //    par revolut-webhook) : si la réservation n'est toujours pas apparue 10 minutes après le
@@ -17,9 +19,11 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getAdminEmail, isInternalCron } from '../_shared/internal-auth.ts';
-import { fetchRevolutOrder } from '../_shared/revolut-order.ts';
+import { cancelRevolutOrder, fetchRevolutOrder } from '../_shared/revolut-order.ts';
 
 const RECONCILE_AFTER_MINUTES = 30;
+const ABANDON_AFTER_HOURS = 24;
+const ABANDONED_NOTE = 'Panier abandonné : jamais payé, commande Revolut annulée automatiquement après 24 h';
 const UNMATCHED_GRACE_MINUTES = 10;
 const FAILED_STATES = ['CANCELLED', 'FAILED'];
 
@@ -94,7 +98,7 @@ async function reconcilePendingBookings(supabase: ServiceClient) {
 
   const { data: pendingBookings, error } = await supabase
     .from('standalone_bookings')
-    .select('id, customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, revolut_order_id, created_at, standalone_experiences(title)')
+    .select('id, customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, revolut_order_id, created_at, cancelled_at, internal_notes, standalone_experiences(title)')
     .eq('status', 'pending')
     .not('revolut_order_id', 'is', null)
     .lt('created_at', cutoff)
@@ -105,6 +109,8 @@ async function reconcilePendingBookings(supabase: ServiceClient) {
 
   let confirmed = 0;
   let cancelled = 0;
+  let abandoned = 0;
+  const abandonCutoff = Date.now() - ABANDON_AFTER_HOURS * 3_600_000;
 
   for (const booking of pendingBookings || []) {
     try {
@@ -113,7 +119,8 @@ async function reconcilePendingBookings(supabase: ServiceClient) {
       if (state === 'COMPLETED' || state === 'AUTHORISED') {
         const { data: updatedRows, error: updErr } = await supabase
           .from('standalone_bookings')
-          .update({ status: 'confirmed', payment_status: 'paid' })
+          // is_cancelled remis à faux : le client a pu fermer la fenêtre de paiement puis payer.
+          .update({ status: 'confirmed', payment_status: 'paid', is_cancelled: false, cancelled_at: null })
           .eq('id', booking.id)
           .eq('status', 'pending')
           .select('id');
@@ -141,14 +148,36 @@ async function reconcilePendingBookings(supabase: ServiceClient) {
         } else {
           cancelled++;
         }
+      } else if (state === 'PENDING' && new Date(booking.created_at as string).getTime() < abandonCutoff) {
+        // Jamais payé depuis 24 h : on ferme d'abord la commande chez Revolut. Si Revolut refuse
+        // (paiement en cours entre-temps), on ne touche à rien et on repassera.
+        if (await cancelRevolutOrder(booking.revolut_order_id as string)) {
+          const notes = (booking.internal_notes as string | null)?.trim();
+          const { error: updErr } = await supabase
+            .from('standalone_bookings')
+            .update({
+              status: 'cancelled',
+              is_cancelled: true,
+              cancelled_at: booking.cancelled_at ?? new Date().toISOString(),
+              internal_notes: notes ? `${notes}\n${ABANDONED_NOTE}` : ABANDONED_NOTE,
+            })
+            .eq('id', booking.id)
+            .eq('status', 'pending')
+            .eq('payment_status', 'pending');
+          if (updErr) {
+            console.error(`reconcile: échec clôture du panier abandonné ${booking.id}:`, updErr);
+          } else {
+            abandoned++;
+          }
+        }
       }
-      // Autres états (PENDING, PROCESSING) : le client n'a pas fini de payer, on repassera.
+      // Autres états (PENDING de moins de 24 h, PROCESSING) : le client n'a pas fini de payer, on repassera.
     } catch (err) {
       console.error(`reconcile: échec vérification Revolut pour la commande ${booking.revolut_order_id}:`, err);
     }
   }
 
-  return { checked: (pendingBookings || []).length, confirmed, cancelled };
+  return { checked: (pendingBookings || []).length, confirmed, cancelled, abandoned };
 }
 
 /** Vrai si une réservation (hôtel, expérience seule ou paiement acompte/solde) porte cette commande. */
