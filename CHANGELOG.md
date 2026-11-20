@@ -4,6 +4,26 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 20/11/2026 : Bateaux, le bouton « Demander sur WhatsApp » n'envoie plus d'email au clic
+
+### Ce qui a changé côté code
+- `src/pages/Boats.tsx` : au clic sur le bouton vert d'une carte bateau, une référence courte (6 caractères, ex. « Réf. AAB82A ») est ajoutée au message WhatsApp pré-rempli. La ligne de suivi est toujours enregistrée, mais l'email de notification n'est plus envoyé.
+- `src/lib/whatsappReference.ts` (nouveau) : calcule cette référence à partir de l'identifiant de la ligne.
+- `src/components/admin/ReservationsHub/BoatWhatsappClicksTable.tsx` (nouveau) : liste « Clics WhatsApp » de la page Réservations (date, référence, bateau, personnes, durée, date souhaitée), recherche par référence via la barre de recherche.
+- `src/components/admin/ReservationsHub/ClaimWhatsappClickDialog.tsx` (nouveau) : fenêtre « Le client a écrit » pour saisir prénom + numéro ; la demande rejoint alors le flux.
+- `src/components/admin/ReservationsHub/ReservationsToolbar.tsx`, `src/pages/admin/Reservations.tsx` : nouvelle puce « Clics WhatsApp » à côté de « Archives ».
+- `src/lib/reservations/queries.ts`, `actions.ts`, `types.ts` : lecture de la liste et enregistrement du prénom/numéro (sans rien écraser si un numéro existe déjà).
+- `supabase/functions/notify-standalone-experience-request/index.ts` : garde-fou, aucun email pour un clic sans numéro (au cas où un ancien onglet appellerait encore la fonction). Fonction redéployée.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261120100000_boat_whatsapp_clicks_out_of_flow.sql` (appliquée) :
+  - vue `admin_reservations` : les clics `card_whatsapp` sans numéro n'apparaissent plus dans le flux ; ils y entrent dès qu'un numéro est saisi.
+  - nouvelle vue `admin_boat_whatsapp_clicks` : les clics en attente, avec leur référence (réservée aux admins).
+- Rien n'est supprimé : le clic actif existant (catamaran) est simplement passé dans la nouvelle liste.
+
+### Pourquoi ce changement
+- Un clic sur le bouton ne prouve pas que le client a envoyé son message WhatsApp : Shana recevait des emails et des lignes « Sans nom » pour de simples clics. Désormais, silence au clic, et la référence dans le message permet de relier le client qui écrit à sa demande.
+
 ## 20/11/2026 : Sélecteur de langue compact sur téléphone, titres Google de l'accueil et de la liste des expériences traduits
 
 ### Ce qui a changé côté code

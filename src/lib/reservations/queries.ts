@@ -8,6 +8,7 @@ import { CHANNEL_LABELS } from "@/components/admin/BookingsGrid/columnTypes";
 import type { CatalogueExperience, CatalogueHotel } from "./productChoice";
 import type {
   ArchivedRequest,
+  BoatWhatsappClick,
   ClientPayment,
   DeletedReservation,
   DossierLine,
@@ -326,6 +327,36 @@ async function fetchRequestArchives(): Promise<ArchivedRequest[]> {
 /** Demandes converties ou archivées (vue SQL `admin_request_archives`), derrière la puce « Archives ». */
 export function useRequestArchives() {
   return useQuery({ queryKey: REQUEST_ARCHIVES_QUERY_KEY, queryFn: fetchRequestArchives });
+}
+
+export const BOAT_WHATSAPP_CLICKS_QUERY_KEY = ["admin-boat-whatsapp-clicks"];
+
+async function fetchBoatWhatsappClicks(): Promise<BoatWhatsappClick[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from("admin_boat_whatsapp_clicks")
+    .select("*")
+    .order("clicked_at", { ascending: false });
+  if (error) throw error;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data as any[]).map((row) => ({
+    id: row.id,
+    ref: row.ref,
+    clickedAt: row.clicked_at,
+    product: row.product,
+    city: row.city,
+    persons: row.persons ?? 0,
+    durationMinutes: row.duration_minutes,
+    requestedDate: row.requested_date,
+    dateRange: row.date_range,
+    sunset: !!row.sunset,
+    isUrgent: !!row.is_urgent,
+  }));
+}
+
+/** Clics « Demander sur WhatsApp » des cartes bateau encore sans numéro, derrière la puce « Clics WhatsApp ». */
+export function useBoatWhatsappClicks() {
+  return useQuery({ queryKey: BOAT_WHATSAPP_CLICKS_QUERY_KEY, queryFn: fetchBoatWhatsappClicks });
 }
 
 export const ITINERARIES_QUERY_KEY = ["admin-itineraries"];

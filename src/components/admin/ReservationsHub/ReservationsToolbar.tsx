@@ -1,7 +1,7 @@
 /**
  * Barre d'outils commune à tous les onglets de la page Réservations : recherche,
  * filtres de statut en puces, filtre rapide Bateaux, puis Paiement, Période et Canal, et en fin
- * de rangée les listes à part (paiements non aboutis, corbeille, archives).
+ * de rangée les listes à part (paiements non aboutis, corbeille, archives, clics WhatsApp).
  */
 
 import { Search } from "lucide-react";
@@ -69,6 +69,10 @@ interface Props {
   archivesCount: number;
   archivesOpen: boolean;
   onArchivesOpenChange: (value: boolean) => void;
+  // Puce « Clics WhatsApp » : clics des cartes bateau, sans numéro connu.
+  whatsappClicksCount: number;
+  whatsappClicksOpen: boolean;
+  onWhatsappClicksOpenChange: (value: boolean) => void;
 }
 
 const ReservationsToolbar = (props: Props) => (
@@ -185,6 +189,14 @@ const ReservationsToolbar = (props: Props) => (
       active={props.archivesOpen}
       onClick={() => props.onArchivesOpenChange(!props.archivesOpen)}
       title="Demandes converties en réservation ou archivées avec un motif."
+    />
+
+    <FilterChip
+      label="Clics WhatsApp"
+      count={props.whatsappClicksCount}
+      active={props.whatsappClicksOpen}
+      onClick={() => props.onWhatsappClicksOpenChange(!props.whatsappClicksOpen)}
+      title="Clics sur « Demander sur WhatsApp » des cartes bateau, en attente du message du client."
     />
   </div>
 );

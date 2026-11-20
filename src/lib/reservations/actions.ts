@@ -101,6 +101,23 @@ export async function reopenRequest(requestId: string) {
   assertChanged(data, ALREADY_HANDLED);
 }
 
+/**
+ * Clic WhatsApp d'une carte bateau : le client a bien écrit. On enregistre son prénom et son
+ * numéro, ce qui fait entrer la demande dans le flux Réservations (la vue ne montre les clics
+ * qu'une fois un numéro connu). Conditionné à l'absence de numéro : rien n'est écrasé.
+ */
+export async function claimBoatWhatsappClick(requestId: string, name: string, phone: string) {
+  const { data, error } = await db
+    .from("standalone_experience_requests")
+    .update({ customer_name: name, customer_phone: phone })
+    .eq("id", requestId)
+    .eq("source", "card_whatsapp")
+    .or("customer_phone.is.null,customer_phone.eq.")
+    .select("id");
+  if (error) throw error;
+  assertChanged(data, ALREADY_HANDLED);
+}
+
 export async function linkRequestToBooking(requestId: string, bookingId: string) {
   const { error } = await db.rpc("link_request_to_booking", { p_request_id: requestId, p_booking_id: bookingId });
   if (error) throw error;
