@@ -23,6 +23,7 @@ import DeleteReservationDialog from "@/components/admin/ReservationsHub/DeleteRe
 import DeletedReservationsTable from "@/components/admin/ReservationsHub/DeletedReservationsTable";
 import UnfinishedPaymentsTable from "@/components/admin/ReservationsHub/UnfinishedPaymentsTable";
 import RequestArchivesTable from "@/components/admin/ReservationsHub/RequestArchivesTable";
+import BoatWhatsappClicksTable from "@/components/admin/ReservationsHub/BoatWhatsappClicksTable";
 import ItinerariesView from "@/components/admin/ReservationsHub/ItinerariesView";
 import FlagRowDialog from "@/components/admin/ReservationsHub/FlagRowDialog";
 import ReservationsEntryGrid from "@/components/admin/ReservationsHub/ReservationsEntryGrid";
@@ -37,6 +38,7 @@ import {
   DOSSIER_LINES_QUERY_KEY,
   ITINERARIES_QUERY_KEY,
   REQUEST_ARCHIVES_QUERY_KEY,
+  BOAT_WHATSAPP_CLICKS_QUERY_KEY,
   RESERVATIONS_QUERY_KEY,
   UNPAID_DOSSIERS_QUERY_KEY,
   useDeletedReservations,
@@ -44,6 +46,7 @@ import {
   useGridCatalogue,
   useItineraries,
   useRequestArchives,
+  useBoatWhatsappClicks,
   useReservationRows,
   useUnfinishedPayments,
 } from "@/lib/reservations/queries";
@@ -75,7 +78,7 @@ import type {
 
 type DisplayMode = "vue" | "saisie";
 // Listes à part ouvertes par les puces de fin de rangée.
-type SideList = "unfinished" | "trash" | "archives" | null;
+type SideList = "unfinished" | "trash" | "archives" | "whatsappClicks" | null;
 
 const DISPLAY_MODE_STORAGE_KEY = "admin-reservations-display";
 
@@ -146,6 +149,7 @@ const AdminReservations = () => {
   const { data: unfinishedPayments } = useUnfinishedPayments();
   const { data: deletedReservations } = useDeletedReservations();
   const { data: requestArchives } = useRequestArchives();
+  const { data: boatWhatsappClicks } = useBoatWhatsappClicks();
   const { data: itineraries } = useItineraries();
   const { data: dossierLines } = useDossierLines();
   const linesByDossier = useMemo(() => {
@@ -491,6 +495,9 @@ const AdminReservations = () => {
         archivesCount={requestArchives?.length ?? 0}
         archivesOpen={sideList === "archives"}
         onArchivesOpenChange={(open) => setSideList(open ? "archives" : null)}
+        whatsappClicksCount={boatWhatsappClicks?.length ?? 0}
+        whatsappClicksOpen={sideList === "whatsappClicks"}
+        onWhatsappClicksOpenChange={(open) => setSideList(open ? "whatsappClicks" : null)}
       />
 
       {sideList === "trash" ? (
@@ -499,6 +506,14 @@ const AdminReservations = () => {
         <UnfinishedPaymentsTable payments={unfinishedPayments ?? []} />
       ) : sideList === "archives" ? (
         <RequestArchivesTable items={requestArchives ?? []} search={search} onReopened={refreshRowsAndArchives} />
+      ) : sideList === "whatsappClicks" ? (
+        <BoatWhatsappClicksTable
+          items={boatWhatsappClicks ?? []}
+          search={search}
+          onClaimed={() =>
+            Promise.all([refreshRows(), queryClient.invalidateQueries({ queryKey: BOAT_WHATSAPP_CLICKS_QUERY_KEY })])
+          }
+        />
       ) : isLoading ? (
         <div className="py-12 text-center text-muted-foreground">Chargement...</div>
       ) : error ? (

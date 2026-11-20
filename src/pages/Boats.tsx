@@ -3,8 +3,8 @@
  * "façon phrase" (personnes, port, durée, date, moment de la journée) fixe
  * au scroll ; à droite, la grille de résultats qui se met à jour en direct.
  * Un clic sur une carte ouvre la fiche détail (photos, inclus, RDV) ; le
- * bouton vert va droit sur WhatsApp avec la sortie déjà décrite dedans —
- * pas de formulaire à remplir pour ce chemin rapide.
+ * bouton vert va droit sur WhatsApp avec la sortie déjà décrite dedans et une
+ * courte référence (« Réf. XXXXXX ») : pas de formulaire, pas d'email au clic.
  * Sur mobile, le filtre passe au-dessus des résultats, sans effet "fixe".
  */
 import { useEffect, useMemo, useState } from "react";
@@ -21,6 +21,7 @@ import { BOATS_CATEGORY_ID } from "@/lib/boatsCategory";
 import BoatDetailModal from "@/components/boats/BoatDetailModal";
 import BoatSentenceFilter, { type BoatFilterState } from "@/components/boats/BoatSentenceFilter";
 import { WHATSAPP_NUMBER } from "@/constants/whatsapp";
+import { whatsappReference } from "@/lib/whatsappReference";
 import { format } from "date-fns";
 import { fr as frLocale } from "date-fns/locale";
 import { tPage } from "@/lib/translations";
@@ -157,7 +158,7 @@ const Boats = () => {
     return null;
   };
 
-  const buildWhatsappHref = (boat: BoatRow, variant: PriceVariant) => {
+  const buildWhatsappHref = (boat: BoatRow, variant: PriceVariant, reference?: string) => {
     const title = localized(boat.title, boat.title_fr, boat.title_he);
     const parts = [
       lang === "fr" ? `Bonjour, je suis intéressé(e) par : ${title}` : `Hi, I'm interested in: ${title}`,
@@ -168,18 +169,19 @@ const Boats = () => {
     if (dateLabel) parts.push(dateLabel);
     const timeLabel = timeOfDayLabel(filter.timeOfDay);
     if (timeLabel) parts.push(timeLabel);
+    if (reference) parts.push(`${lang === "fr" ? "Réf." : "Ref."} ${reference}`);
     const message = parts.join(" · ");
     return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
   };
 
   // Trace silencieuse : le clic ouvre WhatsApp tout de suite (rien ne bloque
-  // le visiteur), mais on garde une ligne dans le suivi des demandes pour que
-  // ça remonte côté back-office — sans nom/contact, puisqu'on ne les demande
-  // pas ici (source: "card_whatsapp" les distingue des demandes via le pop-up).
-  // Best-effort total : une erreur ici ne doit jamais empêcher l'ouverture de WhatsApp.
-  const logDirectWhatsappClick = async (boat: BoatRow, variant: PriceVariant) => {
+  // le visiteur). On garde une ligne de suivi (source "card_whatsapp"), rangée à
+  // part dans le back-office (puce « Clics WhatsApp ») tant qu'aucun numéro n'y est
+  // saisi : le site ne peut pas savoir si le message WhatsApp a vraiment été envoyé.
+  // Pas d'email au clic. La référence du message permet de retrouver la ligne
+  // quand le client écrit. Best-effort total : jamais bloquant pour WhatsApp.
+  const logDirectWhatsappClick = async (requestId: string, boat: BoatRow, variant: PriceVariant) => {
     try {
-      const requestId = crypto.randomUUID();
       // Date précise (bucket "plus tard" + calendrier choisi) → requested_date, un
       // vrai champ structuré. Sinon ("aujourd'hui ou demain" / "dans la semaine"),
       // pas de date exacte à stocker : on garde juste la fourchette, en anglais et
@@ -191,7 +193,8 @@ const Boats = () => {
         : filter.dateBucket === "this_week" ? "this week"
         : null
         : null;
-      const { error } = await (supabase as any).from("standalone_experience_requests").insert({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).from("standalone_experience_requests").insert({
         id: requestId,
         experience_id: boat.id,
         source: "card_whatsapp",
@@ -207,8 +210,6 @@ const Boats = () => {
         status: "new",
         message: dateRangeNote,
       });
-      if (error) return;
-      (supabase as any).functions.invoke("notify-standalone-experience-request", { body: { request_id: requestId } }).catch(() => {});
     } catch {
       // silencieux : ce n'est qu'une trace de suivi, jamais bloquant.
     }
@@ -290,7 +291,13 @@ const Boats = () => {
                             href={buildWhatsappHref(boat, variant)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            onClick={() => logDirectWhatsappClick(boat, variant)}
+                            onClick={(e) => {
+                              // Référence générée au clic, glissée dans le lien juste avant
+                              // que le navigateur ne l'ouvre (le clic reste instantané).
+                              const requestId = crypto.randomUUID();
+                              e.currentTarget.href = buildWhatsappHref(boat, variant, whatsappReference(requestId));
+                              logDirectWhatsappClick(requestId, boat, variant);
+                            }}
                             className="flex items-center justify-center rounded-full bg-[#25D366] hover:bg-[#1ebe57] text-white text-sm font-semibold py-2 transition-colors"
                           >
                             {t.whatsappCta}

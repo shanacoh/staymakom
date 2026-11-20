@@ -98,6 +98,16 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // Clic sur le bouton vert d'une carte bateau, sans numéro : on ne sait pas si le client a
+    // vraiment écrit sur WhatsApp. Pas d'email (le clic est rangé dans « Clics WhatsApp »).
+    // Garde-fou pour les anciens onglets du site qui appelleraient encore cette fonction au clic.
+    if (!preview && request.source === 'card_whatsapp' && !request.customer_phone) {
+      return new Response(JSON.stringify({ skipped: 'card_whatsapp_click' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Pas toujours de bateau précis : une demande peut venir du pop-up générique
     // (port préféré + durée souhaitée, sans fiche sélectionnée).
     const experience = request.standalone_experiences as unknown as { title: string } | null;
@@ -114,7 +124,6 @@ Deno.serve(async (req: Request) => {
     const html = `
       <div style="font-family:Helvetica,Arial,sans-serif;font-size:15px;color:#1a1a1a;line-height:1.6;">
         <p style="font-size:17px;font-weight:700;">${request.is_urgent ? '⚡ URGENT — ' : ''}Nouvelle demande — ${escapeHTML(subjectTitle)}</p>
-        ${request.source === 'card_whatsapp' ? `<p style="color:#ad1414;font-size:13px;font-weight:600;margin:0 0 8px;">Clic direct "Demander sur WhatsApp" depuis la carte — coordonnées pas encore connues, le client vous écrit lui-même sur WhatsApp.</p>` : ''}
         <table cellpadding="0" cellspacing="0" style="margin:16px 0;">
           <tr><td style="color:#999;padding-right:12px;">Client</td><td><strong>${request.customer_name ? escapeHTML(request.customer_name) : 'Non renseigné (contact via WhatsApp)'}</strong></td></tr>
           ${request.customer_phone ? `<tr><td style="color:#999;padding-right:12px;">WhatsApp</td><td>${escapeHTML(request.customer_phone)}</td></tr>` : ''}

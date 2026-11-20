@@ -188,6 +188,23 @@ export interface ArchivedRequest {
   bookingId: string | null;
 }
 
+// Clic « Demander sur WhatsApp » d'une carte bateau, sans numéro connu (vue admin_boat_whatsapp_clicks).
+export interface BoatWhatsappClick {
+  id: string;
+  // Référence glissée dans le message WhatsApp pré-rempli (ex. « B7K2F0 »).
+  ref: string;
+  clickedAt: string;
+  product: string;
+  city: string | null;
+  persons: number;
+  durationMinutes: number | null;
+  requestedDate: string | null;
+  // Fourchette quand il n'y a pas de date précise (« today or tomorrow », « this week »).
+  dateRange: string | null;
+  sunset: boolean;
+  isUrgent: boolean;
+}
+
 // Ligne supprimée, gardée dans la corbeille pour pouvoir être restaurée.
 export interface DeletedReservation {
   id: string;
