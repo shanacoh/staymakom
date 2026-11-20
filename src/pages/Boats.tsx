@@ -217,7 +217,7 @@ const Boats = () => {
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden" dir={isRTL ? "rtl" : "ltr"}>
-      <SEOHead title={`${pageTitle} — STAYMAKOM`} description={pageDescription} />
+      <SEOHead title={`${pageTitle} | STAYMAKOM`} description={pageDescription} />
 
       <V3Header />
 

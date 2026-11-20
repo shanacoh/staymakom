@@ -4,6 +4,18 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 20/11/2026 : Plus de tiret long (—) dans les textes hébreu ni dans les titres d'onglet / Google
+
+### Ce qui a changé côté code
+- `src/lib/translations.ts` : 12 textes hébreu sans tiret long (FAQ de l'accueil, page Entreprises, paiement, carte cadeau, réservations, page démo), reformulés avec une virgule, deux-points ou un point.
+- Titres d'onglet et titres lus par Google : « STAYMAKOM — … » devient « STAYMAKOM | … » (`index.html`, `src/config/seoStaticPages.ts`, `api/bot-meta.ts`, `LaunchIndex`, `StandaloneBookingConfirmation`), « … — STAYMAKOM » devient « … | STAYMAKOM » (`Boats`, `LaunchExperiences`) ; descriptions d'`index.html` et de la liste des expériences pour Google sans tiret long.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Règle de la marque : jamais de tiret long, dans aucune langue, hébreu compris.
+
 ## 20/11/2026 : Bateaux, le bouton « Demander sur WhatsApp » n'envoie plus d'email au clic
 
 ### Ce qui a changé côté code

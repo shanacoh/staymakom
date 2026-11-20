@@ -14,7 +14,7 @@ interface SeoText {
 export const SEO_STATIC_PAGES: Record<"home" | "experiences", Record<SeoLang, SeoText>> = {
   home: {
     en: {
-      title: "STAYMAKOM — Handpicked Hotels & Experiences in Israel",
+      title: "STAYMAKOM | Handpicked Hotels & Experiences in Israel",
       description: "We curate Israel's best boutique hotels and pair them with unique local experiences.",
     },
     fr: {
@@ -22,7 +22,7 @@ export const SEO_STATIC_PAGES: Record<"home" | "experiences", Record<SeoLang, Se
       description: "Nous sélectionnons les plus beaux hôtels-boutiques d'Israël et les associons à des expériences locales uniques.",
     },
     he: {
-      title: "STAYMAKOM — מלונות וחוויות נבחרים בישראל",
+      title: "STAYMAKOM | מלונות וחוויות נבחרים בישראל",
       description: "אנחנו אוצרים את המלונות הבוטיק הטובים בישראל ומשלבים אותם עם חוויות מקומיות ייחודיות.",
     },
     es: {

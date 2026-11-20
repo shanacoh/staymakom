@@ -416,7 +416,7 @@ const LaunchExperiences = () => {
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden" dir={isRTL ? "rtl" : "ltr"}>
       <SEOHead
-        title={`${pageTitle} — STAYMAKOM`}
+        title={`${pageTitle} | STAYMAKOM`}
         description={heroDescription || (isRTL ? "גלה חוויות מלון ייחודיות בישראל" : "Discover unique hotel experiences in Israel")}
       />
 

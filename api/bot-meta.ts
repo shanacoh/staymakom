@@ -159,7 +159,7 @@ async function fetchAggregateRating(
 const SEO_STATIC_PAGES: Record<"home" | "experiences", Record<PageLang, { title: string; description: string }>> = {
   home: {
     en: {
-      title: "STAYMAKOM — Handpicked Hotels & Experiences in Israel",
+      title: "STAYMAKOM | Handpicked Hotels & Experiences in Israel",
       description: "We curate Israel's best boutique hotels and pair them with unique local experiences.",
     },
     fr: {
@@ -167,7 +167,7 @@ const SEO_STATIC_PAGES: Record<"home" | "experiences", Record<PageLang, { title:
       description: "Nous sélectionnons les plus beaux hôtels-boutiques d'Israël et les associons à des expériences locales uniques.",
     },
     he: {
-      title: "STAYMAKOM — מלונות וחוויות נבחרים בישראל",
+      title: "STAYMAKOM | מלונות וחוויות נבחרים בישראל",
       description: "אנחנו אוצרים את המלונות הבוטיק הטובים בישראל ומשלבים אותם עם חוויות מקומיות ייחודיות.",
     },
     es: {
@@ -225,7 +225,7 @@ async function resolveResource(pathname: string, lang: PageLang): Promise<Resour
         ? {
             title: "All Experiences - Staymakom",
             description:
-              "Browse curated local experiences across Israel — from desert adventures to culinary discoveries, bookable alone or paired with a stay.",
+              "Browse curated local experiences across Israel, from desert adventures to culinary discoveries, bookable alone or paired with a stay.",
           }
         : SEO_STATIC_PAGES.experiences[lang]),
       jsonLdBlocks: [

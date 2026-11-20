@@ -112,7 +112,7 @@ const Vitrine = () => {
         <div className="bg-[#ad1414]/10 border-b border-[#ad1414]/20 py-2.5 px-4 text-center">
           <p className="text-[11px] sm:text-xs text-[#ad1414] font-medium">
             {isRTL
-              ? "דף הדגמה — דוגמאות לחוויות StayMakom"
+              ? "דף הדגמה: דוגמאות לחוויות StayMakom"
               : lang === "fr"
                 ? "Page de démonstration — exemples d'expériences StayMakom"
                 : "Demo page — StayMakom experience samples"}
