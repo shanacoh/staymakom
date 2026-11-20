@@ -4,6 +4,20 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 20/11/2026 : Bateaux, grilles de prix 2h / 3h / 4h
+
+### Ce qui a changé côté code
+- Aucun changement de code. La page /boat savait déjà afficher plusieurs durées par bateau ; il manquait les données.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261120100000_bateaux_grilles_2h_3h_4h.sql` (appliquée via l'outil Supabase) :
+  - Table `standalone_experience_price_variants` : grilles complètes pour 4 bateaux. Sailing Boat TLV 1 800 / 2 650 / 3 590 ; Catamaran Tel Aviv 3 100 (nouveau 2h) / 3 900 / 5 100 ; Cozy Sailing Herzliya 1 980 (était 1 990) / 2 500 / 3 390 ; Catamaran Herzliya 3 400 (était 3 240) / 4 500 / 5 500. Ajout du 4h pour les 2 yachts publiés (3h + 1 heure sup.) : Private Yacht 6 760, Private Yacht XXL 13 820. Prix d'achat des nouvelles lignes non renseignés.
+  - Table `standalone_extras` : les extras « Extra hour » / « Extend to 3 hours total » de ces bateaux (et « Extra hour » des 2 yachts) sont désactivés (`is_available = false`), pas supprimés.
+  - Sauvegarde avant modification dans `backup_20261120.boat_price_variants`, `backup_20261120.boat_extras` et `backup_20261120.yacht_extras`.
+
+### Pourquoi ce changement
+- Sur /boat, un bateau 2h n'apparaissait pas quand on choisissait 3h ou 4h : le filtre ne trouve un bateau que s'il a un prix pour exactement cette durée, et l'heure en plus n'était rangée que dans les extras. Shana a fourni les grilles complètes.
+
 ## 20/11/2026 : Noms des moods traduits en espagnol, russe et allemand
 
 ### Ce qui a changé côté code
