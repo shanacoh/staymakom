@@ -4,6 +4,19 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 20/11/2026 : Noms des moods traduits en espagnol, russe et allemand
+
+### Ce qui a changé côté code
+- `src/lib/uiTranslations/{es,ru,de}.ts` : noms des moods dans la fenêtre d'inscription (« Ce que vous aimez ») avec les noms officiels choisis par Shana.
+- `src/pages/LaunchIndex.tsx` : « Romantic Escape » écrit en dur remplacé par la clé `launchRomanticEscape` (six langues).
+- `supabase/functions/_shared/translations/prompt.ts` : les noms des moods ne restent plus en anglais ; la traduction automatique utilise le nom officiel de chaque langue (liste dans les spécificités ES / RU / DE). À redéployer : `translate-content`.
+
+### Ce qui a changé côté base de données
+- Pas de migration. Données : noms officiels des 10 catégories existantes (dont On the Water, qui remplace Mar adentro / В открытое море / Ab aufs Wasser) enregistrés dans `content_translations` (champ `name`), et titres de présentation des pages Romantic Escape, Family Fun, Foody Discovery, Nature & Outdoor alignés ; tous marqués « reviewed » (jamais réécrits par la tâche de nuit). Copie avant modification dans `backup_20261119.content_translations_categories`.
+
+### Pourquoi ce changement
+- Décision de Shana du 20/11/2026 : les noms des moods sont traduits (remplace la décision de les garder en anglais).
+
 ## 20/11/2026 : Plus aucun tiret long (—) dans les textes du site, des emails et du back-office
 
 ### Ce qui a changé côté code

@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
 import { useLocalizedNavigation } from "@/hooks/useLocalizedNavigation";
-import { t } from "@/lib/translations";
+import { t, tPage } from "@/lib/translations";
 import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import { SEOHead } from "@/components/SEOHead";
@@ -453,7 +453,7 @@ const LaunchIndex = () => {
               >
                 <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                   <Heart size={12} strokeWidth={1.5} />
-                  {lang === 'he' ? "בריחה רומנטית" : lang === 'fr' ? "Escapade romantique" : "Romantic Escape"}
+                  {tPage("launchRomanticEscape")}
                 </span>
               </button>
               <div

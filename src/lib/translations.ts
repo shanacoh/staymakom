@@ -1644,6 +1644,9 @@ export const translations = {
 
     // ── Vérification 5 : capacité des chambres ──
     hotelMaxOccupancy: (n: number) => `max ${n}`,
+
+    // ── Noms des moods : page /launch ──
+    launchRomanticEscape: "Romantic Escape",
   },
   he: {
     // Category page
@@ -3272,6 +3275,9 @@ export const translations = {
 
     // ── Vérification 5 : capacité des chambres ──
     hotelMaxOccupancy: (n: number) => `max ${n}`,
+
+    // ── Noms des moods : page /launch ──
+    launchRomanticEscape: "בריחה רומנטית",
   },
   fr: {
     // Category page
@@ -4897,6 +4903,9 @@ export const translations = {
 
     // ── Vérification 5 : capacité des chambres ──
     hotelMaxOccupancy: (n: number) => `max ${n}`,
+
+    // ── Noms des moods : page /launch ──
+    launchRomanticEscape: "Escapade romantique",
   },
 };
 

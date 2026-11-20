@@ -1291,4 +1291,15 @@ export const es: UiDictionary = {
 
   // ── Vérification 5 : capacité des chambres ──
   hotelMaxOccupancy: (n: number) => `máx. ${n}`,
+
+  // ── Noms des moods (décision de Shana du 20/11/2026) ──
+  authPromptDialogRomanticEscape: "Escapada romántica",
+  authPromptDialogNatureOutdoor: "Naturaleza y aire libre",
+  authPromptDialogFoodyDiscovery: "Ruta gastronómica",
+  authPromptDialogMindfulReset: "Pausa consciente",
+  authPromptDialogFamilyFun: "Plan en familia",
+  authPromptDialogWorkUnplugged: "Teletrabajo con vistas",
+
+  // ── Noms des moods : page /launch ──
+  launchRomanticEscape: "Escapada romántica",
 };
