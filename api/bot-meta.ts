@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { SEO_STATIC_PAGES } from "../src/config/seoStaticPages";
 
 // Sert, aux seuls robots (Google, WhatsApp, Facebook...), une version de la page
 // avec le vrai titre / la vraie description / la vraie image de la fiche demandée,
@@ -153,6 +152,46 @@ async function fetchAggregateRating(
   const sum = rows.reduce((acc, r) => acc + Number(r.rating || 0), 0);
   return { ratingValue: Math.round((sum / rows.length) * 10) / 10, reviewCount: rows.length };
 }
+
+// Titres de l'accueil et de la liste des expériences par langue. COPIE de
+// src/config/seoStaticPages.ts (la fonction serveur ne peut pas lire les fichiers du site) :
+// modifier les deux ensemble.
+const SEO_STATIC_PAGES: Record<"home" | "experiences", Record<PageLang, { title: string; description: string }>> = {
+  home: {
+    en: {
+      title: "STAYMAKOM — Handpicked Hotels & Experiences in Israel",
+      description: "We curate Israel's best boutique hotels and pair them with unique local experiences.",
+    },
+    fr: {
+      title: "STAYMAKOM | Hôtels et expériences choisis en Israël",
+      description: "Nous sélectionnons les plus beaux hôtels-boutiques d'Israël et les associons à des expériences locales uniques.",
+    },
+    he: {
+      title: "STAYMAKOM — מלונות וחוויות נבחרים בישראל",
+      description: "אנחנו אוצרים את המלונות הבוטיק הטובים בישראל ומשלבים אותם עם חוויות מקומיות ייחודיות.",
+    },
+    es: {
+      title: "STAYMAKOM | Hoteles y experiencias seleccionados en Israel",
+      description: "Seleccionamos los mejores hoteles boutique de Israel y los combinamos con experiencias locales únicas.",
+    },
+    ru: {
+      title: "STAYMAKOM | Отобранные отели и впечатления в Израиле",
+      description: "Мы отбираем лучшие бутик-отели Израиля и дополняем их уникальными местными впечатлениями.",
+    },
+    de: {
+      title: "STAYMAKOM | Ausgewählte Hotels und Erlebnisse in Israel",
+      description: "Wir wählen die schönsten Boutiquehotels Israels aus und verbinden sie mit einzigartigen Erlebnissen vor Ort.",
+    },
+  },
+  experiences: {
+    en: { title: "All Experiences | Staymakom", description: "Discover all our curated hotel experiences across Israel" },
+    fr: { title: "Toutes les expériences | Staymakom", description: "Découvrez toutes nos expériences d'hôtel choisies avec soin en Israël" },
+    he: { title: "כל החוויות | Staymakom", description: "גלו את כל חוויות המלון האצורות שלנו ברחבי ישראל" },
+    es: { title: "Todas las experiencias | Staymakom", description: "Descubre todas nuestras experiencias de hotel seleccionadas por todo Israel" },
+    ru: { title: "Все впечатления | Staymakom", description: "Все наши тщательно отобранные отельные впечатления по Израилю" },
+    de: { title: "Alle Erlebnisse | Staymakom", description: "Entdecke all unsere ausgewählten Hotelerlebnisse in ganz Israel" },
+  },
+};
 
 async function resolveResource(pathname: string, lang: PageLang): Promise<ResourceMeta | null> {
   // Accueil : le titre/la description générique d'index.html sont déjà bons,

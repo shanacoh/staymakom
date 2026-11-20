@@ -28,7 +28,7 @@
 
 ### Ce qui a changé côté code
 - `src/components/MobileStickyHeader.tsx` : les 3 boutons EN | FR | עב deviennent un seul bouton compact (langue en cours + flèche) qui ouvre les 6 langues proposées, avec le même surlignage rouge que le globe de l'ordinateur ; la langue surlignée est celle de la page (RU sur une page en russe). Cet en-tête n'est visible que sur les pages de connexion (`/auth`, `/mobile-login`) : ailleurs, l'en-tête avec le globe (déjà à 6 langues) passe au-dessus.
-- `src/config/seoStaticPages.ts` (nouveau) : titre et description de l'onglet / de Google pour l'accueil et la liste des expériences, dans les six langues (anglais inchangé). Lu par `src/pages/IndexV3.tsx`, `src/pages/Experiences2.tsx` et `api/bot-meta.ts` (ce que lit Google). Les clés `seoExperiencesTitle` / `seoExperiencesDescription` sont retirées des dictionnaires.
+- `src/config/seoStaticPages.ts` (nouveau) : titre et description de l'onglet / de Google pour l'accueil et la liste des expériences, dans les six langues (anglais inchangé). Lu par `src/pages/IndexV3.tsx` et `src/pages/Experiences2.tsx` ; `api/bot-meta.ts` (ce que lit Google) en garde une copie, car la fonction serveur ne peut pas lire ce fichier (la première mise en ligne qui l'importait a fait échouer les réponses à Google pendant quelques minutes, corrigé aussitôt). Les clés `seoExperiencesTitle` / `seoExperiencesDescription` sont retirées des dictionnaires.
 - Le grand titre visible de l'accueil (« Don't choose a city, choose your escape ») reste en anglais dans toutes les langues (signature de marque, inchangé).
 
 ### Ce qui a changé côté base de données
