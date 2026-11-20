@@ -4,6 +4,17 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 20/11/2026 : Accueil, titre et sous-titre du hero agrandis
+
+### Ce qui a changé côté code
+- `src/pages/IndexV3.tsx` : le titre « Don't choose a city, choose your escape » passe de 18 / 24 / 28 px à 26 / 36 / 52 px (téléphone / tablette / ordinateur) ; le sous-titre « The Israel most people never find. » passe de 12 / 14 / 14 px à 14 / 16 / 18 px.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Demande de Shana : rendre la signature de la page d'accueil plus visible.
+
 ## 19/11/2026 : Espagnol, russe et allemand ouverts au public (interrupteur allumé)
 
 ### Ce qui a changé côté code

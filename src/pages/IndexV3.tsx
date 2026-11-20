@@ -340,12 +340,12 @@ const IndexV3 = () => {
             <span className="md:hidden block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-[#ad1414] mb-2 opacity-0 animate-hero-fade-up">
               STAYMAKOM
             </span>
-            <h1 className="font-sans text-lg sm:text-2xl md:text-[28px] font-bold uppercase tracking-[0.02em] leading-[1.15] mb-2 opacity-0 animate-hero-fade-up text-[#ad1414] text-center">
+            <h1 className="font-sans text-[26px] sm:text-4xl md:text-[52px] font-bold uppercase tracking-[0.02em] leading-[1.1] mb-2 opacity-0 animate-hero-fade-up text-[#ad1414] text-center">
               {/* Signature en anglais dans toutes les langues (lue de gauche à droite, même en hébreu) */}
               <span dir="ltr" className="whitespace-nowrap">{t("en", "homeHeroTitle1")}</span><br /><span dir="ltr" className="whitespace-nowrap">{t("en", "homeHeroTitle2")}</span>
             </h1>
             <p
-              className="font-sans not-italic text-[#ad1414] max-w-xl mx-auto opacity-0 animate-hero-fade-up text-xs sm:text-sm"
+              className="font-sans not-italic text-[#ad1414] max-w-xl mx-auto opacity-0 animate-hero-fade-up text-sm sm:text-base md:text-lg"
               style={{ animationDelay: "250ms" }}
             >
               {ui("homeHeroSubtitle")}
