@@ -1072,8 +1072,6 @@ export const ru: UiDictionary = {
   // ── Session 3, lot 2k : titres pour Google ──
   seoAboutTitle: "О STAYMAKOM | Отобранные отели и поездки в Израиле",
   seoAboutDescription: "STAYMAKOM: платформа бронирования, которая объединяет бутик-отели и насыщенные местные впечатления в Израиле.",
-  seoExperiencesTitle: "Все впечатления | Staymakom",
-  seoExperiencesDescription: "Все наши тщательно отобранные отельные впечатления по Израилю",
 
   // ── Session 3, lot 3 : textes existants (À propos, Contact, carte cadeau, catégories) ──
   aboutHeroTagline: "Израиль, каким вы его ещё не видели",

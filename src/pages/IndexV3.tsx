@@ -38,6 +38,7 @@ import BoatCard from "@/components/boats/BoatCard";
 import BoatDetailModal from "@/components/boats/BoatDetailModal";
 import { BOATS_CATEGORY_ID } from "@/lib/boatsCategory";
 import tailoredRequestHeroV3 from "@/assets/tailored-request-hero-roadtrip.png";
+import { SEO_STATIC_PAGES } from "@/config/seoStaticPages";
 
 /* ─── Icon map (identique à /home) ──────────────────────────────────────── */
 const iconMap: Record<string, LucideIcon> = {
@@ -317,10 +318,8 @@ const IndexV3 = () => {
   return (
     <div className="min-h-screen flex flex-col overflow-x-clip bg-white" dir={isRTL ? "rtl" : "ltr"}>
       <SEOHead
-        titleEn="STAYMAKOM — Handpicked Hotels & Experiences in Israel"
-        titleHe="STAYMAKOM — מלונות וחוויות נבחרים בישראל"
-        descriptionEn="We curate Israel's best boutique hotels and pair them with unique local experiences."
-        descriptionHe="אנחנו אוצרים את המלונות הבוטיק הטובים בישראל ומשלבים אותם עם חוויות מקומיות ייחודיות."
+        title={SEO_STATIC_PAGES.home[locale].title}
+        description={SEO_STATIC_PAGES.home[locale].description}
       />
 
       {/* ──── HEADER toujours blanc avec toggle centré ──── */}

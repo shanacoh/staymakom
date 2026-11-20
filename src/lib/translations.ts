@@ -1552,8 +1552,6 @@ export const translations = {
     // ── Session 3, lot 2k : titres pour Google ──
     seoAboutTitle: "About STAYMAKOM | Curated Hotel Stays in Israel",
     seoAboutDescription: "Discover STAYMAKOM - a curated booking platform combining boutique hotels and immersive local experiences in Israel.",
-    seoExperiencesTitle: "All Experiences | Staymakom",
-    seoExperiencesDescription: "Discover all our curated hotel experiences across Israel",
 
     // ── Session 3, lot 4 : page de connexion, Journal, Contact ──
     authPage__invalidEmail: "Invalid email address",
@@ -3182,8 +3180,6 @@ export const translations = {
     // ── Session 3, lot 2k : titres pour Google ──
     seoAboutTitle: "אודות STAYMAKOM | חוויות אירוח מובחרות בישראל",
     seoAboutDescription: "גלו את STAYMAKOM - פלטפורמת הזמנות מובחרת המשלבת מלונות בוטיק וחוויות מקומיות סוחפות בישראל.",
-    seoExperiencesTitle: "כל החוויות | Staymakom",
-    seoExperiencesDescription: "גלו את כל חוויות המלון האצורות שלנו ברחבי ישראל",
 
     // ── Session 3, lot 4 : page de connexion, Journal, Contact ──
     authPage__invalidEmail: "כתובת אימייל לא תקינה",
@@ -4809,8 +4805,6 @@ export const translations = {
     // ── Session 3, lot 2k : titres pour Google ──
     seoAboutTitle: "À propos de STAYMAKOM | Séjours d'hôtel choisis en Israël",
     seoAboutDescription: "Découvrez STAYMAKOM, une plateforme de réservation qui associe hôtels-boutiques et expériences locales immersives en Israël.",
-    seoExperiencesTitle: "Toutes les expériences | Staymakom",
-    seoExperiencesDescription: "Découvrez toutes nos expériences d'hôtel choisies avec soin en Israël",
 
     // ── Session 3, lot 4 : page de connexion, Journal, Contact ──
     authPage__invalidEmail: "Adresse email invalide",

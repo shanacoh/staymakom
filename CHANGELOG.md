@@ -4,6 +4,19 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 20/11/2026 : Sélecteur de langue compact sur téléphone, titres Google de l'accueil et de la liste des expériences traduits
+
+### Ce qui a changé côté code
+- `src/components/MobileStickyHeader.tsx` : les 3 boutons EN | FR | עב deviennent un seul bouton compact (langue en cours + flèche) qui ouvre les 6 langues proposées, avec le même surlignage rouge que le globe de l'ordinateur ; la langue surlignée est celle de la page (RU sur une page en russe). Cet en-tête n'est visible que sur les pages de connexion (`/auth`, `/mobile-login`) : ailleurs, l'en-tête avec le globe (déjà à 6 langues) passe au-dessus.
+- `src/config/seoStaticPages.ts` (nouveau) : titre et description de l'onglet / de Google pour l'accueil et la liste des expériences, dans les six langues (anglais inchangé). Lu par `src/pages/IndexV3.tsx`, `src/pages/Experiences2.tsx` et `api/bot-meta.ts` (ce que lit Google). Les clés `seoExperiencesTitle` / `seoExperiencesDescription` sont retirées des dictionnaires.
+- Le grand titre visible de l'accueil (« Don't choose a city, choose your escape ») reste en anglais dans toutes les langues (signature de marque, inchangé).
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Après l'ouverture de l'espagnol, du russe et de l'allemand : le sélecteur de la page de connexion sur téléphone ne proposait que 3 langues, et Google lisait le titre anglais de l'accueil et de la liste des expériences dans toutes les langues.
+
 ## 20/11/2026 : Accueil, titre et sous-titre du hero agrandis
 
 ### Ce qui a changé côté code

@@ -9,9 +9,10 @@ import ExperienceCardSkeleton from "@/components/ExperienceCardSkeleton";
 import { useLanguage } from "@/hooks/useLanguage";
 import { SEOHead } from "@/components/SEOHead";
 import { tPage } from "@/lib/translations";
+import { SEO_STATIC_PAGES } from "@/config/seoStaticPages";
 
 const Experiences2 = () => {
-  const { lang } = useLanguage();
+  const { lang, locale } = useLanguage();
   const isRTL = lang === 'he';
 
   useEffect(() => { trackExperiencesListViewed(); }, []);
@@ -76,8 +77,8 @@ const Experiences2 = () => {
   return (
     <div className="min-h-screen flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
       <SEOHead
-        title={tPage("seoExperiencesTitle")}
-        description={tPage("seoExperiencesDescription")}
+        title={SEO_STATIC_PAGES.experiences[locale].title}
+        description={SEO_STATIC_PAGES.experiences[locale].description}
       />
       <V3Header />
       

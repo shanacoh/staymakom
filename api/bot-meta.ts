@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { SEO_STATIC_PAGES } from "../src/config/seoStaticPages";
 
 // Sert, aux seuls robots (Google, WhatsApp, Facebook...), une version de la page
 // avec le vrai titre / la vraie description / la vraie image de la fiche demandée,
@@ -158,6 +159,8 @@ async function resolveResource(pathname: string, lang: PageLang): Promise<Resour
   // on ajoute seulement la fiche d'identité de la marque pour Google.
   if (pathname === "/") {
     return {
+      // Anglais : titre d'index.html (inchangé) ; autres langues : titre traduit (seoStaticPages.ts).
+      ...(lang !== "en" ? SEO_STATIC_PAGES.home[lang] : {}),
       jsonLdBlocks: [
         {
           "@context": "https://schema.org",
@@ -179,9 +182,13 @@ async function resolveResource(pathname: string, lang: PageLang): Promise<Resour
       "status=eq.published&order=created_at.desc&limit=20"
     );
     return {
-      title: "All Experiences - Staymakom",
-      description:
-        "Browse curated local experiences across Israel — from desert adventures to culinary discoveries, bookable alone or paired with a stay.",
+      ...(lang === "en"
+        ? {
+            title: "All Experiences - Staymakom",
+            description:
+              "Browse curated local experiences across Israel — from desert adventures to culinary discoveries, bookable alone or paired with a stay.",
+          }
+        : SEO_STATIC_PAGES.experiences[lang]),
       jsonLdBlocks: [
         buildBreadcrumbJsonLd([
           { name: "Home", url: "https://staymakom.com/" },

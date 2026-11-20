@@ -1039,8 +1039,6 @@ export const es: UiDictionary = {
   // ── Session 3, lot 2k : titres pour Google ──
   seoAboutTitle: "Quiénes somos | STAYMAKOM, estancias de hotel seleccionadas en Israel",
   seoAboutDescription: "Descubre STAYMAKOM, una plataforma de reservas que combina hoteles boutique y experiencias locales auténticas en Israel.",
-  seoExperiencesTitle: "Todas las experiencias | Staymakom",
-  seoExperiencesDescription: "Descubre todas nuestras experiencias de hotel seleccionadas por todo Israel",
 
   // ── Session 3, lot 3 : textes existants (À propos, Contact, carte cadeau, catégories) ──
   aboutHeroTagline: "Otra forma de vivir Israel",
