@@ -362,7 +362,7 @@ const JournalPost = () => {
             </p>
             {block.author && (
               <cite className="block mt-3 text-sm font-medium not-italic" style={{ color: "#8A8580" }}>
-                — {block.author}
+                {block.author}
               </cite>
             )}
           </blockquote>
@@ -391,7 +391,7 @@ const JournalPost = () => {
       case "divider":
         return (
           <div className="text-center my-12" style={{ color: "#B8935A", letterSpacing: "0.3em", fontSize: "14px" }}>
-            — ✦ —
+            ✦
           </div>
         );
 
@@ -614,7 +614,7 @@ const JournalPost = () => {
           {/* End-of-Article CTA */}
           <div className="mx-auto mt-16 pt-8" style={{ maxWidth: "680px" }}>
             <div className="text-center mb-2" style={{ color: "#B8935A", letterSpacing: "0.3em", fontSize: "14px" }}>
-              — ✦ —
+              ✦
             </div>
             <div className="text-center py-8">
               <h3

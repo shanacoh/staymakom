@@ -778,7 +778,7 @@ export function BookingPanel2({
                                   {tPage("bookingPanel2From")}
                                 </p>
                                 {isBarRateLoading ? (
-                                  <span className="text-sm font-semibold text-muted-foreground">—</span>
+                                  <span className="text-sm font-semibold text-muted-foreground">-</span>
                                 ) : (
                                   <DualPrice amount={applyFromPrice(opt) ?? 0} currency={opt.currency} inline className="text-sm font-semibold text-primary" />
                                 )}

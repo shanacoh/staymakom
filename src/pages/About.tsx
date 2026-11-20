@@ -110,7 +110,7 @@ const About = () => {
               tPage('aboutDifferent5')].
               map((item, index) =>
               <div key={index} className="flex items-start gap-4 text-base md:text-lg text-foreground/80">
-                  <span className="text-muted-foreground/50 mt-0.5">—</span>
+                  <span className="text-muted-foreground/50 mt-0.5">·</span>
                   <span>{item}</span>
                 </div>
               )}

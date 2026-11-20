@@ -65,7 +65,7 @@ export const ClientPaymentPill = ({ payment }: { payment: ClientPayment }) => (
 );
 
 export const SupplierPaymentPill = ({ payment }: { payment: SupplierPayment }) => {
-  if (payment === "none") return <span className="text-muted-foreground">—</span>;
+  if (payment === "none") return <span className="text-muted-foreground">-</span>;
   return payment === "paid" ? <Pill tone="neutral">Payé</Pill> : <Pill tone="amber">À payer</Pill>;
 };
 

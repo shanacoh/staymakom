@@ -224,7 +224,7 @@ Deno.serve(async (req: Request) => {
       .single();
     if (paymentError || !payment) {
       console.error('🚨 PAYMENT_LINK_ORPHAN — Revolut order created but DB insert failed', { booking_id, orderId: revolut.orderId, paymentError });
-      return new Response(JSON.stringify({ success: false, error: 'Lien créé côté Revolut mais échec d\'enregistrement — vérifier manuellement' }), {
+      return new Response(JSON.stringify({ success: false, error: 'Lien créé côté Revolut mais échec d\'enregistrement. Vérifier manuellement' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

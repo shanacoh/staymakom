@@ -78,7 +78,7 @@ export function ArticlePreview({
           <blockquote className="my-6 pl-6 border-l-4" style={{ borderColor: "#B8935A" }}>
             <p className="text-xl italic" style={{ color: "#5C4A3A" }}>{block.content}</p>
             {block.author && (
-              <cite className="block mt-2 text-sm font-medium">— {block.author}</cite>
+              <cite className="block mt-2 text-sm font-medium">{block.author}</cite>
             )}
           </blockquote>
         ) : null;
@@ -105,7 +105,7 @@ export function ArticlePreview({
       case "divider":
         return (
           <div className="text-center my-12" style={{ color: "#B8935A", letterSpacing: "0.3em", fontSize: "14px" }}>
-            — ✦ —
+            ✦
           </div>
         );
 

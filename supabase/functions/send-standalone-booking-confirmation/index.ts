@@ -95,8 +95,8 @@ const TEXTS: Record<PracticalLang, {
   contact: string;
 }> = {
   en: {
-    subject: (title) => `✓ Your experience is confirmed — ${title}`,
-    pageTitle: 'Booking Confirmation — StayMakom',
+    subject: (title) => `✓ Your experience is confirmed: ${title}`,
+    pageTitle: 'Booking Confirmation · Staymakom',
     eyebrow: 'Experience Only',
     banner: '✓ Booking Confirmed',
     bannerSub: 'We look forward to seeing you soon!',

@@ -42,7 +42,7 @@ export function useGenerateSeo(
       for (const field of SEO_FIELDS) {
         if (seo[field]) setValue(field, seo[field]);
       }
-      toast.success("SEO généré — relis-le avant de publier.");
+      toast.success("SEO généré, relis-le avant de publier.");
     } catch {
       toast.error("L'IA n'a pas pu générer le SEO, réessaie dans un instant.");
     } finally {

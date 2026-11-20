@@ -280,14 +280,14 @@ Deno.serve(async (req: Request) => {
             const alertHtml = `
               <h2>⚠️ Gift card update failed after successful booking</h2>
               <p>A booking was confirmed but the gift card balance could not be updated.
-                 The card may still be re-usable — please intervene manually.</p>
+                 The card may still be re-usable. Please intervene manually.</p>
               <ul>
                 <li><b>HG Booking ID:</b> ${hgBookingId}</li>
-                <li><b>Staymakom Ref:</b> ${body.staymakomRef ?? '—'}</li>
+                <li><b>Staymakom Ref:</b> ${body.staymakomRef ?? '-'}</li>
                 <li><b>Gift Card ID:</b> ${body.giftCard.id}</li>
                 <li><b>Amount used (intended):</b> ${body.giftCard.newAmountUsed}</li>
                 <li><b>Fully redeemed:</b> ${body.giftCard.isFullyRedeemed ? 'yes' : 'no'}</li>
-                <li><b>Customer email:</b> ${body.email ?? '—'}</li>
+                <li><b>Customer email:</b> ${body.email ?? '-'}</li>
                 <li><b>Error:</b> <pre>${errMsg}</pre></li>
               </ul>
               <p><b>Action requise :</b> aller dans /admin/gift-cards, ouvrir la carte
@@ -303,7 +303,7 @@ Deno.serve(async (req: Request) => {
               body: JSON.stringify({
                 from: 'Staymakom Alerts <reservations@staymakom.com>',
                 to: ['shana@staymakom.com'],
-                subject: `⚠️ Gift card update failed — manual action required (booking ${hgBookingId})`,
+                subject: `⚠️ Gift card update failed: manual action required (booking ${hgBookingId})`,
                 html: alertHtml,
               }),
             });
@@ -400,19 +400,19 @@ Deno.serve(async (req: Request) => {
           body: JSON.stringify({
             from: 'StayMakom <reservations@staymakom.com>',
             to: ['shana@staymakom.com'],
-            subject: `🏨 Nouvelle réservation — ${body.hotelName || body.experienceTitle || hgBookingId}`,
+            subject: `🏨 Nouvelle réservation : ${body.hotelName || body.experienceTitle || hgBookingId}`,
             html: `
               <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:24px;background:#fff;border-radius:8px;border:1px solid #eee;">
                 <h2 style="color:#1A1814;margin:0 0 16px;">🏨 Nouvelle réservation hôtel</h2>
                 <table style="width:100%;border-collapse:collapse;">
                   <tr><td style="padding:8px 0;color:#888;font-size:13px;">Réf. HyperGuest</td><td style="padding:8px 0;font-weight:600;">${hgBookingId}</td></tr>
-                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Expérience</td><td style="padding:8px 0;">${body.experienceTitle || '—'}</td></tr>
-                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Hôtel</td><td style="padding:8px 0;">${body.hotelName || '—'}</td></tr>
-                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Chambre</td><td style="padding:8px 0;">${body.roomName || '—'}</td></tr>
-                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Client</td><td style="padding:8px 0;">${body.guestName || '—'}</td></tr>
-                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Email</td><td style="padding:8px 0;">${body.email || '—'}</td></tr>
-                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Arrivée</td><td style="padding:8px 0;">${checkIn ? dateFormatted(checkIn) : '—'}</td></tr>
-                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Départ</td><td style="padding:8px 0;">${checkOut ? dateFormatted(checkOut) : '—'} (${body.nights} nuit${body.nights > 1 ? 's' : ''})</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Expérience</td><td style="padding:8px 0;">${body.experienceTitle || '-'}</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Hôtel</td><td style="padding:8px 0;">${body.hotelName || '-'}</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Chambre</td><td style="padding:8px 0;">${body.roomName || '-'}</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Client</td><td style="padding:8px 0;">${body.guestName || '-'}</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Email</td><td style="padding:8px 0;">${body.email || '-'}</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Arrivée</td><td style="padding:8px 0;">${checkIn ? dateFormatted(checkIn) : '-'}</td></tr>
+                  <tr><td style="padding:8px 0;color:#888;font-size:13px;">Départ</td><td style="padding:8px 0;">${checkOut ? dateFormatted(checkOut) : '-'} (${body.nights} nuit${body.nights > 1 ? 's' : ''})</td></tr>
                   <tr><td style="padding:8px 0;color:#888;font-size:13px;">Voyageurs</td><td style="padding:8px 0;">${body.partySize} personne${body.partySize > 1 ? 's' : ''}</td></tr>
                   <tr><td style="padding:8px 0;color:#888;font-size:13px;">Montant</td><td style="padding:8px 0;font-weight:700;color:#1A7A74;">${priceDisplay}</td></tr>
                 </table>

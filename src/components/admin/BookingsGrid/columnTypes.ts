@@ -49,7 +49,7 @@ export const CHANNEL_LABELS: Record<string, string> = Object.fromEntries(
 const CURRENCY_SYMBOLS: Record<string, string> = { ILS: "₪", USD: "$", EUR: "€" };
 
 export function formatCurrency(amount: number | null | undefined, currency: string | null | undefined) {
-  if (amount === null || amount === undefined) return "—";
+  if (amount === null || amount === undefined) return "-";
   const symbol = CURRENCY_SYMBOLS[currency || "ILS"] || currency || "₪";
   return `${symbol}${amount.toLocaleString("fr-FR")}`;
 }

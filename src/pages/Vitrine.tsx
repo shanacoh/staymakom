@@ -114,8 +114,8 @@ const Vitrine = () => {
             {isRTL
               ? "דף הדגמה: דוגמאות לחוויות StayMakom"
               : lang === "fr"
-                ? "Page de démonstration — exemples d'expériences StayMakom"
-                : "Demo page — StayMakom experience samples"}
+                ? "Page de démonstration : exemples d'expériences StayMakom"
+                : "Demo page: StayMakom experience samples"}
           </p>
         </div>
 

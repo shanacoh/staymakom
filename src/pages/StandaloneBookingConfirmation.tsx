@@ -154,7 +154,7 @@ export default function StandaloneBookingConfirmation() {
                     <Calendar className="h-3 w-3" /> {t.date}
                   </p>
                   <p className="font-semibold text-sm">
-                    {booking.booking_date ? formatDateDisplay(booking.booking_date, lang) : "—"}
+                    {booking.booking_date ? formatDateDisplay(booking.booking_date, lang) : "-"}
                   </p>
                 </div>
 

@@ -421,7 +421,7 @@ const CategoryEditor = () => {
           <CardHeader>
             <CardTitle className="text-base">Image hero</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Peu utilisée aujourd'hui — sert uniquement d'image de secours au partage sur les réseaux sociaux.
+              Peu utilisée aujourd'hui : sert uniquement d'image de secours au partage sur les réseaux sociaux.
             </p>
           </CardHeader>
           <CardContent>
@@ -472,7 +472,7 @@ const CategoryEditor = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Sous-titre — page Lancement</CardTitle>
+            <CardTitle className="text-base">Sous-titre (page Lancement)</CardTitle>
             <p className="text-sm text-muted-foreground">
               Texte court affiché sur la page de recherche filtrée (/launch/experiences).
             </p>
@@ -516,7 +516,7 @@ const CategoryEditor = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Titre et texte — page Catégorie dédiée</CardTitle>
+            <CardTitle className="text-base">Titre et texte (page Catégorie dédiée)</CardTitle>
             <p className="text-sm text-muted-foreground">
               Affichés sur la page catégorie autonome (/category/:slug), reliée depuis le pied de page du site.
             </p>

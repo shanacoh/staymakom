@@ -306,7 +306,7 @@ export default function BoatAvailabilityPopup({ open, onOpenChange, boat }: Prop
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="rounded-full h-9 gap-2 w-fit">
                     <CalendarIcon className="h-3.5 w-3.5" />
-                    {date ? format(new Date(date + "T12:00:00"), "d MMM", { locale: dateFnsLocale(l) }) : "—"}
+                    {date ? format(new Date(date + "T12:00:00"), "d MMM", { locale: dateFnsLocale(l) }) : "-"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">

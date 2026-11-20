@@ -19,9 +19,9 @@ const Cookies = () => {
 
           <h2 className="text-lg">Types of Cookies Used</h2>
           <ul className="text-sm">
-            <li><strong>Essential cookies</strong> — required for login and booking</li>
-            <li><strong>Performance cookies</strong> — Google Analytics 4</li>
-            <li><strong>Marketing cookies</strong> — Meta Pixel</li>
+            <li><strong>Essential cookies</strong>: required for login and booking</li>
+            <li><strong>Performance cookies</strong>: Google Analytics 4</li>
+            <li><strong>Marketing cookies</strong>: Meta Pixel</li>
           </ul>
 
           <h2 className="text-lg">Your Choices</h2>

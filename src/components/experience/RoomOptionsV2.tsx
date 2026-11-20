@@ -261,7 +261,7 @@ export function RoomOptionsV2({
                     {room.roomName}
                   </span>
                   <span className="text-sm font-semibold shrink-0">
-                    {isBarRateLoading ? "—" : formatPrice(applyFromPrice(ratePlan, price), currency)}
+                    {isBarRateLoading ? "-" : formatPrice(applyFromPrice(ratePlan, price), currency)}
                   </span>
                 </div>
 

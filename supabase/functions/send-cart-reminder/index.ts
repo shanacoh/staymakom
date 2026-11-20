@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
           from: "STAYMAKOM <noreply@staymakom.com>",
           reply_to: "shana@staymakom.com",
           to: [email],
-          subject: `Your saved stay is waiting — ${expTitle}`,
+          subject: `Your saved stay is waiting: ${expTitle}`,
           html: `
 <!DOCTYPE html>
 <html>
@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
     <tr><td>
       <h1 style="font-size:22px;font-weight:600;color:#1A1A1A;margin:0 0 8px;">Hi ${displayName},</h1>
       <p style="font-size:15px;color:#666;margin:0 0 24px;line-height:1.6;">
-        You saved <strong>${expTitle}</strong> — it's still available! Don't let this one slip away.
+        You saved <strong>${expTitle}</strong> and it's still available! Don't let this one slip away.
       </p>
     </td></tr>
     ${heroImg ? `<tr><td style="padding-bottom:20px;"><img src="${heroImg}" alt="${expTitle}" style="width:100%;border-radius:12px;object-fit:cover;max-height:240px;" /></td></tr>` : ""}

@@ -600,7 +600,7 @@ const PREVIEW_ITINERARY: ItineraryRow = {
             description: "Tel Aviv is one of the most fitness-forward cities in the world. Options: bootcamp, yoga, pilates, reformer, beachfront surf lesson, or a half-day trail hike north of the city.",
           },
         ],
-        daytrips_intro: "Easy day trips from Tel Aviv to experience incredible places while still keeping the city as your home base. All under 2 hours away — you're back in time for dinner.",
+        daytrips_intro: "Easy day trips from Tel Aviv to experience incredible places while still keeping the city as your home base. All under 2 hours away, so you're back in time for dinner.",
         daytrips: [
           {
             icon: "🍷",

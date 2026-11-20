@@ -62,7 +62,7 @@ function LigneCard({ ligne, lang, reaction, onReagir }: {
   const [commentaireOuvert, setCommentaireOuvert] = useState(false);
   const [commentaire, setCommentaire] = useState("");
 
-  const titre = ligne.texte_libre || localise(ligne.nom_code, ligne.nom_code_en, ligne.nom_code_he, lang) || "—";
+  const titre = ligne.texte_libre || localise(ligne.nom_code, ligne.nom_code_en, ligne.nom_code_he, lang) || "-";
   const description = localise(ligne.description_sensorielle, ligne.description_sensorielle_en, ligne.description_sensorielle_he, lang);
 
   return (
@@ -150,7 +150,7 @@ function PropositionView({ token, nomDestinataire, objectif, langParam }: { toke
       setRetoursEnvoyes(true);
       toast.success(t("retoursEnvoyes", lang));
     } catch {
-      toast.error("—");
+      toast.error("-");
     }
   };
 

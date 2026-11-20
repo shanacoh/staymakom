@@ -224,7 +224,7 @@ export function BlockItem({
             <Textarea
               value={block.content}
               onChange={(e) => onChange({ ...block, content: e.target.value })}
-              placeholder="Enter pull quote — editorial highlight text..."
+              placeholder="Enter pull quote: editorial highlight text..."
               rows={3}
               className={`italic ${inputClass}`}
               dir={dir}
@@ -244,7 +244,7 @@ export function BlockItem({
       case "divider":
         return (
           <div className="py-4 text-center">
-            <span className="text-[#B8935A] text-sm tracking-[0.3em]">— ✦ —</span>
+            <span className="text-[#B8935A] text-sm tracking-[0.3em]">✦</span>
             <p className="text-xs text-muted-foreground mt-2">Decorative divider</p>
           </div>
         );

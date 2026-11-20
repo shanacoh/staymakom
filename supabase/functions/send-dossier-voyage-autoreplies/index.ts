@@ -79,7 +79,7 @@ function buildEmailHtml(params: { prenom: string; questions: string[] }): string
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Votre demande de voyage — StayMakom</title>
+  <title>Votre demande de voyage · Staymakom</title>
   <style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');</style>
 </head>
 <body style="margin:0;padding:0;background:#FAF9F6;font-family:'Inter',Helvetica,Arial,sans-serif;">
@@ -114,7 +114,7 @@ function buildEmailHtml(params: { prenom: string; questions: string[] }): string
                 </tr>
               </table>
               <p style="margin:0;font-size:14px;color:#888;line-height:1.6;">
-                Tu peux simplement répondre à cet email — je m'occupe du reste.<br/>
+                Tu peux simplement répondre à cet email, je m'occupe du reste.<br/>
                 À très vite,<br/>Shana
               </p>
             </td>
@@ -167,7 +167,7 @@ Deno.serve(async (req) => {
         .slice(0, 3)
         .map((q) => q.texte_fr);
       const html = buildEmailHtml({ prenom: d.nom_destinataire.split(" ")[0], questions: questions.length > 0 ? questions : ["(aucune question manquante pour ce dossier)"] });
-      return json(req, { html, subject: "Votre demande de voyage sur mesure — StayMakom" });
+      return json(req, { html, subject: "Votre demande de voyage sur mesure · Staymakom" });
     }
 
     if (!RESEND_API_KEY) return json(req, { error: "RESEND_API_KEY non configurée" }, 500);
@@ -206,7 +206,7 @@ Deno.serve(async (req) => {
           from: "Shana @ StayMakom <hello@staymakom.com>",
           reply_to: "shana@staymakom.com",
           to: [dossier.email],
-          subject: "Votre demande de voyage sur mesure — StayMakom",
+          subject: "Votre demande de voyage sur mesure · Staymakom",
           html,
         }),
       });

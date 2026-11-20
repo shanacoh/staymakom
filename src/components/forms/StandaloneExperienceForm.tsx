@@ -3252,7 +3252,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
           <div>
             <CardTitle>Options tarifaires</CardTitle>
             <CardDescription>
-              Proposez plusieurs formules à prix différents (ex: "12h — Menu Découverte" à 150₪, "19h — Menu Dégustation" à 280₪)
+              Proposez plusieurs formules à prix différents (ex: "12h · Menu Découverte" à 150₪, "19h · Menu Dégustation" à 280₪)
             </CardDescription>
           </div>
           <div className="flex items-center gap-3">
@@ -3424,7 +3424,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
               })}
             </div>
             {availableDays.length === 0 && (
-              <p className="text-xs text-destructive mt-2">Aucun jour sélectionné — l'expérience sera indisponible.</p>
+              <p className="text-xs text-destructive mt-2">Aucun jour sélectionné : l'expérience sera indisponible.</p>
             )}
             {availableDays.length > 0 && availableDays.length < 7 && (
               <p className="text-xs text-muted-foreground mt-2">
@@ -3446,7 +3446,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                   Dates bloquées (exceptions)
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Cliquez sur une date pour la marquer comme indisponible — cliquez à nouveau pour la débloquer
+                  Cliquez sur une date pour la marquer comme indisponible, cliquez à nouveau pour la débloquer
                 </p>
               </div>
               {blockedDates.length > 0 && (
@@ -3512,7 +3512,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
             )}
             {blockedDates.length === 0 && (
               <p className="text-xs text-muted-foreground mt-2 italic">
-                Aucune date bloquée — disponible tous les jours autorisés ci-dessus.
+                Aucune date bloquée : disponible tous les jours autorisés ci-dessus.
               </p>
             )}
           </div>
@@ -3556,7 +3556,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                   Dates disponibles
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Cliquez sur les dates pour les ouvrir — tout le reste sera fermé
+                  Cliquez sur les dates pour les ouvrir, tout le reste sera fermé
                 </p>
               </div>
               {whitelistedDates.length > 0 && (
@@ -3653,7 +3653,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
               </div>
             ) : (
               <p className="text-xs text-muted-foreground mt-2 italic">
-                Aucune date sélectionnée — l'expérience sera invisible dans le calendrier.
+                Aucune date sélectionnée : l'expérience sera invisible dans le calendrier.
               </p>
             )}
           </div>
@@ -4104,7 +4104,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
             <Card>
               <CardHeader>
                 <CardTitle>Coût prestataire principal</CardTitle>
-                <CardDescription>Référence utilisée pour la suggestion de prix de vente — définie par l'étoile ⭐ dans la liste des prestataires ci-dessus</CardDescription>
+                <CardDescription>Référence utilisée pour la suggestion de prix de vente, définie par l'étoile ⭐ dans la liste des prestataires ci-dessus</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -4112,8 +4112,8 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                     <Label>Prix adulte (prestataire principal)</Label>
                     <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm font-medium">
                       {primarySupplier
-                        ? `${primarySupplier.supplier_name} — ${referencePriceAdult} ${currencySymbol}`
-                        : "Aucun prestataire principal — ajoutez-en un dans la liste ci-dessus"}
+                        ? `${primarySupplier.supplier_name} · ${referencePriceAdult} ${currencySymbol}`
+                        : "Aucun prestataire principal : ajoutez-en un dans la liste ci-dessus"}
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -4202,7 +4202,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
             <Card>
               <CardHeader>
                 <CardTitle>Conditions d'annulation</CardTitle>
-                <CardDescription>Facultatif — peut être rempli plus tard</CardDescription>
+                <CardDescription>Facultatif, peut être rempli plus tard</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-3 gap-6">
@@ -4367,7 +4367,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
                         </>
                       ) : (
                         <>
-                          <p className="text-2xl font-bold text-muted-foreground">—</p>
+                          <p className="text-2xl font-bold text-muted-foreground">-</p>
                           <p className="text-xs text-muted-foreground mt-1">Tarif enfant désactivé</p>
                         </>
                       )}
@@ -4467,7 +4467,7 @@ export function StandaloneExperienceForm({ experienceId, onClose, defaultCategor
               <CardHeader>
                 <CardTitle>Catégories & Mise en avant</CardTitle>
                 <CardDescription>
-                  Sélectionnez une ou plusieurs catégories — l'expérience apparaîtra dans chacune
+                  Sélectionnez une ou plusieurs catégories : l'expérience apparaîtra dans chacune
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">

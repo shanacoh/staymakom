@@ -61,7 +61,7 @@ async function sendNewBookingAdminEmail(
     if (!booking) return;
 
     const exp = booking.standalone_experiences as { title: string } | null;
-    const title = exp?.title || '—';
+    const title = exp?.title || '-';
     const dateFormatted = new Date(booking.booking_date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     const currencySymbol: Record<string, string> = { ILS: '₪', USD: '$', EUR: '€' };
     const priceDisplay = `${currencySymbol[booking.currency] || booking.currency}${booking.sell_price}`;
@@ -74,7 +74,7 @@ async function sendNewBookingAdminEmail(
       body: JSON.stringify({
         from: 'StayMakom <reservations@staymakom.com>',
         to: ['shana@staymakom.com'],
-        subject: `🎉 Nouvelle réservation — ${title}`,
+        subject: `🎉 Nouvelle réservation : ${title}`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:24px;background:#fff;border-radius:8px;border:1px solid #eee;">
             <h2 style="color:#1A1814;margin:0 0 16px;">🎉 Nouvelle réservation standalone</h2>

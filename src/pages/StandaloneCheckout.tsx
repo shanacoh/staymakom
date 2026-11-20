@@ -731,7 +731,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                   {appliedGiftCard ? (
                     <div className="flex items-center justify-between px-3 py-2 bg-emerald-50 border border-emerald-200">
                       <span className="text-sm text-emerald-800 font-medium">
-                        {appliedGiftCard.code} — -{currencySymbol}{giftCardApplied}
+                        {appliedGiftCard.code} · -{currencySymbol}{giftCardApplied}
                       </span>
                       <button
                         type="button"
@@ -772,7 +772,7 @@ function StandaloneCheckoutContent({ state }: { state: StandaloneCheckoutState }
                   {appliedPromo ? (
                     <div className="flex items-center justify-between px-3 py-2 bg-emerald-50 border border-emerald-200">
                       <span className="text-sm text-emerald-800 font-medium">
-                        {appliedPromo.code} — -{promoDiscountLabel}
+                        {appliedPromo.code} · -{promoDiscountLabel}
                         {" "}(-{currencySymbol}{promoDiscount})
                       </span>
                       <button

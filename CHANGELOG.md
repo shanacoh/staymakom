@@ -4,6 +4,20 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 20/11/2026 : Plus aucun tiret long (—) dans les textes du site, des emails et du back-office
+
+### Ce qui a changé côté code
+- Site : textes anglais et français de `src/lib/translations.ts` (paiement, carte cadeau, réservations, page Entreprises, programme de fidélité, page démo), page cookies, itinéraire AJ, page démo `Vitrine`, codes cadeau / promo du paiement (« · »), puces de la page À propos (« · »), citations et séparateurs des articles du Journal (« ✦ » seul), valeurs manquantes affichées « - » au lieu de « — ».
+- Emails client : confirmation d'expérience (objet et titre de page), rappel de panier, réponse aux demandes de voyage, questionnaire sur-mesure. Emails internes : nouvelle réservation, acompte / solde reçu, erreur webhook, nouvelle demande, carte cadeau non mise à jour, lien de paiement (`confirm-standalone-payment`, `revolut-webhook`, `notify-standalone-experience-request`, `process-booking`, `create-booking-payment-link`, `send-standalone-booking-confirmation`, `send-cart-reminder`, `send-dossier-voyage-autoreplies`, `send-tailor-questionnaire`).
+- Back-office : formulaires d'expérience, éditeur de catégorie, éditeur et aperçu du Journal, tableaux des réservations.
+- Laissés volontairement : libellés de commande Revolut (« StayMakom — … », « Acompte — … », « Solde — … », reconnus par `_shared/revolut-order.ts` pour identifier les paiements du site), messages techniques des journaux d'erreurs, outils de diagnostic, consignes de l'IA (où le tiret long est cité comme interdit), commentaires du code.
+
+### Ce qui a changé côté base de données
+- Pas de migration. Données : tiret long remplacé par une virgule dans 2 expériences (« à savoir ») et 3 hôtels (histoire, description Google, anglais et hébreu). Copies avant modification dans `backup_20261119.tirets_standalone` et `backup_20261119.tirets_hotels2`. Les traductions ES / RU / DE de ces textes seront refaites par la tâche de nuit.
+
+### Pourquoi ce changement
+- Règle de la marque : jamais de tiret long, dans aucune langue.
+
 ## 20/11/2026 : Plus de tiret long (—) dans les textes hébreu ni dans les titres d'onglet / Google
 
 ### Ce qui a changé côté code

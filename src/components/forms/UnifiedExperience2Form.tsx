@@ -1461,7 +1461,7 @@ export function UnifiedExperience2Form({
                     Multi-hôtel : ordonnez les étapes du séjour.{" "}
                     {experienceHotels.length > 0 && (
                       <span className="font-medium text-foreground">
-                        {experienceHotels.length} hôtel(s) — Total {totalNights} nuit(s)
+                        {experienceHotels.length} hôtel(s) · Total {totalNights} nuit(s)
                       </span>
                     )}
                   </p>
@@ -1776,7 +1776,7 @@ export function UnifiedExperience2Form({
                 {allParcoursImages.length > 0 && (
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">
-                      Images depuis les hôtels (cliquer pour ajouter) — {allParcoursImages.length} image(s)
+                      Images depuis les hôtels (cliquer pour ajouter) · {allParcoursImages.length} image(s)
                     </Label>
                     <div className="grid grid-cols-6 gap-2 p-3 bg-muted/30 rounded-lg border">
                       {allParcoursImages.map((img, index) => (
@@ -1984,7 +1984,7 @@ export function UnifiedExperience2Form({
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                      <p className="font-medium text-sm">Données HyperGuest — indicatif 30 jours</p>
+                      <p className="font-medium text-sm">Données HyperGuest : indicatif 30 jours</p>
                     </div>
                     <TooltipProvider>
                       <Tooltip>
@@ -2034,14 +2034,14 @@ export function UnifiedExperience2Form({
                               <span className="text-center font-medium">{minBarRatePublic.toFixed(0)} ₪</span>
                               <span className="text-center font-medium">{minNetRate.toFixed(0)} ₪</span>
                               <span className="text-center font-medium">{minDiffILS.toFixed(0)} ₪</span>
-                              <span className="text-center font-medium">{minDiffPct !== null ? `${minDiffPct.toFixed(1)} %` : "—"}</span>
+                              <span className="text-center font-medium">{minDiffPct !== null ? `${minDiffPct.toFixed(1)} %` : "-"}</span>
                             </div>
                             <div className="grid grid-cols-5 gap-2">
                               <span className="text-muted-foreground">Max</span>
-                              <span className="text-center font-medium">{maxBarRatePublic !== null ? maxBarRatePublic.toFixed(0) : "—"} ₪</span>
-                              <span className="text-center font-medium">{maxNetRate !== null ? maxNetRate.toFixed(0) : "—"} ₪</span>
-                              <span className="text-center font-medium">{maxDiffILS !== null ? `${maxDiffILS.toFixed(0)} ₪` : "—"}</span>
-                              <span className="text-center font-medium">{maxDiffPct !== null ? `${maxDiffPct.toFixed(1)} %` : "—"}</span>
+                              <span className="text-center font-medium">{maxBarRatePublic !== null ? maxBarRatePublic.toFixed(0) : "-"} ₪</span>
+                              <span className="text-center font-medium">{maxNetRate !== null ? maxNetRate.toFixed(0) : "-"} ₪</span>
+                              <span className="text-center font-medium">{maxDiffILS !== null ? `${maxDiffILS.toFixed(0)} ₪` : "-"}</span>
+                              <span className="text-center font-medium">{maxDiffPct !== null ? `${maxDiffPct.toFixed(1)} %` : "-"}</span>
                             </div>
                           </>
                         );
@@ -2128,7 +2128,7 @@ export function UnifiedExperience2Form({
                 <div className="rounded-[9px] border border-[#dbe3ea] bg-white p-3 space-y-3">
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-4 w-4 text-primary" />
-                    <p className="font-semibold text-sm">Expérience <span className="text-xs font-normal text-muted-foreground ml-1">— remplis l'un ou l'autre</span></p>
+                    <p className="font-semibold text-sm">Expérience <span className="text-xs font-normal text-muted-foreground ml-1">(remplis l'un ou l'autre)</span></p>
                   </div>
 
                   <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-start">
@@ -2377,7 +2377,7 @@ export function UnifiedExperience2Form({
                             </div>
                           ) : (
                             <p className="text-[11px] text-muted-foreground italic">
-                              Prix plancher indisponible — charge les tarifs HyperGuest pour connaître le prix public minimum.
+                              Prix plancher indisponible : charge les tarifs HyperGuest pour connaître le prix public minimum.
                             </p>
                           )}
                         </div>
@@ -2516,7 +2516,7 @@ export function UnifiedExperience2Form({
                         <div className="flex items-center gap-2">
                           <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">{index + 1}</span>
                           <span className="font-medium">{hotel.name}</span>
-                          <span className="text-sm text-muted-foreground">— {eh.nights} nuit{eh.nights > 1 ? "s" : ""}</span>
+                          <span className="text-sm text-muted-foreground">· {eh.nights} nuit{eh.nights > 1 ? "s" : ""}</span>
                         </div>
                         <ExperienceAvailabilityPreview
                           hyperguestPropertyId={hotel.hyperguest_property_id != null ? String(hotel.hyperguest_property_id) : null}
@@ -2554,7 +2554,7 @@ export function UnifiedExperience2Form({
                                 <span className="font-medium">
                                   {price != null && price > 0
                                     ? `₪${price.toLocaleString("en-IL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                    : "—"}
+                                    : "-"}
                                 </span>
                               </div>
                             );

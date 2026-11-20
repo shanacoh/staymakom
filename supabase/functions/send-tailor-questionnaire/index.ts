@@ -135,7 +135,7 @@ serve(async (req) => {
                 Hello ${greeting},
               </h2>
               <p style="color: #444444; font-size: 16px; line-height: 1.7; margin: 0 0 16px;">
-                Thank you for sharing your dream stay with us — we loved reading about it.
+                Thank you for sharing your dream stay with us. We loved reading about it.
               </p>
               <p style="color: #444444; font-size: 16px; line-height: 1.7; margin: 0 0 32px;">
                 To find the perfect match for you, we'd love to know just two more things. It takes less than a minute:

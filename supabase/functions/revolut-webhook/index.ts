@@ -302,7 +302,7 @@ Deno.serve(async (req) => {
 
               if (booking) {
                 const exp = booking.standalone_experiences as { title: string } | null;
-                const title = exp?.title || '—';
+                const title = exp?.title || '-';
                 const dateFormatted = new Date(booking.booking_date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
                 const currencySymbol: Record<string, string> = { ILS: '₪', USD: '$', EUR: '€' };
                 const priceDisplay = `${currencySymbol[booking.currency] || booking.currency}${booking.sell_price}`;
@@ -310,7 +310,7 @@ Deno.serve(async (req) => {
                 const backofficeUrl = `https://staymakom.com/admin/standalone-bookings`;
 
                 await sendAdminAlertEmail(
-                  `🎉 Nouvelle réservation — ${title}`,
+                  `🎉 Nouvelle réservation : ${title}`,
                   `
                     <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:24px;background:#fff;border-radius:8px;border:1px solid #eee;">
                       <h2 style="color:#1A1814;margin:0 0 16px;">🎉 Nouvelle réservation standalone</h2>
@@ -408,7 +408,7 @@ Deno.serve(async (req) => {
                   const currencySymbol: Record<string, string> = { ILS: '₪', USD: '$', EUR: '€' };
                   const amountDisplay = `${currencySymbol[booking.currency] || booking.currency}${totalPaid}`;
                   await sendAdminAlertEmail(
-                    isFullyPaid ? `✅ Solde reçu — ${exp?.title || 'Réservation'}` : `💶 Acompte reçu — ${exp?.title || 'Réservation'}`,
+                    isFullyPaid ? `✅ Solde reçu : ${exp?.title || 'Réservation'}` : `💶 Acompte reçu : ${exp?.title || 'Réservation'}`,
                     `<div style="font-family:Arial,sans-serif;padding:16px;">
                       <p><b>${isFullyPaid ? 'Réservation soldée' : 'Acompte payé'}</b> pour ${exp?.title || 'une réservation'}.</p>
                       <p>Client : ${booking.customer_name} (${booking.customer_email})</p>
@@ -428,11 +428,11 @@ Deno.serve(async (req) => {
         // Shana par email plutôt qu'un simple log, et on répond en erreur pour que Revolut
         // réessaie ce webhook automatiquement.
         await sendAdminAlertEmail(
-          `⚠️ Erreur webhook Revolut — commande ${orderId}`,
+          `⚠️ Erreur webhook Revolut : commande ${orderId}`,
           `<div style="font-family:Arial,sans-serif;padding:16px;">
             <p>La mise à jour d'une réservation après un événement Revolut (<b>${eventType}</b>, commande <b>${orderId}</b>) a échoué en base de données.</p>
             <p>Erreur : <code>${String((dbError as { message?: string })?.message || dbError)}</code></p>
-            <p>Le paiement a peut-être réussi côté Revolut sans que le statut soit mis à jour sur le site — à vérifier manuellement.</p>
+            <p>Le paiement a peut-être réussi côté Revolut sans que le statut soit mis à jour sur le site. À vérifier manuellement.</p>
           </div>`,
         );
         return new Response(JSON.stringify({ error: 'Database update failed' }), {

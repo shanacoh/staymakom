@@ -123,7 +123,7 @@ Deno.serve(async (req: Request) => {
 
     const html = `
       <div style="font-family:Helvetica,Arial,sans-serif;font-size:15px;color:#1a1a1a;line-height:1.6;">
-        <p style="font-size:17px;font-weight:700;">${request.is_urgent ? '⚡ URGENT — ' : ''}Nouvelle demande — ${escapeHTML(subjectTitle)}</p>
+        <p style="font-size:17px;font-weight:700;">${request.is_urgent ? '⚡ URGENT · ' : ''}Nouvelle demande : ${escapeHTML(subjectTitle)}</p>
         <table cellpadding="0" cellspacing="0" style="margin:16px 0;">
           <tr><td style="color:#999;padding-right:12px;">Client</td><td><strong>${request.customer_name ? escapeHTML(request.customer_name) : 'Non renseigné (contact via WhatsApp)'}</strong></td></tr>
           ${request.customer_phone ? `<tr><td style="color:#999;padding-right:12px;">WhatsApp</td><td>${escapeHTML(request.customer_phone)}</td></tr>` : ''}
@@ -142,7 +142,7 @@ Deno.serve(async (req: Request) => {
         </p>
       </div>`;
 
-    const subject = `${request.is_urgent ? '⚡ URGENT — ' : ''}Nouvelle demande — ${subjectTitle}`;
+    const subject = `${request.is_urgent ? '⚡ URGENT · ' : ''}Nouvelle demande : ${subjectTitle}`;
 
     if (preview) {
       return new Response(JSON.stringify({ html, subject }), {

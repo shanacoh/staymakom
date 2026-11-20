@@ -135,7 +135,7 @@ function DossierLineRow({ line, onLineCost, onLinePaid }: { line: DossierLine } 
           <span className="truncate">{line.product}</span>
         </div>
       </TableCell>
-      <TableCell className="tabular-nums text-muted-foreground">{line.pax || "—"}</TableCell>
+      <TableCell className="tabular-nums text-muted-foreground">{line.pax || "-"}</TableCell>
       <TableCell className="text-right text-xs text-muted-foreground">inclus</TableCell>
       <TableCell>
         <SupplierPaymentPill payment={line.supplierPaid ? "paid" : "todo"} />
@@ -226,7 +226,7 @@ function SummaryRow({
             </button>
           )}
         </TableCell>
-        <TableCell className="tabular-nums">{row.pax || "—"}</TableCell>
+        <TableCell className="tabular-nums">{row.pax || "-"}</TableCell>
         <TableCell className="whitespace-nowrap text-right">
           <div className={cn("font-medium tabular-nums", cancelled && keptByStaymakom(row) === 0 && "line-through")}>
             {formatCurrency(row.amount, row.currency)}

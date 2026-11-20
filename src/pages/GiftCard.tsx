@@ -88,7 +88,7 @@ function GiftCardPreview({
           <p className="text-white text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight drop-shadow-lg">
             {displayedAmount != null
               ? `${displayedSymbol}${Math.round(displayedAmount).toLocaleString("en-US")}`
-              : `${displayedSymbol}—`}
+              : `${displayedSymbol}-`}
           </p>
           <p className="text-white/60 text-xs sm:text-sm italic font-light">
             Gift of Escape
