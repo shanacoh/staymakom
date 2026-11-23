@@ -196,16 +196,57 @@ export function ProviderForm({ draft, onChange, provider, hotels }: ProviderForm
 
       <Section title="Commission et réservation">
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Commission (%)" htmlFor="provider-commission" hint="Vide tant qu'elle n'est pas convenue.">
-            <Input
-              id="provider-commission"
-              type="number"
-              min={0}
-              max={100}
-              step="0.5"
-              defaultValue={draft.commission_percent ?? ""}
-              onChange={(e) => onChange({ commission_percent: e.target.value === "" ? null : Number(e.target.value) })}
-            />
+          <Field
+            label="Commission"
+            htmlFor="provider-commission"
+            hint={
+              draft.provider_type === "hotel"
+                ? "Pourcentage uniquement. Vide tant qu'elle n'est pas convenue : le contrat ne peut pas être signé."
+                : "Vide tant qu'elle n'est pas convenue : les conditions ne peuvent pas être acceptées. Si tu la modifies après signature, le partenaire devra accepter à nouveau."
+            }
+          >
+            <div className="flex flex-wrap gap-2">
+              <select
+                aria-label="Type de commission"
+                className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                value={draft.commission_type ?? ""}
+                onChange={(e) => {
+                  const type = (e.target.value || null) as ProviderDraft["commission_type"];
+                  onChange({
+                    commission_type: type,
+                    commission_value: type ? draft.commission_value : null,
+                    commission_fixed_unit: type === "fixed" ? draft.commission_fixed_unit ?? "per_person" : null,
+                  });
+                }}
+              >
+                <option value="">À saisir</option>
+                <option value="percent">Pourcentage</option>
+                {draft.provider_type !== "hotel" && <option value="fixed">Montant fixe (ILS)</option>}
+              </select>
+              {draft.commission_type && (
+                <Input
+                  id="provider-commission"
+                  type="number"
+                  min={0}
+                  max={draft.commission_type === "percent" ? 100 : undefined}
+                  step="0.5"
+                  className="w-28"
+                  value={draft.commission_value ?? ""}
+                  onChange={(e) => onChange({ commission_value: e.target.value === "" ? null : Number(e.target.value) })}
+                />
+              )}
+              {draft.commission_type === "fixed" && (
+                <select
+                  aria-label="Unité"
+                  className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                  value={draft.commission_fixed_unit ?? "per_person"}
+                  onChange={(e) => onChange({ commission_fixed_unit: e.target.value as ProviderDraft["commission_fixed_unit"] })}
+                >
+                  <option value="per_person">par personne</option>
+                  <option value="per_booking">par réservation</option>
+                </select>
+              )}
+            </div>
           </Field>
           {hotels.length > 0 && (
             <Field label="Commission notée sur ses hôtels" hint="Lecture seule. Se modifie sur la fiche de l'hôtel, rien n'est recalculé ici.">

@@ -90,6 +90,7 @@ const TEXTS: Record<PracticalLang, {
   guests: (count: number) => string;
   total: string;
   meetingPoint: string;
+  cancellation: string;
   goodToKnow: string;
   cta: string;
   contact: string;
@@ -110,6 +111,7 @@ const TEXTS: Record<PracticalLang, {
     guests: (count) => `${count} person${count > 1 ? 's' : ''}`,
     total: 'Total',
     meetingPoint: 'Meeting Point',
+    cancellation: 'Cancellation',
     goodToKnow: 'Good to Know',
     cta: 'View My Booking',
     contact: 'Questions? Reply to this email or contact us at',
@@ -130,6 +132,7 @@ const TEXTS: Record<PracticalLang, {
     guests: (count) => `${count} personne${count > 1 ? 's' : ''}`,
     total: 'Total',
     meetingPoint: 'Point de rendez-vous',
+    cancellation: 'Annulation',
     goodToKnow: 'À savoir',
     cta: 'Voir ma réservation',
     contact: 'Une question ? Répondez à cet email ou écrivez-nous à',
@@ -150,6 +153,7 @@ const TEXTS: Record<PracticalLang, {
     guests: (count) => `${count}`,
     total: 'סה"כ',
     meetingPoint: 'נקודת מפגש',
+    cancellation: 'ביטול',
     goodToKnow: 'חשוב לדעת',
     cta: 'לצפייה בהזמנה',
     contact: 'יש שאלה? אפשר להשיב למייל הזה או לכתוב לנו אל',
@@ -170,6 +174,7 @@ const TEXTS: Record<PracticalLang, {
     guests: (count) => `${count} persona${count === 1 ? '' : 's'}`,
     total: 'Total',
     meetingPoint: 'Punto de encuentro',
+    cancellation: 'Cancelación',
     goodToKnow: 'Bueno saber',
     cta: 'Ver mi reserva',
     contact: '¿Tienes una pregunta? Responde a este correo o escríbenos a',
@@ -190,6 +195,7 @@ const TEXTS: Record<PracticalLang, {
     guests: (count) => `${count} чел.`,
     total: 'Итого',
     meetingPoint: 'Место встречи',
+    cancellation: 'Отмена',
     goodToKnow: 'Полезно знать',
     cta: 'Открыть бронирование',
     contact: 'Есть вопрос? Ответьте на это письмо или напишите нам:',
@@ -210,6 +216,7 @@ const TEXTS: Record<PracticalLang, {
     guests: (count) => `${count} ${count === 1 ? 'Person' : 'Personen'}`,
     total: 'Gesamt',
     meetingPoint: 'Treffpunkt',
+    cancellation: 'Stornierung',
     goodToKnow: 'Gut zu wissen',
     cta: 'Meine Buchung ansehen',
     contact: 'Fragen? Antworte auf diese E-Mail oder schreib uns an',
@@ -231,6 +238,8 @@ function buildEmailHtml(params: {
   bookingRef: string;
   practicalInfo?: PracticalInfo | null;
   requiresEntryTicket?: boolean;
+  /** Politique d'annulation en vigueur au moment du paiement (celle de la fiche à défaut). */
+  cancellationPolicy?: string;
 }): string {
   const {
     guestName, experienceTitle, bookingDate, timeSlot,
@@ -340,6 +349,14 @@ function buildEmailHtml(params: {
                               </td>
                             </tr>
                             ` : ''}
+                            ${params.cancellationPolicy ? `
+                            <tr>
+                              <td colspan="2" style="padding-bottom:12px;">
+                                <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#999;">${t.cancellation}</p>
+                                <p style="margin:4px 0 0;font-size:14px;color:#1a1a1a;">${escapeHTML(params.cancellationPolicy)}</p>
+                              </td>
+                            </tr>
+                            ` : ''}
                           </table>
                         </td>
                       </tr>
@@ -396,6 +413,18 @@ ${params.requiresEntryTicket ? `
   </table>
 </body>
 </html>`;
+}
+
+// La politique d'annulation de la réservation : celle notée au moment du paiement (un changement
+// ultérieur sur la fiche ne s'applique pas), sinon celle de la fiche. Anglais pour es / ru / de.
+function cancellationPolicyFor(
+  snapshot: Record<string, string> | null,
+  experience: Record<string, unknown> | null,
+  lang: PracticalLang,
+): string {
+  const own = lang === 'fr' || lang === 'he' ? lang : 'en';
+  if (snapshot && (snapshot[own] || snapshot.en)) return (snapshot[own] || snapshot.en).trim();
+  return localizedField(experience, 'cancellation_policy', own as PracticalLang);
 }
 
 // Champ d'une fiche dans la langue du client ; à défaut, la version anglaise.
@@ -518,7 +547,7 @@ Deno.serve(async (req: Request) => {
     // En mode aperçu sans token, on prend la réservation la plus récente pour montrer un rendu réel.
     const bookingQuery = supabase
       .from('standalone_bookings')
-      .select('id, customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, confirmation_token, custom_experience_title, custom_address, custom_regulations, status, is_cancelled, product_type, preferred_lang, client_locale, standalone_experience_id, standalone_experiences(id, title, title_fr, title_he, address, address_fr, address_he, requires_entry_ticket)');
+      .select('id, customer_name, customer_email, booking_date, time_slot, party_size, sell_price, currency, confirmation_token, custom_experience_title, custom_address, custom_regulations, status, is_cancelled, product_type, preferred_lang, client_locale, standalone_experience_id, cancellation_policy_snapshot, standalone_experiences(id, title, title_fr, title_he, address, address_fr, address_he, requires_entry_ticket, cancellation_policy, cancellation_policy_fr, cancellation_policy_he)');
     const { data: booking, error: bookingError } = confirmation_token
       ? await bookingQuery.eq('confirmation_token', confirmation_token).single()
       : await bookingQuery.order('created_at', { ascending: false }).limit(1).single();
@@ -562,6 +591,7 @@ Deno.serve(async (req: Request) => {
       bookingRef: `SM-${booking.id.slice(0, 8).toUpperCase()}`,
       practicalInfo,
       requiresEntryTicket: (experience as Record<string, unknown> | null)?.requires_entry_ticket === true,
+      cancellationPolicy: cancellationPolicyFor(booking.cancellation_policy_snapshot as Record<string, string> | null, experienceRow, lang) || undefined,
     });
 
     const subject = TEXTS[lang].subject(experienceTitle);

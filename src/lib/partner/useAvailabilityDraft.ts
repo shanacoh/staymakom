@@ -4,12 +4,14 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { partnerKeys, setPartnerAvailability } from "@/lib/partner/api";
+import { goliveKeys, usePartnerAccess } from "@/lib/partner/access";
+import { partnerKeys } from "@/lib/partner/api";
 import { usePartner } from "@/lib/partner/context";
 import type { PartnerAvailability } from "@/lib/partner/types";
 
 export function useAvailabilityDraft(experienceId: string, initial: PartnerAvailability) {
   const { t } = usePartner();
+  const access = usePartnerAccess();
   const queryClient = useQueryClient();
   const [saved, setSaved] = useState<PartnerAvailability>(initial);
   const [draft, setDraft] = useState<PartnerAvailability>(initial);
@@ -19,12 +21,14 @@ export function useAvailabilityDraft(experienceId: string, initial: PartnerAvail
   const save = async () => {
     setSaving(true);
     try {
-      const applied = await setPartnerAvailability(experienceId, draft);
+      const applied = await access.setAvailability(experienceId, draft);
       setSaved(applied);
       setDraft(applied);
       toast.success(t.avSaved);
       queryClient.invalidateQueries({ queryKey: partnerKeys.experience(experienceId) });
       queryClient.invalidateQueries({ queryKey: partnerKeys.experiences });
+      queryClient.invalidateQueries({ queryKey: goliveKeys.experience(access.scope, experienceId) });
+      queryClient.invalidateQueries({ queryKey: goliveKeys.golive(access.scope) });
     } catch {
       toast.error(t.errorGeneric);
     } finally {

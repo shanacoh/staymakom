@@ -47,7 +47,7 @@ Deno.serve(async (req: Request) => {
     if (providerError || !provider) return json({ error: "Prestataire introuvable" }, 404);
     if (provider.status === "arrete") return json({ error: "Ce prestataire est au statut « Arrêté » : il ne peut pas être invité." }, 400);
     // V0 : l'espace partenaire ne couvre que les expériences et les bateaux.
-    if (provider.provider_type === "hotel") return json({ error: "L'espace partenaire n'est pas encore ouvert aux hôtels." }, 400);
+    // Les hôtels sont invités aussi : ils se connectent pour signer leur contrat en ligne.
 
     const email = String(body.email ?? provider.email ?? "").trim().toLowerCase();
     if (!EMAIL_PATTERN.test(email)) {

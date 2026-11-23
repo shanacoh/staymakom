@@ -37,6 +37,19 @@ describe("cases de la bande", () => {
 
   it("n'ajoute pas de case de gauche vide", () => {
     const facts = buildStandaloneKeyFacts({ highlight: null, cancellation_policy: template("free_48h").en }, "fr");
-    expect(facts.map((f) => f.key)).toEqual(["cancellation"]);
+    // Les cases sans valeur sont masquées par HeroKeyFacts.
+    expect(facts.filter((f) => f.value).map((f) => f.key)).toEqual(["cancellation"]);
+  });
+
+  it("affiche l'âge minimum et « groupes privés uniquement » quand ils sont renseignés", () => {
+    const facts = buildStandaloneKeyFacts({ highlight: null, minAge: 12, privateGroupsOnly: true }, "he");
+    expect(facts.find((f) => f.key === "min_age")?.value).toBe("12+");
+    expect(facts.find((f) => f.key === "private_only")?.value).toBe("פרטיות בלבד");
+    const none = buildStandaloneKeyFacts({ highlight: null, minAge: null, privateGroupsOnly: false }, "de");
+    expect(none.filter((f) => f.value)).toEqual([]);
+  });
+
+  it("résume l'annulation 24 h choisie par le partenaire", () => {
+    expect(summarizeCancellation({ cancellation_policy: template("free_24h").en }, "en")).toContain("24");
   });
 });

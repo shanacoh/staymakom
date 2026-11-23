@@ -10,6 +10,7 @@ import { fetchPartnerUsers, partnerKeys, updatePartnerProfile } from "@/lib/part
 import { usePartner, usePartnerSession } from "@/lib/partner/context";
 import { formatPartnerDate } from "@/lib/partner/i18n";
 import { termsText } from "./PartnerOnboarding";
+import { ContractsCard } from "@/components/partner/golive/ContractsCard";
 
 export default function PartnerProfile() {
   const { t, lang, setSession } = usePartner();
@@ -134,6 +135,8 @@ export default function PartnerProfile() {
           </div>
         )}
       </Card>
+
+      <ContractsCard />
     </>
   );
 }

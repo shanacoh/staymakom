@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type {
   PartnerAvailability,
   PartnerBooking,
+  PartnerContract,
   PartnerExperienceDetail,
   PartnerExperienceSummary,
   PartnerProfilePatch,
@@ -39,6 +40,7 @@ export const partnerKeys = {
   bookings: ["partner", "bookings"] as const,
   reviews: ["partner", "reviews"] as const,
   users: ["partner", "users"] as const,
+  contracts: ["partner", "contracts"] as const,
 };
 
 export const fetchPartnerSession = () => call<PartnerSession>("partner_session");
@@ -46,6 +48,40 @@ export const updatePartnerProfile = (patch: PartnerProfilePatch) =>
   call<PartnerSession>("partner_update_profile", { p_patch: patch });
 export const acceptPartnerTerms = (version: number, signerName: string) =>
   call<PartnerSession>("partner_accept_terms", { p_version: version, p_signer_name: signerName });
+
+// ── Contrat hôtel (compte obligatoire : jamais par le lien) ─────────────────────────────────────
+
+export const signPartnerContract = (params: {
+  version: number;
+  signerName: string;
+  signerTitle: string;
+  signature: string;
+  authorized: boolean;
+  company: { company: string; registration_number: string; address: string };
+}) =>
+  call<{ acceptance_id: string; session: PartnerSession }>("partner_sign_contract", {
+    p_version: params.version,
+    p_signer_name: params.signerName,
+    p_signer_title: params.signerTitle,
+    p_signature: params.signature,
+    p_authorized: params.authorized,
+    p_company: params.company,
+  });
+
+export const fetchPartnerContracts = () => call<PartnerContract[]>("partner_contracts");
+
+/** Génère le PDF du contrat signé, le range et l'envoie par email aux deux parties. */
+export async function finalizePartnerContract(acceptanceId: string): Promise<void> {
+  const { error } = await supabase.functions.invoke("partner-contract", { body: { action: "finalize", acceptance_id: acceptanceId } });
+  if (error) throw error;
+}
+
+/** Adresse de téléchargement temporaire du PDF signé (quelques minutes). */
+export async function partnerContractUrl(acceptanceId: string): Promise<string> {
+  const { data, error } = await supabase.functions.invoke("partner-contract", { body: { action: "download", acceptance_id: acceptanceId } });
+  if (error) throw error;
+  return (data as { url: string }).url;
+}
 
 export const fetchPartnerExperiences = () => call<PartnerExperienceSummary[]>("partner_experiences");
 export const fetchPartnerExperience = (id: string) =>

@@ -6,7 +6,8 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Card, Hint, Notice, PrimaryButton, SectionTitle, SelectField, TextAreaField, TextField } from "@/components/partner/ui";
-import { partnerErrorCode, partnerKeys, setPartnerDayContact, submitPartnerProposal } from "@/lib/partner/api";
+import { goliveKeys, usePartnerAccess } from "@/lib/partner/access";
+import { partnerErrorCode, partnerKeys } from "@/lib/partner/api";
 import { usePartner } from "@/lib/partner/context";
 import { changedFields, ownText } from "@/lib/partner/logic";
 import type { PartnerExperienceDetail } from "@/lib/partner/types";
@@ -15,8 +16,11 @@ const PRACTICAL_TEXT_FIELDS = ["meeting_point", "address", "access_note", "know_
 
 export function QuestionnaireSection({ experience }: { experience: PartnerExperienceDetail }) {
   const { t, lang } = usePartner();
+  const access = usePartnerAccess();
   const queryClient = useQueryClient();
   const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: goliveKeys.experience(access.scope, experience.id) });
+    queryClient.invalidateQueries({ queryKey: goliveKeys.golive(access.scope) });
     queryClient.invalidateQueries({ queryKey: partnerKeys.experience(experience.id) });
     queryClient.invalidateQueries({ queryKey: partnerKeys.experiences });
     queryClient.invalidateQueries({ queryKey: partnerKeys.proposals });
@@ -32,7 +36,7 @@ export function QuestionnaireSection({ experience }: { experience: PartnerExperi
   const saveContact = async () => {
     setSavingContact(true);
     try {
-      await setPartnerDayContact(experience.id, contact);
+      await access.setDayContact(experience.id, contact);
       toast.success(t.qDayContactSaved);
       refresh();
     } catch {
@@ -60,7 +64,7 @@ export function QuestionnaireSection({ experience }: { experience: PartnerExperi
     }
     setSending(true);
     try {
-      await submitPartnerProposal({ experienceId: experience.id, type: "practical_info", proposed: { ...changed, lang } });
+      await access.submitProposal({ experienceId: experience.id, type: "practical_info", proposed: { ...changed, lang } });
       toast.success(t.proposalSent);
       refresh();
     } catch (error) {

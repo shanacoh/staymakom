@@ -31,6 +31,7 @@ const nonRefundable = (lang: HeroLang) =>
 
 const TEMPLATE_SUMMARY: Record<Exclude<CancellationTemplateId, "custom">, (lang: HeroLang) => string> = {
   free_48h: (lang) => hours("48", lang),
+  free_24h: (lang) => hours("24", lang),
   free_7d: (lang) => days("7", lang),
   non_refundable: nonRefundable,
 };
@@ -90,16 +91,24 @@ const LABELS = {
   cancellation: uiRecord("heroKeyFactsCancellation"),
   stay: uiRecord("heroKeyFactsStay"),
   board: uiRecord("heroKeyFactsBoard"),
+  minAge: uiRecord("heroKeyFactsMinAge"),
+  groups: uiRecord("heroKeyFactsGroups"),
+  privateOnly: uiRecord("heroKeyFactsPrivateOnly"),
 } as const;
 
-/** Expérience seule : case choisie par getHeroHighlight (lib/heroHighlight) / Annulation. */
+/**
+ * Expérience seule : case choisie par getHeroHighlight (lib/heroHighlight) / Annulation, puis les
+ * règles du partenaire quand elles sont renseignées : âge minimum (« 12+ ») et groupes privés uniquement.
+ */
 export function buildStandaloneKeyFacts(
-  input: CancellationTexts & { highlight: HeroKeyFact | null },
+  input: CancellationTexts & { highlight: HeroKeyFact | null; minAge?: number | null; privateGroupsOnly?: boolean | null },
   lang: HeroLang,
 ): HeroKeyFact[] {
   return [
     ...(input.highlight ? [input.highlight] : []),
     { key: "cancellation", label: LABELS.cancellation[lang], value: summarizeCancellation(input, lang) },
+    { key: "min_age", label: LABELS.minAge[lang], value: input.minAge && input.minAge > 0 ? `${input.minAge}+` : null },
+    { key: "private_only", label: LABELS.groups[lang], value: input.privateGroupsOnly ? LABELS.privateOnly[lang] : null },
   ];
 }
 

@@ -4,6 +4,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { AvailabilityEditor } from "@/components/partner/AvailabilityEditor";
 import { Card, Hint, Pill, PrimaryButton } from "@/components/partner/ui";
+import { usePartnerAccess } from "@/lib/partner/access";
 import { fetchPartnerBookings, partnerKeys } from "@/lib/partner/api";
 import { usePartner } from "@/lib/partner/context";
 import { bookedDates } from "@/lib/partner/logic";
@@ -26,7 +27,9 @@ export function AvailabilitySaveBar({ dirty, saving, onSave }: { dirty: boolean;
 export function AvailabilitySection({ experience }: { experience: PartnerExperienceDetail }) {
   const { t } = usePartner();
   const { draft, setDraft, dirty, saving, save } = useAvailabilityDraft(experience.id, experience.availability);
-  const bookings = useQuery({ queryKey: partnerKeys.bookings, queryFn: fetchPartnerBookings });
+  // Les réservations ne sont lisibles qu'avec un compte et les conditions acceptées (jamais par le lien).
+  const access = usePartnerAccess();
+  const bookings = useQuery({ queryKey: partnerKeys.bookings, queryFn: fetchPartnerBookings, enabled: access.mode === "account", retry: false });
 
   return (
     <div className="space-y-4">

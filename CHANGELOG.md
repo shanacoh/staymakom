@@ -4,6 +4,39 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 23/11/2026 : Partenaires, un seul parcours du premier lien au go live
+
+### Ce qui a changé côté code
+- `src/lib/partner/access.tsx` (créé) : une seule façon de parler à la base pour l'espace partenaire, avec un compte ou avec le lien personnel (sans compte). Les écrans existants (infos pratiques, disponibilités) l'utilisent désormais, ce qui les rend utilisables par le lien sans les dupliquer.
+- `src/pages/partner/PartnerLinkApp.tsx` (créé) et `src/pages/partner/golive/*` (créés) : l'espace ouvert par le lien (`/partner/link/<jeton>`), l'aperçu de l'annonce section par section, les règles, les infos pratiques avec le prix public, les dates. Mêmes pages en mode connecté (`/partner/listing/...`, `/partner/rules/...`).
+- `src/components/partner/golive/*` (créés) : bloc « Go live » (une seule étape « votre tour » en rouge, un seul bouton), barre « Ça me va / Proposer une modification » par section, aperçu expérience (blocs de la page publique, sans prix client), signature du contrat hôtel au doigt, contrats dans le profil, présentation STAYMAKOM (en bref, presse, comment ça marche, conditions en clair, questions fréquentes).
+- `src/lib/partner/golive.ts`, `i18n-golive.ts` (créés) + `golive.test.ts` : règles du parcours (bouton de l'étape, relance après 3 jours, messages WhatsApp) et textes en anglais, hébreu (à faire relire) et français.
+- `PartnerApp`, `PartnerShell`, `PartnerHome`, `PartnerOnboarding`, `PartnerProfile` : avant signature, l'espace n'est plus bloqué sur l'écran des conditions : il montre le go live et l'annonce ; réservations, revenus, avis et profil arrivent après signature. L'écran des conditions est à `/partner/sign` (contrat hôtel pour un hôtel, « en attente de l'équipe » tant que la commission n'est pas saisie).
+- `src/components/hotel/HotelPageSections.tsx` (créé) : le contenu de la page hôtel publique, sorti de `src/pages/Hotel.tsx` pour être affiché à l'identique dans l'aperçu partenaire (la page publique ne change pas).
+- `src/content/partnerPitch.ts` (créé) : les textes de `/partner-exp`, partagés avec l'espace partenaire. « 20 % de commission » devient « Commission sur les ventes uniquement, convenue ensemble ».
+- Back-office : `ProviderGoLiveSection` (créé) sur la fiche prestataire (lien, message WhatsApp, voir comme le partenaire, régénérer / révoquer, première ouverture et dernière visite, go live, date cible, cases hôtel et HyperGuest, relance, tableau des champs, prix public et commission par expérience) ; `ProviderForm` : commission en type / valeur / unité ; `PartnerTermsEditor` : conditions expériences et contrat hôtel séparés, dépôt de la signature STAYMAKOM ; `ProposalCard` : demandes « note » et propositions sur un hôtel.
+- `src/constants/cancellationTemplates.ts` : modèle « Gratuite jusqu'à 24 h avant » (résumé « 24 h » dans les infos clés, `src/lib/heroKeyFacts.ts`).
+- Fiche expérience publique (`src/pages/StandaloneExperience.tsx`, `src/lib/heroKeyFacts.ts`) : la bande d'infos clés du haut de fiche affiche l'âge minimum (« 12+ ») et « Groupes : privés uniquement » quand ils sont renseignés, en 6 langues (`src/lib/translations.ts`, `src/lib/uiTranslations/{es,ru,de}.ts`). Ni le checkout ni les prix ne changent.
+- PDF du contrat (`supabase/functions/partner-contract/pdf.ts`, `bidi.ts` + `bidi.test.ts`) : police Noto Sans Hebrew (normal et gras) pour les lettres hébraïques, lignes en hébreu remises dans l'ordre droite-à-gauche et alignées à droite, nombres et ponctuation à leur place. Testé avec un hôtel « מלון הים » et un signataire « משה לוי ».
+- Fonctions serveur : `partner-contract` (créée : PDF du contrat signé, stockage privé, email aux deux parties, téléchargement) ; `partner-notify` (règles modifiées, demandes sur un hôtel) ; `partner-invite` (les hôtels peuvent être invités) ; `send-standalone-booking-confirmation` (ligne « Annulation » avec la politique notée au paiement) ; `_shared/partner/email.ts` (pièces jointes). Déployées le 23/11/2026 : `partner-contract`, `partner-notify`, `partner-invite`, `send-standalone-booking-confirmation`.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261123100000_partner_golive_journey.sql` (uniquement des ajouts ; aucune colonne existante supprimée, renommée ni modifiée) :
+  - `providers` : lien partenaire (jeton, création, première ouverture, dernière visite), date cible, accord trouvé et 3 cases HyperGuest, commission en type / valeur / unité (l'ancien pourcentage reste recopié), signataire et fonction, suivi de l'étape en cours pour la relance.
+  - `standalone_experience_internal` : prix public du partenaire et commission propre à l'expérience.
+  - `standalone_experiences` : `min_age`, `private_groups_only`, `free_cancellation_hours` (48 par défaut, ou 24).
+  - `standalone_bookings` : politique d'annulation et commission notées au paiement (déclencheur qui n'écrit que dans ces colonnes et ne bloque jamais l'enregistrement).
+  - `partner_terms_versions.kind` (conditions expériences / contrat hôtel) et brouillon « À coller » du contrat hôtel ; `partner_terms_acceptances` : fonction, signature, autorisation, commission, texte signé, PDF.
+  - `partner_proposals` : `hotel_id`, `section`, `via_link`, nouveau type « note » (règles de contrôle élargies, lignes existantes inchangées) ; `partner_activity_log` : `via_link`, `hotel_id`.
+  - Nouvelle table `partner_listing_fields` : ce que le partenaire a confirmé ou rempli, champ par champ.
+  - Nouveau compartiment de stockage privé `partner-contracts` (PDF signés, signature STAYMAKOM), admins seulement.
+  - Fonctions : porte du lien `partner_link`, go live, aperçu, confirmation de section, note, règles, prix public, signature du contrat, back-office (lien, go live, prix public et commission). Réservations, avis et utilisateurs passent par `partner_require_signed` (jamais par le lien).
+- Scénario de test `supabase/tests/partner_golive_journey_test.sql` : parcours Citrus & Salt + hôtel de test + tests de sécurité, joué dans une transaction annulée (49 vérifications OK le 23/11).
+- Appliquée sur la base en ligne le 23/11/2026 avec `supabase db query --linked -f` (hors historique des migrations, voir le décalage connu), AVANT la mise en ligne du code. Scénario de test rejoué ensuite sur la vraie base : 40 vérifications OK, aucun échec, rien conservé.
+
+### Pourquoi ce changement
+- Shana veut envoyer UN lien WhatsApp à un partenaire, avant ou après signature : il y voit son annonce déjà préparée par l'équipe, où en est sa mise en ligne et ce qu'il lui reste à faire. Son travail se résume à confirmer.
+
 ## 20/11/2026 : Bateaux, grilles de prix 2h / 3h / 4h
 
 ### Ce qui a changé côté code

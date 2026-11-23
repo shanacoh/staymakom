@@ -4,7 +4,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { PartnerBooking, ProposalStatus, ProposalType } from "@/lib/partner/types";
+import type { PartnerBooking, ProposalStatus, ProposalType, TermsKind } from "@/lib/partner/types";
 
 // Les nouvelles tables ne sont pas encore dans les types générés.
 const db = supabase as unknown as SupabaseClient;
@@ -13,7 +13,8 @@ export const partnerAdminKeys = {
   access: (providerId: string) => ["admin-partner-access", providerId] as const,
   proposals: ["admin-partner-proposals"] as const,
   pendingCount: ["admin-partner-proposals-pending-count"] as const,
-  terms: ["admin-partner-terms"] as const,
+  terms: (kind: TermsKind) => ["admin-partner-terms", kind] as const,
+  signature: ["admin-partner-staymakom-signature"] as const,
   settlements: (providerId: string) => ["admin-partner-settlements", providerId] as const,
   priceSignal: (experienceId: string) => ["admin-supplier-price-signal", experienceId] as const,
 };
@@ -88,6 +89,11 @@ export interface AdminProposal {
   provider_name: string;
   experience_id: string | null;
   experience_title: string | null;
+  /** Proposition sur une page hôtel (type « note »). */
+  hotel_id: string | null;
+  hotel_name: string | null;
+  section: string | null;
+  via_link: boolean;
   proposal_type: ProposalType;
   lang: "he" | "en" | "fr";
   proposed: Record<string, unknown>;
@@ -104,20 +110,22 @@ export async function fetchProposals(): Promise<AdminProposal[]> {
   const { data, error } = await db
     .from("partner_proposals")
     .select(
-      "id, provider_id, experience_id, proposal_type, lang, proposed, current, note, status, admin_comment, created_at, reviewed_at, created_experience_id, providers(name), standalone_experiences!partner_proposals_experience_id_fkey(title, title_fr)",
+      "id, provider_id, experience_id, hotel_id, section, via_link, proposal_type, lang, proposed, current, note, status, admin_comment, created_at, reviewed_at, created_experience_id, providers(name), standalone_experiences!partner_proposals_experience_id_fkey(title, title_fr), hotels2(name)",
     )
     .order("created_at", { ascending: false })
     .limit(300);
   if (error) throw error;
   return (data ?? []).map((row) => {
-    const { providers, standalone_experiences: experience, ...proposal } = row as unknown as Record<string, unknown> & {
+    const { providers, standalone_experiences: experience, hotels2: hotel, ...proposal } = row as unknown as Record<string, unknown> & {
       providers: { name: string } | null;
       standalone_experiences: { title: string | null; title_fr: string | null } | null;
+      hotels2: { name: string | null } | null;
     };
     return {
       ...proposal,
       provider_name: providers?.name ?? "Prestataire supprimé",
       experience_title: experience?.title_fr || experience?.title || null,
+      hotel_name: hotel?.name ?? null,
     } as AdminProposal;
   });
 }
@@ -153,9 +161,10 @@ export interface TermsVersion {
   acceptances: number;
 }
 
-export async function fetchTermsVersions(): Promise<TermsVersion[]> {
+/** Les versions d'un type de conditions : « conditions expériences » ou « contrat hôtel ». */
+export async function fetchTermsVersions(kind: TermsKind): Promise<TermsVersion[]> {
   const [versions, acceptances] = await Promise.all([
-    db.from("partner_terms_versions").select("version, text_he, text_en, text_fr, published_at").order("version", { ascending: false }),
+    db.from("partner_terms_versions").select("version, text_he, text_en, text_fr, published_at").eq("kind", kind).order("version", { ascending: false }),
     db.from("partner_terms_acceptances").select("version"),
   ]);
   if (versions.error) throw versions.error;
@@ -174,15 +183,37 @@ export async function saveTermsVersion(version: number, texts: TermsTexts) {
   if (!data || data.length === 0) throw new Error("Version introuvable.");
 }
 
-/** Publie une nouvelle version : chaque prestataire devra l'accepter à sa prochaine connexion. */
-export async function publishTermsVersion(texts: TermsTexts): Promise<number> {
+/**
+ * Publie : le brouillon de ce type s'il n'a jamais été publié (ex. contrat hôtel « À coller »), sinon
+ * une nouvelle version, que chaque prestataire devra accepter.
+ */
+export async function publishTermsVersion(kind: TermsKind, texts: TermsTexts): Promise<number> {
   const { data, error } = await db.rpc("admin_publish_partner_terms", {
+    p_kind: kind,
     p_text_he: texts.text_he,
     p_text_en: texts.text_en,
     p_text_fr: texts.text_fr,
   });
   if (error) throw error;
   return data as number;
+}
+
+// ── Signature STAYMAKOM (apposée sur les contrats hôtel signés) ─────────────────────────────────
+
+export const STAYMAKOM_SIGNATURE_PATH = "staymakom/signature.png";
+
+/** Vrai si la signature STAYMAKOM a déjà été déposée dans le stockage privé des contrats. */
+export async function hasStaymakomSignature(): Promise<boolean> {
+  const { data, error } = await supabase.storage.from("partner-contracts").list("staymakom", { search: "signature.png" });
+  if (error) throw error;
+  return (data ?? []).some((file) => file.name === "signature.png");
+}
+
+export async function uploadStaymakomSignature(file: File): Promise<void> {
+  const { error } = await supabase.storage
+    .from("partner-contracts")
+    .upload(STAYMAKOM_SIGNATURE_PATH, file, { upsert: true, contentType: "image/png", cacheControl: "60" });
+  if (error) throw error;
 }
 
 // ── Règlements ──────────────────────────────────────────────────────────────────────────────────

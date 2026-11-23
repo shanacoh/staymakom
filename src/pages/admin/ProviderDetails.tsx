@@ -21,6 +21,7 @@ import { ProviderBookingsSection } from "@/components/admin/providers/ProviderBo
 import { ProviderForm } from "@/components/admin/providers/ProviderForm";
 import { ProviderLinkedSection } from "@/components/admin/providers/ProviderLinkedSection";
 import { ProviderPartnerAccess } from "@/components/admin/providers/ProviderPartnerAccess";
+import { ProviderGoLiveSection } from "@/components/admin/providers/ProviderGoLiveSection";
 import { ProviderSettlementsSection } from "@/components/admin/providers/ProviderSettlementsSection";
 import { ProviderCreditsSection } from "@/components/admin/providers/ProviderCreditsSection";
 import { errorMessage } from "@/lib/catalogue/queries";
@@ -92,7 +93,9 @@ export default function AdminProviderDetails() {
     );
   }
 
-  const canSave = dirty && draft.name.trim() !== "" && !saveMutation.isPending;
+  // Une commission choisie doit avoir sa valeur (la base refuserait sinon).
+  const commissionComplete = !draft.commission_type || draft.commission_value != null;
+  const canSave = dirty && draft.name.trim() !== "" && commissionComplete && !saveMutation.isPending;
   const save = () =>
     saveMutation.mutate(
       { ...draft, name: draft.name.trim() },
@@ -138,8 +141,11 @@ export default function AdminProviderDetails() {
         onChange={(patch) => setEdited((current) => ({ ...(current ?? toDraft(provider)), ...patch }))}
       />
 
-      {/* L'espace partenaire ne couvre pour l'instant que les expériences et les bateaux. */}
-      {provider.provider_type !== "hotel" && <ProviderPartnerAccess provider={provider} />}
+      {/* Le parcours partenaire : lien personnel, go live, annonce, commission par expérience, relance. */}
+      <ProviderGoLiveSection provider={provider} />
+
+      {/* Invitation par email et utilisateurs (compte) : expériences, bateaux et hôtels. */}
+      <ProviderPartnerAccess provider={provider} />
 
       <ProviderLinkedSection providerId={provider.id} linked={linked} />
 

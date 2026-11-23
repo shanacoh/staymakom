@@ -13,7 +13,7 @@ import { fetchProposals, partnerAdminKeys, reviewProposal } from "@/lib/partnerA
 // Rien n'arrive sur le site sans passer par « Accepter ». Le second onglet sert à rédiger et
 // publier les conditions partenaires.
 
-type Tab = "pending" | "done" | "terms";
+type Tab = "pending" | "done" | "terms" | "contract";
 
 const TAB_CLASS = (active: boolean) =>
   `border-b-2 px-3 py-2 text-sm font-medium ${active ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`;
@@ -21,7 +21,7 @@ const TAB_CLASS = (active: boolean) =>
 export default function AdminPartnerProposals() {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = (["pending", "done", "terms"] as Tab[]).find((t) => t === searchParams.get("tab")) ?? "pending";
+  const tab = (["pending", "done", "terms", "contract"] as Tab[]).find((t) => t === searchParams.get("tab")) ?? "pending";
   const [reviewingId, setReviewingId] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({ queryKey: partnerAdminKeys.proposals, queryFn: fetchProposals });
@@ -66,7 +66,8 @@ export default function AdminPartnerProposals() {
           [
             { key: "pending", label: `À valider (${pending.length})` },
             { key: "done", label: `Traitées (${done.length})` },
-            { key: "terms", label: "Conditions partenaires" },
+            { key: "terms", label: "Conditions expériences" },
+            { key: "contract", label: "Contrat hôtel" },
           ] as { key: Tab; label: string }[]
         ).map((t) => (
           <button key={t.key} type="button" className={TAB_CLASS(tab === t.key)} onClick={() => setSearchParams({ tab: t.key }, { replace: true })}>
@@ -76,7 +77,9 @@ export default function AdminPartnerProposals() {
       </div>
 
       {tab === "terms" ? (
-        <PartnerTermsEditor />
+        <PartnerTermsEditor key="experience_terms" kind="experience_terms" />
+      ) : tab === "contract" ? (
+        <PartnerTermsEditor key="hotel_contract" kind="hotel_contract" />
       ) : isLoading ? (
         <Skeleton className="h-48 w-full" aria-busy="true" />
       ) : error ? (

@@ -118,6 +118,9 @@ interface StandaloneExperienceData {
   region_id?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  /** Règles du partenaire, affichées dans les infos clés quand elles sont renseignées. */
+  min_age?: number | null;
+  private_groups_only?: boolean | null;
   accessibility_info?: string | null;
   category_id?: string | null;
   category_ids?: string[] | null;
@@ -296,7 +299,7 @@ export default function StandaloneExperience() {
         "availability_mode", "whitelisted_dates", "practical_info",
         "languages", "schedule_note", "schedule_note_fr", "schedule_note_he",
         "access_note", "access_note_fr", "access_note_he", "hide_exact_address",
-        "session_labels", "essentials_private_on_request", "hero_highlight",
+        "session_labels", "essentials_private_on_request", "hero_highlight", "min_age", "private_groups_only",
         "seo_title_en", "seo_title_fr", "seo_title_he",
         "meta_description_en", "meta_description_fr", "meta_description_he",
         "og_title_en", "og_title_fr", "og_title_he",
@@ -1180,6 +1183,8 @@ export default function StandaloneExperience() {
                     cancellation_policy: experience.cancellation_policy,
                     cancellation_policy_fr: experience.cancellation_policy_fr,
                     cancellation_policy_he: experience.cancellation_policy_he,
+                    minAge: experience.min_age,
+                    privateGroupsOnly: experience.private_groups_only,
                   },
                   locale,
                 )}

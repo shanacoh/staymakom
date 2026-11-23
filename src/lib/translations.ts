@@ -769,6 +769,9 @@ export const translations = {
     heroKeyFactsCancellation: "Cancellation",
     heroKeyFactsStay: "Stay",
     heroKeyFactsBoard: "Board",
+    heroKeyFactsMinAge: "Min. age",
+    heroKeyFactsGroups: "Groups",
+    heroKeyFactsPrivateOnly: "Private only",
     // src/components/experience/EssentialsBlock.tsx
     essentialsBlockFrench: "French",
     essentialsBlockEnglish: "English",
@@ -2400,6 +2403,9 @@ export const translations = {
     heroKeyFactsCancellation: "ביטול",
     heroKeyFactsStay: "שהייה",
     heroKeyFactsBoard: "פנסיון",
+    heroKeyFactsMinAge: "גיל מינימלי",
+    heroKeyFactsGroups: "קבוצות",
+    heroKeyFactsPrivateOnly: "פרטיות בלבד",
     // src/components/experience/EssentialsBlock.tsx
     essentialsBlockFrench: "צרפתית",
     essentialsBlockEnglish: "אנגלית",
@@ -4036,6 +4042,9 @@ export const translations = {
     heroKeyFactsCancellation: "Annulation",
     heroKeyFactsStay: "Séjour",
     heroKeyFactsBoard: "Pension",
+    heroKeyFactsMinAge: "Âge min.",
+    heroKeyFactsGroups: "Groupes",
+    heroKeyFactsPrivateOnly: "Privés uniquement",
     // src/components/experience/EssentialsBlock.tsx
     essentialsBlockFrench: "Français",
     essentialsBlockEnglish: "Anglais",

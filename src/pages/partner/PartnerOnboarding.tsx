@@ -1,8 +1,13 @@
-// Tant que la version en vigueur des conditions n'est pas acceptée, le partenaire ne voit que cet écran.
+// Signature des conditions (/partner/sign), ouverte depuis l'étape « Conditions » du go live.
 // Première connexion : il vérifie d'abord ses informations, puis accepte les conditions.
-// Nouvelle version publiée : il ne voit que les conditions à accepter de nouveau.
+// Nouvelle version publiée, ou commission modifiée : il ne voit que les conditions à accepter de nouveau.
+// Hôtel : le contrat hôtel, signé au doigt. Tant que l'équipe n'a pas saisi la commission, on ne
+// peut pas signer : « En attente de l'équipe STAYMAKOM ».
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { ContractSign } from "@/components/partner/golive/ContractSign";
+import { GOLIVE_TEXTS } from "@/lib/partner/i18n-golive";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, Hint, Notice, PrimaryButton, QuietButton, TextField } from "@/components/partner/ui";
@@ -23,6 +28,8 @@ export default function PartnerOnboarding() {
   const session = usePartnerSession();
   const { signOut } = useAuth();
   const firstTime = !session.terms.accepted_version;
+  const isHotel = session.terms.kind === "hotel_contract";
+  const g = GOLIVE_TEXTS[lang];
 
   const [step, setStep] = useState<"profile" | "terms">(firstTime ? "profile" : "terms");
   const [draft, setDraft] = useState<ProfileDraft>(() => profileDraftOf(session.provider));
@@ -69,7 +76,15 @@ export default function PartnerOnboarding() {
         </div>
       </div>
 
-      {step === "profile" ? (
+      <Link to="/partner" className="mb-4 inline-block text-[13px] font-medium text-neutral-600 underline underline-offset-4">
+        {t.tabHome}
+      </Link>
+
+      {isHotel ? (
+        <ContractSign />
+      ) : !session.terms.commission_ready ? (
+        <Notice>{g.commissionNotReady}</Notice>
+      ) : step === "profile" ? (
         <Card className="space-y-5">
           <div className="space-y-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">1 / 2 · {session.provider.name}</p>
@@ -90,6 +105,7 @@ export default function PartnerOnboarding() {
             </p>
             <h1 className="text-[17px] font-semibold tracking-tight">{t.termsTitle}</h1>
             <Hint>{firstTime ? t.termsIntroFirst : t.termsIntroUpdated}</Hint>
+            {session.terms.commission_label && <p className="text-[13px] font-semibold text-neutral-900">{g.commissionLine(session.terms.commission_label)}</p>}
           </div>
 
           <div className="max-h-[50vh] overflow-y-auto whitespace-pre-line rounded-[10px] border border-neutral-200 bg-neutral-50 p-4 text-[13px] leading-relaxed text-neutral-800">

@@ -1,10 +1,13 @@
-// Accueil : les chiffres clés (réservations à venir, total généré), ce qui attend le partenaire,
-// le calendrier pour ouvrir ou fermer une date, les prochaines réservations et ses propositions.
+// Accueil : en tête, le go live tant que l'annonce n'est pas en ligne (avec la présentation
+// STAYMAKOM) ; puis, une fois les conditions acceptées, les chiffres clés (réservations à venir,
+// total généré), ce qui attend le partenaire, le calendrier, les prochaines réservations et ses
+// propositions. Avant signature, réservations et revenus ne sont pas montrés (la base les refuse).
 
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight } from "lucide-react";
 import { BookingCard } from "@/components/partner/BookingCard";
+import { GoLiveSection, useGoLive } from "@/components/partner/golive/GoLiveSection";
 import { HomeStats } from "@/components/partner/home/HomeStats";
 import { QuickAvailability } from "@/components/partner/home/QuickAvailability";
 import { ProposalList } from "@/components/partner/ProposalList";
@@ -16,11 +19,14 @@ import { displayText, revenueTotals, splitBookings, toIsoDate } from "@/lib/part
 export default function PartnerHome() {
   const { t, lang } = usePartner();
   const session = usePartnerSession();
-  const bookings = useQuery({ queryKey: partnerKeys.bookings, queryFn: fetchPartnerBookings });
+  const signed = !session.terms.must_accept;
+  const golive = useGoLive();
+  const bookings = useQuery({ queryKey: partnerKeys.bookings, queryFn: fetchPartnerBookings, enabled: signed });
   const experiences = useQuery({ queryKey: partnerKeys.experiences, queryFn: fetchPartnerExperiences });
   const proposals = useQuery({ queryKey: partnerKeys.proposals, queryFn: fetchPartnerProposals });
 
-  if (bookings.isLoading || experiences.isLoading || proposals.isLoading) return <PageLoader label={t.loading} />;
+  if ((signed && bookings.isLoading) || experiences.isLoading || proposals.isLoading || golive.isLoading) return <PageLoader label={t.loading} />;
+  const live = golive.data?.current_step === null;
 
   const allBookings = bookings.data ?? [];
   const allUpcoming = splitBookings(allBookings, toIsoDate(new Date())).upcoming;
@@ -38,7 +44,10 @@ export default function PartnerHome() {
     <>
       <h1 className="text-[17px] font-semibold tracking-tight">{t.homeHello(session.provider.contact_name || session.provider.name)}</h1>
 
-      <HomeStats upcomingCount={allUpcoming.length} totals={revenueTotals(allBookings)} />
+      {/* Le go live reste en tête tant que l'annonce n'est pas en ligne. */}
+      {!live && <GoLiveSection session={session} showPitch={!signed} />}
+
+      {signed && <HomeStats upcomingCount={allUpcoming.length} totals={revenueTotals(allBookings)} />}
 
       {/* « À faire » n'apparaît que s'il y a vraiment quelque chose à faire. */}
       {actions.length > 0 && (
@@ -65,7 +74,7 @@ export default function PartnerHome() {
 
       <QuickAvailability experiences={experiences.data ?? []} bookings={allBookings} />
 
-      <div>
+      {signed && (<div>
         <SectionTitle
           aside={
             <Link to="/partner/bookings" className="text-[13px] font-medium text-neutral-600 underline underline-offset-4">
@@ -84,7 +93,7 @@ export default function PartnerHome() {
             ))}
           </Card>
         )}
-      </div>
+      </div>)}
 
       <Card>
         <SectionTitle>{t.homeProposals}</SectionTitle>

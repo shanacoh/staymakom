@@ -1,7 +1,9 @@
 // Point d'entrée de l'espace partenaire (/partner). Il décide quel écran montrer :
+//  - lien partenaire (/partner/link/<jeton>) → l'espace sans compte (go live, aperçu, règles...) ;
 //  - pas connecté → la page de connexion par lien ;
 //  - connecté mais pas partenaire → un message, sans aucune donnée ;
-//  - conditions pas encore acceptées (ou nouvelle version) → uniquement l'écran des conditions ;
+//  - conditions pas encore acceptées (ou nouvelle version, ou commission modifiée) → l'espace réduit
+//    au go live et à l'annonce, et l'écran de signature (/partner/sign) ;
 //  - sinon → l'espace et ses onglets.
 // C'est un confort d'affichage : la vraie barrière est dans la base, qui refuse de répondre à
 // quiconque n'est pas le bon partenaire ou n'a pas accepté les conditions.
@@ -15,6 +17,7 @@ import { PageLoader, QuietButton } from "@/components/partner/ui";
 import { PartnerShell } from "@/components/partner/PartnerShell";
 import { fetchPartnerSession, partnerErrorCode, partnerKeys, updatePartnerProfile } from "@/lib/partner/api";
 import { PARTNER_LANG_STORAGE_KEY, PartnerContext } from "@/lib/partner/context";
+import { goliveKeys, linkAccess } from "@/lib/partner/access";
 import { PARTNER_TEXTS } from "@/lib/partner/i18n";
 import { initialPartnerLang, normalizePartnerLang } from "@/lib/partner/logic";
 import type { PartnerLang, PartnerSession } from "@/lib/partner/types";
@@ -29,6 +32,17 @@ const PartnerBookings = lazy(() => import("./PartnerBookings"));
 const PartnerRevenue = lazy(() => import("./PartnerRevenue"));
 const PartnerReviews = lazy(() => import("./PartnerReviews"));
 const PartnerProfile = lazy(() => import("./PartnerProfile"));
+const PartnerLinkApp = lazy(() => import("./PartnerLinkApp"));
+const PartnerListingPage = lazy(() => import("./golive/PartnerListingPage"));
+const PartnerRulesPage = lazy(() => import("./golive/PartnerRulesPage"));
+const PartnerPracticalPage = lazy(() => import("./golive/PartnerPracticalPage"));
+const PartnerAvailabilityPage = lazy(() => import("./golive/PartnerAvailabilityPage"));
+
+/** Le jeton du lien partenaire dans l'adresse, ou null. */
+function linkTokenOf(pathname: string): string | null {
+  const match = pathname.match(/^\/partner\/link\/([a-f0-9]{48,64})(?:\/|$)/);
+  return match ? match[1] : null;
+}
 
 function storedLang(): PartnerLang | null {
   try {
@@ -44,15 +58,19 @@ export default function PartnerApp() {
   const queryClient = useQueryClient();
   const { user, loading, signOut } = useAuth();
   const onLoginPage = location.pathname === "/partner/login";
+  const linkToken = linkTokenOf(location.pathname);
+  const linkScope = linkToken ? linkAccess(linkToken).scope : null;
 
   const sessionQuery = useQuery({
     queryKey: partnerKeys.session(user?.id),
     queryFn: fetchPartnerSession,
-    enabled: !!user,
+    enabled: !!user && !linkToken,
     retry: false,
     staleTime: 60 * 1000,
   });
-  const session = sessionQuery.data ?? null;
+  // Par le lien, la session vient du lien (et pas du compte éventuellement connecté sur ce navigateur).
+  const [linkSession, setLinkSession] = useState<PartnerSession | null>(null);
+  const session = linkToken ? linkSession : sessionQuery.data ?? null;
 
   // La langue : le choix fait sur cet appareil, sinon celle du prestataire, sinon celle du navigateur.
   // (Le paramètre ?lang= de l'adresse appartient au site public : on ne s'en sert pas ici.)
@@ -60,8 +78,11 @@ export default function PartnerApp() {
   const lang = chosenLang ?? initialPartnerLang(session?.provider.language, navigator.language);
 
   const setSession = useCallback(
-    (next: PartnerSession) => queryClient.setQueryData(partnerKeys.session(user?.id), next),
-    [queryClient, user?.id],
+    (next: PartnerSession) =>
+      linkScope
+        ? queryClient.setQueryData(goliveKeys.session(linkScope), next)
+        : queryClient.setQueryData(partnerKeys.session(user?.id), next),
+    [queryClient, user?.id, linkScope],
   );
 
   const setLang = useCallback(
@@ -74,10 +95,10 @@ export default function PartnerApp() {
       }
       // Sa langue est aussi celle de ses emails : on l'enregistre sur sa fiche.
       if (session && session.provider.language !== next) {
-        updatePartnerProfile({ language: next }).then(setSession).catch(() => {});
+        (linkToken ? linkAccess(linkToken).setLanguage(next) : updatePartnerProfile({ language: next })).then(setSession).catch(() => {});
       }
     },
-    [session, setSession],
+    [session, setSession, linkToken],
   );
 
   // Cet espace n'a pas à être trouvé par les moteurs de recherche.
@@ -101,7 +122,15 @@ export default function PartnerApp() {
   const t = context.t;
 
   let content: JSX.Element;
-  if (loading || (user && sessionQuery.isLoading)) {
+  if (linkToken) {
+    content = (
+      <Suspense fallback={<PageLoader label={t.loading} />}>
+        <Routes>
+          <Route path="link/:token/*" element={<PartnerLinkApp onSession={setLinkSession} />} />
+        </Routes>
+      </Suspense>
+    );
+  } else if (loading || (user && sessionQuery.isLoading)) {
     content = <PageLoader label={t.loading} />;
   } else if (!user) {
     content = onLoginPage ? <PartnerLogin /> : <Navigate to={`/partner/login${location.search}`} replace />;
@@ -116,21 +145,27 @@ export default function PartnerApp() {
     );
   } else if (onLoginPage) {
     content = <Navigate to="/partner" replace />;
-  } else if (session.terms.must_accept) {
-    content = <PartnerOnboarding />;
+  } else if (location.pathname === "/partner/sign") {
+    // Signature des conditions (ou du contrat hôtel) ; une fois à jour, retour à l'accueil.
+    content = session.terms.must_accept ? <PartnerOnboarding /> : <Navigate to="/partner" replace />;
   } else {
+    const signed = !session.terms.must_accept;
     content = (
       <PartnerShell>
         <Suspense fallback={<PageLoader label={t.loading} />}>
           <Routes>
             <Route index element={<PartnerHome />} />
+            <Route path="listing/:kind/:id" element={<PartnerListingPage />} />
+            <Route path="rules/:id" element={<PartnerRulesPage />} />
+            <Route path="practical/:id" element={<PartnerPracticalPage />} />
+            <Route path="availability/:id" element={<PartnerAvailabilityPage />} />
             <Route path="experiences" element={<PartnerExperiences />} />
             <Route path="experiences/:experienceId" element={<PartnerExperienceDetail />} />
             <Route path="new" element={<PartnerNewExperience />} />
-            <Route path="bookings" element={<PartnerBookings />} />
-            <Route path="revenue" element={<PartnerRevenue />} />
-            <Route path="reviews" element={<PartnerReviews />} />
-            <Route path="profile" element={<PartnerProfile />} />
+            {signed && <Route path="bookings" element={<PartnerBookings />} />}
+            {signed && <Route path="revenue" element={<PartnerRevenue />} />}
+            {signed && <Route path="reviews" element={<PartnerReviews />} />}
+            {signed && <Route path="profile" element={<PartnerProfile />} />}
             <Route path="*" element={<Navigate to="/partner" replace />} />
           </Routes>
         </Suspense>

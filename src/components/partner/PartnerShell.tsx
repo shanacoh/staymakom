@@ -1,5 +1,7 @@
 // Gabarit de l'espace partenaire : en-tête (marque, langue, déconnexion) et onglets.
 // Sur téléphone, les onglets défilent horizontalement sous l'en-tête, qui reste collé en haut.
+// Avant signature des conditions, réservations, revenus, avis et profil ne sont pas proposés (la base
+// les refuse de toute façon). Ouvert par le lien partenaire : ni onglets ni déconnexion.
 
 import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
@@ -38,12 +40,13 @@ export function PartnerBrand() {
   );
 }
 
-export function PartnerShell({ children }: { children: ReactNode }) {
+export function PartnerShell({ children, linkMode = false }: { children: ReactNode; linkMode?: boolean }) {
   const { t } = usePartner();
   const session = usePartnerSession();
   const { signOut } = useAuth();
+  const signed = !session.terms.must_accept;
 
-  const tabs = [
+  const allTabs = [
     { to: "/partner", label: t.tabHome, end: true },
     { to: "/partner/experiences", label: t.tabExperiences },
     { to: "/partner/bookings", label: t.tabBookings },
@@ -53,6 +56,8 @@ export function PartnerShell({ children }: { children: ReactNode }) {
     // En dernier : proposer une nouvelle expérience est occasionnel, le quotidien passe avant.
     { to: "/partner/new", label: t.tabNew },
   ];
+  const preSignTabs = new Set(["/partner", "/partner/experiences"]);
+  const tabs = linkMode ? [] : signed ? allTabs : allTabs.filter((tab) => preSignTabs.has(tab.to));
 
   return (
     <>
@@ -66,6 +71,7 @@ export function PartnerShell({ children }: { children: ReactNode }) {
           </div>
           <div className="flex items-center gap-2">
             <LanguageSwitch />
+            {!linkMode && (
             <button
               type="button"
               onClick={() => signOut()}
@@ -75,8 +81,10 @@ export function PartnerShell({ children }: { children: ReactNode }) {
             >
               <LogOut className="h-4 w-4 rtl:-scale-x-100" aria-hidden />
             </button>
+            )}
           </div>
         </div>
+        {tabs.length > 0 && (
         <nav className="mx-auto max-w-2xl overflow-x-auto px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <ul className="flex min-w-max gap-1 px-2">
             {tabs.map((tab) => (
@@ -97,6 +105,7 @@ export function PartnerShell({ children }: { children: ReactNode }) {
             ))}
           </ul>
         </nav>
+        )}
       </header>
       <main className="mx-auto max-w-2xl space-y-3.5 px-4 pb-16 pt-4">{children}</main>
     </>

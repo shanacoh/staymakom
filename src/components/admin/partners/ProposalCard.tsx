@@ -16,6 +16,17 @@ export const PROPOSAL_TYPE_LABEL: Record<AdminProposal["proposal_type"], string>
   price: "Prix fournisseur",
   practical_info: "Infos pratiques",
   new_experience: "Nouvelle expérience",
+  note: "Demande de modification",
+};
+
+// Sections de l'annonce (propositions « note » envoyées depuis l'aperçu).
+const SECTION_LABEL: Record<string, string> = {
+  story: "Titre et récit",
+  photos: "Photos",
+  inclusions: "Ce qui est inclus",
+  practical: "Infos pratiques",
+  rules: "Règles",
+  rooms: "Chambres",
 };
 
 const FIELD_LABEL: Record<string, string> = {
@@ -81,7 +92,9 @@ export function ProposalCard({ proposal, busy, onReview }: ProposalCardProps) {
   const isNew = proposal.proposal_type === "new_experience";
   const dir = proposal.lang === "he" ? "rtl" : undefined;
   const photos = Array.isArray(proposal.proposed.photos) ? (proposal.proposed.photos as string[]) : [];
-  const fields = Object.keys(proposal.proposed).filter((key) => key !== "photos" && key !== "lang");
+  const isNote = proposal.proposal_type === "note";
+  // Une « note » n'a qu'un texte libre (déjà affiché comme message du prestataire).
+  const fields = isNote ? [] : Object.keys(proposal.proposed).filter((key) => key !== "photos" && key !== "lang");
   const draftUrl = proposal.created_experience_id ? `/admin/experiences2/standalone/edit/${proposal.created_experience_id}` : null;
 
   return (
@@ -91,7 +104,9 @@ export function ProposalCard({ proposal, busy, onReview }: ProposalCardProps) {
           <div className="flex flex-wrap items-center gap-2">
             <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_CLASS[proposal.status]}`}>{STATUS_LABEL[proposal.status]}</span>
             <span className="text-sm font-semibold text-foreground">{PROPOSAL_TYPE_LABEL[proposal.proposal_type]}</span>
+            {isNote && proposal.section && <span className="text-xs text-foreground">· {SECTION_LABEL[proposal.section] ?? proposal.section}</span>}
             <span className="text-xs text-muted-foreground">en {providerLanguageLabel(proposal.lang).toLowerCase()}</span>
+            {proposal.via_link && <span className="text-xs text-muted-foreground">· envoyée par le lien partenaire</span>}
           </div>
           <p className="text-sm text-foreground">
             <Link to={providerUrl(proposal.provider_id)} className="underline underline-offset-2 hover:text-red-600">
@@ -100,6 +115,10 @@ export function ProposalCard({ proposal, busy, onReview }: ProposalCardProps) {
             {" · "}
             {isNew ? (
               <span>{shown(proposal.proposed.title)}</span>
+            ) : proposal.hotel_id ? (
+              <Link to={`/admin/hotels2/edit/${proposal.hotel_id}`} className="underline underline-offset-2 hover:text-red-600">
+                {proposal.hotel_name ?? "Hôtel"}
+              </Link>
             ) : proposal.experience_id ? (
               <Link to={`/admin/experiences2/standalone/edit/${proposal.experience_id}`} className="underline underline-offset-2 hover:text-red-600">
                 {proposal.experience_title ?? "Expérience"}
@@ -156,6 +175,7 @@ export function ProposalCard({ proposal, busy, onReview }: ProposalCardProps) {
         {proposal.proposal_type === "price" &&
           "Accepter ne change que le prix fournisseur. Le prix client reste tel quel : un signal « Prix fournisseur modifié, vérifier le prix client » apparaîtra sur la fiche."}
         {isNew && "Accepter crée une fiche en brouillon reliée à ce prestataire. Elle n'est jamais publiée automatiquement."}
+        {isNote && "Demande en texte libre : accepter ne modifie rien automatiquement. Applique la modification à la main sur la fiche, puis accepte pour la classer."}
         {(proposal.proposal_type === "text" || proposal.proposal_type === "practical_info") &&
           `Accepter applique ces textes sur la fiche, uniquement dans la langue de la proposition (${providerLanguageLabel(proposal.lang).toLowerCase()}). Les autres langues ne sont pas modifiées.`}
       </p>

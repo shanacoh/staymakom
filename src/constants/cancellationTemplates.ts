@@ -1,7 +1,7 @@
 // Sprint 5B — modèles de politique d'annulation pour les expériences standalone.
 // Textes à valider par Shana avant mise en production.
 
-export type CancellationTemplateId = "free_48h" | "free_7d" | "non_refundable" | "custom";
+export type CancellationTemplateId = "free_48h" | "free_24h" | "free_7d" | "non_refundable" | "custom";
 
 export interface CancellationTemplate {
   id: CancellationTemplateId;
@@ -18,6 +18,15 @@ export const CANCELLATION_TEMPLATES: CancellationTemplate[] = [
     en: "Free cancellation up to 48 hours before the experience.",
     fr: "Annulation gratuite jusqu'à 48 h avant l'expérience.",
     he: "ביטול חינם עד 48 שעות לפני החוויה.",
+  },
+  {
+    // Choisie par le partenaire dans ses règles (« J'accepte l'annulation gratuite jusqu'à 24 h avant »).
+    // Mêmes phrases que la base (partner_cancellation_texts).
+    id: "free_24h",
+    label: "Gratuite jusqu'à 24 h avant",
+    en: "Free cancellation up to 24 hours before the experience.",
+    fr: "Annulation gratuite jusqu'à 24 h avant l'expérience.",
+    he: "ביטול חינם עד 24 שעות לפני החוויה.",
   },
   {
     id: "free_7d",

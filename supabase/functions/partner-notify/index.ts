@@ -7,7 +7,9 @@
 //  - booking_paid     : une réservation vient de passer payée et le prestataire n'a pas encore été
 //                       prévenu → email au prestataire (filet pour les paiements confirmés en retard ;
 //                       d'habitude il part avec la confirmation du client) ;
-//  - booking_cancelled : une réservation annoncée à un prestataire est annulée → email au prestataire.
+//  - booking_cancelled : une réservation annoncée à un prestataire est annulée → email au prestataire ;
+//  - rules_changed    : un prestataire a modifié ses règles (groupe, âge, délai, jours, annulation...)
+//                       → email à l'équipe (elles sont déjà appliquées sur la fiche).
 //
 // Les deux emails à l'équipe sont internes : ils reprennent quand même l'habillage commun.
 // `preview` : envoie un exemple de chaque email prestataire à l'adresse d'un admin, sans rien lire ni écrire.
@@ -25,7 +27,51 @@ const PROPOSAL_TYPE_LABELS: Record<string, string> = {
   price: "Prix fournisseur",
   practical_info: "Infos pratiques",
   new_experience: "Nouvelle expérience",
+  note: "Demande de modification",
 };
+
+const RULE_LABELS: Record<string, string> = {
+  min_party: "Minimum de personnes",
+  max_party: "Maximum de personnes",
+  min_age: "Âge minimum",
+  lead_time_days: "Délai de réservation (jours)",
+  available_days: "Jours ouverts (1 = lundi ... 7 = dimanche)",
+  private_groups_only: "Groupes privés uniquement",
+  know_before_you_go: "Ce que le client doit savoir",
+  free_cancellation_hours: "Annulation gratuite jusqu'à (heures avant)",
+};
+
+const shownValue = (value: unknown) =>
+  value === null || value === undefined || value === "" ? "vide" : Array.isArray(value) ? value.join(", ") : String(value);
+
+// deno-lint-ignore no-explicit-any
+async function notifyRulesChanged(supabase: any, id: string) {
+  const { data: entry } = await supabase
+    .from("partner_activity_log")
+    .select("id, provider_id, experience_id, before, after, via_link, created_at, providers(name), standalone_experiences(title, title_fr)")
+    .eq("id", id)
+    .maybeSingle();
+  if (!entry) return { sent: false, reason: "not_found" };
+  const providerName = (entry.providers as { name: string } | null)?.name ?? "Un prestataire";
+  const experience = entry.standalone_experiences as { title: string | null; title_fr: string | null } | null;
+  const after = (entry.after ?? {}) as Record<string, unknown>;
+  const before = (entry.before ?? {}) as Record<string, unknown>;
+  const html = renderPartnerEmail({
+    lang: "fr",
+    eyebrow: "Back-office",
+    banner: "Règles partenaire modifiées",
+    bannerSub: "Déjà appliquées sur la fiche",
+    intro: `${providerName} a modifié ses règles${entry.via_link ? " depuis son lien partenaire" : ""}. Elles limitent déjà ce que le client peut choisir. Un changement d'annulation ne vaut que pour les nouvelles réservations.`,
+    rows: [
+      { label: "Expérience", value: experience?.title_fr || experience?.title || "" },
+      ...Object.keys(after).map((key) => ({ label: RULE_LABELS[key] ?? key, value: `${shownValue(before[key])} → ${shownValue(after[key])}` })),
+    ],
+    cta: { label: "Ouvrir la fiche prestataire", url: `${PARTNER_SITE_URL}/admin/partenaires/${entry.provider_id}` },
+    contact: "Email interne envoyé par l'espace partenaire.",
+  });
+  const sent = await sendPartnerEmail([TEAM_EMAIL], `Règles modifiées : ${providerName}`, html);
+  return { sent: sent.ok };
+}
 
 const json = (payload: unknown, status = 200) =>
   new Response(JSON.stringify(payload), { status, headers: { "Content-Type": "application/json" } });
@@ -34,7 +80,7 @@ const json = (payload: unknown, status = 200) =>
 async function notifyProposalCreated(supabase: any, id: string) {
   const { data: proposal } = await supabase
     .from("partner_proposals")
-    .select("id, proposal_type, proposed, note, providers(name), standalone_experiences!partner_proposals_experience_id_fkey(title, title_fr)")
+    .select("id, proposal_type, section, via_link, proposed, note, providers(name), standalone_experiences!partner_proposals_experience_id_fkey(title, title_fr), hotels2(name)")
     .eq("id", id)
     .maybeSingle();
   if (!proposal) return { sent: false, reason: "not_found" };
@@ -42,9 +88,10 @@ async function notifyProposalCreated(supabase: any, id: string) {
   const experience = proposal.standalone_experiences as { title: string | null; title_fr: string | null } | null;
   const providerName = (proposal.providers as { name: string } | null)?.name ?? "Un prestataire";
   const typeLabel = PROPOSAL_TYPE_LABELS[proposal.proposal_type] ?? proposal.proposal_type;
+  const hotel = proposal.hotels2 as { name: string | null } | null;
   const subjectTitle = proposal.proposal_type === "new_experience"
     ? String(proposal.proposed?.title ?? "")
-    : (experience?.title_fr || experience?.title || "");
+    : (experience?.title_fr || experience?.title || hotel?.name || "");
 
   const html = renderPartnerEmail({
     lang: "fr",
@@ -55,7 +102,9 @@ async function notifyProposalCreated(supabase: any, id: string) {
     rows: [
       { label: "Prestataire", value: providerName },
       { label: "Type", value: typeLabel },
-      { label: proposal.proposal_type === "new_experience" ? "Titre proposé" : "Expérience", value: subjectTitle },
+      { label: proposal.proposal_type === "new_experience" ? "Titre proposé" : hotel ? "Hôtel" : "Expérience", value: subjectTitle },
+      { label: "Section", value: proposal.section ?? "" },
+      { label: "Envoyée", value: proposal.via_link ? "depuis le lien partenaire (sans compte)" : "" },
       { label: "Message du prestataire", value: proposal.note ?? "" },
     ],
     cta: { label: "Voir la proposition", url: `${PARTNER_SITE_URL}/admin/partenaires/propositions` },
@@ -139,6 +188,8 @@ Deno.serve(async (req: Request) => {
         return json(await notifyProviderOfBooking(supabase, body.id, "paid"));
       case "booking_cancelled":
         return json(await notifyProviderOfBooking(supabase, body.id, "cancelled"));
+      case "rules_changed":
+        return json(await notifyRulesChanged(supabase, body.id));
       default:
         return json({ error: "Événement inconnu" }, 400);
     }

@@ -72,6 +72,9 @@ export const PROVIDER_STATUS_CLASS: Record<ProviderStatus, string> = {
   arrete: "text-muted-foreground line-through",
 };
 
+export type ProviderCommissionType = "percent" | "fixed";
+export type ProviderCommissionUnit = "per_person" | "per_booking";
+
 export interface Provider {
   id: string;
   name: string;
@@ -90,8 +93,14 @@ export interface Provider {
   day_contact_name: string | null;
   day_contact_whatsapp: string | null;
   day_contact_language: ProviderLanguage | null;
-  /** Commission en %. Vide tant qu'elle n'a pas été saisie. */
-  commission_percent: number | null;
+  /**
+   * Commission convenue, saisie après accord : pourcentage, ou montant fixe par personne / par
+   * réservation. Vide tant qu'elle n'est pas convenue. Hôtels : pourcentage uniquement. (L'ancienne
+   * colonne commission_percent est tenue à jour par la base.)
+   */
+  commission_type: ProviderCommissionType | null;
+  commission_value: number | null;
+  commission_fixed_unit: ProviderCommissionUnit | null;
   /** Canal de réservation par défaut : celui de l'expérience reste prioritaire. */
   booking_channel: ProviderBookingChannel | null;
   booking_url: string | null;
@@ -130,7 +139,9 @@ export const EMPTY_PROVIDER_DRAFT: ProviderDraft = {
   day_contact_name: null,
   day_contact_whatsapp: null,
   day_contact_language: null,
-  commission_percent: null,
+  commission_type: null,
+  commission_value: null,
+  commission_fixed_unit: null,
   booking_channel: null,
   booking_url: null,
   conditions: null,

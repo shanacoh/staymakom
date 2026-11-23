@@ -113,6 +113,9 @@ verify_jwt = false
 [functions.partner-notify]
 verify_jwt = false
 
+[functions.partner-contract]
+verify_jwt = false
+
 [functions.send-booking-tickets]
 verify_jwt = false
 

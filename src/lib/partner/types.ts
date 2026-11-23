@@ -18,7 +18,20 @@ export interface PartnerProvider {
   day_contact_name: string | null;
   day_contact_whatsapp: string | null;
   day_contact_language: string | null;
+  signatory_name?: string | null;
+  signatory_title?: string | null;
+  golive_target_date?: string | null;
 }
+
+/** Commission convenue (vide tant que l'équipe ne l'a pas saisie). */
+export interface PartnerCommission {
+  type?: "percent" | "fixed";
+  value?: number;
+  unit?: "per_person" | "per_booking";
+  experiences?: Record<string, { type?: "percent" | "fixed"; value?: number; unit?: "per_person" | "per_booking" }>;
+}
+
+export type TermsKind = "experience_terms" | "hotel_contract";
 
 export interface PartnerTerms {
   current_version: number | null;
@@ -30,12 +43,34 @@ export interface PartnerTerms {
   text_en: string | null;
   text_fr: string | null;
   published_at: string | null;
+  kind?: TermsKind;
+  display_version?: number | null;
+  last_acceptance_id?: string | null;
+  last_contract_pdf?: boolean | null;
+  commission?: PartnerCommission | null;
+  commission_label?: string | null;
+  commission_ready?: boolean;
+}
+
+/** Contrat hôtel : les informations pré-remplies du modèle. */
+export interface ContractVariables {
+  hotel_name: string;
+  company: string;
+  registration_number: string;
+  address: string;
+  signatory_name: string;
+  signatory_title: string;
+  commission: string;
+  date: string;
 }
 
 export interface PartnerSession {
   provider: PartnerProvider;
   user_email: string | null;
   terms: PartnerTerms;
+  contract_variables?: ContractVariables | null;
+  /** Vrai quand la session vient du lien partenaire (sans compte). */
+  link_mode?: boolean;
 }
 
 export type PartnerProfilePatch = Partial<
@@ -69,7 +104,7 @@ export interface PartnerAvailability {
   time_slots: string[];
 }
 
-export type ProposalType = "text" | "photos" | "price" | "practical_info" | "new_experience";
+export type ProposalType = "text" | "photos" | "price" | "practical_info" | "new_experience" | "note";
 export type ProposalStatus = "pending" | "accepted" | "rejected";
 
 export interface PartnerPendingProposal {
@@ -98,6 +133,8 @@ export interface PartnerExperienceDetail extends Record<string, unknown> {
 export interface PartnerProposal {
   id: string;
   experience_id: string | null;
+  hotel_id?: string | null;
+  section?: string | null;
   experience_title: string | null;
   experience_title_fr: string | null;
   experience_title_he: string | null;
@@ -154,4 +191,83 @@ export interface PartnerUser {
   email: string;
   last_login_at: string | null;
   is_me: boolean;
+}
+
+// ── Parcours go live (lien partenaire, aperçu de l'annonce, règles) ─────────────────────────────
+
+export type ListingKind = "experience" | "hotel";
+export type StepActor = "staymakom" | "partner";
+
+export interface GoLiveStep {
+  key: string;
+  actor: StepActor;
+  done: boolean;
+  subtasks?: { key: string; done: boolean }[];
+  waiting_commission?: boolean;
+}
+
+export interface GoLiveTarget {
+  kind: ListingKind;
+  id: string;
+  slug: string;
+  status: string;
+  title: string | null;
+  title_he: string | null;
+  title_fr: string | null;
+}
+
+export interface GoLive {
+  kind: ListingKind;
+  target: GoLiveTarget | null;
+  steps: GoLiveStep[];
+  current_step: string | null;
+  my_turn: boolean;
+  target_date: string | null;
+  turn_since: string | null;
+  counts: { total: number; prepared_by_team: number; for_you: number };
+  commission: PartnerCommission | null;
+  commission_ready: boolean;
+}
+
+export type FieldState = "confirmed" | "to_confirm" | "to_fill";
+export type FieldSource = "staymakom" | "partner";
+
+export interface ListingField {
+  section: string;
+  key: string;
+  required: boolean;
+  value: unknown;
+  source: FieldSource;
+  state: FieldState;
+  confirmed_at: string | null;
+}
+
+export interface PartnerListing {
+  kind: ListingKind;
+  content: Record<string, unknown>;
+  fields: ListingField[];
+  pending_notes: { id: string; section: string | null; type: string; created_at: string }[];
+}
+
+export interface PartnerRules {
+  min_party: number;
+  max_party: number;
+  min_age: number | null;
+  lead_time_days: number | null;
+  /** Jours ouverts, 1 = lundi ... 7 = dimanche. */
+  available_days: number[];
+  private_groups_only: boolean;
+  know_before_you_go: string;
+  free_cancellation_hours: 24 | 48;
+}
+
+export interface PartnerContract {
+  id: string;
+  kind: TermsKind;
+  version: number;
+  signer_name: string;
+  signer_title: string | null;
+  accepted_at: string;
+  has_pdf: boolean;
+  commission_label: string | null;
 }

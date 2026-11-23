@@ -131,7 +131,18 @@ ${card}${cta}${footnote}
 </html>`;
 }
 
-export async function sendPartnerEmail(to: string[], subject: string, html: string): Promise<{ ok: boolean; details?: string }> {
+/** Pièce jointe : nom du fichier et contenu encodé en base64. */
+export interface PartnerEmailAttachment {
+  filename: string;
+  content: string;
+}
+
+export async function sendPartnerEmail(
+  to: string[],
+  subject: string,
+  html: string,
+  attachments?: PartnerEmailAttachment[],
+): Promise<{ ok: boolean; details?: string }> {
   const apiKey = Deno.env.get("RESEND_API_KEY");
   if (!apiKey) return { ok: false, details: "RESEND_API_KEY manquante" };
   const response = await fetch("https://api.resend.com/emails", {
@@ -143,6 +154,7 @@ export async function sendPartnerEmail(to: string[], subject: string, html: stri
       to,
       subject,
       html,
+      ...(attachments && attachments.length > 0 ? { attachments } : {}),
     }),
   });
   if (response.ok) return { ok: true };
