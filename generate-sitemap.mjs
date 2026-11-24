@@ -105,9 +105,21 @@ const [experiences, hotels, categories, standalones, journals] = await Promise.a
   fetchSlugs('journal_posts', '&status=eq.published'),
 ]);
 
+// Pages qui listent des fiches : leur date = celle de la fiche la plus récemment modifiée
+// qu'elles affichent. Les pages fixes (À propos, conditions...) restent sans date :
+// on ne connaît pas leur vraie date de modification, et une date inventée est pire que rien.
+const latest = (...lists) => lists.flat().map(lastmodOf).filter(Boolean).sort().pop() || null;
+const boats = standalones.filter(r => r.category_id === BOATS_CATEGORY_ID);
+const LIST_LASTMOD = {
+  '/': latest(experiences, hotels, standalones, categories),
+  '/experiences': latest(experiences, standalones),
+  '/boat': latest(boats),
+  '/journal': latest(journals),
+};
+
 const entries = [
   ...STATIC_PAGES.map(({ path, priority, changefreq }) =>
-    urlEntry(`${BASE_URL}${path}`, priority, changefreq)
+    urlEntry(`${BASE_URL}${path}`, priority, changefreq, LIST_LASTMOD[path] || null)
   ),
   // "bateaux" est une catégorie saisonnière (publiée en été, brouillon hors saison) :
   // on ne la liste pas, la vitrine permanente /boat est déjà dans STATIC_PAGES ci-dessus.

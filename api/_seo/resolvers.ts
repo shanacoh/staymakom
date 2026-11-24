@@ -11,7 +11,7 @@ import {
   websiteJsonLd,
 } from "./jsonLd.js";
 import { NOT_FOUND, PASSTHROUGH, type PageLink, type PageModel, type PageSection } from "./model.js";
-import { BRAND, href, ui, type PageLang } from "./site.js";
+import { BRAND, brandDescription, href, ui, type PageLang } from "./site.js";
 import { SEO_HOME_AND_LIST, STATIC_ALIASES, staticText } from "./staticPages.js";
 import { articleBlocks, formatPrice, metaDescription, oneLine, paragraphs, stripHtml, toList } from "./text.js";
 import { experiencePageTitle, hotelPageTitle } from "./titles.js";
@@ -62,6 +62,19 @@ async function fetchRating(experienceId: string): Promise<{ ratingValue: number;
   if (!rows.length) return null;
   const sum = rows.reduce((acc, r) => acc + Number(r.rating || 0), 0);
   return { ratingValue: Math.round((sum / rows.length) * 10) / 10, reviewCount: rows.length };
+}
+
+
+// Équipements HyperGuest : on garde ceux de l'hôtel (pas ceux des chambres), sans doublons,
+// et sans les mentions trop banales pour aider un voyageur.
+const TRIVIAL_FACILITIES = new Set(["non-smoking rooms", "designated smoking area", "heating", "safe", "ironing service", "bottle of water", "shoeshine"]);
+function hyperguestAmenities(facilities: unknown): string[] {
+  if (!Array.isArray(facilities)) return [];
+  const names = facilities
+    .filter((f: any) => f && typeof f.name === "string" && (!f.type || f.type === "hotel"))
+    .map((f: any) => String(f.name).trim())
+    .filter((name) => name && !TRIVIAL_FACILITIES.has(name.toLowerCase()));
+  return [...new Set(names)];
 }
 
 // ---------------------------------------------------------------------------
@@ -117,7 +130,7 @@ async function resolveHome(lang: PageLang): Promise<PageModel> {
     title: seo.title,
     description: metaDescription(seo.description),
     h1: lang === "fr" ? "Hôtels-boutiques et expériences choisis en Israël" : lang === "he" ? "מלונות בוטיק וחוויות נבחרות בישראל" : "Handpicked boutique hotels and experiences in Israel",
-    intro: [seo.description, BRAND.description],
+    intro: [seo.description, brandDescription(lang)],
     sections: [
       { heading: t.categories, links: categories.map((c) => ({ label: c.name, href: href(`/category/${c.slug}`, lang), note: oneLine(c.launch_description, 140) || undefined })) },
       { heading: `${t.experiences} · ${t.withHotel}`, links: localizeRowsSync(experiences, lang).map((r) => experienceLink(r, lang)) },
@@ -161,7 +174,7 @@ async function resolveHotel(slug: string, lang: PageLang): Promise<PageModel> {
   const t = ui(lang);
   const row = await fetchPublishedBySlug(
     "hotels2",
-    "id,slug,name,name_fr,name_he,city,city_fr,city_he,region,region_fr,region_he,address,address_fr,address_he,story,story_fr,story_he,description_location,description_location_fr,description_location_he,description_room,description_room_fr,description_room_he,highlights,highlights_fr,highlights_he,amenities,amenities_fr,amenities_he,star_rating,hero_image,og_image,latitude,longitude,seo_title_en,seo_title_fr,seo_title_he,meta_description_en,meta_description_fr,meta_description_he,check_in_time,check_out_time",
+    "id,slug,name,name_fr,name_he,city,city_fr,city_he,region,region_fr,region_he,address,address_fr,address_he,story,story_fr,story_he,description_location,description_location_fr,description_location_he,description_room,description_room_fr,description_room_he,highlights,highlights_fr,highlights_he,amenities,amenities_fr,amenities_he,star_rating,hero_image,og_image,latitude,longitude,seo_title_en,seo_title_fr,seo_title_he,meta_description_en,meta_description_fr,meta_description_he,check_in_time,check_out_time,hyperguest_facilities",
     slug,
     lang
   );
@@ -179,7 +192,8 @@ async function resolveHotel(slug: string, lang: PageLang): Promise<PageModel> {
   const experiences = localizeRowsSync([...byId.values()], lang);
 
   const highlights = toList(row.highlights);
-  const amenities = toList(row.amenities);
+  // Équipements saisis à la main, sinon ceux fournis par HyperGuest (équipements de l'hôtel, pas des chambres).
+  const amenities = toList(row.amenities).length ? toList(row.amenities) : hyperguestAmenities(row.hyperguest_facilities);
   const story = paragraphs(row.story);
   const fallbackDescription = `${row.name}${row.star_rating ? `, ${row.star_rating}-star` : ""} hotel${row.city ? ` in ${row.city}, Israel` : " in Israel"}, curated by STAYMAKOM${experiences.length ? ` with ${experiences.map((e) => e.title).slice(0, 2).join(" and ")}` : ""}.`;
   const description = metaDescription(row.meta_description_en, row.story, row.description_location, fallbackDescription);
@@ -201,10 +215,10 @@ async function resolveHotel(slug: string, lang: PageLang): Promise<PageModel> {
     breadcrumbs: crumbs,
     sections: [
       ...(experiences.length ? [{ heading: t.experiencesHere, links: experiences.map((e) => experienceLink(e, lang)) }] : []),
-      ...(highlights.length ? [{ heading: "Highlights", list: highlights }] : []),
+      ...(highlights.length ? [{ heading: t.highlights, list: highlights }] : []),
       ...(paragraphs(row.description_location).length ? [{ heading: t.location, paragraphs: paragraphs(row.description_location) }] : []),
-      ...(paragraphs(row.description_room).length ? [{ heading: "Rooms", paragraphs: paragraphs(row.description_room) }] : []),
-      ...(amenities.length ? [{ heading: "Amenities", list: amenities }] : []),
+      ...(paragraphs(row.description_room).length ? [{ heading: t.rooms, paragraphs: paragraphs(row.description_room) }] : []),
+      ...(amenities.length ? [{ heading: t.amenities, list: amenities.slice(0, 30) }] : []),
     ],
     jsonLd: [hotelJsonLd(row, description, amenities), breadcrumbJsonLd(crumbs)],
   };

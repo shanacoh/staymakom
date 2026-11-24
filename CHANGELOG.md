@@ -7,7 +7,9 @@
 ## 24/11/2026 : Textes manquants des fiches remplis (visibilité IA, suite)
 
 ### Ce qui a changé côté code
-- Rien. Uniquement des textes dans la base.
+- `api/_seo/resolvers.ts` : les fiches hôtel servies aux robots listent les équipements de l'hôtel (saisis à la main, sinon ceux fournis par HyperGuest, sans les mentions banales), aussi repris dans la fiche d'identité Google (`amenityFeature`) ; intertitres « Équipements », « Points forts », « Chambres » traduits.
+- `api/_seo/site.ts` : la présentation de la marque sous le titre de l'accueil est traduite en français et en hébreu (elle restait en anglais).
+- `generate-sitemap.mjs` : l'accueil, /experiences, /boat et /journal ont une date de dernière modification réelle (celle de la fiche la plus récente qu'ils affichent). Les pages fixes (À propos, conditions) restent sans date, faute de date réelle connue.
 
 ### Ce qui a changé côté base de données
 - Migration de données `supabase/migrations/20261124210000_seo_textes_manquants.sql` (appliquée le 24/11/2026), sauvegarde préalable dans le schéma `backup_20261124` (tables `seo_*`) :

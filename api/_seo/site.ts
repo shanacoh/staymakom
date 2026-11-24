@@ -38,7 +38,7 @@ const UI = {
     home: "Home", experiences: "Experiences", boats: "Boats", journal: "Journal", about: "About",
     contact: "Contact", companies: "Companies", partners: "Partners", terms: "Terms & Conditions",
     privacy: "Privacy Policy", cancellation: "Cancellation Policy", cookies: "Cookies", legal: "Legal Notice",
-    categories: "Categories", hotels: "Hotels", from: "From", price: "Price", perPerson: "per person", duration: "Duration",
+    categories: "Categories", hotels: "Hotels", from: "From", price: "Price", amenities: "Amenities", highlights: "Highlights", rooms: "Rooms", perPerson: "per person", duration: "Duration",
     location: "Location", included: "What's included", notIncluded: "Not included", goodToKnow: "Good to know",
     hotel: "Hotel", stars: "stars", experiencesHere: "Experiences at this hotel", inCategory: "Experiences",
     withHotel: "With a hotel stay", experienceOnly: "Experience only", articles: "Articles",
@@ -49,7 +49,7 @@ const UI = {
     home: "Accueil", experiences: "Expériences", boats: "Bateaux", journal: "Journal", about: "À propos",
     contact: "Contact", companies: "Entreprises", partners: "Partenaires", terms: "Conditions générales",
     privacy: "Politique de confidentialité", cancellation: "Politique d'annulation", cookies: "Cookies",
-    legal: "Mentions légales", categories: "Catégories", hotels: "Hôtels", from: "À partir de", price: "Prix",
+    legal: "Mentions légales", categories: "Catégories", hotels: "Hôtels", from: "À partir de", price: "Prix", amenities: "Équipements", highlights: "Points forts", rooms: "Chambres",
     perPerson: "par personne", duration: "Durée", location: "Lieu", included: "Ce qui est inclus",
     notIncluded: "Non inclus", goodToKnow: "Bon à savoir", hotel: "Hôtel", stars: "étoiles",
     experiencesHere: "Expériences dans cet hôtel", inCategory: "Expériences", withHotel: "Avec une nuit d'hôtel",
@@ -61,7 +61,7 @@ const UI = {
     home: "דף הבית", experiences: "חוויות", boats: "סירות", journal: "מגזין", about: "אודות",
     contact: "צור קשר", companies: "חברות", partners: "שותפים", terms: "תנאי שימוש", privacy: "מדיניות פרטיות",
     cancellation: "מדיניות ביטול", cookies: "עוגיות", legal: "מידע משפטי", categories: "קטגוריות",
-    hotels: "מלונות", from: "החל מ-", price: "מחיר", perPerson: "לאדם", duration: "משך", location: "מיקום",
+    hotels: "מלונות", from: "החל מ-", price: "מחיר", amenities: "מתקנים", highlights: "דגשים", rooms: "חדרים", perPerson: "לאדם", duration: "משך", location: "מיקום",
     included: "מה כלול", notIncluded: "לא כלול", goodToKnow: "טוב לדעת", hotel: "מלון", stars: "כוכבים",
     experiencesHere: "חוויות במלון הזה", inCategory: "חוויות", withHotel: "עם לינה במלון",
     experienceOnly: "חוויה בלבד", articles: "כתבות", notFoundTitle: "הדף לא נמצא",
@@ -71,6 +71,17 @@ const UI = {
 };
 
 export type UiTexts = typeof UI.en;
+
+/** Présentation de la marque dans la langue de la page (anglais pour es / ru / de). */
+export function brandDescription(lang: PageLang): string {
+  if (lang === "fr") {
+    return "STAYMAKOM sélectionne les plus beaux hôtels-boutiques d'Israël et les associe à des expériences locales uniques : escapades romantiques, retraites dans le désert, dégustations de vin, aventures en famille et bien plus.";
+  }
+  if (lang === "he") {
+    return "STAYMAKOM אוצרת את מלונות הבוטיק הטובים בישראל ומשלבת אותם עם חוויות מקומיות ייחודיות: חופשות רומנטיות, מפלטים במדבר, טעימות יין, הרפתקאות משפחתיות ועוד.";
+  }
+  return BRAND.description;
+}
 
 export function ui(lang: PageLang): UiTexts {
   return lang === "fr" || lang === "he" ? UI[lang] : UI.en;
