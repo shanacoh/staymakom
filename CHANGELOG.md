@@ -4,6 +4,23 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 24/11/2026 : Textes manquants des fiches remplis (visibilité IA, suite)
+
+### Ce qui a changé côté code
+- Rien. Uniquement des textes dans la base.
+
+### Ce qui a changé côté base de données
+- Migration de données `supabase/migrations/20261124210000_seo_textes_manquants.sql` (appliquée le 24/11/2026), sauvegarde préalable dans le schéma `backup_20261124` (tables `seo_*`) :
+  - **29 hôtels publiés** : description anglaise écrite pour les 13 qui n'en avaient pas (à partir des équipements HyperGuest, des infos pratiques et des expériences liées, sans rien inventer) ; description française pour tous ; vraie description hébraïque pour les 11 dont la case hébreu contenait une copie de l'anglais ou était vide ; Mayer House : description anglaise réécrite (elle était en hébreu) ; résumés Google (meta description) en anglais, français et hébreu, les anciens résumés anglais coupés au milieu d'un mot étant remplacés ; nom et ville en hébreu d'INK Hotel.
+  - **6 catégories** : titre et résumé Google en 3 langues.
+  - **8 expériences** : titre et résumé Google en 3 langues ; sous-titre français du « Spa à deux au Setai » corrigé (il parlait de Jaffa au lieu du lac de Tibériade).
+  - **12 articles du journal** : chapeau anglais, résumés Google en français et en hébreu, deux titres corrigés (majuscule à Israel, espace avant le point d'interrogation).
+  - Une case déjà remplie n'a jamais été écrasée, sauf les cas ci-dessus.
+- Non touchés, à décider par Shana : hôtel « SHANA TEST » publié, doublon « Moa Living- », villes de Kedma (Sde Boker) et Oasis Spa Club (Ein Bokek) indiquées « Be'er Sheva ».
+
+### Pourquoi ce changement
+- Après la mise en ligne de la visibilité IA (note passée de F à B), beaucoup de fiches n'avaient pas de texte à montrer aux IA et à Google, surtout en français et en hébreu.
+
 ## 24/11/2026 : Visibilité IA, le site devient lisible par ChatGPT, Claude, Perplexity et Google
 
 ### Ce qui a changé côté code
