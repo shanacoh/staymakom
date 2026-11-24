@@ -4,6 +4,18 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 24/11/2026 : Signature STAYMAKOM signée à l'écran dans le back-office
+
+### Ce qui a changé côté code
+- `src/components/admin/partners/PartnerTermsEditor.tsx` : dans l'onglet « Contrat hôtel », un pavé « Signer ici » (le même composant `SignaturePad` que celui des hôtels, réutilisé), avec aperçu, « Effacer et recommencer » et « Enregistrer ma signature ». L'envoi d'une image PNG reste possible. Le bloc indique la signature en place : date, heure, compte admin, signée à l'écran ou image.
+- `src/lib/partnerAdmin/queries.ts` : la signature (dessinée ou PNG) va au même endroit qu'avant (stockage privé `partner-contracts`, `staymakom/signature.png`) et remplace la précédente ; la date, l'heure, le compte admin et la façon de la déposer sont enregistrés avec le fichier. `hasStaymakomSignature` devient `fetchStaymakomSignatureInfo`.
+
+### Ce qui a changé côté base de données
+- Rien. Le PDF du contrat lit toujours le même fichier ; un contrat dont le PDF existe déjà garde la signature qu'il avait.
+
+### Pourquoi ce changement
+- Pouvoir signer au nom de STAYMAKOM directement à l'écran, sans préparer une image PNG.
+
 ## 23/11/2026 : Partenaires, un seul parcours du premier lien au go live
 
 ### Ce qui a changé côté code

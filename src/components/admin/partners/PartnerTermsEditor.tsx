@@ -20,14 +20,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { errorMessage } from "@/lib/catalogue/queries";
 import {
   fetchTermsVersions,
-  hasStaymakomSignature,
+  fetchStaymakomSignatureInfo,
   partnerAdminKeys,
   publishTermsVersion,
   saveTermsVersion,
   uploadStaymakomSignature,
+  type StaymakomSignatureMethod,
   type TermsTexts,
 } from "@/lib/partnerAdmin/queries";
 import type { TermsKind } from "@/lib/partner/types";
+import { SignaturePad } from "@/components/partner/golive/SignaturePad";
 
 // Conditions partenaires, par type : « conditions expériences » (trois langues) ou « contrat hôtel »
 // (modèle à variables, texte juridique en anglais). Le texte de la version en vigueur.
@@ -182,35 +184,70 @@ export function PartnerTermsEditor({ kind = "experience_terms" }: { kind?: Terms
   );
 }
 
-/** La signature STAYMAKOM, déposée une fois, apposée sur chaque contrat hôtel signé (PDF). */
+/**
+ * La signature STAYMAKOM, apposée sur chaque contrat hôtel signé (PDF) : signée à l'écran (même pavé
+ * que celui des hôtels) ou envoyée en image PNG. La dernière enregistrée remplace la précédente.
+ */
 function StaymakomSignatureUpload() {
   const queryClient = useQueryClient();
-  const present = useQuery({ queryKey: partnerAdminKeys.signature, queryFn: hasStaymakomSignature });
+  const [drawn, setDrawn] = useState<string | null>(null);
+  const [padKey, setPadKey] = useState(0);
+  const current = useQuery({ queryKey: partnerAdminKeys.signature, queryFn: fetchStaymakomSignatureInfo });
   const upload = useMutation({
-    mutationFn: (file: File) => uploadStaymakomSignature(file),
+    mutationFn: ({ file, method }: { file: Blob; method: StaymakomSignatureMethod }) => uploadStaymakomSignature(file, method),
     onSuccess: () => {
       toast.success("Signature STAYMAKOM enregistrée");
+      setDrawn(null);
+      setPadKey((k) => k + 1);
       queryClient.invalidateQueries({ queryKey: partnerAdminKeys.signature });
     },
     onError: (e) => toast.error(errorMessage(e)),
   });
+  const saveDrawn = async () => {
+    if (!drawn) return;
+    const file = await (await fetch(drawn)).blob();
+    upload.mutate({ file, method: "drawn" });
+  };
+  const info = current.data;
   return (
-    <div className="space-y-1.5 rounded-lg border border-border bg-card p-4 text-sm">
-      <Label htmlFor="staymakom-signature">Signature STAYMAKOM (image PNG, fond transparent de préférence)</Label>
-      <p className="text-xs text-muted-foreground">
-        {present.data ? "Une signature est déjà enregistrée : en envoyer une autre la remplace pour les prochains contrats." : "Pas encore de signature : les PDF seront générés sans elle."}
-      </p>
-      <input
-        id="staymakom-signature"
-        type="file"
-        accept="image/png"
-        disabled={upload.isPending}
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) upload.mutate(file);
-        }}
-        className="text-xs"
-      />
+    <div className="space-y-4 rounded-lg border border-border bg-card p-4 text-sm">
+      <div className="space-y-1">
+        <p className="font-medium">Signature STAYMAKOM</p>
+        <p className="text-xs text-muted-foreground">
+          {info
+            ? `Signature en place : ${info.method === "drawn" ? "signée à l'écran" : info.method === "png" ? "image PNG" : "enregistrée"} le ${format(parseISO(info.savedAt), "d MMMM yyyy 'à' HH:mm", { locale: fr })}${info.savedBy ? ` par ${info.savedBy}` : ""}. En enregistrer une autre la remplace pour les prochains contrats ; les contrats déjà signés gardent la leur.`
+            : "Pas encore de signature : les PDF seront générés sans elle."}
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <SignaturePad key={padKey} label="Signer ici" clearLabel="Effacer et recommencer" onChange={setDrawn} />
+        {drawn && (
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground">Aperçu</p>
+            <img src={drawn} alt="Aperçu de la signature" className="h-20 rounded border border-border bg-white object-contain p-1" />
+          </div>
+        )}
+        <Button type="button" disabled={!drawn || upload.isPending} onClick={saveDrawn}>
+          Enregistrer ma signature
+        </Button>
+      </div>
+
+      <div className="space-y-1.5 border-t border-border pt-3">
+        <Label htmlFor="staymakom-signature">Ou envoyer une image PNG (fond transparent de préférence)</Label>
+        <input
+          id="staymakom-signature"
+          type="file"
+          accept="image/png"
+          disabled={upload.isPending}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) upload.mutate({ file, method: "png" });
+            e.target.value = "";
+          }}
+          className="block text-xs"
+        />
+      </div>
     </div>
   );
 }

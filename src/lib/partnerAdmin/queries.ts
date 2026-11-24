@@ -202,17 +202,42 @@ export async function publishTermsVersion(kind: TermsKind, texts: TermsTexts): P
 
 export const STAYMAKOM_SIGNATURE_PATH = "staymakom/signature.png";
 
-/** Vrai si la signature STAYMAKOM a déjà été déposée dans le stockage privé des contrats. */
-export async function hasStaymakomSignature(): Promise<boolean> {
-  const { data, error } = await supabase.storage.from("partner-contracts").list("staymakom", { search: "signature.png" });
-  if (error) throw error;
-  return (data ?? []).some((file) => file.name === "signature.png");
+export type StaymakomSignatureMethod = "drawn" | "png";
+
+export interface StaymakomSignatureInfo {
+  savedAt: string;
+  savedBy: string | null;
+  method: StaymakomSignatureMethod | null;
 }
 
-export async function uploadStaymakomSignature(file: File): Promise<void> {
-  const { error } = await supabase.storage
-    .from("partner-contracts")
-    .upload(STAYMAKOM_SIGNATURE_PATH, file, { upsert: true, contentType: "image/png", cacheControl: "60" });
+/** La signature STAYMAKOM en place (date, compte admin, façon de la déposer), ou null s'il n'y en a pas. */
+export async function fetchStaymakomSignatureInfo(): Promise<StaymakomSignatureInfo | null> {
+  const { data, error } = await supabase.storage.from("partner-contracts").list("staymakom", { search: "signature.png" });
+  if (error) throw error;
+  const file = (data ?? []).find((f) => f.name === "signature.png");
+  if (!file) return null;
+  const { data: info } = await supabase.storage.from("partner-contracts").info(STAYMAKOM_SIGNATURE_PATH);
+  const meta = (info?.metadata ?? {}) as Record<string, string | undefined>;
+  return {
+    savedAt: meta.saved_at ?? file.updated_at ?? file.created_at,
+    savedBy: meta.saved_by_email ?? null,
+    method: meta.method === "drawn" || meta.method === "png" ? meta.method : null,
+  };
+}
+
+/**
+ * Enregistre la signature STAYMAKOM (image PNG envoyée ou signée à l'écran) au même endroit, en
+ * remplaçant la précédente, avec la date, l'heure et le compte admin. Les PDF déjà générés gardent
+ * la signature qu'ils avaient.
+ */
+export async function uploadStaymakomSignature(file: Blob, method: StaymakomSignatureMethod): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase.storage.from("partner-contracts").upload(STAYMAKOM_SIGNATURE_PATH, file, {
+    upsert: true,
+    contentType: "image/png",
+    cacheControl: "60",
+    metadata: { saved_at: new Date().toISOString(), saved_by_user_id: user?.id ?? null, saved_by_email: user?.email ?? null, method },
+  });
   if (error) throw error;
 }
 
