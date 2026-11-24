@@ -34,3 +34,11 @@ describe("plan des adresses du guichet robots", () => {
     expect(classifyPath("/hotel/a/b")).toBe("unknown");
   });
 });
+
+describe("plan du site (api/_seo/sitemap.ts)", () => {
+  it("recopie bien l'interrupteur des langues de src/config/languages.json", async () => {
+    const config = JSON.parse(readFileSync(join(__dirname, "languages.json"), "utf-8"));
+    const { AUTO_LOCALES_PUBLIC } = await import("../../api/_seo/site");
+    expect(AUTO_LOCALES_PUBLIC).toBe(config.autoLocalesPublic === true);
+  });
+});

@@ -48,7 +48,7 @@ export function publicLocales(): readonly Locale[] {
 /**
  * Adresse d'une page dans une langue, telle qu'annoncée à Google (canonical, hreflang,
  * plan du site) : l'anglais garde l'adresse nue, les autres langues portent leur ?lang=.
- * Même règle dans api/bot-meta.ts et generate-sitemap.mjs.
+ * Même règle dans api/bot-meta.ts et api/_seo/sitemap.ts.
  */
 export function localizedUrl(pageUrl: string, locale: Locale): string {
   return locale === "en" ? pageUrl : `${pageUrl}?lang=${locale}`;

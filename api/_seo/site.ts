@@ -7,6 +7,14 @@ export type PageLang = "en" | "fr" | "he" | "es" | "ru" | "de";
 export const ALL_LANGS: readonly PageLang[] = ["en", "fr", "he", "es", "ru", "de"];
 export const AUTO_LANGS: readonly PageLang[] = ["es", "ru", "de"];
 
+/**
+ * Copie de l'interrupteur src/config/languages.json (autoLocalesPublic) : true = espagnol,
+ * russe et allemand sont annoncés à Google (plan du site). Le test
+ * src/config/publicRoutes.test.ts vérifie que les deux restent identiques.
+ */
+export const AUTO_LOCALES_PUBLIC = true;
+export const PUBLIC_LANGS: readonly PageLang[] = AUTO_LOCALES_PUBLIC ? ALL_LANGS : ["en", "fr", "he"];
+
 /** Adresse de référence du site (canonical, sitemap, données structurées). */
 export const SITE_URL = "https://www.staymakom.com";
 

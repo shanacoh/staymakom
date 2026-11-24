@@ -4,6 +4,20 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 24/11/2026 : Plan du site en direct et retrait des tirets cadratins
+
+### Ce qui a changé côté code
+- `api/sitemap.ts` + `api/_seo/sitemap.ts` (nouveaux) et `vercel.json` : l'adresse `/sitemap.xml` est fabriquée en direct à partir des fiches publiées (cache 1 h). Un hôtel, une expérience ou un article publié dans le back-office y apparaît tout seul, sans attendre une mise en ligne du code. Si la base ne répond pas, Google reçoit « réessayez plus tard » (503) plutôt qu'un plan vide.
+- `generate-sitemap.mjs` et `public/sitemap.xml` supprimés (logique reprise dans `api/_seo/sitemap.ts`) ; `package.json` : l'étape de génération est retirée de la construction du site.
+- `api/_seo/site.ts` : copie de l'interrupteur des langues (`AUTO_LOCALES_PUBLIC`), vérifiée par un test dans `src/config/publicRoutes.test.ts`.
+- Tirets cadratins dans le code : laissés volontairement dans les libellés de paiement Revolut (« Staymakom — … », « Acompte — … »), car `supabase/functions/_shared/revolut-order.ts` s'en sert pour reconnaître les commandes ; les autres sont dans des écrans de diagnostic, des journaux techniques et des consignes d'IA.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261124240000_retrait_tirets_cadratins.sql` (appliquée le 24/11/2026, sauvegarde `backup_20261124.emdash_*`) : plus aucun tiret cadratin dans les textes des hôtels, expériences, expériences seules, catégories, extras et catalogue (titres : « | », dates et listes : deux-points, ailleurs : virgule).
+
+### Pourquoi ce changement
+- Shana voulait qu'un nouvel hôtel publié soit visible des moteurs et des IA sans intervention, et ne veut jamais de tiret cadratin sur le site.
+
 ## 24/11/2026 : Descriptions longues des 13 hôtels qui ont une expérience en vente
 
 ### Ce qui a changé côté code
