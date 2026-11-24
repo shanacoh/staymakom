@@ -1,19 +1,51 @@
 import { next, rewrite } from "@vercel/functions";
 import { isHiddenLocale, isLocale, publicLocales } from "./src/lib/locale";
+import { classifyPath } from "./src/config/publicRoutes";
 
-// Robots que Google/Meta/etc. utilisent pour lire le contenu avant de l'indexer
-// ou d'en générer un aperçu (WhatsApp, Facebook, Twitter/X, Slack, LinkedIn...).
-const BOT_USER_AGENT = /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|sogou|exabot|facebookexternalhit|facebot|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot|slackbot|pinterest|applebot|semrushbot|ahrefsbot|mj12bot|redditbot|skypeuripreview|ia_archiver/i;
+// Robots des moteurs de recherche, des aperçus de liens (WhatsApp, Facebook, LinkedIn...)
+// et des IA (ChatGPT, Claude, Perplexity, Gemini, Apple, Amazon, Meta, Mistral...).
+const BOT_USER_AGENT = new RegExp(
+  [
+    // Moteurs de recherche
+    "googlebot", "google-inspectiontool", "bingbot", "slurp", "duckduckbot", "baiduspider", "yandexbot",
+    "sogou", "exabot", "applebot", "petalbot", "seznambot", "qwantify",
+    // Aperçus de liens
+    "facebookexternalhit", "facebot", "twitterbot", "linkedinbot", "whatsapp", "telegrambot",
+    "discordbot", "slackbot", "pinterest", "redditbot", "skypeuripreview", "embedly",
+    // IA
+    "gptbot", "chatgpt-user", "oai-searchbot", "claudebot", "claude-user", "claude-searchbot",
+    "anthropic-ai", "perplexitybot", "perplexity-user", "google-extended", "googleother",
+    "gemini", "ccbot", "bytespider", "amazonbot", "meta-externalagent", "meta-externalfetcher",
+    "mistralai-user", "cohere-ai", "youbot", "diffbot", "duckassistbot", "timpibot", "ai2bot",
+    // Outils d'audit
+    "semrushbot", "ahrefsbot", "mj12bot", "ia_archiver", "screaming frog", "lighthouse",
+  ].join("|"),
+  "i"
+);
+
+/**
+ * Robot = un robot connu, ou un programme qui ne se présente pas comme un navigateur
+ * (tous les navigateurs humains annoncent « Mozilla/... » ; curl, scripts et outils
+ * d'audit, non). Les visiteurs humains ne passent jamais par le guichet robots.
+ */
+function isBot(userAgent: string): boolean {
+  if (!userAgent) return true;
+  return BOT_USER_AGENT.test(userAgent) || !/mozilla\//i.test(userAgent);
+}
 
 export default function middleware(request: Request) {
-  const userAgent = request.headers.get("user-agent") || "";
-  if (!BOT_USER_AGENT.test(userAgent)) {
+  if (!isBot(request.headers.get("user-agent") || "")) {
     return next();
   }
 
   const url = new URL(request.url);
+  // Zones privées et parcours de réservation / paiement : jamais touchés.
+  const kind = classifyPath(url.pathname);
+  if (kind === "private") return next();
+
   const target = new URL("/api/bot-meta", url);
   target.searchParams.set("path", url.pathname);
+  if (kind === "unknown") target.searchParams.set("notfound", "1");
 
   // Langue demandée (?lang=) et langues à annoncer à Google, d'après l'interrupteur unique
   // src/config/languages.json (le guichet robots n'a ainsi rien à relire lui-même).
@@ -22,22 +54,15 @@ export default function middleware(request: Request) {
   target.searchParams.set("lang", lang);
   target.searchParams.set("locales", publicLocales().join(","));
   if (isHiddenLocale(lang)) target.searchParams.set("hidden", "1");
+  // Mode de la liste (?mode=live / stay) : utile pour /experiences et /category.
+  const mode = url.searchParams.get("mode");
+  if (mode === "live" || mode === "stay") target.searchParams.set("mode", mode);
   return rewrite(target);
 }
 
-// Volontairement limité aux fiches de contenu public (hôtel, expérience, catégorie,
-// journal, accueil, liste des expériences). Ne touche JAMAIS /checkout,
-// /standalone-checkout, /booking, /account, /cart, /auth, /admin, /hotel-admin,
-// /gift-card — ces routes ne passent même pas par ce middleware.
+// Toutes les adresses de pages (sans point, donc pas les images ni les fichiers),
+// hors /api et /assets. Le tri privé / public / inexistant se fait dans classifyPath.
 export const config = {
   runtime: "edge",
-  matcher: [
-    "/",
-    "/experiences",
-    "/hotel/:slug",
-    "/experience/:slug",
-    "/category/:slug",
-    "/journal/:slug",
-    "/standalone-experience/:slug",
-  ],
+  matcher: ["/((?!api/|assets/)[^.]*)"],
 };
