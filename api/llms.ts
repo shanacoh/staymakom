@@ -52,6 +52,10 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
     section("Experiences only", standalones.map((s) => line(s.title, `${s.category_id === BOATS_CATEGORY_ID ? "/boat" : "/standalone-experience"}/${s.slug}`, [s.subtitle, s.city].filter(Boolean).join(" · ")))),
     section("Journal", posts.map((p) => line(p.title_en, `/journal/${p.slug}`, p.excerpt_en))),
     section("About & Policies", policies),
+    section("Press", [
+      `- [The Jerusalem Post](${BRAND.press[0]}): article about STAYMAKOM and its founder`,
+      `- [Actualité Juive](${BRAND.press[1]}): Voyager autrement en Israël avec STAYMAKOM`,
+    ]),
   ]
     .filter(Boolean)
     .join("\n");

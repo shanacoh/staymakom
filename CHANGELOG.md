@@ -4,6 +4,28 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 24/11/2026 : Visibilité IA, le site devient lisible par ChatGPT, Claude, Perplexity et Google
+
+### Ce qui a changé côté code
+- `middleware.ts` (le « portier » qui reconnaît les robots) : ajout des robots des IA (GPTBot, ChatGPT-User, OAI-SearchBot, ClaudeBot, Claude-User, PerplexityBot, Google-Extended, CCBot, Amazonbot, Meta, Mistral...) ; tout programme qui ne se présente pas comme un navigateur (curl, scripts, outils d'audit) est traité comme un robot. Le portier regarde désormais toutes les adresses de pages, mais laisse passer sans rien toucher les zones privées et tous les parcours de réservation / paiement. Les visiteurs humains ne sont jamais concernés.
+- `src/config/publicRoutes.ts` (nouveau) + test `publicRoutes.test.ts` : plan des adresses du site (privées, pages publiques, inexistantes). Le test échoue si une adresse ajoutée dans `App.tsx` n'y est pas classée, pour qu'aucune vraie page ne réponde « introuvable » aux robots.
+- `api/bot-meta.ts` (guichet robots) réécrit et découpé en petits fichiers dans `api/_seo/` :
+  - `resolvers.ts` : pour chaque type de page (accueil, liste des expériences, hôtel, expérience avec hôtel, expérience seule, bateaux, catégorie, journal, article, À propos, Contact, conditions...), lit la fiche publiée et prépare son contenu ; fiche absente ou non publiée = 404 ;
+  - `renderBody.ts` : met ce contenu dans la page servie aux robots (menu, un seul titre H1, texte, intertitres H2, « ce qui est inclus », prix « à partir de », lieu, liens internes, pied de page avec Staymakom Ltd, adresse, email, Instagram / TikTok / LinkedIn et liens vers CGV, confidentialité, annulation, mentions légales). React remplace ce contenu dès que le site s'exécute ;
+  - `patchHead.ts` : titre, description (140 à 160 caractères), canonical, `og:url` / `og:locale` propres à la page, `lang` et `dir="rtl"` pour l'hébreu, hreflang ; adresse inexistante = 404 + « ne pas indexer » ;
+  - `jsonLd.ts` : données structurées Organization + WebSite (accueil), Hotel (fiches hôtel), Product + Offer en ILS (expériences), CollectionPage (catégories, listes), Article (journal), BreadcrumbList ;
+  - `titles.ts` : titres au format de l'audit (« Nom | Hotel & Curated Experiences in Ville | STAYMAKOM », « Expérience at Hôtel | STAYMAKOM »), le titre SEO saisi à la main dans le back-office restant prioritaire ;
+  - `db.ts` : si la base ne répond pas, le guichet sert la page générique et jamais une 404 (pour ne pas faire retirer des fiches de Google par erreur) ;
+  - `site.ts`, `staticPages.ts`, `text.ts`, `model.ts` : identité de la marque, textes des pages fixes, outils de texte.
+- `api/llms.ts` (nouveau) + `vercel.json` : l'adresse `/llms.txt` sert un résumé du site pour les IA (catégories, hôtels, expériences, bateaux, articles, pages À propos / conditions), fabriqué à partir de la base et mis en cache 1 h.
+- `generate-sitemap.mjs` : chaque fiche du plan du site porte sa vraie date de dernière modification (`updated_at`) au lieu de la date du jour ; les bateaux sont listés à leur adresse `/boat/...`.
+- `vercel.json` : redirection définitive de l'ancienne adresse `/hotel/bayit-bagalil-boutique-hotel-by-herbert-samuelnn` vers l'adresse corrigée.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261124200000_fix_slug_bayit_bagalil.sql` : corrige l'adresse (slug) de la fiche Setai Bayit Bagalil (coquille « samuelnn »). À appliquer au moment de la mise en ligne, en même temps que la redirection.
+
+### Pourquoi ce changement
+- L'audit de visibilité IA du 24/11/2026 (note F) montrait que les robots des IA recevaient des pages vides : le site était invisible pour ChatGPT, Claude ou Perplexity. Chaque page publique se lit maintenant sans exécuter le site, avec son vrai titre, son texte, ses prix et ses liens.
 ## 24/11/2026 : La page partenaire prend la DA STAYMAKOM
 
 ### Ce qui a changé côté code

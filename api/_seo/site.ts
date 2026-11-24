@@ -26,7 +26,10 @@ export const BRAND = {
     linkedin: "https://www.linkedin.com/company/staymakom",
   },
   /** Articles de presse qui parlent de STAYMAKOM (repris dans « sameAs » pour Google et les IA). */
-  press: [] as string[],
+  press: [
+    "https://www.jpost.com/travel/article-913937",
+    "https://israj.media-j.com/article/66860/voyager-autrement-en-israel-avec-staymakom-shana-cohen-mise-sur-les-tresors-meconnus-du-pays",
+  ] as string[],
 };
 
 /** Libellés d'interface du contenu servi aux robots. es / ru / de : repli sur l'anglais. */
