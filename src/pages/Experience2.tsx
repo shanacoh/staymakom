@@ -544,7 +544,7 @@ export default function Experience2() {
             "name": experience.title,
             "description": experience.subtitle || undefined,
             "image": experience.hero_image || primaryHotel?.hero_image || undefined,
-            "url": `https://staymakom.com/experience/${experience.slug}`,
+            "url": `https://www.staymakom.com/experience/${experience.slug}`,
             "brand": { "@type": "Brand", "name": "STAYMAKOM" },
             ...(experience.base_price != null && {
               "offers": {
@@ -552,7 +552,7 @@ export default function Experience2() {
                 "price": experience.base_price,
                 "priceCurrency": experience.currency || "ILS",
                 "availability": "https://schema.org/InStock",
-                "url": `https://staymakom.com/experience/${experience.slug}`
+                "url": `https://www.staymakom.com/experience/${experience.slug}`
               }
             }),
             ...(reviewsCount > 0 && averageRating != null && {
@@ -570,17 +570,17 @@ export default function Experience2() {
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(
             buildBreadcrumbJsonLd([
-              { name: "Home", url: "https://staymakom.com/" },
+              { name: "Home", url: "https://www.staymakom.com/" },
               {
                 name: "With Hotel",
                 url: category?.slug
-                  ? `https://staymakom.com/category/${category.slug}?mode=stay`
-                  : "https://staymakom.com/experiences",
+                  ? `https://www.staymakom.com/category/${category.slug}?mode=stay`
+                  : "https://www.staymakom.com/experiences",
               },
               ...(categoryName && category?.slug
-                ? [{ name: categoryName, url: `https://staymakom.com/category/${category.slug}` }]
+                ? [{ name: categoryName, url: `https://www.staymakom.com/category/${category.slug}` }]
                 : []),
-              { name: title, url: `https://staymakom.com/experience/${experience.slug}` },
+              { name: title, url: `https://www.staymakom.com/experience/${experience.slug}` },
             ])
           ),
         }}

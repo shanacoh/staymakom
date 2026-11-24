@@ -191,7 +191,7 @@ const Hotel = () => {
             "@type": "LodgingBusiness",
             "name": hotel.name,
             "image": hotel.hero_image || hotel.og_image || undefined,
-            "url": `https://staymakom.com/hotel/${hotel.slug}`,
+            "url": `https://www.staymakom.com/hotel/${hotel.slug}`,
             "address": {
               "@type": "PostalAddress",
               "addressLocality": hotel.city || undefined,
@@ -212,8 +212,8 @@ const Hotel = () => {
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(
             buildBreadcrumbJsonLd([
-              { name: "Home", url: "https://staymakom.com/" },
-              { name: hotelName, url: `https://staymakom.com/hotel/${hotel.slug}` },
+              { name: "Home", url: "https://www.staymakom.com/" },
+              { name: hotelName, url: `https://www.staymakom.com/hotel/${hotel.slug}` },
             ])
           ),
         }}

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = __dirname;
-const BASE_URL = 'https://staymakom.com';
+const BASE_URL = 'https://www.staymakom.com';
 
 // Lecture du fichier .env (sans dépendance externe)
 const env = {};

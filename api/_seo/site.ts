@@ -8,7 +8,7 @@ export const ALL_LANGS: readonly PageLang[] = ["en", "fr", "he", "es", "ru", "de
 export const AUTO_LANGS: readonly PageLang[] = ["es", "ru", "de"];
 
 /** Adresse de référence du site (canonical, sitemap, données structurées). */
-export const SITE_URL = "https://staymakom.com";
+export const SITE_URL = "https://www.staymakom.com";
 
 export const BRAND = {
   name: "STAYMAKOM",

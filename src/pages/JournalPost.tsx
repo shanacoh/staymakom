@@ -493,7 +493,7 @@ const JournalPost = () => {
             "headline": post.title_en,
             "description": post.excerpt_en || undefined,
             "image": post.og_image || post.cover_image || undefined,
-            "url": `https://staymakom.com/journal/${post.slug}`,
+            "url": `https://www.staymakom.com/journal/${post.slug}`,
             "datePublished": post.published_at,
             "author": { "@type": "Organization", "name": "STAYMAKOM" },
             "publisher": {
@@ -501,7 +501,7 @@ const JournalPost = () => {
               "name": "STAYMAKOM",
               "logo": {
                 "@type": "ImageObject",
-                "url": "https://staymakom.com/favicon.png"
+                "url": "https://www.staymakom.com/favicon.png"
               }
             }
           })

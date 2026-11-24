@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { isHiddenLocale, localizedUrl, publicLocales } from "@/lib/locale";
 
-const BASE_URL = "https://staymakom.com";
+const BASE_URL = "https://www.staymakom.com";
 
 interface SEOHeadProps {
   title?: string;

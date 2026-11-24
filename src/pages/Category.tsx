@@ -335,9 +335,9 @@ const Category = () => {
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(
             buildBreadcrumbJsonLd([
-              { name: "Home", url: "https://staymakom.com/" },
-              ...(isBoatsCategory ? [] : [{ name: mode === 'stay' ? "With Hotel" : "Experience Only", url: `https://staymakom.com/category/${slug}?mode=${mode}` }]),
-              { name: categoryName, url: `https://staymakom.com/category/${slug}?mode=${mode}` },
+              { name: "Home", url: "https://www.staymakom.com/" },
+              ...(isBoatsCategory ? [] : [{ name: mode === 'stay' ? "With Hotel" : "Experience Only", url: `https://www.staymakom.com/category/${slug}?mode=${mode}` }]),
+              { name: categoryName, url: `https://www.staymakom.com/category/${slug}?mode=${mode}` },
             ])
           ),
         }}

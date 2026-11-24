@@ -11,4 +11,4 @@ Disallow: /standalone-booking/confirmation/
 Disallow: /billet/
 Disallow: /standalone-checkout
 
-Sitemap: https://staymakom.com/sitemap.xml
+Sitemap: https://www.staymakom.com/sitemap.xml

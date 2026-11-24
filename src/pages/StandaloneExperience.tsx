@@ -1096,7 +1096,7 @@ export default function StandaloneExperience() {
             "name": experience.title,
             "description": subtitle || undefined,
             "image": experience.hero_image || undefined,
-            "url": `https://staymakom.com/standalone-experience/${experience.slug}`,
+            "url": `https://www.staymakom.com/standalone-experience/${experience.slug}`,
             "brand": { "@type": "Brand", "name": "STAYMAKOM" },
             ...(experience.base_price != null && {
               "offers": {
@@ -1104,7 +1104,7 @@ export default function StandaloneExperience() {
                 "price": experience.base_price,
                 "priceCurrency": experience.currency || "ILS",
                 "availability": "https://schema.org/InStock",
-                "url": `https://staymakom.com/standalone-experience/${experience.slug}`
+                "url": `https://www.staymakom.com/standalone-experience/${experience.slug}`
               }
             }),
             ...(reviewsSummary && reviewsSummary.count > 0 && reviewsSummary.averageRating != null && {
@@ -1122,17 +1122,17 @@ export default function StandaloneExperience() {
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(
             buildBreadcrumbJsonLd([
-              { name: "Home", url: "https://staymakom.com/" },
+              { name: "Home", url: "https://www.staymakom.com/" },
               {
                 name: "Experience Only",
                 url: categorySlug
-                  ? `https://staymakom.com/category/${categorySlug}?mode=live`
-                  : "https://staymakom.com/experiences?mode=live",
+                  ? `https://www.staymakom.com/category/${categorySlug}?mode=live`
+                  : "https://www.staymakom.com/experiences?mode=live",
               },
               ...(categoryName && categorySlug
-                ? [{ name: categoryName, url: `https://staymakom.com/category/${categorySlug}` }]
+                ? [{ name: categoryName, url: `https://www.staymakom.com/category/${categorySlug}` }]
                 : []),
-              { name: title, url: `https://staymakom.com/standalone-experience/${experience.slug}` },
+              { name: title, url: `https://www.staymakom.com/standalone-experience/${experience.slug}` },
             ])
           ),
         }}

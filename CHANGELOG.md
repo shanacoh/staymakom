@@ -20,6 +20,8 @@
 - `api/llms.ts` (nouveau) + `vercel.json` : l'adresse `/llms.txt` sert un résumé du site pour les IA (catégories, hôtels, expériences, bateaux, articles, pages À propos / conditions), fabriqué à partir de la base et mis en cache 1 h.
 - `generate-sitemap.mjs` : chaque fiche du plan du site porte sa vraie date de dernière modification (`updated_at`) au lieu de la date du jour ; les bateaux sont listés à leur adresse `/boat/...`.
 - `vercel.json` : redirection définitive de l'ancienne adresse `/hotel/bayit-bagalil-boutique-hotel-by-herbert-samuelnn` vers l'adresse corrigée.
+- Adresse officielle du site = `https://www.staymakom.com` (choix de Shana, option A) : c'est l'adresse qui répond réellement (staymakom.com y redirige). Mise à jour dans le guichet robots (`api/_seo/site.ts`), le plan du site (`generate-sitemap.mjs`), `public/robots.txt`, `index.html`, `src/components/SEOHead.tsx` et les données structurées des pages Hôtel, Expérience, Expérience seule, Catégorie et Article. Les liens envoyés par WhatsApp ou email depuis le back-office ne changent pas (ils redirigent).
+- Presse : articles du Jerusalem Post et d'Actualité Juive ajoutés à la fiche d'identité de la marque (« sameAs ») et au llms.txt.
 
 ### Ce qui a changé côté base de données
 - Migration `supabase/migrations/20261124200000_fix_slug_bayit_bagalil.sql` : corrige l'adresse (slug) de la fiche Setai Bayit Bagalil (coquille « samuelnn »). À appliquer au moment de la mise en ligne, en même temps que la redirection.
