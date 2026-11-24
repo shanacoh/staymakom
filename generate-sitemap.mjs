@@ -26,8 +26,9 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
   process.exit(1);
 }
 
-async function fetchSlugs(table, params = '') {
-  const url = `${SUPABASE_URL}/rest/v1/${table}?select=slug${params}`;
+// slug + date de dernière modification de la fiche (updated_at), pour la balise <lastmod>.
+async function fetchSlugs(table, params = '', extraColumns = '') {
+  const url = `${SUPABASE_URL}/rest/v1/${table}?select=slug,updated_at${extraColumns}${params}`;
   const res = await fetch(url, {
     headers: {
       apikey: SUPABASE_KEY,
@@ -43,7 +44,12 @@ async function fetchSlugs(table, params = '') {
   return data.filter(r => r.slug);
 }
 
-const today = new Date().toISOString().split('T')[0];
+// Date de dernière modification réelle de la fiche (AAAA-MM-JJ). Les pages fixes
+// (À propos, conditions...) n'en déclarent pas : mieux vaut rien qu'une date inventée.
+const lastmodOf = (row) => (row && row.updated_at ? String(row.updated_at).slice(0, 10) : null);
+
+// Copie de src/lib/boatsCategory.ts : les bateaux ont leur adresse de référence /boat/<slug>.
+const BOATS_CATEGORY_ID = '06434e23-29f4-4c6b-ba63-b61e68879520';
 
 // Langues annoncées à Google. Anglais, français et hébreu sont toujours publics ;
 // espagnol, russe et allemand seulement quand l'interrupteur unique
@@ -57,7 +63,7 @@ const PUBLIC_LOCALES = languagesConfig.autoLocalesPublic === true
 
 // Une page = une adresse par langue, chacune listant toutes ses sœurs
 // (balises xhtml:link), comme demandé par Google pour les sites multilingues.
-function urlEntry(loc, priority, changefreq) {
+function urlEntry(loc, priority, changefreq, lastmod = null) {
   // Anglais = adresse nue ; autres langues = ?lang= (même règle que src/lib/locale.ts)
   const withLang = (code) => (code === 'en' ? loc : `${loc}?lang=${code}`);
   const alternates = [
@@ -68,7 +74,7 @@ function urlEntry(loc, priority, changefreq) {
     '  <url>',
     `    <loc>${withLang(code)}</loc>`,
     ...alternates,
-    `    <lastmod>${today}</lastmod>`,
+    ...(lastmod ? [`    <lastmod>${lastmod}</lastmod>`] : []),
     `    <changefreq>${changefreq}</changefreq>`,
     `    <priority>${priority}</priority>`,
     '  </url>',
@@ -95,7 +101,7 @@ const [experiences, hotels, categories, standalones, journals] = await Promise.a
   fetchSlugs('experiences2', '&status=eq.published'),
   fetchSlugs('hotels2',      '&status=eq.published'),
   fetchSlugs('categories',   '&status=eq.published'),
-  fetchSlugs('standalone_experiences', '&status=eq.published').catch(() => []),
+  fetchSlugs('standalone_experiences', '&status=eq.published', ',category_id').catch(() => []),
   fetchSlugs('journal_posts', '&status=eq.published'),
 ]);
 
@@ -105,11 +111,14 @@ const entries = [
   ),
   // "bateaux" est une catégorie saisonnière (publiée en été, brouillon hors saison) :
   // on ne la liste pas, la vitrine permanente /boat est déjà dans STATIC_PAGES ci-dessus.
-  ...categories.filter(r => r.slug !== 'bateaux').map(r => urlEntry(`${BASE_URL}/category/${r.slug}`, '0.8', 'weekly')),
-  ...experiences.map(r => urlEntry(`${BASE_URL}/experience/${r.slug}`, '0.9', 'weekly')),
-  ...hotels.map(r => urlEntry(`${BASE_URL}/hotel/${r.slug}`, '0.8', 'weekly')),
-  ...standalones.map(r => urlEntry(`${BASE_URL}/standalone-experience/${r.slug}`, '0.8', 'weekly')),
-  ...journals.map(r => urlEntry(`${BASE_URL}/journal/${r.slug}`, '0.7', 'monthly')),
+  ...categories.filter(r => r.slug !== 'bateaux').map(r => urlEntry(`${BASE_URL}/category/${r.slug}`, '0.8', 'weekly', lastmodOf(r))),
+  ...experiences.map(r => urlEntry(`${BASE_URL}/experience/${r.slug}`, '0.9', 'weekly', lastmodOf(r))),
+  ...hotels.map(r => urlEntry(`${BASE_URL}/hotel/${r.slug}`, '0.8', 'weekly', lastmodOf(r))),
+  ...standalones.map(r => urlEntry(
+    `${BASE_URL}${r.category_id === BOATS_CATEGORY_ID ? '/boat' : '/standalone-experience'}/${r.slug}`,
+    '0.8', 'weekly', lastmodOf(r)
+  )),
+  ...journals.map(r => urlEntry(`${BASE_URL}/journal/${r.slug}`, '0.7', 'monthly', lastmodOf(r))),
 ];
 
 const xml = [

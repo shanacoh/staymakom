@@ -1,24 +1,62 @@
 {
   "redirects": [
-    { "source": "/hotel-old/:slug", "destination": "/hotel/:slug", "permanent": true },
-    { "source": "/experience-old/:slug", "destination": "/experience/:slug", "permanent": true },
-    { "source": "/experiences-old", "destination": "/experiences", "permanent": true }
+    {
+      "source": "/hotel-old/:slug",
+      "destination": "/hotel/:slug",
+      "permanent": true
+    },
+    {
+      "source": "/experience-old/:slug",
+      "destination": "/experience/:slug",
+      "permanent": true
+    },
+    {
+      "source": "/experiences-old",
+      "destination": "/experiences",
+      "permanent": true
+    },
+    {
+      "source": "/hotel/bayit-bagalil-boutique-hotel-by-herbert-samuelnn",
+      "destination": "/hotel/bayit-bagalil-boutique-hotel-by-herbert-samuel",
+      "permanent": true
+    }
   ],
   "headers": [
     {
       "source": "/billet/(.*)",
       "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
-        { "key": "Cache-Control", "value": "no-store" },
-        { "key": "Referrer-Policy", "value": "no-referrer" }
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        }
       ]
     },
     {
       "source": "/assets/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
       ]
     }
   ],
-  "rewrites": [{ "source": "/((?!.*\\.).+)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/llms.txt",
+      "destination": "/api/llms"
+    },
+    {
+      "source": "/((?!.*\\.).+)",
+      "destination": "/index.html"
+    }
+  ]
 }
