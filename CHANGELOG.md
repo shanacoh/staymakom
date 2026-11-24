@@ -18,7 +18,7 @@
   - **8 expériences** : titre et résumé Google en 3 langues ; sous-titre français du « Spa à deux au Setai » corrigé (il parlait de Jaffa au lieu du lac de Tibériade).
   - **12 articles du journal** : chapeau anglais, résumés Google en français et en hébreu, deux titres corrigés (majuscule à Israel, espace avant le point d'interrogation).
   - Une case déjà remplie n'a jamais été écrasée, sauf les cas ci-dessus.
-- Non touchés, à décider par Shana : hôtel « SHANA TEST » publié, doublon « Moa Living- », villes de Kedma (Sde Boker) et Oasis Spa Club (Ein Bokek) indiquées « Be'er Sheva ».
+- Migration `supabase/migrations/20261124220000_hotels_test_doublon_villes.sql` (validée par Shana, appliquée le 24/11/2026, sauvegarde `backup_20261124.seo_hotels2_status_city`) : hôtel « SHANA TEST » et doublon « Moa Living- » passés en brouillon (ni l'un ni l'autre n'avait d'expérience liée) ; villes corrigées pour Kedma (Sde Boker) et Oasis Spa Club Dead Sea (Ein Bokek), indiquées « Be'er Sheva » par erreur.
 
 ### Pourquoi ce changement
 - Après la mise en ligne de la visibilité IA (note passée de F à B), beaucoup de fiches n'avaient pas de texte à montrer aux IA et à Google, surtout en français et en hébreu.
