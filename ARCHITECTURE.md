@@ -594,7 +594,7 @@ Note (2026-11-23) — Parcours partenaire, du premier lien au go live (migration
 - **Où se pose le lien** :
   - expérience seule : `standalone_experience_internal.provider_id` = prestataire principal ;
   - bateaux, plusieurs prestataires : `standalone_experience_suppliers.provider_id`. Celui marqué `is_primary` fait foi : le déclencheur `standalone_suppliers_sync_primary_provider` le recopie sur la fiche à chaque écriture de la liste ;
-  - hôtel : `hotel2_internal.provider_id` ;
+  - hôtel : `hotel2_internal.provider_id` (toujours rempli : un hôtel = un prestataire de type « hotel », créé automatiquement par le déclencheur `hotel2_internal_ensure_provider` s'il manque, et jamais effacé ; un groupe d'hôtels = plusieurs hôtels sur le même prestataire, migration `20261124100000_hotel_provider_auto.sql`) ;
   - expérience hôtel : `experience2_internal.provider_id` si elle a son propre prestataire, sinon celui de son hôtel (règle dans `hotelExperienceProviderId`) ;
   - fiche du Catalogue : `catalogue_items.provider_id` ; must-have du plan de l'offre : `offer_must_haves.provider_id` (le texte libre `partner` reste) ;
   - réservation : `standalone_bookings.provider_id` s'il est renseigné, sinon le prestataire principal de l'expérience, déduit à l'affichage (`bookingProviderId`) sans réécrire la réservation.

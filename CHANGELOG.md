@@ -4,6 +4,20 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 24/11/2026 : Un hôtel = un prestataire, créé automatiquement
+
+### Ce qui a changé côté code
+- `src/pages/admin/HotelEditor2.tsx` : sous le champ « Prestataire » de la fiche hôtel, un bouton « Espace partenaire et contrat » ouvre directement la fiche prestataire de l'hôtel (commission, invitation, go live, contrat). Le texte d'aide explique que le prestataire est créé automatiquement et qu'un groupe d'hôtels partage le même.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261124100000_hotel_provider_auto.sql` (appliquée le 24/11/2026) :
+  - les 69 hôtels ont reçu chacun leur prestataire de type « hôtel » : même nom, email et téléphone de contact, région et adresse ; statut « actif » pour les 31 hôtels publiés, « prospect » pour les 38 brouillons ; commission laissée vide (à saisir quand elle est convenue) ;
+  - nouveau déclencheur `hotel2_internal_ensure_provider` : un hôtel enregistré sans prestataire en reçoit un automatiquement, et un hôtel ne peut plus perdre le sien (on peut seulement en choisir un autre) ;
+  - rien d'existant n'est modifié : le taux `commission_rate` des hôtels (18 %) et les prix restent tels quels.
+
+### Pourquoi ce changement
+- Pour STAYMAKOM, chaque hôtel est un partenaire en soi. Sans prestataire, un hôtel ne pouvait ni recevoir de commission, ni être invité, ni signer le contrat.
+
 ## 24/11/2026 : Signature STAYMAKOM signée à l'écran dans le back-office
 
 ### Ce qui a changé côté code

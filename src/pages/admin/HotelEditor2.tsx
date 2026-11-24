@@ -35,6 +35,7 @@ import { InternalOnlyBox } from "@/components/forms/shared/InternalOnlyBox";
 import { MissingProviderBadge } from "@/components/admin/providers/ProviderBadges";
 import { ProviderPicker } from "@/components/admin/providers/ProviderPicker";
 import { PROVIDER_LINKS_QUERY_KEY } from "@/lib/providers/queries";
+import { providerUrl } from "@/lib/providers/types";
 import type {
   HyperGuestHotelWithDetails,
   RoomCapacitySummary,
@@ -1243,8 +1244,14 @@ export const HotelEditor2 = ({ hotelId, onClose }: HotelEditor2Props) => {
                   createType="hotel"
                 />
                 <p className="text-xs text-muted-foreground">
-                  La société qui tient cet hôtel. Ses expériences prennent ce prestataire par défaut.
+                  Chaque hôtel a son prestataire, créé automatiquement à l'enregistrement. Pour un groupe d'hôtels, choisis le même
+                  prestataire pour chacun. Ses expériences prennent ce prestataire par défaut.
                 </p>
+                {formData.provider_id && (
+                  <Button type="button" size="sm" variant="outline" asChild>
+                    <Link to={providerUrl(formData.provider_id)}>Espace partenaire et contrat (commission, invitation, go live)</Link>
+                  </Button>
+                )}
               </div>
             </InternalOnlyBox>
           </CardContent>
