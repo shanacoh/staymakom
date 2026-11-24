@@ -4,6 +4,20 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 24/11/2026 : Descriptions longues des 13 hôtels qui ont une expérience en vente
+
+### Ce qui a changé côté code
+- Rien. Uniquement des textes dans la base.
+
+### Ce qui a changé côté base de données
+- Migration de données `supabase/migrations/20261124230000_hotels_descriptions_longues.sql` (appliquée le 24/11/2026, sauvegarde préalable `backup_20261124.seo_hotels2_long`) : descriptions (`story`, `story_fr`, `story_he`) remplacées par des versions longues (240 à 295 mots en anglais, contre environ 100 avant) pour Beresheet, Kedma, Mitzpe Hayamim, INK, Poli House, Play Eilat, Vert Eilat, Lake House Kinneret, Oasis Spa Club, Setai Bayit Bagalil, Setai Sea of Galilee, Setai Tel Aviv et The Inbal. Chaque texte couvre l'ambiance, pour qui, ce qui distingue l'hôtel, la localisation et l'accès, et l'expérience STAYMAKOM associée.
+- Faits tirés des sites officiels (Isrotel, inbalhotel.com, inkhotel.com), de la presse (Leading Hotels of the World, Wallpaper, Time Out, Michelin) et des fiches de réservation recoupées ; en cas de désaccord entre sources (nombre de chambres), le chiffre n'est pas donné.
+- Vert Eilat : résumé Google corrigé (l'hôtel est à environ 600 m de la plage, pas sur la promenade).
+- À noter : Mitzpe Hayamim n'accepte que les enfants de plus de 10 ans ; INK sert le petit-déjeuner dans des cafés partenaires.
+
+### Pourquoi ce changement
+- Le 2e audit IA (note B) demandait des descriptions d'hôtel d'environ 300 mots ; Shana a choisi l'option « Claude rédige à partir de sources vérifiables, Shana relit ».
+
 ## 24/11/2026 : Textes manquants des fiches remplis (visibilité IA, suite)
 
 ### Ce qui a changé côté code
