@@ -2,8 +2,9 @@
 // états impossibles à confondre :
 //  - fait : rond noir plein avec coche, titre en gris ;
 //  - en cours (une seule étape) : rond cerclé de rouge, titre en gras, encadré crème qui dit ce qui se
-//    passe, qui agit, et soit le bouton rouge (c'est son tour), soit « rien à faire pour l'instant » ;
-//  - à venir : rond gris, titre normal, une ligne d'explication, qui agit.
+//    passe, et soit le bouton rouge (c'est son tour), soit « rien à faire pour l'instant » ;
+//  - à venir : rond gris, titre normal, une ligne d'explication.
+// Pas de mention « qui agit » : les titres le disent déjà (« Nous préparons... », « Vous signez... »).
 // Les étapes et l'étape en cours viennent de la base (go live normalisé, voir normalizeGoLive).
 
 import { Link } from "react-router-dom";
@@ -32,7 +33,6 @@ export function GoLiveCard({ golive, loginEmail }: { golive: GoLive; loginEmail?
     golive.commission_ready && golive.commission ? t.commissionAgreed(commissionLabel(golive.commission, lang)) : t.commissionToAgree,
   ].filter(Boolean);
   const copy = (step: GoLiveStep) => t.timeline[golive.kind]?.[step.key] ?? { title: g.steps[step.key] ?? step.key, text: g.stepHelp[step.key] ?? "" };
-  const actor = (step: GoLiveStep) => (step.actor === "partner" ? t.actorYou : t.actorTeam);
 
   return (
     <section className="space-y-5 rounded-[18px] border border-[#E8E0D4] bg-white p-5 sm:p-7" aria-labelledby="golive-title">
@@ -91,7 +91,7 @@ export function GoLiveCard({ golive, loginEmail }: { golive: GoLive; loginEmail?
                         myTurn ? "bg-brand" : "bg-neutral-900",
                       )}
                     >
-                      {myTurn ? g.yourTurn.toUpperCase() : `${t.inProgress} · ${actor(step).toUpperCase()}`}
+                      {myTurn ? g.yourTurn.toUpperCase() : t.inProgress}
                     </span>
                   </div>
                   <p className="text-[14px] leading-relaxed text-neutral-700">{text}</p>
@@ -134,9 +134,7 @@ export function GoLiveCard({ golive, loginEmail }: { golive: GoLive; loginEmail?
                     <p className={cn("text-[15px]", step.done ? "text-neutral-500" : "font-medium text-neutral-900")}>{title}</p>
                     {!step.done && <p className="text-[13px] leading-relaxed text-neutral-500">{text}</p>}
                   </div>
-                  <span className={cn("text-[12px]", step.done ? "text-neutral-400" : step.actor === "partner" ? "font-medium text-neutral-900" : "text-neutral-500")}>
-                    {step.done ? t.done : actor(step)}
-                  </span>
+                  {step.done && <span className="text-[12px] text-neutral-400">{t.done}</span>}
                 </div>
               )}
             </li>

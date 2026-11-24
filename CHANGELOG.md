@@ -19,6 +19,8 @@
 - `src/lib/partner/i18n-golive.ts` : textes FR / EN / HE de la nouvelle page (repris de la maquette, hébreu à faire relire).
 - `PartnerLinkApp.tsx`, `PartnerHome.tsx` : la page s'ouvre sur le bandeau photo (« Your job: confirm. » supprimé).
 
+- Retouche : la frise ne montre plus « qui agit » (« Notre équipe » / « Vous ») ; l'étape en cours affiche seulement « En cours » ou « C'est votre tour ». Les titres le disent déjà.
+
 ### Ce qui a changé côté base de données
 - Rien (ni base, ni fonctions serveur, ni droits, ni HyperGuest, ni prix, ni paiement).
 
