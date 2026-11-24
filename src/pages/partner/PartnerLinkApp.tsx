@@ -7,7 +7,7 @@
 import { lazy, Suspense, useEffect, useMemo } from "react";
 import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Hint, PageLoader } from "@/components/partner/ui";
+import { PageLoader } from "@/components/partner/ui";
 import { PartnerShell } from "@/components/partner/PartnerShell";
 import { GoLiveSection } from "@/components/partner/golive/GoLiveSection";
 import { goliveKeys, linkAccess, PartnerAccessContext } from "@/lib/partner/access";
@@ -20,19 +20,10 @@ const PartnerRulesPage = lazy(() => import("./golive/PartnerRulesPage"));
 const PartnerPracticalPage = lazy(() => import("./golive/PartnerPracticalPage"));
 const PartnerAvailabilityPage = lazy(() => import("./golive/PartnerAvailabilityPage"));
 
+/** L'accueil du lien : la page partenaire (bandeau photo, go live, présentation). */
 function LinkHome() {
-  const { lang } = usePartner();
-  const t = GOLIVE_TEXTS[lang];
   const session = usePartnerSession();
-  return (
-    <>
-      <div className="space-y-1">
-        <h1 className="text-[17px] font-semibold tracking-tight">{t.linkHello(session.provider.contact_name || session.provider.name)}</h1>
-        <Hint>{t.linkIntro}</Hint>
-      </div>
-      <GoLiveSection session={session} />
-    </>
-  );
+  return <GoLiveSection session={session} />;
 }
 
 /**

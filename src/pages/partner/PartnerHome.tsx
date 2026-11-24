@@ -42,10 +42,12 @@ export default function PartnerHome() {
 
   return (
     <>
-      <h1 className="text-[17px] font-semibold tracking-tight">{t.homeHello(session.provider.contact_name || session.provider.name)}</h1>
-
-      {/* Le go live reste en tête tant que l'annonce n'est pas en ligne. */}
-      {!live && <GoLiveSection session={session} showPitch={!signed} />}
+      {/* Tant que l'annonce n'est pas en ligne, la page s'ouvre sur le bandeau photo et le go live. */}
+      {live ? (
+        <h1 className="text-[17px] font-semibold tracking-tight">{t.homeHello(session.provider.contact_name || session.provider.name)}</h1>
+      ) : (
+        <GoLiveSection session={session} showPitch={!signed} />
+      )}
 
       {signed && <HomeStats upcomingCount={allUpcoming.length} totals={revenueTotals(allBookings)} />}
 

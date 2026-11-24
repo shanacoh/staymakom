@@ -3,6 +3,7 @@
 // (date cible, accord trouvé, HyperGuest) et le prix public / la commission propre d'une expérience.
 // Tout est réservé aux admins par la base.
 
+import { normalizeGoLive } from "@/lib/partner/golive";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { GoLive, ListingField } from "@/lib/partner/types";
@@ -52,7 +53,7 @@ export type ProviderGoLivePatch = Partial<
 export async function fetchAdminGoLive(providerId: string): Promise<AdminGoLive> {
   const { data, error } = await db.rpc("admin_partner_golive", { p_provider_id: providerId });
   if (error) throw error;
-  return data as AdminGoLive;
+  return normalizeGoLive(data as AdminGoLive);
 }
 
 export async function fetchProviderLinkState(providerId: string): Promise<ProviderLinkState> {

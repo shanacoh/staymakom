@@ -28,6 +28,71 @@ export function currentStep(golive: GoLive): GoLiveStep | null {
   return golive.steps.find((step) => step.key === golive.current_step) ?? null;
 }
 
+/**
+ * Le go live tel qu'on l'affiche. L'étape « En ligne » n'est faite que si toutes les précédentes le
+ * sont : une fiche déjà publiée sur le site ne doit pas faire croire que le parcours est fini.
+ */
+export function normalizeGoLive<T extends GoLive>(golive: T): T {
+  const steps = golive.steps.map((step, index) =>
+    step.key === "online" ? { ...step, done: step.done && golive.steps.slice(0, index).every((s) => s.done) } : step,
+  );
+  const current = steps.find((step) => !step.done) ?? null;
+  return {
+    ...golive,
+    steps,
+    current_step: current?.key ?? null,
+    my_turn: current ? current.actor === "partner" : false,
+  };
+}
+
+/** Où en est le partenaire : numéro de l'étape en cours (ou dernière étape si tout est fait) sur le total. */
+export function stepPosition(golive: Pick<GoLive, "steps" | "current_step">): { index: number; total: number } {
+  const total = golive.steps.length;
+  const current = golive.steps.findIndex((step) => step.key === golive.current_step);
+  return { index: current === -1 ? total : current + 1, total };
+}
+
+/** Vrai quand l'équipe a fini de préparer l'annonce (étape « Annonce préparée » faite). */
+export function listingPrepared(golive: Pick<GoLive, "steps">): boolean {
+  return golive.steps.some((step) => step.key === "prepared" && step.done);
+}
+
+/**
+ * Le compteur « X sur Y préparés par notre équipe · Z pour vous » : Z est ce que l'équipe n'a pas
+ * préparé, pour que X + Z = Y. Null tant que l'annonce n'est pas préparée (ou sans champ).
+ */
+export function preparedCounts(golive: Pick<GoLive, "steps" | "counts">): { team: number; total: number; forYou: number } | null {
+  const { total, prepared_by_team: team } = golive.counts;
+  if (!listingPrepared(golive) || total <= 0) return null;
+  const prepared = Math.min(team, total);
+  return { team: prepared, total, forYou: total - prepared };
+}
+
+/** La photo principale d'une annonce (photo de couverture, sinon la première photo), même en brouillon. */
+export function listingCoverPhoto(content: Record<string, unknown> | null | undefined): string | null {
+  if (!content) return null;
+  if (typeof content.hero_image === "string" && content.hero_image) return content.hero_image;
+  const first = Array.isArray(content.photos) ? content.photos.find((p) => typeof p === "string" && p) : null;
+  return (first as string | undefined) ?? null;
+}
+
+/** La phrase du bandeau photo : en préparation, à son tour, entre les mains de l'équipe, en ligne. */
+export type HeroPhase = "preparing" | "your_turn" | "team" | "live";
+
+export function heroPhaseOf(golive: Pick<GoLive, "current_step" | "my_turn" | "steps">): HeroPhase {
+  if (golive.current_step === null) return "live";
+  if (golive.my_turn) return "your_turn";
+  // Tant que le partenaire n'a encore rien eu à faire (on en est avant sa première étape), on prépare.
+  const current = golive.steps.findIndex((step) => step.key === golive.current_step);
+  const firstPartner = golive.steps.findIndex((step) => step.actor === "partner");
+  return firstPartner === -1 || current < firstPartner || !listingPrepared(golive) ? "preparing" : "team";
+}
+
+/** Le lien WhatsApp vers l'équipe STAYMAKOM, avec le nom du partenaire en tête du message. */
+export function teamWhatsappUrl(whatsappNumber: string, providerName: string): string {
+  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`STAYMAKOM · ${providerName}`)}`;
+}
+
 export interface StepAction {
   label: string;
   to: string;

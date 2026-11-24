@@ -176,7 +176,7 @@ export default function PartnerApp() {
   return (
     <PartnerContext.Provider value={context}>
       {/* Hébreu : tout l'espace se lit de droite à gauche. */}
-      <div className="min-h-screen bg-[#FAF9F6] font-sans text-neutral-900" dir={lang === "he" ? "rtl" : "ltr"} lang={lang}>
+      <div className="min-h-screen bg-cream font-sans text-neutral-900" dir={lang === "he" ? "rtl" : "ltr"} lang={lang}>
         {content}
       </div>
     </PartnerContext.Provider>

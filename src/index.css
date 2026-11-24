@@ -86,6 +86,11 @@ All colors MUST be HSL.
     
     /* Hebrew input background – warm neutral */
     --input-hebrew-bg: 30 25% 94%;
+
+    /* Marque STAYMAKOM, jamais redéfinies par un thème : crème de fond (#FAF8F4) et rouge (#AD1414). */
+    --cream: 40 38% 97%;
+    --brand: 0 79% 38%;
+    --brand-hover: 0 79% 30%;
   }
 
   /* Back-office (classe posée sur <html> par useBackofficeTheme) : le noir de marque #1a1814 structure

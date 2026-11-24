@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/popover";
 import { useState } from "react";
 import AccountBubble from "@/components/auth/AccountBubble";
+import { BrandWordmark } from "@/components/BrandWordmark";
 import AuthPromptDialog from "@/components/auth/AuthPromptDialog";
 import UserDropdown from "@/components/auth/UserDropdown";
 
@@ -72,14 +73,8 @@ const V3Header = ({ mode, setMode, showModeToggle = false }: V3HeaderProps) => {
       >
         {/* Left — Logo */}
         <Link to="/" className="flex items-center">
-          {/* Desktop : wordmark complet */}
-          <span className="hidden md:block font-sans font-bold tracking-[-0.04em] uppercase text-xl text-foreground">
-            STAYMAKOM
-          </span>
-          {/* Mobile : monogramme compact */}
-          <span className="md:hidden font-sans font-bold tracking-[-0.04em] uppercase text-lg text-foreground">
-            SM
-          </span>
+          {/* Wordmark complet sur ordinateur, monogramme « SM » sur téléphone */}
+          <BrandWordmark />
         </Link>
 
         {/* Center — Toggle (uniquement sur /v3) */}

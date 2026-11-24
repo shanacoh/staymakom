@@ -1,55 +1,52 @@
-// L'en-tête de l'espace partenaire tant que l'annonce n'est pas en ligne : le go live, les raccourcis
-// vers l'aperçu et les règles, puis la présentation STAYMAKOM. Partagé par le lien et le compte.
+// La page partenaire tant que l'annonce n'est pas en ligne, comme une page du site : bandeau photo
+// (photo de sa fiche, même en brouillon), contact de l'équipe, frise du go live, sa page, puis la
+// présentation STAYMAKOM adaptée à son type. Partagée par le lien et le compte.
 
-import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { GoLiveCard } from "@/components/partner/golive/GoLiveCard";
+import { PartnerHero } from "@/components/partner/golive/PartnerHero";
 import { PitchBlocks } from "@/components/partner/golive/PitchBlocks";
-import { Empty, Hint, PageLoader } from "@/components/partner/ui";
+import { TeamContactBand } from "@/components/partner/golive/TeamContactBand";
+import { YourPageCard } from "@/components/partner/golive/YourPageCard";
+import { Empty, PageLoader } from "@/components/partner/ui";
 import { goliveKeys, usePartnerAccess } from "@/lib/partner/access";
 import { usePartner } from "@/lib/partner/context";
-import { GOLIVE_TEXTS } from "@/lib/partner/i18n-golive";
+import { heroPhaseOf, listingCoverPhoto, normalizeGoLive } from "@/lib/partner/golive";
 import type { PartnerSession } from "@/lib/partner/types";
 
 export function useGoLive() {
   const access = usePartnerAccess();
-  return useQuery({ queryKey: goliveKeys.golive(access.scope), queryFn: access.golive, retry: false });
+  return useQuery({ queryKey: goliveKeys.golive(access.scope), queryFn: access.golive, retry: false, select: normalizeGoLive });
 }
 
 export function GoLiveSection({ session, showPitch = true }: { session: PartnerSession; showPitch?: boolean }) {
-  const { t: base, lang } = usePartner();
-  const t = GOLIVE_TEXTS[lang];
+  const { t: base } = usePartner();
   const access = usePartnerAccess();
   const golive = useGoLive();
+  const target = golive.data?.target ?? null;
+  // La photo de sa fiche (même en brouillon), lue avec l'aperçu de l'annonce (même cache).
+  const listing = useQuery({
+    queryKey: target ? goliveKeys.listing(access.scope, target.kind, target.id) : ["partner", access.scope, "listing", "none"],
+    queryFn: () => access.listing(target!.kind, target!.id),
+    enabled: !!target,
+    retry: false,
+  });
 
   if (golive.isLoading) return <PageLoader label={base.loading} />;
   if (!golive.data) return <Empty>{base.errorGeneric}</Empty>;
-  const target = golive.data.target;
+  const data = golive.data;
+  const photo = listingCoverPhoto(listing.data?.content);
+  const current = data.steps.find((step) => step.key === data.current_step);
+  const signed = !session.terms.must_accept;
+  const accountNeeded = signed || (data.my_turn && (current?.key === "terms" || current?.key === "contract"));
 
   return (
-    <>
-      <GoLiveCard golive={golive.data} loginEmail={session.provider.email} />
-      {target ? (
-        <div className="flex flex-wrap gap-2">
-          <Link
-            to={`${access.base}/listing/${target.kind}/${target.id}`}
-            className="inline-flex min-h-[36px] items-center rounded-full border border-neutral-300 bg-white px-4 text-[12px] font-semibold text-neutral-900 hover:bg-neutral-100"
-          >
-            {t.openPreview}
-          </Link>
-          {target.kind === "experience" && (
-            <Link
-              to={`${access.base}/rules/${target.id}`}
-              className="inline-flex min-h-[36px] items-center rounded-full border border-neutral-300 bg-white px-4 text-[12px] font-semibold text-neutral-900 hover:bg-neutral-100"
-            >
-              {t.myRules}
-            </Link>
-          )}
-        </div>
-      ) : (
-        <Hint>{t.noListingYet}</Hint>
-      )}
-      {showPitch && <PitchBlocks providerName={session.provider.name} />}
-    </>
+    <div className="space-y-7">
+      <PartnerHero name={session.provider.name} photo={photo} kind={data.kind} phase={heroPhaseOf(data)} />
+      <TeamContactBand providerName={session.provider.name} />
+      <GoLiveCard golive={data} loginEmail={session.provider.email} />
+      <YourPageCard golive={data} photo={photo} />
+      {showPitch && <PitchBlocks providerName={session.provider.name} golive={data} loginEmail={session.provider.email} accountNeeded={accountNeeded} />}
+    </div>
   );
 }

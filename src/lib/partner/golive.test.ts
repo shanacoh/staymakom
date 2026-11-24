@@ -6,6 +6,10 @@ import {
   buildReminderMessage,
   closedDaysOf,
   formatFieldValue,
+  heroPhaseOf,
+  normalizeGoLive,
+  preparedCounts,
+  stepPosition,
   openDaysOf,
   sectionState,
   turnIsStale,
@@ -104,5 +108,70 @@ describe("messages WhatsApp", () => {
   it("la relance nomme l'étape", () => {
     expect(buildReminderMessage({ language: "en", contactName: "Avi", stepKey: "practical", url: "u" })).toContain('"Practical info"');
     expect(buildReminderMessage({ language: "fr", contactName: null, stepKey: "dates", url: "u" })).toContain("« Premières dates ouvertes »");
+  });
+});
+
+describe("normalizeGoLive", () => {
+  const hotel = (online: boolean, agreement = false) =>
+    golive({
+      kind: "hotel",
+      steps: [
+        { key: "agreement", actor: "staymakom", done: agreement },
+        { key: "prepared", actor: "staymakom", done: true },
+        { key: "online", actor: "staymakom", done: online },
+      ],
+      current_step: agreement ? "online" : "agreement",
+      my_turn: false,
+    });
+
+  it("ne coche pas « En ligne » tant qu'une étape précédente n'est pas faite (fiche déjà publiée)", () => {
+    const g = normalizeGoLive(hotel(true));
+    expect(g.steps.find((s) => s.key === "online")?.done).toBe(false);
+    expect(g.current_step).toBe("agreement");
+  });
+
+  it("coche « En ligne » quand tout est fait et la fiche publiée", () => {
+    const g = normalizeGoLive(hotel(true, true));
+    expect(g.steps.every((s) => s.done)).toBe(true);
+    expect(g.current_step).toBeNull();
+    expect(g.my_turn).toBe(false);
+  });
+});
+
+describe("stepPosition", () => {
+  it("donne l'étape en cours sur le total", () => {
+    expect(stepPosition(golive({}))).toEqual({ index: 2, total: 3 });
+    expect(stepPosition(golive({ current_step: null }))).toEqual({ index: 3, total: 3 });
+  });
+});
+
+describe("preparedCounts", () => {
+  it("X + Z = Y", () => {
+    const c = preparedCounts(golive({ counts: { total: 8, prepared_by_team: 1, for_you: 8 } }));
+    expect(c).toEqual({ team: 1, total: 8, forYou: 7 });
+  });
+
+  it("masqué tant que l'annonce n'est pas préparée", () => {
+    const steps = [{ key: "prepared", actor: "staymakom" as const, done: false }];
+    expect(preparedCounts(golive({ steps }))).toBeNull();
+  });
+});
+
+describe("heroPhaseOf", () => {
+  const steps = [
+    { key: "agreement", actor: "staymakom" as const, done: false },
+    { key: "prepared", actor: "staymakom" as const, done: true },
+    { key: "reviewed", actor: "partner" as const, done: true },
+    { key: "contract", actor: "staymakom" as const, done: false },
+  ];
+  it("« on prépare » avant la première étape du partenaire", () => {
+    expect(heroPhaseOf({ steps, current_step: "agreement", my_turn: false })).toBe("preparing");
+  });
+  it("« entre nos mains » après", () => {
+    expect(heroPhaseOf({ steps, current_step: "contract", my_turn: false })).toBe("team");
+  });
+  it("à son tour, puis en ligne", () => {
+    expect(heroPhaseOf({ steps, current_step: "reviewed", my_turn: true })).toBe("your_turn");
+    expect(heroPhaseOf({ steps, current_step: null, my_turn: false })).toBe("live");
   });
 });

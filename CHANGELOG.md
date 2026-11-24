@@ -4,6 +4,32 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 24/11/2026 : La page partenaire prend la DA STAYMAKOM
+
+### Ce qui a changé côté code
+- `tailwind.config.ts`, `src/index.css` : deux couleurs ajoutées au système existant, `cream` (#FAF8F4, fond) et `brand` (#AD1414, rouge STAYMAKOM, avec `brand-hover`).
+- `src/components/BrandWordmark.tsx` (créé) : le logo texte STAYMAKOM de l'en-tête du site, sorti de `V3Header.tsx` pour être partagé avec l'espace partenaire (aucun changement visible sur le site).
+- `src/components/partner/PartnerShell.tsx` : en-tête comme celui du site (logo STAYMAKOM, « Partner space », langues en pastilles EN · FR · עב). `PartnerApp.tsx` : fond crème.
+- `src/components/partner/golive/PartnerHero.tsx` (créé) : bandeau photo (photo de la fiche du partenaire, même en brouillon, sinon photo de marque), « PARTNER SPACE · Nom » (nom tel que saisi), « Welcome to STAYMAKOM. » et une phrase selon l'avancement.
+- `src/components/partner/golive/TeamContactBand.tsx` (créé) : « L'équipe STAYMAKOM est avec vous » + bouton WhatsApp.
+- `src/components/partner/golive/GoLiveCard.tsx` (refait) : « Étape X sur Y », date cible et commission, barre segmentée, frise verticale fait / en cours / à venir.
+- `src/components/partner/golive/YourPageCard.tsx` (créé) : vignette de la fiche, « Voir mon annonce » actif seulement une fois l'annonce préparée.
+- `src/components/partner/golive/PitchBlocks.tsx` (refait) : présentation éditoriale par type (hôtel ou expérience), une seule action WhatsApp, « Ouvrir mon espace » seulement s'il faut un compte.
+- `src/lib/partner/golive.ts` : `normalizeGoLive`, `stepPosition`, `listingPrepared`, `preparedCounts`, `heroPhaseOf`, `listingCoverPhoto`, `teamWhatsappUrl` (+ tests). `src/lib/partnerAdmin/golive.ts` : même go live normalisé dans le back-office.
+- `src/lib/partner/i18n-golive.ts` : textes FR / EN / HE de la nouvelle page (repris de la maquette, hébreu à faire relire).
+- `PartnerLinkApp.tsx`, `PartnerHome.tsx` : la page s'ouvre sur le bandeau photo (« Your job: confirm. » supprimé).
+
+### Ce qui a changé côté base de données
+- Rien (ni base, ni fonctions serveur, ni droits, ni HyperGuest, ni prix, ni paiement).
+
+### Bugs corrigés
+- « En ligne » apparaissait fait alors que l'étape 1 ne l'était pas : la base coche « En ligne » dès que la fiche est publiée. L'écran ne la coche plus que si toutes les étapes précédentes sont faites.
+- Compteur « 1 sur 8 préparés · 8 pour vous » faux : « pour vous » comptait tous les champs non confirmés, y compris ceux préparés par l'équipe. Il vaut maintenant total moins préparés (X + Z = Y), masqué tant que l'annonce n'est pas préparée.
+- Un hôtel voyait les textes des expériences : la présentation dépend maintenant du type.
+
+### Pourquoi ce changement
+- La page partenaire ressemblait à un outil d'administration. Elle doit rassurer un hôtel qui découvre STAYMAKOM et montrer l'avancement en 3 secondes.
+
 ## 24/11/2026 : Un hôtel = un prestataire, créé automatiquement
 
 ### Ce qui a changé côté code

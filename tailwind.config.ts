@@ -78,6 +78,12 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
         logo: "hsl(var(--logo))",
+        // Marque : crème de fond et rouge STAYMAKOM, identiques partout (back-office compris).
+        cream: "hsl(var(--cream))",
+        brand: {
+          DEFAULT: "hsl(var(--brand))",
+          hover: "hsl(var(--brand-hover))",
+        },
         "hebrew-input": "hsl(var(--input-hebrew-bg))",
         "mobile-header": "hsl(var(--mobile-header))",
         "mobile-border": "hsl(var(--mobile-border))",
