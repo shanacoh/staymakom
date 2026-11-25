@@ -1107,7 +1107,8 @@ export default function StandaloneExperience() {
             "url": `https://www.staymakom.com${canonicalPath}`,
             "brand": { "@type": "Brand", "name": "STAYMAKOM" },
             // Ni adresse exacte ni nom de prestataire dans les données structurées.
-            ...(Number(experience.base_price) > 0 && {
+            // Prix = celui affiché sur la page ; une fiche sur demande (bateaux) n'en affiche pas.
+            ...(experience.is_bookable !== false && Number(experience.base_price) > 0 && {
               "offers": {
                 "@type": "Offer",
                 "price": Math.round(getStandaloneFromPrice(experience)),

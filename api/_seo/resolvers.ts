@@ -316,7 +316,7 @@ async function resolveStandalone(slug: string, lang: PageLang): Promise<PageMode
   const t = ui(lang);
   const row = await fetchPublishedBySlug(
     "standalone_experiences",
-    "id,slug,title,title_fr,title_he,subtitle,subtitle_fr,subtitle_he,long_copy,long_copy_fr,long_copy_he,duration,duration_fr,duration_he,city,city_fr,city_he,region,region_fr,region_he,address,address_fr,address_he,hide_exact_address,includes,includes_he,not_includes,not_includes_he,good_to_know,good_to_know_he,hero_image,og_image,base_price,base_price_child,has_child_price,base_price_type,currency,seo_title_en,seo_title_fr,seo_title_he,meta_description_en,meta_description_fr,meta_description_he,category_id,categories(name,name_fr,name_he,slug)",
+    "id,slug,title,title_fr,title_he,subtitle,subtitle_fr,subtitle_he,long_copy,long_copy_fr,long_copy_he,duration,duration_fr,duration_he,city,city_fr,city_he,region,region_fr,region_he,address,address_fr,address_he,hide_exact_address,includes,includes_he,not_includes,not_includes_he,good_to_know,good_to_know_he,hero_image,og_image,base_price,base_price_child,has_child_price,base_price_type,currency,is_bookable,seo_title_en,seo_title_fr,seo_title_he,meta_description_en,meta_description_fr,meta_description_he,category_id,categories(name,name_fr,name_he,slug)",
     slug,
     lang
   );
@@ -324,7 +324,9 @@ async function resolveStandalone(slug: string, lang: PageLang): Promise<PageMode
   const category = Array.isArray(row.categories) ? row.categories[0] : row.categories;
   if (category) localizeRowsSync([category], lang);
   const isBoat = row.category_id === BOATS_CATEGORY_ID;
-  const price = standalonePrice(row);
+  // Fiche non réservable en ligne (bateaux, sur demande) : la page n'affiche aucun prix, donc
+  // Google n'en reçoit pas non plus (règle : prix Google = prix affiché sur la page).
+  const price = row.is_bookable === false ? null : standalonePrice(row);
   const perPerson = row.base_price_type === "per_person";
   const description = metaDescription(row.meta_description_en, row.subtitle, row.long_copy);
   const seoTitle = experiencePageTitle(row, row.city || row.region, lang);
