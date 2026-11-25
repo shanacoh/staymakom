@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { JsonLd } from "@/components/JsonLd";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
@@ -24,6 +24,93 @@ import { trackJournalArticleViewed, trackCtaClickedFromJournal } from "@/lib/ana
 import { tPage } from "@/lib/translations";
 import { tPlace } from "@/lib/placeNames";
 import { journalCategoryLabel } from "@/lib/journalCategories";
+import { GeneratedArticleView, type GeneratedArticleRow } from "@/components/journal/GeneratedArticleView";
+import { articleFaqJsonLd, articleLang, articlePath, inlineToText, isGeneratedArticle, movedArticleSlug } from "../../api/_seo/journalArticle";
+
+const SITE_URL = "https://www.staymakom.com";
+
+/** Versions publiées du même sujet dans d'autres langues (hreflang). */
+function useTopicAlternates(post: any) {
+  return useQuery({
+    queryKey: ["journal-topic-alternates", post?.topic_group],
+    enabled: !!post?.topic_group,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("journal_posts" as any)
+        .select("slug,lang,title,body")
+        .eq("topic_group", post.topic_group)
+        .eq("status", "published");
+      const versions = ((data || []) as any[]).filter((p) => isGeneratedArticle(p));
+      if (versions.length < 2) return [];
+      const alts = versions.map((p) => ({ lang: articleLang(p), url: `${SITE_URL}${articlePath(p.slug, articleLang(p))}` }));
+      const en = alts.find((a) => a.lang === "en");
+      return en ? [...alts, { lang: "x-default", url: en.url }] : alts;
+    },
+  });
+}
+
+/** Article au nouveau format : une langue, son adresse, ses données structurées. */
+function GeneratedJournalPost({ post }: { post: any }) {
+  const lang = articleLang(post);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { data: alternates } = useTopicAlternates(post);
+  const url = `${SITE_URL}${articlePath(post.slug, lang)}`;
+
+  // L'article n'existe que dans sa langue : l'adresse (et l'interface) passent dans cette langue.
+  useEffect(() => {
+    const current = searchParams.get("lang");
+    const wanted = lang === "en" ? null : lang;
+    if ((current || "en") !== (wanted || "en")) {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("lang", lang);
+        return next;
+      }, { replace: true });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
+
+  const description = post.meta_description || inlineToText(post.intro || "").slice(0, 155);
+  const title = `${post.seo_title || post.title} | STAYMAKOM`;
+  return (
+    <>
+      <SEOHead
+        title={title}
+        titleEn={title}
+        titleHe={title}
+        titleFr={title}
+        description={description}
+        descriptionEn={description}
+        descriptionHe={description}
+        descriptionFr={description}
+        ogImage={post.og_image || post.cover_image}
+        canonicalPath={`/journal/${post.slug}`}
+        canonicalUrl={url}
+        alternates={alternates || []}
+      />
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": post.title,
+        "description": description || undefined,
+        "image": post.og_image || post.cover_image || undefined,
+        "url": url,
+        "inLanguage": lang,
+        "datePublished": post.published_at,
+        "dateModified": post.updated_at || post.published_at,
+        "author": { "@type": "Organization", "name": "STAYMAKOM", "url": "https://www.staymakom.com/" },
+        "publisher": { "@type": "Organization", "name": "STAYMAKOM", "logo": { "@type": "ImageObject", "url": "https://www.staymakom.com/favicon.png" } },
+      }} />
+      {articleFaqJsonLd(post.faq || []) && <JsonLd data={articleFaqJsonLd(post.faq || [])!} />}
+      <JsonLd data={buildBreadcrumbJsonLd([
+        { name: "Home", url: `${SITE_URL}/${lang === "en" ? "" : `?lang=${lang}`}` },
+        { name: "Journal", url: `${SITE_URL}/journal${lang === "en" ? "" : `?lang=${lang}`}` },
+        { name: post.title, url },
+      ])} />
+      <GeneratedArticleView post={post as GeneratedArticleRow} />
+    </>
+  );
+}
 
 // Reading progress bar
 function ReadingProgressBar() {
@@ -211,7 +298,6 @@ const JournalPost = () => {
   const { slug } = useParams<{ slug: string }>();
   const { lang, locale } = useLanguage();
 
-  useEffect(() => { if (slug) trackJournalArticleViewed(slug); }, [slug]);
 
   const { data: post, isLoading } = useQuery({
     queryKey: ["journal-post", slug],
@@ -228,6 +314,13 @@ const JournalPost = () => {
       return data as any;
     },
   });
+
+  useEffect(() => {
+    if (slug && post) {
+      trackJournalArticleViewed(slug, isGeneratedArticle(post) ? { language: post.lang, topic_group: post.topic_group } : { language: lang });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, post?.id]);
 
   // Fetch related articles from same category
   const { data: relatedPosts } = useQuery({
@@ -424,6 +517,10 @@ const JournalPost = () => {
     }
   };
 
+  // Version d'un ancien article devenue un article à part (ex. hébreu de l'article Hanoucca).
+  const moved = slug ? movedArticleSlug(slug, locale) : null;
+  if (moved) return <Navigate to={`/journal/${moved}?lang=${locale}`} replace />;
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white">
@@ -460,6 +557,26 @@ const JournalPost = () => {
 
   if (!post) {
     return <NotFound />;
+  }
+
+  if (isGeneratedArticle(post)) {
+    const isRTLArticle = post.lang === "he";
+    return (
+      <div className="min-h-screen bg-white">
+        <ReadingProgressBar />
+        <V3Header />
+        <main className="max-w-4xl mx-auto px-6 py-20">
+          <Link to={`/journal${post.lang === "en" ? "" : `?lang=${post.lang}`}`}>
+            <Button variant="ghost" className="mb-8">
+              <ArrowLeft className={`w-4 h-4 ${isRTLArticle ? "ml-2 rotate-180" : "mr-2"}`} />
+              {tPage("journalPostBackToJournal")}
+            </Button>
+          </Link>
+          <GeneratedJournalPost post={post} />
+        </main>
+        <LaunchFooter />
+      </div>
+    );
   }
 
   const title = getLocalizedField(post, "title", lang) || post.title_en;

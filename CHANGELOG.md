@@ -4,6 +4,41 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 25/11/2026 : Journal, séparation de l'article Hanoucca et rédacteur vérifié par recherche web
+
+### Ce qui a changé côté code
+- `supabase/functions/generate-journal-article/index.ts` (redéployée) : le rédacteur peut chercher sur le web (outil de recherche web de l'API Claude, 8 recherches au plus par article, coût ajouté au suivi : 0,01 $ la recherche) ; reprise automatique quand la recherche est en pause ; plus de 2e tentative après 5 minutes (la fonction serveur s'arrête vers 6 minutes). Option `test_inject_text` (admin ou tâche planifiée) pour tester les contrôles en glissant une phrase imposée.
+- `supabase/functions/_shared/journal/prompt.ts` : tout lieu, événement, marché, festival, décoration, restaurant ou café cité doit être confirmé en ligne, sinon il est retiré ; chaque élément vérifié va dans « points à vérifier » avec l'URL de sa source ; jamais de grande chaîne, seulement des adresses de chef, nouvelles ou citées par la presse.
+- `supabase/functions/_shared/journal/validate.ts` : un point à vérifier sans URL (hors « date clé vérifiée ») déclenche une correction, puis le blocage. `checks.ts` : une grande chaîne citée bloque l'article.
+- `api/_seo/journalArticle.ts` (`MOVED_ARTICLE_VERSIONS`), `api/_seo/resolvers.ts`, `src/pages/JournalPost.tsx`, `vercel.json` : `/journal/hanukkah-in-israel-2026?lang=he` redirige (301) vers `/journal/matana-lezug-chanuka?lang=he` (robots, visiteurs venant de l'extérieur et navigation dans le site).
+- `api/_seo/resolvers.ts`, `src/lib/journal/journalList.ts` : un ancien article n'apparaît dans la liste hébreu que s'il a un texte hébreu.
+- `src/components/admin/journal/SettingsTab.tsx` : réglage « Grandes chaînes jamais citées ».
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261125120300_journal_hanoucca_separation_reglages.sql` (appliquée le 25/11/2026 avec `supabase db query --linked -f`, sauvegarde `backup_20261125.journal_posts_avant_separation`) : colonne `journal_settings.chain_names` (24 noms en anglais et en hébreu) ; validation manuelle des 10 premiers articles générés (`manual_review_remaining = 10`) ; brouillon Hanoucca généré rejeté ; l'article `hanukkah-in-israel-2026` ne garde que l'anglais, sa version hébreu devient l'article `matana-lezug-chanuka` (format « une langue par article », 4 cartes « À réserver ») ; sujets Hanoucca EN et HE marqués publiés, FR écarté de la génération.
+
+### Pourquoi ce changement
+- Décisions de Shana après lecture du premier brouillon : garder l'article Hanoucca déjà en ligne, donner à chaque langue sa propre adresse, ne laisser passer aucun détail inventé (lieux, marchés, événements) et aucune grande chaîne, et valider à la main les 10 premiers articles avant la publication automatique.
+
+## 25/11/2026 : Blog automatique du Journal (un article SEO par jour, en anglais, hébreu ou français)
+
+### Ce qui a changé côté code
+- `supabase/functions/generate-journal-article/index.ts` (nouvelle fonction, déployée, sans contrôle de jeton Supabase : accès par le secret de la tâche planifiée ou un admin) : choisit le sujet du jour, envoie au rédacteur (Claude, même modèle que `generate-experience-draft`) le sujet, jusqu'à 8 vraies fiches publiées (titre SEO dans la langue, description, ville, région, mood, prix de départ en ₪), les articles déjà publiés de la langue et les dates clés vérifiées ; contrôle la réponse (une 2e tentative si la forme ne va pas), passe les contrôles de fond, enregistre l'article (programmé à 17:00, brouillon de calibrage ou bloqué), crée le lien « Rejeter » et envoie l'email du jour. Répond tout de suite et travaille en arrière-plan (suivi dans `journal_generation_runs`).
+- `supabase/functions/_shared/journal/` (nouveau) : `rotation.ts` (sujet du jour : saisonnier à 10 jours, sinon rotation 3 EN / 2 HE / 2 FR), `listings.ts` (fiches liées au sujet), `prompt.ts` (consignes de rédaction, section 3 du cahier des charges), `validate.ts` (forme : longueurs, sections, FAQ, liens existants), `checks.ts` (fond : prestataires, adresses, mots interdits, doublon), `schedule.ts` (heures d'Israël), `email.ts` (email interne au même habillage que l'email de confirmation), `text.ts`, `types.ts`. Testés par `src/lib/journal/journalGenerator.test.ts`.
+- `supabase/functions/journal-email-action/index.ts` (nouvelle, déployée) + page `src/pages/JournalAction.tsx` (route privée `/journal-action`) : le lien « Rejeter » de l'email marche en un clic (jeton à usage unique, 24 h).
+- Site : `api/_seo/journalArticle.ts` (nouveau, partagé site + robots : rendu sûr des liens et du gras, FAQPage), `src/components/journal/GeneratedArticleView.tsx` (article, bloc « À réserver avec STAYMAKOM » en cartes, FAQ, hébreu de droite à gauche), `src/pages/JournalPost.tsx` (adresse, langues liées, données structurées Article + FAQPage + fil d'Ariane), `src/pages/Journal.tsx`, `src/components/JournalSection.tsx`, `src/components/account/RecommendedJournal.tsx` et `src/lib/journal/journalList.ts` (liste filtrée par la langue du visiteur, anglais par défaut), `src/components/SEOHead.tsx` (adresse et langues propres à un article), `src/lib/analytics.ts` (`journal_article_viewed` avec langue, slug, groupe de sujet ; nouvel événement `journal_experience_card_clicked`).
+- Version pour Google : `api/_seo/resolvers.ts`, `model.ts`, `patchHead.ts`, `redirect.ts`, `jsonLd.ts`, `sitemap.ts`, `api/bot-meta.ts`, `api/llms.ts` : HTML complet de l'article dans sa langue, une seule adresse par article (301 vers `?lang=` de sa langue), hreflang uniquement entre articles publiés d'un même sujet, plan du site avec date de mise à jour. Testé par `src/config/seoJournalArticle.test.ts`.
+- Back-office : `src/pages/admin/Journal.tsx` (onglets Articles / File de sujets / Réglages), `src/components/admin/journal/ArticlesTab.tsx`, `TopicsTab.tsx`, `SettingsTab.tsx`, `journalAdmin.ts`, et fiche `src/pages/admin/JournalArticleEditor.tsx` (route `/admin/journal/article/:id` : points à vérifier, aperçu, modification, Publier maintenant / Programmer / Régénérer / Rejeter / Dépublier). Les anciens articles gardent leur éditeur.
+- `public/6f1e2b9c4d8a47e3b5c0a9d2e7f41c86.txt` : clé IndexNow (Bing), publique par principe.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261125120000_journal_blog_automatique.sql` (appliquée le 25/11/2026 avec `supabase db query --linked -f`, hors historique des migrations ; sauvegarde `backup_20261125.journal_posts`) : `journal_posts` reçoit une langue par article (`lang`), un groupe de sujet (`topic_group`), un statut éditorial (`pipeline_status` : brouillon, programmé, publié, rejeté, bloqué) synchronisé avec l'ancien `status` par un déclencheur, et les champs de l'article (titre SEO 60 car., meta 155 car., intro, corps, FAQ, fiches liées, points à vérifier, raison de blocage...). Lecture publique limitée aux articles publiés. Nouvelles tables `blog_topics` (file de sujets), `journal_settings` (interrupteur, heure, mots interdits, prestataires, dates clés), `journal_action_tokens` (liens « Rejeter »), `journal_generation_runs` (journal et coût de chaque génération). Fonctions `journal_publish_due`, `journal_publish_now`, `journal_reject_by_token`, `journal_ping_indexnow`.
+- Migration `supabase/migrations/20261125120100_journal_blog_topics_depart.sql` : les 31 sujets de départ (13 EN, 10 HE, 8 FR), Hanoucca en premier.
+- Migration `supabase/migrations/20261125120200_journal_blog_cron.sql` : tâches `journal-generate-daily` (05:00 heure d'Israël) et `journal-publish-due` (toutes les 15 min), créées EN PAUSE, à allumer une fois le site en ligne.
+
+### Pourquoi ce changement
+- Le Journal avait 12 articles anglais peu visibles sur Google. Un article SEO par jour, écrit nativement dans la langue de son lecteur (Américains, Israéliens, francophones) et relié aux vraies fiches, publié automatiquement à 17:00 sauf si Shana le rejette ou si un contrôle le bloque. Les 3 premiers (Hanoucca) attendent sa validation pour calibrer le ton.
+
 ## 25/11/2026 : Prix « à partir de » des expériences avec hôtel recalculé chaque semaine pour Google
 
 ### Ce qui a changé côté code

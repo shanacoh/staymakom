@@ -256,7 +256,8 @@ public/
 | `/booking/confirmation/:token` | BookingConfirmationPage | Post-booking (token-secured) |
 | `/auth` | Auth | Login / Sign up |
 | `/journal` | Journal | Blog listing |
-| `/journal/:slug` | JournalPost | Blog article |
+| `/journal/:slug` | JournalPost | Blog article (ancien bilingue, ou article du blog automatique dans sa langue, `?lang=fr`/`he`) |
+| `/journal-action` | JournalAction | Lien « Rejeter » de l'email du Journal (privé) |
 | `/gift-card` | GiftCard | Gift card purchase |
 | `/companies` | Companies | Corporate page |
 | `/partners` | Partners | Hotel partner signup |
@@ -294,6 +295,7 @@ public/
 | `/admin/journal` | AdminJournal |
 | `/admin/journal/new` | JournalEditor |
 | `/admin/journal/edit/:id` | JournalEditor |
+| `/admin/journal/article/:id` | JournalArticleEditor (articles du blog automatique) |
 | `/admin/gift-cards` | AdminGiftCards |
 | `/admin/gift-cards/:id` | AdminGiftCardDetails |
 | `/admin/leads` | AdminLeads |
@@ -532,6 +534,15 @@ Note (2026-11-23) — Parcours partenaire, du premier lien au go live (migration
 - **Ne pas confondre** avec `translate-text` (ancienne passerelle Lovable / Gemini, non utilisée ici) ni avec l'action `translate` de `generate-experience-draft` (FR vers EN / HE dans les formulaires).
 
 ---
+
+## Blog automatique du Journal (25/11/2026)
+
+- **Principe** : chaque jour à 05:00 (heure d'Israël), la tâche `journal-generate-daily` appelle `generate-journal-article`, qui prend un sujet dans `blog_topics` (saisonnier à 10 jours, sinon rotation 3 EN / 2 HE / 2 FR), rédige l'article avec Claude à partir des vraies fiches publiées, le contrôle et l'enregistre dans `journal_posts`. Un email part à chaque génération (titre, statut, points à vérifier, liens Aperçu / Modifier / Publier maintenant / Rejeter).
+- **Une langue par article** : colonnes `lang`, `title`, `intro`, `body` (sections), `faq`, `linked_listings`... Les anciens articles (colonnes `_en` / `_he`, blocs) restent tels quels ; `isGeneratedArticle` (`api/_seo/journalArticle.ts`) distingue les deux formats partout (site, robots, plan du site, llms.txt). Les nouveaux articles ne sont jamais traduits (colonnes `_en` vides, donc ignorées par `translate-content`).
+- **Statuts** : `pipeline_status` (draft, scheduled, published, rejected, blocked) est la vérité éditoriale ; le déclencheur `journal_posts_sync_status` garde `status` cohérent (contrainte `journal_posts_status_consistent`). Publication : `journal_publish_due()` toutes les 15 min si `journal_settings.auto_publish`, ou `journal_publish_now()` (back-office), puis `journal_ping_indexnow`.
+- **Contrôles** : forme (`_shared/journal/validate.ts`, 2e tentative sinon bloqué) et fond (`checks.ts` : noms de prestataires de la table `providers` hors hôtels + variantes de `journal_settings.provider_aliases`, adresses, mots interdits par langue, doublon de mot-clé). Bloqué = jamais publié automatiquement. Les 3 premiers articles attendent une validation (`manual_review_remaining`).
+- **Adresses et SEO** : `/journal/<slug>` (anglais) ou `?lang=fr` / `?lang=he`, une seule adresse par article (301 côté robots). hreflang seulement entre articles publiés d'un même `topic_group`. Données structurées : Article, FAQPage, BreadcrumbList (un bloc chacun).
+- **Dates** : le rédacteur n'écrit que les dates de `journal_settings.key_dates` (vérifiées par Shana).
 
 ## Design System
 

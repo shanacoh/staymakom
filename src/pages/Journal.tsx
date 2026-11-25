@@ -7,10 +7,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
 import { Calendar, ArrowRight } from "lucide-react";
 import { format } from "date-fns";
-import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
+import { useLanguage } from "@/hooks/useLanguage";
 import { dateFnsLocale } from "@/lib/dateFnsLocale";
 import { tPage } from "@/lib/translations";
 import { journalCategoryLabel } from "@/lib/journalCategories";
+import { postsForLocale, toListItem } from "@/lib/journal/journalList";
 
 const Journal = () => {
   const { lang, locale } = useLanguage();
@@ -29,8 +30,10 @@ const Journal = () => {
     },
   });
 
-  const featuredPost = posts?.[0];
-  const remainingPosts = posts?.slice(1);
+  // Articles dans la langue du visiteur (sinon en anglais), titres et adresses prêts à afficher.
+  const visible = posts ? postsForLocale(posts, locale).map((p) => toListItem(p, lang)) : undefined;
+  const featuredPost = visible?.[0];
+  const remainingPosts = visible?.slice(1);
 
   return (
     <div className="min-h-screen bg-white">
@@ -78,15 +81,15 @@ const Journal = () => {
               ))}
             </div>
           </div>
-        ) : posts && posts.length > 0 ? (
+        ) : visible && visible.length > 0 ? (
           <div className="space-y-12">
             {/* Featured Article — Hero Card */}
             {featuredPost && (
-              <Link to={`/journal/${featuredPost.slug}`} className="block group">
+              <Link to={featuredPost.__href} className="block group">
                 <div className="relative rounded-xl overflow-hidden" style={{ height: "420px" }}>
                   <img
                     src={featuredPost.cover_image || "/placeholder.svg"}
-                    alt={getLocalizedField(featuredPost, "title", lang) || featuredPost.title_en}
+                    alt={featuredPost.__title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     style={{ aspectRatio: "16/9" }}
                   />
@@ -107,11 +110,11 @@ const Journal = () => {
                       className="text-white mb-3 line-clamp-2"
                       style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "36px", fontWeight: 500, lineHeight: 1.2 }}
                     >
-                      {getLocalizedField(featuredPost, "title", lang) || featuredPost.title_en}
+                      {featuredPost.__title}
                     </h2>
-                    {(getLocalizedField(featuredPost, "excerpt", lang) || featuredPost.excerpt_en) && (
+                    {featuredPost.__excerpt && (
                       <p className="text-white/80 text-sm line-clamp-2 max-w-2xl mb-4">
-                        {getLocalizedField(featuredPost, "excerpt", lang) || featuredPost.excerpt_en}
+                        {featuredPost.__excerpt}
                       </p>
                     )}
                     <span className="inline-flex items-center gap-1 text-[#ad1414] text-sm font-medium group-hover:gap-2 transition-all">
@@ -126,13 +129,13 @@ const Journal = () => {
             {remainingPosts && remainingPosts.length > 0 && (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {remainingPosts.map((post) => (
-                  <Link key={post.id} to={`/journal/${post.slug}`}>
+                  <Link key={post.id} to={post.__href}>
                     <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full border-0 bg-white">
                       {post.cover_image && (
                         <div className="aspect-[4/3] overflow-hidden">
                           <img
                             src={post.cover_image}
-                            alt={getLocalizedField(post, "title", lang) || post.title_en}
+                            alt={post.__title}
                             className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                           />
                         </div>
@@ -150,11 +153,11 @@ const Journal = () => {
                           )}
                         </div>
                         <h3 className="font-serif text-lg mb-1 line-clamp-2">
-                          {getLocalizedField(post, "title", lang) || post.title_en}
+                          {post.__title}
                         </h3>
-                        {(getLocalizedField(post, "excerpt", lang) || post.excerpt_en) && (
+                        {post.__excerpt && (
                           <p className="text-sm text-muted-foreground line-clamp-2" style={{ lineHeight: 1.5 }}>
-                            {getLocalizedField(post, "excerpt", lang) || post.excerpt_en}
+                            {post.__excerpt}
                           </p>
                         )}
                       </CardContent>

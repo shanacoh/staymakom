@@ -3,6 +3,7 @@
 // sans attendre une mise en ligne du code. Remplace l'ancien generate-sitemap.mjs.
 import { MAIN_FIELD, availableLangsOf, fetchMany, translationIndex } from "./db.js";
 import { PUBLIC_LANGS, pageUrl, type PageLang } from "./site.js";
+import { articleLang, isGeneratedArticle } from "./journalArticle.js";
 
 type Row = Record<string, any>;
 
@@ -53,6 +54,40 @@ function urlEntry(path: string, priority: string, changefreq: string, lastmod: s
     .join("\n");
 }
 
+/**
+ * Article écrit dans une seule langue : une adresse (celle de sa langue), et les autres langues
+ * du même sujet (topic_group) comme alternatives si elles sont publiées.
+ */
+function generatedArticleEntry(row: Row, all: Row[]): string {
+  const lang = articleLang(row);
+  const loc = pageUrl(`/journal/${row.slug}`, lang);
+  const siblings = row.topic_group ? all.filter((r) => r.topic_group === row.topic_group) : [];
+  const alternates =
+    siblings.length >= 2
+      ? [
+          ...siblings.map((r) => `    <xhtml:link rel="alternate" hreflang="${articleLang(r)}" href="${xmlEscape(pageUrl(`/journal/${r.slug}`, articleLang(r)))}"/>`),
+          ...siblings
+            .filter((r) => articleLang(r) === "en")
+            .map((r) => `    <xhtml:link rel="alternate" hreflang="x-default" href="${xmlEscape(pageUrl(`/journal/${r.slug}`, "en"))}"/>`),
+        ]
+      : [];
+  const lastmod = lastmodOf(row);
+  return [
+    "  <url>",
+    `    <loc>${xmlEscape(loc)}</loc>`,
+    ...alternates,
+    ...(lastmod ? [`    <lastmod>${lastmod}</lastmod>`] : []),
+    "    <changefreq>monthly</changefreq>",
+    "    <priority>0.7</priority>",
+    "  </url>",
+  ].join("\n");
+}
+
+/** Adresse dans le XML : lettres hébraïques encodées, « & » échappé. */
+function xmlEscape(url: string): string {
+  return encodeURI(decodeURI(url)).replace(/&/g, "&amp;");
+}
+
 /** null = la base n'a rien renvoyé (on ne publie pas un plan du site vide). */
 export async function buildSitemap(): Promise<string | null> {
   const published = "status=eq.published";
@@ -67,7 +102,7 @@ export async function buildSitemap(): Promise<string | null> {
     fetchMany("hotels2", `slug,updated_at,${main("hotels2")}`, published),
     fetchMany("categories", `slug,updated_at,${main("categories")}`, published),
     fetchMany("standalone_experiences", `slug,updated_at,category_id,${main("standalone_experiences")}`, published),
-    fetchMany("journal_posts", `slug,updated_at,${main("journal_posts")}`, published),
+    fetchMany("journal_posts", `slug,updated_at,published_at,lang,title,body,topic_group,${main("journal_posts")}`, published),
   ]);
   if (!experiences.length && !hotels.length) return null;
 
@@ -94,6 +129,9 @@ export async function buildSitemap(): Promise<string | null> {
     "/journal": latest(journals),
   };
   const langs = PUBLIC_LANGS;
+  // Articles du blog automatique : une seule langue chacun (pas de traduction automatique).
+  const generatedJournals = journals.filter((r) => isGeneratedArticle(r));
+  const legacyJournals = journals.filter((r) => !isGeneratedArticle(r));
   const withSlug = (rows: Row[]) => rows.filter((r) => r.slug);
 
   const entries = [
@@ -105,7 +143,8 @@ export async function buildSitemap(): Promise<string | null> {
     ...withSlug(standalones).map((r) =>
       urlEntry(`${r.category_id === BOATS_CATEGORY_ID ? "/boat" : "/standalone-experience"}/${r.slug}`, "0.8", "weekly", lastmodOf(r), langsOf(r))
     ),
-    ...withSlug(journals).map((r) => urlEntry(`/journal/${r.slug}`, "0.7", "monthly", lastmodOf(r), langsOf(r))),
+    ...withSlug(legacyJournals).map((r) => urlEntry(`/journal/${r.slug}`, "0.7", "monthly", lastmodOf(r), langsOf(r))),
+    ...withSlug(generatedJournals).map((r) => generatedArticleEntry(r, generatedJournals)),
   ];
 
   return [

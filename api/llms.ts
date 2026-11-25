@@ -28,7 +28,7 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
     fetchMany("hotels2", "slug,name,city,region,star_rating,meta_description_en", "status=eq.published&order=name.asc"),
     fetchMany("experiences2", "slug,title,subtitle,hotels2(name,city)", "status=eq.published&order=display_order.asc.nullslast"),
     fetchMany("standalone_experiences", "slug,title,subtitle,city,category_id", "status=eq.published&order=display_order.asc.nullslast"),
-    fetchMany("journal_posts", "slug,title_en,excerpt_en", "status=eq.published&order=published_at.desc.nullslast"),
+    fetchMany("journal_posts", "slug,lang,title,intro,title_en,excerpt_en", "status=eq.published&order=published_at.desc.nullslast"),
   ]);
 
   const hotelSummary = (h: Row) =>
@@ -50,7 +50,14 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
     section("Hotels", hotels.map((h) => line(h.name, `/hotel/${h.slug}`, hotelSummary(h)))),
     section("Experiences with a hotel stay", experiences.map((e) => line(e.title, `/experience/${e.slug}`, experienceSummary(e)))),
     section("Experiences only", standalones.map((s) => line(s.title, `${s.category_id === BOATS_CATEGORY_ID ? "/boat" : "/standalone-experience"}/${s.slug}`, [s.subtitle, s.city].filter(Boolean).join(" · ")))),
-    section("Journal", posts.map((p) => line(p.title_en, `/journal/${p.slug}`, p.excerpt_en))),
+    section(
+      "Journal",
+      posts.map((p) =>
+        p.title
+          ? line(p.title, `/journal/${p.slug}${p.lang && p.lang !== "en" ? `?lang=${p.lang}` : ""}`, p.intro)
+          : line(p.title_en, `/journal/${p.slug}`, p.excerpt_en)
+      )
+    ),
     section("About & Policies", policies),
     section("Press", [
       `- [The Jerusalem Post](${BRAND.press[0]}): article about STAYMAKOM and its founder`,

@@ -153,7 +153,8 @@ export function articleJsonLd(row: Record<string, any>, headline: string, descri
     headline,
     description,
     image: row.og_image || row.cover_image,
-    url: pageUrl(`/journal/${row.slug}`),
+    url: row.__url || pageUrl(`/journal/${row.slug}`),
+    inLanguage: row.__lang || undefined,
     datePublished: row.published_at || row.created_at,
     dateModified: row.updated_at || row.published_at,
     // Auteur = la marque (décision du sprint SEO du 25/11/2026), quel que soit le rédacteur.

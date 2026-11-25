@@ -23,9 +23,11 @@ export function patchHtml(html: string, pathname: string, page: PageModel, langu
   // (canonical) vers l'anglais, et seules les langues réellement disponibles sont annoncées.
   const isAvailable = (code: PageLang) => !page.availableLangs || page.availableLangs.includes(code);
   const declaredLangs = language.publicLangs.filter(isAvailable);
-  const canonicalUrl = pageUrl(path, isAvailable(lang) ? lang : "en");
+  // Page écrite dans une seule langue (article du Journal) : c'est elle qui fait foi.
+  const docLang: PageLang = page.contentLang || lang;
+  const canonicalUrl = pageUrl(path, page.contentLang || (isAvailable(lang) ? lang : "en"));
 
-  html = html.replace(/<html[^>]*>/, `<html lang="${lang}"${lang === "he" ? ' dir="rtl"' : ""}>`);
+  html = html.replace(/<html[^>]*>/, `<html lang="${docLang}"${docLang === "he" ? ' dir="rtl"' : ""}>`);
 
   if (page.title) {
     const title = escapeHtml(page.title);
@@ -47,17 +49,24 @@ export function patchHtml(html: string, pathname: string, page: PageModel, langu
     html = html.replace(/<meta property="og:image:(width|height)" content="[^"]*"\s*\/?>\s*/g, "");
   }
   html = setMeta(html, /<meta property="og:url" content="[^"]*"\s*\/?>/, `<meta property="og:url" content="${canonicalUrl}" />`);
-  html = setMeta(html, /<meta property="og:locale" content="[^"]*"\s*\/?>/, `<meta property="og:locale" content="${OG_LOCALE[lang]}" />`);
+  html = setMeta(html, /<meta property="og:locale" content="[^"]*"\s*\/?>/, `<meta property="og:locale" content="${OG_LOCALE[docLang]}" />`);
 
   const extras: string[] = [];
   if (page.status === 404) {
     extras.push(`<meta name="robots" content="noindex, follow" />`);
   } else {
     extras.push(`<link rel="canonical" href="${canonicalUrl}" />`);
-    for (const code of declaredLangs) {
-      extras.push(`<link rel="alternate" hreflang="${code}" href="${pageUrl(path, code)}" />`);
+    if (page.alternates) {
+      // Versions à des adresses différentes (même sujet dans une autre langue) ; aucune = rien.
+      for (const alt of page.alternates) {
+        extras.push(`<link rel="alternate" hreflang="${alt.lang}" href="${escapeHtml(alt.url)}" />`);
+      }
+    } else {
+      for (const code of declaredLangs) {
+        extras.push(`<link rel="alternate" hreflang="${code}" href="${pageUrl(path, code)}" />`);
+      }
+      extras.push(`<link rel="alternate" hreflang="x-default" href="${pageUrl(path, "en")}" />`);
     }
-    extras.push(`<link rel="alternate" hreflang="x-default" href="${pageUrl(path, "en")}" />`);
     if (language.hidden) extras.push(`<meta name="robots" content="noindex, follow" />`);
   }
   for (const block of (page.jsonLd || []).filter(Boolean)) {

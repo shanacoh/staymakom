@@ -43,6 +43,16 @@ export interface PageModel {
    * n'est ni annoncée (hreflang, plan du site), et sa version pointe (canonical) vers l'anglais.
    */
   availableLangs?: string[];
+  /**
+   * Page écrite dans UNE seule langue (articles du Journal au nouveau format) : sa langue de
+   * référence (canonical, html lang), quelle que soit la langue demandée dans l'adresse.
+   */
+  contentLang?: "en" | "fr" | "he";
+  /**
+   * Versions dans d'autres langues à des adresses différentes (articles d'un même sujet).
+   * Présent = remplace le calcul habituel des hreflang ; liste vide = aucune alternative.
+   */
+  alternates?: { lang: string; url: string }[];
   /** true = on ne prépare pas de contenu (pages sur mesure pour un client, etc.). */
   passthrough?: boolean;
 }

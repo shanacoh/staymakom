@@ -5,6 +5,7 @@ import { Loader2, BookOpen, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { tPage } from "@/lib/translations";
 import { journalCategoryLabel } from "@/lib/journalCategories";
+import { postsForLocale, toListItem } from "@/lib/journal/journalList";
 
 interface RecommendedJournalProps {
   userId?: string;
@@ -20,13 +21,14 @@ export default function RecommendedJournal({ userId, limit = 3 }: RecommendedJou
     queryFn: async () => {
       const { data, error } = await supabase
         .from("journal_posts")
-        .select("id, slug, title_en, excerpt_en, cover_image, category, published_at")
+        .select("id, slug, lang, title, intro, body, title_en, excerpt_en, cover_image, category, published_at")
         .eq("status", "published")
         .order("published_at", { ascending: false })
-        .limit(limit);
+        .limit(40);
 
       if (error) throw error;
-      return data;
+      // Espace client en anglais : articles anglais (nouveaux et anciens).
+      return postsForLocale(data as any[], "en").slice(0, limit).map((p) => toListItem(p, "en"));
     },
   });
 
@@ -59,13 +61,13 @@ export default function RecommendedJournal({ userId, limit = 3 }: RecommendedJou
         {posts.map((post) => (
           <article
             key={post.id}
-            onClick={() => navigate(`/journal/${post.slug}`)}
+            onClick={() => navigate(post.__href)}
             className="group cursor-pointer"
           >
             <div className="relative aspect-[16/10] rounded-xl overflow-hidden mb-3">
               <img
                 src={post.cover_image || "/placeholder.svg"}
-                alt={post.title_en}
+                alt={post.__title}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -76,11 +78,11 @@ export default function RecommendedJournal({ userId, limit = 3 }: RecommendedJou
             </span>
 
             <h4 className="font-serif text-lg text-foreground mt-1 mb-2 group-hover:text-primary transition-colors line-clamp-2">
-              {post.title_en}
+              {post.__title}
             </h4>
 
-            {post.excerpt_en && (
-              <p className="text-sm text-muted-foreground line-clamp-2">{post.excerpt_en}</p>
+            {post.__excerpt && (
+              <p className="text-sm text-muted-foreground line-clamp-2">{post.__excerpt}</p>
             )}
           </article>
         ))}

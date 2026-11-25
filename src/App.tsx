@@ -77,6 +77,8 @@ const AdminReservationDetails = lazy(() => import("./pages/admin/ReservationDeta
 const AdminCustomers         = lazy(() => import("./pages/admin/Customers"));
 const AdminJournal           = lazy(() => import("./pages/admin/Journal"));
 const JournalEditor          = lazy(() => import("./pages/admin/JournalEditor"));
+const JournalArticleEditor   = lazy(() => import("./pages/admin/JournalArticleEditor"));
+const JournalAction          = lazy(() => import("./pages/JournalAction"));
 const AdminGiftCards         = lazy(() => import("./pages/admin/GiftCards"));
 const AdminGiftCardDetails   = lazy(() => import("./pages/admin/GiftCardDetails"));
 const AdminSettings          = lazy(() => import("./pages/admin/Settings"));
@@ -290,6 +292,8 @@ const AppContent = () => {
           <Route path="/itineraries-AJ" element={<Itineraries />} />
           <Route path="/journal" element={<Journal />} />
           <Route path="/journal/:slug" element={<JournalPost />} />
+          {/* Lien « Rejeter » de l'email quotidien du Journal (page privée, jeton à usage unique). */}
+          <Route path="/journal-action" element={<JournalAction />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/about" element={<About />} />
           <Route path="/consulting" element={<Consulting />} />
@@ -377,6 +381,7 @@ const AppContent = () => {
             <Route path="journal" element={<AdminJournal />} />
             <Route path="journal/new" element={<JournalEditor />} />
             <Route path="journal/edit/:id" element={<JournalEditor />} />
+            <Route path="journal/article/:id" element={<JournalArticleEditor />} />
             <Route path="leads" element={<AdminLeads />} />
             <Route path="favorites" element={<AdminFavorites />} />
             <Route path="settings" element={<AdminSettings />} />

@@ -29,6 +29,7 @@ export const PRIVATE_PREFIXES: readonly string[] = [
   "/tailor-questionnaire",
   "/swipe",
   "/voyage",
+  "/journal-action",
 ];
 
 /** Pages publiques sans paramètre (une seule adresse chacune). */

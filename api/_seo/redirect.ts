@@ -9,10 +9,21 @@ import { ALL_LANGS, pageUrl, type PageLang } from "./site.js";
  * On garde la langue ; les autres paramètres (mode=stay/live, filtres...) ne font jamais
  * partie de l'adresse de référence.
  */
-export function canonicalRedirect(pathname: string, rawLang: unknown, canonicalPath: string | undefined, lang: PageLang): string | null {
+export function canonicalRedirect(
+  pathname: string,
+  rawLang: unknown,
+  canonicalPath: string | undefined,
+  lang: PageLang,
+  contentLang?: PageLang
+): string | null {
   const requestedPath = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
   const targetPath = canonicalPath || requestedPath;
   const langInUrl = typeof rawLang === "string" ? rawLang : null;
+  // Page écrite dans une seule langue (article du Journal) : une seule adresse, celle de sa langue.
+  if (contentLang) {
+    if (targetPath === pathname && lang === contentLang && (contentLang !== "en" || langInUrl === null)) return null;
+    return pageUrl(targetPath, contentLang);
+  }
   // ?lang=en, ou une langue inconnue : l'adresse de référence est l'adresse nue (anglais).
   const wrongLangParam = langInUrl !== null && (langInUrl === "en" || !(ALL_LANGS as readonly string[]).includes(langInUrl));
   if (targetPath === pathname && !wrongLangParam) return null;

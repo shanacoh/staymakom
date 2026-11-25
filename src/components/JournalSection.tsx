@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getLocalizedField, Language } from "@/hooks/useLanguage";
+import { Language } from "@/hooks/useLanguage";
+import { postsForLocale, toListItem } from "@/lib/journal/journalList";
 import { t } from "@/lib/translations";
 
 interface JournalSectionProps {
@@ -20,7 +21,7 @@ const JournalSection = ({ lang }: JournalSectionProps) => {
         .eq("status", "published")
         .not("published_at", "is", null)
         .order("published_at", { ascending: false })
-        .limit(3);
+        .limit(40);
       if (error) throw error;
       return data;
     },
@@ -63,7 +64,7 @@ const JournalSection = ({ lang }: JournalSectionProps) => {
     return null;
   }
 
-  const [featuredPost, ...sidePosts] = posts;
+  const [featuredPost, ...sidePosts] = postsForLocale(posts, lang).slice(0, 3).map((p) => toListItem(p, lang));
 
   const isRTL = lang === 'he';
 
@@ -92,14 +93,14 @@ const JournalSection = ({ lang }: JournalSectionProps) => {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           {/* Featured Article (Left) */}
           <Link
-            to={`/journal/${featuredPost.slug}${lang === "he" ? "?lang=he" : ""}`}
+            to={featuredPost.__href === `/journal/${featuredPost.slug}` && lang === "he" ? `${featuredPost.__href}?lang=he` : featuredPost.__href}
             className="md:col-span-3 group relative overflow-hidden rounded-lg"
           >
             <div className="aspect-[16/9] overflow-hidden">
               {featuredPost.cover_image ? (
                 <img
                   src={featuredPost.cover_image}
-                  alt={getLocalizedField(featuredPost, "title", lang) as string}
+                  alt={featuredPost.__title}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
               ) : (
@@ -117,7 +118,7 @@ const JournalSection = ({ lang }: JournalSectionProps) => {
                 {getCategoryLabel(featuredPost.category)}
               </span>
               <h3 className="text-white font-semibold text-sm sm:text-base line-clamp-2">
-                {getLocalizedField(featuredPost, "title", lang) as string}
+                {featuredPost.__title}
               </h3>
             </div>
           </Link>
@@ -127,14 +128,14 @@ const JournalSection = ({ lang }: JournalSectionProps) => {
             {sidePosts.map((post) => (
               <Link
                 key={post.id}
-                to={`/journal/${post.slug}${lang === "he" ? "?lang=he" : ""}`}
+                to={post.__href === `/journal/${post.slug}` && lang === "he" ? `${post.__href}?lang=he` : post.__href}
                 className="group relative overflow-hidden rounded-lg flex-1 min-h-[120px]"
               >
                 {/* Background Image */}
                 {post.cover_image ? (
                   <img
                     src={post.cover_image}
-                    alt={getLocalizedField(post, "title", lang) as string}
+                    alt={post.__title}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 ) : (
@@ -152,7 +153,7 @@ const JournalSection = ({ lang }: JournalSectionProps) => {
                     {getCategoryLabel(post.category)}
                   </span>
                   <h3 className="text-white font-medium text-xs sm:text-sm line-clamp-2">
-                    {getLocalizedField(post, "title", lang) as string}
+                    {post.__title}
                   </h3>
                 </div>
               </Link>

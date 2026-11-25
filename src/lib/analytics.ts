@@ -312,8 +312,23 @@ export function trackExperiencesListViewed() {
   safeTrack("experiences_list_viewed");
 }
 
-export function trackJournalArticleViewed(articleSlug: string) {
-  safeTrack("journal_article_viewed", { article: articleSlug });
+export function trackJournalArticleViewed(
+  articleSlug: string,
+  details: { language?: string; topic_group?: string | null } = {}
+) {
+  safeTrack("journal_article_viewed", { article: articleSlug, slug: articleSlug, ...details });
+}
+
+/** Clic sur une carte du bloc « À réserver avec STAYMAKOM » d'un article du Journal. */
+export function trackJournalExperienceCardClicked(params: {
+  article: string;
+  language: string;
+  topic_group: string | null;
+  listing_id: string;
+  listing_kind: string;
+  position: number;
+}) {
+  safeTrack("journal_experience_card_clicked", params);
 }
 
 export function trackCtaClickedFromJournal(articleSlug: string, ctaType: string) {

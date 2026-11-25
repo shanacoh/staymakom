@@ -38,7 +38,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     page = null; // Base injoignable : page générique plus bas, jamais de redirection à l'aveugle.
   }
   if (page && page.status === 200 && !page.passthrough) {
-    const location = canonicalRedirect(pathname, req.query.rawlang, page.canonicalPath, lang);
+    const location = canonicalRedirect(pathname, req.query.rawlang, page.canonicalPath, lang, page.contentLang);
     if (location) {
       res.setHeader("cache-control", "public, max-age=0, s-maxage=1800, stale-while-revalidate=86400");
       res.redirect(301, location);

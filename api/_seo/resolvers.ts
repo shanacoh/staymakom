@@ -13,7 +13,20 @@ import {
   websiteJsonLd,
 } from "./jsonLd.js";
 import { NOT_FOUND, PASSTHROUGH, type PageLink, type PageModel, type PageSection } from "./model.js";
-import { BRAND, brandDescription, href, ui, type PageLang } from "./site.js";
+import { BRAND, brandDescription, href, pageUrl, ui, type PageLang } from "./site.js";
+import {
+  BOOKING_HEADING,
+  FAQ_HEADING,
+  articleFaqJsonLd,
+  articleLang,
+  articlePath,
+  inlineToText,
+  isGeneratedArticle,
+  movedArticleSlug,
+  type ArticleFaq as ArticleFaqRow,
+  type ArticleSection as ArticleSectionRow,
+  type LinkedListing,
+} from "./journalArticle.js";
 import { SEO_HOME_AND_LIST, STATIC_ALIASES, staticText } from "./staticPages.js";
 import { articleBlocks, formatPrice, metaDescription, oneLine, paragraphs, stripHtml, toList } from "./text.js";
 import { experiencePageTitle, hotelPageTitle } from "./titles.js";
@@ -454,11 +467,37 @@ async function resolveBoats(lang: PageLang): Promise<PageModel> {
   };
 }
 
+/**
+ * Articles visibles dans une langue : nouveaux articles écrits dans cette langue + anciens
+ * articles bilingues (anglais / hébreu, traduits en es / ru / de). Français : seulement les
+ * articles écrits en français, et s'il n'y en a aucun, la liste anglaise.
+ */
+function journalPostsForLang(posts: Row[], lang: PageLang): Row[] {
+  const legacy = posts.filter((p) => !isGeneratedArticle(p));
+  const generated = posts.filter((p) => isGeneratedArticle(p));
+  const legacyIn = (code: string) => (code === "fr" ? [] : code === "he" ? legacy.filter((p) => p.title_he) : legacy);
+  const inLang = (code: string) => [...generated.filter((p) => p.lang === code), ...legacyIn(code)];
+  const code = lang === "fr" || lang === "he" ? lang : "en";
+  const list = inLang(code);
+  return list.length ? list : inLang("en");
+}
+
 async function resolveJournalList(lang: PageLang): Promise<PageModel> {
   const t = ui(lang);
   const text = staticText("/journal", lang)!;
-  const posts = await fetchMany("journal_posts", "slug,title_en,title_he,excerpt_en,excerpt_he,published_at", "status=eq.published&order=published_at.desc.nullslast");
-  localizeRowsSync(posts, lang);
+  const all = await fetchMany(
+    "journal_posts",
+    "slug,lang,title,intro,body,title_en,title_he,excerpt_en,excerpt_he,published_at",
+    "status=eq.published&order=published_at.desc.nullslast"
+  );
+  const posts = journalPostsForLang(all, lang);
+  // Anciens articles : titre et chapeau dans la langue de la page (hébreu saisi à la main).
+  localizeRowsSync(posts.filter((p) => !isGeneratedArticle(p)), lang);
+  const item = (p: Row) =>
+    isGeneratedArticle(p)
+      ? { label: p.title as string, path: articlePath(p.slug, articleLang(p)), note: oneLine(inlineToText(p.intro || ""), 160) || undefined }
+      : { label: p.title_en as string, path: href(`/journal/${p.slug}`, lang), note: oneLine(p.excerpt_en, 160) || undefined };
+  const items = posts.map(item);
   const crumbs = [{ name: t.home, path: "/" }, { name: t.journal, path: "/journal" }];
   return {
     status: 200,
@@ -467,20 +506,111 @@ async function resolveJournalList(lang: PageLang): Promise<PageModel> {
     h1: text.h1,
     intro: [text.description],
     breadcrumbs: crumbs,
-    sections: [{ heading: t.articles, links: posts.map((p) => ({ label: p.title_en, href: href(`/journal/${p.slug}`, lang), note: oneLine(p.excerpt_en, 160) || undefined })) }],
-    jsonLd: [itemListJsonLd(text.h1, "/journal", posts.map((p) => ({ name: p.title_en, path: `/journal/${p.slug}` }))), breadcrumbJsonLd(crumbs)],
+    sections: [{ heading: t.articles, links: items.map((i) => ({ label: i.label, href: i.path, note: i.note })) }],
+    jsonLd: [itemListJsonLd(text.h1, "/journal", items.map((i) => ({ name: i.label, path: i.path }))), breadcrumbJsonLd(crumbs)],
+  };
+}
+
+/** Fiches du bloc « À réserver » d'un article (titre dans la langue de l'article). */
+async function linkedListingLinks(listings: LinkedListing[], lang: "en" | "fr" | "he"): Promise<PageLink[]> {
+  if (!listings?.length) return [];
+  const ids = (kind: string[]) => listings.filter((l) => kind.includes(l.kind)).map((l) => l.id);
+  const inIds = (list: string[]) => `id=in.(${list.map(encodeURIComponent).join(",")})&status=eq.published`;
+  const exIds = ids(["experience"]);
+  const saIds = ids(["standalone", "boat"]);
+  const [ex, sa] = await Promise.all([
+    exIds.length ? fetchMany("experiences2", `id,slug,title,title_fr,title_he,subtitle,subtitle_fr,subtitle_he,${EXPERIENCE_PRICE_COLUMNS}`, inIds(exIds)) : [],
+    saIds.length
+      ? fetchMany("standalone_experiences", "id,slug,category_id,title,title_fr,title_he,subtitle,subtitle_fr,subtitle_he,base_price,base_price_child,has_child_price,base_price_type,currency", inIds(saIds))
+      : [],
+  ]);
+  localizeRowsSync(ex, lang);
+  localizeRowsSync(sa, lang);
+  const byId = new Map<string, PageLink>();
+  for (const r of ex) byId.set(r.id, experienceLink(r, lang));
+  for (const r of sa) byId.set(r.id, standaloneLink(r, lang));
+  // Une fiche dépubliée depuis disparaît simplement du bloc.
+  return listings.map((l) => byId.get(l.id)).filter((l): l is PageLink => !!l);
+}
+
+/** Versions du même sujet dans d'autres langues (hreflang), seulement si elles sont publiées. */
+async function topicAlternates(row: Row): Promise<{ lang: string; url: string }[]> {
+  if (!row.topic_group) return [];
+  const siblings = await fetchMany("journal_posts", "slug,lang,title,body", `topic_group=eq.${encodeURIComponent(row.topic_group)}&status=eq.published`);
+  const versions = siblings.filter((p) => isGeneratedArticle(p));
+  if (versions.length < 2) return [];
+  const alts = versions.map((p) => ({ lang: articleLang(p), url: pageUrl(`/journal/${p.slug}`, articleLang(p)) }));
+  const en = alts.find((a) => a.lang === "en");
+  return en ? [...alts, { lang: "x-default", url: en.url }] : alts;
+}
+
+/** Exportée pour les tests (src/config/seoJournalArticle.test.ts). */
+export async function resolveGeneratedArticle(row: Row): Promise<PageModel> {
+  const lang = articleLang(row);
+  const t = ui(lang);
+  const sections: PageSection[] = (row.body as ArticleSectionRow[]).map((s) => ({
+    heading: s.heading,
+    paragraphs: (s.paragraphs || []).map(inlineToText),
+    list: s.bullets?.length ? s.bullets.map(inlineToText) : undefined,
+  }));
+  const booking = await linkedListingLinks(row.linked_listings || [], lang);
+  if (booking.length) {
+    sections.push({ heading: BOOKING_HEADING[lang], paragraphs: row.booking_intro ? [inlineToText(row.booking_intro)] : [], links: booking });
+  }
+  const faq: ArticleFaqRow[] = Array.isArray(row.faq) ? row.faq : [];
+  if (faq.length) {
+    sections.push({ heading: FAQ_HEADING[lang], paragraphs: [] });
+    for (const f of faq) sections.push({ heading: inlineToText(f.question), paragraphs: [inlineToText(f.answer)] });
+  }
+  if (row.conclusion) sections.push({ paragraphs: [inlineToText(row.conclusion)] });
+
+  const description = metaDescription(row.meta_description, inlineToText(row.intro || ""));
+  const path = `/journal/${row.slug}`;
+  // Fil d'Ariane : chemins nus pour la page (la langue est ajoutée au rendu), avec ?lang= dans
+  // les données structurées.
+  const crumbs = [
+    { name: t.home, path: "/" },
+    { name: t.journal, path: "/journal" },
+    { name: row.title, path },
+  ];
+  const crumbsLd = crumbs.map((c) => ({ ...c, path: c.path === path ? articlePath(row.slug, lang) : href(c.path, lang) }));
+  return {
+    status: 200,
+    canonicalPath: path,
+    contentLang: lang,
+    alternates: await topicAlternates(row),
+    title: `${row.seo_title || row.title} | STAYMAKOM`,
+    description,
+    image: row.og_image || row.cover_image || undefined,
+    h1: row.title,
+    intro: row.intro ? [inlineToText(row.intro)] : [],
+    facts: [
+      ...(row.published_at ? [{ label: t.published, value: String(row.published_at).slice(0, 10) }] : []),
+      { label: "", value: "STAYMAKOM" },
+    ],
+    breadcrumbs: crumbs,
+    sections,
+    jsonLd: [
+      articleJsonLd({ ...row, __url: pageUrl(path, lang), __lang: lang }, row.title, description),
+      articleFaqJsonLd(faq),
+      breadcrumbJsonLd(crumbsLd),
+    ],
   };
 }
 
 async function resolveJournalPost(slug: string, lang: PageLang): Promise<PageModel> {
   const t = ui(lang);
+  // Version d'un ancien article devenue un article à part : 301 vers sa nouvelle adresse.
+  const moved = movedArticleSlug(slug, lang);
+  if (moved) return { status: 200, canonicalPath: `/journal/${moved}`, contentLang: lang as "he" | "fr" | "en" };
   const row = await fetchPublishedBySlug(
     "journal_posts",
-    "id,slug,title_en,title_he,excerpt_en,excerpt_he,content_en,content_he,author_name,cover_image,og_image,seo_title_en,seo_title_fr,seo_title_he,meta_description_en,meta_description_fr,meta_description_he,published_at,created_at,updated_at",
+    "id,slug,lang,topic_group,title,seo_title,meta_description,intro,body,booking_intro,conclusion,faq,linked_listings,title_en,title_he,excerpt_en,excerpt_he,content_en,content_he,author_name,cover_image,og_image,seo_title_en,seo_title_fr,seo_title_he,meta_description_en,meta_description_fr,meta_description_he,published_at,created_at,updated_at",
     slug,
     lang
   );
   if (!row) return NOT_FOUND;
+  if (isGeneratedArticle(row)) return resolveGeneratedArticle(row);
   // Le premier intertitre reprend souvent le titre de l'article : on l'enlève (un seul H1 par page).
   const sameAsTitle = (text: string) => text.trim().toLowerCase() === String(row.title_en || "").trim().toLowerCase();
   const blocks = articleBlocks(row.content_en).filter((b) => !(b.kind === "h2" && sameAsTitle(b.text)));

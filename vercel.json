@@ -34,6 +34,18 @@
       "source": "/experiences2",
       "destination": "/experiences",
       "statusCode": 301
+    },
+    {
+      "source": "/journal/hanukkah-in-israel-2026",
+      "has": [
+        {
+          "type": "query",
+          "key": "lang",
+          "value": "he"
+        }
+      ],
+      "destination": "/journal/matana-lezug-chanuka?lang=he",
+      "permanent": true
     }
   ],
   "headers": [

@@ -32,6 +32,13 @@ interface SEOHeadProps {
    * version pointe (canonical) vers l'anglais.
    */
   availableLocales?: readonly string[];
+  /**
+   * Page écrite dans UNE langue à son adresse propre (articles du Journal au nouveau format) :
+   * adresse de référence complète, et versions du même sujet dans d'autres langues
+   * (liste vide = aucune alternative déclarée).
+   */
+  canonicalUrl?: string;
+  alternates?: readonly { lang: string; url: string }[];
 }
 
 export function SEOHead({
@@ -56,6 +63,8 @@ export function SEOHead({
   fallbackDescription = "Discover unique boutique hotels and immersive experiences across Israel. From desert escapes to vineyard retreats, find your perfect getaway.",
   canonicalPath,
   availableLocales,
+  canonicalUrl,
+  alternates,
 }: SEOHeadProps) {
   const { lang, locale } = useLanguage();
 
@@ -113,7 +122,8 @@ export function SEOHead({
     const pageUrl = `${BASE_URL}${canonicalPath || window.location.pathname}`;
     const isAvailable = (code: string) => !availableLocales || availableLocales.includes(code);
     const canonicalLocale = isAvailable(locale) ? locale : "en";
-    updateMetaTag("og:url", localizedUrl(pageUrl, canonicalLocale), true);
+    const finalCanonical = canonicalUrl || localizedUrl(pageUrl, canonicalLocale);
+    updateMetaTag("og:url", finalCanonical, true);
     
     if (ogImage) {
       updateMetaTag("og:image", ogImage, true);
@@ -137,7 +147,19 @@ export function SEOHead({
       }
       for (const [name, value] of Object.entries(attrs)) el.setAttribute(name, value);
     };
-    setLink('link[rel="canonical"]', { rel: "canonical", href: localizedUrl(pageUrl, canonicalLocale) });
+    setLink('link[rel="canonical"]', { rel: "canonical", href: finalCanonical });
+
+    if (alternates) {
+      // Versions à des adresses différentes : on remplace toutes les langues annoncées.
+      const wanted = new Set(alternates.map((a) => a.lang));
+      document.head.querySelectorAll<HTMLLinkElement>('link[rel="alternate"][hreflang]').forEach((el) => {
+        if (!wanted.has(el.getAttribute("hreflang") || "")) el.remove();
+      });
+      for (const alt of alternates) {
+        setLink(`link[rel="alternate"][hreflang="${alt.lang}"]`, { rel: "alternate", hreflang: alt.lang, href: alt.url });
+      }
+      return;
+    }
 
     // Hreflang : on annonce à Google uniquement les langues publiques (l'interrupteur
     // src/config/languages.json décide si espagnol / russe / allemand en font partie).
@@ -188,6 +210,8 @@ export function SEOHead({
     fallbackDescription,
     canonicalPath,
     availableLocales,
+    canonicalUrl,
+    alternates,
   ]);
 
   return null;
