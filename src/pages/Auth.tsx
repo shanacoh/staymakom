@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import { consumeAuthRedirect, rememberAuthRedirect } from "@/lib/authRedirect";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,12 +62,19 @@ const Auth = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Page demandée avant la connexion (ex. lien d'un email vers le back-office).
+  const [searchParams] = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
+  useEffect(() => {
+    rememberAuthRedirect(redirectParam);
+  }, [redirectParam]);
+
   useEffect(() => {
     // Don't redirect if onboarding is in progress or password recovery
     if (user && !showOnboarding && !newUserId && !isPasswordRecovery) {
-      navigate("/account?tab=bookings");
+      navigate(consumeAuthRedirect(redirectParam) || "/account?tab=bookings", { replace: true });
     }
-  }, [user, navigate, showOnboarding, newUserId, isPasswordRecovery]);
+  }, [user, navigate, showOnboarding, newUserId, isPasswordRecovery, redirectParam]);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -51,7 +51,7 @@ const JournalArticleEditor = () => {
   const [confirm, setConfirm] = useState<null | "publish" | "reject" | "unpublish" | "regenerate">(null);
   const [scheduleAt, setScheduleAt] = useState("");
 
-  const { data: post, refetch } = useQuery({
+  const { data: post, refetch, isError } = useQuery({
     queryKey: ["admin-journal-article", id],
     enabled: !!id,
     queryFn: async () => {
@@ -71,6 +71,16 @@ const JournalArticleEditor = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [post?.id]);
 
+  // Article supprimé (ex. lien d'un ancien email) : le dire, au lieu d'un chargement sans fin.
+  if (isError) {
+    return (
+      <div className="py-12 text-center space-y-3">
+        <p className="font-semibold">Article introuvable</p>
+        <p className="text-sm text-muted-foreground">Il a peut-être été supprimé depuis l'envoi de l'email.</p>
+        <Button variant="outline" onClick={() => navigate("/admin/journal")}>Retour au Journal</Button>
+      </div>
+    );
+  }
   if (!form || !post) return <div className="py-12 text-center">Chargement...</div>;
 
   const set = (fields: Partial<Post>) => setForm({ ...form, ...fields });

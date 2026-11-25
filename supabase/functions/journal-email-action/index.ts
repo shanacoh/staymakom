@@ -1,7 +1,8 @@
-// Lien « Rejeter » de l'email du Journal. La page du site /journal-action?t=... appelle cette
-// fonction dès son ouverture (un clic depuis l'email suffit). Le jeton est à usage unique et
-// expire au bout de 24 h ; la vérification et le rejet se font dans la même transaction
-// (fonction journal_reject_by_token de la base). Aucune connexion requise : le jeton suffit.
+// Liens de l'email du Journal, sans connexion (le jeton de l'email suffit) :
+//  - « Rejeter » (/journal-action?t=...) : jeton à usage unique, 24 h ; vérification et rejet
+//    dans la même transaction (fonction journal_reject_by_token de la base).
+//  - « Aperçu » (/journal-action/apercu?t=..., action "preview") : jeton à part, en lecture
+//    seule, réutilisable 7 jours (fonction journal_post_by_preview_token) ; renvoie le brouillon.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
 
 const ALLOWED_ORIGINS = [
@@ -40,6 +41,15 @@ Deno.serve(async (req) => {
   const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+  if (body?.action === "preview") {
+    const { data, error } = await db.rpc("journal_post_by_preview_token", { p_token_hash: await sha256Hex(token) });
+    if (error) {
+      console.error("journal-email-action (aperçu):", error.message);
+      return reply({ error: "Erreur temporaire, réessaie dans un instant." }, 500);
+    }
+    return reply(data ? { result: "ok", post: data } : { result: "invalid" });
+  }
+
   const { data, error } = await db.rpc("journal_reject_by_token", { p_token_hash: await sha256Hex(token) });
   if (error) {
     console.error("journal-email-action:", error.message);

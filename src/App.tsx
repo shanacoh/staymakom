@@ -79,6 +79,7 @@ const AdminJournal           = lazy(() => import("./pages/admin/Journal"));
 const JournalEditor          = lazy(() => import("./pages/admin/JournalEditor"));
 const JournalArticleEditor   = lazy(() => import("./pages/admin/JournalArticleEditor"));
 const JournalAction          = lazy(() => import("./pages/JournalAction"));
+const JournalPreview         = lazy(() => import("./pages/JournalPreview"));
 const AdminGiftCards         = lazy(() => import("./pages/admin/GiftCards"));
 const AdminGiftCardDetails   = lazy(() => import("./pages/admin/GiftCardDetails"));
 const AdminSettings          = lazy(() => import("./pages/admin/Settings"));
@@ -294,6 +295,7 @@ const AppContent = () => {
           <Route path="/journal/:slug" element={<JournalPost />} />
           {/* Lien « Rejeter » de l'email quotidien du Journal (page privée, jeton à usage unique). */}
           <Route path="/journal-action" element={<JournalAction />} />
+          <Route path="/journal-action/apercu" element={<JournalPreview />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/about" element={<About />} />
           <Route path="/consulting" element={<Consulting />} />

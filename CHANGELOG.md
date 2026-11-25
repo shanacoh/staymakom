@@ -4,6 +4,21 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 25/11/2026 : Journal, le bouton « Aperçu » de l'email ouvre le brouillon sans connexion
+
+### Ce qui a changé côté code
+- `src/pages/JournalPreview.tsx` (nouveau) + route `/journal-action/apercu` dans `src/App.tsx` : page d'aperçu du brouillon (même rendu que le site, bandeau « Aperçu du brouillon, non publié » et lien vers le back-office), ouverte avec le jeton de l'email, sans connexion. Privée (sous `/journal-action`), jamais indexée.
+- `supabase/functions/journal-email-action/index.ts` : nouvelle action « preview » qui renvoie le brouillon si le jeton d'aperçu est valable (redéployée).
+- `supabase/functions/generate-journal-article/index.ts` : chaque email crée un 2e jeton (aperçu, lecture seule, 7 jours) ; le bouton « Aperçu » pointe vers la nouvelle page au lieu du back-office (redéployée).
+- `src/components/ProtectedRoute.tsx`, `src/pages/Auth.tsx`, `src/lib/authRedirect.ts` (nouveau, + test) : une page protégée ouverte sans être connecté (ex. « Modifier » ou « Publier » depuis l'email) ramène sur cette page après connexion, au lieu de « Mon compte ». Seules les adresses du site sont acceptées ; gardée aussi pendant la connexion Google.
+- `src/pages/admin/JournalArticleEditor.tsx` : un article supprimé affiche « Article introuvable » au lieu d'un chargement sans fin.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261125210000_journal_apercu_par_jeton.sql` (appliquée avec `supabase db query --linked -f`) : la table `journal_action_tokens` accepte l'action `preview` ; nouvelle fonction `journal_post_by_preview_token` (lecture seule, utilisable uniquement par la fonction serveur).
+
+### Pourquoi ce changement
+- Depuis l'email, « Aperçu » menait à une page qui exigeait d'être connecté au back-office (et perdait l'adresse après connexion) : Shana ne voyait pas le brouillon.
+
 ## 25/11/2026 : Accueil lisible par Google et les IA (titres, H1, « À propos », fiche d'identité)
 
 ### Ce qui a changé côté code

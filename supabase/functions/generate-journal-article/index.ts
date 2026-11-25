@@ -41,6 +41,7 @@ const ALLOWED_ORIGINS = [
 ];
 const SITE = "https://www.staymakom.com";
 const REJECT_URL = `${SITE}/journal-action`;
+const PREVIEW_URL = `${SITE}/journal-action/apercu`;
 // Même modèle que generate-experience-draft (variable d'environnement partagée).
 const DEFAULT_CLAUDE_MODEL = "claude-sonnet-4-5";
 // Tarif Sonnet (dollars par million de jetons) pour estimer le coût de chaque article.
@@ -532,14 +533,14 @@ async function generate(db: Db, client: Anthropic, params: RunParams) {
     const postId = saved.data.id as string;
     await db.from("blog_topics").update({ status: "genere" }).eq("id", topic.id).eq("status", "a_faire");
 
-    // 7. Lien « Rejeter » (usage unique, 24 h) et email
+    // 7. Liens « Rejeter » (usage unique, 24 h) et « Aperçu » (lecture seule, 7 jours), puis email
     const token = randomToken();
-    await db.from("journal_action_tokens").insert({
-      post_id: postId,
-      action: "reject",
-      token_hash: await sha256Hex(token),
-      expires_at: new Date(Date.now() + 24 * 3600_000).toISOString(),
-    });
+    const previewToken = randomToken();
+    const { error: tokenError } = await db.from("journal_action_tokens").insert([
+      { post_id: postId, action: "reject", token_hash: await sha256Hex(token), expires_at: new Date(Date.now() + 24 * 3600_000).toISOString() },
+      { post_id: postId, action: "preview", token_hash: await sha256Hex(previewToken), expires_at: new Date(Date.now() + 7 * 24 * 3600_000).toISOString() },
+    ]);
+    if (tokenError) throw new Error(`Liens de l'email : ${tokenError.message}`);
     const editUrl = `${SITE}/admin/journal/article/${postId}`;
     const emailParams = {
       title: article.h1,
@@ -552,7 +553,9 @@ async function generate(db: Db, client: Anthropic, params: RunParams) {
       keyword: topic.primary_keyword,
       wordCount,
       costUsd,
-      links: { preview: `${editUrl}?tab=preview`, edit: editUrl, publish: `${editUrl}?action=publish`, reject: `${REJECT_URL}?t=${token}` },
+      // Aperçu : page sans connexion (jeton en lecture seule, 7 jours), lisible depuis n'importe
+      // quel téléphone ou application mail, même non connecté au back-office.
+      links: { preview: `${PREVIEW_URL}?t=${previewToken}`, edit: editUrl, publish: `${editUrl}?action=publish`, reject: `${REJECT_URL}?t=${token}` },
     } as const;
     await sendEmail(settings.notify_email, journalEmailSubject(emailParams), journalEmailHtml(emailParams));
 
