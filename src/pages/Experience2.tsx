@@ -582,7 +582,7 @@ export default function Experience2() {
               ...(categoryName && category?.slug
                 ? [{ name: categoryName, url: `https://www.staymakom.com/category/${category.slug}` }]
                 : []),
-              { name: title, url: `https://www.staymakom.com/experience/${experience.slug}` },
+              { name: productNameFromSeoTitle(pageSeoTitle), url: `https://www.staymakom.com/experience/${experience.slug}` },
             ])} />
 
       <V3Header />

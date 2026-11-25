@@ -1135,7 +1135,7 @@ export default function StandaloneExperience() {
               ...(categoryName && categorySlug
                 ? [{ name: categoryName, url: `https://www.staymakom.com/category/${categorySlug}` }]
                 : []),
-              { name: title, url: `https://www.staymakom.com${canonicalPath}` },
+              { name: productNameFromSeoTitle(pageSeoTitle), url: `https://www.staymakom.com${canonicalPath}` },
             ])} />
 
       <V3Header />

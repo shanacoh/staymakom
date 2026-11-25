@@ -256,7 +256,7 @@ async function resolveExperience(slug: string, lang: PageLang): Promise<PageMode
   const crumbs = [
     { name: t.home, path: "/" },
     ...(category?.slug ? [{ name: category.name, path: `/category/${category.slug}` }] : [{ name: t.experiences, path: "/experiences" }]),
-    { name: row.title, path: `/experience/${row.slug}` },
+    { name: productNameFromSeoTitle(seoTitle), path: `/experience/${row.slug}` },
   ];
   // Jamais d'adresse exacte (règle : elle n'apparaît que dans l'email de confirmation).
   const location = [hotel?.name, hotel?.city].filter(Boolean).join(", ");
@@ -324,7 +324,7 @@ async function resolveStandalone(slug: string, lang: PageLang): Promise<PageMode
       : category?.slug
         ? { name: category.name, path: `/category/${category.slug}` }
         : { name: t.experiences, path: "/experiences" },
-    { name: row.title, path },
+    { name: productNameFromSeoTitle(seoTitle), path },
   ];
   // Jamais d'adresse exacte (règle : elle n'apparaît que dans l'email de confirmation).
   const location = [row.city, row.region].filter(Boolean).join(", ");

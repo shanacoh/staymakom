@@ -9,6 +9,7 @@
 ### Ce qui a changé côté code
 - `src/components/JsonLd.tsx` (nouveau) : les données structurées des pages passent par ce composant, qui n'écrit rien quand la page vient du guichet robots (blocs déjà présents dans l'en-tête, marqués `data-seo="bot"` par `api/_seo/patchHead.ts`). Utilisé par `Experience2.tsx`, `StandaloneExperience.tsx`, `Hotel.tsx`, `Category.tsx`, `JournalPost.tsx`, `FAQSection.tsx`.
 - `api/_seo/resolvers.ts`, `api/_seo/seoTitle.ts` (`productNameFromSeoTitle`), `Experience2.tsx`, `StandaloneExperience.tsx` : le nom du Product est le titre Google de la langue (sans « | STAYMAKOM »), plus le titre éditorial en majuscules.
+- Même règle pour le dernier maillon du fil d'Ariane des fiches expérience (avant : « CHOCOLATE WORKSHOP AT GALITA »).
 
 ### Ce qui a changé côté base de données
 - Rien.
