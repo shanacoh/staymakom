@@ -4,6 +4,18 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 25/11/2026 : Tarif de référence pour 3 expériences sans prix
+
+### Ce qui a changé côté code
+- Rien.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261125100000_tarifs_reference_3_experiences.sql` (appliquée le 25/11/2026, sauvegarde `backup_20261124.ref_rates`) : tarif de chambre de référence (`room_net_rate`) ajouté à la dégustation de vin au Beresheet (1 545,65 ₪), à la jeep vers les sources de Nahal Tzin au Kedma (821,45 ₪) et à l'atelier chocolat Galita au Lake House Kinneret (606,66 ₪). Valeurs obtenues comme dans le back-office : prix d'achat HyperGuest le plus bas sur les 30 prochaines dates disponibles (1 nuit, 2 adultes, petit-déjeuner, nationalité par défaut du site).
+- Prix « à partir de » qui en découlent pour les robots : environ 2 487 ₪, 2 545 ₪ et 988 ₪.
+
+### Pourquoi ce changement
+- Ces 3 fiches n'avaient aucun prix visible pour Google et les IA (critère de l'audit IA : le signe ₪ sur la fiche dégustation de vin).
+
 ## 24/11/2026 : Plan du site en direct et retrait des tirets cadratins
 
 ### Ce qui a changé côté code
