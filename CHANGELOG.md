@@ -4,6 +4,21 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 25/11/2026 : Journal, photos de couverture perdues remplacées
+
+### Ce qui a changé côté code
+- `src/components/journal/JournalCoverImage.tsx` (nouveau) : image de couverture d'article qui bascule sur l'image de route du désert (`hero-road-desert.jpg`) si l'article n'a pas de photo ou si le fichier est introuvable.
+- `src/pages/Journal.tsx` : l'article à la une et toutes les cartes utilisent cette image ; les cartes sans photo affichent désormais l'image par défaut (grille de hauteur régulière).
+- `src/pages/JournalPost.tsx` : couverture de l'article et « articles liés » utilisent la même image de secours.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261125180000_journal_couvertures_photos_catalogue.sql` : 12 articles publiés reçoivent comme couverture (et image de partage) une photo d'une fiche expérience du catalogue, choisie selon le sujet. 9 pointaient vers le dossier `journal-images`, vide (fichiers perdus) ; 3 n'avaient pas de photo.
+- Sauvegarde des anciennes valeurs : table `backup_20261125.journal_posts_covers`.
+
+### Pourquoi ce changement
+- La page Journal affichait des cadres blancs avec le titre en gris à la place des photos, et une grille bancale.
+
+
 ## 25/11/2026 : Journal, article français « Hanouka 2026 en Israël » publié
 
 ### Ce qui a changé côté code

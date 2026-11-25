@@ -25,6 +25,7 @@ import { tPage } from "@/lib/translations";
 import { tPlace } from "@/lib/placeNames";
 import { journalCategoryLabel } from "@/lib/journalCategories";
 import { GeneratedArticleView, type GeneratedArticleRow } from "@/components/journal/GeneratedArticleView";
+import JournalCoverImage from "@/components/journal/JournalCoverImage";
 import { articleFaqJsonLd, articleLang, articlePath, inlineToText, isGeneratedArticle, movedArticleSlug } from "../../api/_seo/journalArticle";
 
 const SITE_URL = "https://www.staymakom.com";
@@ -678,7 +679,7 @@ const JournalPost = () => {
           {/* Cover Image — full width (max 840px) */}
           {post.cover_image && (
             <div className="rounded-lg overflow-hidden mb-12 mx-auto" style={{ maxWidth: "840px" }}>
-              <img
+              <JournalCoverImage
                 src={post.cover_image}
                 alt={title}
                 className="w-full object-cover"
@@ -783,8 +784,8 @@ const JournalPost = () => {
               {relatedPosts.slice(0, 2).map((rp: any) => (
                 <Link key={rp.id} to={`/journal/${rp.slug}`} className="group">
                   <div className="rounded-xl overflow-hidden mb-3">
-                    <img
-                      src={rp.cover_image || "/placeholder.svg"}
+                    <JournalCoverImage
+                      src={rp.cover_image}
                       alt={getLocalizedField(rp, "title", lang) || rp.title_en}
                       className="w-full aspect-[16/10] object-cover transition-transform duration-300 group-hover:scale-105"
                     />

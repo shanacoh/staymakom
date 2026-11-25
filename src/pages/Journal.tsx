@@ -11,6 +11,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { dateFnsLocale } from "@/lib/dateFnsLocale";
 import { tPage } from "@/lib/translations";
 import { journalCategoryLabel } from "@/lib/journalCategories";
+import JournalCoverImage from "@/components/journal/JournalCoverImage";
 import { postsForLocale, toListItem } from "@/lib/journal/journalList";
 
 const Journal = () => {
@@ -87,8 +88,8 @@ const Journal = () => {
             {featuredPost && (
               <Link to={featuredPost.__href} className="block group">
                 <div className="relative rounded-xl overflow-hidden" style={{ height: "420px" }}>
-                  <img
-                    src={featuredPost.cover_image || "/placeholder.svg"}
+                  <JournalCoverImage
+                    src={featuredPost.cover_image}
                     alt={featuredPost.__title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     style={{ aspectRatio: "16/9" }}
@@ -131,15 +132,13 @@ const Journal = () => {
                 {remainingPosts.map((post) => (
                   <Link key={post.id} to={post.__href}>
                     <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full border-0 bg-white">
-                      {post.cover_image && (
-                        <div className="aspect-[4/3] overflow-hidden">
-                          <img
-                            src={post.cover_image}
-                            alt={post.__title}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                          />
-                        </div>
-                      )}
+                      <div className="aspect-[4/3] overflow-hidden">
+                        <JournalCoverImage
+                          src={post.cover_image}
+                          alt={post.__title}
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
                       <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="inline-block px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.1em] rounded-full bg-muted text-foreground">
