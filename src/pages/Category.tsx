@@ -1,4 +1,5 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { JsonLd } from "@/components/JsonLd";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import V3Header from "@/components/V3Header";
@@ -330,18 +331,11 @@ const Category = () => {
         fallbackTitle={`${categoryName} - Staymakom`}
         fallbackDescription={introText}
       />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
-            buildBreadcrumbJsonLd([
+      <JsonLd data={buildBreadcrumbJsonLd([
               { name: "Home", url: "https://www.staymakom.com/" },
               ...(isBoatsCategory ? [] : [{ name: mode === 'stay' ? "With Hotel" : "Experience Only", url: `https://www.staymakom.com/category/${slug}?mode=${mode}` }]),
               { name: categoryName, url: `https://www.staymakom.com/category/${slug}?mode=${mode}` },
-            ])
-          ),
-        }}
-      />
+            ])} />
       <V3Header showModeToggle={!isBoatsCategory} mode={mode} setMode={handleSetMode} />
 
       <main className="flex-1">

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { JsonLd } from "@/components/JsonLd";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { trackExperienceViewed, trackExperienceEngaged, type ProductLike } from "@/lib/analytics";
@@ -184,10 +185,7 @@ const Hotel = () => {
         fallbackTitle={`${hotelName} - ${city || ''} - Staymakom`}
         fallbackDescription={story?.substring(0, 155) || ""}
         canonicalPath={hotel.slug ? `/hotel/${hotel.slug}` : undefined} />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+      <JsonLd data={{
             "@context": "https://schema.org",
             "@type": "LodgingBusiness",
             "name": hotel.name,
@@ -205,20 +203,11 @@ const Hotel = () => {
                 "longitude": hotel.longitude
               }
             })
-          })
-        }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
-            buildBreadcrumbJsonLd([
+          }} />
+      <JsonLd data={buildBreadcrumbJsonLd([
               { name: "Home", url: "https://www.staymakom.com/" },
               { name: hotelName, url: `https://www.staymakom.com/hotel/${hotel.slug}` },
-            ])
-          ),
-        }}
-      />
+            ])} />
 
       <V3Header />
 

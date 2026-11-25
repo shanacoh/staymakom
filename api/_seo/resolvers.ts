@@ -17,6 +17,7 @@ import { BRAND, brandDescription, href, ui, type PageLang } from "./site.js";
 import { SEO_HOME_AND_LIST, STATIC_ALIASES, staticText } from "./staticPages.js";
 import { articleBlocks, formatPrice, metaDescription, oneLine, paragraphs, stripHtml, toList } from "./text.js";
 import { experiencePageTitle, hotelPageTitle } from "./titles.js";
+import { productNameFromSeoTitle } from "./seoTitle.js";
 
 type Row = Record<string, any>;
 
@@ -251,6 +252,7 @@ async function resolveExperience(slug: string, lang: PageLang): Promise<PageMode
   const included = includeRows.length ? toList(localizeRowsSync(includeRows, lang)) : toList(row.includes);
   const price = experienceFromPrice(row);
   const description = metaDescription(row.meta_description_en, row.subtitle, row.long_copy);
+  const seoTitle = experiencePageTitle(row, hotel?.city || hotel?.region, lang);
   const crumbs = [
     { name: t.home, path: "/" },
     ...(category?.slug ? [{ name: category.name, path: `/category/${category.slug}` }] : [{ name: t.experiences, path: "/experiences" }]),
@@ -263,7 +265,7 @@ async function resolveExperience(slug: string, lang: PageLang): Promise<PageMode
     status: 200,
     canonicalPath: `/experience/${row.slug}`,
     availableLangs: row.__availableLangs,
-    title: experiencePageTitle(row, hotel?.city || hotel?.region, lang),
+    title: seoTitle,
     description,
     image: row.og_image || row.hero_image || undefined,
     h1: row.title,
@@ -283,7 +285,8 @@ async function resolveExperience(slug: string, lang: PageLang): Promise<PageMode
     ],
     jsonLd: [
       productJsonLd({
-        name: row.title,
+        // Nom = titre Google de la langue (jamais le titre éditorial en majuscules).
+        name: productNameFromSeoTitle(seoTitle),
         description,
         image: row.hero_image || row.og_image || undefined,
         path: `/experience/${row.slug}`,
@@ -311,6 +314,7 @@ async function resolveStandalone(slug: string, lang: PageLang): Promise<PageMode
   const price = Number(row.base_price) > 0 ? Number(row.base_price) : null;
   const perPerson = row.base_price_type === "per_person";
   const description = metaDescription(row.meta_description_en, row.subtitle, row.long_copy);
+  const seoTitle = experiencePageTitle(row, row.city || row.region, lang);
   // Bateaux : adresse de référence /boat/<slug> ; autres expériences seules : /standalone-experience/<slug>.
   const path = `${isBoat ? "/boat" : "/standalone-experience"}/${row.slug}`;
   const crumbs = [
@@ -330,7 +334,7 @@ async function resolveStandalone(slug: string, lang: PageLang): Promise<PageMode
     status: 200,
     canonicalPath: path,
     availableLangs: row.__availableLangs,
-    title: experiencePageTitle(row, row.city || row.region, lang),
+    title: seoTitle,
     description,
     image: row.og_image || row.hero_image || undefined,
     h1: row.title,
@@ -349,7 +353,8 @@ async function resolveStandalone(slug: string, lang: PageLang): Promise<PageMode
     ],
     jsonLd: [
       productJsonLd({
-        name: row.title,
+        // Nom = titre Google de la langue (jamais le titre éditorial en majuscules).
+        name: productNameFromSeoTitle(seoTitle),
         description,
         image: row.hero_image || row.og_image || undefined,
         path,

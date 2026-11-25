@@ -4,6 +4,7 @@
  * Utilise experiences2 + hotels2 + intégration HyperGuest
  */
 import { useRef, useState, useMemo, useCallback, useEffect, lazy, Suspense } from "react";
+import { JsonLd } from "@/components/JsonLd";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useExperience2 } from "@/hooks/useExperience2";
 import { useQuery } from "@tanstack/react-query";
@@ -34,7 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/hooks/useLanguage";
 import { trackedRegionName, useRegionLabel } from "@/lib/regionList/queries";
 import { SEOHead } from "@/components/SEOHead";
-import { experienceSeoTitle } from "../../api/_seo/seoTitle";
+import { experienceSeoTitle, productNameFromSeoTitle } from "../../api/_seo/seoTitle";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumbJsonLd";
 import {
   trackExperiencePageViewed,
@@ -529,25 +530,25 @@ export default function Experience2() {
   // Main render
   // ---------------------------------------------------------------------------
 
+  // Titre Google de la langue : onglet, et nom du Product dans les données structurées.
+  const pageSeoTitle = experienceSeoTitle({
+      seoTitle: (experience as any)[`seo_title_${lang === "fr" || lang === "he" ? lang : "en"}`],
+      editorialTitle: title,
+      place: city,
+    });
+
   return (
     <div className="min-h-screen flex flex-col" style={{ overflowX: 'clip' }} dir={lang === 'he' ? 'rtl' : 'ltr'}>
       <SEOHead
-        title={experienceSeoTitle({
-          seoTitle: (experience as any)[`seo_title_${lang === "fr" || lang === "he" ? lang : "en"}`],
-          editorialTitle: title,
-          place: city,
-        })}
+        title={pageSeoTitle}
         description={(experience as any)[`meta_description_${lang === "fr" || lang === "he" ? lang : "en"}`] || subtitle || undefined}
         ogImage={experience.hero_image || primaryHotel?.hero_image || undefined}
         canonicalPath={`/experience/${experience.slug}`}
       />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+      <JsonLd data={{
             "@context": "https://schema.org",
             "@type": "Product",
-            "name": experience.title,
+            "name": productNameFromSeoTitle(pageSeoTitle),
             "description": experience.subtitle || undefined,
             "image": experience.hero_image || primaryHotel?.hero_image || undefined,
             "url": `https://www.staymakom.com/experience/${experience.slug}`,
@@ -569,14 +570,8 @@ export default function Experience2() {
                 "reviewCount": reviewsCount
               }
             })
-          })
-        }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
-            buildBreadcrumbJsonLd([
+          }} />
+      <JsonLd data={buildBreadcrumbJsonLd([
               { name: "Home", url: "https://www.staymakom.com/" },
               {
                 name: "With Hotel",
@@ -588,10 +583,7 @@ export default function Experience2() {
                 ? [{ name: categoryName, url: `https://www.staymakom.com/category/${category.slug}` }]
                 : []),
               { name: title, url: `https://www.staymakom.com/experience/${experience.slug}` },
-            ])
-          ),
-        }}
-      />
+            ])} />
 
       <V3Header />
 

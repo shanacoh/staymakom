@@ -5,6 +5,7 @@
  * Le checkout (infos client + paiement) est délégué à StandaloneCheckout.tsx.
  */
 import { useRef, useState, useCallback, useEffect, useMemo } from "react";
+import { JsonLd } from "@/components/JsonLd";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,7 +37,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
 import { trackedRegionName, useRegionLabel } from "@/lib/regionList/queries";
 import { SEOHead } from "@/components/SEOHead";
-import { experienceSeoTitle } from "../../api/_seo/seoTitle";
+import { experienceSeoTitle, productNameFromSeoTitle } from "../../api/_seo/seoTitle";
 import { BOATS_CATEGORY_ID } from "@/lib/boatsCategory";
 import { MOOD_PARAM, inMood, orderedPhotos } from "@/lib/moodDisplay/moodDisplay";
 import { useArrivalMood } from "@/lib/moodDisplay/queries";
@@ -1069,6 +1070,13 @@ export default function StandaloneExperience() {
   // Main render
   // -------------------------------------------------------------------------
 
+  // Titre Google de la langue : onglet, et nom du Product dans les données structurées.
+  const pageSeoTitle = experienceSeoTitle({
+      seoTitle: lang === "fr" ? experience.seo_title_fr : lang === "he" ? experience.seo_title_he : experience.seo_title_en,
+      editorialTitle: title,
+      place: locCity || experience.region,
+    });
+
   return (
     <div
       className="min-h-screen flex flex-col"
@@ -1076,11 +1084,7 @@ export default function StandaloneExperience() {
       dir={lang === "he" ? "rtl" : "ltr"}
     >
       <SEOHead
-        title={experienceSeoTitle({
-          seoTitle: lang === "fr" ? experience.seo_title_fr : lang === "he" ? experience.seo_title_he : experience.seo_title_en,
-          editorialTitle: title,
-          place: locCity || experience.region,
-        })}
+        title={pageSeoTitle}
         canonicalPath={canonicalPath}
         description={subtitle}
         descriptionEn={experience.meta_description_en || undefined}
@@ -1094,13 +1098,10 @@ export default function StandaloneExperience() {
         ogDescriptionHe={experience.og_description_he || undefined}
         ogImage={experience.og_image || experience.hero_image || undefined}
       />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+      <JsonLd data={{
             "@context": "https://schema.org",
             "@type": "Product",
-            "name": experience.title,
+            "name": productNameFromSeoTitle(pageSeoTitle),
             "description": subtitle || undefined,
             "image": experience.hero_image || undefined,
             "url": `https://www.staymakom.com${canonicalPath}`,
@@ -1122,14 +1123,8 @@ export default function StandaloneExperience() {
                 "reviewCount": reviewsSummary.count
               }
             })
-          })
-        }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
-            buildBreadcrumbJsonLd([
+          }} />
+      <JsonLd data={buildBreadcrumbJsonLd([
               { name: "Home", url: "https://www.staymakom.com/" },
               {
                 name: "Experience Only",
@@ -1141,10 +1136,7 @@ export default function StandaloneExperience() {
                 ? [{ name: categoryName, url: `https://www.staymakom.com/category/${categorySlug}` }]
                 : []),
               { name: title, url: `https://www.staymakom.com${canonicalPath}` },
-            ])
-          ),
-        }}
-      />
+            ])} />
 
       <V3Header />
 

@@ -1,4 +1,5 @@
 import { useLanguage } from "@/hooks/useLanguage";
+import { JsonLd } from "@/components/JsonLd";
 import { t } from "@/lib/translations";
 import {
   Accordion,
@@ -56,7 +57,7 @@ const FAQSection = () => {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd).replace(/</g, "\\u003c") }} />
+      <JsonLd data={faqJsonLd} />
       <section className="py-8 sm:py-10 border-t border-border/40" dir={isRTL ? "rtl" : "ltr"}>
         <div className="container px-4 max-w-2xl mx-auto">
           <div className="text-center mb-5 sm:mb-7">

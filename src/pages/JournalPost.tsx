@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { JsonLd } from "@/components/JsonLd";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -488,10 +489,7 @@ const JournalPost = () => {
         // Pas de version française des articles ; l'hébreu seulement s'il est rédigé.
         availableLocales={post.content_he ? ["en", "he", "es", "ru", "de"] : ["en", "es", "ru", "de"]}
       />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+      <JsonLd data={{
             "@context": "https://schema.org",
             "@type": "Article",
             "headline": post.title_en,
@@ -509,21 +507,12 @@ const JournalPost = () => {
                 "url": "https://www.staymakom.com/favicon.png"
               }
             }
-          })
-        }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
-            buildBreadcrumbJsonLd([
+          }} />
+      <JsonLd data={buildBreadcrumbJsonLd([
               { name: "Home", url: "https://www.staymakom.com/" },
               { name: "Journal", url: "https://www.staymakom.com/journal" },
               { name: post.title_en, url: `https://www.staymakom.com/journal/${post.slug}` },
-            ])
-          ),
-        }}
-      />
+            ])} />
       <V3Header />
 
       <main className="max-w-4xl mx-auto px-6 py-20" dir={isRTL ? "rtl" : "ltr"}>

@@ -4,6 +4,18 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 25/11/2026 : Un seul bloc Product et un seul fil d'Ariane par page pour Google
+
+### Ce qui a changé côté code
+- `src/components/JsonLd.tsx` (nouveau) : les données structurées des pages passent par ce composant, qui n'écrit rien quand la page vient du guichet robots (blocs déjà présents dans l'en-tête, marqués `data-seo="bot"` par `api/_seo/patchHead.ts`). Utilisé par `Experience2.tsx`, `StandaloneExperience.tsx`, `Hotel.tsx`, `Category.tsx`, `JournalPost.tsx`, `FAQSection.tsx`.
+- `api/_seo/resolvers.ts`, `api/_seo/seoTitle.ts` (`productNameFromSeoTitle`), `Experience2.tsx`, `StandaloneExperience.tsx` : le nom du Product est le titre Google de la langue (sans « | STAYMAKOM »), plus le titre éditorial en majuscules.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- L'outil de test des résultats enrichis de Google exécute la page : il voyait le Product du guichet robots (valide) ET l'ancien Product ajouté par la page (sans prix sur les fiches avec hôtel, donc « problème critique »).
+
 ## 25/11/2026 : Sprint SEO technique et propreté du suivi Amplitude
 
 ### Ce qui a changé côté code

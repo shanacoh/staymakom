@@ -62,7 +62,9 @@ export function patchHtml(html: string, pathname: string, page: PageModel, langu
   }
   for (const block of (page.jsonLd || []).filter(Boolean)) {
     const jsonLd = JSON.stringify(block).replace(/</g, "\\u003c");
-    extras.push(`<script type="application/ld+json">${jsonLd}</script>`);
+    // data-seo="bot" : le site (src/components/JsonLd.tsx) voit que ces blocs existent déjà et
+    // n'en ajoute pas d'autres quand l'outil de Google exécute la page (sinon doublons).
+    extras.push(`<script type="application/ld+json" data-seo="bot">${jsonLd}</script>`);
   }
   html = html.replace("</head>", `${extras.join("\n")}\n</head>`);
 

@@ -89,3 +89,8 @@ export function experienceSeoTitle(params: {
   if (isUsableSeoTitle(params.seoTitle, params.editorialTitle)) return params.seoTitle!.trim();
   return defaultExperienceSeoTitle(params.editorialTitle, params.place);
 }
+
+/** Nom du Product (données structurées) : le titre Google sans la signature « | STAYMAKOM ». */
+export function productNameFromSeoTitle(seoTitle: string): string {
+  return seoTitle.replace(/\s*\|\s*STAYMAKOM\s*$/i, "").trim();
+}
