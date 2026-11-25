@@ -34,7 +34,10 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem("staymakom_currency");
       if (saved === "ILS" || saved === "USD" || saved === "EUR") return saved;
     } catch {}
-    return "USD";
+    // Devise par défaut : le shekel (₪), pour tous les visiteurs et toutes les langues
+    // (décision du 25/11/2026). Un visiteur qui choisit $ ou € garde son choix (affichage
+    // indicatif : la facturation reste toujours en ILS).
+    return "ILS";
   });
 
   const setDisplayCurrency = useCallback((c: DisplayCurrency) => {

@@ -18,6 +18,7 @@ import { SEO_HOME_AND_LIST, STATIC_ALIASES, staticText } from "./staticPages.js"
 import { articleBlocks, formatPrice, metaDescription, oneLine, paragraphs, stripHtml, toList } from "./text.js";
 import { experiencePageTitle, hotelPageTitle } from "./titles.js";
 import { productNameFromSeoTitle } from "./seoTitle.js";
+import { getStandaloneFromPrice } from "./standaloneFromPrice.js";
 
 type Row = Record<string, any>;
 
@@ -48,6 +49,16 @@ function experienceFromPrice(row: Row): number | null {
   const minParty = Number(row.min_party) || 1;
   const total = roomClient + sellFixed + sellPerPerson * minParty;
   return total > 0 ? Math.round(total * 100) / 100 : null;
+}
+
+/** Prix d'appel d'une expérience seule, arrondi comme sur la fiche (tarif enfant s'il est plus bas). */
+function standalonePrice(row: Row): number | null {
+  const amount = getStandaloneFromPrice({
+    base_price: Number(row.base_price) || 0,
+    base_price_child: row.base_price_child == null ? null : Number(row.base_price_child),
+    has_child_price: row.has_child_price,
+  });
+  return amount > 0 ? Math.round(amount) : null;
 }
 
 function priceNote(price: number | null, currency: string, lang: PageLang, perPerson = false): string | undefined {
@@ -105,7 +116,7 @@ function standaloneLink(row: Row, lang: PageLang): PageLink {
   return {
     label: row.title,
     href: href(`${row.category_id === BOATS_CATEGORY_ID ? "/boat" : "/standalone-experience"}/${row.slug}`, lang),
-    note: [oneLine(row.subtitle, 140), priceNote(Number(row.base_price) || null, row.currency, lang, row.base_price_type === "per_person")]
+    note: [oneLine(row.subtitle, 140), priceNote(standalonePrice(row), row.currency, lang, row.base_price_type === "per_person")]
       .filter(Boolean)
       .join(" · ") || undefined,
   };
@@ -124,7 +135,7 @@ async function resolveHome(lang: PageLang): Promise<PageModel> {
   const [categories, experiences, standalones, hotels] = await Promise.all([
     publishedCategories(lang),
     fetchMany("experiences2", `id,slug,title,title_fr,title_he,subtitle,subtitle_fr,subtitle_he,${EXPERIENCE_PRICE_COLUMNS}`, "status=eq.published&order=display_order.asc.nullslast"),
-    fetchMany("standalone_experiences", "slug,category_id,title,title_fr,title_he,subtitle,subtitle_fr,subtitle_he,base_price,base_price_type,currency", "status=eq.published&order=display_order.asc.nullslast"),
+    fetchMany("standalone_experiences", "slug,category_id,title,title_fr,title_he,subtitle,subtitle_fr,subtitle_he,base_price,base_price_child,has_child_price,base_price_type,currency", "status=eq.published&order=display_order.asc.nullslast"),
     fetchMany("hotels2", "slug,name,name_fr,name_he,city,city_fr,city_he,region,region_fr,region_he", "status=eq.published&order=name.asc"),
   ]);
   const seo = SEO_HOME_AND_LIST.home[lang];
@@ -150,7 +161,7 @@ async function resolveExperiencesList(lang: PageLang): Promise<PageModel> {
   const t = ui(lang);
   const [experiences, standalones] = await Promise.all([
     fetchMany("experiences2", `slug,title,title_fr,title_he,subtitle,subtitle_fr,subtitle_he,${EXPERIENCE_PRICE_COLUMNS}`, "status=eq.published&order=display_order.asc.nullslast"),
-    fetchMany("standalone_experiences", "slug,category_id,title,title_fr,title_he,subtitle,subtitle_fr,subtitle_he,base_price,base_price_type,currency", "status=eq.published&order=display_order.asc.nullslast"),
+    fetchMany("standalone_experiences", "slug,category_id,title,title_fr,title_he,subtitle,subtitle_fr,subtitle_he,base_price,base_price_child,has_child_price,base_price_type,currency", "status=eq.published&order=display_order.asc.nullslast"),
   ]);
   const seo = SEO_HOME_AND_LIST.experiences[lang];
   const withHotel = localizeRowsSync(experiences, lang).map((r) => experienceLink(r, lang));
@@ -250,7 +261,9 @@ async function resolveExperience(slug: string, lang: PageLang): Promise<PageMode
   if (category) localizeRowsSync([category], lang);
 
   const included = includeRows.length ? toList(localizeRowsSync(includeRows, lang)) : toList(row.includes);
-  const price = experienceFromPrice(row);
+  // Arrondi à l'unité comme le prix affiché sur la fiche (₪988, pas 987,62).
+  const fromPrice = experienceFromPrice(row);
+  const price = fromPrice != null ? Math.round(fromPrice) : null;
   const description = metaDescription(row.meta_description_en, row.subtitle, row.long_copy);
   const seoTitle = experiencePageTitle(row, hotel?.city || hotel?.region, lang);
   const crumbs = [
@@ -303,7 +316,7 @@ async function resolveStandalone(slug: string, lang: PageLang): Promise<PageMode
   const t = ui(lang);
   const row = await fetchPublishedBySlug(
     "standalone_experiences",
-    "id,slug,title,title_fr,title_he,subtitle,subtitle_fr,subtitle_he,long_copy,long_copy_fr,long_copy_he,duration,duration_fr,duration_he,city,city_fr,city_he,region,region_fr,region_he,address,address_fr,address_he,hide_exact_address,includes,includes_he,not_includes,not_includes_he,good_to_know,good_to_know_he,hero_image,og_image,base_price,base_price_type,currency,seo_title_en,seo_title_fr,seo_title_he,meta_description_en,meta_description_fr,meta_description_he,category_id,categories(name,name_fr,name_he,slug)",
+    "id,slug,title,title_fr,title_he,subtitle,subtitle_fr,subtitle_he,long_copy,long_copy_fr,long_copy_he,duration,duration_fr,duration_he,city,city_fr,city_he,region,region_fr,region_he,address,address_fr,address_he,hide_exact_address,includes,includes_he,not_includes,not_includes_he,good_to_know,good_to_know_he,hero_image,og_image,base_price,base_price_child,has_child_price,base_price_type,currency,seo_title_en,seo_title_fr,seo_title_he,meta_description_en,meta_description_fr,meta_description_he,category_id,categories(name,name_fr,name_he,slug)",
     slug,
     lang
   );
@@ -311,7 +324,7 @@ async function resolveStandalone(slug: string, lang: PageLang): Promise<PageMode
   const category = Array.isArray(row.categories) ? row.categories[0] : row.categories;
   if (category) localizeRowsSync([category], lang);
   const isBoat = row.category_id === BOATS_CATEGORY_ID;
-  const price = Number(row.base_price) > 0 ? Number(row.base_price) : null;
+  const price = standalonePrice(row);
   const perPerson = row.base_price_type === "per_person";
   const description = metaDescription(row.meta_description_en, row.subtitle, row.long_copy);
   const seoTitle = experiencePageTitle(row, row.city || row.region, lang);
@@ -375,7 +388,7 @@ async function resolveCategory(slug: string, lang: PageLang): Promise<PageModel>
     lang
   );
   if (!row) return NOT_FOUND;
-  const standaloneColumns = "id,slug,category_id,title,title_fr,title_he,subtitle,subtitle_fr,subtitle_he,base_price,base_price_type,currency";
+  const standaloneColumns = "id,slug,category_id,title,title_fr,title_he,subtitle,subtitle_fr,subtitle_he,base_price,base_price_child,has_child_price,base_price_type,currency";
   const [experiences, standaloneMain, standaloneExtra] = await Promise.all([
     fetchMany("experiences2", `slug,title,title_fr,title_he,subtitle,subtitle_fr,subtitle_he,${EXPERIENCE_PRICE_COLUMNS}`, `category_id=eq.${row.id}&status=eq.published&order=display_order.asc.nullslast`),
     fetchMany("standalone_experiences", standaloneColumns, `category_id=eq.${row.id}&status=eq.published&order=display_order.asc.nullslast`),
@@ -418,7 +431,7 @@ async function resolveBoats(lang: PageLang): Promise<PageModel> {
   const text = staticText("/boat", lang)!;
   const boats = await fetchMany(
     "standalone_experiences",
-    "slug,category_id,title,title_fr,title_he,subtitle,subtitle_fr,subtitle_he,base_price,base_price_type,currency",
+    "slug,category_id,title,title_fr,title_he,subtitle,subtitle_fr,subtitle_he,base_price,base_price_child,has_child_price,base_price_type,currency",
     `category_id=eq.${BOATS_CATEGORY_ID}&status=eq.published&order=display_order.asc.nullslast`
   );
   const links = localizeRowsSync(boats, lang).map((r) => ({ ...standaloneLink(r, lang), href: href(`/boat/${r.slug}`, lang) }));

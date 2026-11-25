@@ -557,7 +557,7 @@ export default function Experience2() {
             ...(Number(experience.base_price) > 0 && {
               "offers": {
                 "@type": "Offer",
-                "price": experience.base_price,
+                "price": Math.round(Number(experience.base_price)),
                 "priceCurrency": experience.currency || "ILS",
                 "availability": "https://schema.org/InStock",
                 "url": `https://www.staymakom.com/experience/${experience.slug}`

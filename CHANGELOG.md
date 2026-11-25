@@ -4,6 +4,19 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 25/11/2026 : Descriptions sans prestataire, shekel par défaut, prix Google = prix affiché
+
+### Ce qui a changé côté code
+- `supabase/functions/generate-experience-draft/index.ts`, `supabase/functions/_shared/prompts/hotel-experience.ts`, `standalone-experience.ts` : le bouton « Générer le SEO » et le brouillon complet n'écrivent plus le nom du prestataire de l'expérience dans les titres et descriptions (noms d'hôtels autorisés). Fonction redéployée.
+- `src/contexts/CurrencyContext.tsx` : devise affichée par défaut = ILS (₪) au lieu de USD, pour tous les visiteurs. Un choix $ / € fait par le visiteur reste gardé ; c'est un affichage indicatif, la facturation reste en ILS (paiement et emails inchangés : ils utilisent la devise de la fiche ou de la réservation, en ILS).
+- `api/_seo/standaloneFromPrice.ts` (nouveau, règle partagée ; `src/lib/standaloneFromPrice.ts` la réexporte), `api/_seo/resolvers.ts` : le prix donné à Google pour une expérience seule est le même que sur la fiche (tarif enfant s'il est plus bas), arrondi à l'unité ; le prix des expériences avec hôtel est arrondi comme à l'écran. Même chose dans les données structurées côté site (`StandaloneExperience.tsx`, `Experience2.tsx`).
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261125130000_meta_descriptions_sans_prestataire.sql` (demandée par Shana, appliquée le 25/11/2026, sauvegarde `backup_20261125.seo_descriptions`) : descriptions Google et textes de partage sans nom de prestataire (Galita, Lev HaTeva, Cameland, Ramat Negev Winery, Dolphin Reef, Tishbi) sur 7 fiches. Les versions es / ru / de de ces textes reviennent à l'anglais jusqu'à la retraduction automatique de la nuit.
+
+### Pourquoi ce changement
+- Ne pas mettre en avant les prestataires dans Google ; afficher les prix dans la devise de facturation ; donner à Google le même prix que celui affiché sur la page.
+
 ## 25/11/2026 : Un seul bloc Product et un seul fil d'Ariane par page pour Google
 
 ### Ce qui a changé côté code

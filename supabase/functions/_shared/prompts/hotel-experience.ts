@@ -232,6 +232,8 @@ This form's pricing is split between room rate (via HyperGuest, not something th
 
 ### SEO CONFIGURATION
 
+RULE (all languages, SEO and OG fields): never name the experience provider (workshop, farm, winery, dive center, studio, guide company...). Hotel names are allowed. SEO title = activity type + place, in natural search wording, normal case (never ALL CAPS). Descriptions describe the activity and the place instead ("a family winery in Zichron Yaakov", not the winery's name).
+
 **English SEO**
 SEO Title (max 60 chars):
 Meta Description (max 155 chars):

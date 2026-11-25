@@ -539,7 +539,7 @@ Tâche : rédiger uniquement le titre SEO et la méta-description, pas de rédac
     · JAMAIS le nom du prestataire, de l'hôtel, du domaine ou de l'atelier (ni « Galita », ni « The Setai », ni « Lev HaTeva »...) ;
     · JAMAIS le titre éditorial poétique tel quel (« SOURCES SECRÈTES DU NÉGUEV », « LOST AT SEA ») et JAMAIS en majuscules : casse normale ;
     · pas de « | STAYMAKOM » (ajouté par le site si la place le permet), pas de tiret cadratin.
-  - meta_description_* : 155 caractères maximum, qui donne envie de cliquer, dans la voix STAYMAKOM.
+  - meta_description_* : 155 caractères maximum, qui donne envie de cliquer, dans la voix STAYMAKOM. JAMAIS le nom du prestataire de l'expérience (atelier, ferme, domaine viticole, centre de plongée, studio...) : décris l'activité et le lieu à la place (« une cave familiale de Zichron Yaakov », pas son nom). Les noms d'hôtels sont autorisés.
 - Si une langue n'a ni titre ni description fournis, laisse ses deux champs SEO vides pour cette langue.
 - Ne produis rien d'autre que les champs SEO : pas de titre, pas de description, pas de prix.
 - Réponds uniquement via l'outil fourni (fill_seo_fields).`;
