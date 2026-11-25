@@ -1,6 +1,6 @@
--- Prix « à partir de » des expériences avec hôtel, recalculé chaque nuit pour Google
+-- Prix « à partir de » des expériences avec hôtel, recalculé chaque semaine pour Google
 -- (option 2 validée par Shana le 25/11/2026). La fiche calcule ce prix en direct chez le
--- visiteur ; la version préparée pour Google lit ces colonnes, remplies chaque nuit par la
+-- visiteur ; la version préparée pour Google lit ces colonnes, remplies chaque semaine par la
 -- fonction compute-experience-from-prices avec exactement la même méthode.
 -- Colonnes d'affichage uniquement : ni réservation ni paiement ne les lisent.
 
@@ -16,13 +16,14 @@ comment on column public.experiences2.from_price_checkin is
 comment on column public.experiences2.from_price_computed_at is
   'Moment du dernier calcul de from_price_ils.';
 
--- Chaque nuit de 2 h à 5 h heure d'Israël (00:00 à 02:55 UTC), toutes les 5 minutes : chaque
--- passage recalcule UNE fiche (la plus ancienne pas encore faite ce jour-là). Une seule à la fois
--- car HyperGuest limite le rythme des appels venant du serveur (36 passages pour 17 fiches).
--- Pour revenir en arrière : select cron.unschedule('experience-from-prices-nightly');
+-- UNE FOIS PAR SEMAINE (choix de Shana du 25/11/2026, pour limiter les recherches HyperGuest) :
+-- la nuit du dimanche au lundi, de 2 h à 5 h heure d'Israël (lundi 00:00 à 02:55 UTC), toutes
+-- les 5 minutes ; chaque passage recalcule UNE fiche (la plus ancienne pas encore faite ce
+-- jour-là). Une seule à la fois car HyperGuest limite le rythme des appels venant du serveur.
+-- Pour revenir en arrière : select cron.unschedule('experience-from-prices-weekly');
 select cron.schedule(
-  'experience-from-prices-nightly',
-  '*/5 0-2 * * *',
+  'experience-from-prices-weekly',
+  '*/5 0-2 * * 1',
   $cron$
   select net.http_post(
     url := 'https://uqeipzfdhyjkjzvqbkeu.supabase.co/functions/v1/compute-experience-from-prices',

@@ -39,7 +39,7 @@ const EXPERIENCE_PRICE_COLUMNS =
 function experienceFromPrice(row: Row): number | null {
   if (Number(row.base_price) > 0) return Number(row.base_price);
   if (row.pricing_model !== "bar_rate") return null;
-  // Prix recalculé chaque nuit avec la même méthode que la fiche (fonction
+  // Prix recalculé chaque semaine avec la même méthode que la fiche (fonction
   // compute-experience-from-prices) : c'est celui que voit un visiteur ce jour-là.
   if (Number(row.from_price_ils) > 0) return Number(row.from_price_ils);
   // Repli (pas encore calculé) : estimation sur le tarif de chambre de référence.

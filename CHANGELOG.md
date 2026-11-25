@@ -4,17 +4,17 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
-## 25/11/2026 : Prix « à partir de » des expériences avec hôtel recalculé chaque nuit pour Google
+## 25/11/2026 : Prix « à partir de » des expériences avec hôtel recalculé chaque semaine pour Google
 
 ### Ce qui a changé côté code
 - `supabase/functions/compute-experience-from-prices/index.ts` (nouvelle fonction, déployée, `verify_jwt = false` dans `supabase/config.toml`, accès par le secret de la tâche planifiée ou un admin) : recalcule le prix « à partir de » de chaque expérience avec hôtel avec exactement la méthode de la fiche (`useFromPrice` : 1er hôtel du parcours, 1 nuit, adultes = min_party, nationalité FR, ILS, 90 jours dès demain, arrêt à 30 dates disponibles, règles de dates, net de la date la moins chère sinon tarif de référence, + marge + prix de l'expérience). Écrit seulement 3 colonnes d'affichage.
 - `api/_seo/resolvers.ts` : la version Google lit ce prix (`from_price_ils`), avec repli sur l'ancienne estimation s'il manque.
 
 ### Ce qui a changé côté base de données
-- Migration `supabase/migrations/20261125140000_prix_a_partir_de_nuit.sql` (option 2 validée par Shana, appliquée le 25/11/2026) : colonnes `experiences2.from_price_ils`, `from_price_checkin`, `from_price_computed_at` (affichage seulement, ni réservation ni paiement ne les lisent) et tâche planifiée `experience-from-prices-nightly` (toutes les 5 min de 00:00 à 02:55 UTC, une fiche par passage : HyperGuest limite le rythme des appels venant du serveur ; la fonction attend le délai qu'il indique et, si des dates restent illisibles, garde le prix de la veille). Retour arrière : `select cron.unschedule('experience-from-prices-nightly');`.
+- Migration `supabase/migrations/20261125140000_prix_a_partir_de_nuit.sql` (option 2 validée par Shana, appliquée le 25/11/2026) : colonnes `experiences2.from_price_ils`, `from_price_checkin`, `from_price_computed_at` (affichage seulement, ni réservation ni paiement ne les lisent) et tâche planifiée `experience-from-prices-weekly` (une fois par semaine, choix de Shana pour limiter les recherches HyperGuest : lundi toutes les 5 min de 00:00 à 02:55 UTC, une fiche par passage : HyperGuest limite le rythme des appels venant du serveur ; la fonction attend le délai qu'il indique et, si des dates restent illisibles, garde le prix de la veille). Retour arrière : `select cron.unschedule('experience-from-prices-weekly');`.
 
 ### Pourquoi ce changement
-- Sur la fiche, ce prix est calculé en direct chez le visiteur ; Google recevait un tarif de référence fixe. Il reçoit maintenant le prix calculé la nuit avec la même méthode (écart possible seulement dans la journée).
+- Sur la fiche, ce prix est calculé en direct chez le visiteur ; Google recevait un tarif de référence fixe. Il reçoit maintenant le prix calculé chaque semaine avec la même méthode (écart possible jusqu'au recalcul suivant).
 
 ## 25/11/2026 : Descriptions sans prestataire, shekel par défaut, prix Google = prix affiché
 

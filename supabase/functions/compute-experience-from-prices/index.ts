@@ -1,11 +1,12 @@
-// Prix « à partir de » des expériences avec hôtel, recalculé chaque nuit pour Google.
+// Prix « à partir de » des expériences avec hôtel, recalculé chaque semaine pour Google
+// (nuit du dimanche au lundi, choix de Shana du 25/11/2026 pour limiter les appels HyperGuest).
 //
 // Pourquoi : sur la fiche, ce prix est calculé EN DIRECT dans le navigateur du visiteur
 // (src/hooks/useExperience2Price.ts → useFromPrice, src/hooks/useQuickDateAvailability.ts) en
 // interrogeant HyperGuest sur les prochaines dates. La version préparée pour Google ne peut
 // pas faire ces dizaines d'appels à chaque passage d'un robot : elle lit le résultat de cette
 // tâche (experiences2.from_price_ils), calculé avec EXACTEMENT la même méthode
-// (option 2 validée par Shana le 25/11/2026). Écart possible seulement dans la journée.
+// (option 2 validée par Shana le 25/11/2026). Écart possible jusqu'au recalcul suivant.
 //
 // Méthode (copie fidèle du site, à garder alignée) :
 //  - hôtel = le premier hôtel du parcours (experience2_hotels, par position), sinon hotel_id ;
