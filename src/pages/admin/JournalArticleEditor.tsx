@@ -282,6 +282,7 @@ const JournalArticleEditor = () => {
                 </div>
                 <Textarea dir={dir} rows={6} value={paragraphsToText(section.paragraphs)} onChange={(e) => set({ body: form.body.map((s, j) => (j === i ? { ...s, paragraphs: textToParagraphs(e.target.value) } : s)) })} />
                 <Textarea dir={dir} rows={2} placeholder="Puces (une par ligne, facultatif)" value={(section.bullets || []).join("\n")} onChange={(e) => set({ body: form.body.map((s, j) => (j === i ? { ...s, bullets: lines(e.target.value) } : s)) })} />
+                <Textarea dir={dir} rows={3} placeholder="Paragraphes après les puces (facultatif, séparés par une ligne vide)" value={paragraphsToText(section.paragraphs_after || [])} onChange={(e) => set({ body: form.body.map((s, j) => (j === i ? { ...s, paragraphs_after: textToParagraphs(e.target.value) } : s)) })} />
               </div>
             ))}
             <Button variant="outline" size="sm" onClick={() => set({ body: [...form.body, { heading: "", paragraphs: [] }] })}><Plus className="w-4 h-4 mr-1" />Section</Button>

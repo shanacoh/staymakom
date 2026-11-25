@@ -548,11 +548,15 @@ async function topicAlternates(row: Row): Promise<{ lang: string; url: string }[
 export async function resolveGeneratedArticle(row: Row): Promise<PageModel> {
   const lang = articleLang(row);
   const t = ui(lang);
-  const sections: PageSection[] = (row.body as ArticleSectionRow[]).map((s) => ({
-    heading: s.heading,
-    paragraphs: (s.paragraphs || []).map(inlineToText),
-    list: s.bullets?.length ? s.bullets.map(inlineToText) : undefined,
-  }));
+  const sections: PageSection[] = (row.body as ArticleSectionRow[]).flatMap((s) => [
+    {
+      heading: s.heading,
+      paragraphs: (s.paragraphs || []).map(inlineToText),
+      list: s.bullets?.length ? s.bullets.map(inlineToText) : undefined,
+    },
+    // Paragraphes placés après la liste : même ordre que sur le site.
+    ...(s.paragraphs_after?.length ? [{ paragraphs: s.paragraphs_after.map(inlineToText) }] : []),
+  ]);
   const booking = await linkedListingLinks(row.linked_listings || [], lang);
   if (booking.length) {
     sections.push({ heading: BOOKING_HEADING[lang], paragraphs: row.booking_intro ? [inlineToText(row.booking_intro)] : [], links: booking });

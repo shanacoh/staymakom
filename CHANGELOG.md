@@ -4,6 +4,17 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 25/11/2026 : Journal, article français « Hanouka 2026 en Israël » publié
+
+### Ce qui a changé côté code
+- `api/_seo/journalArticle.ts`, `src/components/journal/GeneratedArticleView.tsx`, `api/_seo/resolvers.ts`, `src/pages/admin/JournalArticleEditor.tsx` : une section d'article peut avoir des paragraphes après sa liste à puces (`paragraphs_after`), affichés dans le même ordre sur le site et pour Google, modifiables dans la fiche article du back-office.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261125120400_journal_article_fr_hanouka_2026.sql` (appliquée avec `supabase db query --linked -f`) : article `hanouka-2026-israel` en français, texte fourni et relu par Shana, publié directement (4 cartes « À réserver » : Cité de David et tunnel d'Ézéchias, voyage dans l'histoire de Jérusalem, chocolat dans le noir à Jaffa, Shabbat à l'Inbal ; couverture de la fiche Cité de David ; FAQ en données structurées). Sujet FR Hanoucca marqué publié. Bing prévenu.
+
+### Pourquoi ce changement
+- Shana a fourni l'article français relu pour Hanoucca 2026, à publier tel quel avec le nouveau format d'article.
+
 ## 25/11/2026 : Journal, séparation de l'article Hanoucca et rédacteur vérifié par recherche web
 
 ### Ce qui a changé côté code

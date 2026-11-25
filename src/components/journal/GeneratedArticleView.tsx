@@ -178,6 +178,9 @@ export function GeneratedArticleView({ post, preview = false }: { post: Generate
                 ))}
               </ul>
             )}
+            {(section.paragraphs_after || []).map((p, j) => (
+              <Rich key={`after-${j}`} text={p} lang={lang} style={{ ...BODY_STYLE, marginBottom: "20px" }} />
+            ))}
           </section>
         ))}
 

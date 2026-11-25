@@ -9,6 +9,8 @@ export interface ArticleSection {
   heading: string;
   paragraphs: string[];
   bullets?: string[];
+  /** Paragraphes affichés après la liste à puces (facultatif). */
+  paragraphs_after?: string[];
 }
 
 export interface ArticleFaq {
