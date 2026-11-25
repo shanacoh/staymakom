@@ -16,12 +16,13 @@ comment on column public.experiences2.from_price_checkin is
 comment on column public.experiences2.from_price_computed_at is
   'Moment du dernier calcul de from_price_ils.';
 
--- Chaque nuit de 2 h à 5 h heure d'Israël (00:00 à 02:50 UTC), toutes les 10 minutes :
--- chaque passage recalcule les 3 fiches les plus anciennes pas encore faites ce jour-là.
+-- Chaque nuit de 2 h à 5 h heure d'Israël (00:00 à 02:55 UTC), toutes les 5 minutes : chaque
+-- passage recalcule UNE fiche (la plus ancienne pas encore faite ce jour-là). Une seule à la fois
+-- car HyperGuest limite le rythme des appels venant du serveur (36 passages pour 17 fiches).
 -- Pour revenir en arrière : select cron.unschedule('experience-from-prices-nightly');
 select cron.schedule(
   'experience-from-prices-nightly',
-  '*/10 0-2 * * *',
+  '*/5 0-2 * * *',
   $cron$
   select net.http_post(
     url := 'https://uqeipzfdhyjkjzvqbkeu.supabase.co/functions/v1/compute-experience-from-prices',
@@ -29,8 +30,8 @@ select cron.schedule(
       'Content-Type', 'application/json',
       'x-cron-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'internal_cron_secret')
     ),
-    body := '{"limit": 3}'::jsonb,
-    timeout_milliseconds := 150000
+    body := '{"limit": 1}'::jsonb,
+    timeout_milliseconds := 400000
   );
   $cron$
 );

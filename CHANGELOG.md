@@ -11,7 +11,7 @@
 - `api/_seo/resolvers.ts` : la version Google lit ce prix (`from_price_ils`), avec repli sur l'ancienne estimation s'il manque.
 
 ### Ce qui a changé côté base de données
-- Migration `supabase/migrations/20261125140000_prix_a_partir_de_nuit.sql` (option 2 validée par Shana, appliquée le 25/11/2026) : colonnes `experiences2.from_price_ils`, `from_price_checkin`, `from_price_computed_at` (affichage seulement, ni réservation ni paiement ne les lisent) et tâche planifiée `experience-from-prices-nightly` (toutes les 10 min de 00:00 à 02:50 UTC, 3 fiches par passage). Retour arrière : `select cron.unschedule('experience-from-prices-nightly');`.
+- Migration `supabase/migrations/20261125140000_prix_a_partir_de_nuit.sql` (option 2 validée par Shana, appliquée le 25/11/2026) : colonnes `experiences2.from_price_ils`, `from_price_checkin`, `from_price_computed_at` (affichage seulement, ni réservation ni paiement ne les lisent) et tâche planifiée `experience-from-prices-nightly` (toutes les 5 min de 00:00 à 02:55 UTC, une fiche par passage : HyperGuest limite le rythme des appels venant du serveur ; la fonction attend le délai qu'il indique et, si des dates restent illisibles, garde le prix de la veille). Retour arrière : `select cron.unschedule('experience-from-prices-nightly');`.
 
 ### Pourquoi ce changement
 - Sur la fiche, ce prix est calculé en direct chez le visiteur ; Google recevait un tarif de référence fixe. Il reçoit maintenant le prix calculé la nuit avec la même méthode (écart possible seulement dans la journée).

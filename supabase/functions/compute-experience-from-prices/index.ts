@@ -30,7 +30,7 @@ type Row = Record<string, any>;
 
 const DATES_TO_SCAN = 90;
 const MAX_RESULTS = 30;
-const BATCH_SIZE = 10;
+const BATCH_SIZE = 3; // plus lent que le site (10) : depuis le serveur, HyperGuest limite le rythme
 const DEFAULT_NATIONALITY = "FR";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -84,7 +84,37 @@ function cheapestOfDate(date: string, result: Row | null, boardType: string | nu
   return sell === null ? { date, sell: Number.POSITIVE_INFINITY, net: null } : { date, sell, net };
 }
 
+let failedCalls = 0;
+let lastError = "";
+
+/**
+ * Appel HyperGuest avec nouvelles tentatives : depuis le serveur, des appels trop rapprochés
+ * échouent parfois (constaté le 25/11/2026 : dates manquantes, donc mauvaise date retenue).
+ * Une date en échec n'est jamais comptée comme « sans chambre ».
+ */
 async function searchOneNight(propertyId: number, date: string, adults: number): Promise<Row | null> {
+  for (let attempt = 1; attempt <= 6; attempt++) {
+    try {
+      return await searchOnce(propertyId, date, adults);
+    } catch (e) {
+      // HyperGuest limite le nombre d'appels et indique le délai à respecter
+      // (« Rate limit exceeded… Retry after 3138ms ») : on attend ce délai, puis on réessaie.
+      const wait = Number((e instanceof Error ? e.message : "").match(/Retry after (\d+)\s*ms/i)?.[1]);
+      if (attempt < 6) {
+        await delay((Number.isFinite(wait) && wait > 0 ? wait : 1000 * attempt) + 250);
+        continue;
+      }
+      {
+        failedCalls++;
+        lastError = `${date}: ${e instanceof Error ? e.message : String(e)}`.slice(0, 300);
+        throw e;
+      }
+    }
+  }
+  return null;
+}
+
+async function searchOnce(propertyId: number, date: string, adults: number): Promise<Row | null> {
   const res = await fetch(`${SUPABASE_URL}/functions/v1/hyperguest?action=search`, {
     method: "POST",
     headers: { Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json" },
@@ -97,7 +127,7 @@ async function searchOneNight(propertyId: number, date: string, adults: number):
       currency: "ILS",
     }),
   });
-  if (!res.ok) throw new Error(`HyperGuest ${res.status}`);
+  if (!res.ok) throw new Error(`HyperGuest ${res.status} ${(await res.text()).slice(0, 200)}`);
   const body = await res.json();
   if (!body.success) throw new Error(body.error || "HyperGuest error");
   return body.data;
@@ -119,6 +149,9 @@ function isCheckinDisabled(date: string, rules: Row[]): boolean {
   return true;
 }
 
+let lastScan: DatePrice[] = [];
+let debugScan = false;
+
 async function cheapestDate(propertyId: number, adults: number, boardType: string | null, rules: Row[]): Promise<DatePrice | null> {
   const specific = rules
     .filter((r) => r.rule_type === "specific_dates" && Array.isArray(r.specific_dates))
@@ -134,7 +167,7 @@ async function cheapestDate(propertyId: number, adults: number, boardType: strin
   } else {
     for (let start = 0; start < DATES_TO_SCAN; start += BATCH_SIZE) {
       if (found.length >= MAX_RESULTS) break;
-      if (start > 0) await delay(200);
+      if (start > 0) await delay(500);
       const dates = Array.from({ length: Math.min(BATCH_SIZE, DATES_TO_SCAN - start) }, (_, i) => israelDate(1 + start + i));
       const batch = await Promise.all(
         dates.map((date) => searchOneNight(propertyId, date, adults).then((r) => cheapestOfDate(date, r, boardType)).catch(() => null))
@@ -143,6 +176,7 @@ async function cheapestDate(propertyId: number, adults: number, boardType: strin
     }
     found.splice(MAX_RESULTS);
   }
+  lastScan = found;
   const allowed = rules.length > 0 && specific.length === 0 ? found.filter((d) => !isCheckinDisabled(d.date, rules)) : found;
   let best: DatePrice | null = null;
   for (const d of allowed) if (Number.isFinite(d.sell) && (!best || d.sell < best.sell)) best = d;
@@ -174,15 +208,21 @@ async function processExperience(db: Row, exp: Row): Promise<Row> {
     .eq("experience_id", exp.id)
     .eq("is_active", true);
 
+  failedCalls = 0;
   const board = typeof exp.preferred_board_type === "string" && exp.preferred_board_type.trim() ? exp.preferred_board_type.trim().toUpperCase() : null;
   const best = propertyId ? await cheapestDate(propertyId, exp.min_party || 2, board, rules ?? []) : null;
   const price = fromPrice(exp, best?.net ?? null);
 
+  // Des dates n'ont pas pu être lues : le calcul serait faux, on garde le prix précédent
+  // (la tâche repasse 10 minutes plus tard tant que la fiche n'est pas faite ce jour-là).
+  if (failedCalls > 0) {
+    return { slug: exp.slug, skipped: true, failed: failedCalls, lastError };
+  }
   await db
     .from("experiences2")
     .update({ from_price_ils: price, from_price_checkin: best?.date ?? null, from_price_computed_at: new Date().toISOString() })
     .eq("id", exp.id);
-  return { slug: exp.slug, price, date: best?.date ?? null, live: best?.net != null };
+  return { slug: exp.slug, price, date: best?.date ?? null, live: best?.net != null, failed: failedCalls, ...(debugScan ? { scan: lastScan.map((d) => `${d.date}:${Number.isFinite(d.sell) ? d.sell : "-"}`) } : {}) };
 }
 
 Deno.serve(async (req) => {
@@ -201,11 +241,12 @@ Deno.serve(async (req) => {
     query = query
       .or(`from_price_computed_at.is.null,from_price_computed_at.lt.${israelDate(0)}T00:00:00+02:00`)
       .order("from_price_computed_at", { ascending: true, nullsFirst: true })
-      .limit(Math.min(Math.max(Number(body.limit) || 3, 1), 6));
+      .limit(Math.min(Math.max(Number(body.limit) || 1, 1), 3));
   }
   const { data: experiences, error } = await query;
   if (error) return json({ error: error.message }, 500);
 
+  debugScan = body.debug === true;
   const done: Row[] = [];
   for (const exp of experiences ?? []) {
     try {
