@@ -11,6 +11,7 @@ import { SEOHead } from "@/components/SEOHead";
 import MarqueeBanner from "@/components/MarqueeBanner";
 import TailoredRequestSection from "@/components/TailoredRequestSection";
 import FAQSection from "@/components/FAQSection";
+import HomeAboutSection from "@/components/HomeAboutSection";
 import PressStrip from "@/components/PressStrip";
 import Experience2CardWithPrice from "@/components/Experience2CardWithPrice";
 import StandaloneExperienceCard from "@/components/StandaloneExperienceCard";
@@ -336,13 +337,15 @@ const IndexV3 = () => {
           <div className="absolute inset-0 bg-black/15" />
 
           <div className="relative z-10 text-center text-white px-4 sm:px-6 max-w-3xl mx-auto translate-y-0 sm:translate-y-2">
-            <span className="md:hidden block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-[#ad1414] mb-2 opacity-0 animate-hero-fade-up">
-              STAYMAKOM
-            </span>
-            <h1 className="font-sans text-[26px] sm:text-4xl md:text-[52px] font-bold uppercase tracking-[0.02em] leading-[1.1] mb-2 opacity-0 animate-hero-fade-up text-[#ad1414] text-center">
+            {/* Sur-titre = titre principal (H1) de la page pour Google, même style que l'ancien
+                « STAYMAKOM » rouge qu'il remplace (visible aussi sur ordinateur). */}
+            <h1 className="block font-sans font-bold tracking-[-0.04em] uppercase text-xs text-[#ad1414] mb-2 opacity-0 animate-hero-fade-up">
+              {ui("homeHeroEyebrow")}
+            </h1>
+            <h2 className="font-sans text-[26px] sm:text-4xl md:text-[52px] font-bold uppercase tracking-[0.02em] leading-[1.1] mb-2 opacity-0 animate-hero-fade-up text-[#ad1414] text-center">
               {/* Signature en anglais dans toutes les langues (lue de gauche à droite, même en hébreu) */}
               <span dir="ltr" className="whitespace-nowrap">{t("en", "homeHeroTitle1")}</span><br /><span dir="ltr" className="whitespace-nowrap">{t("en", "homeHeroTitle2")}</span>
-            </h1>
+            </h2>
             <p
               className="font-sans not-italic text-[#ad1414] max-w-xl mx-auto opacity-0 animate-hero-fade-up text-sm sm:text-base md:text-lg"
               style={{ animationDelay: "250ms" }}
@@ -685,6 +688,9 @@ const IndexV3 = () => {
 
         {/* ──── 10. Q&A ──── */}
         <FAQSection />
+
+        {/* ──── 11. À PROPOS (texte indexable, au-dessus du pied de page) ──── */}
+        <HomeAboutSection />
 
       </main>
 

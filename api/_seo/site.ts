@@ -26,8 +26,13 @@ export const BRAND = {
   logo: `${SITE_URL}/favicon.png`,
   image: `${SITE_URL}/og-image.jpg`,
   tagline: "The Israel most people never find.",
+  slogan: "Don't choose a city, choose your escape.",
+  /** Description d'entité (Google, IA, llms.txt), décidée le 25/11/2026. */
   description:
-    "STAYMAKOM curates Israel's best boutique hotels and pairs them with unique local experiences: romantic escapes, desert retreats, wine tastings, family adventures and more.",
+    "STAYMAKOM is an online booking platform for curated experiences in Israel, from cooking classes in Tel Aviv and wine tastings in the Negev to desert jeep tours and sunset sails from Herzliya. Travelers choose by mood and book each experience on its own or with a night in a boutique hotel.",
+  foundingDate: "2026-06",
+  /** Copie de WHATSAPP_NUMBER (src/constants/whatsapp.ts) : le service client. */
+  whatsappUrl: "https://wa.me/972555009910",
   socials: {
     instagram: "https://www.instagram.com/staymakom/",
     tiktok: "https://www.tiktok.com/@staymakom",
@@ -79,17 +84,6 @@ const UI = {
 };
 
 export type UiTexts = typeof UI.en;
-
-/** Présentation de la marque dans la langue de la page (anglais pour es / ru / de). */
-export function brandDescription(lang: PageLang): string {
-  if (lang === "fr") {
-    return "STAYMAKOM sélectionne les plus beaux hôtels-boutiques d'Israël et les associe à des expériences locales uniques : escapades romantiques, retraites dans le désert, dégustations de vin, aventures en famille et bien plus.";
-  }
-  if (lang === "he") {
-    return "STAYMAKOM אוצרת את מלונות הבוטיק הטובים בישראל ומשלבת אותם עם חוויות מקומיות ייחודיות: חופשות רומנטיות, מפלטים במדבר, טעימות יין, הרפתקאות משפחתיות ועוד.";
-  }
-  return BRAND.description;
-}
 
 export function ui(lang: PageLang): UiTexts {
   return lang === "fr" || lang === "he" ? UI[lang] : UI.en;

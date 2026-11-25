@@ -45,7 +45,14 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
   const body = [
     `# ${BRAND.name}\n`,
     `> ${BRAND.description}\n`,
-    `${BRAND.name} (${BRAND.legalName}, ${BRAND.address.city}, Israel) is a curated booking platform: each experience can be booked with a night in a partner boutique hotel, or on its own. Prices are in Israeli shekels (ILS). Pages exist in English, French (?lang=fr) and Hebrew (?lang=he). Contact: ${BRAND.email}. Instagram and TikTok: @staymakom.\n`,
+    `${BRAND.name} (${BRAND.legalName}, ${BRAND.address.city}, Israel) is a curated booking platform: each experience can be booked with a night in a partner boutique hotel, or on its own. Prices are in Israeli shekels (ILS). Payment is online, most experiences offer free cancellation, and the team answers on WhatsApp (${BRAND.whatsappUrl}). Pages exist in English, French (?lang=fr), Hebrew (?lang=he), Spanish (?lang=es), Russian (?lang=ru) and German (?lang=de). Contact: ${BRAND.email}. Instagram and TikTok: @staymakom.\n`,
+    section("Main pages", [
+      `- [Home](${SITE_URL}/): ${BRAND.slogan} Curated experiences and boutique hotels in Israel, chosen by mood.`,
+      `- [All experiences](${SITE_URL}/experiences): every experience, bookable alone or with a hotel stay`,
+      `- [Boat trips](${SITE_URL}/boat): private boats, sunset cruises and sailing from Tel Aviv and Herzliya`,
+      `- [Journal](${SITE_URL}/journal): travel guides and stories about Israel`,
+      `- [About](${SITE_URL}/about): who we are and how STAYMAKOM works`,
+    ]),
     section("Categories", categories.filter((c) => c.slug !== "bateaux").map((c) => line(c.name, `/category/${c.slug}`, c.meta_description_en || c.launch_description))),
     section("Hotels", hotels.map((h) => line(h.name, `/hotel/${h.slug}`, hotelSummary(h)))),
     section("Experiences with a hotel stay", experiences.map((e) => line(e.title, `/experience/${e.slug}`, experienceSummary(e)))),

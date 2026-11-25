@@ -9,6 +9,16 @@ import { escapeHtml } from "./text.js";
 
 const e = (value: string) => escapeHtml(value);
 
+/**
+ * Paragraphe avec liens internes écrits [texte](/adresse) (section « À propos » de l'accueil) :
+ * le texte est d'abord protégé, puis chaque marque devient un vrai lien dans la langue de la page.
+ * Seules les adresses internes (commençant par « / ») sont transformées.
+ */
+function paragraph(text: string, lang: PageLang): string {
+  const html = e(text).replace(/\[([^\]]+)\]\((\/[^)\s]*)\)/g, (_m, label: string, path: string) => `<a href="${e(href(path, lang))}">${label}</a>`);
+  return `<p>${html}</p>`;
+}
+
 function linkList(links: PageLink[]): string {
   if (!links.length) return "";
   const items = links
@@ -88,7 +98,7 @@ function mainContent(page: PageModel, lang: PageLang): string {
   }
   for (const section of page.sections || []) {
     const body = [
-      ...(section.paragraphs || []).map((p) => `<p>${e(p)}</p>`),
+      ...(section.paragraphs || []).map((p) => paragraph(p, lang)),
       section.list?.length ? `<ul>${section.list.map((i) => `<li>${e(i)}</li>`).join("")}</ul>` : "",
       linkList(section.links || []),
     ].join("");

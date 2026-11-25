@@ -392,6 +392,12 @@ export const translations = {
     homeHeroTitle1: "Don't choose a city,",
     homeHeroTitle2: "choose your escape",
     homeHeroSubtitle: "The Israel most people never find.",
+    // Sur-titre du hero = titre principal (H1) de l'accueil pour Google ; le slogan passe en H2.
+    // Copie pour les robots : api/_seo/homeIntro.ts (test src/config/seoHomeIntro.test.ts).
+    homeHeroEyebrow: "Curated experiences and boutique hotels in Israel",
+    // Section « À propos » en bas de l'accueil : [texte](/adresse) = lien interne.
+    homeAboutTitle: "About STAYMAKOM",
+    homeAboutText: "STAYMAKOM is an online booking platform for curated things to do in Israel. Choose by mood (romantic, family, food, nature, history, on the water) and book experiences that last a few hours, a day or a night: [cooking classes in Tel Aviv](/category/taste), [wine tastings in the Negev](/category/taste) and Zichron Yaakov, desert jeep tours, [sunset sails from Herzliya](/boat), [family activities in Jerusalem](/category/family). Each experience can be booked on its own or with a night in a hand-picked boutique hotel, from Tel Aviv and Jerusalem to the Galilee, the Golan, the Dead Sea and Eilat. Payment is online, most experiences offer free cancellation, and our team answers on WhatsApp.",
     homeFindExperience: "Find an experience",
     homeSpecialRequest: "Special request",
     homeCardsTitle1: "Handpicked Hotels.",
@@ -2034,6 +2040,9 @@ export const translations = {
 
     // Accueil
     homeHeroSubtitle: "הישראל שרוב האנשים לא מוצאים.",
+    homeHeroEyebrow: "חוויות ומלונות בוטיק נבחרים בישראל",
+    homeAboutTitle: "על STAYMAKOM",
+    homeAboutText: "STAYMAKOM היא פלטפורמה להזמנת חוויות נבחרות בישראל. בוחרים לפי מצב רוח (רומנטי, משפחה, אוכל, טבע, היסטוריה, ים) ומזמינים חוויות של כמה שעות, יום שלם או לילה: [סדנאות בישול בתל אביב](/category/taste), [טעימות יין בנגב](/category/taste) ובזכרון יעקב, ג'יפים במדבר, [שייט בשקיעה מהרצליה](/boat) ו[פעילויות למשפחות בירושלים](/category/family). כל חוויה אפשר להזמין בפני עצמה או עם לילה במלון בוטיק נבחר, מתל אביב וירושלים ועד הגליל, הגולן, ים המלח ואילת. התשלום אונליין, לרוב החוויות יש ביטול חינם, והצוות שלנו זמין בוואטסאפ.",
     homeFindExperience: "מצאו חוויה",
     homeSpecialRequest: "בקשה מיוחדת",
     homeCardsTitle1: "מלונות שנבחרו בקפידה.",
@@ -3668,6 +3677,9 @@ export const translations = {
 
     // Accueil (titre du hero : signature en anglais dans toutes les langues, pas de clé ici)
     homeHeroSubtitle: "Israël comme vous ne l'avez jamais vu.",
+    homeHeroEyebrow: "Expériences et hôtels boutique sélectionnés en Israël",
+    homeAboutTitle: "À propos de STAYMAKOM",
+    homeAboutText: "STAYMAKOM est une plateforme de réservation d'expériences sélectionnées pour votre voyage en Israël. On choisit selon son envie (romantique, famille, gastronomie, nature, histoire, mer) et on réserve des expériences de quelques heures, d'une journée ou d'une nuit : [cours de cuisine à Tel Aviv](/category/taste), [dégustations dans le Néguev](/category/taste) et à Zichron Yaakov, jeep dans le désert, [voile au coucher du soleil depuis Herzliya](/boat), [sorties en famille à Jérusalem](/category/family). Chaque expérience se réserve seule ou avec une nuit dans un hôtel boutique sélectionné, de Tel Aviv et Jérusalem à la Galilée, au Golan, à la mer Morte et à Eilat. Paiement en ligne, annulation gratuite sur la plupart des expériences, et une équipe qui répond sur WhatsApp.",
     homeFindExperience: "Trouver une expérience",
     homeSpecialRequest: "Demande spéciale",
     homeCardsTitle1: "Hôtels d'exception.",

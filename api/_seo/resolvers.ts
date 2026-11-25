@@ -2,6 +2,7 @@
 // à partir des fiches publiées dans la base. Une fiche absente ou non publiée = 404.
 import { fetchMany, fetchPublishedBySlug, localizeRowsSync } from "./db.js";
 import { HOME_FAQ } from "./faq.js";
+import { HOME_INTRO, HOME_SLOGAN } from "./homeIntro.js";
 import {
   articleJsonLd,
   faqPageJsonLd,
@@ -13,7 +14,7 @@ import {
   websiteJsonLd,
 } from "./jsonLd.js";
 import { NOT_FOUND, PASSTHROUGH, type PageLink, type PageModel, type PageSection } from "./model.js";
-import { BRAND, brandDescription, href, pageUrl, ui, type PageLang } from "./site.js";
+import { BRAND, href, pageUrl, ui, type PageLang } from "./site.js";
 import {
   BOOKING_HEADING,
   FAQ_HEADING,
@@ -156,19 +157,24 @@ async function resolveHome(lang: PageLang): Promise<PageModel> {
     fetchMany("hotels2", "slug,name,name_fr,name_he,city,city_fr,city_he,region,region_fr,region_he", "status=eq.published&order=name.asc"),
   ]);
   const seo = SEO_HOME_AND_LIST.home[lang];
+  const intro = HOME_INTRO[lang];
   return {
     status: 200,
     title: seo.title,
-    description: metaDescription(seo.description),
-    h1: lang === "fr" ? "Hôtels-boutiques et expériences choisis en Israël" : lang === "he" ? "מלונות בוטיק וחוויות נבחרות בישראל" : "Handpicked boutique hotels and experiences in Israel",
-    intro: [seo.description, brandDescription(lang)],
+    // Description écrite à la main pour l'accueil : gardée en entier (pas de coupe à 160).
+    description: seo.description,
+    // Même structure que la page vue par un visiteur : sur-titre = H1, slogan = H2.
+    h1: intro.eyebrow,
     sections: [
+      { heading: HOME_SLOGAN, paragraphs: [seo.description] },
       { heading: t.categories, links: categories.map((c) => ({ label: c.name, href: href(`/category/${c.slug}`, lang), note: oneLine(c.launch_description, 140) || undefined })) },
       { heading: `${t.experiences} · ${t.withHotel}`, links: localizeRowsSync(experiences, lang).map((r) => experienceLink(r, lang)) },
       { heading: `${t.experiences} · ${t.experienceOnly}`, links: localizeRowsSync(standalones, lang).map((r) => standaloneLink(r, lang)) },
       { heading: t.hotels, links: localizeRowsSync(hotels, lang).map((r) => hotelLink(r, lang)) },
       // FAQ de l'accueil : questions ET réponses dans la page (comme sur le site).
       ...HOME_FAQ[lang].map((item) => ({ heading: item.q, paragraphs: item.a.map((p) => p.replace(/\[([^\]]+)\]/g, "$1")) })),
+      // « À propos » en bas de page, comme sur le site ; [texte](/adresse) devient un vrai lien.
+      { heading: intro.aboutTitle, paragraphs: [intro.aboutText] },
     ],
     jsonLd: [organizationJsonLd(), websiteJsonLd(), faqPageJsonLd(HOME_FAQ[lang])],
   };

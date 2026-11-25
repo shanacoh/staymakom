@@ -15,10 +15,14 @@ function clean<T extends Json>(obj: T): T {
   return obj;
 }
 
+/**
+ * Fiche d'identité de la marque (une seule par page, sur l'accueil). Agence de voyage en
+ * ligne : adresse limitée à la ville (pas de rue), pas de note moyenne (aggregateRating).
+ */
 export function organizationJsonLd(): Json {
   return clean({
     "@context": "https://schema.org",
-    "@type": "Organization",
+    "@type": ["Organization", "TravelAgency"],
     "@id": `${SITE_URL}/#organization`,
     name: BRAND.name,
     legalName: BRAND.legalName,
@@ -26,12 +30,22 @@ export function organizationJsonLd(): Json {
     logo: BRAND.logo,
     image: BRAND.image,
     description: BRAND.description,
+    slogan: BRAND.slogan,
+    foundingDate: BRAND.foundingDate,
+    areaServed: { "@type": "Country", name: "Israel" },
+    knowsLanguage: ["en", "fr", "he", "es", "ru", "de"],
+    priceRange: "₪₪",
     email: BRAND.email,
     address: {
       "@type": "PostalAddress",
-      streetAddress: BRAND.address.street,
       addressLocality: BRAND.address.city,
       addressCountry: BRAND.address.country,
+    },
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "customer service",
+      url: BRAND.whatsappUrl,
+      availableLanguage: ["en", "fr", "he"],
     },
     sameAs: [BRAND.socials.instagram, BRAND.socials.tiktok, BRAND.socials.linkedin, ...BRAND.press],
   });

@@ -4,6 +4,39 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 25/11/2026 : Accueil lisible par Google et les IA (titres, H1, « À propos », fiche d'identité)
+
+### Ce qui a changé côté code
+- `src/config/seoStaticPages.ts` et sa copie robots `api/_seo/staticPages.ts` : nouveaux titres et descriptions Google de l'accueil (EN, FR, HE donnés par Shana ; ES, RU, DE traduits), tous terminés par « | STAYMAKOM ». `index.html` : valeurs par défaut alignées sur l'anglais.
+- `src/pages/IndexV3.tsx` : le petit « STAYMAKOM » rouge au-dessus du slogan est remplacé par un sur-titre (« Curated experiences and boutique hotels in Israel », traduit), qui devient le seul H1 de la page, visible aussi sur ordinateur ; le slogan garde exactement son rendu mais passe en H2.
+- `src/components/HomeAboutSection.tsx` (nouveau) : section « À propos de STAYMAKOM » en bas de l'accueil, au-dessus du pied de page, avec 4 liens vers les catégories (cuisine et vin vers Foody Discovery, voile vers Bateaux, famille vers Family Fun).
+- `src/lib/translations.ts`, `src/lib/uiTranslations/{es,ru,de}.ts` : clés `homeHeroEyebrow`, `homeAboutTitle`, `homeAboutText` dans les 6 langues.
+- `api/_seo/homeIntro.ts` (nouveau), `api/_seo/resolvers.ts`, `api/_seo/renderBody.ts` : la version robots de l'accueil suit la même structure (H1 = sur-titre, slogan en H2, « À propos » en bas avec de vrais liens) ; la description écrite à la main n'est plus coupée à 160 caractères.
+- `api/_seo/site.ts`, `api/_seo/jsonLd.ts` : la fiche d'identité devient Organization + TravelAgency (nouvelle description, slogan, date de création 2026-06, Israël, 6 langues, gamme de prix, contact WhatsApp, adresse limitée à Herzliya). Ancienne fonction `brandDescription` supprimée (plus utilisée).
+- `api/llms.ts` : description d'entité, lien WhatsApp, 6 langues et section « Main pages » (accueil, expériences, bateaux, Journal, à propos).
+- `src/config/seoHomeIntro.test.ts` (nouveau) : vérifie que les textes servis aux robots sont identiques à ceux du site.
+
+### Ce qui a changé côté base de données
+- Rien pour cette partie.
+
+### Pourquoi ce changement
+- Mieux remonter sur « things to do in Israel » et être bien décrit par Google et les IA (ChatGPT, Claude, Perplexity). La version robots de l'accueil existait déjà depuis le 24/11 ; elle est enrichie, pas recréée.
+
+
+## 25/11/2026 : 8 fiches sans nom de prestataire
+
+### Ce qui a changé côté code
+- Aucun.
+
+### Ce qui a changé côté base de données
+- Migration `supabase/migrations/20261125200000_fiches_sans_nom_prestataire.sql` (appliquée avec `supabase db query --linked -f`, en une seule transaction) : titres, sous-titres, descriptions longues, meta / og et « ce qui est inclus » réécrits en EN, FR, HE pour retirer Ramat Negev (et la famille Tzadok), Tishbi, Beach Club TLV, Dolphin Reef, Galita, Sun Young (et Fu Sushi, Kisu, Ni Shi), Jápon. Noms d'hôtels gardés. Adresses non touchées (déjà masquées sur le site, envoyées seulement dans l'email de confirmation). Adresses web (slugs) inchangées.
+- Sauvegarde de l'avant : `backup_20261125.fiches_prestataires_standalone`, `fiches_prestataires_experiences2`, `fiches_prestataires_includes_sa`, `fiches_prestataires_includes_e2`.
+- Traductions ES / RU / DE de ces fiches relancées tout de suite (`translate-content`) : plus aucun nom de prestataire.
+
+### Pourquoi ce changement
+- Règle STAYMAKOM : aucun nom de prestataire d'expérience visible sur le site, pour que le client réserve chez nous.
+
+
 ## 25/11/2026 : Journal, photos de couverture perdues remplacées
 
 ### Ce qui a changé côté code

@@ -4,6 +4,9 @@ import type { UiDictionary } from "@/lib/translations";
 export const de: UiDictionary = {
   // Accueil
   homeHeroSubtitle: "Das Israel, das kaum jemand entdeckt.",
+  homeHeroEyebrow: "Ausgewählte Erlebnisse und Boutiquehotels in Israel",
+  homeAboutTitle: "Über STAYMAKOM",
+  homeAboutText: "STAYMAKOM ist eine Online-Buchungsplattform für ausgewählte Erlebnisse in Israel. Du wählst nach Stimmung (romantisch, Familie, Kulinarik, Natur, Geschichte, auf dem Wasser) und buchst Erlebnisse für ein paar Stunden, einen Tag oder eine Nacht: [Kochkurse in Tel Aviv](/category/taste), [Weinproben im Negev](/category/taste) und in Zichron Yaakov, Jeeptouren in der Wüste, [Segeltörns bei Sonnenuntergang ab Herzliya](/boat), [Familienausflüge in Jerusalem](/category/family). Jedes Erlebnis lässt sich einzeln buchen oder mit einer Nacht in einem ausgewählten Boutiquehotel, von Tel Aviv und Jerusalem bis nach Galiläa, auf die Golanhöhen, ans Tote Meer und nach Eilat. Du bezahlst online, die meisten Erlebnisse sind kostenlos stornierbar, und unser Team antwortet auf WhatsApp.",
   homeFindExperience: "Erlebnis finden",
   homeSpecialRequest: "Sonderwunsch",
   homeCardsTitle1: "Handverlesene Hotels.",

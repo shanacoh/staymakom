@@ -80,12 +80,12 @@ export function staticText(path: string, lang: PageLang): StaticText | null {
 /** Accueil et liste des expériences : copie de src/config/seoStaticPages.ts (modifier les deux ensemble). */
 export const SEO_HOME_AND_LIST: Record<"home" | "experiences", Record<PageLang, { title: string; description: string }>> = {
   home: {
-    en: { title: "STAYMAKOM | Handpicked Hotels & Experiences in Israel", description: "We curate Israel's best boutique hotels and pair them with unique local experiences." },
-    fr: { title: "STAYMAKOM | Hôtels et expériences choisis en Israël", description: "Nous sélectionnons les plus beaux hôtels-boutiques d'Israël et les associons à des expériences locales uniques." },
-    he: { title: "STAYMAKOM | מלונות וחוויות נבחרים בישראל", description: "אנחנו אוצרים את המלונות הבוטיק הטובים בישראל ומשלבים אותם עם חוויות מקומיות ייחודיות." },
-    es: { title: "STAYMAKOM | Hoteles y experiencias seleccionados en Israel", description: "Seleccionamos los mejores hoteles boutique de Israel y los combinamos con experiencias locales únicas." },
-    ru: { title: "STAYMAKOM | Отобранные отели и впечатления в Израиле", description: "Мы отбираем лучшие бутик-отели Израиля и дополняем их уникальными местными впечатлениями." },
-    de: { title: "STAYMAKOM | Ausgewählte Hotels und Erlebnisse in Israel", description: "Wir wählen die schönsten Boutiquehotels Israels aus und verbinden sie mit einzigartigen Erlebnissen vor Ort." },
+    en: { title: "Things to Do in Israel: Experiences & Boutique Hotels | STAYMAKOM", description: "Unique things to do in Israel, booked online: Negev wine tastings, desert jeeps, sunset sails, Tel Aviv cooking classes. Book them alone or with a boutique hotel." },
+    fr: { title: "Voyage en Israël : expériences et hôtels boutique | STAYMAKOM", description: "Votre voyage en Israël autrement : vin dans le Néguev, jeep dans le désert, voile à Herzliya, cuisine à Tel Aviv. Seules ou avec une nuit en hôtel boutique." },
+    he: { title: "חוויות ויום כיף בישראל, עם מלון בוטיק | STAYMAKOM", description: "יום כיף, חוויה זוגית או חופשה עם הילדים: סדנאות, טעימות יין, ג'יפים במדבר ושייט בשקיעה, עם לילה במלון בוטיק או בלי. בוחרים לפי מצב רוח ומזמינים אונליין." },
+    es: { title: "Qué hacer en Israel: experiencias y hoteles boutique | STAYMAKOM", description: "Experiencias únicas en Israel, reservadas online: catas en el Néguev, jeeps en el desierto, velero al atardecer, cocina en Tel Aviv. Solas o con hotel boutique." },
+    ru: { title: "Чем заняться в Израиле: впечатления и бутик-отели | STAYMAKOM", description: "Необычные впечатления в Израиле онлайн: вино в Негеве, джипы в пустыне, парусные прогулки на закате, кулинария в Тель-Авиве. Отдельно или с бутик-отелем." },
+    de: { title: "Unternehmungen in Israel: Erlebnisse & Boutiquehotels | STAYMAKOM", description: "Besondere Erlebnisse in Israel online buchen: Weinproben im Negev, Jeeptouren, Segeln bei Sonnenuntergang, Kochkurse in Tel Aviv. Allein oder mit Boutiquehotel." },
   },
   experiences: {
     en: { title: "All Experiences | Staymakom", description: "Browse curated local experiences across Israel, from desert adventures to culinary discoveries, bookable alone or paired with a stay." },
