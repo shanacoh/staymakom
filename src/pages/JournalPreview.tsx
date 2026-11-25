@@ -39,11 +39,14 @@ const JournalPreview = () => {
     return (
       <div className="min-h-screen bg-white">
         <meta name="robots" content="noindex, nofollow" />
-        <div className="sticky top-0 z-10 bg-[#ad1414] text-white text-xs sm:text-sm px-4 py-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-          <span className="font-semibold uppercase tracking-[0.12em]">Aperçu du brouillon, non publié</span>
-          <Link to={`/admin/journal/article/${post.id}`} className="underline underline-offset-2">Modifier dans le back-office</Link>
-        </div>
-        <GeneratedArticleView post={{ ...post, published_at: post.published_at || new Date().toISOString() }} preview />
+        {/* Même cadre que la page article publiée (JournalPost). */}
+        <main className="max-w-4xl mx-auto px-6 py-20">
+          <div className="mb-8 rounded-lg bg-[#ad1414] text-white text-xs sm:text-sm px-4 py-2.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+            <span className="font-semibold uppercase tracking-[0.12em]">Aperçu du brouillon, non publié</span>
+            <Link to={`/admin/journal/article/${post.id}`} className="underline underline-offset-2">Modifier dans le back-office</Link>
+          </div>
+          <GeneratedArticleView post={{ ...post, published_at: post.published_at || new Date().toISOString() }} preview />
+        </main>
       </div>
     );
   }
