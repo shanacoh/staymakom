@@ -127,3 +127,7 @@ verify_jwt = false
 
 [functions.translate-content]
 verify_jwt = false
+
+# Tâche de nuit (secret x-cron-secret vérifié dans la fonction, ou admin connecté).
+[functions.compute-experience-from-prices]
+verify_jwt = false

@@ -26,7 +26,7 @@ type Row = Record<string, any>;
 const BOATS_CATEGORY_ID = "06434e23-29f4-4c6b-ba63-b61e68879520";
 
 const EXPERIENCE_PRICE_COLUMNS =
-  "base_price,currency,pricing_model,room_net_rate,bar_rate_markup_value,bar_rate_markup_is_pct,experience_sell_fixed,experience_sell_per_person,min_party";
+  "base_price,currency,pricing_model,from_price_ils,room_net_rate,bar_rate_markup_value,bar_rate_markup_is_pct,experience_sell_fixed,experience_sell_per_person,min_party";
 
 // ---------------------------------------------------------------------------
 // Prix « à partir de »
@@ -39,6 +39,10 @@ const EXPERIENCE_PRICE_COLUMNS =
 function experienceFromPrice(row: Row): number | null {
   if (Number(row.base_price) > 0) return Number(row.base_price);
   if (row.pricing_model !== "bar_rate") return null;
+  // Prix recalculé chaque nuit avec la même méthode que la fiche (fonction
+  // compute-experience-from-prices) : c'est celui que voit un visiteur ce jour-là.
+  if (Number(row.from_price_ils) > 0) return Number(row.from_price_ils);
+  // Repli (pas encore calculé) : estimation sur le tarif de chambre de référence.
   const netRate = Number(row.room_net_rate) || 0;
   if (netRate <= 0) return null;
   const markupValue = Number(row.bar_rate_markup_value) || 0;

@@ -1,0 +1,36 @@
+-- Prix « à partir de » des expériences avec hôtel, recalculé chaque nuit pour Google
+-- (option 2 validée par Shana le 25/11/2026). La fiche calcule ce prix en direct chez le
+-- visiteur ; la version préparée pour Google lit ces colonnes, remplies chaque nuit par la
+-- fonction compute-experience-from-prices avec exactement la même méthode.
+-- Colonnes d'affichage uniquement : ni réservation ni paiement ne les lisent.
+
+alter table public.experiences2
+  add column if not exists from_price_ils numeric,
+  add column if not exists from_price_checkin date,
+  add column if not exists from_price_computed_at timestamptz;
+
+comment on column public.experiences2.from_price_ils is
+  'Prix « à partir de » (ILS, 1 nuit) calculé chaque nuit comme sur la fiche ; lu par la version Google (api/_seo). Affichage seulement.';
+comment on column public.experiences2.from_price_checkin is
+  'Date d''arrivée la moins chère trouvée lors du dernier calcul de from_price_ils.';
+comment on column public.experiences2.from_price_computed_at is
+  'Moment du dernier calcul de from_price_ils.';
+
+-- Chaque nuit de 2 h à 5 h heure d'Israël (00:00 à 02:50 UTC), toutes les 10 minutes :
+-- chaque passage recalcule les 3 fiches les plus anciennes pas encore faites ce jour-là.
+-- Pour revenir en arrière : select cron.unschedule('experience-from-prices-nightly');
+select cron.schedule(
+  'experience-from-prices-nightly',
+  '*/10 0-2 * * *',
+  $cron$
+  select net.http_post(
+    url := 'https://uqeipzfdhyjkjzvqbkeu.supabase.co/functions/v1/compute-experience-from-prices',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'x-cron-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'internal_cron_secret')
+    ),
+    body := '{"limit": 3}'::jsonb,
+    timeout_milliseconds := 150000
+  );
+  $cron$
+);
