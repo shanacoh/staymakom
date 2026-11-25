@@ -33,7 +33,7 @@ import { format } from "date-fns";
 import { fr, he } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import type { CheckoutState } from "@/pages/Checkout";
-import { trackDurationTabClicked, trackDateSelected, trackViewDatesClicked, trackGuestsSelected, trackRoomTypeSelected, trackBookThisStayClicked, trackNoAvailabilityShown } from "@/lib/analytics";
+import { trackDurationTabClicked, trackDateSelected, trackViewDatesClicked, trackGuestsSelected, trackRoomTypeSelected, trackBookThisStayClicked, trackNoAvailabilityShown, armUserSearch } from "@/lib/analytics";
 import { ReassuranceLine } from "@/components/reviews/ReassuranceLine";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useCustomerNationality } from "@/hooks/useCustomerNationality";
@@ -332,8 +332,8 @@ export function BookingPanel2({
       const opt = displayQuickDates.find((d) => d.id === selectedDateOptionId);
       if (opt) {
         setDateRange({ from: opt.checkin, to: opt.checkout });
-        const checkIn = typeof opt.checkin === 'string' ? opt.checkin : (opt.checkin as Date).toISOString().split('T')[0];
-        trackDateSelected(experienceSlug, checkIn, opt.nights || (typeof selectedTab === 'number' ? selectedTab : 1));
+        // Pas d'événement « date_selected » ici : cet effet tourne aussi quand le site
+        // présélectionne la date la moins chère. L'événement part au clic (onValueChange).
       }
     }
   }, [selectedDateOptionId, displayQuickDates, selectedTab]);
@@ -602,11 +602,11 @@ export function BookingPanel2({
               <div className="flex items-center justify-between" dir="ltr">
                 <span className="text-sm" dir={lang === "he" ? "rtl" : "ltr"}>{t.adults}</span>
                 <div className="flex items-center gap-4">
-                  <Button variant="outline" size="sm" className="h-9 w-9 p-0" onClick={() => { const v = Math.max(minParty, adults - 1); setAdults(v); trackGuestsSelected(experienceSlug, v, childrenAges.length); }} disabled={adults <= minParty}>
+                  <Button variant="outline" size="sm" className="h-9 w-9 p-0" onClick={() => { const v = Math.max(minParty, adults - 1); setAdults(v); trackGuestsSelected(experienceSlug, v, childrenAges.length); armUserSearch(); }} disabled={adults <= minParty}>
                     <Minus className="h-3.5 w-3.5" />
                   </Button>
                   <span className="text-lg font-medium w-8 text-center">{adults}</span>
-                  <Button variant="outline" size="sm" className="h-9 w-9 p-0" onClick={() => { const v = Math.min(maxParty, adults + 1); setAdults(v); trackGuestsSelected(experienceSlug, v, childrenAges.length); }} disabled={adults >= maxParty}>
+                  <Button variant="outline" size="sm" className="h-9 w-9 p-0" onClick={() => { const v = Math.min(maxParty, adults + 1); setAdults(v); trackGuestsSelected(experienceSlug, v, childrenAges.length); armUserSearch(); }} disabled={adults >= maxParty}>
                     <Plus className="h-3.5 w-3.5" />
                   </Button>
                 </div>
@@ -679,7 +679,7 @@ export function BookingPanel2({
               <button
                 key={n}
                 type="button"
-                onClick={() => { trackDurationTabClicked(experienceSlug, n); setSelectedTab(n); }}
+                onClick={() => { trackDurationTabClicked(experienceSlug, n); armUserSearch(); setSelectedTab(n); }}
                 className={cn(
                   "flex-1 px-1 py-1.5 rounded-lg border-2 transition-all text-xs whitespace-nowrap",
                   "hover:border-primary/50",
@@ -725,7 +725,16 @@ export function BookingPanel2({
                 <>
                   <RadioGroup
                     value={selectedDateOptionId ?? ""}
-                    onValueChange={(val) => setSelectedDateOptionId(val)}
+                    onValueChange={(val) => {
+                      // Choix réel du visiteur : seul moment où « date_selected » est envoyé.
+                      const opt = displayQuickDates.find((d) => d.id === val);
+                      if (opt) {
+                        const checkIn = typeof opt.checkin === 'string' ? opt.checkin : (opt.checkin as Date).toISOString().split('T')[0];
+                        trackDateSelected(experienceSlug, checkIn, opt.nights || (typeof selectedTab === 'number' ? selectedTab : 1));
+                      }
+                      armUserSearch();
+                      setSelectedDateOptionId(val);
+                    }}
                     className="space-y-1.5"
                   >
                     {visibleQuickDates.map((opt) => {
@@ -829,6 +838,11 @@ export function BookingPanel2({
                 defaultMonth={calendarDefaultMonth}
                 selected={dateRange as DateRange}
                 onSelect={(range) => {
+                  if (range?.from && range?.to) {
+                    const checkIn = format(range.from, "yyyy-MM-dd");
+                    trackDateSelected(experienceSlug, checkIn, Math.max(1, Math.round((range.to.getTime() - range.from.getTime()) / 86400000)));
+                    armUserSearch();
+                  }
                   setDateRange({
                     from: range?.from,
                     to: range?.to,

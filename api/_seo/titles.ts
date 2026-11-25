@@ -1,8 +1,10 @@
-// Titres d'onglet / de résultat Google des fiches, au format recommandé par l'audit IA
-// du 24/11/2026. Le titre SEO saisi à la main dans le back-office reste prioritaire,
-// sauf s'il n'est que le titre automatique « <Nom> | Staymakom ».
+// Titres d'onglet / de résultat Google des fiches.
+// Hôtels : format de l'audit IA du 24/11/2026. Expériences : règle unique de seoTitle.ts
+// (titre SEO saisi, sinon « Titre | Lieu | STAYMAKOM », sans nom de prestataire).
+import { experienceSeoTitle } from "./seoTitle.js";
 
 type Lang = "en" | "fr" | "he" | "es" | "ru" | "de";
+type Row = Record<string, any>;
 
 function isAutoTitle(seoTitle: string | null | undefined, name: string): boolean {
   if (!seoTitle || !seoTitle.trim()) return true;
@@ -18,9 +20,16 @@ export function hotelPageTitle(name: string, city: string | null | undefined, la
   return `${name} | Hotel & Curated Experiences${where} | STAYMAKOM`;
 }
 
-export function experiencePageTitle(title: string, hotelName: string | null | undefined, lang: Lang, seoTitle?: string | null): string {
-  if (!isAutoTitle(seoTitle, title)) return seoTitle!.trim();
-  if (!hotelName) return `${title} | STAYMAKOM`;
-  const at = lang === "fr" ? "à l'hôtel" : lang === "he" ? "ב" : "at";
-  return lang === "he" ? `${title} ${at}${hotelName} | STAYMAKOM` : `${title} ${at} ${hotelName} | STAYMAKOM`;
+/**
+ * Titre SEO saisi pour la langue de la page. Les fiches passent par localizeRow, qui a déjà
+ * mis seo_title_fr / seo_title_he dans seo_title_en quand ils existent : on relit donc la
+ * colonne de la langue elle-même pour ne jamais servir un titre anglais à une page française.
+ */
+export function seoTitleForLang(row: Row, lang: Lang): string | null {
+  if (lang === "fr" || lang === "he") return row[`seo_title_${lang}`] || null;
+  return row.seo_title_en || null;
+}
+
+export function experiencePageTitle(row: Row, place: string | null | undefined, lang: Lang): string {
+  return experienceSeoTitle({ seoTitle: seoTitleForLang(row, lang), editorialTitle: row.title, place });
 }

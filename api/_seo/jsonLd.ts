@@ -86,6 +86,11 @@ export function hotelJsonLd(row: Record<string, any>, description: string | unde
   });
 }
 
+/**
+ * Fiche expérience vendue : Product + Offer. Volontairement SANS adresse exacte ni nom du
+ * prestataire ou de l'hôtel partenaire (règle : l'adresse n'apparaît que dans l'email de
+ * confirmation).
+ */
 export function productJsonLd(params: {
   name: string;
   description?: string;
@@ -93,9 +98,10 @@ export function productJsonLd(params: {
   path: string;
   price: number | null;
   currency: string;
-  hotel?: { name: string; slug: string } | null;
   rating?: { ratingValue: number; reviewCount: number } | null;
-}): Json {
+}): Json | null {
+  // Google refuse un Product sans prix ni avis : dans ce cas on n'en déclare pas.
+  if (!(params.price != null && params.price > 0) && !params.rating) return null;
   const url = pageUrl(params.path);
   return clean({
     "@context": "https://schema.org",
@@ -116,9 +122,6 @@ export function productJsonLd(params: {
             seller: { "@id": `${SITE_URL}/#organization` },
           }
         : undefined,
-    isRelatedTo: params.hotel
-      ? { "@type": "Hotel", name: params.hotel.name, url: pageUrl(`/hotel/${params.hotel.slug}`) }
-      : undefined,
     aggregateRating: params.rating
       ? { "@type": "AggregateRating", ratingValue: params.rating.ratingValue, reviewCount: params.rating.reviewCount }
       : undefined,
@@ -153,13 +156,25 @@ export function articleJsonLd(row: Record<string, any>, headline: string, descri
     url: pageUrl(`/journal/${row.slug}`),
     datePublished: row.published_at || row.created_at,
     dateModified: row.updated_at || row.published_at,
-    author: row.author_name
-      ? { "@type": "Person", name: row.author_name }
-      : { "@type": "Organization", name: BRAND.name },
+    // Auteur = la marque (décision du sprint SEO du 25/11/2026), quel que soit le rédacteur.
+    author: { "@type": "Organization", name: BRAND.name, url: `${SITE_URL}/` },
     publisher: {
       "@type": "Organization",
       name: BRAND.name,
       logo: { "@type": "ImageObject", url: BRAND.logo },
     },
   });
+}
+
+/** Questions fréquentes de l'accueil (résultat enrichi « FAQ » de Google). */
+export function faqPageJsonLd(items: { q: string; a: string[] }[]): Json {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: { "@type": "Answer", text: item.a.join(" ").replace(/\[([^\]]+)\]/g, "$1") },
+    })),
+  };
 }

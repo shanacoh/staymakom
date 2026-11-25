@@ -19,6 +19,21 @@
       "source": "/hotel/bayit-bagalil-boutique-hotel-by-herbert-samuelnn",
       "destination": "/hotel/bayit-bagalil-boutique-hotel-by-herbert-samuel",
       "permanent": true
+    },
+    {
+      "source": "/experience2/:slug",
+      "destination": "/experience/:slug",
+      "statusCode": 301
+    },
+    {
+      "source": "/hotels/:slug",
+      "destination": "/hotel/:slug",
+      "statusCode": 301
+    },
+    {
+      "source": "/experiences2",
+      "destination": "/experiences",
+      "statusCode": 301
     }
   ],
   "headers": [

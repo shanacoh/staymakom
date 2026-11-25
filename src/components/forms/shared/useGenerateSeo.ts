@@ -6,6 +6,8 @@ const CONTENT_FIELDS = [
   "title", "title_fr", "title_he",
   "subtitle", "subtitle_fr", "subtitle_he",
   "long_copy", "long_copy_fr", "long_copy_he",
+  // Lieu : le titre SEO = « type d'activité + lieu » (jamais le nom du prestataire).
+  "city", "region",
 ] as const;
 
 const SEO_FIELDS = [

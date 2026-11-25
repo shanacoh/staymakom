@@ -340,6 +340,20 @@ export function trackCompaniesPageViewed() {
 // H. SEARCH (2 events)
 // ============================================
 
+// « search_performed » / « search_no_results » ne partent que d'une action réelle du
+// visiteur (date, durée, nombre de personnes), jamais de la recherche automatique faite au
+// chargement de la fiche. Le geste « arme » la prochaine recherche, qui le consomme.
+let userSearchArmedAt = 0;
+export function armUserSearch() {
+  userSearchArmedAt = Date.now();
+}
+/** true une seule fois après un geste du visiteur (valable 30 secondes). */
+export function consumeUserSearch(): boolean {
+  const armed = userSearchArmedAt > 0 && Date.now() - userSearchArmedAt < 30_000;
+  userSearchArmedAt = 0;
+  return armed;
+}
+
 export function trackSearchPerformed(query: {
   destination?: string;
   checkIn?: string;
@@ -402,11 +416,24 @@ export function productProps(product: ProductLike | null | undefined, productTyp
   };
 }
 
-export function computeEntrySource(utmSource: string | undefined, referrer: string): string {
+/**
+ * Source d'arrivée de la visite. L'utm_source prime toujours (les navigateurs intégrés
+ * d'Instagram / TikTok / WhatsApp n'envoient souvent aucun referrer). Sans utm ni referrer,
+ * on reconnaît ces navigateurs intégrés à leur signature avant de conclure « direct ».
+ */
+export function computeEntrySource(utmSource: string | undefined, referrer: string, userAgent: string = typeof navigator !== "undefined" ? navigator.userAgent : ""): string {
   if (utmSource) return utmSource;
   const ref = (referrer || "").toLowerCase();
-  if (!ref) return "direct";
-  if (ref.includes("instagram.com")) return "instagram";
+  if (!ref) {
+    const ua = userAgent || "";
+    if (/Instagram/i.test(ua)) return "instagram";
+    if (/musical_ly|BytedanceWebview|TikTok/i.test(ua)) return "tiktok";
+    if (/WhatsApp/i.test(ua)) return "whatsapp";
+    if (/FBAN|FBAV|FB_IAB/i.test(ua)) return "facebook";
+    return "direct";
+  }
+  if (ref.includes("whatsapp") || ref.includes("wa.me")) return "whatsapp";
+  if (ref.includes("instagram")) return "instagram";
   if (ref.includes("tiktok.com")) return "tiktok";
   if (ref.includes("facebook.com")) return "facebook";
   if (ref.includes("google.")) return "google";

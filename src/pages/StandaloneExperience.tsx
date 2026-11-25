@@ -36,6 +36,8 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useLanguage, getLocalizedField } from "@/hooks/useLanguage";
 import { trackedRegionName, useRegionLabel } from "@/lib/regionList/queries";
 import { SEOHead } from "@/components/SEOHead";
+import { experienceSeoTitle } from "../../api/_seo/seoTitle";
+import { BOATS_CATEGORY_ID } from "@/lib/boatsCategory";
 import { MOOD_PARAM, inMood, orderedPhotos } from "@/lib/moodDisplay/moodDisplay";
 import { useArrivalMood } from "@/lib/moodDisplay/queries";
 import { useExperienceIncludes, withIncludePhotos } from "@/hooks/useExperienceIncludes";
@@ -539,6 +541,9 @@ export default function StandaloneExperience() {
 
   const extrasTotal = selectedExtras.reduce((sum, e) => sum + e.price, 0);
   const grandTotal = totalPrice + extrasTotal;
+
+  // Adresse de référence : /boat/<slug> pour un bateau, /standalone-experience/<slug> sinon.
+  const canonicalPath = `${experience?.category_id === BOATS_CATEGORY_ID ? "/boat" : "/standalone-experience"}/${experience?.slug ?? slug}`;
 
   const title =
     lang === "he"
@@ -1071,10 +1076,12 @@ export default function StandaloneExperience() {
       dir={lang === "he" ? "rtl" : "ltr"}
     >
       <SEOHead
-        title={title}
-        titleEn={experience.seo_title_en || undefined}
-        titleFr={experience.seo_title_fr || undefined}
-        titleHe={experience.seo_title_he || undefined}
+        title={experienceSeoTitle({
+          seoTitle: lang === "fr" ? experience.seo_title_fr : lang === "he" ? experience.seo_title_he : experience.seo_title_en,
+          editorialTitle: title,
+          place: locCity || experience.region,
+        })}
+        canonicalPath={canonicalPath}
         description={subtitle}
         descriptionEn={experience.meta_description_en || undefined}
         descriptionFr={experience.meta_description_fr || undefined}
@@ -1096,15 +1103,16 @@ export default function StandaloneExperience() {
             "name": experience.title,
             "description": subtitle || undefined,
             "image": experience.hero_image || undefined,
-            "url": `https://www.staymakom.com/standalone-experience/${experience.slug}`,
+            "url": `https://www.staymakom.com${canonicalPath}`,
             "brand": { "@type": "Brand", "name": "STAYMAKOM" },
-            ...(experience.base_price != null && {
+            // Ni adresse exacte ni nom de prestataire dans les données structurées.
+            ...(Number(experience.base_price) > 0 && {
               "offers": {
                 "@type": "Offer",
                 "price": experience.base_price,
                 "priceCurrency": experience.currency || "ILS",
                 "availability": "https://schema.org/InStock",
-                "url": `https://www.staymakom.com/standalone-experience/${experience.slug}`
+                "url": `https://www.staymakom.com${canonicalPath}`
               }
             }),
             ...(reviewsSummary && reviewsSummary.count > 0 && reviewsSummary.averageRating != null && {
@@ -1126,13 +1134,13 @@ export default function StandaloneExperience() {
               {
                 name: "Experience Only",
                 url: categorySlug
-                  ? `https://www.staymakom.com/category/${categorySlug}?mode=live`
-                  : "https://www.staymakom.com/experiences?mode=live",
+                  ? `https://www.staymakom.com/category/${categorySlug}`
+                  : "https://www.staymakom.com/experiences",
               },
               ...(categoryName && categorySlug
                 ? [{ name: categoryName, url: `https://www.staymakom.com/category/${categorySlug}` }]
                 : []),
-              { name: title, url: `https://www.staymakom.com/standalone-experience/${experience.slug}` },
+              { name: title, url: `https://www.staymakom.com${canonicalPath}` },
             ])
           ),
         }}

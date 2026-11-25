@@ -24,6 +24,14 @@ interface SEOHeadProps {
   ogImage?: string;
   fallbackTitle?: string;
   fallbackDescription?: string;
+  /** Adresse de référence quand la page a plusieurs adresses (ex. un bateau ouvert en /standalone-experience/ → /boat/). */
+  canonicalPath?: string;
+  /**
+   * Langues où le contenu principal existe vraiment (ex. article du Journal seulement en
+   * anglais). Absent = toutes. Une langue absente n'est pas annoncée (hreflang) et sa
+   * version pointe (canonical) vers l'anglais.
+   */
+  availableLocales?: readonly string[];
 }
 
 export function SEOHead({
@@ -46,6 +54,8 @@ export function SEOHead({
   ogImage,
   fallbackTitle = "Staymakom - Curated Boutique Experiences in Israel",
   fallbackDescription = "Discover unique boutique hotels and immersive experiences across Israel. From desert escapes to vineyard retreats, find your perfect getaway.",
+  canonicalPath,
+  availableLocales,
 }: SEOHeadProps) {
   const { lang, locale } = useLanguage();
 
@@ -99,7 +109,11 @@ export function SEOHead({
     updateMetaTag("og:title", finalOgTitle, true);
     updateMetaTag("og:description", finalOgDescription, true);
     updateMetaTag("og:type", "website", true);
-    updateMetaTag("og:url", `${BASE_URL}${window.location.pathname}`, true);
+    // Adresse de référence : jamais de paramètre de filtre (mode, etc.), une seule par langue.
+    const pageUrl = `${BASE_URL}${canonicalPath || window.location.pathname}`;
+    const isAvailable = (code: string) => !availableLocales || availableLocales.includes(code);
+    const canonicalLocale = isAvailable(locale) ? locale : "en";
+    updateMetaTag("og:url", localizedUrl(pageUrl, canonicalLocale), true);
     
     if (ogImage) {
       updateMetaTag("og:image", ogImage, true);
@@ -115,7 +129,6 @@ export function SEOHead({
     }
 
     // Canonical : l'anglais garde l'adresse nue, les autres langues portent leur ?lang=
-    const pageUrl = `${BASE_URL}${window.location.pathname}`;
     const setLink = (selector: string, attrs: Record<string, string>) => {
       let el = document.head.querySelector<HTMLLinkElement>(selector);
       if (!el) {
@@ -124,15 +137,16 @@ export function SEOHead({
       }
       for (const [name, value] of Object.entries(attrs)) el.setAttribute(name, value);
     };
-    setLink('link[rel="canonical"]', { rel: "canonical", href: localizedUrl(pageUrl, locale) });
+    setLink('link[rel="canonical"]', { rel: "canonical", href: localizedUrl(pageUrl, canonicalLocale) });
 
     // Hreflang : on annonce à Google uniquement les langues publiques (l'interrupteur
     // src/config/languages.json décide si espagnol / russe / allemand en font partie).
-    const announced = new Set<string>([...publicLocales(), "x-default"]);
+    const declared = publicLocales().filter(isAvailable);
+    const announced = new Set<string>([...declared, "x-default"]);
     document.head.querySelectorAll<HTMLLinkElement>('link[rel="alternate"][hreflang]').forEach((el) => {
       if (!announced.has(el.getAttribute("hreflang") || "")) el.remove();
     });
-    for (const code of publicLocales()) {
+    for (const code of declared) {
       setLink(`link[rel="alternate"][hreflang="${code}"]`, { rel: "alternate", hreflang: code, href: localizedUrl(pageUrl, code) });
     }
     setLink('link[rel="alternate"][hreflang="x-default"]', { rel: "alternate", hreflang: "x-default", href: localizedUrl(pageUrl, "en") });
@@ -172,6 +186,8 @@ export function SEOHead({
     ogImage,
     fallbackTitle,
     fallbackDescription,
+    canonicalPath,
+    availableLocales,
   ]);
 
   return null;

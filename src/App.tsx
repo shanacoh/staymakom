@@ -15,6 +15,8 @@ import { useCookieConsent } from "@/hooks/useCookieConsent";
 import { CurrentProductProvider } from "@/contexts/CurrentProductContext";
 import { trackPageViewed, trackUtmCaptured, trackSessionLanded, identifySessionLanded, computeEntrySource } from "@/lib/analytics";
 import { rememberVisitSource } from "@/lib/tailorMade/visitSource";
+import * as amplitude from "@amplitude/unified";
+import { isTrackingStarted, isUntrackedPath } from "@/lib/trackingGuard";
 import { Loader2 } from "lucide-react";
 import { NewsletterPopup } from "@/components/NewsletterPopup";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -177,6 +179,8 @@ const AppContent = () => {
   const { showBanner, acceptCookies, declineCookies } = useCookieConsent();
 
   useEffect(() => {
+    // Back-office (/admin, /hotel-admin) : Amplitude se met en pause, y compris ses clics automatiques.
+    if (isTrackingStarted()) amplitude.setOptOut(isUntrackedPath(location.pathname));
     trackPageViewed(location.pathname);
   }, [location.pathname]);
 
@@ -193,6 +197,11 @@ const AppContent = () => {
     const entrySource = computeEntrySource(utmSource, referrer);
     try {
       sessionStorage.setItem("staymakom_entry_source", entrySource);
+      // UTM de l'arrivée, gardés toute la visite : joints à chaque événement jusqu'à la réservation.
+      sessionStorage.setItem(
+        "staymakom_utm",
+        JSON.stringify({ utm_source: utmSource, utm_medium: utmMedium, utm_campaign: utmCampaign, utm_content: utmContent, utm_term: utmTerm })
+      );
     } catch {}
     trackSessionLanded({
       landingPage: window.location.pathname,

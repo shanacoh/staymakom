@@ -1,3 +1,4 @@
+import { BOATS_CATEGORY_ID } from "@/lib/boatsCategory";
 /**
  * Carte pour les expériences "standalone" (Experience Only, sans hôtel).
  * Adaptée de Experience2CardWithPrice — pas de HyperGuest, pas de calcul de prix complexe.
@@ -58,6 +59,8 @@ interface StandaloneExperienceCardProps {
     region?: string | null;
     region_he?: string | null;
     practical_info?: unknown;
+    // Catégorie : un bateau a toujours son adresse de référence /boat/<slug>.
+    category_id?: string | null;
   };
   index?: number;
   badge?: string | null;
@@ -77,7 +80,7 @@ export default function StandaloneExperienceCard({
   index = 0,
   badge,
   linkSuffix,
-  linkPrefix = "/standalone-experience",
+  linkPrefix,
   showTotalPrice = false,
   isBoat = false,
 }: StandaloneExperienceCardProps) {
@@ -156,7 +159,7 @@ export default function StandaloneExperienceCard({
   return (
     <ExperienceCard
       experience={cardExperience}
-      linkPrefix={linkPrefix}
+      linkPrefix={linkPrefix ?? (experience.category_id === BOATS_CATEGORY_ID ? "/boat" : "/standalone-experience")}
       linkSuffix={linkSuffix}
       index={index}
       badge={badge}

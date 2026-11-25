@@ -117,7 +117,7 @@ const Experiences2 = () => {
                     hyperguestPropertyId={primaryHotelLink?.hyperguest_property_id}
                     availabilityRules={rulesMap[experience.id] ?? []}
                     addons={(experience as any).experience2_addons}
-                    linkPrefix="/experience2"
+                    linkPrefix="/experience"
                   />
                 );
               })}

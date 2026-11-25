@@ -37,7 +37,12 @@ export interface PageModel {
   sections?: PageSection[];
   /** Fil d'Ariane : nom + chemin (ex. "/hotel/the-inbal-jerusalem"). */
   breadcrumbs?: { name: string; path: string }[];
-  jsonLd?: Record<string, unknown>[];
+  jsonLd?: (Record<string, unknown> | null)[];
+  /**
+   * Langues où le contenu principal existe vraiment. Absent = toutes. Une langue absente
+   * n'est ni annoncée (hreflang, plan du site), et sa version pointe (canonical) vers l'anglais.
+   */
+  availableLangs?: string[];
   /** true = on ne prépare pas de contenu (pages sur mesure pour un client, etc.). */
   passthrough?: boolean;
 }

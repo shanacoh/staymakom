@@ -34,6 +34,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/hooks/useLanguage";
 import { trackedRegionName, useRegionLabel } from "@/lib/regionList/queries";
 import { SEOHead } from "@/components/SEOHead";
+import { experienceSeoTitle } from "../../api/_seo/seoTitle";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumbJsonLd";
 import {
   trackExperiencePageViewed,
@@ -531,9 +532,14 @@ export default function Experience2() {
   return (
     <div className="min-h-screen flex flex-col" style={{ overflowX: 'clip' }} dir={lang === 'he' ? 'rtl' : 'ltr'}>
       <SEOHead
-        title={title}
-        description={subtitle || undefined}
+        title={experienceSeoTitle({
+          seoTitle: (experience as any)[`seo_title_${lang === "fr" || lang === "he" ? lang : "en"}`],
+          editorialTitle: title,
+          place: city,
+        })}
+        description={(experience as any)[`meta_description_${lang === "fr" || lang === "he" ? lang : "en"}`] || subtitle || undefined}
         ogImage={experience.hero_image || primaryHotel?.hero_image || undefined}
+        canonicalPath={`/experience/${experience.slug}`}
       />
       <script
         type="application/ld+json"
@@ -546,7 +552,8 @@ export default function Experience2() {
             "image": experience.hero_image || primaryHotel?.hero_image || undefined,
             "url": `https://www.staymakom.com/experience/${experience.slug}`,
             "brand": { "@type": "Brand", "name": "STAYMAKOM" },
-            ...(experience.base_price != null && {
+            // Ni adresse exacte ni nom de prestataire dans les données structurées.
+            ...(Number(experience.base_price) > 0 && {
               "offers": {
                 "@type": "Offer",
                 "price": experience.base_price,
@@ -574,7 +581,7 @@ export default function Experience2() {
               {
                 name: "With Hotel",
                 url: category?.slug
-                  ? `https://www.staymakom.com/category/${category.slug}?mode=stay`
+                  ? `https://www.staymakom.com/category/${category.slug}`
                   : "https://www.staymakom.com/experiences",
               },
               ...(categoryName && category?.slug

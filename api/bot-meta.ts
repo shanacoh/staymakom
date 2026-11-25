@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { patchHtml, type LanguageInfo } from "./_seo/patchHead.js";
 import { renderBody } from "./_seo/renderBody.js";
 import { publishedCategories, resolvePage } from "./_seo/resolvers.js";
+import { canonicalRedirect } from "./_seo/redirect.js";
 import { ALL_LANGS, type PageLang } from "./_seo/site.js";
 
 // Guichet robots : sert aux seuls robots (Google, IA comme ChatGPT / Claude / Perplexity,
@@ -28,6 +29,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const protocol = (req.headers["x-forwarded-proto"] as string) || "https";
   const origin = `${protocol}://${req.headers.host}`;
 
+  // Une seule adresse par fiche et par langue : toute autre adresse (ancienne route
+  // /experience2/..., /hotels/..., mauvais type de fiche, ?lang=en...) répond 301 vers elle.
+  let page: Awaited<ReturnType<typeof resolvePage>> | null = null;
+  try {
+    page = await resolvePage(pathname, lang, notFound);
+  } catch {
+    page = null; // Base injoignable : page générique plus bas, jamais de redirection à l'aveugle.
+  }
+  if (page && page.status === 200 && !page.passthrough) {
+    const location = canonicalRedirect(pathname, req.query.rawlang, page.canonicalPath, lang);
+    if (location) {
+      res.setHeader("cache-control", "public, max-age=0, s-maxage=1800, stale-while-revalidate=86400");
+      res.redirect(301, location);
+      return;
+    }
+  }
+
   let html = "";
   try {
     const originRes = await fetch(`${origin}/index.html`);
@@ -39,10 +57,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   let status = 200;
   try {
-    const [page, categories] = await Promise.all([
-      resolvePage(pathname, lang, notFound),
-      publishedCategories(lang).catch(() => []),
-    ]);
+    if (!page) throw new Error("base injoignable");
+    const categories = await publishedCategories(lang).catch(() => []);
     status = page.status;
     if (!page.passthrough) {
       const body = renderBody(page, lang, categories.map((c) => ({ name: c.name, slug: c.slug })));

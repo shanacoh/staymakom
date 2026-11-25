@@ -43,8 +43,20 @@ const FAQSection = () => {
   const sectionTitle: string = t(locale, "faqTitle");
   const items: FAQItem[] = t(locale, "faqItems");
 
+  // Résultat enrichi « FAQ » de Google : mêmes questions et réponses, liens [..] en texte simple.
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: { "@type": "Answer", text: item.a.join(" ").replace(/\[([^\]]+)\]/g, "$1") },
+    })),
+  };
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd).replace(/</g, "\\u003c") }} />
       <section className="py-8 sm:py-10 border-t border-border/40" dir={isRTL ? "rtl" : "ltr"}>
         <div className="container px-4 max-w-2xl mx-auto">
           <div className="text-center mb-5 sm:mb-7">
@@ -66,7 +78,9 @@ const FAQSection = () => {
                 <AccordionTrigger className="text-sm sm:text-base font-medium text-left hover:no-underline text-foreground hover:text-[#a83c3c] py-4 [&[data-state=open]]:text-[#a83c3c] transition-colors duration-200 text-start">
                   {item.q}
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground text-sm leading-relaxed pb-5">
+                {/* forceMount : la réponse reste dans la page même accordéon fermé (masquée,
+                    pas absente), pour que Google la lise. Radix la cache avec l'attribut hidden. */}
+                <AccordionContent forceMount className="text-muted-foreground text-sm leading-relaxed pb-5">
                   {item.a.map((paragraph, i) => (
                     <Paragraph key={i} text={paragraph} className={i > 0 ? "mt-3" : undefined} />
                   ))}

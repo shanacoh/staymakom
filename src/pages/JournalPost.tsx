@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import V3Header from "@/components/V3Header";
 import LaunchFooter from "@/components/LaunchFooter";
 import { SEOHead } from "@/components/SEOHead";
+import { buildBreadcrumbJsonLd } from "@/lib/breadcrumbJsonLd";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, ArrowLeft, MapPin, ArrowRight, Heart } from "lucide-react";
@@ -483,6 +484,9 @@ const JournalPost = () => {
         ogDescriptionHe={post.og_description_he || post.meta_description_he || post.excerpt_he}
         ogDescriptionFr={post.og_description_fr || post.meta_description_fr}
         ogImage={post.og_image || post.cover_image}
+        canonicalPath={`/journal/${post.slug}`}
+        // Pas de version française des articles ; l'hébreu seulement s'il est rédigé.
+        availableLocales={post.content_he ? ["en", "he", "es", "ru", "de"] : ["en", "es", "ru", "de"]}
       />
       <script
         type="application/ld+json"
@@ -495,7 +499,8 @@ const JournalPost = () => {
             "image": post.og_image || post.cover_image || undefined,
             "url": `https://www.staymakom.com/journal/${post.slug}`,
             "datePublished": post.published_at,
-            "author": { "@type": "Organization", "name": "STAYMAKOM" },
+            "dateModified": post.updated_at || post.published_at,
+            "author": { "@type": "Organization", "name": "STAYMAKOM", "url": "https://www.staymakom.com/" },
             "publisher": {
               "@type": "Organization",
               "name": "STAYMAKOM",
@@ -505,6 +510,18 @@ const JournalPost = () => {
               }
             }
           })
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            buildBreadcrumbJsonLd([
+              { name: "Home", url: "https://www.staymakom.com/" },
+              { name: "Journal", url: "https://www.staymakom.com/journal" },
+              { name: post.title_en, url: `https://www.staymakom.com/journal/${post.slug}` },
+            ])
+          ),
         }}
       />
       <V3Header />

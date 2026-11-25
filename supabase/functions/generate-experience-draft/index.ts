@@ -534,7 +534,11 @@ const SEO_INSTRUCTIONS = `
 Tâche : rédiger uniquement le titre SEO et la méta-description, pas de rédaction depuis zéro du contenu.
 - Source : le titre, l'accroche et la description déjà rédigés par Shana, fournis ci-dessous par langue. N'invente aucun fait qui n'y figure pas.
 - Pour chaque langue effectivement fournie (titre ou description non vide), produis :
-  - seo_title_* : 60 caractères maximum, incluant si pertinent le lieu ou la catégorie, pensé pour Google et l'onglet du navigateur.
+  - seo_title_* : 60 caractères maximum, construit comme une RECHERCHE GOOGLE naturelle dans la langue : « type d'activité + lieu » (ex. « Cooking Class in Tel Aviv », « Cours de cuisine à Tel Aviv », « Horseback Riding in the Carmel », « Atelier chocolat au bord du lac de Tibériade »). Règles :
+    · le TYPE D'ACTIVITÉ concret d'abord (cours de cuisine, balade à cheval, dégustation de vin, tour en jeep, spa...), puis la ville ou la région ;
+    · JAMAIS le nom du prestataire, de l'hôtel, du domaine ou de l'atelier (ni « Galita », ni « The Setai », ni « Lev HaTeva »...) ;
+    · JAMAIS le titre éditorial poétique tel quel (« SOURCES SECRÈTES DU NÉGUEV », « LOST AT SEA ») et JAMAIS en majuscules : casse normale ;
+    · pas de « | STAYMAKOM » (ajouté par le site si la place le permet), pas de tiret cadratin.
   - meta_description_* : 155 caractères maximum, qui donne envie de cliquer, dans la voix STAYMAKOM.
 - Si une langue n'a ni titre ni description fournis, laisse ses deux champs SEO vides pour cette langue.
 - Ne produis rien d'autre que les champs SEO : pas de titre, pas de description, pas de prix.
@@ -569,6 +573,9 @@ async function handleSeo(
       return `### ${l.label}\nTitre : ${l.title || "(vide)"}\nAccroche : ${l.subtitle || "(vide)"}\nDescription : ${descriptionText || "(vide)"}`;
     })
     .join("\n\n");
+  // Lieu de la fiche (ville / région), pour le « type d'activité + lieu » du titre SEO.
+  const place = [pick("city"), pick("region")].filter(Boolean).join(", ");
+  const userTextWithPlace = place ? `Lieu de l'expérience : ${place}\n\n${userText}` : userText;
 
   const systemPrompt = loadSystemPrompt(type) + SEO_INSTRUCTIONS;
 
@@ -579,7 +586,7 @@ async function handleSeo(
       model: Deno.env.get("EXPERIENCE_DRAFT_AI_MODEL") || DEFAULT_CLAUDE_MODEL,
       max_tokens: MAX_TOKENS,
       system: systemPrompt,
-      messages: [{ role: "user", content: userText }],
+      messages: [{ role: "user", content: userTextWithPlace }],
       tools: [seoToolSchema],
       tool_choice: { type: "tool", name: SEO_TOOL_NAME },
     } as any);

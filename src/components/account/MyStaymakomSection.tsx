@@ -642,7 +642,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
                               { duration: 6000 }
                             );
                             if ((booking as any).slug) {
-                              navigate(booking.type === "v2" ? `/experience2/${(booking as any).slug}` : `/experience/${(booking as any).slug}`);
+                              navigate(booking.type === "v2" ? `/experience/${(booking as any).slug}` : `/experience/${(booking as any).slug}`);
                             }
                           }}
                         >
@@ -680,7 +680,7 @@ export default function MyStaymakomSection({ userId }: MyStaymakomSectionProps) 
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => navigate(booking.type === "v2" ? `/experience2/${booking.slug}` : `/experience/${booking.slug}`)}
+                          onClick={() => navigate(booking.type === "v2" ? `/experience/${booking.slug}` : `/experience/${booking.slug}`)}
                         >
                           {tPage("myStaymakomSectionView")}
                           <ChevronRight className="ml-1 h-4 w-4" />

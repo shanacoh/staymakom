@@ -1,8 +1,10 @@
 // Traduit une adresse du site en PageModel (ce que les robots doivent lire sur la page),
 // à partir des fiches publiées dans la base. Une fiche absente ou non publiée = 404.
 import { fetchMany, fetchPublishedBySlug, localizeRowsSync } from "./db.js";
+import { HOME_FAQ } from "./faq.js";
 import {
   articleJsonLd,
+  faqPageJsonLd,
   breadcrumbJsonLd,
   hotelJsonLd,
   itemListJsonLd,
@@ -136,8 +138,10 @@ async function resolveHome(lang: PageLang): Promise<PageModel> {
       { heading: `${t.experiences} · ${t.withHotel}`, links: localizeRowsSync(experiences, lang).map((r) => experienceLink(r, lang)) },
       { heading: `${t.experiences} · ${t.experienceOnly}`, links: localizeRowsSync(standalones, lang).map((r) => standaloneLink(r, lang)) },
       { heading: t.hotels, links: localizeRowsSync(hotels, lang).map((r) => hotelLink(r, lang)) },
+      // FAQ de l'accueil : questions ET réponses dans la page (comme sur le site).
+      ...HOME_FAQ[lang].map((item) => ({ heading: item.q, paragraphs: item.a.map((p) => p.replace(/\[([^\]]+)\]/g, "$1")) })),
     ],
-    jsonLd: [organizationJsonLd(), websiteJsonLd()],
+    jsonLd: [organizationJsonLd(), websiteJsonLd(), faqPageJsonLd(HOME_FAQ[lang])],
   };
 }
 
@@ -203,6 +207,7 @@ async function resolveHotel(slug: string, lang: PageLang): Promise<PageModel> {
   return {
     status: 200,
     canonicalPath: `/hotel/${row.slug}`,
+    availableLangs: row.__availableLangs,
     title: hotelPageTitle(row.name, row.city, lang, row.seo_title_en),
     description,
     image: row.og_image || row.hero_image || undefined,
@@ -251,12 +256,14 @@ async function resolveExperience(slug: string, lang: PageLang): Promise<PageMode
     ...(category?.slug ? [{ name: category.name, path: `/category/${category.slug}` }] : [{ name: t.experiences, path: "/experiences" }]),
     { name: row.title, path: `/experience/${row.slug}` },
   ];
-  const location = [hotel?.name, hotel?.city || row.address].filter(Boolean).join(", ");
+  // Jamais d'adresse exacte (règle : elle n'apparaît que dans l'email de confirmation).
+  const location = [hotel?.name, hotel?.city].filter(Boolean).join(", ");
 
   return {
     status: 200,
     canonicalPath: `/experience/${row.slug}`,
-    title: experiencePageTitle(row.title, hotel?.name, lang, row.seo_title_en),
+    availableLangs: row.__availableLangs,
+    title: experiencePageTitle(row, hotel?.city || hotel?.region, lang),
     description,
     image: row.og_image || row.hero_image || undefined,
     h1: row.title,
@@ -282,7 +289,6 @@ async function resolveExperience(slug: string, lang: PageLang): Promise<PageMode
         path: `/experience/${row.slug}`,
         price,
         currency: row.currency || "ILS",
-        hotel: hotel?.slug ? { name: hotel.name, slug: hotel.slug } : null,
         rating,
       }),
       breadcrumbJsonLd(crumbs),
@@ -316,13 +322,15 @@ async function resolveStandalone(slug: string, lang: PageLang): Promise<PageMode
         : { name: t.experiences, path: "/experiences" },
     { name: row.title, path },
   ];
-  const location = [row.hide_exact_address ? null : row.address, row.city, row.region].filter(Boolean).join(", ");
+  // Jamais d'adresse exacte (règle : elle n'apparaît que dans l'email de confirmation).
+  const location = [row.city, row.region].filter(Boolean).join(", ");
   const included = toList(row.includes);
 
   return {
     status: 200,
     canonicalPath: path,
-    title: experiencePageTitle(row.title, null, lang, row.seo_title_en),
+    availableLangs: row.__availableLangs,
+    title: experiencePageTitle(row, row.city || row.region, lang),
     description,
     image: row.og_image || row.hero_image || undefined,
     h1: row.title,
@@ -382,6 +390,7 @@ async function resolveCategory(slug: string, lang: PageLang): Promise<PageModel>
   return {
     status: 200,
     canonicalPath: `/category/${row.slug}`,
+    availableLangs: row.__availableLangs,
     title: row.seo_title_en || `${row.name} | STAYMAKOM`,
     description,
     image: row.og_image || row.hero_image || undefined,
@@ -468,6 +477,7 @@ async function resolveJournalPost(slug: string, lang: PageLang): Promise<PageMod
   return {
     status: 200,
     canonicalPath: `/journal/${row.slug}`,
+    availableLangs: row.__availableLangs,
     title: row.seo_title_en || `${row.title_en} | STAYMAKOM`,
     description,
     image: row.og_image || row.cover_image || undefined,
@@ -503,6 +513,15 @@ function resolveStatic(path: string, lang: PageLang): PageModel | null {
   };
 }
 
+async function firstFound(...resolvers: (() => Promise<PageModel>)[]): Promise<PageModel> {
+  let page: PageModel = NOT_FOUND;
+  for (const resolve of resolvers) {
+    page = await resolve();
+    if (page.status !== 404) return page;
+  }
+  return page;
+}
+
 /**
  * Point d'entrée : adresse demandée → contenu pour les robots.
  * notFound = l'adresse n'existe pas dans le site (décidé par middleware.ts).
@@ -516,6 +535,8 @@ export async function resolvePage(pathname: string, lang: PageLang, notFound: bo
   if (path === "/") return resolveHome(lang);
   if (!slug) {
     if (key === "experiences") return resolveExperiencesList(lang);
+    // Ancienne liste /experiences2 : même contenu, adresse de référence /experiences (301).
+    if (key === "experiences2") return { ...(await resolveExperiencesList(lang)), canonicalPath: "/experiences" };
     if (key === "boat") return resolveBoats(lang);
     if (key === "journal") return resolveJournalList(lang);
     return resolveStatic(`/${key}`, lang) || PASSTHROUGH;
@@ -526,14 +547,16 @@ export async function resolvePage(pathname: string, lang: PageLang, notFound: bo
     case "hotels":
     case "hotel-old":
       return resolveHotel(decoded, lang);
+    // Une fiche demandée sous le mauvais type d'adresse (ex. l'atelier chocolat Galita, fiche
+    // avec hôtel, appelée en /standalone-experience/...) est retrouvée dans l'autre table :
+    // son canonicalPath donne alors la bonne adresse et le guichet répond 301.
     case "experience":
     case "experience2":
     case "experience-old":
-      return resolveExperience(decoded, lang);
+      return firstFound(() => resolveExperience(decoded, lang), () => resolveStandalone(decoded, lang));
     case "standalone-experience":
-      return resolveStandalone(decoded, lang);
     case "boat":
-      return resolveStandalone(decoded, lang);
+      return firstFound(() => resolveStandalone(decoded, lang), () => resolveExperience(decoded, lang));
     case "category":
       return resolveCategory(decoded, lang);
     case "journal":

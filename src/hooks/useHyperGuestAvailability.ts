@@ -8,7 +8,7 @@ import {
   getPropertyAvailability, 
   type HyperGuestSearchParams 
 } from '@/services/hyperguest';
-import { trackSearchPerformed, trackSearchNoResults } from '@/lib/analytics';
+import { trackSearchPerformed, trackSearchNoResults, consumeUserSearch } from '@/lib/analytics';
 
 export const hyperguestAvailabilityKeys = {
   all: ['hyperguest-availability'] as const,
@@ -23,7 +23,9 @@ async function fetchHyperGuestAvailability(
   propertyId: number,
   params: HyperGuestSearchParams
 ): Promise<any | null> {
-  trackSearchPerformed({
+  // Recherche lancée par un geste du visiteur ? Sinon (chargement de la page) : aucun événement.
+  const userInitiated = consumeUserSearch();
+  if (userInitiated) trackSearchPerformed({
     checkIn: params.checkIn,
     nights: params.nights,
     guests: parseInt(params.guests) || undefined,
@@ -32,7 +34,7 @@ async function fetchHyperGuestAvailability(
   try {
     const result = await getPropertyAvailability(propertyId, params);
     if (!result) {
-      trackSearchNoResults({
+      if (userInitiated) trackSearchNoResults({
         checkIn: params.checkIn,
         nights: params.nights,
         guests: parseInt(params.guests) || undefined,
@@ -42,7 +44,7 @@ async function fetchHyperGuestAvailability(
 
     // Check if results have zero rooms
     const rooms = result?.results?.[0]?.rooms;
-    if (!rooms || rooms.length === 0) {
+    if (userInitiated && (!rooms || rooms.length === 0)) {
       trackSearchNoResults({
         checkIn: params.checkIn,
         nights: params.nights,

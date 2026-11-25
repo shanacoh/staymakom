@@ -31,8 +31,15 @@ function header(lang: PageLang, categories: { name: string; slug: string }[]): s
   return `<header><nav aria-label="Main">${linkList(main)}</nav></header>`;
 }
 
-function footer(lang: PageLang): string {
+function footer(lang: PageLang, categories: { name: string; slug: string }[]): string {
   const t = ui(lang);
+  // Maillage interne : toutes les catégories (moods) et les grandes rubriques, sur chaque page.
+  const explore: PageLink[] = [
+    { label: t.experiences, href: href("/experiences", lang) },
+    ...categories.map((c) => ({ label: c.name, href: href(`/category/${c.slug}`, lang) })),
+    { label: t.boats, href: href("/boat", lang) },
+    { label: t.journal, href: href("/journal", lang) },
+  ];
   const pages: PageLink[] = [
     { label: t.about, href: href("/about", lang) },
     { label: t.contact, href: href("/contact", lang) },
@@ -53,6 +60,7 @@ function footer(lang: PageLang): string {
     "<footer>",
     `<p><strong>${e(BRAND.name)}</strong> - ${e(BRAND.tagline)}</p>`,
     `<address>${e(BRAND.legalName)}, ${e(BRAND.address.street)}, ${e(BRAND.address.city)}, Israel. ${e(t.contactLine)}: <a href="mailto:${e(BRAND.email)}">${e(BRAND.email)}</a></address>`,
+    `<nav aria-label="Explore">${linkList(explore)}</nav>`,
     `<nav aria-label="Legal">${linkList(pages)}</nav>`,
     `<p>${e(t.followUs)}:</p>${linkList(socials)}`,
     "</footer>",
@@ -92,5 +100,5 @@ function mainContent(page: PageModel, lang: PageLang): string {
 }
 
 export function renderBody(page: PageModel, lang: PageLang, categories: { name: string; slug: string }[]): string {
-  return `${header(lang, categories)}${mainContent(page, lang)}${footer(lang)}`;
+  return `${header(lang, categories)}${mainContent(page, lang)}${footer(lang, categories)}`;
 }

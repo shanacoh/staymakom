@@ -52,6 +52,9 @@ export default function middleware(request: Request) {
   const requested = url.searchParams.get("lang");
   const lang = isLocale(requested) ? requested : "en";
   target.searchParams.set("lang", lang);
+  // ?lang= tel qu'écrit dans l'adresse : « ?lang=en » (ou une langue inconnue) est redirigé
+  // en 301 vers l'adresse nue par le guichet robots (une seule adresse par langue).
+  if (requested !== null) target.searchParams.set("rawlang", requested);
   target.searchParams.set("locales", publicLocales().join(","));
   if (isHiddenLocale(lang)) target.searchParams.set("hidden", "1");
   // Mode de la liste (?mode=live / stay) : utile pour /experiences et /category.

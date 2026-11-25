@@ -182,7 +182,8 @@ const Hotel = () => {
         ogDescriptionHe={hotel.og_description_he}
         ogImage={hotel.og_image || hotel.hero_image}
         fallbackTitle={`${hotelName} - ${city || ''} - Staymakom`}
-        fallbackDescription={story?.substring(0, 155) || ""} />
+        fallbackDescription={story?.substring(0, 155) || ""}
+        canonicalPath={hotel.slug ? `/hotel/${hotel.slug}` : undefined} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

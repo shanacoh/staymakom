@@ -127,7 +127,7 @@ const OtherExperiences2 = ({ currentExperienceId, categoryId, lang = "en" }: Oth
                 // base_price est stocké en NIS en base : on le convertit dans la devise affichée à l'utilisateur.
                 base_price: exp.base_price ? Math.round(convert(exp.base_price)) : exp.base_price,
               }}
-              linkPrefix="/experience2"
+              linkPrefix="/experience"
             />
           </div>
         ))}

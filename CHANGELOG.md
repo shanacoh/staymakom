@@ -4,6 +4,33 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 25/11/2026 : Sprint SEO technique et propreté du suivi Amplitude
+
+### Ce qui a changé côté code
+- `api/_seo/redirect.ts` (nouveau), `api/bot-meta.ts`, `middleware.ts`, `api/_seo/resolvers.ts` : une seule adresse par fiche et par langue. Pour Google, toute autre adresse de la même fiche (`/experience2/…`, `/hotels/…`, `/standalone-experience/<fiche avec hôtel>`, `/standalone-experience/<bateau>`, `?lang=en`, barre finale) répond une redirection 301 vers l'adresse de référence, en gardant la langue.
+- `vercel.json` : 301 pour tout le monde de `/experience2/*` vers `/experience/*`, `/hotels/*` vers `/hotel/*`, `/experiences2` vers `/experiences`.
+- Liens internes pointés vers l'adresse de référence : `HamburgerMenu.tsx`, `MyStaymakomSection.tsx`, `Checkout.tsx` (retour à la fiche), `Experiences2.tsx`, `OtherExperiences2.tsx`, `StandaloneExperienceCard.tsx` (un bateau mène à `/boat/…`).
+- `src/components/SEOHead.tsx` : nouvelles options `canonicalPath` (adresse de référence) et `availableLocales` (langues vraiment traduites) ; utilisées par `Experience2.tsx`, `StandaloneExperience.tsx`, `Hotel.tsx`, `JournalPost.tsx`.
+- `api/_seo/seoTitle.ts` (nouveau), `api/_seo/titles.ts` : règle unique du titre Google des expériences (titre SEO saisi, sinon « Titre | Lieu | STAYMAKOM », sans majuscules ni nom de prestataire, 60 caractères max), branchée sur le site et sur la version robots. Avant, la fiche avec hôtel affichait le titre éditorial dans Google.
+- `supabase/functions/generate-experience-draft/index.ts` + `useGenerateSeo.ts` : le bouton « Générer le SEO » écrit « type d'activité + lieu » en langage de recherche, sans nom de prestataire ni titre éditorial en majuscules (la fonction doit être redéployée).
+- `api/_seo/jsonLd.ts`, `Experience2.tsx`, `StandaloneExperience.tsx`, `JournalPost.tsx` : Product + Offer seulement s'il y a un prix, sans hôtel partenaire ; fil d'Ariane sans `?mode=` ; Article signé STAYMAKOM avec date de mise à jour et fil d'Ariane ; FAQPage sur l'accueil.
+- `api/_seo/faq.ts` (nouveau, copie robots de la FAQ, test `src/config/seoFaq.test.ts`), `FAQSection.tsx` : réponses présentes dans la page même accordéon fermé.
+- `api/_seo/db.ts`, `patchHead.ts`, `sitemap.ts` : une langue n'est déclarée (hreflang, plan du site) que si le texte principal de la fiche existe dans cette langue ; sinon son canonical pointe vers l'anglais. Plan du site : 696 adresses au lieu de 714 (articles du Journal sans français, etc.).
+- `api/_seo/renderBody.ts`, `LaunchFooter.tsx`, `IndexV3.tsx` : vrais liens vers les catégories, /experiences, /boat, /journal, /about dans le pied de page ; icônes de moods et « voir toutes les expériences » de l'accueil en vrais liens (le clic filtre toujours la grille comme avant).
+- `MarqueeBanner.tsx` : le texte du bandeau défilant n'existe plus qu'une fois dans la page.
+- `src/lib/trackingGuard.ts` (nouveau, testé), `main.tsx`, `App.tsx`, `lib/amplitude.ts` : Amplitude ne démarre que pour un vrai visiteur sur www.staymakom.com (robots, faux Chrome 145, navigateurs pilotés, localhost, preview Vercel et visites `utm_source=…test…` exclus), en pause sur /admin et /hotel-admin.
+- `BookingPanel2.tsx`, `useHyperGuestAvailability.ts`, `lib/analytics.ts` : `date_selected`, `search_performed`, `search_no_results` seulement sur un geste du visiteur (plus lors de la présélection automatique de la date). Logique de réservation inchangée.
+- `App.tsx`, `lib/amplitude.ts`, `lib/analytics.ts` : UTM conservés toute la visite et joints à chaque événement ; source d'arrivée : utm_source, puis referrer, puis navigateur intégré Instagram / TikTok / WhatsApp / Facebook.
+- `docs/seo/traduction-inclus-fr.sql` (nouveau) : traduction française des 96 lignes « Ce qui est inclus » des 17 expériences avec hôtel.
+- `LaunchHamburgerMenu.tsx` : le lien « Explore » du menu mène à `/experiences` (au lieu de `/launch/experiences?context=launch`).
+
+### Ce qui a changé côté base de données
+- `docs/seo/traduction-inclus-fr.sql` (validé par Shana, appliqué le 25/11/2026, sauvegarde `backup_20261125.experience2_includes_title_fr`) : `experience2_includes.title_fr` rempli pour les 96 lignes vides (jeep Kedma en français, etc.).
+- Migration `supabase/migrations/20261125120000_titres_seo_sans_prestataire.sql` (validée, appliquée le 25/11/2026, sauvegarde `backup_20261125.seo_titles`) : titres SEO sans nom de prestataire d'expérience (Galita, Lev HaTeva, The Cooking Studio, Dolphin Reef ; noms d'hôtels gardés), deux titres français ramenés sous 60 caractères, titre hébreu du saut en parachute ajouté. Les versions es / ru / de de ces titres reviennent à l'anglais jusqu'à la retraduction automatique de la nuit.
+
+### Pourquoi ce changement
+- Audit Search Console / Semrush / Amplitude des 24-25/11 : une même fiche indexée sous jusqu'à 8 adresses, des fiches en page 1 sans clic à cause d'un titre éditorial dans Google, des pages découvertes seulement par le plan du site, et plus de la moitié des sessions Amplitude venant de robots.
+
 ## 25/11/2026 : Tarif de référence pour 3 expériences sans prix
 
 ### Ce qui a changé côté code

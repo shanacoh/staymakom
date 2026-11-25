@@ -3,10 +3,43 @@ import { Instagram, Gift } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { openNewsletterPopup } from "@/components/NewsletterPopup";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { getLocalizedField } from "@/hooks/useLanguage";
+import { useLocalizedNavigation } from "@/hooks/useLocalizedNavigation";
 
 const LaunchFooter = () => {
   const { lang, locale } = useLanguage();
   const isRTL = lang === "he";
+  const { getLocalizedPath } = useLocalizedNavigation();
+
+  // Maillage interne : vrais liens vers chaque catégorie (mood) et les grandes rubriques,
+  // pour que Google découvre ces pages autrement que par le plan du site.
+  const { data: categories = [] } = useQuery({
+    queryKey: ["footer-categories"],
+    staleTime: 60 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("slug, name, name_fr, name_he, display_order")
+        .eq("status", "published")
+        .order("display_order", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const exploreLinks = [
+    { to: "/experiences", label: t(locale, "menuExploreEscapes") as string },
+    ...categories
+      .filter((c) => c.slug)
+      .map((c) => ({
+        // La catégorie saisonnière « bateaux » a sa vitrine permanente /boat.
+        to: c.slug === "bateaux" ? "/boat" : `/category/${c.slug}`,
+        label: String(getLocalizedField(c, "name", lang as "en" | "fr" | "he") || c.name),
+      })),
+    { to: "/journal", label: t(locale, "journalTitle") as string },
+    { to: "/about", label: t(locale, "menuAbout") as string },
+  ];
 
   return (
     <footer className="bg-[#1a1814] text-white border-t border-white/10" dir={isRTL ? "rtl" : "ltr"}>
@@ -28,6 +61,14 @@ const LaunchFooter = () => {
             </button>
           </div>
         </div>
+
+        <nav aria-label="Explore" className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs text-white/70">
+          {exploreLinks.map((l) => (
+            <Link key={l.to} to={getLocalizedPath(l.to)} className="hover:text-white transition-colors">
+              {l.label}
+            </Link>
+          ))}
+        </nav>
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           {/* Left: Logo */}

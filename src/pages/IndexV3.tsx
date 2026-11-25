@@ -429,10 +429,17 @@ const IndexV3 = () => {
                 const line1 = words.slice(0, mid).join(" ");
                 const line2 = words.slice(mid).join(" ");
 
+                // Vrai lien vers la page de la catégorie (lu par Google) ; un clic garde le
+                // comportement d'avant : filtrer la grille de l'accueil sans changer de page.
                 return (
-                  <button
+                  <a
                     key={v3cat.id}
-                    onClick={() => setSelectedCategory((prev) => (prev === categoryKey ? null : categoryKey))}
+                    href={getLocalizedPath(categoryKey === "bateaux" ? "/boat" : `/category/${categoryKey}`)}
+                    onClick={(event) => {
+                      if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+                      event.preventDefault();
+                      setSelectedCategory((prev) => (prev === categoryKey ? null : categoryKey));
+                    }}
                     className={cn(
                       "cat-chip group relative flex flex-col items-center gap-2 flex-shrink-0 w-16 sm:w-[74px] py-2 px-1 rounded-2xl transition-all duration-200",
                       isDimmed ? "opacity-35" : "hover:-translate-y-0.5"
@@ -490,7 +497,7 @@ const IndexV3 = () => {
                     >
                       {line1}{line2 && <><br />{line2}</>}
                     </span>
-                  </button>
+                  </a>
                 );
               })}
             </div>
@@ -589,12 +596,13 @@ const IndexV3 = () => {
                     })}
                   </div>
                   <div className="text-center mt-5">
-                    <button
-                      onClick={() => { trackViewAllExperiencesClicked("v3_grid"); navigate(getLocalizedPath("/experiences")); }}
+                    <Link
+                      to={getLocalizedPath("/experiences")}
+                      onClick={() => trackViewAllExperiencesClicked("v3_grid")}
                       className="inline-flex items-center gap-2 h-9 px-4 border border-border bg-white text-foreground text-[13px] font-semibold rounded-full hover:bg-muted transition-colors"
                     >
                       {ui("homeViewAll")}
-                    </button>
+                    </Link>
                   </div>
                 </>
               ) : (

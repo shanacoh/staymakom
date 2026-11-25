@@ -716,7 +716,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
   };
 
   const goBackToExperience = () => {
-    navigate(`/experience2/${state.experienceSlug}?lang=${lang}&context=launch`);
+    navigate(`/experience/${state.experienceSlug}?lang=${lang}&context=launch`);
   };
 
   // Crée un nouvel ordre Revolut quand un paiement précédent a échoué.
@@ -1394,7 +1394,7 @@ function CheckoutContent({ state }: { state: CheckoutState }) {
         open={showConfirmation}
         onClose={() => {
           setShowConfirmation(false);
-          navigate(`/experience2/${state.experienceSlug}?lang=${lang}&context=launch`);
+          navigate(`/experience/${state.experienceSlug}?lang=${lang}&context=launch`);
         }}
         data={confirmationData}
         lang={lang}

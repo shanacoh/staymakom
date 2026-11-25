@@ -37,7 +37,7 @@ const LaunchHamburgerMenu = ({ isScrolled = false }: LaunchHamburgerMenuProps) =
       >
         <nav className="flex flex-col" dir={isRTL ? "rtl" : "ltr"}>
           <Link
-            to="/launch/experiences?context=launch"
+            to="/experiences"
             onClick={handleNavClick}
             className="px-4 py-3 text-[15px] text-foreground hover:bg-foreground/5 rounded-lg transition-colors"
           >

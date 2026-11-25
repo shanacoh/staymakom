@@ -1,4 +1,5 @@
 import * as amplitude from "@amplitude/unified";
+import { isTrackingActive } from "./trackingGuard";
 
 type Language = "en" | "he" | "fr";
 const LANG_STORAGE_KEY = "preferredLang";
@@ -46,8 +47,19 @@ function getEntrySource(): string | undefined {
   }
 }
 
+/** UTM de l'arrivée (enregistrés dans App.tsx au premier affichage de la visite). */
+function getSessionUtm(): Record<string, string> {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem("staymakom_utm") || "{}");
+    return Object.fromEntries(Object.entries(saved).filter(([, v]) => typeof v === "string" && v)) as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
 function getCommonProperties(): Record<string, any> {
   return {
+    ...getSessionUtm(),
     lang: getCurrentLang(),
     page_path: window.location.pathname,
     page_type: getPageType(window.location.pathname),
@@ -56,8 +68,9 @@ function getCommonProperties(): Record<string, any> {
   };
 }
 
+/** false = robot, environnement de test, back-office : aucun événement n'est envoyé. */
 export function isAmplitudeReady(): boolean {
-  return typeof window !== "undefined";
+  return isTrackingActive();
 }
 
 export function initAmplitude() {

@@ -38,8 +38,76 @@ export async function fetchPublishedBySlug(
 ): Promise<Row | null> {
   const rows = await fetchRows(table, columns, `slug=eq.${encodeURIComponent(slug)}&status=eq.published&limit=1`);
   const row = rows[0] || null;
-  if (row) await localizeRow(table, row, lang);
+  if (row) {
+    // Langues où la fiche existe vraiment, calculées AVANT la mise en langue (textes d'origine).
+    row.__availableLangs = await availableLangsOf(table, row);
+    await localizeRow(table, row, lang);
+  }
   return row;
+}
+
+// ---------------------------------------------------------------------------
+// Langues réellement disponibles d'une fiche (hreflang, plan du site, canonical)
+// ---------------------------------------------------------------------------
+
+/**
+ * Texte principal de chaque type de fiche : une langue n'est annoncée à Google que si ce
+ * texte existe dans cette langue (saisi en fr / he, ou traduit automatiquement à jour en
+ * es / ru / de). Sinon la version dans cette langue n'est pas déclarée.
+ */
+export const MAIN_FIELD: Record<string, string> = {
+  experiences2: "long_copy",
+  standalone_experiences: "long_copy",
+  hotels2: "story",
+  categories: "name",
+  journal_posts: "content_en",
+};
+
+/** Colonne saisie à la main pour fr / he (même règle que localizeRow : long_copy → long_copy_fr, content_en → content_fr). */
+function writtenColumn(field: string, lang: "fr" | "he"): string {
+  return `${field.replace(/_en$/, "")}_${lang}`;
+}
+
+/** Index des traductions automatiques : id de fiche → langue → empreinte du texte anglais traduit. */
+export type TranslationIndex = Map<string, Map<string, string>>;
+
+export async function translationIndex(table: string, ids?: string[]): Promise<TranslationIndex> {
+  const index: TranslationIndex = new Map();
+  const entity = ENTITY_BY_TABLE[table];
+  const field = MAIN_FIELD[table];
+  if (!entity || !field) return index;
+  const filter = ids?.length ? `&entity_id=in.(${ids.map(encodeURIComponent).join(",")})` : "";
+  // Lecture par pages de 1 000 lignes (limite de la base).
+  for (let offset = 0; offset < 20000; offset += 1000) {
+    const rows = await fetchMany(
+      "content_translations",
+      "entity_id,locale,source_hash",
+      `entity_type=eq.${entity}&field=eq.${field}${filter}&order=entity_id.asc&limit=1000&offset=${offset}`
+    );
+    for (const r of rows) {
+      if (!index.has(r.entity_id)) index.set(r.entity_id, new Map());
+      index.get(r.entity_id)!.set(r.locale, r.source_hash);
+    }
+    if (rows.length < 1000) break;
+  }
+  return index;
+}
+
+/** Langues où la fiche a son texte principal. L'anglais est toujours là. */
+export async function availableLangsOf(table: string, row: Row, index?: TranslationIndex): Promise<PageLang[]> {
+  const field = MAIN_FIELD[table];
+  if (!field) return ["en", "fr", "he", ...AUTO_LANGS];
+  const langs: PageLang[] = ["en"];
+  for (const lang of ["fr", "he"] as const) if (hasContent(row[writtenColumn(field, lang)])) langs.push(lang);
+  const original = row[field];
+  if (typeof original === "string" && original.trim() && row.id) {
+    const translations = (index || (await translationIndex(table, [row.id]))).get(row.id);
+    if (translations) {
+      const hash = await sha256Hex(original);
+      for (const lang of AUTO_LANGS) if (translations.get(lang) === hash) langs.push(lang);
+    }
+  }
+  return langs;
 }
 
 // Table de la base → type de fiche dans content_translations

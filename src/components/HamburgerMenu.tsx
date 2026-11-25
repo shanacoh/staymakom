@@ -24,7 +24,7 @@ const HamburgerMenu = ({ isScrolled = false }: HamburgerMenuProps) => {
   };
 
   const menuItems = [
-    { label: lang === 'he' ? 'חוויות חדשות' : 'New Experiences', to: "/experiences2" },
+    { label: lang === 'he' ? 'חוויות חדשות' : 'New Experiences', to: "/experiences" },
     { label: t(lang, "hamburgerGiftCard"), to: "/gift-card" },
     { label: t(lang, "hamburgerCompanyReward"), to: "/corporate" },
     { label: t(lang, "hamburgerHotelPartnership"), to: "/partners" },

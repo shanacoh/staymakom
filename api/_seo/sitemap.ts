@@ -1,7 +1,7 @@
 // Plan du site (sitemap.xml) fabriqué en direct à partir des fiches publiées : un hôtel,
 // une expérience ou un article publié dans le back-office y apparaît tout seul (cache 1 h),
 // sans attendre une mise en ligne du code. Remplace l'ancien generate-sitemap.mjs.
-import { fetchMany } from "./db.js";
+import { MAIN_FIELD, availableLangsOf, fetchMany, translationIndex } from "./db.js";
 import { PUBLIC_LANGS, pageUrl, type PageLang } from "./site.js";
 
 type Row = Record<string, any>;
@@ -56,14 +56,35 @@ function urlEntry(path: string, priority: string, changefreq: string, lastmod: s
 /** null = la base n'a rien renvoyé (on ne publie pas un plan du site vide). */
 export async function buildSitemap(): Promise<string | null> {
   const published = "status=eq.published";
+  // Texte principal en anglais + ses versions fr / he : sert à n'annoncer que les langues traduites.
+  const main = (table: string) => {
+    const field = MAIN_FIELD[table];
+    const base = field.replace(/_en$/, "");
+    return `id,${field},${base}_he${table === "journal_posts" ? "" : `,${base}_fr`}`;
+  };
   const [experiences, hotels, categories, standalones, journals] = await Promise.all([
-    fetchMany("experiences2", "slug,updated_at", published),
-    fetchMany("hotels2", "slug,updated_at", published),
-    fetchMany("categories", "slug,updated_at", published),
-    fetchMany("standalone_experiences", "slug,updated_at,category_id", published),
-    fetchMany("journal_posts", "slug,updated_at", published),
+    fetchMany("experiences2", `slug,updated_at,${main("experiences2")}`, published),
+    fetchMany("hotels2", `slug,updated_at,${main("hotels2")}`, published),
+    fetchMany("categories", `slug,updated_at,${main("categories")}`, published),
+    fetchMany("standalone_experiences", `slug,updated_at,category_id,${main("standalone_experiences")}`, published),
+    fetchMany("journal_posts", `slug,updated_at,${main("journal_posts")}`, published),
   ]);
   if (!experiences.length && !hotels.length) return null;
+
+  // Langues réellement disponibles de chaque fiche (une seule lecture des traductions par type).
+  const langsByRow = new Map<Row, readonly PageLang[]>();
+  await Promise.all(
+    ([["experiences2", experiences], ["hotels2", hotels], ["categories", categories], ["standalone_experiences", standalones], ["journal_posts", journals]] as const).map(
+      async ([table, rows]) => {
+        const index = await translationIndex(table);
+        for (const row of rows) {
+          const available = await availableLangsOf(table, row, index);
+          langsByRow.set(row, PUBLIC_LANGS.filter((code) => available.includes(code)));
+        }
+      }
+    )
+  );
+  const langsOf = (row: Row) => langsByRow.get(row) || ["en"];
 
   const boats = standalones.filter((r) => r.category_id === BOATS_CATEGORY_ID);
   const listLastmod: Record<string, string | null> = {
@@ -78,13 +99,13 @@ export async function buildSitemap(): Promise<string | null> {
   const entries = [
     ...STATIC_PAGES.map((p) => urlEntry(p.path, p.priority, p.changefreq, listLastmod[p.path] || null, langs)),
     // « bateaux » est une catégorie saisonnière : la vitrine permanente /boat est déjà listée.
-    ...withSlug(categories).filter((r) => r.slug !== "bateaux").map((r) => urlEntry(`/category/${r.slug}`, "0.8", "weekly", lastmodOf(r), langs)),
-    ...withSlug(experiences).map((r) => urlEntry(`/experience/${r.slug}`, "0.9", "weekly", lastmodOf(r), langs)),
-    ...withSlug(hotels).map((r) => urlEntry(`/hotel/${r.slug}`, "0.8", "weekly", lastmodOf(r), langs)),
+    ...withSlug(categories).filter((r) => r.slug !== "bateaux").map((r) => urlEntry(`/category/${r.slug}`, "0.8", "weekly", lastmodOf(r), langsOf(r))),
+    ...withSlug(experiences).map((r) => urlEntry(`/experience/${r.slug}`, "0.9", "weekly", lastmodOf(r), langsOf(r))),
+    ...withSlug(hotels).map((r) => urlEntry(`/hotel/${r.slug}`, "0.8", "weekly", lastmodOf(r), langsOf(r))),
     ...withSlug(standalones).map((r) =>
-      urlEntry(`${r.category_id === BOATS_CATEGORY_ID ? "/boat" : "/standalone-experience"}/${r.slug}`, "0.8", "weekly", lastmodOf(r), langs)
+      urlEntry(`${r.category_id === BOATS_CATEGORY_ID ? "/boat" : "/standalone-experience"}/${r.slug}`, "0.8", "weekly", lastmodOf(r), langsOf(r))
     ),
-    ...withSlug(journals).map((r) => urlEntry(`/journal/${r.slug}`, "0.7", "monthly", lastmodOf(r), langs)),
+    ...withSlug(journals).map((r) => urlEntry(`/journal/${r.slug}`, "0.7", "monthly", lastmodOf(r), langsOf(r))),
   ];
 
   return [
