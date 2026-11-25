@@ -12,6 +12,7 @@
 ### Ce qui a changé côté base de données
 - Migration `supabase/migrations/20261125100000_tarifs_reference_3_experiences.sql` (appliquée le 25/11/2026, sauvegarde `backup_20261124.ref_rates`) : tarif de chambre de référence (`room_net_rate`) ajouté à la dégustation de vin au Beresheet (1 545,65 ₪), à la jeep vers les sources de Nahal Tzin au Kedma (821,45 ₪) et à l'atelier chocolat Galita au Lake House Kinneret (606,66 ₪). Valeurs obtenues comme dans le back-office : prix d'achat HyperGuest le plus bas sur les 30 prochaines dates disponibles (1 nuit, 2 adultes, petit-déjeuner, nationalité par défaut du site).
 - Prix « à partir de » qui en découlent pour les robots : environ 2 487 ₪, 2 545 ₪ et 988 ₪.
+- Migration `supabase/migrations/20261125110000_tarif_beresheet_90_jours.sql` (validée par Shana, appliquée le 25/11/2026) : pour le Beresheet, la nuit la moins chère est cherchée sur les 90 prochains jours, ce qui donne 1 436,06 ₪ et un « à partir de » d'environ 2 363 ₪. Kedma et Galita sont inchangés, leur minimum sur 90 jours étant le même. Attention : si la fiche est rouverte dans le back-office, la section prix recalcule ce tarif sur les 30 premières dates disponibles et peut le remonter.
 
 ### Pourquoi ce changement
 - Ces 3 fiches n'avaient aucun prix visible pour Google et les IA (critère de l'audit IA : le signe ₪ sur la fiche dégustation de vin).
