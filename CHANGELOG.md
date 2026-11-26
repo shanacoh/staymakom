@@ -4,6 +4,21 @@
 > Chaque entrée décrit ce qui a changé côté code **et** côté base de données, avec le contexte métier.
 > Format : du plus récent au plus ancien.
 
+## 26/11/2026 : Liens courts pour les bios des réseaux sociaux (/ig, /tt, /li, /wa)
+
+### Ce qui a changé côté code
+- `vercel.json` : 4 redirections temporaires (302), placées en tête : `/ig` (Instagram), `/tt` (TikTok), `/li` (LinkedIn), `/wa` (WhatsApp) mènent à l'accueil avec les paramètres de campagne utm_* correspondants. Aucune page du site n'utilisait déjà ces adresses.
+- `src/lib/cleanUtmFromUrl.ts` (nouveau, + test) : retire les utm_* de la barre d'adresse (sans recharger, en gardant `lang` et les autres paramètres).
+- `src/lib/amplitude.ts` + `src/main.tsx` : le démarrage d'Amplitude est mémorisé pour savoir quand il a fini de lire l'adresse.
+- `src/App.tsx` : une fois les utm lus (événements `session_landed`, `utm_captured`, source de la visite) et Amplitude démarré, l'adresse est nettoyée. Les utm restent mémorisés pour toute la visite.
+- `public/robots.txt` : `/ig`, `/tt`, `/li`, `/wa` interdits aux robots. Le plan du site (`api/_seo/sitemap.ts`) n'avait rien à changer : il ne liste que des pages fixes et les fiches publiées.
+
+### Ce qui a changé côté base de données
+- Rien.
+
+### Pourquoi ce changement
+- Avoir un lien court et propre à mettre dans chaque bio (staymakom.com/ig, etc.), savoir dans Amplitude de quel réseau vient chaque visiteur, et que le client voie simplement staymakom.com.
+
 ## 25/11/2026 : Journal, le bouton « Aperçu » de l'email ouvre le brouillon sans connexion
 
 ### Ce qui a changé côté code

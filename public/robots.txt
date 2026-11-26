@@ -10,5 +10,9 @@ Disallow: /booking/confirmation/
 Disallow: /standalone-booking/confirmation/
 Disallow: /billet/
 Disallow: /standalone-checkout
+Disallow: /ig$
+Disallow: /tt$
+Disallow: /li$
+Disallow: /wa$
 
 Sitemap: https://www.staymakom.com/sitemap.xml

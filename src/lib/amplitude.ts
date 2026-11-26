@@ -68,6 +68,19 @@ function getCommonProperties(): Record<string, any> {
   };
 }
 
+let amplitudeStarted: Promise<void> = Promise.resolve();
+
+/** Mémorise le démarrage d'Amplitude (appelé une seule fois dans main.tsx). */
+export function rememberAmplitudeStart(start: Promise<void>): void {
+  amplitudeStarted = start.catch(() => undefined);
+}
+
+/** Se résout quand Amplitude a fini de démarrer (et donc lu la source de la visite dans l'adresse).
+ *  Se résout tout de suite si Amplitude n'a pas été démarré (robot, preview, test). */
+export function whenAmplitudeStarted(): Promise<void> {
+  return amplitudeStarted;
+}
+
 /** false = robot, environnement de test, back-office : aucun événement n'est envoyé. */
 export function isAmplitudeReady(): boolean {
   return isTrackingActive();

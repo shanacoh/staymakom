@@ -15,6 +15,8 @@ import { useCookieConsent } from "@/hooks/useCookieConsent";
 import { CurrentProductProvider } from "@/contexts/CurrentProductContext";
 import { trackPageViewed, trackUtmCaptured, trackSessionLanded, identifySessionLanded, computeEntrySource } from "@/lib/analytics";
 import { rememberVisitSource } from "@/lib/tailorMade/visitSource";
+import { whenAmplitudeStarted } from "@/lib/amplitude";
+import { cleanUtmFromAddressBar } from "@/lib/cleanUtmFromUrl";
 import * as amplitude from "@amplitude/unified";
 import { isTrackingStarted, isUntrackedPath } from "@/lib/trackingGuard";
 import { Loader2 } from "lucide-react";
@@ -237,6 +239,13 @@ const AppContent = () => {
       trackUtmCaptured({ source, medium, campaign, content, term });
       sessionStorage.setItem("staymakom_utm_tracked", "1");
     }
+  }, []);
+
+  // Doit rester APRÈS les deux lectures des utm ci-dessus : une fois Amplitude démarré
+  // (il lit aussi l'adresse de son côté), on retire les utm_* de la barre d'adresse.
+  // Les utm restent mémorisés pour toute la visite (staymakom_utm, source de la visite).
+  useEffect(() => {
+    whenAmplitudeStarted().then(cleanUtmFromAddressBar);
   }, []);
 
   return (
